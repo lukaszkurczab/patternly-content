@@ -1,7 +1,7 @@
-# Patternly published content
+# Patternly manual content publishing
 
-This repository publishes immutable, versioned JSON question banks for Patternly.
+The canonical pipeline is manual source → read-only validation → immutable track artifact → immutable release. Runtime applications import generated artifact bytes at build time; they never use this repository or a content HTTP endpoint at runtime.
 
-Run `npm run validate` before publishing. Run `npm run serve` to expose the root manifest at `http://127.0.0.1:4173/manifest.json` for local development.
+Legacy `tracks/` files are not pipeline ingress and are never scanned as a fallback. Moving or pasting any existing question into `manual/source/` is **MANUAL ONLY**.
 
-Published bank files are immutable. A content update must use a new bank version and atomically update its manifest only after validation succeeds.
+Run `npm test` for architecture fixtures. Human authors use `npm run validate:track -- --track <trackId>`, then `npm run build:track -- --track <trackId>`. See `docs/manual-publishing-handoff.md` before adding any manual source or approval record.

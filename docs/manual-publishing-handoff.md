@@ -7,13 +7,13 @@
 - Editorial approvals: `manual/approvals/<trackId>/*.json`, conforming to `schemas/publishing/editorial-approval-record.schema.json`.
 - Activation record: exactly one `manual/activations/<trackId>/*.json`, conforming to `schemas/publishing/content-activation-record.schema.json`.
 
-`tracks/`, test fixtures, generated artifacts, and exports are never discovery roots. Moving existing question files is `MANUAL ONLY`; no pipeline command migrates, copies, or reads them as a fallback.
+`tracks/`, test fixtures, generated artifacts, and releases are never discovery roots. Moving existing question files is `MANUAL ONLY`; no pipeline command migrates, copies, or reads them as a fallback.
 
 ## Algorithms batch contract
 
 An Algorithms batch carries its batch ID, version identity, batch taxonomy (`roadmapNodeId`, `primaryMentalUnitId`, `patternFamilyId`), authoring provenance, authored items, and explicit named mode structures. A contrast batch also requires contrasted mental units, false heuristic, and transfer boundary.
 
-Every Algorithms item has one primary skill atom, de-duplicated secondary skill atoms, learning stage, explicit interaction and scoring contract, authored Reason/Details, and external source overrides when a claim is version- or policy-dependent. The publisher resolves the full taxonomy and provenance on every published item. It never infers either from a file name, path, item ID, or prompt.
+Every Algorithms item has one primary skill atom, de-duplicated secondary skill atoms, learning stage, explicit interaction and scoring contract, authored Reason/Details, and external source overrides when a claim is version- or policy-dependent. Optional `constraints` is a non-empty list of strings and optional `difficulty` is a non-empty string; both compile directly to the application item contract. The publisher resolves the full taxonomy and provenance on every published item. It never infers either from a file name, path, item ID, or prompt.
 
 The checked-in Algorithms taxonomy has deliberately not been expanded with invented mental-unit, family, variant, archetype, skill-atom, or heuristic mappings. Before real source is added, a human owner must provide the complete versioned taxonomy manifest required by the source contract; this is `MANUAL ONLY` and is not replaced with inferred mappings.
 
@@ -44,4 +44,4 @@ Inspection is read-only and may run on working source. Evidence emission, build,
 
 ## Application handoff
 
-The external envelope remains unchanged: `artifacts/releases/<release-id>/release.json` has a track-scoped release manifest and consumer-shaped artifact references. The generated app module exports that exact immutable release. Runtime application code imports only the generated bundle; the development HTTP server serves only generated artifacts and is not a runtime dependency.
+The external envelope remains unchanged: `artifacts/releases/<release-id>/release.json` has a track-scoped release manifest and consumer-shaped artifact references. Build writes `track-artifact.json` and `build-report.json` into one staged immutable version directory; publish writes `release.json` and `generated-bundled-content.mjs` into one staged immutable release directory. Each directory becomes visible through one atomic rename. Runtime application code imports only a deliberately pinned generated bundle; the development HTTP server serves only generated artifacts and is not a runtime dependency.

@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { buildTrack, emitTechnicalEvidence, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
 import { algorithmsBatch, certificationBatch, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
-import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APPLICATION_ALGORITHM_MODE_IDS } from "./fixtures/applicationContractSnapshot.mjs";
+import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS, APPLICATION_ALGORITHM_MODE_IDS } from "./fixtures/applicationContractSnapshot.mjs";
 
 const COMMIT = "fixture-source-commit";
 const exec = promisify(execFile);
@@ -32,6 +32,15 @@ test("publisher accepts only exact application Algorithms mode IDs", async () =>
   assert.deepEqual(JSON.parse(await readFile("config/families/algorithms.json", "utf8")).modeBlueprintRequirements.map((entry) => entry.modeId), APPLICATION_ALGORITHM_MODE_IDS);
   const path = await root({ algorithms: algorithmsBatch({ declaredModes: ["retired-local-mode-id"] }), approvals: false });
   try { await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_MODE")); } finally { await rm(path, { recursive: true }); }
+});
+
+test("constraints and difficulty compile as the application contract's legal optional fields", async () => {
+  const batch = algorithmsBatch(); batch.items[0].constraints = ["fixture constraint"]; batch.items[0].difficulty = "foundational";
+  const path = await root({ algorithms: batch });
+  try {
+    const built = await buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT }); const item = JSON.parse(built.artifact.artifactBytes).bank.items.find((entry) => entry.id === "fixture-algorithm-1");
+    assert.deepEqual(Object.keys(item).filter((key) => APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS.includes(key)).sort(), [...APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS].sort()); assert.deepEqual(item.constraints, ["fixture constraint"]); assert.equal(item.difficulty, "foundational");
+  } finally { await rm(path, { recursive: true }); }
 });
 
 test("empty canonical ingress is explicit even with a legacy bank", async () => {
@@ -79,12 +88,29 @@ test("simulation has an explicit pool, profile, deterministic legal selector, an
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("simulation selection prefers declared targets without weakening fixed-40 constraints", async () => {
+  const batch = algorithmsBatch({ count: 41 }); batch.items.forEach((entry, index) => { entry.difficulty = index === 40 ? "other" : "target"; });
+  const path = await root({ algorithms: batch });
+  try {
+    const inspected = await validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }); const pool = inspected.source.modeStructures.simulationPools[0]; const profile = { ...inspected.source.modeStructures.simulationProfiles[0], distributions: [{ dimension: "difficulty", buckets: [{ valueId: "target", minimum: 0, target: 40, maximum: 40 }, { valueId: "other", minimum: 0, target: 0, maximum: 40 }] }] };
+    const selected = selectSimulationPlan({ profile, pool, items: inspected.source.items, selectionSeed: "targets" }); assert.equal(selected.itemIds.length, 40); assert.equal(selected.diagnostics.targetDeviation, 0); assert.ok(selected.itemIds.every((id) => id !== "fixture-algorithm-41"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
 test("approvals and activations bind exact immutable fingerprints", async () => {
   const path = await root({ algorithms: algorithmsBatch() });
   try {
     const source = join(path, "manual/source/algorithms/fixture.json"); const batch = JSON.parse(await readFile(source, "utf8")); batch.items[0].prompt = "Select all changed learner-visible invariants."; await writeFile(source, JSON.stringify(batch));
     await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit" });
     await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit" }), fails("MISSING_APPROVAL"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("approval item identities must exactly match the cited technical evidence", async () => {
+  const path = await root({ algorithms: algorithmsBatch() });
+  try {
+    const approvalPath = join(path, "manual/approvals/algorithms/fixture-algorithms-batch.json"); const approval = JSON.parse(await readFile(approvalPath, "utf8")); approval.includedItems.pop(); await writeFile(approvalPath, JSON.stringify(approval));
+    await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_APPROVAL"));
   } finally { await rm(path, { recursive: true }); }
 });
 
@@ -128,7 +154,7 @@ test("build refuses dirty or untracked canonical inputs before emitting an artif
 test("build checks every immutable target before making an artifact visible", async () => {
   const path = await root({ algorithms: algorithmsBatch() });
   try {
-    const out = join(path, "out"); const report = join(path, "reports/publishing/algorithms-algorithms-fixture-v2.json"); await mkdir(dirname(report), { recursive: true }); await writeFile(report, "existing\n");
+    const out = join(path, "out"); const report = join(out, "tracks/algorithms/algorithms-fixture-v2/build-report.json"); await mkdir(dirname(report), { recursive: true }); await writeFile(report, "existing\n");
     await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: out, sourceRepositoryCommit: COMMIT }), fails("IMMUTABLE_VERSION"));
     await assert.rejects(() => stat(join(out, "tracks/algorithms/algorithms-fixture-v2/track-artifact.json")), (error) => error?.code === "ENOENT");
   } finally { await rm(path, { recursive: true }); }
@@ -140,7 +166,7 @@ test("artifact and release are immutable, exact-byte checked, and tracks remain 
     const out = join(path, "out"); const algorithm = await buildTrack({ root: path, trackId: "algorithms", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" });
     assert.deepEqual(Object.keys(algorithm.artifact).sort(), ["approvalCoverage", "artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"]);
     await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("IMMUTABLE_VERSION"));
-    const release = await publishRelease({ root: path, releaseId: "algorithms-only", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["algorithms"]);
+    const release = await publishRelease({ root: path, releaseId: "algorithms-only", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["algorithms"]); assert.match(await readFile(release.exportPath, "utf8"), /GENERATED_BUNDLED_CONTENT_RELEASE/);
     const raw = JSON.parse(await readFile(algorithm.path, "utf8")); raw.artifactBytes += " "; await writeFile(algorithm.path, JSON.stringify(raw)); await assert.rejects(() => verifyArtifact(algorithm.path), fails("CHECKSUM_MISMATCH"));
   } finally { await rm(path, { recursive: true }); }
 });

@@ -17,11 +17,11 @@ Every Algorithms item has one primary skill atom, de-duplicated secondary skill 
 
 The checked-in Algorithms taxonomy has deliberately not been expanded with invented mental-unit, family, variant, archetype, skill-atom, or heuristic mappings. Before real source is added, a human owner must provide the complete versioned taxonomy manifest required by the source contract; this is `MANUAL ONLY` and is not replaced with inferred mappings.
 
-Modes are represented by practice blueprints and explicit recognition sets, contrast sets, interleaved scopes, compatibility sets, simulation pools, and simulation profiles. A declared mode is content-ready only when its own blueprint meets its `minimumActualLength`; bank-wide item count is not evidence. Interview Simulation uses an explicit pool/profile and deterministic `sha256-ranked-constraints-v1` selection of exactly 40 unique items without replacement.
+The only Algorithms mode IDs are `algorithms-learn-approach`, `algorithms-guided-practice`, `algorithms-recognize-patterns`, `algorithms-contrast-practice`, `algorithms-weak-area-review`, `algorithms-independent-practice`, and `algorithms-interview-simulation`. Modes are represented by practice blueprints and explicit recognition sets, contrast sets, interleaved scopes, compatibility sets, simulation pools, and simulation profiles. A declared mode is content-ready only when its own blueprint meets its `minimumActualLength`; bank-wide item count is not evidence. Interview Simulation uses an explicit pool/profile and deterministic `sha256-ranked-constraints-v1` selection of exactly 40 unique items without replacement.
 
 ## Approval and activation contract
 
-Technical validation evidence is calculated by the validator and emitted with a successful build. It is not a manual approval file. Each batch needs one human editorial approval whose included item IDs and fingerprints exactly equal the validator evidence, and whose `technicalValidationEvidenceId` names passed evidence.
+The lifecycle is fixed: `inspect-source` → `emit-technical-evidence` → human editorial approval → activation → `validate-release-candidate` → build → publish. Technical evidence is emitted after successful inspection, before any editorial approval, and is not a human approval file. It is deterministic and immutable per inspected source bytes. An approval is reusable across content versions only when its track, family, item ID, item fingerprint, approval identity, reviewer metadata, and non-revoked approved disposition remain valid. `targetContentVersion`, if retained, is historical context rather than a reuse constraint.
 
 Every publication version also needs one manual activation record covering every item in the exact artifact with the same item fingerprint and owning approval ID. The outer consumer `approvalCoverage.identity` is a deterministic identity for that exact activation record. An edited learner-visible field changes the fingerprint and invalidates old coverage.
 
@@ -29,6 +29,10 @@ Every publication version also needs one manual activation record covering every
 
 ```text
 npm test
+npm run inspect:real:algorithms
+npm run evidence:real:algorithms
+npm run validate:real:algorithms
+npm run build:real:algorithms
 npm run validate:track -- --track algorithms
 npm run build:track -- --track algorithms
 npm run verify:artifact -- --artifact artifacts/tracks/algorithms/<version>/track-artifact.json
@@ -36,7 +40,7 @@ npm run publish:immutable -- --release <release-id> --artifact artifacts/tracks/
 npm run serve:artifacts
 ```
 
-Build and publish require a clean Git state for canonical inputs, including untracked ingress files. `DIRTY_SOURCE`, `EMPTY_INGRESS`, `MISSING_APPROVAL`, `MISSING_ACTIVATION`, `MODE_UNREADY`, `SIMULATION_INFEASIBLE`, `INVALID_SIMULATION_PROFILE`, `INVALID_RESPONSE`, `INVALID_REFERENCE`, and `IMMUTABLE_VERSION` are hard stops. No command repairs data, generates questions, creates approvals, shrinks a fixed simulation, or publishes a subset.
+Inspection is read-only and may run on working source. Evidence emission, build, and publish require a clean Git state for canonical inputs, including untracked ingress files. `DIRTY_SOURCE`, `EMPTY_INGRESS`, `MISSING_CANONICAL_TAXONOMY`, `MISSING_TECHNICAL_EVIDENCE`, `MISSING_APPROVAL`, `MISSING_ACTIVATION`, `MODE_UNREADY`, `SIMULATION_INFEASIBLE`, `SIMULATION_SOLVER_LIMIT`, `INVALID_SIMULATION_PROFILE`, `INVALID_RESPONSE`, `INVALID_REFERENCE`, and `IMMUTABLE_VERSION` are hard stops. No command repairs data, generates questions, creates approvals, shrinks a fixed simulation, or publishes a subset.
 
 ## Application handoff
 

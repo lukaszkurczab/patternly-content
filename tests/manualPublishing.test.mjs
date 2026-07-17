@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
-import { buildTrack, emitTechnicalEvidence, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
+import { buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
 import { algorithmsBatch, certificationBatch, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
 import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS, APPLICATION_ALGORITHM_MODE_IDS } from "./fixtures/applicationContractSnapshot.mjs";
 
@@ -13,6 +13,24 @@ const COMMIT = "fixture-source-commit";
 const exec = promisify(execFile);
 async function root(input = {}) { const path = await mkdtemp(join(tmpdir(), "patternly-publishing-")); await fixtureRoot(path, input); return path; }
 const fails = (code) => (error) => error instanceof PublishingFailure && error.code === code;
+function simulationInput({ items, distributions = [], profileId = "solver-profile", seed = "solver-seed" }) {
+  const itemIds = items.map((item) => item.id);
+  return {
+    profile: { profileId, profileVersion: "v1", poolId: "solver-pool", distributions },
+    pool: { poolId: "solver-pool", poolVersion: "v1", itemIds },
+    items,
+    selectionSeed: seed,
+  };
+}
+function solverItem(id, { difficulty = "neutral", mentalUnit = "unit", interactionType = "choice" } = {}) { return { id, difficulty, interactionType, resolvedTaxonomy: { learningStage: "foundations", primaryMentalUnitId: mentalUnit } }; }
+function shaRank(input, itemId) { return hash(`${CANONICAL_SERIALIZATION_VERSION}\n${JSON.stringify([input.profile.profileId, input.profile.profileVersion, input.pool.poolId, input.pool.poolVersion, input.selectionSeed, itemId])}`); }
+function simulationValue(item, dimension) { return dimension === "interactionType" ? item.interactionType : dimension === "difficulty" ? item.difficulty : item.resolvedTaxonomy[dimension]; }
+function legacyLocalGreedyPlan(input) {
+  const compareText = (left, right) => left === right ? 0 : left < right ? -1 : 1; const buckets = input.profile.distributions.flatMap((distribution) => distribution.buckets.map((bucket) => ({ ...bucket, dimension: distribution.dimension }))); const ranked = input.items.map((item) => ({ item, rank: shaRank(input, item.id) })).sort((left, right) => compareText(left.rank, right.rank) || compareText(left.item.id, right.item.id)); const selected = [];
+  while (selected.length < 40) { const count = (bucket) => selected.filter((item) => simulationValue(item, bucket.dimension) === bucket.valueId).length; const choices = ranked.filter(({ item }) => !selected.includes(item)).filter(({ item }) => buckets.every((bucket) => count(bucket) + (simulationValue(item, bucket.dimension) === bucket.valueId ? 1 : 0) <= bucket.maximum)).sort((left, right) => { const penalty = (candidate) => buckets.reduce((total, bucket) => Math.abs(count(bucket) + (simulationValue(candidate.item, bucket.dimension) === bucket.valueId ? 1 : 0) - bucket.target) - Math.abs(count(bucket) - bucket.target), 0); return penalty(left) - penalty(right) || compareText(left.rank, right.rank) || compareText(left.item.id, right.item.id); }); selected.push(choices[0].item); }
+  return selected;
+}
+function targetDeviation(items, profile) { return profile.distributions.flatMap((distribution) => distribution.buckets.map((bucket) => Math.abs(items.filter((item) => simulationValue(item, distribution.dimension) === bucket.valueId).length - bucket.target))).reduce((total, value) => total + value, 0); }
 
 test("canonical discovery is deterministic and ignores legacy content", async () => {
   const first = await root({ algorithms: algorithmsBatch() }); const second = await root({ algorithms: algorithmsBatch(), legacy: true });
@@ -97,6 +115,48 @@ test("simulation selection prefers declared targets without weakening fixed-40 c
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("simulation branch-and-bound finds the global multi-dimensional target optimum", () => {
+  const items = [
+    ...Array.from({ length: 20 }, (_, index) => solverItem(`ax-${index}`, { difficulty: "a", mentalUnit: "x" })),
+    ...Array.from({ length: 20 }, (_, index) => solverItem(`by-${index}`, { difficulty: "b", mentalUnit: "y" })),
+    solverItem("ay", { difficulty: "a", mentalUnit: "y" }),
+    solverItem("bx", { difficulty: "b", mentalUnit: "x" }),
+  ];
+  const input = simulationInput({ items, distributions: [
+    { dimension: "difficulty", buckets: [{ valueId: "a", minimum: 0, target: 20, maximum: 40 }, { valueId: "b", minimum: 0, target: 20, maximum: 40 }] },
+    { dimension: "primaryMentalUnitId", buckets: [{ valueId: "x", minimum: 0, target: 20, maximum: 40 }, { valueId: "y", minimum: 0, target: 20, maximum: 40 }] },
+  ] });
+  const result = selectSimulationPlan(input);
+  assert.equal(result.itemIds.length, 40); assert.equal(new Set(result.itemIds).size, 40); assert.equal(result.diagnostics.totalTargetDeviation, 0); assert.equal(result.diagnostics.optimalityProven, true);
+});
+
+test("simulation rejects the previous local-target greedy counterexample", () => {
+  const shapes = ["011", "100", "001", "100", "011", "001", "010", "111", "110", "111", "001", "000", "101", "000", "111", "110", "001", "110", "000", "100", "101", "100", "101", "100", "010", "001", "001", "101", "010", "000", "011", "100", "010", "100", "111", "110", "000", "010", "101", "010", "111", "110"];
+  const items = shapes.map((shape, index) => solverItem(`counterexample-${String(index + 1).padStart(2, "0")}`, { difficulty: shape[0] === "0" ? "a" : "b", mentalUnit: shape[1] === "0" ? "unit-a" : "unit-b", interactionType: shape[2] === "0" ? "choice" : "ordering" }));
+  const input = simulationInput({ items, profileId: "global-counterexample", seed: "counterexample", distributions: [
+    { dimension: "difficulty", buckets: [{ valueId: "a", minimum: 0, target: 20, maximum: 40 }] },
+    { dimension: "primaryMentalUnitId", buckets: [{ valueId: "unit-a", minimum: 0, target: 20, maximum: 40 }] },
+    { dimension: "interactionType", buckets: [{ valueId: "choice", minimum: 0, target: 20, maximum: 40 }] },
+  ] });
+  const legacy = legacyLocalGreedyPlan(input); const global = selectSimulationPlan(input);
+  assert.equal(legacy.length, 40); assert.equal(global.diagnostics.totalTargetDeviation, 2); assert.equal(targetDeviation(legacy, input.profile), 4); assert.ok(global.diagnostics.totalTargetDeviation < targetDeviation(legacy, input.profile));
+});
+
+test("simulation tie-break is SHA-ranked, seed-dependent only on ties, and input-order independent", () => {
+  const items = Array.from({ length: 41 }, (_, index) => solverItem(`tie-${String(index + 1).padStart(2, "0")}`));
+  const input = simulationInput({ items }); const first = selectSimulationPlan(input); const reversed = selectSimulationPlan({ ...input, items: [...items].reverse() }); const alternateSeed = selectSimulationPlan({ ...input, selectionSeed: "alternate-seed" }); const compareText = (left, right) => left === right ? 0 : left < right ? -1 : 1; const expected = [...items].sort((left, right) => compareText(shaRank(input, left.id), shaRank(input, right.id)) || compareText(left.id, right.id)).slice(0, 40).map((item) => item.id);
+  assert.equal(first.diagnostics.totalTargetDeviation, 0); assert.deepEqual(first.itemIds, expected); assert.deepEqual(first.itemIds, reversed.itemIds); assert.equal(first.itemIds.length, 40); assert.equal(new Set(first.itemIds).size, 40); assert.notDeepEqual(first.itemIds, alternateSeed.itemIds);
+});
+
+test("simulation treats minima and maxima as hard constraints and distinguishes infeasibility from a limit", () => {
+  const items = [...Array.from({ length: 20 }, (_, index) => solverItem(`a-${index}`, { difficulty: "a" })), ...Array.from({ length: 21 }, (_, index) => solverItem(`b-${index}`, { difficulty: "b" }))];
+  const constrained = simulationInput({ items, distributions: [{ dimension: "difficulty", buckets: [{ valueId: "a", minimum: 20, target: 20, maximum: 20 }, { valueId: "b", minimum: 20, target: 20, maximum: 20 }] }] });
+  const selected = selectSimulationPlan(constrained); assert.equal(selected.itemIds.length, 40); assert.equal(selected.itemIds.filter((id) => id.startsWith("a-")).length, 20); assert.equal(selected.itemIds.filter((id) => id.startsWith("b-")).length, 20);
+  const impossible = simulationInput({ items, distributions: [{ dimension: "difficulty", buckets: [{ valueId: "a", minimum: 21, target: 21, maximum: 40 }] }] });
+  assert.throws(() => selectSimulationPlan(impossible), fails("SIMULATION_INFEASIBLE"));
+  assert.throws(() => selectSimulationPlan({ ...constrained, stateLimit: 1 }), fails("SIMULATION_SOLVER_LIMIT"));
+});
+
 test("approvals and activations bind exact immutable fingerprints", async () => {
   const path = await root({ algorithms: algorithmsBatch() });
   try {
@@ -130,7 +190,7 @@ test("symmetric compatibility accepts overlap and bounded solver exposes its lim
   try {
     const inspected = await inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }); const pool = inspected.source.modeStructures.simulationPools[0]; const profile = inspected.source.modeStructures.simulationProfiles[0];
     assert.deepEqual(inspected.source.items[0].compatibilityMemberships, ["fixture-symmetric"]);
-    assert.throws(() => selectSimulationPlan({ profile, pool, items: inspected.source.items, selectionSeed: "limit", stateLimit: 1 }), fails("SIMULATION_SOLVER_LIMIT"));
+    assert.throws(() => selectSimulationPlan({ profile, pool, items: inspected.source.items, selectionSeed: "limit", stateLimit: 1 }), (error) => fails("SIMULATION_SOLVER_LIMIT")(error) && /visitedStates/.test(error.message) && /stateLimit/.test(error.message) && /bestSolutionFound/.test(error.message) && /optimalityProven":false/.test(error.message));
   } finally { await rm(path, { recursive: true }); }
 });
 

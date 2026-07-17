@@ -193,27 +193,44 @@ export function selectSimulationPlan({ profile, pool, items, selectionSeed, stat
       key: `${distribution.dimension}:${bucket.valueId}`,
     }));
   });
-  const selected = []; const selectedIds = new Set(); const memo = new Set(); const diagnostics = { visitedStates: 0, prunedStates: 0, candidateCount: candidates.length, selectedCount: 0, constraintSummary: buckets.map(({ dimension, valueId, minimum, target, maximum }) => ({ dimension, valueId, minimum, target, maximum })) };
-  const count = (bucket) => selected.filter((entry) => valueForDimension(entry, bucket.dimension) === bucket.valueId).length;
-  const remaining = (bucket) => candidates.filter((candidate) => !selectedIds.has(candidate.id) && valueForDimension(candidate.item, bucket.dimension) === bucket.valueId).length;
-  const feasible = () => buckets.every((bucket) => count(bucket) <= bucket.maximum && count(bucket) + remaining(bucket) >= bucket.minimum);
-  const canAdd = (item) => buckets.every((bucket) => count(bucket) + (valueForDimension(item, bucket.dimension) === bucket.valueId ? 1 : 0) <= bucket.maximum);
-  const targetPenalty = (item) => buckets.reduce((total, bucket) => {
-    const before = Math.abs(count(bucket) - bucket.target); const after = Math.abs(count(bucket) + (valueForDimension(item, bucket.dimension) === bucket.valueId ? 1 : 0) - bucket.target);
-    return total + after - before;
-  }, 0);
-  const visit = () => {
-    diagnostics.visitedStates += 1; if (diagnostics.visitedStates > stateLimit) throw new PublishingFailure("SIMULATION_SOLVER_LIMIT", `Simulation solver exceeded ${stateLimit} states.`);
-    const state = [...selectedIds].sort(compare).join("\u0000"); if (memo.has(state)) { diagnostics.prunedStates += 1; return false; } memo.add(state);
-    if (!feasible() || selected.length > 40) { diagnostics.prunedStates += 1; return false; }
-    if (selected.length === 40) return buckets.every((bucket) => count(bucket) >= bucket.minimum && count(bucket) <= bucket.maximum);
-    const required = buckets.filter((bucket) => count(bucket) < bucket.minimum).sort((left, right) => remaining(left) - remaining(right) || compare(left.key, right.key))[0];
-    const choices = candidates.filter((candidate) => !selectedIds.has(candidate.id) && (!required || valueForDimension(candidate.item, required.dimension) === required.valueId) && canAdd(candidate.item)).sort((left, right) => targetPenalty(left.item) - targetPenalty(right.item) || compare(left.rank, right.rank) || compare(left.id, right.id));
-    for (const candidate of choices) { selected.push(candidate.item); selectedIds.add(candidate.id); if (visit()) return true; selected.pop(); selectedIds.delete(candidate.id); }
-    diagnostics.prunedStates += 1; return false;
+  const candidateMatches = candidates.map((candidate) => buckets.map((bucket) => valueForDimension(candidate.item, bucket.dimension) === bucket.valueId));
+  const remainingMatches = buckets.map(() => Array(candidates.length + 1).fill(0));
+  for (let bucketIndex = 0; bucketIndex < buckets.length; bucketIndex += 1) for (let candidateIndex = candidates.length - 1; candidateIndex >= 0; candidateIndex -= 1) remainingMatches[bucketIndex][candidateIndex] = remainingMatches[bucketIndex][candidateIndex + 1] + (candidateMatches[candidateIndex][bucketIndex] ? 1 : 0);
+  const diagnostics = { visitedStates: 0, prunedStates: 0, candidateCount: candidates.length, selectedCount: 0, targetDeviation: 0, totalTargetDeviation: 0, lowerBoundAtCompletion: 0, optimalityProven: false, constraintSummary: buckets.map(({ dimension, valueId, minimum, target, maximum }) => ({ dimension, valueId, minimum, target, maximum })) };
+  const counts = Array(buckets.length).fill(0); const selected = []; const memo = new Map(); let bestSolution;
+  const tieKey = (ranks) => [...ranks].sort(compare).join("\u0000");
+  const lowerBound = (candidateIndex) => {
+    const slots = 40 - selected.length; if (slots < 0 || candidates.length - candidateIndex < slots) return Number.POSITIVE_INFINITY;
+    let total = 0;
+    for (let bucketIndex = 0; bucketIndex < buckets.length; bucketIndex += 1) {
+      const bucket = buckets[bucketIndex]; const matchingCandidates = remainingMatches[bucketIndex][candidateIndex]; const nonMatchingCandidates = candidates.length - candidateIndex - matchingCandidates; const minimumPossible = Math.max(counts[bucketIndex], bucket.minimum, counts[bucketIndex] + Math.max(0, slots - nonMatchingCandidates)); const maximumPossible = Math.min(bucket.maximum, counts[bucketIndex] + Math.min(slots, matchingCandidates));
+      if (minimumPossible > maximumPossible) return Number.POSITIVE_INFINITY;
+      total += bucket.target < minimumPossible ? minimumPossible - bucket.target : bucket.target > maximumPossible ? bucket.target - maximumPossible : 0;
+    }
+    return total;
   };
-  if (!visit()) throw new PublishingFailure("SIMULATION_INFEASIBLE", "No legal 40-item simulation selection satisfies the profile.");
-  diagnostics.selectedCount = selected.length; diagnostics.targetDeviation = buckets.reduce((total, bucket) => total + Math.abs(count(bucket) - bucket.target), 0); return { itemIds: selected.map((item) => item.id), diagnostics };
+  const optimisticTieKey = (candidateIndex) => tieKey([...selected.map((candidate) => candidate.rank), ...candidates.slice(candidateIndex, candidateIndex + (40 - selected.length)).map((candidate) => candidate.rank)]);
+  const solutionDeviation = () => buckets.reduce((total, bucket, bucketIndex) => total + Math.abs(counts[bucketIndex] - bucket.target), 0);
+  const legalComplete = () => selected.length === 40 && buckets.every((bucket, bucketIndex) => counts[bucketIndex] >= bucket.minimum && counts[bucketIndex] <= bucket.maximum);
+  const consider = () => { if (!legalComplete()) return; const totalTargetDeviation = solutionDeviation(); const candidate = { itemIds: selected.map((entry) => entry.id), totalTargetDeviation, tieBreakKey: tieKey(selected.map((entry) => entry.rank)) }; if (!bestSolution || candidate.totalTargetDeviation < bestSolution.totalTargetDeviation || (candidate.totalTargetDeviation === bestSolution.totalTargetDeviation && compare(candidate.tieBreakKey, bestSolution.tieBreakKey) < 0)) bestSolution = candidate; };
+  const visit = (candidateIndex) => {
+    diagnostics.visitedStates += 1;
+    if (diagnostics.visitedStates > stateLimit) { const detail = { visitedStates: diagnostics.visitedStates, stateLimit, bestDeviationFound: bestSolution?.totalTargetDeviation ?? null, bestSolutionFound: !!bestSolution, optimalityProven: false }; throw new PublishingFailure("SIMULATION_SOLVER_LIMIT", `Simulation solver reached its state limit: ${canonicalJson(detail)}`); }
+    const bound = lowerBound(candidateIndex);
+    if (!Number.isFinite(bound)) { diagnostics.prunedStates += 1; return; }
+    if (bestSolution && (bound > bestSolution.totalTargetDeviation || (bound === bestSolution.totalTargetDeviation && compare(optimisticTieKey(candidateIndex), bestSolution.tieBreakKey) >= 0))) { diagnostics.prunedStates += 1; return; }
+    const state = `${candidateIndex}|${selected.length}|${counts.join(",")}`; const selectedTie = tieKey(selected.map((candidate) => candidate.rank)); const seenTie = memo.get(state);
+    if (seenTie !== undefined && compare(seenTie, selectedTie) <= 0) { diagnostics.prunedStates += 1; return; }
+    memo.set(state, selectedTie);
+    if (candidateIndex === candidates.length) { consider(); return; }
+    const candidate = candidates[candidateIndex]; const matches = candidateMatches[candidateIndex];
+    if (counts.every((count, bucketIndex) => count + (matches[bucketIndex] ? 1 : 0) <= buckets[bucketIndex].maximum)) { selected.push(candidate); for (let bucketIndex = 0; bucketIndex < buckets.length; bucketIndex += 1) if (matches[bucketIndex]) counts[bucketIndex] += 1; visit(candidateIndex + 1); for (let bucketIndex = 0; bucketIndex < buckets.length; bucketIndex += 1) if (matches[bucketIndex]) counts[bucketIndex] -= 1; selected.pop(); }
+    visit(candidateIndex + 1);
+  };
+  visit(0);
+  if (!bestSolution) throw new PublishingFailure("SIMULATION_INFEASIBLE", "No legal 40-item simulation selection satisfies the profile.");
+  diagnostics.selectedCount = bestSolution.itemIds.length; diagnostics.targetDeviation = bestSolution.totalTargetDeviation; diagnostics.totalTargetDeviation = bestSolution.totalTargetDeviation; diagnostics.lowerBoundAtCompletion = bestSolution.totalTargetDeviation; diagnostics.optimalityProven = true;
+  return { itemIds: bestSolution.itemIds, diagnostics };
 }
 export function selectSimulationItems(input) { return selectSimulationPlan(input).itemIds; }
 function validateModeStructures(structures, declaredModes, family, items, taxonomy) {

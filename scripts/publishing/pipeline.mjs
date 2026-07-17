@@ -59,7 +59,7 @@ async function sourceCommit(root, override) {
 async function assertCleanSource(root, override) {
   if (override) return sourceCommit(root, override); // Test-only injected identity; CLI never supplies it.
   const commit = await sourceCommit(root);
-  const { stdout } = await git(root, ["status", "--porcelain", "--untracked-files=all", "--", "manual", "config", "schemas/publishing", "scripts/publishing"]);
+  const { stdout } = await git(root, ["status", "--porcelain", "--untracked-files=all", "--", "manual", "config", "schemas/publishing", "scripts/publishing", "reports/technical-evidence"]);
   if (stdout.trim()) throw new PublishingFailure("DIRTY_SOURCE", "Canonical publishing inputs contain staged, unstaged, or untracked changes.");
   return commit;
 }

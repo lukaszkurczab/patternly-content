@@ -40,6 +40,11 @@ async function writeFixtureApprovalAndActivation(root, inspected, evidence) {
   await mkdir(join(root, "manual/activations/algorithms"), { recursive: true });
   await writeFile(join(root, "manual/activations/algorithms/fixture-cycle-activation.json"), JSON.stringify({ activationSchemaVersion: 1, activationId: "fixture-cycle-activation", trackId: "algorithms", familyId: "algorithms", contentVersion: inspected.source.contentVersion, taxonomyVersion: inspected.source.taxonomyVersion, itemCoverage: inspected.source.items.map((item) => ({ itemId: item.id, itemFingerprint: item.itemFingerprint, approvalId })) }));
 }
+async function cleanGitReleaseFixture(path) {
+  await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test"); await commitFixtureInputs(path, "technical inputs");
+  const evidence = await emitTechnicalEvidence({ root: path, trackId: "algorithms" }); await commitFixtureInputs(path, "technical evidence"); const inspected = await inspectTrack({ root: path, trackId: "algorithms" }); await writeFixtureApprovalAndActivation(path, inspected, evidence.evidence[0]); await commitFixtureInputs(path, "approvals and activation");
+  return evidence;
+}
 
 test("canonical discovery is deterministic and ignores legacy content", async () => {
   const first = await root({ algorithms: algorithmsBatch() }); const second = await root({ algorithms: algorithmsBatch(), legacy: true });
@@ -95,6 +100,18 @@ test("technical evidence survives the clean multi-commit approval and activation
     const approvalPath = join(path, "manual/approvals/algorithms/fixture-cycle-approval.json"); const approval = JSON.parse(await readFile(approvalPath, "utf8")); approval.reviewDate = "2026-07-18"; await writeFile(approvalPath, JSON.stringify(approval)); const approvalCommit = await commitFixtureInputs(path, "approval metadata"); await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms" })); assert.notEqual(approvalCommit, releaseCommit);
     const sourcePath = join(path, "manual/source/algorithms/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.items[0].prompt = "Choose all changed technical invariants."; await writeFile(sourcePath, JSON.stringify(source)); await commitFixtureInputs(path, "changed source"); const changed = await inspectTrack({ root: path, trackId: "algorithms" }); assert.notEqual(changed.source.technicalInputFingerprint, evidence.technicalInputFingerprint); await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms" }), fails("MISSING_TECHNICAL_EVIDENCE"));
   } finally { await rm(path, { recursive: true }); }
+});
+
+test("build rejects modified and untracked technical evidence outside the committed release candidate", async () => {
+  for (const kind of ["modified", "untracked"]) {
+    const path = await root({ algorithms: algorithmsBatch(), approvals: false });
+    try {
+      const evidence = await cleanGitReleaseFixture(path);
+      if (kind === "modified") await writeFile(evidence.path, `${await readFile(evidence.path, "utf8")} `);
+      else await writeFile(join(path, "reports/technical-evidence/algorithms/untracked.json"), "{}\n");
+      await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out") }), fails("DIRTY_SOURCE"));
+    } finally { await rm(path, { recursive: true }); }
+  }
 });
 
 test("technical input fingerprint includes config, taxonomy, and source schema", async () => {

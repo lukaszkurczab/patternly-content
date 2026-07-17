@@ -79,8 +79,9 @@ function validateBatchTaxonomy(value, taxonomy, batchId) {
   const patternFamilyId = text(taxonomyInput.patternFamilyId, `${batchId} patternFamilyId`, "INVALID_REFERENCE");
   const mental = requireTaxonomy(taxonomy.mentalUnits, primaryMentalUnitId, "primary mental unit");
   if (!taxonomy.roadmapNodes.has(roadmapNodeId) || mental.roadmapNodeId !== roadmapNodeId) throw new PublishingFailure("INVALID_REFERENCE", `${batchId} mental unit is not in its roadmap node.`);
-  const family = requireTaxonomy(taxonomy.patternFamilies, patternFamilyId, "pattern family");
-  if (family.primaryMentalUnitId !== primaryMentalUnitId) throw new PublishingFailure("INVALID_REFERENCE", `${batchId} pattern family is not in its primary mental unit.`);
+  requireTaxonomy(taxonomy.patternFamilies, patternFamilyId, "pattern family");
+  const legalPatternFamilyIds = ids(mental.legalPatternFamilyIds ?? [], `${batchId} mental unit legal pattern families`, "INVALID_REFERENCE");
+  if (!legalPatternFamilyIds.includes(patternFamilyId)) throw new PublishingFailure("INVALID_REFERENCE", `${batchId} pattern family is not legal for its primary mental unit.`);
   return { roadmapNodeId, primaryMentalUnitId, patternFamilyId };
 }
 function validateAuthoringProvenance(value, batchId) {
@@ -150,13 +151,16 @@ function validateAlgorithmsItem(item, batchTaxonomy, taxonomy, provenance) {
   const difficulty = item.difficulty === undefined ? undefined : text(item.difficulty, `${id} difficulty`, "INVALID_RESPONSE");
   const input = record(item.taxonomy, `${id} item taxonomy`, "INVALID_REFERENCE");
   for (const prohibited of ["roadmapNodeId", "primaryMentalUnitId", "patternFamilyId"]) if (Object.hasOwn(input, prohibited)) throw new PublishingFailure("INVALID_REFERENCE", `${id} may not override batch ${prohibited}.`);
+  const mentalUnit = requireTaxonomy(taxonomy.mentalUnits, batchTaxonomy.primaryMentalUnitId, "primary mental unit");
   const primarySkillAtomId = text(input.primarySkillAtomId, `${id} primary skill atom`, "INVALID_REFERENCE"); const primary = requireTaxonomy(taxonomy.skillAtoms, primarySkillAtomId, "primary skill atom");
   if (primary.primaryMentalUnitId !== batchTaxonomy.primaryMentalUnitId) throw new PublishingFailure("INVALID_REFERENCE", `${id} primary skill atom is outside the batch mental unit.`);
   const secondarySkillAtomIds = ids(input.secondarySkillAtomIds ?? [], `${id} secondary skill atoms`, "INVALID_REFERENCE"); if (secondarySkillAtomIds.includes(primarySkillAtomId)) throw new PublishingFailure("INVALID_REFERENCE", `${id} secondary skill atom duplicates primary.`);
   for (const skillId of secondarySkillAtomIds) if (requireTaxonomy(taxonomy.skillAtoms, skillId, "secondary skill atom").primaryMentalUnitId !== batchTaxonomy.primaryMentalUnitId) throw new PublishingFailure("INVALID_REFERENCE", `${id} secondary skill atom is outside the batch mental unit.`);
-  const resolvedTaxonomy = { ...batchTaxonomy, primarySkillAtomId, secondarySkillAtomIds, learningStage: text(input.learningStage, `${id} learningStage`, "INVALID_REFERENCE") };
+  const learningStage = text(input.learningStage, `${id} learningStage`, "INVALID_REFERENCE");
+  if (learningStage !== mentalUnit.learningStage) throw new PublishingFailure("INVALID_REFERENCE", `${id} learningStage is not legal for the batch mental unit.`);
+  const resolvedTaxonomy = { ...batchTaxonomy, primarySkillAtomId, secondarySkillAtomIds, learningStage };
   if (input.patternVariantId !== undefined) { const variant = requireTaxonomy(taxonomy.patternVariants, input.patternVariantId, "pattern variant"); if (variant.patternFamilyId !== batchTaxonomy.patternFamilyId) throw new PublishingFailure("INVALID_REFERENCE", `${id} variant belongs to another pattern family.`); resolvedTaxonomy.patternVariantId = input.patternVariantId; }
-  if (input.problemArchetypeId !== undefined) { const archetype = requireTaxonomy(taxonomy.problemArchetypes, input.problemArchetypeId, "problem archetype"); if (archetype.patternFamilyId !== batchTaxonomy.patternFamilyId) throw new PublishingFailure("INVALID_REFERENCE", `${id} archetype belongs to another pattern family.`); resolvedTaxonomy.problemArchetypeId = input.problemArchetypeId; }
+  if (input.problemArchetypeId !== undefined) { const archetype = requireTaxonomy(taxonomy.problemArchetypes, input.problemArchetypeId, "problem archetype"); if (!ids(archetype.legalPatternFamilyIds ?? [], `${id} archetype legal pattern families`, "INVALID_REFERENCE").includes(batchTaxonomy.patternFamilyId)) throw new PublishingFailure("INVALID_REFERENCE", `${id} archetype does not permit the batch pattern family.`); resolvedTaxonomy.problemArchetypeId = input.problemArchetypeId; }
   const response = item.interaction?.type === "choice" ? validateChoice(item) : item.interaction?.type === "ordering" ? validateOrdering(item) : item.interaction?.type === "complexity" ? validateComplexity(item) : (() => { throw new PublishingFailure("UNSUPPORTED_INTERACTION", `${id} interaction is unsupported.`); })();
   return { ...item, id, ...(constraints ? { constraints } : {}), ...(difficulty ? { difficulty } : {}), interactionType: response.interactionType, resolvedTaxonomy, resolvedProvenance: { ...provenance, externalSources: validateExternalSources(item.sourceOverrides, id) } };
 }

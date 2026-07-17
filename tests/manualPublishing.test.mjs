@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
 import { algorithmsBatch, certificationBatch, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
 import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS, APPLICATION_ALGORITHM_MODE_IDS } from "./fixtures/applicationContractSnapshot.mjs";
+import { generatedTypeScript, structuralPayload, taxonomyFingerprint } from "../scripts/taxonomy/export-algorithms-taxonomy.mjs";
 
 const COMMIT = "fixture-source-commit";
 const exec = promisify(execFile);
@@ -286,4 +287,31 @@ test("artifact and release are immutable, exact-byte checked, and tracks remain 
 test("fixtures and legacy paths cannot enter production publishing code", async () => {
   const source = await readFile("scripts/publishing/pipeline.mjs", "utf8"); assert.doesNotMatch(source, /tests\/fixtures|tracks\/algorithms|tracks\/cloud-certification|slice\(0, 40\)|Math\.random/);
   const workflow = await readFile(".github/workflows/real-content-release.yml", "utf8"); assert.match(workflow, /algorithms-real-content/); assert.match(workflow, /certification-real-content/); assert.doesNotMatch(workflow, /continue-on-error/);
+});
+
+test("Algorithms batch taxonomy uses mental-unit legal families, not family entry-unit equality", async () => {
+  const path = await root({ algorithms: algorithmsBatch(), approvals: false });
+  try {
+    const taxonomyPath = join(path, "config/taxonomy/algorithms.json"); const taxonomy = JSON.parse(await readFile(taxonomyPath, "utf8"));
+    taxonomy.mentalUnits.push({ id: "later_arrays_unit", roadmapNodeId: "arrays_and_strings", unitKind: "direct", primaryPatternFamilyId: "arrays_and_strings", legalPatternFamilyIds: ["arrays_and_strings"], primarySkillAtomId: "later_arrays_skill", secondarySkillAtomIds: [], learningStage: "foundations", patternVariantIds: [], problemArchetypeIds: [] });
+    taxonomy.skillAtoms.push({ id: "later_arrays_skill", primaryMentalUnitId: "later_arrays_unit" }); await writeFile(taxonomyPath, JSON.stringify(taxonomy));
+    const batch = algorithmsBatch(); batch.taxonomy.primaryMentalUnitId = "later_arrays_unit"; batch.items.forEach((item) => { item.taxonomy.primarySkillAtomId = "later_arrays_skill"; }); await writeFile(join(path, "manual/source/algorithms/fixture.json"), JSON.stringify(batch));
+    await assert.doesNotReject(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }));
+    batch.taxonomy.patternFamilyId = "unknown_family"; await writeFile(join(path, "manual/source/algorithms/fixture.json"), JSON.stringify(batch));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_REFERENCE"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("taxonomy exporter fingerprints exactly the generated structural payload", () => {
+  const taxonomy = { taxonomyVersion: "algorithms-taxonomy-v2", learningStages: ["foundations"], roadmapNodes: [{ id: "arrays" }], mentalUnits: [], patternFamilies: [], patternVariants: [], problemArchetypes: [], skillAtoms: [], falseHeuristics: [] };
+  const output = generatedTypeScript(taxonomy); assert.match(output, /GENERATED FILE — DO NOT EDIT MANUALLY/); assert.match(output, /patternly-content\/config\/taxonomy\/algorithms\.json/); assert.match(output, new RegExp(taxonomyFingerprint(structuralPayload(taxonomy))));
+});
+
+test("Algorithms structural SOT has the resolved node, family, and cross-family unit contract", async () => {
+  const taxonomy = JSON.parse(await readFile("config/taxonomy/algorithms.json", "utf8"));
+  assert.equal(taxonomy.taxonomyVersion, "algorithms-taxonomy-v2"); assert.deepEqual(taxonomy.roadmapNodes.map((node) => node.order), Array.from({ length: 26 }, (_, index) => index + 1));
+  assert.equal(taxonomy.roadmapNodes.filter((node) => node.contentOwnership === "direct").length, 20); assert.equal(taxonomy.roadmapNodes.filter((node) => node.contentOwnership === "cross_family").length, 6); assert.equal(taxonomy.patternFamilies.length, 21);
+  const units = new Map(taxonomy.mentalUnits.map((unit) => [unit.id, unit])); assert.equal(units.size, taxonomy.mentalUnits.length); assert.equal(units.get("recursion_base_case_and_result_contract").roadmapNodeId, "recursion_basics"); assert.equal(units.get("backtracking_base_case_and_result_contract").roadmapNodeId, "backtracking"); assert.equal(units.has("base_case_and_result_contract"), false);
+  assert.equal(taxonomy.mentalUnits.filter((unit) => unit.unitKind === "strategy").length, 8); const contrast = taxonomy.mentalUnits.filter((unit) => unit.unitKind === "contrast"); assert.equal(contrast.length, 40); assert.ok(contrast.every((unit) => unit.learningStage === "contrast_practice" && unit.contrastedMentalUnitIds.length > 0));
+  assert.equal(taxonomy.falseHeuristics.filter((entry) => entry.relevantRoadmapNodeIds.some((id) => id.startsWith("contrast_"))).length, 7);
 });

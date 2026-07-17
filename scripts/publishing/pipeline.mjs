@@ -12,7 +12,7 @@ const compare = (left, right) => left === right ? 0 : left < right ? -1 : 1;
 export const hash = (value) => createHash("sha256").update(value).digest("hex");
 export const CANONICAL_SERIALIZATION_VERSION = "canonical-json-v1";
 export const SIMULATION_SOLVER_LIMIT = 50_000;
-export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v2";
+export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v3";
 const canonical = (value) => {
   if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;

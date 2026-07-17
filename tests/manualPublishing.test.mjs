@@ -31,6 +31,15 @@ function legacyLocalGreedyPlan(input) {
   return selected;
 }
 function targetDeviation(items, profile) { return profile.distributions.flatMap((distribution) => distribution.buckets.map((bucket) => Math.abs(items.filter((item) => simulationValue(item, distribution.dimension) === bucket.valueId).length - bucket.target))).reduce((total, value) => total + value, 0); }
+async function fixtureGit(root, ...args) { return exec("git", args, { cwd: root }); }
+async function commitFixtureInputs(root, message) { await fixtureGit(root, "add", "-A"); await fixtureGit(root, "commit", "-m", message); return (await fixtureGit(root, "rev-parse", "HEAD")).stdout.trim(); }
+async function writeFixtureApprovalAndActivation(root, inspected, evidence) {
+  const approvalId = "fixture-cycle-approval";
+  await mkdir(join(root, "manual/approvals/algorithms"), { recursive: true });
+  await writeFile(join(root, "manual/approvals/algorithms/fixture-cycle-approval.json"), JSON.stringify({ approvalSchemaVersion: 1, approvalId, reviewKind: "editorial", batchId: evidence.batchId, familyId: "algorithms", trackId: "algorithms", primaryTaxonomyReference: "arrays_and_strings", includedItems: Object.entries(evidence.itemFingerprints).map(([itemId, itemFingerprint]) => ({ itemId, itemFingerprint })), reviewer: "fixture reviewer", reviewDate: "2026-07-17", technicalValidationEvidenceId: evidence.evidenceId, factualAndEditorialDefectsFound: [], requiredCorrections: [], finalDisposition: "approved" }));
+  await mkdir(join(root, "manual/activations/algorithms"), { recursive: true });
+  await writeFile(join(root, "manual/activations/algorithms/fixture-cycle-activation.json"), JSON.stringify({ activationSchemaVersion: 1, activationId: "fixture-cycle-activation", trackId: "algorithms", familyId: "algorithms", contentVersion: inspected.source.contentVersion, taxonomyVersion: inspected.source.taxonomyVersion, itemCoverage: inspected.source.items.map((item) => ({ itemId: item.id, itemFingerprint: item.itemFingerprint, approvalId })) }));
+}
 
 test("canonical discovery is deterministic and ignores legacy content", async () => {
   const first = await root({ algorithms: algorithmsBatch() }); const second = await root({ algorithms: algorithmsBatch(), legacy: true });
@@ -70,6 +79,32 @@ test("technical evidence is emitted before human approval and current evidence i
   try {
     await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
     await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_APPROVAL"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("technical evidence survives the clean multi-commit approval and activation cycle", async () => {
+  const path = await root({ algorithms: algorithmsBatch(), approvals: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    const technicalCommit = await commitFixtureInputs(path, "technical inputs"); const initial = await inspectTrack({ root: path, trackId: "algorithms" }); const emitted = await emitTechnicalEvidence({ root: path, trackId: "algorithms" }); const evidence = emitted.evidence[0];
+    assert.equal(evidence.validatedAtSourceCommit, technicalCommit); assert.equal(evidence.technicalInputFingerprint, initial.source.technicalInputFingerprint);
+    const evidenceCommit = await commitFixtureInputs(path, "technical evidence"); const reused = await emitTechnicalEvidence({ root: path, trackId: "algorithms" }); assert.deepEqual(reused.evidence, emitted.evidence);
+    const approved = await inspectTrack({ root: path, trackId: "algorithms" }); await writeFixtureApprovalAndActivation(path, approved, evidence); const releaseCommit = await commitFixtureInputs(path, "approvals and activation");
+    const validated = await validateTrack({ root: path, trackId: "algorithms" }); const built = await buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out") });
+    assert.equal(validated.source.technicalInputFingerprint, evidence.technicalInputFingerprint); assert.equal(built.artifact.sourceRepositoryCommit, releaseCommit); assert.notEqual(evidenceCommit, releaseCommit);
+    const approvalPath = join(path, "manual/approvals/algorithms/fixture-cycle-approval.json"); const approval = JSON.parse(await readFile(approvalPath, "utf8")); approval.reviewDate = "2026-07-18"; await writeFile(approvalPath, JSON.stringify(approval)); const approvalCommit = await commitFixtureInputs(path, "approval metadata"); await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms" })); assert.notEqual(approvalCommit, releaseCommit);
+    const sourcePath = join(path, "manual/source/algorithms/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.items[0].prompt = "Choose all changed technical invariants."; await writeFile(sourcePath, JSON.stringify(source)); await commitFixtureInputs(path, "changed source"); const changed = await inspectTrack({ root: path, trackId: "algorithms" }); assert.notEqual(changed.source.technicalInputFingerprint, evidence.technicalInputFingerprint); await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms" }), fails("MISSING_TECHNICAL_EVIDENCE"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("technical input fingerprint includes config, taxonomy, and source schema", async () => {
+  const path = await root({ algorithms: algorithmsBatch(), approvals: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test"); await commitFixtureInputs(path, "technical inputs");
+    const baseline = (await inspectTrack({ root: path, trackId: "algorithms" })).source.technicalInputFingerprint;
+    const familyPath = join(path, "config/families/algorithms.json"); const family = JSON.parse(await readFile(familyPath, "utf8")); family.technicalRevision = 1; await writeFile(familyPath, JSON.stringify(family)); assert.notEqual((await inspectTrack({ root: path, trackId: "algorithms" })).source.technicalInputFingerprint, baseline);
+    const taxonomyPath = join(path, "config/taxonomy/algorithms.json"); const taxonomy = JSON.parse(await readFile(taxonomyPath, "utf8")); taxonomy.roadmapNodes.push({ id: "unused_valid_node" }); await writeFile(taxonomyPath, JSON.stringify(taxonomy)); assert.notEqual((await inspectTrack({ root: path, trackId: "algorithms" })).source.technicalInputFingerprint, baseline);
+    const schemaPath = join(path, "schemas/publishing/algorithms-manual-source.schema.json"); const schema = JSON.parse(await readFile(schemaPath, "utf8")); schema.title = "Changed technical schema"; await writeFile(schemaPath, JSON.stringify(schema)); assert.notEqual((await inspectTrack({ root: path, trackId: "algorithms" })).source.technicalInputFingerprint, baseline);
   } finally { await rm(path, { recursive: true }); }
 });
 

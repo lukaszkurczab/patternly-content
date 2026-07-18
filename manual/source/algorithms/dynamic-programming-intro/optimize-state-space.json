@@ -1,0 +1,414 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-dynamic-programming-intro-optimize_state_space-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-dynamic-programming-intro-authoring-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "dynamic_programming_intro",
+    "primaryMentalUnitId": "optimize_state_space",
+    "patternFamilyId": "dynamic_programming_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-dynamic-programming-intro-optimize_state_space-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-dpintro-compression-01-dependency-liveness",
+      "prompt": "A one-dimensional recurrence uses dp[i] = dp[i - 1] + dp[i - 2], and only dp[n] is required. Which storage conclusion is justified?",
+      "constraints": [
+        "Indices are processed increasing.",
+        "No reconstruction or intermediate query is required."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "all_overlap",
+            "text": "Keep the full table because overlapping subproblems always require retaining every computed state."
+          },
+          {
+            "id": "one_value",
+            "text": "Keep only dp[i - 1] because the recurrence is one-dimensional."
+          },
+          {
+            "id": "two_live_values",
+            "text": "Keep the two most recent values because every future transition reads only that live window."
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_live_values"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The recurrence has a two-state live window, so older values can be discarded once no future update can read them.",
+        "details": "At iteration i, only the two immediate predecessors are dependencies. After dp[i] is computed, dp[i - 2] will never be needed again, so variables can roll forward. This proof depends on the fixed evaluation order and output contract. Overlap explains why values are reused, but liveness determines how long they must be retained.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_overlap": "Reuse requires values while they can be requested; states older than i - 2 are dead under this fixed forward schedule.",
+          "one_value": "The transition also reads dp[i - 2], so one value is insufficient even though the semantic state has one index."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "count_ways"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-02-semantic-state-versus-storage",
+      "prompt": "A 2D recurrence dp(i, j) is evaluated row by row with two rolling rows. What has been compressed?",
+      "constraints": [
+        "The value still depends semantically on both suffix or prefix indices.",
+        "The current row index i is known from the loop."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "transition",
+            "text": "The recurrence no longer depends on prior states."
+          },
+          {
+            "id": "storage_axis",
+            "text": "The row storage axis is reduced to previous/current buffers; the logical state remains (i, j)."
+          },
+          {
+            "id": "semantic_i",
+            "text": "The i component was proven irrelevant to the DP state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "storage_axis"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The loop supplies the current row identity, allowing storage reuse without declaring row-independent subproblems.",
+        "details": "dp(i, j) retains a distinct meaning for every pair. At one moment, the buffers represent rows i - 1 and i; after advancing, their roles rotate. The row coordinate is therefore encoded temporally rather than as an unbounded array axis. Confusing semantic state with physical storage can lead to an invalid index-only model.",
+        "wrongOptionExplanationsByOptionId": {
+          "semantic_i": "Different rows represent different subproblems; i is implicit in the phase, not semantically irrelevant.",
+          "transition": "Rolling rows work precisely because the recurrence still reads a bounded set of prior-layer states."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-03-rolling-row-space",
+      "prompt": "An m by n DP evaluates every cell in O(1) time and is compressed to two rows of length n + 1. Select time and extra space.",
+      "constraints": [
+        "m and n are positive.",
+        "Only the final value is needed.",
+        "The two input sequences are not counted as extra space."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(m + n)",
+            "O(mn)",
+            "O(n)",
+            "O(2^(m+n))"
+          ],
+          "space": [
+            "O(1)",
+            "O(n)",
+            "O(m + n)",
+            "O(mn)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(mn)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Rolling rows retain O(n) values but still evaluate all mn states.",
+        "details": "Every table cell remains part of the computation, so time stays O(mn). Only two rows are live, each of length Θ(n), giving O(n) extra space. If the formulation is symmetric, orienting the shorter input as the row width can refine space to O(min(m, n)). Compression is a memory optimization; it does not make top-down or bottom-up universally faster."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-04-prove-before-rewrite",
+      "prompt": "Order the steps for safely compressing a correct full-table DP.",
+      "constraints": [
+        "The uncompressed state, bases, recurrence, and traversal are already correct."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "list_reads",
+            "text": "List every logical predecessor each transition reads."
+          },
+          {
+            "id": "find_liveness",
+            "text": "Determine how long each predecessor remains needed by future updates and output reconstruction."
+          },
+          {
+            "id": "map_versions",
+            "text": "Map those logical predecessors to buffers or in-place values at each update moment."
+          },
+          {
+            "id": "verify_edges",
+            "text": "Check every update order and boundary against the full-table recurrence."
+          }
+        ],
+        "canonicalOrder": [
+          "list_reads",
+          "find_liveness",
+          "map_versions",
+          "verify_edges"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Compression is justified by dependency liveness and value-version equivalence, not by deleting an array dimension first.",
+        "details": "The full recurrence names exact logical cells. Liveness determines the smallest set that must coexist, including any values needed later for reconstruction. A buffer plan then assigns each live logical layer to physical storage, and the update order must preserve the correct old or new version of every read. Skipping these steps often produces an in-place algorithm that looks plausible but solves a different recurrence."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-05-reconstruction-information-loss",
+      "prompt": "A longest-alignment DP is compressed to two rows and still returns the correct optimum length. The product must also output one alignment. What is the unresolved issue?",
+      "constraints": [
+        "No predecessor choices or checkpoints are stored.",
+        "Re-running the whole computation is not currently part of the design."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "lost_path_evidence",
+            "text": "The optimum length is preserved, but predecessor evidence needed for ordinary backtracking was discarded."
+          },
+          {
+            "id": "length_wrong",
+            "text": "The optimum length is no longer trustworthy because every correct alignment DP must retain all prior rows."
+          },
+          {
+            "id": "memo_required",
+            "text": "Switching to memoization recovers the alignment automatically from the order in which cache entries were inserted."
+          }
+        ],
+        "acceptedOptionIds": [
+          "lost_path_evidence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Correct scalar evaluation does not guarantee that enough historical information remains to recover a witness.",
+        "details": "The value recurrence may need only adjacent rows, so rolling buffers preserve the optimum length. Backtracking, however, usually walks through predecessor relationships across the entire state grid. Without stored choices, checkpoints, or a specified recomputation strategy, those relationships are gone. Compression must be evaluated against the complete output contract, not only the numeric answer.",
+        "wrongOptionExplanationsByOptionId": {
+          "length_wrong": "Two rows can preserve value dependencies exactly; the missing contract is reconstruction information, not necessarily the scalar value.",
+          "memo_required": "Memoization stores values by state but still needs a rule or recorded choices to select a predecessor path."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-06-overwrite-old-value",
+      "prompt": "During a one-row update, old dp[c] will become the diagonal predecessor for column c + 1 after dp[c] is overwritten. What should the implementation do?",
+      "constraints": [
+        "Columns are processed left to right.",
+        "A scalar diagonal carries the previous row's c - 1 value into the current update."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "overwrite_first",
+            "text": "Overwrite dp[c], then copy the new value into diagonal."
+          },
+          {
+            "id": "reuse_left",
+            "text": "Use dp[c - 1] as the next diagonal because it is nearby."
+          },
+          {
+            "id": "save_old_up",
+            "text": "Save old dp[c] in a temporary, compute the new dp[c], then assign the temporary to diagonal for the next column."
+          }
+        ],
+        "acceptedOptionIds": [
+          "save_old_up"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The previous-row value at c must survive the overwrite long enough to serve as the next cell's diagonal.",
+        "details": "One physical slot changes meaning during the update. Before assignment it is the up predecessor for the current cell; after assignment it is the current-row result. The next column needs the old version as its diagonal, so a temporary carries that version across the write. This explicit version trace is the core correctness proof for many in-place DP optimizations.",
+        "wrongOptionExplanationsByOptionId": {
+          "overwrite_first": "The new value belongs to the current row; the next cell needs the previous-row value that was just destroyed.",
+          "reuse_left": "After a left-to-right update, dp[c - 1] is a current-row value, not the required previous-row diagonal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-07-capacity-versus-reconstruction-transfer",
+      "prompt": "A 0/1 capacity DP can compute the maximum value with one descending-capacity array. Which statement is correct when the selected item set must also be returned?",
+      "constraints": [
+        "The one-array value computation is correct.",
+        "No choice history is currently stored."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_compression_possible",
+            "text": "Any reconstruction requirement forces retention of the entire value table."
+          },
+          {
+            "id": "additional_plan_needed",
+            "text": "The value array may remain compressed, but reconstruction needs additional choice information, checkpoints, or a defined recomputation strategy."
+          },
+          {
+            "id": "array_enough",
+            "text": "The final one-dimensional value array always uniquely identifies every selected item."
+          }
+        ],
+        "acceptedOptionIds": [
+          "additional_plan_needed"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Value liveness and reconstruction evidence are separate storage concerns.",
+        "details": "Descending updates preserve the 0/1 value recurrence, but each capacity cell is overwritten across item layers. The final values do not necessarily reveal which layer and branch produced them, especially under ties. The design must explicitly retain or recover that information. The full table is a straightforward reference, but not the only possible reconstruction strategy.",
+        "wrongOptionExplanationsByOptionId": {
+          "array_enough": "Multiple decision paths can produce the same values, and overwritten item layers no longer reveal which transition was used.",
+          "no_compression_possible": "A full table is one solution, but parent bits, divide-and-conquer reconstruction, checkpoints, or recomputation may use less memory."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [
+      {
+        "id": "dpintro-same-mechanism-optimize_state_space-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-dpintro-compression-01-dependency-liveness",
+          "alg-dpintro-compression-02-semantic-state-versus-storage",
+          "alg-dpintro-compression-03-rolling-row-space"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-compression-04-prove-before-rewrite",
+          "alg-dpintro-compression-05-reconstruction-information-loss",
+          "alg-dpintro-compression-06-overwrite-old-value",
+          "alg-dpintro-compression-07-capacity-versus-reconstruction-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "optimize_state_space"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

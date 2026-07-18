@@ -1,0 +1,471 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-prefix-sums-build-one-dimensional-prefix-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-prefix-sums-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "prefix_sums",
+    "primaryMentalUnitId": "build_one_dimensional_prefix",
+    "patternFamilyId": "prefix_sums"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-prefix-sums-build-one-dimensional-prefix-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-prefix-build-1d-exclusive-recurrence",
+      "prompt": "Let P[i] mean the sum of the first i elements of A. Which recurrence constructs this prefix array correctly?",
+      "constraints": [
+        "A has length n and uses zero-based indices.",
+        "P must have an explicit empty-prefix entry."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "exclusive_recurrence",
+            "text": "Set P[0] = 0, then for i from 0 to n - 1 set P[i + 1] = P[i] + A[i]."
+          },
+          {
+            "id": "same_index_add",
+            "text": "Set P[0] = A[0], then set P[i] = P[i] + A[i] for every i."
+          },
+          {
+            "id": "sorted_recurrence",
+            "text": "Sort A, set P[0] = 0, then accumulate the sorted values."
+          },
+          {
+            "id": "window_recurrence",
+            "text": "Set P[i] to the sum of only A[i - 1] and A[i]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "exclusive_recurrence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The recurrence extends the sum of the first i elements by exactly the next original element A[i].",
+        "details": "P[0] represents the empty prefix. If P[i] already equals A[0] + ... + A[i - 1], then adding A[i] yields P[i + 1], the sum of the first i + 1 elements. Sorting would change index semantics, while a two-element window does not preserve the full accumulated history.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_index_add": "This overwrites or self-references P[i] without a stable prior-prefix contract and has no valid empty-prefix entry. A same-index inclusive convention needs a different initialization and recurrence.",
+          "sorted_recurrence": "Sorting is not required and would make the prefix describe sorted positions rather than the original array ranges.",
+          "window_recurrence": "A two-element sum is local window state, not cumulative state. Earlier elements would disappear from later prefix entries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "construct_prefix_accumulation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-build-1d-loop-invariant",
+      "prompt": "Immediately before processing A[i] in an exclusive-prefix loop, which invariant must hold?",
+      "constraints": [
+        "The loop uses P[0] = 0 and writes P[i + 1].",
+        "Indices smaller than i have already been processed."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "first_i_sum",
+            "text": "P[i] equals the sum of A[0] through A[i - 1]."
+          },
+          {
+            "id": "current_window_sum",
+            "text": "P[i] equals the sum of the current fixed-size window ending at i."
+          },
+          {
+            "id": "sorted_smaller_sum",
+            "text": "P[i] equals the sum of all values smaller than A[i]."
+          },
+          {
+            "id": "future_suffix_sum",
+            "text": "P[i] equals the sum of A[i] through A[n - 1]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "first_i_sum"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The construction step is valid because the previous entry already summarizes exactly the processed prefix.",
+        "details": "The invariant connects indices to meaning: P[i] contains all and only the elements before i. Therefore P[i + 1] = P[i] + A[i] preserves the invariant for the next iteration. A moving window, sorted-value summary, or suffix state cannot justify this recurrence.",
+        "wrongOptionExplanationsByOptionId": {
+          "current_window_sum": "A current window may omit older processed elements. The recurrence would then propagate an incomplete history rather than a prefix.",
+          "sorted_smaller_sum": "This is a value-order statistic, not an index-prefix invariant. Prefix construction preserves original order and includes values regardless of magnitude.",
+          "future_suffix_sum": "A suffix state points in the opposite direction and would require a right-to-left recurrence. It cannot justify adding A[i] to a left prefix."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "construct_prefix_accumulation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-build-1d-construction-order",
+      "prompt": "Order the operations for constructing an exclusive one-dimensional prefix array from A.",
+      "constraints": [
+        "P[i] will mean the sum of the first i elements.",
+        "Score is based on preserved adjacent relations."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "allocate_n_plus_one",
+            "text": "Allocate P with n + 1 entries."
+          },
+          {
+            "id": "set_empty_prefix",
+            "text": "Set P[0] to the additive identity 0."
+          },
+          {
+            "id": "scan_original_order",
+            "text": "Scan i from 0 through n - 1 in the original index order."
+          },
+          {
+            "id": "extend_prefix",
+            "text": "Write P[i + 1] = P[i] + A[i]."
+          },
+          {
+            "id": "finish_boundary",
+            "text": "After the scan, treat P[n] as the sum of the whole array."
+          }
+        ],
+        "canonicalOrder": [
+          "allocate_n_plus_one",
+          "set_empty_prefix",
+          "scan_original_order",
+          "extend_prefix",
+          "finish_boundary"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The storage and empty identity establish the index contract before the recurrence extends it one element at a time.",
+        "details": "The n + 1 allocation makes room for both the empty prefix and the full-array boundary. Initializing P[0] before the scan is what makes the first recurrence legal. Scanning original order and extending from P[i] preserves the cumulative invariant; P[n] then follows as the final state rather than a separately computed special case."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "construct_prefix_accumulation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-build-1d-empty-and-first-element",
+      "prompt": "For A = [7], which prefix array is correct under the contract P[i] = sum of the first i elements?",
+      "constraints": [
+        "The empty sum is 0.",
+        "P has one more entry than A."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "zero_then_seven",
+            "text": "P = [0, 7]."
+          },
+          {
+            "id": "seven_only",
+            "text": "P = [7]."
+          },
+          {
+            "id": "zero_only",
+            "text": "P = [0]."
+          },
+          {
+            "id": "seven_then_zero",
+            "text": "P = [7, 0]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero_then_seven"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The two legal boundaries are before the only element and after it, so they store 0 and 7.",
+        "details": "P[0] is the empty prefix and P[1] includes A[0]. This tiny case exposes the index convention: omitting either entry makes a boundary unavailable, while reversing them contradicts the meaning of “first i elements.” The same contract makes an empty input produce P = [0].",
+        "wrongOptionExplanationsByOptionId": {
+          "seven_only": "This is an inclusive n-length representation, not the declared exclusive n + 1 contract. It lacks the empty-prefix boundary used by uniform range formulas.",
+          "zero_only": "The empty prefix is represented, but the boundary after A[0] is missing, so the full-array sum cannot be read.",
+          "seven_then_zero": "The entries are attached to the wrong boundaries. The prefix before any element must be the identity, not the element value."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "construct_prefix_accumulation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-build-1d-not-moving-window",
+      "prompt": "Which update distinguishes building a prefix array from maintaining a fixed-size moving-window sum?",
+      "constraints": [
+        "Both procedures scan left to right.",
+        "The prefix array stores one state per boundary."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "never_remove_processed_value",
+            "text": "The prefix recurrence adds A[i] to the prior cumulative state and never removes an earlier processed value."
+          },
+          {
+            "id": "remove_outgoing_value",
+            "text": "The prefix recurrence subtracts the value that leaves a fixed-length interval."
+          },
+          {
+            "id": "sort_each_step",
+            "text": "The prefix recurrence reorders the processed values after each addition."
+          },
+          {
+            "id": "keep_only_one_sum",
+            "text": "The prefix recurrence overwrites one scalar and discards every earlier boundary state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "never_remove_processed_value"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix construction is cumulative history: processed values remain represented in every later prefix state.",
+        "details": "A moving window deliberately removes an outgoing value so its state represents only one current interval. Prefix construction never shrinks; it extends history and stores each boundary state for later reuse. A scalar running sum could compute the total but would not supply all query boundaries unless each state is saved.",
+        "wrongOptionExplanationsByOptionId": {
+          "remove_outgoing_value": "Subtracting an outgoing value is the defining update of a fixed window. It would make P[i] depend on a window size rather than on the first i elements.",
+          "sort_each_step": "Neither prefix construction nor window maintenance requires repeated sorting. Reordering would destroy the intended index contract.",
+          "keep_only_one_sum": "One scalar is enough for the final total, but not for random range queries. A prefix array must retain the historical boundary states."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "construct_prefix_accumulation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-build-1d-preserve-original-order",
+      "prompt": "Before constructing prefixes for original index-range queries, should A be sorted?",
+      "constraints": [
+        "A query [l, r] refers to positions in the original array.",
+        "Values may be negative or repeated."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "do_not_sort",
+            "text": "No. Scan the original order because each prefix boundary is tied to original indices."
+          },
+          {
+            "id": "sort_ascending",
+            "text": "Yes. Prefix subtraction is valid only after ascending sort."
+          },
+          {
+            "id": "sort_by_absolute_value",
+            "text": "Yes. Sorting by magnitude prevents negative prefixes."
+          },
+          {
+            "id": "sort_only_duplicates",
+            "text": "Yes. Equal values must be adjacent before accumulation."
+          }
+        ],
+        "acceptedOptionIds": [
+          "do_not_sort"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix entries summarize original positions; sorting would construct a different sequence and invalidate original interval membership.",
+        "details": "The recurrence works for any numeric order and any sign. What must remain stable is the index sequence that queries reference. Sorting is appropriate only when the problem itself permits reordering and asks about the sorted order; it is not a construction prerequisite.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_ascending": "Addition and subtraction do not require monotonic values. Sorting changes which values lie between l and r.",
+          "sort_by_absolute_value": "Negative prefixes are legal. Preventing a decrease is unnecessary and changes the data semantics.",
+          "sort_only_duplicates": "Duplicate adjacency is irrelevant to cumulative addition. Prefix state includes values by position, not by groups of equal values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "construct_prefix_accumulation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-build-1d-cost",
+      "prompt": "Select the construction time and extra space for producing a separate n + 1 entry prefix array from n input values.",
+      "constraints": [
+        "Each input value is read once.",
+        "The input array remains unchanged.",
+        "The output prefix array counts as auxiliary state for this question."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "construction_time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "construction_time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "construction_time": [
+            "O(n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The recurrence performs constant work per element and stores one cumulative entry per boundary.",
+        "details": "A single scan gives O(n) construction time. Because a separate n + 1 prefix array is retained, extra space is O(n), not O(1). Some implementations may overwrite a mutable input or treat the prefix as required output, changing the accounting convention, but a hash-prefix algorithm still needs its own auxiliary map."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "construct_prefix_accumulation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-build-1d-transfer-indicator-prefix",
+      "prompt": "You need many queries asking how many negative values occur in [l, r]. Which construction correctly transfers the one-dimensional prefix recurrence?",
+      "constraints": [
+        "A is immutable.",
+        "Queries use original indices."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "indicator_prefix",
+            "text": "Create B[i] = 1 when A[i] < 0 and 0 otherwise, then build P[i + 1] = P[i] + B[i]."
+          },
+          {
+            "id": "sort_then_count",
+            "text": "Sort A so that all negative values form one global prefix, then use original l and r."
+          },
+          {
+            "id": "window_only",
+            "text": "Maintain one moving count window even though query boundaries arrive in arbitrary order."
+          },
+          {
+            "id": "prefix_raw_values",
+            "text": "Build a sum prefix of A and infer the number of negative values from the range sum alone."
+          }
+        ],
+        "acceptedOptionIds": [
+          "indicator_prefix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The construction transfers by redefining each position’s additive contribution while preserving the same boundary recurrence.",
+        "details": "A 0/1 indicator turns “count negatives” into an additive range aggregate. The exclusive recurrence is unchanged because it only needs an identity and a combine operation. A raw numeric sum does not determine how many negative values produced it, and sorting or a single window loses the original arbitrary query boundaries.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_then_count": "Sorting can reveal the global number of negative values, but it disconnects original query positions from their elements.",
+          "window_only": "One moving window cannot answer unrelated query boundaries in constant time. The reusable prefix states are still the relevant structure.",
+          "prefix_raw_values": "Different ranges can have the same sum but different counts of negative elements. The per-position contribution must encode the requested property."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "construct_prefix_accumulation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,426 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-hash-map-and-set-preserve-indices-and-provenance-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-hash-map-and-set-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "hash_map_and_set",
+    "primaryMentalUnitId": "preserve_indices_and_provenance",
+    "patternFamilyId": "hash_map_and_set"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-hash-map-and-set-preserve-indices-and-provenance-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-hms-provenance-value-to-first-index",
+      "prompt": "A scan must later return the first index at which each distinct value appeared. Which hash state directly supports the output?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_to_first_index",
+            "text": "A map from value to its first original index."
+          },
+          {
+            "id": "seen_values",
+            "text": "A set of values that have appeared."
+          },
+          {
+            "id": "index_to_value",
+            "text": "A map from every index to its value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_to_first_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The lookup key is the value and the required provenance payload is the first original index.",
+        "details": "State should preserve the information that cannot be reconstructed after a streaming pass. A value-to-first-index map lets later logic retrieve origin directly. The map update rule must preserve the first write; otherwise the same shape silently changes to latest-index semantics.",
+        "wrongOptionExplanationsByOptionId": {
+          "seen_values": "A set proves that a value appeared but does not retain where its first occurrence was.",
+          "index_to_value": "The required query starts from a value; an index-to-value map does not provide direct value lookup and duplicates the input direction."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_index_in_lookup_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-provenance-first-wins-overwrite",
+      "prompt": "The map invariant is map[value] = earliest processed index. What should happen when the value appears again?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "keep_existing",
+            "text": "Leave the existing index unchanged."
+          },
+          {
+            "id": "overwrite_latest",
+            "text": "Replace it with the new index."
+          },
+          {
+            "id": "delete_key",
+            "text": "Remove the value from the map."
+          },
+          {
+            "id": "increment_index",
+            "text": "Add one to the stored index."
+          }
+        ],
+        "acceptedOptionIds": [
+          "keep_existing"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Earliest provenance uses first-write-wins semantics; later duplicates must not replace the payload.",
+        "details": "A map’s key set can remain correct while its payload meaning becomes wrong. The update policy is therefore part of the state contract. Overwrite is valid for latest-index requirements, and append is valid for all-indices requirements, but neither preserves earliest index.",
+        "wrongOptionExplanationsByOptionId": {
+          "overwrite_latest": "Overwriting changes the invariant to latest processed index and loses earliest provenance.",
+          "delete_key": "Deletion discards valid provenance precisely when a duplicate confirms the key remains relevant.",
+          "increment_index": "Indices are source positions, not counts; arithmetic on the stored index does not represent any stated provenance rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_index_in_lookup_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-provenance-complement-index-order",
+      "prompt": "Order the steps for returning two distinct original indices in a one-pass complement lookup.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "compute_needed",
+            "text": "Compute the partner value needed by the current value."
+          },
+          {
+            "id": "query_index",
+            "text": "Look up an earlier index stored for that partner value."
+          },
+          {
+            "id": "emit_indices",
+            "text": "If found, emit the earlier index and current index."
+          },
+          {
+            "id": "store_current_index",
+            "text": "Store the current value with an index according to the provenance policy."
+          }
+        ],
+        "canonicalOrder": [
+          "compute_needed",
+          "query_index",
+          "emit_indices",
+          "store_current_index"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The query must read provenance from prior state before the current occurrence is recorded.",
+        "details": "The map invariant is that every stored index belongs to an earlier occurrence. Querying under that invariant guarantees distinct indices and provides the metadata needed for the result. Recording the current index afterward prepares future lookups; its overwrite policy still depends on whether earliest, latest, or any valid origin is required."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_index_in_lookup_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-provenance-all-indices-one-to-many",
+      "prompt": "The output must list every original index at which a value occurred. Which payload preserves complete provenance?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_to_index_list",
+            "text": "A map from value to a list of all original indices."
+          },
+          {
+            "id": "value_to_last_index",
+            "text": "A map from value to only the most recent index."
+          },
+          {
+            "id": "value_to_count",
+            "text": "A map from value to occurrence count."
+          },
+          {
+            "id": "seen_set",
+            "text": "A set of values that occurred."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_to_index_list"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Complete provenance is one-to-many: each key must retain every associated original index.",
+        "details": "Counts and single representatives are lossy compressions. They are valid only when the output asks for cardinality or any one origin. To return all positions, append each index to the key’s list in processing order, which also preserves stable occurrence order without a later sort.",
+        "wrongOptionExplanationsByOptionId": {
+          "value_to_last_index": "One index loses every earlier occurrence and cannot reconstruct the full list.",
+          "value_to_count": "A count gives list length but not the actual positions.",
+          "seen_set": "Presence retains neither multiplicity nor any origin position."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_index_in_lookup_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-provenance-set-loss-diagnosis",
+      "prompt": "An implementation replaces value-to-index state with a seen set but keeps the requirement to return indices. What is the precise defect?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "provenance_erased",
+            "text": "The implementation can still detect a match but cannot reconstruct the earlier source index."
+          },
+          {
+            "id": "lookup_slower",
+            "text": "Set lookup is asymptotically slower than map lookup."
+          },
+          {
+            "id": "duplicates_impossible",
+            "text": "A set prevents duplicate values from occurring in the input."
+          }
+        ],
+        "acceptedOptionIds": [
+          "provenance_erased"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The set preserves key existence but erases the payload required to identify the earlier occurrence.",
+        "details": "This bug can pass boolean-existence tests while failing only when concrete origins are asserted. That makes it a state-contract mismatch rather than a lookup-family error. Complexity parity between set and map does not repair the missing provenance.",
+        "wrongOptionExplanationsByOptionId": {
+          "lookup_slower": "Sets and maps commonly share the same expected key-lookup class; the defect is semantic information loss, not asymptotic lookup speed.",
+          "duplicates_impossible": "A set does not alter the input; it merely stores one membership entry per distinct value."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_index_in_lookup_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-provenance-count-loss-diagnosis",
+      "prompt": "A frequency map says value 8 occurred three times. The task asks for the first and last positions of 8. What additional state is required?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "first_and_last_indices",
+            "text": "Store first and last original indices for each value."
+          },
+          {
+            "id": "larger_count",
+            "text": "Use a wider integer for the frequency."
+          },
+          {
+            "id": "presence_set",
+            "text": "Add a set containing values with positive counts."
+          }
+        ],
+        "acceptedOptionIds": [
+          "first_and_last_indices"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Frequency summarizes how many occurrences exist; first and last positions require separate provenance fields.",
+        "details": "Several input histories can produce the same count while having different first and last indices. The count is therefore insufficient to reconstruct the requested result. A map payload can be a record such as {count, firstIndex, lastIndex} when all three dimensions are required.",
+        "wrongOptionExplanationsByOptionId": {
+          "larger_count": "A wider count avoids overflow but still contains no positional information.",
+          "presence_set": "Presence is derivable from a positive count and adds no provenance."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_index_in_lookup_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "advanced"
+    },
+    {
+      "id": "alg-hms-provenance-index-map-cost",
+      "prompt": "A scan of n values stores one value-to-index entry per distinct value and performs one expected hash lookup per element. Classify expected time and extra space.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The scan performs n expected-constant lookups and retains at most n distinct provenance entries.",
+        "details": "Attaching an index payload does not change the asymptotic number of hash operations relative to a seen set. Total expected time remains O(n), and the map can grow to O(n) keys. The statement remains expectation-based under ordinary hash assumptions; preserving all indices rather than one per value can still use O(n) total entries because there are n input positions."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_index_in_lookup_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Assume fixed-width values and indices and ordinary well-distributed hashing."
+      ]
+    },
+    {
+      "id": "alg-hms-provenance-select-all-required-fields",
+      "prompt": "A match result must contain the earlier record’s original index and source partition ID. Select all fields the value-keyed lookup payload must preserve.",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "original_index",
+            "text": "Original index"
+          },
+          {
+            "id": "partition_id",
+            "text": "Source partition ID"
+          },
+          {
+            "id": "occurrence_count_only",
+            "text": "Only the number of times the value appeared"
+          },
+          {
+            "id": "presence_flag_only",
+            "text": "Only a boolean presence flag"
+          }
+        ],
+        "acceptedOptionIds": [
+          "original_index",
+          "partition_id"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The payload must retain every provenance field that appears in the result and cannot be derived from the key.",
+        "details": "The value remains the lookup key because the current relation searches by value. The payload becomes a provenance record containing index and partition. A count or boolean may coexist if later logic needs it, but neither substitutes for the two required origin fields.",
+        "wrongOptionExplanationsByOptionId": {
+          "occurrence_count_only": "A count cannot identify either the source position or the partition of the matching record.",
+          "presence_flag_only": "Presence confirms existence but preserves neither required provenance field."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "original_index": "Omitting original_index loses the exact source position that the result contract requires.",
+          "partition_id": "Omitting partition_id loses the source partition needed to identify the original record unambiguously."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_index_in_lookup_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

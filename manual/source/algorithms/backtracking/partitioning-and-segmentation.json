@@ -1,0 +1,999 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "backtracking-partitioning-and-segmentation-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-core",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "backtracking",
+    "primaryMentalUnitId": "partitioning_and_segmentation",
+    "patternFamilyId": "backtracking"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-17T00:00:00.000Z",
+    "contentBatchId": "backtracking-partitioning-and-segmentation-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-backtracking-partition-001",
+      "prompt": "A partition call begins at index start in a string of length n. Which exclusive end boundaries produce non-empty next segments?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_plus_one_to_n",
+            "text": "start + 1 through n, inclusive."
+          },
+          {
+            "id": "start_to_n_minus_one",
+            "text": "start through n - 1."
+          },
+          {
+            "id": "zero_to_start",
+            "text": "0 through start."
+          },
+          {
+            "id": "only_n",
+            "text": "Only n."
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_plus_one_to_n"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A non-empty segment [start, end) needs end > start and may extend to the input end.",
+        "details": "Each legal boundary is a branch choice before segment validation.",
+        "wrongOptionExplanationsByOptionId": {
+          "start_to_n_minus_one": "end = start creates an empty segment and end = n must be available.",
+          "zero_to_start": "These boundaries overlap or precede the unresolved suffix.",
+          "only_n": "This omits shorter first segments."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-002",
+      "prompt": "When is a full segmentation complete?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_equals_n",
+            "text": "When the next unresolved start index equals n."
+          },
+          {
+            "id": "path_nonempty",
+            "text": "When at least one segment has been chosen."
+          },
+          {
+            "id": "end_less_n",
+            "text": "When a chosen end is less than n."
+          },
+          {
+            "id": "segment_length_one",
+            "text": "When the latest segment has length one."
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_equals_n"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Completion means the chosen segments cover the input exactly with no gap or remainder.",
+        "details": "The exclusive boundary convention makes start == n the natural terminal state.",
+        "wrongOptionExplanationsByOptionId": {
+          "path_nonempty": "A non-empty path may leave input uncovered.",
+          "end_less_n": "That means a suffix remains.",
+          "segment_length_one": "Segment length does not define total coverage."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-003",
+      "prompt": "Why are empty segments usually excluded from ordinary partition enumeration?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_progress",
+            "text": "Choosing end = start makes no input progress and can cause infinite recursion or duplicate decompositions."
+          },
+          {
+            "id": "empty_never_valid",
+            "text": "An empty segment can never be valid in any contract."
+          },
+          {
+            "id": "indices_forbidden",
+            "text": "Exclusive indices cannot represent empty ranges."
+          },
+          {
+            "id": "sorting_needed",
+            "text": "Empty segments prevent sorting."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_progress"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every recursive choice should advance the unresolved boundary unless the contract explicitly models empty components.",
+        "details": "Without progress, the state can repeat indefinitely.",
+        "wrongOptionExplanationsByOptionId": {
+          "empty_never_valid": "Some specialized contracts may allow it; the issue is the ordinary non-empty partition model.",
+          "indices_forbidden": "A half-open range [start, start) represents an empty segment.",
+          "sorting_needed": "Sorting is unrelated."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-004",
+      "prompt": "A palindrome-partition solver considers substring [start, end). When should it recurse from end?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "only_if_palindrome",
+            "text": "Only if the chosen substring satisfies the palindrome predicate."
+          },
+          {
+            "id": "always",
+            "text": "For every possible boundary, even when the segment is invalid."
+          },
+          {
+            "id": "only_if_length_one",
+            "text": "Only for one-character segments."
+          },
+          {
+            "id": "only_at_n",
+            "text": "Only when end equals n."
+          }
+        ],
+        "acceptedOptionIds": [
+          "only_if_palindrome"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Segment validity is part of candidate legality.",
+        "details": "Once the boundary fixes the segment, later choices affect only the suffix and cannot repair that segment.",
+        "wrongOptionExplanationsByOptionId": {
+          "always": "An invalid fixed segment cannot become valid later.",
+          "only_if_length_one": "Longer palindromes are also legal.",
+          "only_at_n": "Intermediate segments are necessary for multi-part partitions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-005",
+      "prompt": "After recursively exploring a chosen segment, what must happen before trying another end boundary?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "pop_segment",
+            "text": "Remove the segment from the current partition path."
+          },
+          {
+            "id": "delete_input",
+            "text": "Delete the segment from the original string."
+          },
+          {
+            "id": "clear_results",
+            "text": "Clear all completed partitions."
+          },
+          {
+            "id": "reset_start_zero",
+            "text": "Reset start to zero."
+          }
+        ],
+        "acceptedOptionIds": [
+          "pop_segment"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The current path is branch-local state and must return to the parent partition prefix.",
+        "details": "The next boundary represents a sibling choice from the same start.",
+        "wrongOptionExplanationsByOptionId": {
+          "delete_input": "The input remains shared and immutable.",
+          "clear_results": "Sibling results remain valid.",
+          "reset_start_zero": "The parent start remains unchanged while its loop tries another end."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-006",
+      "prompt": "Which relation between consecutive segments prevents gaps and overlaps?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "next_start_previous_end",
+            "text": "The next segment starts exactly at the previous segment's exclusive end."
+          },
+          {
+            "id": "next_start_zero",
+            "text": "Every segment starts at zero."
+          },
+          {
+            "id": "next_start_end_plus_one",
+            "text": "The next segment starts one position after the previous exclusive end."
+          },
+          {
+            "id": "arbitrary_start",
+            "text": "The next segment may begin at any index."
+          }
+        ],
+        "acceptedOptionIds": [
+          "next_start_previous_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Exact boundary handoff makes the segments contiguous and collectively covering.",
+        "details": "Half-open intervals [start, end) compose cleanly when the child start equals end.",
+        "wrongOptionExplanationsByOptionId": {
+          "next_start_zero": "That overlaps earlier segments.",
+          "next_start_end_plus_one": "That leaves a one-position gap.",
+          "arbitrary_start": "Arbitrary starts can create gaps and overlaps."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-007",
+      "prompt": "A solver records a partition as soon as the latest segment is valid, even though unprocessed input remains. What defect results?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "partial_results",
+            "text": "It records incomplete partitions that do not cover the full input."
+          },
+          {
+            "id": "duplicate_control",
+            "text": "It automatically removes duplicate partitions."
+          },
+          {
+            "id": "constant_space",
+            "text": "It changes auxiliary space to O(1)."
+          },
+          {
+            "id": "sorted_segments",
+            "text": "It sorts all segments."
+          }
+        ],
+        "acceptedOptionIds": [
+          "partial_results"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Local segment validity is not the full result contract.",
+        "details": "A partition becomes recordable only when the recursive start reaches the input length.",
+        "wrongOptionExplanationsByOptionId": {
+          "duplicate_control": "The defect is incomplete coverage.",
+          "constant_space": "Recording timing does not remove path state.",
+          "sorted_segments": "No sorting occurs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-008",
+      "prompt": "For the string \"abc\", how many possible cut locations exist between characters?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "two",
+            "text": "2"
+          },
+          {
+            "id": "three",
+            "text": "3"
+          },
+          {
+            "id": "one",
+            "text": "1"
+          },
+          {
+            "id": "four",
+            "text": "4"
+          }
+        ],
+        "acceptedOptionIds": [
+          "two"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A length-n sequence has n - 1 internal boundaries where a cut may be present or absent.",
+        "details": "These binary boundary decisions explain the 2^(n - 1) unconstrained partition count.",
+        "wrongOptionExplanationsByOptionId": {
+          "three": "There are three characters but only two internal gaps.",
+          "one": "Both gaps between a-b and b-c are possible cut locations.",
+          "four": "Boundaries at the outer ends do not represent optional internal cuts."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-009",
+      "prompt": "When is choosing the entire remaining suffix as one segment legal?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "suffix_valid",
+            "text": "When [start, n) satisfies the segment predicate."
+          },
+          {
+            "id": "always",
+            "text": "Always, regardless of segment constraints."
+          },
+          {
+            "id": "never",
+            "text": "Never; partitions must contain at least two segments."
+          },
+          {
+            "id": "only_empty",
+            "text": "Only when the suffix is empty."
+          }
+        ],
+        "acceptedOptionIds": [
+          "suffix_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The boundary end = n is a normal candidate representing one final segment.",
+        "details": "If valid, its child call reaches start = n and records the complete partition.",
+        "wrongOptionExplanationsByOptionId": {
+          "always": "The segment must satisfy the same validity contract as shorter choices.",
+          "never": "A one-segment partition can be valid.",
+          "only_empty": "The empty suffix is completion, not an ordinary non-empty segment."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-010",
+      "prompt": "Which conditions make [start, end) a legal next partition segment? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "end_greater_start",
+            "text": "end is greater than start."
+          },
+          {
+            "id": "end_at_most_n",
+            "text": "end is at most the input length."
+          },
+          {
+            "id": "predicate_valid",
+            "text": "The segment satisfies the required predicate."
+          },
+          {
+            "id": "start_reset_zero",
+            "text": "start is reset to zero for every segment."
+          }
+        ],
+        "acceptedOptionIds": [
+          "end_greater_start",
+          "end_at_most_n",
+          "predicate_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A legal segment advances the boundary, stays inside the input, and satisfies the segment contract.",
+        "details": "The child starts at end rather than restarting.",
+        "wrongOptionExplanationsByOptionId": {
+          "start_reset_zero": "That would overlap already covered input."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "end_greater_start": "The segment is non-empty.",
+          "end_at_most_n": "The range remains inside the input.",
+          "predicate_valid": "Only valid segments become choices."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-011",
+      "prompt": "Which tests are important for partition-boundary correctness? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "empty_input",
+            "text": "Empty input under an explicitly defined empty-partition contract."
+          },
+          {
+            "id": "single_element",
+            "text": "A one-element input."
+          },
+          {
+            "id": "whole_and_split",
+            "text": "An input where both the whole sequence and a multi-segment split are valid."
+          },
+          {
+            "id": "only_long_random",
+            "text": "Only one long random input."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_input",
+          "single_element",
+          "whole_and_split"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Boundary review needs identity, minimum non-empty, and competing-cut cases.",
+        "details": "A long case alone does not reveal the exact transition between legal and illegal boundaries.",
+        "wrongOptionExplanationsByOptionId": {
+          "only_long_random": "It may not isolate off-by-one boundary defects."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "empty_input": "It tests terminal identity semantics.",
+          "single_element": "It should have one possible non-empty segment.",
+          "whole_and_split": "It verifies end = n and shorter boundaries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-012",
+      "prompt": "Which conditions can soundly prune a partition branch? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "invalid_fixed_segment",
+            "text": "The newly chosen segment violates a mandatory predicate."
+          },
+          {
+            "id": "too_many_segments",
+            "text": "The path already exceeds a hard maximum segment count."
+          },
+          {
+            "id": "insufficient_remaining_length",
+            "text": "The remaining length cannot satisfy a hard minimum size for the required remaining segments."
+          },
+          {
+            "id": "segment_looks_unusual",
+            "text": "The segment looks unusual but satisfies every stated constraint."
+          }
+        ],
+        "acceptedOptionIds": [
+          "invalid_fixed_segment",
+          "too_many_segments",
+          "insufficient_remaining_length"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Partition pruning follows from fixed-segment validity and explicit capacity constraints.",
+        "details": "Subjective preference may affect ordering but cannot remove a legal branch.",
+        "wrongOptionExplanationsByOptionId": {
+          "segment_looks_unusual": "Appearance is not impossibility."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "invalid_fixed_segment": "Later suffix choices cannot change it.",
+          "too_many_segments": "Adding more segments cannot repair the excess.",
+          "insufficient_remaining_length": "Capacity is impossible."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "constraints_and_pruning",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-013",
+      "prompt": "Arrange the generic partition-search call.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "check_complete",
+            "text": "If start equals n, record a snapshot of the current partition."
+          },
+          {
+            "id": "loop_end",
+            "text": "Enumerate exclusive end boundaries from start + 1 through n."
+          },
+          {
+            "id": "validate_segment",
+            "text": "Check whether [start, end) is a legal segment."
+          },
+          {
+            "id": "append_recurse_pop",
+            "text": "Append the segment, recurse from end, then pop it."
+          }
+        ],
+        "canonicalOrder": [
+          "check_complete",
+          "loop_end",
+          "validate_segment",
+          "append_recurse_pop"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Completion is resolved before generating segments, and only valid segments become child branches.",
+        "details": "The path is restored for each sibling end boundary."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-014",
+      "prompt": "Arrange the operations for one chosen partition boundary.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "form_range",
+            "text": "Identify the segment [start, end)."
+          },
+          {
+            "id": "test_predicate",
+            "text": "Evaluate the required segment predicate."
+          },
+          {
+            "id": "append_segment",
+            "text": "Append the valid segment to the path."
+          },
+          {
+            "id": "recurse_and_pop",
+            "text": "Recurse from end, then remove the segment."
+          }
+        ],
+        "canonicalOrder": [
+          "form_range",
+          "test_predicate",
+          "append_segment",
+          "recurse_and_pop"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The boundary defines a candidate segment whose legality is checked before mutation.",
+        "details": "Undo returns to the same partition prefix for the next boundary."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-015",
+      "prompt": "Arrange the completion flow when the final chosen segment reaches n.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "append_final",
+            "text": "Append the valid final segment."
+          },
+          {
+            "id": "recurse_n",
+            "text": "Recurse with start = n."
+          },
+          {
+            "id": "record_snapshot",
+            "text": "Record a snapshot at the completion base case."
+          },
+          {
+            "id": "pop_final",
+            "text": "Return and remove the final segment from the live path."
+          }
+        ],
+        "canonicalOrder": [
+          "append_final",
+          "recurse_n",
+          "record_snapshot",
+          "pop_final"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The final segment becomes part of the completed path before the base case records it.",
+        "details": "Popping afterward preserves the stored snapshot while restoring the parent."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-016",
+      "prompt": "Arrange the reasoning for a minimum-segment-length capacity prune.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "compute_remaining",
+            "text": "Compute the unprocessed input length."
+          },
+          {
+            "id": "compute_required",
+            "text": "Compute the minimum total length required by the remaining segment slots."
+          },
+          {
+            "id": "compare",
+            "text": "If remaining length is smaller than required length, prune."
+          },
+          {
+            "id": "enumerate_otherwise",
+            "text": "Otherwise continue with legal boundary choices."
+          }
+        ],
+        "canonicalOrder": [
+          "compute_remaining",
+          "compute_required",
+          "compare",
+          "enumerate_otherwise"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The branch is impossible when remaining material cannot satisfy mandatory segment sizes.",
+        "details": "The bound must use the exact number of remaining slots and the stated minimum length."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "constraints_and_pruning",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-017",
+      "prompt": "A length-n sequence may be cut or not cut at each internal boundary, and every resulting segment is considered valid. Select the number of complete partitions and maximum recursion depth.",
+      "constraints": [
+        "There are n - 1 internal cut positions.",
+        "Each recursive segment consumes at least one element."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "complete_partitions",
+          "recursion_depth"
+        ],
+        "availableValuesByDimension": {
+          "complete_partitions": [
+            "O(n)",
+            "O(2^(n-1))",
+            "O(n!)",
+            "O(n^n)"
+          ],
+          "recursion_depth": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(2^n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "complete_partitions": [
+            "O(2^(n-1))"
+          ],
+          "recursion_depth": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "complete_partitions": {
+            "cut_decisions": "O(2^(n-1))"
+          },
+          "recursion_depth": {
+            "single_element_segments": "O(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Each internal boundary independently separates or joins adjacent elements.",
+        "details": "The deepest partition uses n single-element segments."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-partition-018",
+      "prompt": "A collect-all partition solver returns s partitions, and each partition contains at most n segment references or copied segments. Select a lower bound on materialized output work and output space.",
+      "constraints": [
+        "Every returned partition is stored independently."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "output_work",
+          "output_space"
+        ],
+        "availableValuesByDimension": {
+          "output_work": [
+            "O(1)",
+            "O(s)",
+            "O(n)",
+            "O(sn)"
+          ],
+          "output_space": [
+            "O(1)",
+            "O(s)",
+            "O(n)",
+            "O(sn)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "output_work": [
+            "O(sn)"
+          ],
+          "output_space": [
+            "O(sn)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "output_work": {
+            "partitions_times_size": "O(sn)"
+          },
+          "output_space": {
+            "materialized_partitions": "O(sn)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Returning s partitions of size up to n is inherently output-sensitive.",
+        "details": "Pruning invalid segments can reduce search overhead but cannot avoid materializing required valid outputs."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_partition_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "backtracking-partitioning-learn-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-backtracking-partition-001",
+            "alg-backtracking-partition-002",
+            "alg-backtracking-partition-003",
+            "alg-backtracking-partition-004",
+            "alg-backtracking-partition-005",
+            "alg-backtracking-partition-006",
+            "alg-backtracking-partition-007",
+            "alg-backtracking-partition-008",
+            "alg-backtracking-partition-009",
+            "alg-backtracking-partition-010",
+            "alg-backtracking-partition-011",
+            "alg-backtracking-partition-012",
+            "alg-backtracking-partition-013",
+            "alg-backtracking-partition-014",
+            "alg-backtracking-partition-015",
+            "alg-backtracking-partition-016",
+            "alg-backtracking-partition-017",
+            "alg-backtracking-partition-018"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

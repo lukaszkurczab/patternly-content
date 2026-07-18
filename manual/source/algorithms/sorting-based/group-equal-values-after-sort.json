@@ -1,0 +1,464 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sorting-based-group_equal_values_after_sort-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sorting-based-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sorting_based",
+    "primaryMentalUnitId": "group_equal_values_after_sort",
+    "patternFamilyId": "sorting_based"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sorting-based-group_equal_values_after_sort-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sort-groups-01-contiguous-equality-signal",
+      "prompt": "A batch of unsorted event codes must be emitted as (code, count) groups in ascending code order. Which representation makes each group processable with one forward pass?",
+      "constraints": [
+        "The output explicitly requires ascending code order.",
+        "Equal codes use ordinary exact equality."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "input_adjacent_runs",
+            "text": "Keep input order and treat only currently adjacent equal codes as one group."
+          },
+          {
+            "id": "sort_by_count",
+            "text": "Sort codes by their unknown final frequency before counting them."
+          },
+          {
+            "id": "sort_and_runs",
+            "text": "Sort by code, then process each maximal equal-code run."
+          },
+          {
+            "id": "pair_every_code",
+            "text": "Compare each code with every later code and emit a group after each comparison."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_and_runs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting by the grouping key makes every equality class one contiguous run and already supplies the requested output order.",
+        "details": "A maximal run begins when the current code differs from the previous one and ends just before the next different code. Because all equal keys are contiguous after sorting, the pass can count and emit each group exactly once. Input adjacency does not capture separated occurrences, while sorting by frequency is circular because frequency is the value being computed rather than an available key.",
+        "wrongOptionExplanationsByOptionId": {
+          "input_adjacent_runs": "Separated occurrences of the same code would become multiple incomplete groups.",
+          "sort_by_count": "The frequency is not known before grouping, and it is not the key that defines membership.",
+          "pair_every_code": "Pairwise comparison repeats work and does not naturally produce one maximal group per code."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_equal_value_runs",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-groups-02-run-state-transitions",
+      "prompt": "Order the core state transitions while scanning a nonempty array that has already been sorted by the grouping key.",
+      "constraints": [
+        "The loop visits items from left to right.",
+        "This ordering covers a key change inside the loop; final end-of-input flushing is handled separately."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "compare_next_key",
+            "text": "Compare the next item's key with currentKey."
+          },
+          {
+            "id": "extend_or_emit",
+            "text": "Increment count on equality; otherwise emit the completed run."
+          },
+          {
+            "id": "start_new_run",
+            "text": "After emitting on a key change, set currentKey to the new key and reset count to one."
+          },
+          {
+            "id": "initialize_run",
+            "text": "Initialize currentKey and count from the first sorted item."
+          }
+        ],
+        "canonicalOrder": [
+          "initialize_run",
+          "compare_next_key",
+          "extend_or_emit",
+          "start_new_run"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The next key is interpreted relative to initialized run state, and a new run starts only after the prior one is emitted.",
+        "details": "The scan maintains one invariant: currentKey and count describe exactly the maximal equal prefix ending at the previously consumed item. On equality, extending count preserves it. On a key change, the old run is complete and must be emitted before state is overwritten. Starting the new run first would lose the old key or count. The end-of-input case needs one additional flush because no later key change triggers it."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_equal_value_runs",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-groups-03-final-run-flush",
+      "prompt": "A sorted run scanner emits a group only when it sees a different next key. For input [2, 2, 5, 5, 5], which defect remains after the loop ends?",
+      "constraints": [
+        "The loop processes every item.",
+        "There is no artificial sentinel appended to the array."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "first_run_not_counted",
+            "text": "The run for key 2 can never be counted because it is first."
+          },
+          {
+            "id": "sorting_removed_fives",
+            "text": "Sorting deletes the repeated 5 values."
+          },
+          {
+            "id": "all_runs_already_emitted",
+            "text": "No action is needed because end of input acts as an automatic key change."
+          },
+          {
+            "id": "last_run_not_emitted",
+            "text": "The run for key 5 remains in state and must be emitted after the loop."
+          }
+        ],
+        "acceptedOptionIds": [
+          "last_run_not_emitted"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The final run has no following key change to trigger emission, so it requires an explicit post-loop flush.",
+        "details": "The scanner's transition rule emits a run when it encounters the first element of the next run. The last run has no such element, even though its count is correct in memory. End of iteration is control flow, not an implicit data key. A sentinel can encode the same boundary if it is guaranteed not to collide and is handled deliberately, but the stated implementation has none.",
+        "wrongOptionExplanationsByOptionId": {
+          "first_run_not_counted": "The first run is initialized from the first item and is emitted when key 5 appears.",
+          "sorting_removed_fives": "Sorting reorders occurrences; it does not delete multiplicity.",
+          "all_runs_already_emitted": "Loop termination does not execute the key-change branch, so the retained final state is not output automatically."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_equal_value_runs",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-groups-04-representative-tie-key",
+      "prompt": "Records must be grouped by category in ascending category order. For each category, output the earliest timestamp record; timestamp ties require the smallest record ID. Which sorted-run design makes the first record of each run the required representative?",
+      "constraints": [
+        "Record IDs are unique.",
+        "Every category has at least one record."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "category_time_id",
+            "text": "Sort by (category, timestamp, recordId), then take the first record of each category run."
+          },
+          {
+            "id": "category_only",
+            "text": "Sort by category only and take whichever record appears first in each run."
+          },
+          {
+            "id": "time_only",
+            "text": "Sort by timestamp only and treat adjacent timestamps as categories."
+          },
+          {
+            "id": "category_desc_time_desc",
+            "text": "Sort category descending and timestamp descending, then take each run's first record."
+          }
+        ],
+        "acceptedOptionIds": [
+          "category_time_id"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The first-in-run shortcut is correct only when the full sort key encodes both representative tie-breaks inside each category.",
+        "details": "Category as the primary key creates the group boundary. Timestamp then orders candidate representatives from earliest to latest, and record ID resolves equal timestamps deterministically. A category-only sort guarantees contiguity but not which member appears first. The distinction matters because grouping membership and representative selection are separate contracts that happen to be implemented by one composite order here.",
+        "wrongOptionExplanationsByOptionId": {
+          "category_only": "It forms correct runs but leaves the chosen representative dependent on prior order or sort stability.",
+          "time_only": "Timestamp order can interleave categories, so equal-category records are not guaranteed to form one run.",
+          "category_desc_time_desc": "This reverses both required category output order and earliest-record selection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_equal_value_runs",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-groups-05-membership-provenance",
+      "prompt": "A report groups equal values after sorting and must list the original positions belonging to each group. Select all required preservation steps.",
+      "constraints": [
+        "Equal values may occur many times.",
+        "Positions inside each output group must be ascending original indices."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "order_group_indices",
+            "text": "Within each completed value run, order or collect original indices according to the output contract."
+          },
+          {
+            "id": "use_sorted_positions",
+            "text": "Treat the positions inside the sorted array as original positions."
+          },
+          {
+            "id": "store_count_only",
+            "text": "Keep only the run count and reconstruct all source positions later from the value."
+          },
+          {
+            "id": "attach_index",
+            "text": "Attach originalIndex to every occurrence before sorting."
+          }
+        ],
+        "acceptedOptionIds": [
+          "attach_index",
+          "order_group_indices"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Grouping by value does not preserve source positions automatically; occurrence identity must be carried and then emitted in the required index order.",
+        "details": "Decorating each occurrence preserves which source element entered a run. Sorting by value establishes run membership, but it may not order original indices inside the run unless index is included as a tie-break or the run's indices are separately normalized. Sorted positions are coordinates in the transformed array. A count records multiplicity but cannot reconstruct the exact member identities requested by the report.",
+        "wrongOptionExplanationsByOptionId": {
+          "use_sorted_positions": "Sorted coordinates change after reordering and do not name the source occurrences.",
+          "store_count_only": "Multiplicity alone loses which original positions contributed to the group, especially with repeated values."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "attach_index": "Each occurrence needs a stable source identity before sorting can move it into a run.",
+          "order_group_indices": "The output's intra-group index order is a separate requirement that must be enforced explicitly."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_equal_value_runs",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-groups-06-hash-frequency-alternative",
+      "prompt": "The task is to return an unordered map from each string to its frequency. Expected O(n) hashing is permitted, and no sorted output is required. Which assessment is correct?",
+      "constraints": [
+        "The input strings are immutable keys with a valid hash implementation.",
+        "Output iteration order is irrelevant."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_required",
+            "text": "Equal strings can be counted only after sorting makes them adjacent."
+          },
+          {
+            "id": "hash_map_direct",
+            "text": "Accumulate frequencies in a hash map; sorting is a valid alternative but not automatically better."
+          },
+          {
+            "id": "quadratic_required",
+            "text": "Every string must be compared with every other string because output is grouped."
+          },
+          {
+            "id": "sort_is_expected_linear",
+            "text": "Comparison sorting is expected O(n), so it dominates hashing."
+          }
+        ],
+        "acceptedOptionIds": [
+          "hash_map_direct"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Direct keyed aggregation already creates the required groups without paying for an unused total order.",
+        "details": "A frequency map represents one accumulator per equality class and processes each occurrence once under the stated expected hash model. Sort-then-runs is still useful when ordered output, low auxiliary memory under an in-place sort, or deterministic comparison behaviour is required. None of those benefits appears in this contract, so grouping does not itself prove that sorting is the preferred mechanism.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_required": "Hash keys group separated equal strings through shared map state; adjacency is not the only complete mechanism.",
+          "quadratic_required": "The map avoids pairwise comparisons by directly locating the accumulator for each key.",
+          "sort_is_expected_linear": "Generic comparison sorting is O(n log n), not expected O(n), under the stated model."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_equal_value_runs",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-groups-07-sort-and-run-cost",
+      "prompt": "A comparison sort arranges n records by group key, then one pass emits each maximal equal-key run. What is the worst-case total time?",
+      "constraints": [
+        "Key comparison is O(1).",
+        "Emitting aggregate metadata is O(1) per input record in total."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n^2)",
+            "O(n)",
+            "O(n log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {}
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "Run processing is linear, but comparison sorting remains the asymptotically dominant phase.",
+        "details": "The scan advances through each record once and performs constant aggregate work, giving O(n). The preceding comparison sort costs O(n log n), so the complete pipeline is O(n log n + n) = O(n log n). The number of distinct groups does not remove sorting cost. A bounded-key counting arrangement could have a different bound, but that is a separate declared algorithm."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_equal_value_runs",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-groups-08-transfer-equivalence-key",
+      "prompt": "Select all designs where sorting by the stated key guarantees that every intended equivalence class forms one contiguous run.",
+      "constraints": [
+        "The intended group relation is exactly the one described in each option.",
+        "Normalization functions are deterministic."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "casefold_words",
+            "text": "Group words case-insensitively by sorting on caseFold(word) and testing equality of that same normalized key."
+          },
+          {
+            "id": "raw_sort_casefold_group",
+            "text": "Group words case-insensitively after sorting only by their raw case-sensitive spelling."
+          },
+          {
+            "id": "date_day",
+            "text": "Group timestamps by calendar day by sorting on extractedDay(timestamp) and testing that same day key."
+          },
+          {
+            "id": "length_sort_anagram_group",
+            "text": "Group anagrams after sorting only by string length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "casefold_words",
+          "date_day"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Contiguous runs are guaranteed when the primary sort key is the same deterministic key that defines group equality.",
+        "details": "Case-folded text and extracted calendar day each produce a canonical group key; sorting by that key places all equal keys together. Raw spelling can interleave case-insensitive equivalents with other strings, and length alone coarsens many non-anagram strings into one region without making each anagram signature contiguous. A secondary tie-break may order members inside a run, but the group key must remain primary.",
+        "wrongOptionExplanationsByOptionId": {
+          "raw_sort_casefold_group": "Case-sensitive order does not guarantee that every case-insensitive equivalent occupies one uninterrupted block.",
+          "length_sort_anagram_group": "Equal length is necessary for anagrams but not the equivalence key, so different signatures can interleave the intended groups."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "casefold_words": "The normalized case-folded key is both the sort key and the equality key, guaranteeing one run per class.",
+          "date_day": "Extracted day identity directly defines the groups and therefore becomes contiguous under the same primary key."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_equal_value_runs",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

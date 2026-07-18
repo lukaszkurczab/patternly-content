@@ -1,0 +1,363 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-tree-traversal-carry_path_and_aggregate_state-candidate-001",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-tree-traversal-candidate-0001",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "tree_traversal",
+    "primaryMentalUnitId": "carry_path_and_aggregate_state",
+    "patternFamilyId": "tree_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; not a human reviewer)",
+    "createdAt": "2026-07-18T16:17:19Z",
+    "contentBatchId": "algorithms-tree-traversal-carry_path_and_aggregate_state-candidate-001",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tree-path-running-sum-state",
+      "prompt": "A helper determines whether a root-to-leaf path sums to `target`. Which state update keeps each recursive branch independent?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "pass_next_remaining",
+            "text": "Compute `nextRemaining = remaining - node.value` and pass that value separately to each child."
+          },
+          {
+            "id": "mutate_global_remaining",
+            "text": "Subtract from one global `remaining` variable and never restore it after a child returns."
+          },
+          {
+            "id": "recompute_from_root",
+            "text": "At every node, walk back to the root and recompute the entire prefix sum."
+          },
+          {
+            "id": "store_in_node",
+            "text": "Overwrite each node value with the running sum before visiting its children."
+          }
+        ],
+        "acceptedOptionIds": [
+          "pass_next_remaining"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The required sum is ancestor-derived branch state, so each child should receive the current branch's next value without inheriting mutations from its sibling.",
+        "details": "A root-to-current prefix is different on different branches. Passing `nextRemaining` by value makes that branch state explicit and naturally restores the parent's value when a call returns. One global mutable value leaks the left branch's subtraction into the right branch unless carefully undone. Recomputing from the root preserves correctness but repeats work, and overwriting node values corrupts the input and mixes traversal state with data. The same pattern applies to path minima, parity, constraints, and accumulated labels when the next state can be derived from the parent state and current node.",
+        "wrongOptionExplanationsByOptionId": {
+          "mutate_global_remaining": "A single variable looks economical, but sibling calls share it and the second branch observes the first branch's updates. It is valid only with an explicit save-and-restore discipline and no concurrent traversal.",
+          "recompute_from_root": "This can be correct if parent links exist, but it turns a local transition into repeated path scans and can produce quadratic work on a chain.",
+          "store_in_node": "Embedding state in nodes avoids a parameter but destroys original values and makes reuse unsafe. It is appropriate only if destructive prefix transformation is the actual required output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Node values must remain unchanged.",
+        "The tree is a proper binary tree."
+      ]
+    },
+    {
+      "id": "alg-tree-path-mutable-buffer-sequence",
+      "prompt": "A DFS uses one mutable `path` list to enumerate root-to-leaf paths without copying it at every edge. Order the branch-local operations for a non-null node.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "append_current",
+            "text": "Append the current node value to `path`."
+          },
+          {
+            "id": "record_if_leaf",
+            "text": "If the current node is a leaf, record a snapshot of `path`."
+          },
+          {
+            "id": "visit_children",
+            "text": "Otherwise recurse into the non-null children using the same `path` list."
+          },
+          {
+            "id": "remove_current",
+            "text": "Remove the current node value before returning to the parent."
+          }
+        ],
+        "canonicalOrder": [
+          "append_current",
+          "record_if_leaf",
+          "visit_children",
+          "remove_current"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The current value must be present for leaf recording and descendant calls, then removed so the sibling branch receives only the parent prefix.",
+        "details": "Append establishes the root-to-current invariant. At a leaf, snapshot the current list because the reusable buffer will later change. At an internal node, children extend the same prefix one at a time. The final removal is the backtracking step that restores exactly the state the caller supplied. Recording before append omits the leaf; removing before recursion omits the ancestor from descendants; failing to remove leaks one branch into its sibling. A `try/finally`-style restoration is useful when recursion may exit early or throw."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The recorded result stores a snapshot, not the mutable list reference.",
+        "Scoring uses preserved adjacent relations."
+      ]
+    },
+    {
+      "id": "alg-tree-path-sibling-isolation",
+      "prompt": "During DFS, the left child adds `7` to a mutable path sum and returns. The right child must start from the parent's original sum.\nWhich invariant is sufficient?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "restore_parent_state",
+            "text": "Before returning from a child call, restore the mutable sum to exactly the value received from the parent."
+          },
+          {
+            "id": "keep_left_update",
+            "text": "Keep the left child's final sum so the right child can continue from it."
+          },
+          {
+            "id": "reset_to_zero",
+            "text": "Reset the sum to zero after every child, regardless of the parent's prefix."
+          },
+          {
+            "id": "one_sum_per_depth_global",
+            "text": "Store one global sum per depth and assume all nodes at that depth have the same prefix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "restore_parent_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Siblings share only their parent prefix, so a child must leave the caller-owned state exactly as it found it.",
+        "details": "The branch invariant is “state on entry represents the root-to-parent prefix; state after adding the current node represents root-to-current.” When the call returns, it must restore the entry state. Keeping the left update contaminates the right path, while resetting to zero discards ancestors. Nodes at the same depth can have different values and therefore different prefixes, so depth is not a sufficient key. Passing an immutable numeric value instead of mutating shared state satisfies the same isolation rule without an explicit undo.",
+        "wrongOptionExplanationsByOptionId": {
+          "keep_left_update": "This treats siblings as one continuous path even though no edge connects them. It would be valid only for a traversal-wide cumulative total, not a root-to-current value.",
+          "reset_to_zero": "Zero is the top-level identity, not necessarily the caller's state. It is correct only when every child is a direct child of an artificial zero-prefix root.",
+          "one_sum_per_depth_global": "Depth does not uniquely determine the path prefix. This could work only in a specially constrained tree where all root-to-depth sums are guaranteed equal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The sum is mutable shared state rather than a value parameter."
+      ]
+    },
+    {
+      "id": "alg-tree-path-success-at-actual-leaf",
+      "prompt": "A root has value `5`, a left child with value `4`, and no right child. The target is `5`.\nWhich success test correctly enforces a root-to-leaf path?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "check_at_leaf",
+            "text": "Succeed only at a non-null leaf when the accumulated sum including that leaf equals the target."
+          },
+          {
+            "id": "check_at_null_child",
+            "text": "Succeed whenever a recursive call reaches null with accumulated sum equal to the target."
+          },
+          {
+            "id": "check_any_prefix",
+            "text": "Succeed at any non-null node as soon as its prefix sum equals the target."
+          },
+          {
+            "id": "check_after_both_children",
+            "text": "Succeed only after both child calls return true."
+          }
+        ],
+        "acceptedOptionIds": [
+          "check_at_leaf"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The root alone is a matching prefix but not a root-to-leaf path because it has a child; success belongs to an actual terminal node.",
+        "details": "A leaf is a real node with no children. In this tree, the only root-to-leaf path is `5 → 4`, whose sum is `9`, so target `5` must fail. Testing at the missing right child of the root incorrectly treats “no edge here” as a completed path and accepts the root prefix. Testing every prefix answers a different question: whether any root-to-node path matches. The endpoint contract must be stated before recursion because the same arithmetic can support different path queries.",
+        "wrongOptionExplanationsByOptionId": {
+          "check_at_null_child": "Null is a structural boundary, not an endpoint node. This test becomes valid only for a deliberately edge-based contract that defines stepping beyond a leaf as completion and also prevents early missing-child acceptance.",
+          "check_any_prefix": "This correctly solves a root-to-any-node prefix-sum query, but it weakens the required leaf endpoint and would accept an internal node whose descendants still continue the path.",
+          "check_after_both_children": "Existence combines branches with OR, not AND, and a leaf has no successful child calls. AND would require a property to hold in both subtrees."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "A leaf is a non-null node with both child references null.",
+        "The path must start at the root."
+      ]
+    },
+    {
+      "id": "alg-tree-path-tree-versus-cyclic-graph-state",
+      "prompt": "A DFS enumerates simple paths from a start node. How must path state change when the input changes from a proper tree to a graph that may contain cycles?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "add_current_path_visited",
+            "text": "Keep a set of vertex identities on the current path; reject a neighbor already in that set, and remove the vertex when backtracking."
+          },
+          {
+            "id": "no_change_needed",
+            "text": "Use only the accumulated path values because DFS depth prevents cycles automatically."
+          },
+          {
+            "id": "global_visited_forever",
+            "text": "Mark every vertex globally forever, even when another simple path could legally reach it."
+          },
+          {
+            "id": "visited_by_value",
+            "text": "Reject any vertex whose payload value already appears on the path."
+          }
+        ],
+        "acceptedOptionIds": [
+          "add_current_path_visited"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A cyclic graph can revisit an ancestor, so simple-path enumeration needs identity-based membership in the current path with backtracking.",
+        "details": "Proper tree structure guarantees that descending child references cannot return to an ancestor. A graph removes that guarantee. For simple-path enumeration, the relevant invariant is path-local: a vertex cannot repeat within one candidate path, but it may appear in a different path after backtracking. A global visited set is correct for reachability traversal that expands each vertex once, but it can suppress distinct simple paths. Payload values are not vertex identities. The required state therefore depends on both structure and the query's output contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_change_needed": "DFS order does not prevent an edge from returning to an ancestor; recursion can loop indefinitely. No visited state is safe only under an acyclic unique-parent contract.",
+          "global_visited_forever": "Global marking is plausible from graph reachability, but path enumeration may need to revisit a vertex through a different prefix. It is correct when the goal is visit-once reachability rather than enumerate paths.",
+          "visited_by_value": "Two distinct vertices may share a value, so value-based rejection loses valid paths. It works only if value uniquely defines vertex identity by contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "The graph task enumerates simple paths rather than mere reachability.",
+        "Vertex identity is distinct from payload value."
+      ]
+    },
+    {
+      "id": "alg-tree-path-copy-each-edge-cost",
+      "prompt": "On a skewed `n`-node tree, each recursive call receives a newly allocated array equal to `parentPath + [node.value]`. Every active frame retains its own path array until its child returns. Determine worst-case time and peak auxiliary space, excluding the input and final output.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)",
+            "O(2^n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n^2)"
+          ],
+          "space": [
+            "O(n^2)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Copy lengths grow from one to `n`, and all prefix arrays remain live along the skewed recursion chain, so their total work and storage are quadratic.",
+        "details": "Creating the path at depth `d` copies `Θ(d)` elements. On a chain, summing `1 + 2 + ... + n` gives `Θ(n^2)` copy time. Because each recursive frame retains its own array while the deepest call is active, the live arrays also contain a quadratic total number of elements. A single mutable buffer with append before descent and pop on return reduces path storage to `O(n)` and total traversal work to `O(n)`, assuming snapshots are made only for required outputs. An immutable linked representation with structural sharing can also avoid full-prefix copying."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "The tree is a single chain.",
+        "Array concatenation copies every element.",
+        "No output path snapshots are counted."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

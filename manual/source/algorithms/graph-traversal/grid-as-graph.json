@@ -1,0 +1,388 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-graph-traversal-grid_as_graph-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-graph-traversal-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "graph_traversal",
+    "primaryMentalUnitId": "grid_as_graph",
+    "patternFamilyId": "graph_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring; human review required",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-graph-traversal-grid_as_graph-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-gt-grid-001",
+      "prompt": "A rectangular maze allows orthogonal movement between open cells. Which graph mapping is the correct starting model?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "open_cells_states",
+            "text": "Each open cell is a vertex, with an edge to each in-bounds open orthogonal neighbor."
+          },
+          {
+            "id": "rows_vertices",
+            "text": "Each row is one vertex, because cells in a row share a coordinate."
+          },
+          {
+            "id": "values_edges",
+            "text": "Cell values are vertices and coordinates are edges."
+          },
+          {
+            "id": "tree_cells",
+            "text": "Each cell has one parent edge because any maze can be treated as a tree."
+          }
+        ],
+        "acceptedOptionIds": [
+          "open_cells_states"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The state is the current open coordinate, and legal one-step moves define the edges.",
+        "details": "A graph model names the information needed to determine future transitions. In a static maze, the current cell is sufficient state, while bounds, obstacles, and the orthogonal movement rule generate neighboring states. The grid is an implicit graph: no adjacency matrix or explicit edge list is normally needed. Once this mapping is fixed, BFS or DFS can be selected from the requested output.",
+        "wrongOptionExplanationsByOptionId": {
+          "rows_vertices": "Cells in one row can have different obstacles and different legal neighbors, so collapsing the row loses state.",
+          "values_edges": "Two cells with the same value can occupy different positions and have different neighborhoods; coordinates identify the states here.",
+          "tree_cells": "Open-cell adjacency can contain cycles and multiple routes, so a parent relation is a traversal result rather than the input graph."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "map_grid_cells_to_graph_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-grid-002",
+      "prompt": "A cell is blocked by the input maze. How should that fact differ from a cell that is open but already visited by the current traversal?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "separate_roles",
+            "text": "Blocked means the state or transition is illegal in the graph; visited means a legal state has already been discovered in this traversal."
+          },
+          {
+            "id": "same_flag",
+            "text": "They are semantically identical, so one permanent flag should represent both without distinction."
+          },
+          {
+            "id": "blocked_after_dequeue",
+            "text": "A cell becomes blocked only when dequeued; this is equivalent to visited-on-enqueue."
+          },
+          {
+            "id": "matrix_only",
+            "text": "Only an adjacency matrix can distinguish blocked from visited cells."
+          }
+        ],
+        "acceptedOptionIds": [
+          "separate_roles"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Obstacle legality defines the graph; visited state records one traversal's progress through that graph.",
+        "details": "Treat blocked cells as absent vertices or as states with no legal entry, depending on the exact contract. Treat visited as mutable traversal metadata for legal states. Conflating the two can destroy the original maze, make repeated queries impossible, or misreport why a state is unreachable. In-place mutation is valid only when the input may be consumed and the marker cannot collide with a meaningful cell value.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_flag": "Obstacles belong to the problem instance, while visited state is execution-specific and may need to be reset or queried separately.",
+          "blocked_after_dequeue": "Whether a cell is an obstacle is known before traversal and is not a frontier-timing decision.",
+          "matrix_only": "A grid plus a separate visited structure or safe in-place marker can represent the distinction directly."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "map_grid_cells_to_graph_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-grid-003",
+      "prompt": "The same occupied-cell grid is evaluated once with 4-direction adjacency and once with 8-direction adjacency. Which part of the graph model changes?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "edges_change",
+            "text": "The vertex set can remain the same, but diagonal legal moves add edges in the 8-direction model."
+          },
+          {
+            "id": "visited_changes_edges",
+            "text": "Only the visited timing changes; graph edges are identical."
+          },
+          {
+            "id": "bfs_changes_graph",
+            "text": "Using BFS instead of DFS adds the diagonal edges because BFS is broader."
+          },
+          {
+            "id": "representation_invalid",
+            "text": "A grid cannot represent two adjacency rules without converting to an adjacency matrix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "edges_change"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The movement rule is the edge relation, so adding diagonals changes connectivity and distances.",
+        "details": "Coordinates identify the same candidate states, but the set of legal neighboring coordinates differs. This can merge components and shorten paths even though the cell values are unchanged. BFS and DFS must both consume the same declared neighborhood. The transfer rule is to state direction sets, wraparound, portals, and corner-cutting rules before applying a graph algorithm.",
+        "wrongOptionExplanationsByOptionId": {
+          "visited_changes_edges": "Visited timing cannot make a diagonal transition legal when the movement contract forbids it.",
+          "bfs_changes_graph": "Traversal order explores a fixed graph; it does not define its legal transitions.",
+          "representation_invalid": "Neighbor generation can use a four-direction or eight-direction offset table on the same grid."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "map_grid_cells_to_graph_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-grid-004",
+      "prompt": "A grid traversal may overwrite an open cell with a visited marker. Select all conditions needed for that in-place choice to preserve the problem contract.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "mutation_allowed",
+            "text": "The caller permits the grid to be mutated or no later consumer needs the original values."
+          },
+          {
+            "id": "marker_unambiguous",
+            "text": "The chosen marker cannot be confused with any meaningful unvisited cell value."
+          },
+          {
+            "id": "tree_guarantee",
+            "text": "The grid must be a tree, otherwise in-place marking is invalid."
+          },
+          {
+            "id": "dequeue_required",
+            "text": "Visited must be written only on dequeue because enqueue-time marking changes the grid too early."
+          }
+        ],
+        "acceptedOptionIds": [
+          "mutation_allowed",
+          "marker_unambiguous"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "In-place visited storage is safe only when mutation is allowed and the marker has a distinct meaning.",
+        "details": "The traversal invariant is independent of where visited state is stored. A separate boolean matrix preserves input and can be reused across read-only callers. In-place mutation saves auxiliary storage but changes the grid and requires a disjoint marker value. Cycles do not prohibit it; they make timely discovery marking more important. This is a representation trade-off, not a universal optimization.",
+        "wrongOptionExplanationsByOptionId": {
+          "tree_guarantee": "In-place marking is a storage choice and works on cyclic grid graphs when discovery timing is correct.",
+          "dequeue_required": "For BFS, marking when a legal cell is first enqueued usually prevents duplicate scheduling and remains semantically valid."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "mutation_allowed": "Destroying input that must be reused violates an external contract even if the traversal result is correct.",
+          "marker_unambiguous": "A colliding marker can make an unvisited legal cell appear blocked or already processed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "map_grid_cells_to_graph_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-grid-005",
+      "prompt": "A robot may break at most one wall. It can reach cell (r,c) before using the break and later reach the same cell after using it, with different future options. What is the correct graph-state identity?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "coordinate_and_break",
+            "text": "(r, c, breakUsed), so the two arrivals are distinct vertices in the implicit graph."
+          },
+          {
+            "id": "coordinate_only",
+            "text": "(r, c) only, because every physical cell is one graph vertex in every grid problem."
+          },
+          {
+            "id": "break_only",
+            "text": "breakUsed only, because coordinates are merely visual layout."
+          },
+          {
+            "id": "no_visited",
+            "text": "No visited structure, because revisiting cells is required."
+          }
+        ],
+        "acceptedOptionIds": [
+          "coordinate_and_break"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A graph vertex must include the resource bit because it changes which outgoing moves remain legal.",
+        "details": "The implicit graph has up to two states per cell: break unused and break used. Edges update both coordinate and resource status. Visited must use the same composite key. The general transfer rule is that history belongs in state only when it affects future transitions or cost; irrelevant history should not be retained because it multiplies the state space without changing decisions.",
+        "wrongOptionExplanationsByOptionId": {
+          "coordinate_only": "The remaining wall-break capability changes future legal transitions, so collapsing the states can discard the optimal or only valid route.",
+          "break_only": "Movement and destination depend on location; resource state alone is insufficient.",
+          "no_visited": "Revisiting a coordinate under a different resource state is handled by a richer key, not by allowing unlimited duplicate states."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "map_grid_cells_to_graph_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-grid-006",
+      "prompt": "An open-cell grid has unit-cost orthogonal moves, and the output is the minimum number of moves from start to goal. After mapping the grid to a graph, which traversal property is decisive?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bfs_layers",
+            "text": "BFS processes states by nondecreasing number of unit edges, so first discovery gives the minimum move count."
+          },
+          {
+            "id": "dfs_first_path",
+            "text": "The first DFS route is minimum because DFS reaches a goal before BFS finishes a layer."
+          },
+          {
+            "id": "matrix_shortest",
+            "text": "An adjacency matrix makes either traversal return the shortest path automatically."
+          },
+          {
+            "id": "mark_dequeue",
+            "text": "Minimum distance requires marking every cell only on dequeue, which is always equivalent."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bfs_layers"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The grid mapping produces an unweighted graph, and BFS layer number equals path length in moves.",
+        "details": "Each legal move contributes one edge and one unit of distance. FIFO processing ensures all states at distance d are handled before any state at d+1, so the first accepted discovery of the goal is optimal. DFS remains valid for reachability but not for first-path optimality. If terrain gives unequal costs, the graph model changes to weighted edges and the frontier must change accordingly.",
+        "wrongOptionExplanationsByOptionId": {
+          "dfs_first_path": "DFS discovery order is not ordered by path length and can find a long route first.",
+          "matrix_shortest": "Representation affects neighbor access but does not give DFS a shortest-path guarantee.",
+          "mark_dequeue": "Discovery-time marking with distance assignment is the standard one-enqueue invariant for unit-cost BFS."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "map_grid_cells_to_graph_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-grid-007",
+      "prompt": "For an R × C grid with at most four generated neighbors per cell, why is a full adjacency matrix normally a poor traversal representation?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "implicit_linear",
+            "text": "There are O(RC) states and O(RC) local edges, while a matrix over all cells uses O((RC)²) space."
+          },
+          {
+            "id": "matrix_incorrect",
+            "text": "A matrix cannot represent grid edges correctly under any conditions."
+          },
+          {
+            "id": "bfs_only_reason",
+            "text": "Because BFS is always faster than DFS and therefore forbids matrices."
+          },
+          {
+            "id": "visited_replaces_edges",
+            "text": "Because marking visited on dequeue generates all needed edges without a movement rule."
+          }
+        ],
+        "acceptedOptionIds": [
+          "implicit_linear"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Grid geometry provides O(1) neighbor generation per state, so quadratic all-pairs storage adds no useful index.",
+        "details": "Flattening cells gives N = RC vertices, but each vertex has bounded degree, so E = O(N). On-demand direction checks preserve O(N) traversal time and O(N) visited/frontier storage. An N × N matrix is correct but costs O(N²), mostly for absent edges. The boundary changes only if the transition relation is dense or unusually expensive to compute and reuse.",
+        "wrongOptionExplanationsByOptionId": {
+          "matrix_incorrect": "It can represent them, but it stores overwhelmingly many absent cell-to-cell edges for a bounded-degree grid.",
+          "bfs_only_reason": "Both traversals can consume either representation; the issue is the grid's sparse implicit edge structure.",
+          "visited_replaces_edges": "Visited state does not define which neighboring coordinates are legal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "map_grid_cells_to_graph_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

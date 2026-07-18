@@ -1,0 +1,296 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sliding-window-frequency-constrained-window",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sliding-window-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sliding_window",
+    "primaryMentalUnitId": "frequency_constrained_window",
+    "patternFamilyId": "sliding_window"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — unreviewed candidate generation",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sliding-window-frequency-constrained-window",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sw-frequency-at-most-k-distinct",
+      "prompt": "A window must contain at most K distinct values. The incoming value x currently has frequency 0 in the window. Which state update is correct?",
+      "constraints": [
+        "A frequency map and an integer distinctCount are maintained.",
+        "The window is repaired only when distinctCount > K."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "increment_then_distinct",
+            "text": "Increment freq[x] and increment distinctCount because x crosses from absent to present; then shrink while distinctCount > K."
+          },
+          {
+            "id": "distinct_every_occurrence",
+            "text": "Increment distinctCount for every occurrence of x."
+          },
+          {
+            "id": "shrink_before_add",
+            "text": "Shrink before adding x so the new value is never part of an invalid state."
+          },
+          {
+            "id": "replace_map",
+            "text": "Clear the map and start a new window whenever x is new."
+          }
+        ],
+        "acceptedOptionIds": [
+          "increment_then_distinct"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Distinct count changes only when a frequency crosses zero; the incoming value must enter state before its violation can be diagnosed.",
+        "details": "The map records multiplicity and distinctCount summarizes how many keys have positive frequency. Because freq[x] is zero, adding x creates one new distinct value. If that raises distinctCount above K, left removals repair the window until the count returns to K. Repeated copies of an existing x do not change distinctCount. Shrinking before expansion evaluates the old state and can miss the violation introduced by x; clearing the map discards valid overlap. A transient K+1th key is acceptable only long enough to diagnose and repair the post-expansion violation; it is never an answer-eligible state.",
+        "wrongOptionExplanationsByOptionId": {
+          "distinct_every_occurrence": "Distinctness counts keys, not elements. A repeated x increases its frequency but not the number of distinct values.",
+          "shrink_before_add": "The need to shrink is caused by the post-expansion state; checking the old window cannot see the new violation.",
+          "replace_map": "A new key may require removing only a small prefix. Resetting loses longer valid suffixes and later candidates."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-no-repeat-shrink",
+      "prompt": "For the longest substring with no repeated character, adding the rightmost character makes its frequency equal to 2. What is the correct frequency-window repair?",
+      "constraints": [
+        "The maintained window must have every character frequency at most 1.",
+        "The objective is maximum length."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shrink_until_one",
+            "text": "Remove characters from the left, updating their frequencies, until the incoming character's frequency returns to 1."
+          },
+          {
+            "id": "remove_incoming",
+            "text": "Discard the newly added character and keep the previous window unchanged."
+          },
+          {
+            "id": "shrink_once",
+            "text": "Remove exactly one left character, regardless of which character it is."
+          },
+          {
+            "id": "clear_all",
+            "text": "Clear the whole frequency map whenever any duplicate appears."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shrink_until_one"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The violation persists until one copy of the duplicated character leaves; unrelated left removals may be needed first.",
+        "details": "A duplicate of the incoming character may have its earlier copy several positions inside the window. Removing one arbitrary left character does not necessarily remove that copy, so repair continues while its frequency is greater than one. Every removal updates the corresponding character count, preserving correct state for later candidates. Dropping the incoming character prevents exploration of windows ending at the current right boundary, while a full reset discards a valid suffix after the earlier duplicate.",
+        "wrongOptionExplanationsByOptionId": {
+          "remove_incoming": "The optimal no-repeat window may end at the new character after the earlier duplicate is removed.",
+          "shrink_once": "The first outgoing character can be unrelated to the duplicate, leaving its frequency at 2 and the window invalid.",
+          "clear_all": "Only the prefix through the earlier conflicting occurrence must leave; the remaining suffix can still be part of a longer answer."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-zero-count-removal",
+      "prompt": "Order the operations for removing the current leftmost value y from an at-most-K-distinct frequency window.",
+      "constraints": [
+        "distinctCount equals the number of keys with positive frequency.",
+        "The current left boundary still points to y."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "decrement_y",
+            "text": "Decrement freq[y]."
+          },
+          {
+            "id": "remove_zero_key",
+            "text": "If freq[y] becomes 0, remove y from the map and decrement distinctCount."
+          },
+          {
+            "id": "advance_left",
+            "text": "Advance the left boundary."
+          }
+        ],
+        "canonicalOrder": [
+          "decrement_y",
+          "remove_zero_key",
+          "advance_left"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Multiplicity must be updated first; distinctCount changes only if the outgoing key has no remaining copies, then the boundary advances.",
+        "details": "The map and boundaries must describe the same range after each completed removal. Decrementing first reveals whether another copy of y remains. Only a zero count means y is no longer distinct in the window. Advancing left before identifying and updating the outgoing value risks mutating the wrong key unless y was explicitly cached; decrementing distinctCount unconditionally breaks windows with duplicates. The same zero-crossing rule applies to fixed-size frequency windows. If the post-decrement count remains positive, both the key and distinctCount must remain unchanged because the value is still represented inside the boundaries."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-exactly-k-transfer",
+      "prompt": "You must count all contiguous ranges containing exactly K distinct values. Why is one standard at-most-K window not sufficient, and what transfer is valid?",
+      "constraints": [
+        "The answer is a count of all qualifying ranges.",
+        "K is at least 1."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "difference_of_at_most",
+            "text": "One at-most window counts ranges with 0..K distinct values; compute atMost(K) − atMost(K−1) to isolate exactly K."
+          },
+          {
+            "id": "one_window_equals_exact",
+            "text": "After repairing to at most K, add the current window length and treat every counted suffix as exactly K."
+          },
+          {
+            "id": "fixed_k_length",
+            "text": "Use a fixed window of length K because exactly K distinct values are required."
+          },
+          {
+            "id": "set_without_counts",
+            "text": "Use one set and count a range whenever its size is K, without tracking multiplicity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "difference_of_at_most"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An at-most window deliberately includes suffixes with fewer than K distinct values; subtracting atMost(K−1) removes them.",
+        "details": "After an at-most-K window is repaired for a right boundary, every start from left through right forms a valid suffix, but those suffixes can contain any number of distinct values up to K. Therefore adding right−left+1 computes atMost(K), not exactly K. Running the same counting contract for K−1 and subtracting isolates ranges present in the first count but absent in the second. Exactly K is a property of categories, not length, and frequencies are still needed to move the boundaries correctly.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_window_equals_exact": "The counted suffixes include ranges with fewer than K distinct values, so the total overcounts exactly-K ranges.",
+          "fixed_k_length": "A range can contain exactly K distinct values while having length greater than K because values may repeat.",
+          "set_without_counts": "Without multiplicities, removing one outgoing occurrence can incorrectly erase a value that remains inside the range."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-set-loses-multiplicity",
+      "prompt": "The current window is 'abac'. When the leftmost 'a' leaves, another 'a' remains. What bug occurs if state is only a set and the algorithm removes 'a' from the set unconditionally?",
+      "constraints": [
+        "The set is intended to represent characters currently present.",
+        "Duplicate characters may occur."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "premature_absence",
+            "text": "The state claims 'a' is absent even though one copy remains, so later distinctness and duplicate checks are wrong."
+          },
+          {
+            "id": "no_bug",
+            "text": "There is no bug because a set needs only one copy of each character."
+          },
+          {
+            "id": "window_too_long_only",
+            "text": "The only effect is an off-by-one error in the window length."
+          },
+          {
+            "id": "sort_order_bug",
+            "text": "The bug is that set iteration order differs from string order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "premature_absence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A set records presence but cannot decide whether presence survives removal of one among multiple copies.",
+        "details": "Before removal, freq['a']=2. After the first 'a' leaves, the correct count is 1, so 'a' remains present. An unconditional set deletion collapses those two states and may admit another 'a' without detecting a duplicate or undercount distinct types. Frequency state resolves the ambiguity by removing the key only on a 1→0 transition. A set becomes sufficient only when the window invariant already guarantees every key occurs at most once and removal is coordinated with a last-position rule.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_bug": "The set cannot infer whether another copy remains, which is exactly the information needed after an outgoing duplicate.",
+          "window_too_long_only": "The boundary length can be correct while the semantic state is wrong; future validity decisions then fail.",
+          "sort_order_bug": "Iteration order is irrelevant. The defect is lost multiplicity, not presentation order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

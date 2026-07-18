@@ -1,0 +1,480 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-prefix-sums-prefix-index-conventions-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-prefix-sums-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "prefix_sums",
+    "primaryMentalUnitId": "prefix_index_conventions",
+    "patternFamilyId": "prefix_sums"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-prefix-sums-prefix-index-conventions-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-prefix-index-contract-half-open-formula",
+      "prompt": "A codebase defines P[i] as the sum of A[0:i], excluding A[i]. Which expression matches the half-open query [l, r)?",
+      "constraints": [
+        "0 <= l <= r <= n.",
+        "P has length n + 1 and P[0] = 0."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "p_r_minus_p_l",
+            "text": "P[r] - P[l]"
+          },
+          {
+            "id": "p_r_plus_one_minus_p_l",
+            "text": "P[r + 1] - P[l]"
+          },
+          {
+            "id": "p_r_minus_p_l_plus_one",
+            "text": "P[r] - P[l + 1]"
+          },
+          {
+            "id": "p_l_minus_p_r",
+            "text": "P[l] - P[r]"
+          }
+        ],
+        "acceptedOptionIds": [
+          "p_r_minus_p_l"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The query endpoints are already prefix boundaries: P[r] contains everything before r and P[l] contains everything before l.",
+        "details": "Because both the prefix and the query use half-open boundaries, no endpoint translation is needed. Subtracting P[l] from P[r] leaves exactly A[l:r]. Adding one to r would include A[r], while adding one to l would remove A[l]. The formula is determined by the contract, not by a memorized universal pattern.",
+        "wrongOptionExplanationsByOptionId": {
+          "p_r_plus_one_minus_p_l": "This is the formula for an inclusive right endpoint [l, r]. Under [l, r), it includes one extra element A[r] when r < n.",
+          "p_r_minus_p_l_plus_one": "P[l + 1] includes A[l], so subtracting it omits the first requested element.",
+          "p_l_minus_p_r": "The boundary order is reversed and produces the negative of the half-open range sum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_prefix_boundary_convention",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-index-contract-single-meaning",
+      "prompt": "Which statement is the strongest invariant for preventing off-by-one errors across prefix construction and querying?",
+      "constraints": [
+        "One convention must be documented and used everywhere.",
+        "The implementation uses zero-based array indices."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_stable_boundary_meaning",
+            "text": "Every P[i] has one stable meaning—such as the aggregate of the first i elements—and all formulas are derived from that meaning."
+          },
+          {
+            "id": "switch_when_convenient",
+            "text": "P[i] may mean inclusive or exclusive depending on the current formula, as long as tests usually pass."
+          },
+          {
+            "id": "sort_to_remove_offsets",
+            "text": "Sorting the input removes the need to define prefix boundaries."
+          },
+          {
+            "id": "window_alias",
+            "text": "Treat P[i] as whichever moving-window sum currently ends at i."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_stable_boundary_meaning"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A prefix index is a semantic boundary, not merely an array position; one stable meaning is what makes formulas derivable and reviewable.",
+        "details": "If P[i] always means the aggregate before index i, construction, queries, empty ranges, and sentinel handling follow mechanically. Switching meanings between inclusive and exclusive interpretations creates formulas that can appear plausible but disagree at edges. Sortedness and window state do not repair an inconsistent contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "switch_when_convenient": "A value cannot simultaneously summarize two different regions. Mixing conventions is the direct source of off-by-one errors.",
+          "sort_to_remove_offsets": "Sorting changes value order but does not define whether a prefix index includes the current element. Boundary semantics remain necessary.",
+          "window_alias": "A window endpoint does not identify all elements before i. Reusing the same notation for moving and cumulative state obscures ownership."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_prefix_boundary_convention",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-index-contract-workflow-order",
+      "prompt": "Order the engineering steps for establishing and using a prefix index convention safely.",
+      "constraints": [
+        "The chosen contract is P[i] = aggregate of A[0:i].",
+        "Score is based on preserved adjacent relations."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "write_contract",
+            "text": "Write the meaning of P[i] and the legal boundary domain 0 through n."
+          },
+          {
+            "id": "allocate_sentinel",
+            "text": "Allocate n + 1 entries and initialize the identity at P[0]."
+          },
+          {
+            "id": "derive_recurrence",
+            "text": "Derive P[i + 1] from P[i] and A[i]."
+          },
+          {
+            "id": "translate_api_ranges",
+            "text": "Translate each external range shape into the prefix boundary domain."
+          },
+          {
+            "id": "test_extreme_ranges",
+            "text": "Test empty, first-element, last-element, and full-array boundaries."
+          }
+        ],
+        "canonicalOrder": [
+          "write_contract",
+          "allocate_sentinel",
+          "derive_recurrence",
+          "translate_api_ranges",
+          "test_extreme_ranges"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The semantic contract must precede storage and formulas; edge tests then verify that every layer honors it.",
+        "details": "Starting with code before defining P[i] invites accidental convention mixing. The sentinel and recurrence are derived from the written meaning, external APIs are translated into the same boundary domain, and focused edge cases verify the agreement. Tests are confirmation, not a substitute for the contract."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_prefix_boundary_convention",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-index-contract-empty-range",
+      "prompt": "Under the half-open contract P[i] = sum of A[0:i], what should the query [x, x) return?",
+      "constraints": [
+        "The API permits empty half-open ranges.",
+        "0 <= x <= n."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "zero_from_equal_boundaries",
+            "text": "0, because P[x] - P[x] cancels the same boundary state."
+          },
+          {
+            "id": "a_x",
+            "text": "A[x], because both endpoints name the same element."
+          },
+          {
+            "id": "invalid_unless_sorted",
+            "text": "It is valid only if A is sorted."
+          },
+          {
+            "id": "current_window_sum",
+            "text": "The sum of the most recent moving window."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero_from_equal_boundaries"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A half-open range with equal boundaries contains no elements, and identical prefix states cancel to the identity.",
+        "details": "This edge case is a direct consequence of the contract, not a special exception. It remains valid at x = 0 and x = n. Returning A[x] would confuse a boundary with an element index and would also be invalid when x = n.",
+        "wrongOptionExplanationsByOptionId": {
+          "a_x": "The range [x, x) excludes its right endpoint and contains no element. At x = n there is no A[x] at all.",
+          "invalid_unless_sorted": "Sortedness has no effect on whether equal half-open boundaries form an empty range.",
+          "current_window_sum": "The result is defined entirely by the two supplied prefix boundaries, not by prior query state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_prefix_boundary_convention",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-index-contract-window-endpoints",
+      "prompt": "A moving-window implementation uses inclusive left and right element indices, while a prefix helper uses half-open boundaries. Which integration is correct?",
+      "constraints": [
+        "The current window contains A[left] through A[right].",
+        "P[i] sums A[0:i]."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "translate_right_plus_one",
+            "text": "Call the prefix helper with boundaries [left, right + 1), producing P[right + 1] - P[left]."
+          },
+          {
+            "id": "reuse_same_pair",
+            "text": "Call it with [left, right), because endpoint conventions are interchangeable."
+          },
+          {
+            "id": "sort_before_call",
+            "text": "Sort the current window so inclusive and exclusive endpoints align."
+          },
+          {
+            "id": "subtract_outgoing_twice",
+            "text": "Use P[right] - P[left] and also subtract A[left]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "translate_right_plus_one"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The inclusive window’s last element maps to the exclusive prefix boundary immediately after it.",
+        "details": "Different components may use different legal conventions, but their interface must translate explicitly. Passing right directly would omit A[right]. Sorting does not change endpoint semantics, and ad hoc compensating arithmetic is harder to reason about than a correct boundary conversion.",
+        "wrongOptionExplanationsByOptionId": {
+          "reuse_same_pair": "P[right] stops before A[right], so the inclusive window’s last element is lost. The conventions are not interchangeable.",
+          "sort_before_call": "Ordering values cannot reconcile inclusive and exclusive endpoint meanings. It also changes window membership by position.",
+          "subtract_outgoing_twice": "P[right] - P[left] already excludes A[left] from the removed prefix correctly; subtracting it again corrupts the range and still omits A[right]."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_prefix_boundary_convention",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-index-contract-sortedness-independent",
+      "prompt": "Does choosing an inclusive or exclusive prefix convention depend on whether A is sorted?",
+      "constraints": [
+        "Queries refer to positions in the current array order.",
+        "Either convention may be implemented consistently."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "independent_of_sortedness",
+            "text": "No. The convention defines index-boundary ownership and is independent of value order."
+          },
+          {
+            "id": "exclusive_only_sorted",
+            "text": "Yes. Exclusive prefixes require sorted input."
+          },
+          {
+            "id": "inclusive_only_unsorted",
+            "text": "Yes. Unsorted arrays require inclusive prefixes."
+          },
+          {
+            "id": "window_decides_sort",
+            "text": "The current moving window determines whether the prefix is inclusive."
+          }
+        ],
+        "acceptedOptionIds": [
+          "independent_of_sortedness"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Boundary semantics describe which positions are summarized; they do not impose an ordering property on the values.",
+        "details": "Both inclusive and exclusive prefixes can be built over arbitrary sequences, including negative and repeated values. The choice affects storage shape, recurrence, and query formula—not whether the values are sorted. Sorting may change the problem’s positional semantics but cannot determine the convention.",
+        "wrongOptionExplanationsByOptionId": {
+          "exclusive_only_sorted": "An exclusive prefix works on any order because it is defined by indices and addition, not monotonicity.",
+          "inclusive_only_unsorted": "Inclusive prefixes also work on sorted or unsorted input. Value order is orthogonal to endpoint inclusion.",
+          "window_decides_sort": "A moving window may consume a prefix helper, but it does not redefine the helper’s persistent boundary contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_prefix_boundary_convention",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-index-contract-complexity",
+      "prompt": "For either a consistent inclusive-prefix or exclusive-prefix implementation over n elements, select the asymptotic build time, range-query time, and separate prefix storage.",
+      "constraints": [
+        "Both implementations store one cumulative value per element boundary or element position.",
+        "Each query combines a constant number of stored values."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "build_time",
+          "query_time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "build_time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "query_time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "build_time": [
+            "O(n)"
+          ],
+          "query_time": [
+            "O(1)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 3
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "A coherent endpoint convention changes constants and formulas, not the linear number of stored states or constant query work.",
+        "details": "Both common representations visit n elements to build and retain Θ(n) cumulative values. A query reads a constant number of entries, so it is O(1). The auxiliary storage remains linear; neither an exclusive sentinel nor an inclusive layout makes prefix state disappear, and hash-prefix variants may also use O(n) memory."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_prefix_boundary_convention",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-index-contract-transfer-2d-padding",
+      "prompt": "Which 2D design most directly transfers the exclusive-boundary convention used by a one-dimensional n + 1 prefix?",
+      "constraints": [
+        "Matrix queries use inclusive cell coordinates.",
+        "The design should avoid negative row or column indices."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "zero_row_zero_column",
+            "text": "Use an (R + 1) × (C + 1) prefix with a zero row and column, and translate lower-right coordinates by +1 on both axes."
+          },
+          {
+            "id": "no_padding_mixed_indices",
+            "text": "Use an R × C prefix but switch between inclusive and exclusive meanings per query term."
+          },
+          {
+            "id": "sort_rows_columns",
+            "text": "Sort every row and column so padding is unnecessary."
+          },
+          {
+            "id": "one_window_corner",
+            "text": "Store only the most recently queried rectangle at P[R][C]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero_row_zero_column"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The identity boundary extends independently along each axis, preserving one half-open geometric meaning for every prefix entry.",
+        "details": "The zero row and column represent empty prefixes before the first real row and column. Inclusive (r2, c2) becomes the exclusive boundary (r2 + 1, c2 + 1), exactly mirroring the 1D translation on both axes. Mixed meanings recreate off-by-one and overlap errors rather than removing them.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_padding_mixed_indices": "An unpadded inclusive representation can be valid, but switching meanings term by term is not. It usually requires explicit boundary branches.",
+          "sort_rows_columns": "Sorting changes matrix geometry and has no effect on whether a prefix index denotes an inclusive or exclusive boundary.",
+          "one_window_corner": "One current rectangle is not reusable boundary state and cannot support arbitrary inclusion-exclusion queries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_prefix_boundary_convention",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,427 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-graph-traversal-topological_order_intro-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-graph-traversal-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "graph_traversal",
+    "primaryMentalUnitId": "topological_order_intro",
+    "patternFamilyId": "graph_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring; human review required",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-graph-traversal-topological_order_intro-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-gt-topo-001",
+      "prompt": "Course P must be completed before course Q. Which directed edge orientation supports Kahn's topological processing?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "p_to_q",
+            "text": "P → Q, so completing P removes one unmet prerequisite from Q."
+          },
+          {
+            "id": "q_to_p",
+            "text": "Q → P, because Q names P as a prerequisite."
+          },
+          {
+            "id": "both",
+            "text": "Add both P → Q and Q → P so the relationship is visible in either direction."
+          },
+          {
+            "id": "undirected",
+            "text": "Use an undirected edge because dependency is just connectivity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "p_to_q"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Edges point from a prerequisite to the work it unlocks, matching indegree as the count of unmet prerequisites.",
+        "details": "Kahn's algorithm begins with vertices whose indegree is zero. When P is processed, it traverses outgoing edges and decrements Q's indegree, representing satisfaction of P. Reversing the edge changes the meaning of indegree and can produce an invalid schedule. The graph is directed even if the underlying pair of items is connected in an informal sense.",
+        "wrongOptionExplanationsByOptionId": {
+          "q_to_p": "That orientation makes processing Q reduce P's indegree and reverses the prerequisite effect.",
+          "both": "The two-edge representation creates a directed cycle and says each course depends on the other.",
+          "undirected": "A prerequisite has direction; undirected reachability cannot encode which item must precede the other."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_dependency_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "topological_order_intro",
+        "problemArchetypeId": "order_dependencies"
+      }
+    },
+    {
+      "id": "alg-gt-topo-002",
+      "prompt": "Which vertices belong in the initial queue of Kahn's algorithm for a directed dependency graph?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "all_zero_indegree",
+            "text": "Every vertex whose indegree is zero, including isolated vertices."
+          },
+          {
+            "id": "one_arbitrary",
+            "text": "One arbitrary vertex, because ordinary BFS always starts from one source."
+          },
+          {
+            "id": "all_vertices",
+            "text": "All vertices, with visited marking deferred until dequeue."
+          },
+          {
+            "id": "highest_outdegree",
+            "text": "Only the vertex with the most outgoing edges, because it unlocks the most work."
+          }
+        ],
+        "acceptedOptionIds": [
+          "all_zero_indegree"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Indegree zero is the exact readiness predicate, and every currently ready vertex may be processed.",
+        "details": "The initial queue is a set of valid starting choices, not a single-source reachability frontier. Isolated vertices have no prerequisites and belong in it. Different queue tie orders can produce different valid topological orders. The queue makes the procedure look like BFS, but its admission rule is dependency readiness rather than unweighted distance discovery.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_arbitrary": "Dependency processing may have several independent ready items; omitting them can leave a valid DAG unprocessed.",
+          "all_vertices": "Vertices with unmet prerequisites are not ready and must not enter the processing queue.",
+          "highest_outdegree": "Readiness is determined by zero unmet prerequisites, not by a greedy outdegree preference."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_dependency_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "topological_order_intro",
+        "problemArchetypeId": "order_dependencies"
+      }
+    },
+    {
+      "id": "alg-gt-topo-003",
+      "prompt": "Vertex u has already been removed from Kahn's ready queue and appended to the output. For one outgoing edge u → v, order the dependent-state transitions that publish v exactly when its final prerequisite is satisfied.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "decrement",
+            "text": "Decrement indegree[v] for the satisfied edge u → v."
+          },
+          {
+            "id": "test_zero",
+            "text": "Test whether indegree[v] has just become zero."
+          },
+          {
+            "id": "enqueue_new_zero",
+            "text": "If it became zero, enqueue v in the ready queue."
+          }
+        ],
+        "canonicalOrder": [
+          "decrement",
+          "test_zero",
+          "enqueue_new_zero"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Readiness is evaluated after the current prerequisite decrement, and publication occurs only on the transition to zero.",
+        "details": "The indegree value summarizes how many prerequisites of v remain unsatisfied. Processing edge u → v first removes that one requirement. Only the resulting value can establish readiness; testing before the decrement can miss the zero transition, while enqueuing without the zero test can publish v too early or more than once. Parallel implementations must make this decrement-and-zero-publication transition logically atomic."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_dependency_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "topological_order_intro",
+        "problemArchetypeId": "order_dependencies"
+      }
+    },
+    {
+      "id": "alg-gt-topo-004",
+      "prompt": "A DAG initially has two zero-indegree vertices A and B, and neither depends on the other. What does their presence imply about the topological order?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "multiple_valid",
+            "text": "Either may appear first; the graph can have multiple valid topological orders."
+          },
+          {
+            "id": "a_must_first",
+            "text": "A must appear first because it was listed first in the input."
+          },
+          {
+            "id": "bfs_unique",
+            "text": "BFS queue semantics make the topological order mathematically unique."
+          },
+          {
+            "id": "cycle",
+            "text": "Two initial ready vertices prove there is a cycle between them."
+          }
+        ],
+        "acceptedOptionIds": [
+          "multiple_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A topological order constrains only dependency-related pairs; incomparable ready vertices may be ordered either way.",
+        "details": "Kahn's algorithm can choose any zero-indegree vertex. A normal queue gives one deterministic result based on insertion order, while a priority queue can enforce another policy. Both remain valid if every directed edge points forward in the output. Uniqueness requires an additional condition, such as exactly one ready choice at every step, and is not guaranteed by DAG status alone.",
+        "wrongOptionExplanationsByOptionId": {
+          "a_must_first": "Input order is not a dependency unless an edge or explicit tie policy says so.",
+          "bfs_unique": "FIFO preserves a chosen insertion order, but another valid tie order can produce another legal result.",
+          "cycle": "Zero indegree means neither currently has an incoming prerequisite; it does not imply a cycle."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_dependency_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "topological_order_intro",
+        "problemArchetypeId": "order_dependencies"
+      }
+    },
+    {
+      "id": "alg-gt-topo-005",
+      "prompt": "Kahn's algorithm finishes after outputting 7 of 9 declared vertices. What is the decisive conclusion?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "cycle_exists",
+            "text": "At least one directed cycle prevents the remaining vertices from ever reaching indegree zero."
+          },
+          {
+            "id": "disconnected",
+            "text": "The two remaining vertices are merely in another disconnected DAG component."
+          },
+          {
+            "id": "matrix_error",
+            "text": "The result only proves adjacency lists were used instead of a matrix."
+          },
+          {
+            "id": "late_visited",
+            "text": "Marking vertices on dequeue would automatically process the missing two."
+          }
+        ],
+        "acceptedOptionIds": [
+          "cycle_exists"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A DAG always exposes at least one zero-indegree vertex in every remaining nonempty subgraph.",
+        "details": "If the ready queue empties while vertices remain unprocessed, those vertices form or depend on a directed cycle that keeps their indegrees positive. Comparing processedCount with V is therefore the cycle check. This is stronger than merely maintaining a visited set: ordinary reachability can traverse cyclic graphs, while topological ordering is impossible on them.",
+        "wrongOptionExplanationsByOptionId": {
+          "disconnected": "All zero-indegree vertices from every component were seeded; a disconnected acyclic component would still be processed.",
+          "matrix_error": "Both representations can support Kahn's algorithm; incomplete processing is a dependency-state signal.",
+          "late_visited": "Kahn's admission is indegree zero, not ordinary visited timing; a cycle leaves no legal ready vertex."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_dependency_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "topological_order_intro",
+        "problemArchetypeId": "order_dependencies"
+      }
+    },
+    {
+      "id": "alg-gt-topo-006",
+      "prompt": "Why is Kahn's algorithm not just ordinary single-source BFS with a different name?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "different_admission",
+            "text": "Its queue admits every vertex when its remaining indegree becomes zero, not when first reached from one source."
+          },
+          {
+            "id": "bfs_faster",
+            "text": "It is ordinary BFS, but BFS is always faster than DFS so the name emphasizes speed."
+          },
+          {
+            "id": "no_graph",
+            "text": "It is not a graph algorithm because prerequisites form a tree."
+          },
+          {
+            "id": "matrix_only",
+            "text": "It differs only because Kahn's algorithm requires an adjacency matrix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "different_admission"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Kahn's frontier represents globally ready work, whereas BFS's frontier represents states reached at successive path lengths from sources.",
+        "details": "Both use a FIFO container, but data-structure similarity does not imply the same algorithmic invariant. Kahn decrements prerequisite counts and publishes a vertex on the zero transition. BFS publishes a vertex on first graph discovery and uses layers for unweighted distance. Confusing the two can process a dependent before all prerequisites or incorrectly require one starting source.",
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_faster": "The algorithms maintain different invariants; speed does not define Kahn processing.",
+          "no_graph": "Dependency graphs can branch, converge, be disconnected, and contain cycles.",
+          "matrix_only": "Outgoing adjacency lists plus an indegree array are the standard O(V + E) representation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_dependency_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "topological_order_intro",
+        "problemArchetypeId": "order_dependencies"
+      }
+    },
+    {
+      "id": "alg-gt-topo-007",
+      "prompt": "A dependency DAG has two disconnected subgraphs and one isolated vertex. What must a complete topological-order implementation do?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "process_all_ready",
+            "text": "Include zero-indegree vertices from every subgraph and the isolated vertex, producing an order of all declared vertices."
+          },
+          {
+            "id": "one_component",
+            "text": "Start from one arbitrary source and stop when its reachable component is exhausted."
+          },
+          {
+            "id": "new_component_count",
+            "text": "Increment a component counter and treat the count as the topological order."
+          },
+          {
+            "id": "link_components",
+            "text": "Add artificial edges between subgraphs so one BFS can reach all vertices."
+          }
+        ],
+        "acceptedOptionIds": [
+          "process_all_ready"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Topological ordering covers the entire declared DAG, including independent components and isolated vertices.",
+        "details": "Kahn initialization naturally seeds every zero-indegree vertex, so disconnectedness needs no separate traversal root logic. An isolated vertex has indegree zero and no outgoing edges; it can appear anywhere consistent with other constraints. The output length must still equal V. This differs from a single-source BFS that intentionally restricts itself to one reachable component.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_component": "That is single-source traversal and omits independent valid work.",
+          "new_component_count": "Component identity does not order prerequisites within each directed subgraph.",
+          "link_components": "Artificial dependencies change the set of valid orders and the input problem."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_dependency_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "topological_order_intro",
+        "problemArchetypeId": "order_dependencies"
+      }
+    },
+    {
+      "id": "alg-gt-topo-008",
+      "prompt": "For a sparse dependency graph, which representation and state support an O(V + E) Kahn implementation?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "lists_indegree",
+            "text": "Outgoing adjacency lists plus an indegree value for every declared vertex."
+          },
+          {
+            "id": "matrix_required",
+            "text": "An adjacency matrix, because dependency order needs constant-time membership for every pair."
+          },
+          {
+            "id": "parent_only",
+            "text": "One parent pointer per vertex, because dependencies form a traversal tree."
+          },
+          {
+            "id": "visited_only",
+            "text": "A visited set with marking on dequeue; indegrees are redundant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "lists_indegree"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Kahn needs efficient outgoing-edge enumeration and an explicit remaining-prerequisite count.",
+        "details": "Building indegrees and adjacency lists takes O(V + E). Each vertex enters the ready queue once, and each directed edge causes one decrement, so processing remains O(V + E). A matrix is valid but may cost O(V²) to build or scan. Parent-only tree state cannot represent converging prerequisites, and ordinary visited state cannot replace indegree readiness.",
+        "wrongOptionExplanationsByOptionId": {
+          "matrix_required": "Kahn repeatedly enumerates actual outgoing edges; sparse adjacency lists avoid scanning absent pairs.",
+          "parent_only": "A dependent can have several prerequisites and a prerequisite can unlock several dependents.",
+          "visited_only": "Visited tracks processing but does not tell when all prerequisites of a vertex have been satisfied."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_dependency_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "topological_order_intro",
+        "problemArchetypeId": "order_dependencies"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

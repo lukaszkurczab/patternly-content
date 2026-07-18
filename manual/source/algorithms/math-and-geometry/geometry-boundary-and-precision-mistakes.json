@@ -1,0 +1,468 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-math-and-geometry-geometry-boundary-and-precision-mistakes-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-math-and-geometry-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "math_and_geometry",
+    "primaryMentalUnitId": "geometry_boundary_and_precision_mistakes",
+    "patternFamilyId": "math_and_geometry"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring; not a human reviewer)",
+    "createdAt": "2026-07-18T12:00:00.000Z",
+    "contentBatchId": "algorithms-math-and-geometry-geometry-boundary-and-precision-mistakes-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-mg-geometry-point-segment-degenerate",
+      "prompt": "Segment AB has A=B=(2,3), so it is a single point. Segment CD is nondegenerate. Which first decision is required in an intersection routine?",
+      "constraints": [
+        "Endpoint contact counts as intersection.",
+        "Coordinates are exact integers."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "point_on_segment_test",
+            "text": "Treat AB as a point and test whether (2,3) lies on segment CD."
+          },
+          {
+            "id": "general_orientation_only",
+            "text": "Run only the ordinary four-orientation crossing test and ignore the repeated endpoints."
+          },
+          {
+            "id": "assign_horizontal_slope",
+            "text": "Give AB slope 0 and compare it with CD."
+          },
+          {
+            "id": "always_intersects",
+            "text": "Declare every point-segment pair intersecting because a point has zero area."
+          }
+        ],
+        "acceptedOptionIds": [
+          "point_on_segment_test"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A collapsed segment changes the predicate from segment-segment crossing to point-on-segment membership.",
+        "details": "The zero direction vector invalidates the assumptions behind a general crossing test. The correct branch checks collinearity of the point with CD and verifies that its coordinates lie within CD’s bounds. Assigning an arbitrary slope invents a line, and zero area says nothing about membership. The same reduction applies when both segments collapse: compare the two points directly.",
+        "wrongOptionExplanationsByOptionId": {
+          "general_orientation_only": "The general test assumes both directed segments are meaningful; with AB collapsed, its orientation values are trivially zero and can misclassify.",
+          "assign_horizontal_slope": "A point has no line direction, so assigning slope zero creates geometry not present in the input.",
+          "always_intersects": "A point intersects a segment only when it lies on that finite segment."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-touching-endpoint-policy",
+      "prompt": "Closed segments AB and CD share exactly one endpoint B=C, and otherwise do not overlap. Under the stated closed-segment contract, what is the intersection result?",
+      "constraints": [
+        "Closed endpoints are included.",
+        "Touching counts as intersection."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "intersects_at_endpoint",
+            "text": "They intersect at the shared endpoint."
+          },
+          {
+            "id": "no_intersection",
+            "text": "They do not intersect because the orientations do not form a strict crossing."
+          },
+          {
+            "id": "overlapping_segment",
+            "text": "Their intersection is a positive-length segment."
+          },
+          {
+            "id": "slope_dependent",
+            "text": "The answer depends on whether their slopes are equal as floating-point values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "intersects_at_endpoint"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A closed-segment contract includes endpoint contact even when the strict-crossing signs are not opposite.",
+        "details": "Many orientation implementations first detect the proper crossing case and then separately handle zero-orientation points lying on the other segment. The shared endpoint satisfies the on-segment boundary and is therefore an intersection. It is not a positive-length overlap. If a problem instead defines open segments or excludes touching, the accepted boundary changes, which is why endpoint semantics must appear in the prompt rather than only in feedback.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_intersection": "Strict opposite orientations detect only an interior crossing and omit the explicitly included endpoint case.",
+          "overlapping_segment": "One shared point has zero length and is not a collinear interval overlap.",
+          "slope_dependent": "Endpoint identity decides this case directly; floating slope equality is irrelevant and fragile."
+        }
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-collinear-overlap-projection",
+      "prompt": "Exact integer segments AB and CD are collinear. Which additional test distinguishes disjoint, touching, and positive-length overlap?",
+      "constraints": [
+        "The segments may be vertical.",
+        "Endpoints are closed."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "project_bounding_intervals",
+            "text": "Compare their closed projections on x and y, using the nonconstant axis or equivalent bounding-box overlap."
+          },
+          {
+            "id": "cross_zero_is_enough",
+            "text": "A zero orientation alone proves the finite segments overlap."
+          },
+          {
+            "id": "compare_slopes",
+            "text": "Equal slopes prove overlap."
+          },
+          {
+            "id": "compare_lengths",
+            "text": "The longer segment always contains the shorter one."
+          }
+        ],
+        "acceptedOptionIds": [
+          "project_bounding_intervals"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Collinearity places the segments on one supporting line, but finite overlap still depends on endpoint ranges.",
+        "details": "Two collinear segments can be far apart, touch at one endpoint, or share an interval. Checking max(min endpoints) against min(max endpoints) on a suitable axis classifies those cases and works for vertical segments when y is used or when both coordinate boxes are checked. Equal slopes or zero cross products establish only the supporting line. Relative length alone gives no position information.",
+        "wrongOptionExplanationsByOptionId": {
+          "cross_zero_is_enough": "Collinear segments can be disjoint, so line membership does not establish finite overlap.",
+          "compare_slopes": "Equal slopes say nothing about where the segments lie and fail for vertical lines.",
+          "compare_lengths": "A shorter segment can lie completely outside the longer segment’s coordinate range."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-near-collinear-float-policy",
+      "prompt": "A geometry system receives measured floating coordinates. Two large products in an orientation determinant nearly cancel. Which policy is most defensible?",
+      "constraints": [
+        "The application defines an error budget.",
+        "Inputs are not exact rationals."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scale_aware_or_adaptive",
+            "text": "Use a scale-aware tolerance justified by the error model, or an adaptive robust predicate when the result is near the boundary."
+          },
+          {
+            "id": "exact_double_zero",
+            "text": "Use det == 0.0 as the only collinearity rule."
+          },
+          {
+            "id": "fixed_unscaled_epsilon",
+            "text": "Use the same absolute epsilon for every coordinate magnitude without analysis."
+          },
+          {
+            "id": "slope_equality",
+            "text": "Compare two floating slopes with == because division reduces the magnitude."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scale_aware_or_adaptive"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Near cancellation makes a raw floating sign uncertain; the boundary must be tied to scale and the data-error model or resolved with higher precision.",
+        "details": "An absolute determinant has units proportional to the product of vector lengths, so one fixed epsilon is not invariant under scaling. A normalized or scale-aware tolerance can model angular error, while adaptive exact predicates can increase precision only when a fast estimate is inconclusive. Exact double zero and equal divided slopes both ignore rounding and vertical cases. The correct choice depends on whether inputs are measured, computed, or exact integers.",
+        "wrongOptionExplanationsByOptionId": {
+          "exact_double_zero": "Roundoff can produce a tiny nonzero value for a mathematically zero determinant or zero for a tiny real one.",
+          "fixed_unscaled_epsilon": "A threshold suitable near unit coordinates can be meaningless at 10^12 or 10^-12 scale.",
+          "slope_equality": "Division adds its own instability, loses vertical cases, and exact equality remains brittle."
+        }
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-vertical-line-predicate",
+      "prompt": "A point-on-line test must handle a vertical line through A and B. Which predicate avoids an unsafe special-case slope?",
+      "constraints": [
+        "A and B are distinct.",
+        "Coordinates are exact integers in a safe width."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "cross_zero",
+            "text": "Test cross(B-A, P-A)==0."
+          },
+          {
+            "id": "slope_equals",
+            "text": "Test (Py-Ay)/(Px-Ax) == (By-Ay)/(Bx-Ax)."
+          },
+          {
+            "id": "x_only",
+            "text": "Test only Px==Ax for every line direction."
+          },
+          {
+            "id": "infinite_slope_token",
+            "text": "Assign a floating infinity slope and compare it with ==."
+          }
+        ],
+        "acceptedOptionIds": [
+          "cross_zero"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The determinant handles every line orientation with one exact predicate and no division by a zero x-difference.",
+        "details": "For a vertical line, Bx-Ax is zero, so slope division is undefined. The cross product tests whether P-A is linearly dependent with B-A and works equally for horizontal and diagonal lines. Testing x alone is valid only after the line is known vertical, and an infinity token does not solve general exact comparison. Segment membership would add a bounding check after collinearity.",
+        "wrongOptionExplanationsByOptionId": {
+          "slope_equals": "The baseline denominator is zero, so the expression is undefined.",
+          "x_only": "That is a vertical-only shortcut and would accept wrong points for nonvertical lines.",
+          "infinite_slope_token": "Floating infinity is an implementation artifact, not a general exact line predicate."
+        }
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-determinant-overflow-diagnostic",
+      "prompt": "An orientation test returns inconsistent signs for large signed integer coordinates. The code subtracts and multiplies in the input type. What is the first diagnostic question?",
+      "constraints": [
+        "The mathematical formula is otherwise correct."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "check_full_intermediate_range",
+            "text": "Do coordinate differences, both products, and their subtraction fit the exact type used at the moment each operation is evaluated?"
+          },
+          {
+            "id": "add_epsilon",
+            "text": "Should an epsilon be added to the wrapped integer determinant?"
+          },
+          {
+            "id": "switch_to_slope",
+            "text": "Should the code divide to slopes so the numbers become smaller?"
+          },
+          {
+            "id": "ignore_large_cases",
+            "text": "Should large-coordinate signs be accepted as implementation-dependent?"
+          }
+        ],
+        "acceptedOptionIds": [
+          "check_full_intermediate_range"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Inconsistent exact-integer signs are a strong signal of intermediate overflow, including overflow before a later cast.",
+        "details": "The determinant combines differences and products whose ranges can be much larger than the original coordinates. Every operation must be evaluated in a type that covers its mathematical result. An epsilon cannot repair a corrupted integer, and slope division replaces overflow with rounding and zero-denominator problems. Explicit range analysis or checked arithmetic turns the hidden failure into a precise contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "add_epsilon": "Epsilon addresses approximate floating boundaries, not integer wraparound.",
+          "switch_to_slope": "Division loses exactness and introduces vertical-line failures without proving the quotient is safe.",
+          "ignore_large_cases": "The input domain is part of correctness; implementation-dependent signs are not a valid geometric result."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-negative-polygon-index",
+      "prompt": "A polygon has n>0 vertices indexed 0..n-1. At i=0, code needs the previous vertex. In a language where -1 % n is -1, which index expression is correct?",
+      "constraints": [
+        "n is positive.",
+        "Index arithmetic uses a type that can represent i-1+n."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "normalized_previous",
+            "text": "((i-1)%n+n)%n"
+          },
+          {
+            "id": "raw_previous",
+            "text": "(i-1)%n"
+          },
+          {
+            "id": "absolute_previous",
+            "text": "abs(i-1)%n"
+          },
+          {
+            "id": "clamp_previous",
+            "text": "max(0,i-1)"
+          }
+        ],
+        "acceptedOptionIds": [
+          "normalized_previous"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Canonical modulo normalization maps the predecessor of vertex zero to n-1 instead of an invalid negative index.",
+        "details": "Polygon traversal is cyclic, so the predecessor relation must wrap rather than clamp. With truncating remainder, raw -1%n remains -1. Adding n and reducing again returns n-1. Absolute value gives 1 when n>2, which is the next-near vertex rather than the previous one. This boundary often appears in orientation, edge, and shoelace loops even when all geometry predicates themselves are exact.",
+        "wrongOptionExplanationsByOptionId": {
+          "raw_previous": "The prompt states that the result is negative, so it is not a legal vertex index.",
+          "absolute_previous": "For i=0, it gives vertex 1 rather than vertex n-1.",
+          "clamp_previous": "Clamping changes the polygon cycle by making vertex zero its own predecessor."
+        }
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-robust-segment-intersection-order",
+      "prompt": "Order the conceptual stages of a closed-segment intersection predicate that must handle degenerate and collinear cases.",
+      "constraints": [
+        "Endpoints use an exact predicate or an explicitly robust numeric policy.",
+        "Endpoint touching counts as intersection."
+      ],
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "classify_degenerate_segments",
+            "text": "Detect point segments and reduce them to point equality or point-on-segment tests."
+          },
+          {
+            "id": "compute_orientations",
+            "text": "For two nondegenerate segments, compute the four robust orientation values."
+          },
+          {
+            "id": "test_proper_crossing",
+            "text": "Accept the proper crossing case when each segment’s endpoints lie on opposite sides of the other line."
+          },
+          {
+            "id": "test_zero_on_segment",
+            "text": "For every zero orientation, test whether the corresponding point lies within the other closed segment bounds."
+          },
+          {
+            "id": "reject_otherwise",
+            "text": "Reject only after neither the proper crossing nor any included boundary case applies."
+          }
+        ],
+        "canonicalOrder": [
+          "classify_degenerate_segments",
+          "compute_orientations",
+          "test_proper_crossing",
+          "test_zero_on_segment",
+          "reject_otherwise"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Degenerate objects are classified first, then the general crossing and collinear endpoint boundaries are evaluated before rejection.",
+        "details": "The proper crossing test alone excludes touching and overlap. Zero orientations must therefore be paired with finite on-segment bounds, while collapsed segments need point-specific treatment before a line direction is assumed. Rejection is safe only after all declared closed-boundary cases are exhausted. This order transfers to robust geometry generally: validate object type, evaluate the generic predicate, then resolve each legal boundary explicitly."
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

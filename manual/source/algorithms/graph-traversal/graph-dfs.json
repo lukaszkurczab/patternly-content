@@ -1,0 +1,382 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-graph-traversal-graph_dfs-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-graph-traversal-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "graph_traversal",
+    "primaryMentalUnitId": "graph_dfs",
+    "patternFamilyId": "graph_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring; human review required",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-graph-traversal-graph_dfs-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-gt-dfs-001",
+      "prompt": "Order the core steps of recursive graph DFS for a preorder-style visit of vertex u. The graph may contain cycles.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "mark_u",
+            "text": "Mark u visited."
+          },
+          {
+            "id": "process_u",
+            "text": "Process u for the preorder visit."
+          },
+          {
+            "id": "inspect_neighbors",
+            "text": "Iterate through u’s outgoing neighbors."
+          },
+          {
+            "id": "recurse_unseen",
+            "text": "For each unvisited neighbor v, recurse into DFS(v)."
+          }
+        ],
+        "canonicalOrder": [
+          "mark_u",
+          "process_u",
+          "inspect_neighbors",
+          "recurse_unseen"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "DFS must claim the vertex before following an edge that could lead back to it.",
+        "details": "Marking u before recursion preserves the invariant that every active recursive frame owns an already-discovered vertex. Processing then occurs at the stated preorder point, followed by neighbor iteration and recursive descent into unseen neighbors. If the callback were postorder, its placement would move after recursive children, but marking still precedes descent. Tree DFS may omit a general visited set when parent-child structure is guaranteed; graph DFS cannot assume that boundary."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_depth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-dfs-002",
+      "prompt": "An iterative DFS uses an explicit stack. A vertex can be reached from several already-discovered vertices. Which policy best avoids pushing the same vertex many times?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "mark_on_push",
+            "text": "When an unseen neighbor is pushed, mark it discovered immediately."
+          },
+          {
+            "id": "mark_on_pop",
+            "text": "Leave it unvisited until popped; marking on pop is always equivalent."
+          },
+          {
+            "id": "matrix_fix",
+            "text": "Switch to an adjacency matrix; duplicate pushes occur only with adjacency lists."
+          },
+          {
+            "id": "tree_parent_only",
+            "text": "Record only the first parent and skip visited state because DFS always creates a tree."
+          }
+        ],
+        "acceptedOptionIds": [
+          "mark_on_push"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Discovery should be recorded when the stack accepts the vertex, so later incoming edges see it as already claimed.",
+        "details": "An explicit stack represents pending work. If a vertex remains unmarked until pop, each incoming edge encountered before that pop may add another copy. Mark-on-push preserves one pending entry per vertex in the canonical traversal. A delayed-processing design can still work if it maintains a separate enqueued/discovered set, but that is not equivalent to having no discovery guard.",
+        "wrongOptionExplanationsByOptionId": {
+          "mark_on_pop": "Several predecessors can push the same still-unmarked vertex before its first pop, creating duplicate stack entries and extra work.",
+          "matrix_fix": "Duplicate discovery is controlled by visited timing, not by whether neighbors come from a list or matrix.",
+          "tree_parent_only": "The traversal tree is an output of discovery; the input graph can contain cross edges and cycles that still require discovered-state checks."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_depth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-dfs-003",
+      "prompt": "The task is to report every vertex reachable from source s in an unweighted graph; no shortest distance or level order is requested. Which statement is correct?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "dfs_valid",
+            "text": "DFS is valid because any complete cycle-safe exploration of s’s reachable region produces the required set."
+          },
+          {
+            "id": "bfs_required",
+            "text": "BFS is required because BFS is always faster than DFS."
+          },
+          {
+            "id": "matrix_required",
+            "text": "DFS is valid only with an adjacency matrix."
+          },
+          {
+            "id": "tree_no_visited",
+            "text": "DFS may omit visited state because its recursive calls form a tree."
+          }
+        ],
+        "acceptedOptionIds": [
+          "dfs_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Reachable-set output requires complete exploration, not a particular layer order.",
+        "details": "DFS and BFS are both correct for unweighted reachability when they use a valid visited invariant. With adjacency lists, each has O(V + E) worst-case full-traversal time over the reached subgraph. DFS may be chosen for implementation shape or memory behavior, but not because it universally dominates BFS. The decision changes when the output asks for minimum edge distance or level order.",
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_required": "Both traversals inspect the reachable vertices and edges under the same representation; no shortest-path contract selects BFS here.",
+          "matrix_required": "DFS needs neighbor access but is independent of a specific representation; lists, matrices, or implicit neighbors can support it.",
+          "tree_no_visited": "The call tree does not remove cycles and cross edges from the input graph."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_depth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-dfs-004",
+      "prompt": "A graph is a single path of 2,000,000 vertices. The language runtime has a shallow call-stack limit. Which DFS implementation decision addresses the material risk without changing reachability semantics?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "explicit_stack",
+            "text": "Use iterative DFS with an explicit stack and the same visited invariant."
+          },
+          {
+            "id": "bfs_faster",
+            "text": "Replace DFS with BFS because BFS is always faster."
+          },
+          {
+            "id": "matrix_storage",
+            "text": "Build an adjacency matrix so recursion cannot overflow."
+          },
+          {
+            "id": "mark_on_return",
+            "text": "Keep recursion but mark a vertex only when returning from it."
+          }
+        ],
+        "acceptedOptionIds": [
+          "explicit_stack"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A path can create Θ(V) recursive depth, so an explicit stack moves that state to controlled heap memory.",
+        "details": "Recursive and iterative DFS can implement the same discovery order and reachable-set semantics. The path shape creates the worst recursion-depth boundary even though total traversal work remains linear. An explicit stack avoids dependence on the language call-stack limit while retaining mark-before-push discovery. BFS could also traverse the path, but changing traversal family is unnecessary when the requirement is specifically depth-first mechanics.",
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_faster": "The issue is recursion depth, not a universal runtime ranking; iterative DFS preserves the intended depth-first behavior.",
+          "matrix_storage": "Representation does not remove recursive call depth and would add prohibitive quadratic storage.",
+          "mark_on_return": "On a graph with cycles this is unsafe, and it does not reduce the path’s call depth."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_depth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-dfs-005",
+      "prompt": "An unweighted graph contains paths s → a → b → t and s → x → t. A DFS explores neighbor a before x and stops when it first reaches t. What is wrong with using that result as the shortest path?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "first_dfs_not_shortest",
+            "text": "First DFS discovery follows depth order, so it may return the three-edge path before the two-edge path."
+          },
+          {
+            "id": "dfs_always_shortest",
+            "text": "Nothing; DFS reaches a terminal vertex as soon as possible and is therefore shortest."
+          },
+          {
+            "id": "matrix_needed",
+            "text": "The result is wrong only because an adjacency list was used instead of a matrix."
+          },
+          {
+            "id": "mark_on_pop_fix",
+            "text": "Marking t only after unwinding the recursion would make the first path shortest."
+          }
+        ],
+        "acceptedOptionIds": [
+          "first_dfs_not_shortest"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "DFS first discovery is governed by neighbor order and depth, not by minimum edge count.",
+        "details": "The first branch reaches t through three edges, while another branch contains a two-edge path. DFS is still correct for reachability, but stopping at first discovery cannot certify an unweighted shortest path. BFS supplies that guarantee because its frontier is processed by distance layers. The transfer boundary is important: a DFS path can be a valid path without being the optimal path requested by the output contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "dfs_always_shortest": "Depth-first exploration minimizes neither edge count nor accumulated weight.",
+          "matrix_needed": "Neighbor storage can alter tie order but does not give DFS a shortest-path guarantee.",
+          "mark_on_pop_fix": "Visited timing does not turn depth-first order into nondecreasing distance order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_depth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-dfs-006",
+      "prompt": "A graph has three disconnected regions. A correct DFS is called once from a vertex in the first region. Which conclusion is valid?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_component",
+            "text": "That call visits exactly the vertices reachable from its start; whole-graph coverage needs an outer scan over unvisited vertices."
+          },
+          {
+            "id": "all_graph",
+            "text": "Recursive DFS eventually reaches all declared vertices even without edges between regions."
+          },
+          {
+            "id": "bfs_only_components",
+            "text": "Only BFS can continue into the other regions because BFS is always faster."
+          },
+          {
+            "id": "tree_parent_bridge",
+            "text": "The DFS parent tree implicitly connects the regions, so no outer scan is needed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_component"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A DFS call is bounded by reachability from its start vertex.",
+        "details": "Disconnected regions have no path between them, so one DFS cannot visit the whole declared vertex set. Whole-graph tasks wrap DFS in an outer loop that starts a new traversal at each unvisited vertex. Counting those starts is owned by the connected-components unit; this item only diagnoses the scope of one DFS invocation.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_graph": "Traversal follows edges and cannot cross a disconnected boundary.",
+          "bfs_only_components": "Neither traversal can cross absent edges; both require a new start for each unseen region.",
+          "tree_parent_bridge": "Traversal parents are created only for reached vertices and cannot invent missing graph edges."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_depth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-dfs-007",
+      "prompt": "Two correct DFS implementations use the same start vertex and visited rule but iterate each adjacency list in a different order. What may differ?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "visit_order_only",
+            "text": "The DFS tree and visitation sequence may differ, while the reachable set remains the same."
+          },
+          {
+            "id": "reachability_changes",
+            "text": "The reachable set changes because DFS correctness depends on one canonical neighbor order."
+          },
+          {
+            "id": "matrix_equivalence",
+            "text": "The results match only if both implementations use an adjacency matrix."
+          },
+          {
+            "id": "late_mark_equivalence",
+            "text": "Any difference disappears if both mark visited only after popping or returning."
+          }
+        ],
+        "acceptedOptionIds": [
+          "visit_order_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "DFS traversal order is occurrence-specific, but complete cycle-safe exploration preserves reachability.",
+        "details": "Neighbor order chooses which branch is explored first and therefore can change parent edges, timestamps, and the visible sequence. It does not change the set of vertices reachable through the graph when every unvisited neighbor is eventually explored. If the output depends on a specific lexical or numerical order, that ordering must be an explicit constraint and applied consistently.",
+        "wrongOptionExplanationsByOptionId": {
+          "reachability_changes": "For complete exploration, neighbor order affects which path discovers a vertex first, not whether a reachable vertex is eventually discovered.",
+          "matrix_equivalence": "Representation and neighbor order are separate; either representation can enumerate neighbors in different valid orders.",
+          "late_mark_equivalence": "Late marking can introduce duplicate work or cycles and is not a remedy for nondeterministic neighbor order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_depth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

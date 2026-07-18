@@ -1,0 +1,970 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "backtracking-path-state-and-undo-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-core",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "backtracking",
+    "primaryMentalUnitId": "path_state_and_undo",
+    "patternFamilyId": "backtracking"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-17T00:00:00.000Z",
+    "contentBatchId": "backtracking-path-state-and-undo-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-backtracking-undo-001",
+      "prompt": "Why is the final pop in append-recurse-pop necessary when one mutable path is reused?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "restore_parent_path",
+            "text": "It restores the exact parent path before the next sibling choice."
+          },
+          {
+            "id": "remove_result",
+            "text": "It removes the completed result from the output collection."
+          },
+          {
+            "id": "reduce_input",
+            "text": "It permanently deletes the candidate from the input."
+          },
+          {
+            "id": "sort_path",
+            "text": "It keeps the path sorted."
+          }
+        ],
+        "acceptedOptionIds": [
+          "restore_parent_path"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sibling branches must begin from the same parent state.",
+        "details": "Without the pop, a choice made for one branch remains visible when another candidate is explored.",
+        "wrongOptionExplanationsByOptionId": {
+          "remove_result": "The pop targets branch state, not stored result snapshots.",
+          "reduce_input": "The input candidate set is separate from the current path.",
+          "sort_path": "Sorting is unrelated to restoration."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "enumerate_combinations"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-002",
+      "prompt": "A grid solver marks a cell visited before recursion. When should it normally unmark that cell for path-local reuse constraints?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "after_neighbors_fail_or_finish",
+            "text": "After all recursive exploration from that cell finishes, before returning to the parent."
+          },
+          {
+            "id": "before_recurse",
+            "text": "Immediately before entering a neighbor."
+          },
+          {
+            "id": "never",
+            "text": "Never; visited state should be global across all branches."
+          },
+          {
+            "id": "after_all_start_cells",
+            "text": "Only after every possible starting cell is processed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "after_neighbors_fail_or_finish"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The mark belongs to the current path and must remain active throughout all descendants of that branch.",
+        "details": "Unmarking on return restores the parent state's visited set.",
+        "wrongOptionExplanationsByOptionId": {
+          "before_recurse": "That would allow the child path to reuse the current cell.",
+          "never": "Path search may need the cell in a sibling path.",
+          "after_all_start_cells": "That couples independent searches and blocks valid paths."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_search",
+        "problemArchetypeId": "search_grid_paths"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-003",
+      "prompt": "When can explicit undo be unnecessary?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "immutable_child_state",
+            "text": "When each child receives an independent immutable or copied state and the parent state is never mutated."
+          },
+          {
+            "id": "shared_mutable_path",
+            "text": "When all branches share one mutable path."
+          },
+          {
+            "id": "in_place_board_mark",
+            "text": "When the board is modified in place to mark visited cells."
+          },
+          {
+            "id": "global_assignment",
+            "text": "When one global assignment object is reused across sibling branches."
+          }
+        ],
+        "acceptedOptionIds": [
+          "immutable_child_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Undo is required to restore mutated shared state, not as a ritual independent of the representation.",
+        "details": "Copying can replace explicit restoration, usually with additional allocation and copying cost.",
+        "wrongOptionExplanationsByOptionId": {
+          "shared_mutable_path": "Shared mutation requires restoration.",
+          "in_place_board_mark": "In-place marking normally requires reversal.",
+          "global_assignment": "Sibling isolation still requires undo or copying."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-004",
+      "prompt": "A solver appends candidate A, explores its child, forgets to pop A, and then appends sibling candidate B. What path does the B branch incorrectly inherit?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "a_then_b",
+            "text": "A followed by B."
+          },
+          {
+            "id": "b_only",
+            "text": "Only B."
+          },
+          {
+            "id": "empty_path",
+            "text": "The empty path."
+          },
+          {
+            "id": "result_copy",
+            "text": "Only a detached result snapshot."
+          }
+        ],
+        "acceptedOptionIds": [
+          "a_then_b"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Missing undo contaminates the next sibling with state from the previous branch.",
+        "details": "The B branch should start from the parent path, not from A's child path.",
+        "wrongOptionExplanationsByOptionId": {
+          "b_only": "That would be correct parent restoration.",
+          "empty_path": "A was never removed.",
+          "result_copy": "The bug affects the live mutable path."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "enumerate_combinations"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-005",
+      "prompt": "What is the correct undo operation for a choice that subtracts x from remainingTarget?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "add_x",
+            "text": "Add x back after the child returns."
+          },
+          {
+            "id": "subtract_again",
+            "text": "Subtract x a second time."
+          },
+          {
+            "id": "set_zero",
+            "text": "Set remainingTarget to zero."
+          },
+          {
+            "id": "recompute_output",
+            "text": "Recompute the global result list."
+          }
+        ],
+        "acceptedOptionIds": [
+          "add_x"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Undo should be the semantic inverse of the branch-state update.",
+        "details": "The parent must observe the same remainingTarget value it had before selecting x.",
+        "wrongOptionExplanationsByOptionId": {
+          "subtract_again": "This moves farther from the parent state.",
+          "set_zero": "That discards the parent's unresolved target.",
+          "recompute_output": "Result storage is not the mutated branch field."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "constraints_and_pruning",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-006",
+      "prompt": "A find-one solver returns true immediately after a child succeeds, but the public contract requires the input board to be unchanged after the call. What must happen before returning?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "restore_board_then_true",
+            "text": "Restore any in-place marks, then return true."
+          },
+          {
+            "id": "return_without_restore",
+            "text": "Return immediately and leave marks in the board."
+          },
+          {
+            "id": "erase_solution",
+            "text": "Clear the success result."
+          },
+          {
+            "id": "restart_search",
+            "text": "Explore all remaining siblings before returning."
+          }
+        ],
+        "acceptedOptionIds": [
+          "restore_board_then_true"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Short-circuit success does not override an externally visible restoration requirement.",
+        "details": "Control flow must unwind mutations before exposing the final result.",
+        "wrongOptionExplanationsByOptionId": {
+          "return_without_restore": "That violates the observable input-restoration contract.",
+          "erase_solution": "Restoration does not negate success.",
+          "restart_search": "Find-one semantics permit short-circuiting after restoration."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_search",
+        "problemArchetypeId": "search_grid_paths"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-007",
+      "prompt": "Why does copying a completed path into results not replace the need to pop the live path?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "different_roles",
+            "text": "The copy preserves the result snapshot, while pop restores branch state for sibling exploration."
+          },
+          {
+            "id": "copy_is_undo",
+            "text": "Copying automatically removes the last live choice."
+          },
+          {
+            "id": "results_are_input",
+            "text": "The results collection becomes the new input."
+          },
+          {
+            "id": "pop_deletes_copy",
+            "text": "Popping would delete the stored copy."
+          }
+        ],
+        "acceptedOptionIds": [
+          "different_roles"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Result preservation and branch restoration solve different problems.",
+        "details": "A solver often needs both: snapshot on completion and pop after each branch.",
+        "wrongOptionExplanationsByOptionId": {
+          "copy_is_undo": "A copy does not mutate the source path.",
+          "results_are_input": "Result storage is separate.",
+          "pop_deletes_copy": "A proper snapshot is independent."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "enumerate_combinations"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-008",
+      "prompt": "A branch updates path, used flags, and remainingTarget. What must be restored before the next sibling?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "all_mutated_branch_fields",
+            "text": "Every branch-local field changed by the choice."
+          },
+          {
+            "id": "path_only",
+            "text": "Only the path, because other state repairs itself."
+          },
+          {
+            "id": "used_only",
+            "text": "Only the used flags."
+          },
+          {
+            "id": "nothing_if_failure",
+            "text": "Nothing when the child fails."
+          }
+        ],
+        "acceptedOptionIds": [
+          "all_mutated_branch_fields"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The parent-state invariant spans every mutable component.",
+        "details": "Partial restoration creates internally inconsistent state and subtle sibling defects.",
+        "wrongOptionExplanationsByOptionId": {
+          "path_only": "Used flags and remainingTarget remain mutated unless explicitly reversed or copied.",
+          "used_only": "The path and target would still describe the child.",
+          "nothing_if_failure": "Failure is precisely when sibling exploration continues from the parent."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "constraints_and_pruning",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-009",
+      "prompt": "Which branch-state changes normally require explicit undo when shared mutable state is reused? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "path_append",
+            "text": "Appending a choice to the current path."
+          },
+          {
+            "id": "mark_used",
+            "text": "Marking a candidate or grid cell as used."
+          },
+          {
+            "id": "decrement_remaining",
+            "text": "Decrementing remaining capacity or target."
+          },
+          {
+            "id": "read_input",
+            "text": "Reading an immutable input value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "path_append",
+          "mark_used",
+          "decrement_remaining"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every shared mutable update must be reversed or replaced by branch-local copying.",
+        "details": "Immutable reads do not require restoration.",
+        "wrongOptionExplanationsByOptionId": {
+          "read_input": "A read does not change state."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "path_append": "The appended element must be removed.",
+          "mark_used": "The mark must be cleared for siblings.",
+          "decrement_remaining": "The parent value must be restored."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-010",
+      "prompt": "Which designs can avoid an explicit pop or unmark step? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "copied_path",
+            "text": "Pass a fresh path copy to each child."
+          },
+          {
+            "id": "persistent_state",
+            "text": "Use an immutable persistent state that returns a new child version."
+          },
+          {
+            "id": "shared_path",
+            "text": "Reuse one mutable path for all branches."
+          },
+          {
+            "id": "in_place_visited",
+            "text": "Mark the shared board in place."
+          }
+        ],
+        "acceptedOptionIds": [
+          "copied_path",
+          "persistent_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Undo is representation-dependent.",
+        "details": "Avoiding explicit restoration generally trades mutation for allocation or persistent data structures.",
+        "wrongOptionExplanationsByOptionId": {
+          "shared_path": "This requires restoration.",
+          "in_place_visited": "This normally requires unmarking."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "copied_path": "The parent path is never mutated.",
+          "persistent_state": "Parent state remains available unchanged."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-011",
+      "prompt": "Which properties should hold immediately after a child branch returns to its parent? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "same_path_as_before",
+            "text": "The live path equals the parent path from before the choice."
+          },
+          {
+            "id": "same_used_state",
+            "text": "Used or visited state equals the parent's pre-choice state."
+          },
+          {
+            "id": "same_remaining_state",
+            "text": "Remaining target, capacity, or counts equal their pre-choice values."
+          },
+          {
+            "id": "results_unchanged",
+            "text": "The global results collection must be identical to before the child."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_path_as_before",
+          "same_used_state",
+          "same_remaining_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Branch-local state is restored, while intended global result accumulation may persist.",
+        "details": "This distinction separates reversible search state from durable outputs.",
+        "wrongOptionExplanationsByOptionId": {
+          "results_unchanged": "Valid results discovered by the child should remain stored."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "same_path_as_before": "Sibling branches need the same prefix.",
+          "same_used_state": "No child mark may leak.",
+          "same_remaining_state": "Numeric branch state must be restored."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-012",
+      "prompt": "Arrange the standard choose-recurse-unchoose sequence.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "apply_choice",
+            "text": "Apply the candidate to branch state."
+          },
+          {
+            "id": "recurse",
+            "text": "Explore the child state."
+          },
+          {
+            "id": "undo_choice",
+            "text": "Reverse every branch-state update."
+          },
+          {
+            "id": "next_sibling",
+            "text": "Continue with the next candidate from the parent state."
+          }
+        ],
+        "canonicalOrder": [
+          "apply_choice",
+          "recurse",
+          "undo_choice",
+          "next_sibling"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "One branch must be fully isolated before the next sibling begins.",
+        "details": "Undo belongs after the child returns and before sibling iteration continues."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-013",
+      "prompt": "Arrange the path update for combination generation.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "append",
+            "text": "Append the chosen candidate."
+          },
+          {
+            "id": "recurse",
+            "text": "Recurse with the updated candidate boundary."
+          },
+          {
+            "id": "pop",
+            "text": "Remove the chosen candidate."
+          },
+          {
+            "id": "advance",
+            "text": "Advance the parent loop to another candidate."
+          }
+        ],
+        "canonicalOrder": [
+          "append",
+          "recurse",
+          "pop",
+          "advance"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The live path represents exactly the active branch.",
+        "details": "Popping before the loop advances restores the shared parent prefix."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "enumerate_combinations"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-014",
+      "prompt": "Arrange the visited-state transition for one grid cell.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "validate_cell",
+            "text": "Confirm the cell is legal for the current path."
+          },
+          {
+            "id": "mark_visited",
+            "text": "Mark the cell as used by this path."
+          },
+          {
+            "id": "search_neighbors",
+            "text": "Recurse into legal neighboring cells."
+          },
+          {
+            "id": "unmark",
+            "text": "Restore the cell before returning to the parent."
+          }
+        ],
+        "canonicalOrder": [
+          "validate_cell",
+          "mark_visited",
+          "search_neighbors",
+          "unmark"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "A cell is marked only after validation and remains unavailable to all descendants of that branch.",
+        "details": "Unmarking restores availability for sibling paths."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_search",
+        "problemArchetypeId": "search_grid_paths"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-015",
+      "prompt": "Arrange the reversible state update for a constrained assignment.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "assign_value",
+            "text": "Assign the candidate value to the next variable."
+          },
+          {
+            "id": "update_constraints",
+            "text": "Update used sets, counts, or conflict structures."
+          },
+          {
+            "id": "recurse",
+            "text": "Explore assignments extending the new partial state."
+          },
+          {
+            "id": "restore_all",
+            "text": "Remove the assignment and reverse every constraint update."
+          }
+        ],
+        "canonicalOrder": [
+          "assign_value",
+          "update_constraints",
+          "recurse",
+          "restore_all"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The child must see a fully consistent updated state, and the parent must be recovered completely.",
+        "details": "Undo must mirror all state changes, not only the visible assignment."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "constraints_and_pruning",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-016",
+      "prompt": "Arrange failure handling for a branch that finds no valid completion.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "child_returns_failure",
+            "text": "Receive failure from the child search."
+          },
+          {
+            "id": "undo_branch",
+            "text": "Restore all state changed by the candidate."
+          },
+          {
+            "id": "continue_siblings",
+            "text": "Try the next legal candidate."
+          },
+          {
+            "id": "return_parent_failure",
+            "text": "Return failure only after every sibling also fails."
+          }
+        ],
+        "canonicalOrder": [
+          "child_returns_failure",
+          "undo_branch",
+          "continue_siblings",
+          "return_parent_failure"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "One failed branch is not a failed parent until all legal alternatives are exhausted.",
+        "details": "Restoration must occur before the next sibling is tested."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-017",
+      "prompt": "Arrange a find-one success path when the board must be restored before return.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "child_succeeds",
+            "text": "A recursive child reports success."
+          },
+          {
+            "id": "restore_current",
+            "text": "Undo the current branch's board and path mutations."
+          },
+          {
+            "id": "propagate_success",
+            "text": "Return success to the caller."
+          },
+          {
+            "id": "caller_restores",
+            "text": "Each caller restores its own branch mutation while unwinding."
+          }
+        ],
+        "canonicalOrder": [
+          "child_succeeds",
+          "restore_current",
+          "propagate_success",
+          "caller_restores"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Success propagation and restoration interleave during stack unwinding.",
+        "details": "Every stack frame owns and reverses the mutation it introduced."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_search",
+        "problemArchetypeId": "search_grid_paths"
+      }
+    },
+    {
+      "id": "alg-backtracking-undo-018",
+      "prompt": "A depth-d solver copies a path of length proportional to the current depth for every recursive child. Along one active root-to-leaf chain, select an upper bound on simultaneously retained copied-path space.",
+      "constraints": [
+        "At depth i, a distinct copied path of length O(i) remains active.",
+        "The maximum depth is d."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "active_copy_space"
+        ],
+        "availableValuesByDimension": {
+          "active_copy_space": [
+            "O(d)",
+            "O(d log d)",
+            "O(d²)",
+            "O(2^d)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "active_copy_space": [
+            "O(d²)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "active_copy_space": {
+            "sum_of_prefix_lengths": "O(d²)"
+          }
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "Active copied paths can total 1 + 2 + ... + d elements along the recursion chain.",
+        "details": "In-place choose-recurse-unchoose can reduce active path storage to O(d), at the cost of requiring correct restoration."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_path_state_after_branch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "backtracking-path-state-and-undo-learn-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-backtracking-undo-001",
+            "alg-backtracking-undo-002",
+            "alg-backtracking-undo-003",
+            "alg-backtracking-undo-004",
+            "alg-backtracking-undo-005",
+            "alg-backtracking-undo-006",
+            "alg-backtracking-undo-007",
+            "alg-backtracking-undo-008",
+            "alg-backtracking-undo-009",
+            "alg-backtracking-undo-010",
+            "alg-backtracking-undo-011",
+            "alg-backtracking-undo-012",
+            "alg-backtracking-undo-013",
+            "alg-backtracking-undo-014",
+            "alg-backtracking-undo-015",
+            "alg-backtracking-undo-016",
+            "alg-backtracking-undo-017",
+            "alg-backtracking-undo-018"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

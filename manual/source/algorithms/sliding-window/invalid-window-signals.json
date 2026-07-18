@@ -1,0 +1,352 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sliding-window-invalid-window-signals",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sliding-window-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sliding_window",
+    "primaryMentalUnitId": "invalid_window_signals",
+    "patternFamilyId": "sliding_window"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — unreviewed candidate generation",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sliding-window-invalid-window-signals",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sw-invalid-signed-shortest-threshold",
+      "prompt": "The task is the shortest contiguous range with sum at least T, and values may be negative. Which observation is the strongest signal that the simple positive-value window is unsafe?",
+      "constraints": [
+        "The proposed algorithm stops shrinking when the current sum falls below T.",
+        "No additional monotonic data structure is maintained."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shrink_can_raise_sum",
+            "text": "Removing a negative left value can raise the sum, so an invalid window can become valid after further shrinking."
+          },
+          {
+            "id": "range_is_contiguous",
+            "text": "The candidate is contiguous."
+          },
+          {
+            "id": "answer_is_shortest",
+            "text": "The answer is a minimum length."
+          },
+          {
+            "id": "values_are_integers",
+            "text": "The inputs are integers."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shrink_can_raise_sum"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The attempted stopping rule requires further shrinking to preserve invalidity; a negative outgoing value can reverse that assumption.",
+        "details": "The positive-value algorithm relies on a monotone boundary: after a left removal makes sum<T, later removals cannot restore sum≥T. Signed values invalidate that implication because removing a negative contribution increases the sum. Contiguity and a shortest objective are necessary context but do not establish a legal discard rule. This failure signal should stop use of the simple window and trigger consideration of a mechanism that preserves competing starts, such as prefix sums with a monotonic deque for the general shortest-at-least problem.",
+        "wrongOptionExplanationsByOptionId": {
+          "range_is_contiguous": "Contiguity identifies the candidate shape but not whether a one-way shrink rule can safely discard starts.",
+          "answer_is_shortest": "Many shortest-range objectives lack monotonicity; the objective name does not validate the strategy.",
+          "values_are_integers": "Integer type permits negative contributions and supplies no directional guarantee."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-invalid-exact-sum-trace",
+      "prompt": "Consider the rule ‘if sum > 3, shrink left until sum ≤ 3; record when sum = 3’ on [4, -2, 1]. Which trace proves the rule can miss a valid range?",
+      "constraints": [
+        "The whole range [4, -2, 1] sums to 3.",
+        "The algorithm processes values left to right and never moves left backward."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "discarded_four_too_early",
+            "text": "At the first value, sum = 4 causes 4 to be discarded; the later −2 and 1 would have brought that same start back to the exact target."
+          },
+          {
+            "id": "target_not_integer",
+            "text": "The target 3 is not an integer representable by the algorithm."
+          },
+          {
+            "id": "range_not_contiguous",
+            "text": "The whole range is not contiguous because it contains a negative value."
+          },
+          {
+            "id": "needs_fixed_length",
+            "text": "The rule fails only because the required length was not provided."
+          }
+        ],
+        "acceptedOptionIds": [
+          "discarded_four_too_early"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "With signed values, a start that is currently over target can become exactly valid after later expansion, so shrinking discards it without proof.",
+        "details": "After reading 4, the proposed comparison-based rule assumes that keeping this start can never help and removes it. That assumption is valid for positive exact/threshold behaviour only under carefully stated objectives. Here the next contributions are −2 and +1, so the untouched prefix would evolve from 4 to 2 to 3 and form a qualifying range. Because left never moves backward, the algorithm cannot recover it. Prefix-difference state retains all prior starts instead of making this unsupported discard.",
+        "wrongOptionExplanationsByOptionId": {
+          "target_not_integer": "The target is an ordinary integer; representation is unrelated to the lost start boundary.",
+          "range_not_contiguous": "Signs do not affect contiguity. The three adjacent positions form one contiguous range.",
+          "needs_fixed_length": "Exact-sum ranges can have variable lengths; the failure comes from a non-monotone sum, not missing k."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      }
+    },
+    {
+      "id": "alg-sw-invalid-arbitrary-range-queries",
+      "prompt": "After one preprocessing pass, a system must answer many arbitrary range-sum queries [l, r] presented in any order. Which fact is the decisive signal against using one moving sliding window as the primary query mechanism?",
+      "constraints": [
+        "Every query still refers to a contiguous range.",
+        "Successive query endpoints may jump left or right with no monotone order."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "endpoints_jump",
+            "text": "A single window would need to move boundaries backward or rebuild state for arbitrary query order; prefix sums answer each range from two stored prefixes."
+          },
+          {
+            "id": "contiguous_means_window",
+            "text": "Every query is contiguous, so one sliding window is automatically optimal."
+          },
+          {
+            "id": "sort_queries",
+            "text": "Sort the array values before answering so every requested range becomes easy to slide."
+          },
+          {
+            "id": "fixed_query_count",
+            "text": "Use a fixed-size window whose length equals the number of queries."
+          }
+        ],
+        "acceptedOptionIds": [
+          "endpoints_jump"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sliding window gains efficiency from one monotone sweep; arbitrary query endpoints destroy that traversal order, while prefix sums retain reusable range state.",
+        "details": "Each query names a contiguous interval, but contiguity is not the only requirement for a moving window. A window reuses state when the next candidate is adjacent to the previous one and its boundaries continue forward. Arbitrary queries can jump from [100..200] to [3..8] and then to [70..900], forcing backward moves or reconstruction. Prefix sums preprocess cumulative state once and answer every [l..r] as prefix[r+1] − prefix[l] regardless of query order. An offline algorithm may reorder queries under a separate contract, but that is not the simple single-sweep window assumed here.",
+        "wrongOptionExplanationsByOptionId": {
+          "contiguous_means_window": "Contiguity defines each candidate, but arbitrary ordering prevents the one-out/one-in monotone reuse that gives a sliding window its advantage.",
+          "sort_queries": "Sorting the input values changes the elements inside each original index range and therefore changes every requested answer.",
+          "fixed_query_count": "The number of queries has no relation to any query interval's length or to the state required for its sum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      }
+    },
+    {
+      "id": "alg-sw-invalid-nonmonotone-validity",
+      "prompt": "A range is valid only when its median equals M. Without an additional data structure or proof, why is ‘expand, then shrink until valid’ not a justified simple window rule?",
+      "constraints": [
+        "Values are arbitrary.",
+        "The rule has no monotone predicate beyond median == M."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "validity_can_toggle",
+            "text": "Adding or removing one value can move the median above, below, or back to M, so no single directional repair/discard rule is established."
+          },
+          {
+            "id": "median_is_numeric",
+            "text": "Numeric statistics are never compatible with windows."
+          },
+          {
+            "id": "equality_is_forbidden",
+            "text": "A window may use only ≤ or ≥ predicates, never equality."
+          },
+          {
+            "id": "needs_sorting_once",
+            "text": "Sorting the whole input preserves every original contiguous range and fixes the issue."
+          }
+        ],
+        "acceptedOptionIds": [
+          "validity_can_toggle"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A simple variable window needs a proof that one boundary move restores validity and safely discards excluded starts; median equality supplies no such monotonicity by itself.",
+        "details": "Window feasibility is not determined by whether a statistic is numeric or uses equality. The problem is directional control. With arbitrary values, adding one element can move the median in either direction, and removing the leftmost element can do the same. A currently invalid range does not tell which move is safe or whether a discarded start could become valid later. Specialized median-maintenance structures can update the statistic, but they do not automatically prove a one-way shrink policy. Sorting the whole input destroys original contiguity.",
+        "wrongOptionExplanationsByOptionId": {
+          "median_is_numeric": "Sums, counts, and many numeric aggregates are window-compatible when their validity behaviour is proven.",
+          "equality_is_forbidden": "Some exact conditions are window-compatible under stronger constraints; the missing property is a safe boundary rule, not the equality symbol itself.",
+          "needs_sorting_once": "Global sorting changes which elements are adjacent and therefore changes the legal ranges."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      }
+    },
+    {
+      "id": "alg-sw-invalid-shrink-by-validity-not-answer",
+      "prompt": "A longest-window implementation shrinks while `currentLength <= bestLength` and stops when the answer would change. What is the decisive defect?",
+      "constraints": [
+        "The problem also has an explicit validity constraint.",
+        "bestLength is historical global state, not the current window predicate."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "wrong_loop_condition",
+            "text": "Shrinking must be controlled by current validity; comparing with the historical answer neither restores the invariant nor proves a start can be discarded."
+          },
+          {
+            "id": "best_should_decrease",
+            "text": "The only defect is that bestLength should decrease during shrinking."
+          },
+          {
+            "id": "length_never_matters",
+            "text": "Window length must never appear in a sliding-window solution."
+          },
+          {
+            "id": "shrink_once_only",
+            "text": "The loop should always be replaced with exactly one left move."
+          }
+        ],
+        "acceptedOptionIds": [
+          "wrong_loop_condition"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Boundary movement is justified by the current window invariant, not by whether the global answer changes.",
+        "details": "The global best summarizes earlier legal candidates. It does not say whether the current range violates its budget, frequency cap, or other predicate. Shrinking a valid range merely because it is not longer can discard starts needed for future expansions; failing to shrink an invalid range because its length is promising leaves state illegal. The loop condition must name the violation being repaired, and the answer update occurs at the legal state prescribed by the objective. The answer is an output accumulator, not a control invariant.",
+        "wrongOptionExplanationsByOptionId": {
+          "best_should_decrease": "A maximum accumulator should not decrease; the error is using it to control boundary legality.",
+          "length_never_matters": "Length is often the answer, but it cannot substitute for a separate validity predicate unless length itself is the fixed constraint.",
+          "shrink_once_only": "A variable violation may need zero, one, or many removals; the correct count follows the invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-invalid-fixed-size-negative-safe",
+      "prompt": "A fixed-size task asks for the maximum sum of exactly k consecutive values, and values may be negative. Does negativity invalidate the fixed-size sliding window?",
+      "constraints": [
+        "Every candidate has exactly k elements.",
+        "The running sum removes one outgoing value and adds one incoming value."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "still_valid_fixed",
+            "text": "No. The update is exact algebraic replacement, not a monotone shrink decision, so signs do not affect correctness."
+          },
+          {
+            "id": "all_negative_break",
+            "text": "Yes. Any negative value makes every sliding window invalid."
+          },
+          {
+            "id": "only_sorted",
+            "text": "It remains valid only if values are sorted."
+          },
+          {
+            "id": "convert_absolute",
+            "text": "Replace each value by its absolute value before sliding."
+          }
+        ],
+        "acceptedOptionIds": [
+          "still_valid_fixed"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Negative values break some monotone variable-window rules, not the exact one-out/one-in maintenance of a fixed-size aggregate.",
+        "details": "The fixed-size invariant is purely representational: the sum equals the values between boundaries and the range contains exactly k elements. Moving the window right subtracts the value that leaves and adds the value that enters, which is correct for any signed numbers. No decision assumes that expansion raises the sum or shrinking lowers it. Therefore ‘negative values’ is a targeted failure signal for certain sum-threshold windows, not a universal ban on sliding windows.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_negative_break": "Signs do not affect exact subtraction/addition for a predetermined range size.",
+          "only_sorted": "Original order defines contiguity; sorting is unnecessary and would change the candidate ranges.",
+          "convert_absolute": "Absolute values change every candidate sum and solve a different problem."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

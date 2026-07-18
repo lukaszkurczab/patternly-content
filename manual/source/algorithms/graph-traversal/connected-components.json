@@ -1,0 +1,382 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-graph-traversal-connected_components-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-graph-traversal-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "graph_traversal",
+    "primaryMentalUnitId": "connected_components",
+    "patternFamilyId": "graph_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring; human review required",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-graph-traversal-connected_components-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-gt-components-001",
+      "prompt": "Order the high-level steps for counting connected components in an undirected graph whose vertex set is 0 through n−1.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "initialize",
+            "text": "Initialize all vertices as unseen and set count to zero."
+          },
+          {
+            "id": "scan",
+            "text": "Scan vertices in the declared vertex set."
+          },
+          {
+            "id": "new_root",
+            "text": "When the current vertex is unseen, increment count."
+          },
+          {
+            "id": "traverse",
+            "text": "From that vertex, mark its entire reachable region seen with BFS or DFS."
+          }
+        ],
+        "canonicalOrder": [
+          "initialize",
+          "scan",
+          "new_root",
+          "traverse"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The count advances exactly when the outer scan finds a vertex not covered by any earlier traversal.",
+        "details": "Each traversal consumes one maximal connected region. After it finishes, every vertex in that component is marked, so the outer scan skips them. The next unseen vertex cannot be connected to a prior root, otherwise it would already have been reached; it therefore starts exactly one new component. Incrementing per dequeued vertex or per edge would count internal structure rather than components."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_connected_components",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "connected_components",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-components-002",
+      "prompt": "An undirected graph declares vertices {0,1,2,3,4,5}. Its edges are {0—1, 1—2, 3—4}; vertex 5 is isolated. How many connected components does it have?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "three",
+            "text": "3"
+          },
+          {
+            "id": "two",
+            "text": "2"
+          },
+          {
+            "id": "four",
+            "text": "4"
+          },
+          {
+            "id": "six",
+            "text": "6"
+          }
+        ],
+        "acceptedOptionIds": [
+          "three"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The components are {0,1,2}, {3,4}, and the isolated singleton {5}.",
+        "details": "Connectedness is defined over the declared vertex set, not only vertices that appear in an edge list. An isolated vertex is reachable from itself by a length-zero path and forms a singleton component. This is why graph construction must retain all n vertices and why the outer scan ranges over all of them. Omitting 5 from the representation would produce a representation defect, not a valid two-component answer.",
+        "wrongOptionExplanationsByOptionId": {
+          "two": "This counts only edge-containing groups and incorrectly drops the isolated declared vertex.",
+          "four": "Vertices 0, 1, and 2 are mutually connected through paths and form one component, not separate components.",
+          "six": "A component is a maximal path-connected set; an edge can join several vertices into one component."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_connected_components",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "connected_components",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-components-003",
+      "prompt": "A directed graph contains edges A → B and C → B. The task asks for strongly connected components. Is the ordinary undirected component-counting outer loop with one BFS/DFS sufficient?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "not_sufficient",
+            "text": "No; one-way reachability is not mutual reachability, so an SCC algorithm with directed structure is required."
+          },
+          {
+            "id": "ignore_direction",
+            "text": "Yes; ignore directions and count one weak component."
+          },
+          {
+            "id": "bfs_sufficient",
+            "text": "Yes; BFS is always faster than DFS and therefore discovers strong components correctly."
+          },
+          {
+            "id": "matrix_sufficient",
+            "text": "Yes, provided the graph uses an adjacency matrix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "not_sufficient"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Strong connectivity requires paths in both directions, which one ordinary traversal from a root does not certify.",
+        "details": "The simple outer-loop algorithm is correct for connected components of an undirected graph, or for weak components after explicitly ignoring edge direction. Directed SCCs require additional structure such as finish order plus a reversed graph, or low-link reasoning. This item protects the ownership boundary: counting undirected components is the target mental unit, not silently teaching SCC mechanics.",
+        "wrongOptionExplanationsByOptionId": {
+          "ignore_direction": "That computes weak connectivity and changes the requested strong-connectivity relation.",
+          "bfs_sufficient": "Traversal order cannot turn one-way paths into mutual reachability or supply the missing SCC invariant.",
+          "matrix_sufficient": "Representation does not change the definition of strong connectivity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_connected_components",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "connected_components",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-components-004",
+      "prompt": "While counting undirected components, when should the component counter be incremented?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "on_unseen_root",
+            "text": "Once, immediately before starting a traversal from an unseen outer-loop vertex."
+          },
+          {
+            "id": "on_every_enqueue",
+            "text": "Every time a vertex is enqueued, because every queue entry represents a component."
+          },
+          {
+            "id": "on_every_edge",
+            "text": "For each edge that connects two previously unseen vertices."
+          },
+          {
+            "id": "on_dequeue_duplicate",
+            "text": "Whenever a duplicate vertex is dequeued after late visited marking."
+          }
+        ],
+        "acceptedOptionIds": [
+          "on_unseen_root"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The unseen outer-loop root is the one event that proves a new maximal reachable region begins.",
+        "details": "Once the counter advances, BFS or DFS marks the entire component. All later vertices reached during that traversal belong to the same component and do not increment the counter. Discovery timing still matters for avoiding duplicate work, but duplicates must never alter the component identity. Counting at traversal roots separates the global partition invariant from local frontier mechanics.",
+        "wrongOptionExplanationsByOptionId": {
+          "on_every_enqueue": "Queue entries represent vertices inside one component; incrementing there counts traversal work.",
+          "on_every_edge": "A component may contain many edges, cycles, or no edges; edge count is not component count.",
+          "on_dequeue_duplicate": "Duplicate frontier entries are an implementation defect or guarded condition, not evidence of another component."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_connected_components",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "connected_components",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-components-005",
+      "prompt": "For a static undirected graph stored as adjacency lists, the only output is the number of connected components. Which traversal choice is correct?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "either",
+            "text": "Either cycle-safe BFS or cycle-safe DFS; both partition the graph into the same reachable regions in O(V + E)."
+          },
+          {
+            "id": "bfs_only",
+            "text": "Only BFS, because breadth order defines components and is always faster."
+          },
+          {
+            "id": "dfs_no_visited",
+            "text": "Only recursive DFS without visited state, because each component becomes a tree."
+          },
+          {
+            "id": "matrix_required",
+            "text": "Either traversal works only after converting the graph to an adjacency matrix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "either"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Component identity depends on reachability closure, which both BFS and DFS compute.",
+        "details": "The outer scan is the component-counting mechanism. The inner traversal may be BFS or DFS as long as it marks every reachable vertex exactly once. With adjacency lists, both take O(V + E) overall. Choose iterative DFS if recursion depth is risky, or BFS when queue layering is useful for another output; neither is universally faster for this result.",
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_only": "Components depend on reachability, not layer order; DFS reaches the same region under the same graph contract.",
+          "dfs_no_visited": "The input component may contain cycles; the traversal tree does not eliminate non-tree edges.",
+          "matrix_required": "Adjacency lists already support complete neighbor expansion and preserve O(V + E) cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_connected_components",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "connected_components",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-components-006",
+      "prompt": "An edge list for n vertices is converted to adjacency lists, but the implementation creates a list entry only when a vertex appears in an edge. What component-counting failure can result?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "drops_isolates",
+            "text": "Isolated declared vertices are absent from the outer scan and their singleton components are not counted."
+          },
+          {
+            "id": "merges_components",
+            "text": "Every edge-containing component is merged into one because lists cannot represent separation."
+          },
+          {
+            "id": "bfs_slower_only",
+            "text": "The count remains correct; only BFS becomes slower than DFS."
+          },
+          {
+            "id": "late_mark_fix",
+            "text": "Marking visited on dequeue restores the missing singleton vertices."
+          }
+        ],
+        "acceptedOptionIds": [
+          "drops_isolates"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Component counting ranges over vertices, so representation must preserve the complete declared vertex set.",
+        "details": "Initialize n empty adjacency collections before inserting edges. Then isolated vertices remain visible to the outer loop and each starts a one-vertex traversal. Creating keys only from edges is a common representation shortcut that changes the input model. Neither BFS/DFS choice nor visited timing can repair a state that was never represented.",
+        "wrongOptionExplanationsByOptionId": {
+          "merges_components": "Adjacency lists can represent disconnected graphs; the defect is omission of vertices with no edges.",
+          "bfs_slower_only": "The missing vertices change the represented graph and therefore the count, independent of traversal order.",
+          "late_mark_fix": "Visited timing cannot discover a vertex that was omitted from the declared scan and representation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_connected_components",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-components-007",
+      "prompt": "A binary grid counts islands using orthogonal adjacency. The same occupied cells form two islands under 4-direction movement but one island when diagonal movement is also legal. What explains the change?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "edge_definition",
+            "text": "The vertex set is the same, but the legal-move rule changes the graph's edges and therefore its connected components."
+          },
+          {
+            "id": "bfs_speed",
+            "text": "Eight-direction BFS is faster, so it is allowed to merge components."
+          },
+          {
+            "id": "visited_timing",
+            "text": "Marking on dequeue merges diagonal cells even when diagonals are forbidden."
+          },
+          {
+            "id": "tree_rule",
+            "text": "A grid is always one tree, and the component difference is only output formatting."
+          }
+        ],
+        "acceptedOptionIds": [
+          "edge_definition"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Components are defined relative to the graph's edge relation, and diagonal moves add edges.",
+        "details": "Mapping a grid to a graph requires an explicit neighborhood contract. With four directions, diagonally touching cells have no edge; with eight directions, they do. The outer-loop component algorithm is unchanged, but it runs on a different graph and can produce a different partition. This transfer shows that component counting is stable across representations only when the state and edge definitions are preserved.",
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_speed": "Algorithm speed cannot change the mathematical connectivity relation; the new diagonal edges do.",
+          "visited_timing": "Visited timing affects scheduling, not which transitions are legal.",
+          "tree_rule": "Grid graphs can contain cycles and disconnected regions; adjacency rules define their topology."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_connected_components",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "count_components"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

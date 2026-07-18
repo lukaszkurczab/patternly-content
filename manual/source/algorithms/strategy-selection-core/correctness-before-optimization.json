@@ -1,0 +1,325 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-strategy-selection-core-correctness_before_optimization-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-strategy-selection-core-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "strategy_selection_core",
+    "primaryMentalUnitId": "correctness_before_optimization",
+    "patternFamilyId": "complexity_and_constraints"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-strategy-selection-core-correctness_before_optimization-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "ssc-correctness-proven-slower-over-broken-faster",
+      "prompt": "A proposed O(n) sliding-window solution fails a supplied counterexample with negative values. A proven O(n log n) alternative satisfies the output contract and the maximum constraints. What is the correct strategy decision?",
+      "constraints": [
+        "The O(n) candidate fails a valid counterexample.",
+        "The O(n log n) candidate is proven correct.",
+        "O(n log n) fits the maximum constraints."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "choose_proven",
+            "text": "Use the proven O(n log n) strategy; the faster candidate is not eligible until its correctness gap is resolved."
+          },
+          {
+            "id": "choose_asymptotic",
+            "text": "Use the O(n) strategy because its lower growth rate should dominate, and treat the supplied failing case as an exceptional input."
+          },
+          {
+            "id": "average_outputs",
+            "text": "Run both candidates, then combine their outputs by choosing the shorter reported range whenever they disagree on the answer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "choose_proven"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Correctness is a feasibility gate. A strategy that violates the output contract is not a faster solution to the same problem.",
+        "details": "Optimization compares implementations only after they compute the required function. The counterexample establishes that the window candidate's invariant is insufficient under the stated value domain, so its O(n) running time describes a different, incorrect procedure. The proven O(n log n) candidate fits the constraints and therefore remains eligible. The faster idea may be revisited by changing its state or proof, but it cannot be selected on asymptotics alone. The transfer rule is to treat correctness, legality, and resource feasibility as gates before ranking speed.",
+        "wrongOptionExplanationsByOptionId": {
+          "choose_asymptotic": "A wrong result is not an acceptable constant-probability or edge-case trade-off unless the product explicitly permits approximation. This option becomes valid only after the candidate is proven correct for the complete domain.",
+          "average_outputs": "Combining incompatible outputs has no correctness argument and can hide both defects. Cross-checking is useful for testing, but production selection still needs a defined correct result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-correctness-preserve-original-indices",
+      "prompt": "A task must return original indices. An in-place sort followed by two pointers is fast but loses the required identity mapping; sorting indexed records is slightly slower and uses more memory but fits all limits. Which candidate should be selected?",
+      "constraints": [
+        "Return original indices.",
+        "Duplicate values may exist.",
+        "The indexed strategy fits time and space limits."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "guess_indices",
+            "text": "Sort in place and reconstruct indices by searching for equal values afterward without retained identity."
+          },
+          {
+            "id": "raw_sort_fast",
+            "text": "Select the in-place sort because returning the right values is close enough to returning their indices."
+          },
+          {
+            "id": "indexed_correct",
+            "text": "Select the indexed-record strategy because it preserves the required witnesses."
+          }
+        ],
+        "acceptedOptionIds": [
+          "indexed_correct"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The witness contract is part of correctness. The legal adaptation that preserves original identity must be evaluated, even when it costs more.",
+        "details": "A strategy is not correct merely because it finds two values with the right sum. The caller asks for positions in the original input, and duplicates can make value-only reconstruction ambiguous. Sorting indexed pairs retains that information explicitly, at the cost of O(n) auxiliary records and the same O(n log n) dominant sort. When those resources fit, preserving the output contract takes priority over an illegal in-place shortcut. The transfer rule is to preserve every required witness, ordering, multiplicity, and provenance field before optimizing representation.",
+        "wrongOptionExplanationsByOptionId": {
+          "raw_sort_fast": "Returning values instead of original indices changes the function being computed. It becomes valid only if the output contract is relaxed to values or input mutation and identity loss are explicitly allowed.",
+          "guess_indices": "Duplicate values make post-hoc identity ambiguous, and an additional search can choose the same position twice. Reconstruction is valid only with a retained one-to-one mapping and a proof that handles multiplicity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-correctness-safe-optimization-sequence",
+      "prompt": "Order the steps for optimizing a correct reference solution without allowing performance work to redefine the problem.",
+      "constraints": [
+        "A correct reference can be executed on bounded cases.",
+        "The optimized mechanism must preserve the same output contract.",
+        "Ordering is scored by adjacent relations."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "contract",
+            "text": "Fix the output contract and executable reference behaviour on small cases."
+          },
+          {
+            "id": "proof",
+            "text": "State the candidate invariant and prove equivalence to the required result."
+          },
+          {
+            "id": "measure",
+            "text": "Confirm the reference misses a real resource constraint or measured bottleneck."
+          },
+          {
+            "id": "optimize",
+            "text": "Replace repeated work while preserving the proof obligations and regression oracle."
+          }
+        ],
+        "canonicalOrder": [
+          "contract",
+          "proof",
+          "measure",
+          "optimize"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Correct semantics and proof obligations precede performance diagnosis. Optimization then targets demonstrated cost without discarding the reference oracle.",
+        "details": "A safe optimization process begins with an unambiguous function and a simple implementation or model that can generate expected results. A faster mechanism must state why its compressed state, discard rule, or preprocessing produces the same answers. Only then does measurement or constraint analysis identify which cost must change. The optimized implementation should continue to be checked against the reference on bounded or randomized cases. The order prevents a fast heuristic from silently becoming the new specification. The transfer boundary is any optimization that changes observable semantics or lacks an equivalence argument; it must return to the proof step."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-correctness-proven-nlogn-vs-speculative-linear",
+      "prompt": "For n ≤ 50,000, a proven O(n log n) sorting-based solution fits comfortably. A proposed O(n) greedy rule has no invariant or exchange argument and has not been tested beyond examples. Which choice is responsible?",
+      "constraints": [
+        "n is at most 50,000.",
+        "O(n log n) fits the limit.",
+        "The O(n) rule has no proof and only example coverage."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "proven_fits",
+            "text": "Use the proven O(n log n) solution; investigate the linear rule separately until it has a correctness argument."
+          },
+          {
+            "id": "linear_label",
+            "text": "Use the O(n) rule because its lower asymptotic bound should take priority even before the irreversible greedy choices are justified."
+          },
+          {
+            "id": "examples_prove",
+            "text": "Use the O(n) rule because matching every provided example is sufficient evidence that its local choices generalize to the full input domain."
+          }
+        ],
+        "acceptedOptionIds": [
+          "proven_fits"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "When a proven strategy satisfies the constraints, an unproven optimization is unnecessary risk. Lower asymptotic time does not establish semantic equivalence.",
+        "details": "The decision is not between elegance and caution; it is between one complete contract and one incomplete hypothesis. O(n log n) at the stated scale is feasible, while the greedy candidate lacks the property that would justify its irreversible choices. Examples exercise only a tiny subset of inputs and often miss adversarial orderings or ties. The linear idea can become preferable after a proof and boundary analysis, but until then it is not a production candidate. The transfer rule is to stop optimizing once a simple proven method satisfies the real constraints, unless a measured requirement demands more.",
+        "wrongOptionExplanationsByOptionId": {
+          "linear_label": "Complexity describes resource growth for the implemented rule; it does not prove the rule returns the right answer. This becomes valid only after correctness is independently established.",
+          "examples_prove": "Examples confirm a few instances, not universal behaviour. They become meaningful evidence only as part of broader tests and a proof that covers the full domain."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-correctness-numeric-width-correctness",
+      "prompt": "Prefix sums may reach 10^14. Two implementations are both O(n + q): one stores 32-bit signed totals and can overflow; the other stores 64-bit totals and fits the stated range. Which implementation is eligible?",
+      "constraints": [
+        "Reachable totals may be 10^14.",
+        "The required result is ordinary integer arithmetic, not modular arithmetic.",
+        "Both implementations have the same asymptotic cost."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "wide_correct",
+            "text": "Use 64-bit totals because the numeric domain is part of correctness."
+          },
+          {
+            "id": "overflow_wrap",
+            "text": "Use 32-bit totals and rely on wraparound to preserve range differences."
+          },
+          {
+            "id": "narrow_faster",
+            "text": "Use 32-bit totals because the smaller type may be faster."
+          }
+        ],
+        "acceptedOptionIds": [
+          "wide_correct"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Asymptotic equality does not make overflowing arithmetic correct. The representation must cover all reachable intermediate and final values.",
+        "details": "A prefix sum can exceed every individual input value because it accumulates many terms. Signed 32-bit storage cannot represent 10^14, so overflow changes the stored prefix values and can corrupt range differences. Wraparound preserves modular arithmetic, not ordinary integer sums, unless the output contract explicitly asks for a modulus. The 64-bit implementation has the same asymptotic time and space and satisfies the numeric range. The transfer rule is to prove bounds for intermediate state before micro-optimizing type width or arithmetic.",
+        "wrongOptionExplanationsByOptionId": {
+          "narrow_faster": "A possible constant-factor benefit cannot justify incorrect values. This becomes valid only if a proven tighter bound keeps every intermediate within 32-bit range.",
+          "overflow_wrap": "Modular wraparound computes a different algebra. It is legal only when the problem specifies the same modulus and subtraction is interpreted consistently under it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-correctness-differential-evidence-before-replacement",
+      "prompt": "An optimized implementation matches the sample cases but changes several state updates from a correct reference. Which evidence is strongest before replacing the reference?",
+      "constraints": [
+        "A correct reference implementation exists.",
+        "The optimized version changes internal state updates.",
+        "Sample cases are not exhaustive."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "samples_only",
+            "text": "Use agreement on the published sample cases as the equivalence test, because those examples represent the important boundary conditions."
+          },
+          {
+            "id": "benchmark_only",
+            "text": "Use a benchmark showing lower time and memory as the replacement evidence, because performance improvement is the goal of the rewrite."
+          },
+          {
+            "id": "proof_and_differential",
+            "text": "A preserved invariant plus differential tests against the reference across edge and randomized bounded cases."
+          }
+        ],
+        "acceptedOptionIds": [
+          "proof_and_differential"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Replacement needs evidence of semantic equivalence, not only speed or sample agreement. Proof obligations and an independent oracle catch different classes of defects.",
+        "details": "The reference supplies executable expected behaviour for inputs small enough to handle, while the invariant explains why the optimized state summarizes the same necessary information. Differential testing can expose boundary, duplicate, and update-order errors that examples omit; the proof guards against merely failing to sample a counterexample. A benchmark measures cost only after correctness is established. The transfer rule is to preserve an independent oracle whenever optimization compresses state, skips work, reorders operations, or introduces amortization.",
+        "wrongOptionExplanationsByOptionId": {
+          "samples_only": "Samples are sparse illustrations and commonly omit adversarial boundaries. They become sufficient only for a truly finite contract that explicitly enumerates every possible input.",
+          "benchmark_only": "A faster wrong implementation is not an optimization of the same function. Benchmarking becomes decision evidence after equivalence has been established."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

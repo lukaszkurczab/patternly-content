@@ -1,0 +1,405 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-dynamic-programming-intro-define_transition-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-dynamic-programming-intro-authoring-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "dynamic_programming_intro",
+    "primaryMentalUnitId": "define_transition",
+    "patternFamilyId": "dynamic_programming_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-dynamic-programming-intro-define_transition-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-dpintro-transition-01-first-decision-decomposition",
+      "prompt": "Let dp(i) be the number of ways to reach step n from i using moves of 1 or 2. Which transition matches that state meaning for i < n?",
+      "constraints": [
+        "Every valid path starts with exactly one move of length 1 or 2.",
+        "The two first-move groups are disjoint."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "self_reference",
+            "text": "dp(i) = dp(i) + 1"
+          },
+          {
+            "id": "sum_branches",
+            "text": "dp(i) = dp(i + 1) + dp(i + 2)"
+          },
+          {
+            "id": "max_branches",
+            "text": "dp(i) = max(dp(i + 1), dp(i + 2))"
+          }
+        ],
+        "acceptedOptionIds": [
+          "sum_branches"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Counting requires summing the disjoint sets of paths created by the two legal first moves.",
+        "details": "The state asks for all continuations from i. Every continuation begins with either a one-step or a two-step move, after which the remaining count is dp(i + 1) or dp(i + 2). Because those groups are disjoint and exhaustive, their counts add. Overlap may make this recurrence worth memoizing, but overlap alone does not supply the recurrence or its aggregation operator.",
+        "wrongOptionExplanationsByOptionId": {
+          "max_branches": "Taking a maximum chooses one branch and discards valid paths from the other branch; the output contract asks for a count.",
+          "self_reference": "This does not reduce the unresolved problem and creates a cyclic equation rather than decomposing by a legal move."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_dp_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_dp",
+        "problemArchetypeId": "count_ways"
+      }
+    },
+    {
+      "id": "alg-dpintro-transition-02-state-controls-legal-branches",
+      "prompt": "For 0/1 selection, dp(i, c) is the best value using items i onward with remaining capacity c. Item i has weight w[i] and value v[i]. Which transition is correct?",
+      "constraints": [
+        "Each item may be used at most once.",
+        "Taking item i is legal only when w[i] <= c."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "guarded_take_skip",
+            "text": "dp(i, c) = max(dp(i + 1, c), v[i] + dp(i + 1, c - w[i])) when w[i] <= c; otherwise dp(i + 1, c)."
+          },
+          {
+            "id": "ignore_capacity",
+            "text": "dp(i, c) = max(dp(i + 1, c), v[i] + dp(i + 1, c)) for every c."
+          },
+          {
+            "id": "reuse_item",
+            "text": "dp(i, c) = max(dp(i + 1, c), v[i] + dp(i, c - w[i])) when w[i] <= c."
+          }
+        ],
+        "acceptedOptionIds": [
+          "guarded_take_skip"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The take branch must be feasible, consume capacity, and advance past an item that may be used only once.",
+        "details": "The skip branch leaves capacity unchanged and moves to i + 1. The take branch is available only when the item fits; it adds v[i], subtracts its weight, and also moves to i + 1 to enforce single use. Every part follows from the state and problem contract. An incomplete index-only state could not express the capacity guard, while a transition that keeps i silently changes the archetype.",
+        "wrongOptionExplanationsByOptionId": {
+          "ignore_capacity": "The take branch neither consumes capacity nor checks feasibility, so it can select overweight items and overstate the optimum.",
+          "reuse_item": "Keeping i after taking allows the same item to be selected repeatedly; that is an unbounded-choice transition, not 0/1 selection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_dp_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-transition-03-recurrence-independent-of-direction",
+      "prompt": "A correct recurrence is dp(i) = min(cost[i] + dp(i + 1), cost[i] + dp(i + 2)). What changes when moving from memoization to tabulation?",
+      "constraints": [
+        "Both implementations use the same state meaning and base cases.",
+        "All states are reachable."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "operator_changes",
+            "text": "min must become max because bottom-up tables optimize in the opposite direction."
+          },
+          {
+            "id": "memo_always_less_work",
+            "text": "Memoization necessarily evaluates fewer states and is therefore always faster."
+          },
+          {
+            "id": "evaluation_only",
+            "text": "The recurrence stays the same; the implementation changes which states are requested or iterated and in what order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "evaluation_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The recurrence expresses problem structure; memoization and tabulation differ only in how its dependency graph is evaluated.",
+        "details": "A state value must be identical regardless of whether it is requested recursively or filled from a loop. Moving bottom-up requires bases and a dependency-safe order, but not a new objective or branch meaning. Top-down can skip unreachable states; bottom-up can avoid call overhead and improve locality. Those trade-offs come after the transition is fixed.",
+        "wrongOptionExplanationsByOptionId": {
+          "operator_changes": "The aggregation operator follows the objective, not evaluation direction. Changing it changes the problem being solved.",
+          "memo_always_less_work": "When every state is reachable, both evaluate the same state set; constants, recursion overhead, and memory locality decide practical cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_dp_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-transition-04-derive-before-schedule",
+      "prompt": "Order the steps for turning a grid-state meaning into a bottom-up transition and schedule.",
+      "constraints": [
+        "dp(r, c) is defined before these steps.",
+        "Moves are restricted by the problem statement."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "enumerate_moves",
+            "text": "List the legal first moves or predecessor choices for (r, c)."
+          },
+          {
+            "id": "map_dependencies",
+            "text": "Translate each legal choice into the dependent DP state it uses."
+          },
+          {
+            "id": "combine_values",
+            "text": "Choose the aggregation operator required by the output contract."
+          },
+          {
+            "id": "schedule_cells",
+            "text": "Choose row and column directions that make those dependencies available."
+          }
+        ],
+        "canonicalOrder": [
+          "enumerate_moves",
+          "map_dependencies",
+          "combine_values",
+          "schedule_cells"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "A loop direction is justified only after legal choices have been converted into explicit dependency edges.",
+        "details": "The transition comes from the problem's moves and the state's meaning, not from how a table happens to be laid out. Mapping each choice to a predecessor or successor reveals which cells must be ready. The output contract determines whether those values are added, minimized, or maximized. Only then can iteration order be checked against every dependency."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_dp_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-transition-05-in-place-transition-alias",
+      "prompt": "A 0/1 capacity recurrence is compressed to one array. Updating capacities from low to high makes dp[c - w] reflect the current item. What semantic error does this introduce?",
+      "constraints": [
+        "Each item may be used at most once.",
+        "Before processing an item, dp represents solutions using only earlier items."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "only_performance",
+            "text": "The result remains correct and only cache locality changes."
+          },
+          {
+            "id": "same_item_reused",
+            "text": "The take branch can reuse the current item multiple times because it reads a value already updated in this item layer."
+          },
+          {
+            "id": "misses_all_items",
+            "text": "The skip branch becomes impossible, so no item can ever be selected."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_item_reused"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Ascending capacity aliases the previous-item dependency with a current-item value, turning a 0/1 transition into an unbounded one.",
+        "details": "The uncompressed take branch reads dp from the previous item layer. In one array, that value is preserved only if capacities are processed descending; then c - w has not yet been updated for the current item. Ascending order lets the current item contribute repeatedly within one layer. Compression therefore requires a revised operational transition whose reads still represent the intended logical states.",
+        "wrongOptionExplanationsByOptionId": {
+          "misses_all_items": "The previous dp[c] still represents skipping; the defect is repeated use through an overwritten take dependency.",
+          "only_performance": "Update direction changes the logical layer read by the recurrence, so it can change the feasible solution set and the answer."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_dp_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-transition-06-impossible-branch-handling",
+      "prompt": "A maximization DP allows negative values, and an impossible take branch must not be selected. Which representation is safest?",
+      "constraints": [
+        "Valid solutions may have negative total value.",
+        "The transition takes a maximum over legal branches."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "negative_infinity",
+            "text": "Use -infinity or exclude the branch so it cannot win the maximum."
+          },
+          {
+            "id": "zero",
+            "text": "Use 0 so the impossible state behaves like a neutral candidate in the maximum."
+          },
+          {
+            "id": "positive_infinity",
+            "text": "Use +infinity so impossible states are distinguishable from finite values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "negative_infinity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An impossible branch must be dominated by every valid maximization result, so -infinity or explicit exclusion preserves semantics.",
+        "details": "Sentinel choice is part of the transition contract. In a maximization where legitimate values may be negative, zero is not harmless: it can appear better than every feasible branch. Negative infinity ensures the branch cannot win, while explicit guards avoid creating it at all. For minimization the polarity reverses, and counting usually excludes impossible branches or assigns them zero ways.",
+        "wrongOptionExplanationsByOptionId": {
+          "zero": "Zero can beat valid negative solutions and fabricate a feasible outcome that the transition never earned.",
+          "positive_infinity": "Positive infinity would always win a maximization and make the result invalid."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_dp_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-transition-07-aggregation-transfer",
+      "prompt": "From each grid cell, moves right and down are legal. Which pair of transitions correctly distinguishes path counting from minimum path cost?",
+      "constraints": [
+        "count(r, c) counts valid paths from the cell.",
+        "cost(r, c) is the minimum total cell cost from the cell to the destination."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "both_sum",
+            "text": "Both transitions add successor values because both have two legal moves."
+          },
+          {
+            "id": "both_min",
+            "text": "Both transitions take the minimum because a path chooses one next move."
+          },
+          {
+            "id": "sum_and_min",
+            "text": "count adds the two successor counts; cost adds the current cell cost to the minimum successor cost."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sum_and_min"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The successor states are the same, but counting combines disjoint solution sets by addition while optimization selects the best branch.",
+        "details": "Legal moves determine that right and down are the dependencies in both problems. The output contract then supplies the algebra: sum for the cardinality of disjoint path sets, and minimum for choosing one cheapest continuation, with current cost added. Reusing a graph shape does not mean reusing its aggregation operator. This distinction transfers to boolean feasibility using OR and maximum reward using max.",
+        "wrongOptionExplanationsByOptionId": {
+          "both_sum": "The cost contract asks for one cheapest path, not the sum of costs over all paths.",
+          "both_min": "Counting must include paths beginning with each legal move, so minimizing discards valid path groups."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_dp_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [
+      {
+        "id": "dpintro-same-mechanism-define_transition-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-dpintro-transition-01-first-decision-decomposition",
+          "alg-dpintro-transition-02-state-controls-legal-branches",
+          "alg-dpintro-transition-03-recurrence-independent-of-direction"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-transition-04-derive-before-schedule",
+          "alg-dpintro-transition-05-in-place-transition-alias",
+          "alg-dpintro-transition-06-impossible-branch-handling",
+          "alg-dpintro-transition-07-aggregation-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "define_transition"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

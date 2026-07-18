@@ -1,0 +1,598 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "two-pointers-partitioning_by_predicate-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-two-pointers-review-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "two_pointers",
+    "primaryMentalUnitId": "partitioning_by_predicate",
+    "patternFamilyId": "two_pointers"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; human review required)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "two-pointers-partitioning_by_predicate-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tp-part-classified-regions-invariant",
+      "prompt": "For an in-place binary partition, left and right delimit an unclassified middle. Which invariant is sufficient for correctness?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "both_move_every_step",
+            "text": "Both pointers move once on every loop iteration."
+          },
+          {
+            "id": "true_prefix_false_suffix",
+            "text": "Every position before left satisfies P, every position after right fails P, and only [left, right] remains unclassified."
+          },
+          {
+            "id": "whole_array_sorted",
+            "text": "The entire array is numerically sorted after every step."
+          },
+          {
+            "id": "left_equals_right",
+            "text": "left and right remain equal throughout the scan."
+          }
+        ],
+        "acceptedOptionIds": [
+          "true_prefix_false_suffix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The two pointers are boundaries of already-classified predicate regions. Correctness requires growth of those regions, not total sorting or synchronized movement.",
+        "details": "The prefix contract establishes that values already passed by left belong on the true side, and the suffix contract does the same for values passed by right on the false side. Values in the middle have not yet been classified or repaired. Scanning and swapping must preserve those exterior statements while shrinking the middle. This invariant defines a partition even though order inside either side remains arbitrary.",
+        "wrongOptionExplanationsByOptionId": {
+          "whole_array_sorted": "Partitioning imposes only a predicate boundary. Numerical sorting is a stronger, unnecessary contract.",
+          "left_equals_right": "The pointers usually start apart and move independently while classifying different sides.",
+          "both_move_every_step": "A pointer may pause on a violation while the other scans. Movement follows classification state, not a fixed schedule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "Relative order inside each partition is irrelevant.",
+        "The array may be mutated."
+      ]
+    },
+    {
+      "id": "alg-tp-part-scan-to-violations",
+      "prompt": "Under the invariant that P-true values belong on the left and P-false values on the right, when should the two boundary values be swapped?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "every_iteration",
+            "text": "On every loop iteration, regardless of the values."
+          },
+          {
+            "id": "both_are_correct",
+            "text": "When left is P-true and right is P-false."
+          },
+          {
+            "id": "pointers_meet",
+            "text": "Only after left equals right."
+          },
+          {
+            "id": "both_are_violations",
+            "text": "After left stops on a value that fails P and right stops on a value that satisfies P, provided left < right."
+          }
+        ],
+        "acceptedOptionIds": [
+          "both_are_violations"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A swap is useful only when it repairs one misplaced value from each side. Correctly placed values should be skipped, not exchanged.",
+        "details": "left advances over values already valid for the prefix, and right retreats over values already valid for the suffix. When both stop, each boundary holds a value that belongs on the opposite side. Swapping repairs both positions in one operation and preserves the exterior invariant. At or after crossing, no two-sided violation pair remains to exchange.",
+        "wrongOptionExplanationsByOptionId": {
+          "every_iteration": "Blind swapping can move correctly classified values to the wrong side and destroys the invariant.",
+          "both_are_correct": "Those values already satisfy their side contracts; swapping would create two violations.",
+          "pointers_meet": "At equality there is at most one unclassified position, not a pair of opposite violations to swap."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-part-partition-loop-order",
+      "prompt": "Order the guarded actions for one cycle of an opposite-ends predicate partition.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "scan_left",
+            "text": "Advance left across values that already satisfy P, checking that left has not crossed right before each read."
+          },
+          {
+            "id": "move_after_swap",
+            "text": "Move both boundaries past the repaired positions."
+          },
+          {
+            "id": "scan_right",
+            "text": "Retreat right across values that already fail P, checking that the active interval still exists before each read."
+          },
+          {
+            "id": "swap_violations",
+            "text": "Swap the two stopped violations."
+          },
+          {
+            "id": "check_crossing",
+            "text": "Check whether left is still strictly before right; if not, stop without swapping."
+          }
+        ],
+        "canonicalOrder": [
+          "scan_left",
+          "scan_right",
+          "check_crossing",
+          "swap_violations",
+          "move_after_swap"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The algorithm first locates actual violations, then verifies that two positions remain, repairs them, and only then consumes the repaired boundaries.",
+        "details": "Each inner scan must guard the active interval before reading, because one scan can cross the other pointer. Scanning skips values that already extend the classified prefix or suffix. The explicit post-scan crossing decision prevents a self-swap; a valid swap then places each stopped value on its required side. Advancing both after that repair is justified because both positions have become classified, whereas advancing before inspection would skip unresolved values."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-tp-part-move-both-only-after-repair",
+      "prompt": "A partition implementation advances both pointers immediately at the top of every loop, before inspecting their values. What is the likely correctness defect?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sorts_instead",
+            "text": "Advancing both turns partitioning into a full sort."
+          },
+          {
+            "id": "duplicates_forbidden",
+            "text": "The method fails only when duplicates exist."
+          },
+          {
+            "id": "skips_unclassified_values",
+            "text": "It can skip values that have not been shown correct or repaired, leaving violations inside the claimed partitions."
+          },
+          {
+            "id": "always_quadratic",
+            "text": "Advancing both makes the runtime O(n^2)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "skips_unclassified_values"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A boundary position becomes consumable only after its predicate side is established. Blind movement can move the boundary over an unresolved violation.",
+        "details": "The partition invariant describes positions strictly outside the current pointers as classified. If a pointer moves before inspecting or repairing its current value, the algorithm begins claiming that value belongs to the exterior region without evidence. The loop may still be linear and terminate, so runtime alone will not expose the bug. Both pointers may move together after a valid swap because both repaired positions are then proven classified.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_quadratic": "The pointer count remains linear; the issue is that the resulting partition may be wrong.",
+          "sorts_instead": "No total-order comparisons or sorting invariant are introduced by blind movement.",
+          "duplicates_forbidden": "The defect can occur with distinct values. Duplicate presence is not the decisive condition."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-part-uniform-input-edge",
+      "prompt": "If every array value satisfies P, what should an opposite-ends partition do?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "left_scans_through",
+            "text": "left advances through the sequence, no swap is required, and the array is already a valid partition."
+          },
+          {
+            "id": "swap_every_pair",
+            "text": "Swap symmetric pairs so both pointers make equal progress."
+          },
+          {
+            "id": "sort_values",
+            "text": "Sort the values numerically before returning."
+          },
+          {
+            "id": "fail_no_false",
+            "text": "Report failure because the false partition is empty."
+          }
+        ],
+        "acceptedOptionIds": [
+          "left_scans_through"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An empty false side is a valid partition. The left scan can classify the entire array without any repair swap.",
+        "details": "The contract requires all P-true values before all P-false values; it does not require both groups to be nonempty. Every value already belongs in the left partition, so scanning consumes them until the pointers cross. Symmetric swaps would be unnecessary and could still preserve values only by accident. The all-false case is symmetric for the right scan.",
+        "wrongOptionExplanationsByOptionId": {
+          "swap_every_pair": "Correctly placed values should be skipped. Swapping is reserved for a true value on the right paired with a false value on the left.",
+          "sort_values": "Sorting would also group many common predicates, but it performs stronger numerical ordering than required and may violate stability. A direct scan handles the all-one-side edge without preprocessing.",
+          "fail_no_false": "A partition may legitimately have an empty side; the predicate boundary can be at the end of the sequence."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-part-stability-boundary",
+      "prompt": "The output now requires all P-true values before all P-false values while preserving relative order inside both groups. Is the ordinary opposite-ends swap partition sufficient?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_if_move_both",
+            "text": "Yes, provided both pointers move after every comparison."
+          },
+          {
+            "id": "yes_after_sort",
+            "text": "Yes, because sorting by value always preserves encounter order."
+          },
+          {
+            "id": "no_not_stable",
+            "text": "No. Opposite-end swaps can reorder values within a group; a stable method or extra buffer is required."
+          },
+          {
+            "id": "yes_partition_implies_stable",
+            "text": "Yes. Any correct predicate partition is automatically stable."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_not_stable"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Predicate correctness and stability are separate output contracts. End swaps can satisfy the side boundary while changing within-group order.",
+        "details": "A swap may move a late P-true value before earlier P-true values or move an early P-false value after later ones. The final array can therefore be a valid unstable partition but fail stability. A buffered stable partition or a stable read/write construction is needed when order matters, with corresponding space or movement trade-offs. Moving both pointers more regularly does not restore lost order.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_partition_implies_stable": "Partitioning constrains only which side each value occupies. It does not constrain order inside a side unless stability is explicitly maintained.",
+          "yes_if_move_both": "Moving both pointers symmetrically may look orderly, but cadence cannot restore relative order once long-distance swaps occur. Stability requires a different mechanism, such as stable compaction.",
+          "yes_after_sort": "Sorting by value changes encounter order and imposes a different ordering relation. A stable sort by predicate could preserve group order, but its cost and exact key contract must be stated."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Relative order within both predicate groups must be preserved."
+      ]
+    },
+    {
+      "id": "alg-tp-part-partition-not-sort",
+      "prompt": "After a correct partition by P, which guarantee is valid?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "equal_sizes",
+            "text": "The two groups have equal length."
+          },
+          {
+            "id": "side_membership_only",
+            "text": "Every P-true value precedes every P-false value, but values inside a side may remain in arbitrary order."
+          },
+          {
+            "id": "numeric_sort",
+            "text": "The full sequence is numerically sorted."
+          },
+          {
+            "id": "stable_groups",
+            "text": "Relative order inside both groups is always preserved."
+          }
+        ],
+        "acceptedOptionIds": [
+          "side_membership_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A binary partition establishes one predicate boundary and nothing stronger unless the algorithm tracks additional properties.",
+        "details": "The invariant classifies each value by side, not by numerical rank or original position. Swaps can reorder values, and the predicate distribution determines group sizes. Confusing partition with sorting can lead to downstream code relying on guarantees that were never established. If total order or stability is required, that must be a separate explicit operation and cost.",
+        "wrongOptionExplanationsByOptionId": {
+          "numeric_sort": "Values can be arbitrarily ordered within the true and false groups; no pairwise ordering guarantee exists.",
+          "stable_groups": "The result can satisfy the binary predicate boundary while reordering values inside each side. Stability is a separate output requirement and needs a stable algorithm, not ordinary opposite-end swaps.",
+          "equal_sizes": "Symmetric pointer movement may suggest equal groups, but group sizes are determined solely by how many values satisfy P. A correct partition does not require balance."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-part-nested-indices-not-partition",
+      "prompt": "A routine uses indices i and j to compare every pair of elements, but it never maintains a classified prefix, suffix, or unclassified middle. Why is it not a pointer partition algorithm?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_partition_regions",
+            "text": "The indices do not represent or grow predicate-classified regions; they only enumerate pairs."
+          },
+          {
+            "id": "indices_not_pointers",
+            "text": "i and j are integers rather than raw pointers."
+          },
+          {
+            "id": "partition_needs_duplicates",
+            "text": "Partitioning applies only to arrays with duplicates."
+          },
+          {
+            "id": "partition_needs_sort",
+            "text": "Partitioning is valid only after numeric sorting."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_partition_regions"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Partition identity comes from region semantics and invariant-preserving movement, not from having two index variables.",
+        "details": "A partition pointer marks a boundary between classified and unclassified positions or scans for a side violation. Exhaustive pair enumeration has no such region meaning and typically performs quadratic work. Raw pointer syntax is irrelevant, duplicates are optional, and full sorting is not a precondition for predicate partition. The decisive test is what state the indices own.",
+        "wrongOptionExplanationsByOptionId": {
+          "indices_not_pointers": "Array indices are a normal implementation of two-pointer algorithms. Memory-pointer syntax is not required.",
+          "partition_needs_duplicates": "The predicate can split distinct or duplicate values; duplicates do not define the mechanism.",
+          "partition_needs_sort": "Partitioning creates a predicate boundary directly and does not require prior total ordering."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-part-region-growth-proof",
+      "prompt": "Which argument proves that swapping two stopped partition violations preserves correctness?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "both_pointers_exist",
+            "text": "Two pointers make every swap safe."
+          },
+          {
+            "id": "array_will_terminate",
+            "text": "The loop eventually terminates, so each swap is correct."
+          },
+          {
+            "id": "repairs_both_boundaries",
+            "text": "The swap places each complementary violation on its required side, so both classified exterior regions may grow."
+          },
+          {
+            "id": "swaps_are_reversible",
+            "text": "Any reversible operation is automatically correct."
+          }
+        ],
+        "acceptedOptionIds": [
+          "repairs_both_boundaries"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The swap is correct because it exchanges complementary violations and turns both current positions into classified positions.",
+        "details": "Before the swap, all positions outside the interval already satisfy the invariant. The two stopped values are each on the wrong side, so exchanging them puts a P-true value at the left boundary and a P-false value at the right boundary. Moving past those repaired positions enlarges the valid exterior regions. Reversibility and termination are not substitutes for this predicate-specific placement argument.",
+        "wrongOptionExplanationsByOptionId": {
+          "swaps_are_reversible": "A reversible operation can still move correct data to incorrect positions. The predicate roles of the two values matter.",
+          "both_pointers_exist": "Pointer count does not establish that the selected elements are complementary violations.",
+          "array_will_terminate": "Termination only shows the loop stops; it does not show the final sides satisfy P."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-tp-part-sorting-versus-partition-time",
+      "prompt": "A proposal numerically sorts an array in O(n log n) solely to place P-true values before P-false values. A direct partition scan would be O(n). What is the proposal's time complexity?",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "Sorting performs stronger ordering work than the predicate boundary requires and dominates the proposal's runtime.",
+        "details": "The proposal executes a full comparison sort, so its time is O(n log n) even if the resulting order happens to satisfy the predicate partition. A direct pointer partition classifies each position once and can finish in O(n). The sorted result may also introduce guarantees or mutations not requested. Sorting is a separate strategy with a visible cost, not a free way to initialize pointers."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "Comparison sorting takes O(n log n).",
+        "Predicate evaluation takes O(1)."
+      ]
+    },
+    {
+      "id": "alg-tp-part-direct-partition-complexity",
+      "prompt": "In an opposite-ends predicate partition, left only advances, right only retreats, each position is inspected O(1) times, and swaps are in place. What are the time and auxiliary-space complexities?",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The unclassified interval shrinks monotonically and no proportional auxiliary structure is allocated.",
+        "details": "Each pointer crosses each position at most once, including positions passed by its inner scan. The total number of inspections and swaps is therefore O(n), not O(n^2) despite two scan loops in the code. Swaps reuse array storage and the algorithm keeps only indices and temporary scalar values, so auxiliary space is O(1). This analysis assumes predicate checks and swaps are constant time."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "partition_sequence_with_pointers",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "Predicate evaluation and swap cost are O(1).",
+        "The algorithm is only the single partition pass."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

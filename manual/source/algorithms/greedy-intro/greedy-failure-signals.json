@@ -1,0 +1,313 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-greedy-intro-greedy-failure-signals-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-greedy-intro-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "greedy_intro",
+    "primaryMentalUnitId": "greedy_failure_signals",
+    "patternFamilyId": "greedy_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-greedy-intro-greedy-failure-signals-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-greedy-intro-gfs-001",
+      "prompt": "A proposed minimum-coin algorithm repeatedly takes the largest denomination not exceeding the remaining amount. For denominations {1,3,4} and target 6, what is the correct diagnostic?",
+      "constraints": [
+        "Coins are available in unlimited quantity.",
+        "The objective is to minimize the number of coins."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "counterexample_refutes_rule",
+            "text": "The rule takes 4+1+1 using three coins, while 3+3 uses two, so the local choice property is absent for this denomination system."
+          },
+          {
+            "id": "largest_is_always_safe",
+            "text": "Taking 4 is safe because it reduces the remaining amount more than any other coin."
+          },
+          {
+            "id": "sorting_fix",
+            "text": "Sorting denominations in descending order makes the same choice correct."
+          },
+          {
+            "id": "greedy_equals_dp",
+            "text": "The result is still optimal because greedy and dynamic programming are interchangeable methods."
+          }
+        ],
+        "acceptedOptionIds": [
+          "counterexample_refutes_rule"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The instance directly disproves the largest-first choice: committing to 4 removes every two-coin optimum. A larger immediate reduction is not the same as a smaller final coin count.",
+        "details": "The rule’s first choice is 4, leaving remainder 2, which requires two 1-coins. The resulting count is three. Choosing 3 first leaves another 3 and completes the target with two coins. Therefore no optimal solution for this instance begins with the greedy choice 4. The greedy-choice property fails before any running-time question matters.\n\nSorting only makes the faulty rule deterministic; it does not change the counterexample. Some denomination systems do support largest-first coin change, but that fact must be proved from their denomination structure rather than inferred from sorted values. The transfer habit is to test a local choice against combinations of slightly smaller choices that can jointly outperform it. A single valid counterexample is sufficient to reject a universal greedy rule.",
+        "wrongOptionExplanationsByOptionId": {
+          "largest_is_always_safe": "Largest immediate reduction ignores how the remainder can be composed. Here it creates a remainder that needs two additional coins.",
+          "sorting_fix": "The algorithm already behaves as descending order would dictate. Ordering cannot repair an invalid dominance claim.",
+          "greedy_equals_dp": "Dynamic programming would compare alternative remainders; greedy discards them. Their different behavior is exposed by this counterexample."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_missing_greedy_choice_property",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "running_best_choice",
+        "problemArchetypeId": "minimize_or_maximize_local_cost"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gfs-002",
+      "prompt": "There are two time slots. Project A occupies both slots and earns 8. Project B uses only slot 1 and earns 5. Project C uses only slot 2 and earns 5. What does this instance show about “always take the currently highest-reward project”?",
+      "constraints": [
+        "Projects sharing a slot are incompatible.",
+        "The objective is maximum total reward."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "combination_beats_local_max",
+            "text": "The rule chooses A for 8, but B+C earn 10, so the highest immediate reward is not exchange-safe."
+          },
+          {
+            "id": "a_must_be_optimal",
+            "text": "A is optimal because no single other project has reward greater than 8."
+          },
+          {
+            "id": "sort_by_reward_proves",
+            "text": "Descending reward order proves the first item is globally optimal."
+          },
+          {
+            "id": "count_not_value",
+            "text": "The only issue is that the algorithm should maximize project count instead of the stated reward objective."
+          }
+        ],
+        "acceptedOptionIds": [
+          "combination_beats_local_max"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A dominates each alternative individually but not their compatible combination. The local comparison ignores opportunity cost created by the shared slots.",
+        "details": "Greedy dominance must compare the local choice with the best consequences it excludes, not just with each individual alternative. A has the largest single reward, but accepting it consumes both slots. B and C are mutually compatible and produce a larger total. No one-for-one exchange can insert A into the optimum {B,C} without reducing value.\n\nThis is a common failure signal in indivisible selection problems: the value of a choice is coupled to a set of displaced options. Sorting by reward makes the commitment earlier but does not eliminate the coupling. The transfer boundary is a structural property such as a matroid exchange rule or another dominance theorem that guarantees a local maximum can replace excluded choices. No such property is given here.",
+        "wrongOptionExplanationsByOptionId": {
+          "a_must_be_optimal": "Global objectives compare feasible sets, not only individual items. Two smaller compatible rewards can exceed one larger reward.",
+          "sort_by_reward_proves": "Sort order does not establish that the first project can replace the combination it blocks without loss.",
+          "count_not_value": "Changing the objective would solve a different problem. The diagnostic is that the proposed rule fails the stated total-reward contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_missing_greedy_choice_property",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gfs-003",
+      "prompt": "Travel occurs on days 1 through 7 and day 10. Passes cost 2 for 1 day, 7 for 7 days, and 15 for 30 days. What is the decisive failure signal for “buy the cheapest pass on each uncovered travel day”?",
+      "constraints": [
+        "A pass covers consecutive calendar days beginning on its purchase day.",
+        "The objective is minimum total cost."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "future_coverage_state",
+            "text": "The 7-day pass costs more now but covers several future travel days, so immediate price does not capture the residual cost state."
+          },
+          {
+            "id": "cheapest_is_always_best",
+            "text": "A 1-day pass is cheapest, so buying it on every travel day must minimize total cost."
+          },
+          {
+            "id": "sort_passes_once",
+            "text": "Sorting pass types by price once makes the repeated cheapest choice optimal."
+          },
+          {
+            "id": "same_as_interval_count",
+            "text": "Because passes cover intervals, earliest-finish interval selection applies unchanged."
+          }
+        ],
+        "acceptedOptionIds": [
+          "future_coverage_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Pass choices change which future travel days remain uncovered. The 7-day pass can dominate several locally cheaper purchases, so current price alone is not a sufficient greedy boundary.",
+        "details": "Buying eight 1-day passes costs 16. Buying one 7-day pass at day 1 covers days 1 through 7, then one 1-day pass covers day 10, for total cost 9. The locally cheapest action is globally worse because each pass changes the residual position by a different amount. Multiple continuations—pay less now and revisit soon, or pay more and skip several days—must be compared.\n\nSorting pass prices cannot remove this horizon effect, and interval-selection proofs optimize a different output: choosing a compatible subset rather than covering required dates at minimum cost. The transfer signal is variable future coverage or duration. When actions advance the state by different distances and their costs are not dominated, a state-based optimization is a more credible candidate than repeated immediate minimum.",
+        "wrongOptionExplanationsByOptionId": {
+          "cheapest_is_always_best": "It minimizes one transaction but can maximize the number of transactions. The objective is the total across the covered horizon.",
+          "sort_passes_once": "The price order is already known; the missing information is how each pass changes future uncovered days.",
+          "same_as_interval_count": "Travel passes cover mandatory dates and may overlap; the maximum-compatible-subset exchange does not represent this objective."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_missing_greedy_choice_property",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "running_best_choice",
+        "problemArchetypeId": "minimize_or_maximize_local_cost"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gfs-004",
+      "prompt": "Capacity is 50. Items are (weight,value): A=(10,60), B=(20,100), C=(30,120). Items are indivisible. What does value-density order demonstrate?",
+      "constraints": [
+        "Each item may be selected at most once and cannot be split.",
+        "The objective is maximum total value within capacity."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "density_fails_for_indivisible",
+            "text": "Density order takes A then B for value 160, while B+C fit exactly for value 220; indivisibility breaks the fractional exchange."
+          },
+          {
+            "id": "density_always_optimal",
+            "text": "Value density is a universal greedy key for every capacity-selection problem."
+          },
+          {
+            "id": "take_a_then_c",
+            "text": "Density order takes A then C, so it already reaches value 180 and is optimal."
+          },
+          {
+            "id": "capacity_sort_fix",
+            "text": "Sorting by capacity before sorting items repairs the greedy proof."
+          }
+        ],
+        "acceptedOptionIds": [
+          "density_fails_for_indivisible"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The ratio rule relies on exchanging fractional amounts. With 0/1 items, the highest-density item can consume capacity that a better indivisible combination needs.",
+        "details": "The densities are 6 for A, 5 for B, and 4 for C. Greedy therefore chooses A and B, using weight 30 and leaving capacity 20, which cannot hold C; value is 160. The combination B+C uses all 50 capacity and yields 220. The local ratio winner A is not part of this optimum.\n\nFractional knapsack is different because part of C could fill any remaining capacity, and a density exchange can replace lower-density mass continuously. Indivisibility removes that exchange and creates discrete combination effects. The transfer rule is to inspect the resource model: a proof based on exchanging quantities does not survive when choices are atomic. Sorting capacity is meaningless because capacity is one fixed constraint, not a candidate key.",
+        "wrongOptionExplanationsByOptionId": {
+          "density_always_optimal": "Density is optimal for the fractional version, not arbitrary indivisible selection. This exact instance refutes the universal claim.",
+          "take_a_then_c": "After taking A, C fits, but density order selects B before C; A+B yields 160. Even A+C at 180 is below B+C at 220.",
+          "capacity_sort_fix": "There is one capacity value. Reordering the input cannot restore the missing fractional exchange property."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_missing_greedy_choice_property",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "minimize_or_maximize_local_cost"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gfs-005",
+      "prompt": "Which findings are sufficient reasons to stop treating a proposed greedy rule as established and require a different proof or strategy? Select all statements that apply.",
+      "constraints": [
+        "The proposal claims correctness for every legal input.",
+        "Efficiency is not under evaluation in this item."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "valid_counterexample",
+            "text": "A legal input on which the rule returns a strictly worse objective value than another feasible solution."
+          },
+          {
+            "id": "lossy_exchange",
+            "text": "Replacing an optimal choice with the greedy choice can preserve feasibility but reduce the objective."
+          },
+          {
+            "id": "history_dependent_residual",
+            "text": "Two partial solutions at the same visible boundary have different future possibilities because discarded history still matters."
+          },
+          {
+            "id": "requires_sorting",
+            "text": "The method begins with sorting, which by itself shows that the local choices are unsafe."
+          },
+          {
+            "id": "uses_heap",
+            "text": "The method maintains a heap, which by itself shows that the local choices are unsafe."
+          }
+        ],
+        "acceptedOptionIds": [
+          "valid_counterexample",
+          "lossy_exchange",
+          "history_dependent_residual"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each accepted finding breaks a correctness obligation: universal validity, objective-preserving exchange, or sufficient residual state. Sorting and heaps are neutral implementation mechanisms.",
+        "details": "A universal greedy rule is immediately refuted by one valid counterexample. Even without a full counterexample, a proposed exchange that loses objective value cannot establish compatibility with an optimum. A residual state that omits history also blocks repeated local commitment because later outcomes depend on alternatives the rule discarded.\n\nThese diagnostics are stronger than implementation observations. Sorting may expose a valid order, and a heap may maintain a proven dynamic extreme; neither is evidence for or against correctness by itself. The transfer checklist is therefore strategy-neutral: test the rule on adversarial combinations, inspect every exchange for both feasibility and objective preservation, and verify that the updated state captures all future consequences. A failed test does not automatically prove which replacement strategy is correct, but it does prevent unsupported activation of the greedy claim.",
+        "wrongOptionExplanationsByOptionId": {
+          "requires_sorting": "Many correct greedy algorithms sort. Sorting becomes a problem only when the chosen key lacks a correctness relation.",
+          "uses_heap": "A heap is an implementation tool for dynamic extremes and appears in correct greedy algorithms. Its presence is not a failure signal."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "valid_counterexample": "A single legal counterexample disproves a rule claimed for all inputs, regardless of how many examples passed.",
+          "lossy_exchange": "If the exchange lowers the objective, it cannot transform an optimum into a greedy-compatible optimum.",
+          "history_dependent_residual": "Hidden relevant history means the greedy boundary is insufficient and later local choices may be based on incomplete state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_missing_greedy_choice_property",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

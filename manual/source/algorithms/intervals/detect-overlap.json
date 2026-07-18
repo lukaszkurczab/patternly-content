@@ -1,0 +1,489 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-intervals-overlap-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-intervals-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "intervals",
+    "primaryMentalUnitId": "detect_overlap",
+    "patternFamilyId": "intervals"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring; no human review claimed",
+    "createdAt": "2026-07-18T00:00:00+02:00",
+    "contentBatchId": "algorithms-intervals-overlap-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "algorithms-intervals-overlap-001",
+      "prompt": "For two half-open intervals [a, b) and [c, d), which predicate is equivalent to a non-empty intersection?",
+      "constraints": [
+        "Assume a <= b and c <= d.",
+        "The endpoint contract is half-open."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "strict_cross",
+            "text": "a < d and c < b"
+          },
+          {
+            "id": "inclusive_cross",
+            "text": "a <= d and c <= b"
+          },
+          {
+            "id": "length_sum",
+            "text": "(b - a) + (d - c) > 0"
+          }
+        ],
+        "acceptedOptionIds": [
+          "strict_cross"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each interval must start strictly before the other's exclusive end; equality at either boundary leaves the intersection empty.",
+        "details": "The intervals fail to overlap exactly when one lies completely before the other: b <= c or d <= a. Negating that disjunction gives b > c and d > a, which is the same as a < d and c < b. This derivation is safer than memorizing a comparator because it exposes the endpoint convention. Under a closed contract, the non-overlap cases use strict inequalities and the overlap predicate becomes inclusive. The predicate is symmetric: swapping the intervals does not change the result. Duration, input order, and which interval is longer are irrelevant to the set intersection.",
+        "wrongOptionExplanationsByOptionId": {
+          "inclusive_cross": "The inclusive comparisons classify equality at a shared endpoint as overlap, which contradicts the half-open contract.",
+          "length_sum": "Positive total duration says nothing about relative position; two positive-length intervals may be far apart."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-overlap-002",
+      "prompt": "For two closed intervals [a, b] and [c, d], which predicate correctly includes a one-point intersection?",
+      "constraints": [
+        "Assume a <= b and c <= d.",
+        "Both endpoints are included."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "inclusive_cross",
+            "text": "a <= d and c <= b"
+          },
+          {
+            "id": "strict_cross",
+            "text": "a < d and c < b"
+          },
+          {
+            "id": "compare_widths",
+            "text": "min(b - a, d - c) > 0"
+          }
+        ],
+        "acceptedOptionIds": [
+          "inclusive_cross"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Closed intervals overlap when neither ends strictly before the other, so equality remains a valid intersection.",
+        "details": "For closed intervals, separation means b < c or d < a. Negating separation yields b >= c and d >= a, equivalently a <= d and c <= b. The inclusive equality is not an implementation patch; it is the direct consequence of including both endpoints. A point interval [x, x] is therefore non-empty and overlaps another closed interval that contains x. This differs from [x, x), which is empty. Transfer the predicate only after verifying the representation contract of both inputs.",
+        "wrongOptionExplanationsByOptionId": {
+          "strict_cross": "Strict comparisons omit the legal equality case where the intervals share exactly one included endpoint.",
+          "compare_widths": "A zero-width closed interval can still contain a point, and widths do not encode where the intervals lie."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-overlap-003",
+      "prompt": "Under half-open scheduling semantics, do [2, 5) and [5, 9) overlap?",
+      "constraints": [
+        "A shared endpoint alone does not occupy positive time in both intervals."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_overlap",
+            "text": "No; the first excludes 5 and the second begins at 5."
+          },
+          {
+            "id": "overlap_at_five",
+            "text": "Yes; both interval records contain the number 5."
+          },
+          {
+            "id": "depends_on_length",
+            "text": "It depends on whether either duration exceeds 3."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_overlap"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The equality first.end == second.start is a legal handoff under [start, end), not a shared occupied instant.",
+        "details": "Substituting into a < d and c < b gives 2 < 9, which is true, and 5 < 5, which is false. Because both conditions are required, the intersection is empty. This is the minimal counterexample for an accidental '<=' comparator. It should appear in unit tests for conflict detection, room reuse, insertion, and event ties whenever those modules use half-open ranges. If the domain instead treats an endpoint as occupied by both intervals, the contract must say so and the comparator changes.",
+        "wrongOptionExplanationsByOptionId": {
+          "overlap_at_five": "Mentioning the same coordinate is not equivalent to containing it. The first interval excludes its end.",
+          "depends_on_length": "Changing duration without crossing the positional boundary does not determine intersection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "detect_schedule_conflict"
+      }
+    },
+    {
+      "id": "algorithms-intervals-overlap-004",
+      "prompt": "Under half-open semantics, interval A is [0, 100) and interval B is [40, 41). Which statement is correct?",
+      "constraints": [
+        "Overlap means any non-empty shared subset."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "b_contained",
+            "text": "They overlap because B is contained inside A."
+          },
+          {
+            "id": "lengths_too_different",
+            "text": "They do not overlap because their lengths differ too much."
+          },
+          {
+            "id": "need_sorting",
+            "text": "Overlap cannot be decided until the intervals are sorted by end."
+          }
+        ],
+        "acceptedOptionIds": [
+          "b_contained"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Containment is overlap: B starts before A ends and A starts before B ends, regardless of their very different lengths.",
+        "details": "The predicate 0 < 41 and 40 < 100 is true in both directions, so the intersection is [40, 41). Length is not part of the overlap contract. Sorting is useful only when processing a collection and establishing a scan invariant; it contributes nothing to this two-interval decision. This distinction prevents an implementation from adding a duration threshold or sorting overhead where a direct endpoint test is sufficient. Transfer the same containment reasoning to closed intervals after changing only the equality boundary.",
+        "wrongOptionExplanationsByOptionId": {
+          "lengths_too_different": "Length disparity does not prevent containment. The shorter interval B is fully inside A, so every point of B is shared despite the unequal durations.",
+          "need_sorting": "Pairwise overlap is a constant-time endpoint comparison and does not require sorting."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-overlap-005",
+      "prompt": "Under half-open semantics, select all interval pairs that overlap.",
+      "constraints": [
+        "Select all correct pairs.",
+        "Every pair is evaluated independently."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "containment_pair",
+            "text": "[1, 5) with [2, 3)"
+          },
+          {
+            "id": "touching_pair",
+            "text": "[1, 2) with [2, 4)"
+          },
+          {
+            "id": "crossing_pair",
+            "text": "[4, 7) with [1, 5)"
+          },
+          {
+            "id": "separated_pair",
+            "text": "[0, 1) with [2, 3)"
+          }
+        ],
+        "acceptedOptionIds": [
+          "containment_pair",
+          "crossing_pair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Containment and crossing both satisfy the strict cross-end predicate; touching and separated pairs do not.",
+        "details": "For [1, 5) and [2, 3), both 1 < 3 and 2 < 5 hold. For [4, 7) and [1, 5), both 4 < 5 and 1 < 7 hold. The touching pair fails because 2 < 2 is false, and the separated pair fails because 2 < 1 is false in the required cross comparison. Evaluating several surface forms with the same predicate demonstrates transfer without changing the decision rule. It also shows why interval length and visual adjacency are unreliable shortcuts.",
+        "wrongOptionExplanationsByOptionId": {
+          "touching_pair": "These intervals only touch at coordinate 2, which [0, 2) excludes. The option would be plausible under a closed-end contract, but not under the stated half-open one.",
+          "separated_pair": "The first interval ends at 3 and the second starts at 4, leaving a positive gap. No endpoint convention can turn that gap into a shared point."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "containment_pair": "Containment still gives a non-empty intersection [2, 3); omitting it would confuse similar length with overlap.",
+          "crossing_pair": "The ranges share [4, 5); omitting it would miss the ordinary crossing case."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-overlap-006",
+      "prompt": "A service must return the first conflict in chronological start order from an unsorted set of half-open bookings. Which preparation and scan matches that output contract?",
+      "constraints": [
+        "The returned conflict should be anchored at the earliest later start that conflicts.",
+        "The service may sort once."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_sort_running_end",
+            "text": "Sort by start, then scan while tracking the greatest end seen and its owning interval."
+          },
+          {
+            "id": "end_sort_adjacent",
+            "text": "Sort by end and return the first adjacent overlap found."
+          },
+          {
+            "id": "length_sort",
+            "text": "Sort by descending duration and compare adjacent intervals."
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_sort_running_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Start order aligns the scan with the requested chronology, while a running maximum end detects whether the current start enters any earlier active range.",
+        "details": "After start sorting, the current interval has the earliest unprocessed start. If current.start is before the greatest prior end, it conflicts with an earlier interval, and this is the earliest possible later-start conflict. Tracking the owner of that maximum end produces a concrete pair even when the immediately preceding interval ends sooner. End sorting can be valid for other questions, but returning its first found pair would answer a different ordering contract. This item separates pairwise overlap semantics from the collection-level order required by a specific result definition.",
+        "wrongOptionExplanationsByOptionId": {
+          "end_sort_adjacent": "End order may detect some conflict, but it does not preserve the requested chronological-start output contract.",
+          "length_sort": "Duration order provides neither chronological output nor a guarantee that conflicting positions are adjacent."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "detect_schedule_conflict"
+      }
+    },
+    {
+      "id": "algorithms-intervals-overlap-007",
+      "prompt": "A half-open conflict detector uses sweep events and treats any active count above 1 as overlap. At time t one interval ends and another starts. Which rule avoids a false conflict?",
+      "constraints": [
+        "The active count is updated and inspected after each individual event."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "end_before_start",
+            "text": "Process the end event before the start event."
+          },
+          {
+            "id": "start_before_end",
+            "text": "Process the start event before the end event."
+          },
+          {
+            "id": "random_tie",
+            "text": "Use any deterministic order; the overlap result is invariant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "end_before_start"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The ending interval is inactive at t, so it must leave the active set before the new interval enters.",
+        "details": "Sweep-based detection is equivalent to pairwise semantics only when event ordering preserves the same endpoint contract. For half-open intervals, decrementing first represents release at t, and the active count never exceeds 1 for back-to-back intervals. Incrementing first reports a conflict that the direct predicate rejects. Closed intervals reverse this tie because both ranges contain t. If the implementation groups all events at t, it must prove how the grouped update maps to the conflict question rather than assuming ties disappear.",
+        "wrongOptionExplanationsByOptionId": {
+          "start_before_end": "That creates a transient active count of 2 even though the intervals do not share an occupied instant under [start, end).",
+          "random_tie": "Determinism alone is insufficient. The chosen order must encode the endpoint contract because intermediate counts differ."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "detect_schedule_conflict"
+      }
+    },
+    {
+      "id": "algorithms-intervals-overlap-008",
+      "prompt": "Given two already normalized interval records, choose the time and extra-space complexities of evaluating their overlap with direct endpoint comparisons.",
+      "constraints": [
+        "Do not include storage already occupied by the two input records.",
+        "No sorting or collection scan is performed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(1)"
+          ],
+          "space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "A fixed number of endpoint comparisons determines the result and allocates no input-dependent state.",
+        "details": "The half-open or closed predicate evaluates a constant number of scalar comparisons and boolean operations. The size of a larger interval collection is irrelevant because this item receives exactly two records. Extra space remains constant because no auxiliary structure grows with input size. Sorting is required only for a collection-wide processing objective and must not be smuggled into the pairwise cost. Numeric comparison cost is treated as constant under the ordinary fixed-width endpoint model; arbitrary-precision endpoints would require a separately declared cost model."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-overlap-009",
+      "prompt": "On a 24-hour clock, an interval [23:00, 01:00) wraps across midnight. Can the ordinary linear predicate be applied directly against [00:30, 02:00)?",
+      "constraints": [
+        "Clock values are cyclic rather than globally ordered.",
+        "The wrapped interval has not yet been normalized."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "normalize_wrap",
+            "text": "No; split or otherwise normalize the wrapped interval into a linear representation first."
+          },
+          {
+            "id": "apply_directly",
+            "text": "Yes; compare 23:00 < 02:00 and 00:30 < 01:00 as usual."
+          },
+          {
+            "id": "compare_durations",
+            "text": "Yes; decide from which interval has the longer clock duration."
+          }
+        ],
+        "acceptedOptionIds": [
+          "normalize_wrap"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The standard predicate assumes one linear order with start <= end. A wrapped cyclic interval violates that precondition.",
+        "details": "Represent [23:00, 01:00) as [23:00, 24:00) union [00:00, 01:00), or map both intervals onto a deliberately chosen unwrapped timeline. The second interval then overlaps on [00:30, 01:00). Applying the linear formula to raw cyclic coordinates confuses representation failure with non-overlap. The transfer boundary is explicit: the endpoint predicate is reusable after normalization, but normalization is owned by the cyclic domain and must preserve the same half-open semantics at midnight.",
+        "wrongOptionExplanationsByOptionId": {
+          "apply_directly": "The first comparison fails only because the cyclic interval was encoded with a start numerically greater than its end. The linear precondition is violated.",
+          "compare_durations": "Duration does not identify the shared segment around midnight and cannot replace cyclic normalization."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "evaluate_interval_overlap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

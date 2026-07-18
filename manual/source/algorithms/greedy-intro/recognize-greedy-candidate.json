@@ -1,0 +1,365 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-greedy-intro-recognize-greedy-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-greedy-intro-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "greedy_intro",
+    "primaryMentalUnitId": "recognize_greedy_candidate",
+    "patternFamilyId": "greedy_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-greedy-intro-recognize-greedy-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-greedy-intro-rgc-001",
+      "prompt": "A problem asks for an optimal sequence of irrevocable decisions. Which statements are genuine structural reasons to investigate a greedy strategy? Select all statements that apply.",
+      "constraints": [
+        "A decision cannot be undone after it is committed.",
+        "The objective is global, not merely the value of the next action."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "exchange_safe_candidate",
+            "text": "A locally preferred feasible choice may be replaceable for the corresponding choice in some optimal solution without worsening the objective."
+          },
+          {
+            "id": "same_form_residual",
+            "text": "After fixing that choice, the remaining work has the same optimization contract under an updated boundary or state."
+          },
+          {
+            "id": "sortable_input",
+            "text": "The input records can be sorted by at least one field."
+          },
+          {
+            "id": "one_pass_possible",
+            "text": "It is possible to imagine an implementation with one loop."
+          }
+        ],
+        "acceptedOptionIds": [
+          "exchange_safe_candidate",
+          "same_form_residual"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A credible greedy candidate needs a potentially safe local commitment and a residual problem that can be solved under the same objective. Sortability and loop count are implementation facts, not correctness structure.",
+        "details": "Greedy reasoning is about committing now without later reconsideration. The first accepted statement identifies the greedy-choice property: the preferred choice must be compatible with at least one global optimum, commonly shown by exchange, dominance, or a stays-ahead argument. The second identifies the recursive structure needed after that commitment: once the choice is fixed, the rest of the instance must still express the same objective with a smaller feasible region.\n\nNeither condition is established by syntax. Almost any finite record set can be sorted, and many incorrect heuristics can be written as one pass. When transferring this test, ask two questions before naming a strategy: “Why can this choice be fixed without losing an optimum?” and “What exactly is the remaining instance after the choice?” If either answer is missing, greedy is only a hypothesis.",
+        "wrongOptionExplanationsByOptionId": {
+          "sortable_input": "Sorting may expose a useful order, but every proposed sort key still needs a correctness argument. Sortability alone says nothing about whether the first sorted item is safe to commit.",
+          "one_pass_possible": "A one-pass procedure may still make irreversible mistakes. Loop count describes an implementation shape, not the dominance or exchange property required for greedy correctness."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "exchange_safe_candidate": "Without a reason that an optimum can include the local choice, the method may discard every optimal solution at its first commitment.",
+          "same_form_residual": "Without a well-defined residual problem, later choices may depend on hidden history and require state-based optimization rather than repeated greedy selection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-002",
+      "prompt": "You must choose as many mutually non-overlapping half-open intervals [start, end) as possible. Which observation most strongly supports treating the problem as a greedy candidate?",
+      "constraints": [
+        "Every selected interval contributes exactly one unit to the objective.",
+        "Touching endpoints are compatible: an interval starting at the current end is allowed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "earliest_finish_exchange",
+            "text": "An earliest-finishing feasible interval can replace the first interval of an optimal schedule while leaving no less room for all later intervals."
+          },
+          {
+            "id": "shortest_duration_local",
+            "text": "The shortest feasible interval consumes the least duration, so it must belong to an optimum."
+          },
+          {
+            "id": "earliest_start_local",
+            "text": "The earliest-starting interval begins first, so delaying that choice cannot help."
+          },
+          {
+            "id": "overlap_requires_dp",
+            "text": "Because intervals overlap, dynamic programming and greedy are interchangeable descriptions of the same method."
+          }
+        ],
+        "acceptedOptionIds": [
+          "earliest_finish_exchange"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The replaceability of the earliest-finishing interval is the decisive signal. It connects the local choice to an optimum and defines the remaining instance by a single end boundary.",
+        "details": "The objective counts intervals, not occupied time. Let an optimal schedule begin with interval o and let g be a feasible interval with the earliest end. Because g.end is no later than o.end, every interval that can follow o can also follow g under the half-open endpoint contract. Replacing o with g therefore preserves both feasibility and the number of selected intervals. The remaining task is the same problem restricted to intervals whose start is at least g.end.\n\nThis is stronger than noticing that the input contains intervals. Shortest duration and earliest start do not control the future boundary that determines later feasibility. The recognition transfers to equivalent maximum-cardinality or minimum-removal formulations with equal item value. It stops transferring when intervals have different weights, because a one-for-one replacement can preserve count while reducing total value.",
+        "wrongOptionExplanationsByOptionId": {
+          "shortest_duration_local": "Short duration is plausible because it sounds economical, but a short interval may finish late and block two compatible intervals. Duration is not the decisive future boundary.",
+          "earliest_start_local": "Starting early does not imply finishing early. An early-starting long interval can occupy the resource while several later intervals could have been selected.",
+          "overlap_requires_dp": "Overlap creates a feasibility relation, but it does not make methods interchangeable. Greedy is justified here by exchange; weighted or state-dependent variants may instead require dynamic programming."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-003",
+      "prompt": "A route has one decision at each station. The immediate fee of a coupon is known, but the discount available at the next station depends on the last two coupon types chosen. The goal is minimum total fee. What is the best strategy-level conclusion?",
+      "constraints": [
+        "Coupon choices are irrevocable.",
+        "Two partial routes at the same station can have different future discounts because their last two coupon types differ."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "state_dependent_not_yet_greedy",
+            "text": "The problem is not yet a justified greedy candidate because the cheapest current coupon may change future costs through history-dependent state."
+          },
+          {
+            "id": "pick_cheapest_coupon",
+            "text": "Choose the cheapest coupon at every station; a smaller immediate fee always improves the final total."
+          },
+          {
+            "id": "sort_coupon_types",
+            "text": "Sort coupon types by fee once and always take the first currently available type."
+          },
+          {
+            "id": "greedy_equals_dp",
+            "text": "Use either greedy or dynamic programming; both optimize the same objective and are therefore interchangeable."
+          }
+        ],
+        "acceptedOptionIds": [
+          "state_dependent_not_yet_greedy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The future value of a coupon is not determined by its immediate fee alone. Different histories remain materially distinct, so an irrevocable local minimum needs a new dominance proof before it can be called greedy-safe.",
+        "details": "A greedy boundary should summarize everything about the past that matters for future feasibility and objective value. Here the current station index is not enough: the last two coupon types alter the transition costs that remain. Choosing the smallest immediate fee can move the route into a more expensive future state, while a slightly larger fee can unlock better discounts later.\n\nThis does not prove that no specialized greedy theorem exists, but it removes the ordinary signal for a repeated local minimum. The natural diagnostic is to retain the relevant history as state and compare alternative continuations. That is the role a dynamic-programming formulation might serve; designing that state is outside this item. The transfer rule is to look for multiple partial solutions that reach the same visible position but have different future option values. Their coexistence is a warning that “current cheapest” is not a sufficient decision rule.",
+        "wrongOptionExplanationsByOptionId": {
+          "pick_cheapest_coupon": "Immediate fee is only part of the consequence. This option ignores that the selected coupon changes the prices of later choices.",
+          "sort_coupon_types": "A fixed ordering cannot account for history-dependent availability and transition costs. Sorting is useful only when the sort key remains decisive throughout the residual problem.",
+          "greedy_equals_dp": "The methods have different commitments. Dynamic programming may retain several states; greedy discards alternatives and therefore needs a proof that the discarded histories cannot win."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "running_best_choice",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-004",
+      "prompt": "Each job has a duration and a deadline, all jobs are available initially, and the objective is to complete the largest possible number by their deadlines. A candidate method processes jobs by deadline, tentatively keeps each job, and removes one selected job whenever the prefix becomes infeasible. Which observation identifies the greedy structure?",
+      "constraints": [
+        "Every completed job contributes the same value of one.",
+        "A job counts only if its completion time is no later than its deadline."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "repair_prefix_by_longest",
+            "text": "Within an infeasible deadline prefix, removing the longest selected duration creates the greatest time reduction while decreasing the selected count by exactly one."
+          },
+          {
+            "id": "heap_implies_correctness",
+            "text": "Using a heap makes the method greedy and therefore proves that it is optimal."
+          },
+          {
+            "id": "keep_earliest_deadline_only",
+            "text": "The earliest-deadline job must be permanently kept because it appears first after sorting."
+          },
+          {
+            "id": "choose_shortest_globally",
+            "text": "Selecting all jobs globally by shortest duration is equivalent to processing deadline prefixes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "repair_prefix_by_longest"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The signal is a reversible local repair on a deadline-ordered prefix: discard the longest selected job to preserve the best time budget for the same retained count. The heap only implements that choice.",
+        "details": "Deadline order exposes the constraints incrementally. After considering a prefix, the candidate solution represents jobs that could fit within the deadlines seen so far. If adding a job makes the total duration too large, one job must be removed to restore a feasible cardinality. Removing the longest selected duration minimizes the total time of the remaining set among all one-job removals, so it leaves the strongest feasible prefix for future deadlines.\n\nThis is a greedy-with-heap pattern because the set of candidates changes as deadlines are reached and the decisive extreme must be queried repeatedly. The heap is not the proof; it is an efficient data structure for the proven local repair. The recognition stops transferring when jobs have unequal rewards, dependencies, or constraints that are not captured by each deadline prefix, because removing one longest job may then discard disproportionate value or fail to repair the relevant constraint.",
+        "wrongOptionExplanationsByOptionId": {
+          "heap_implies_correctness": "A heap efficiently returns an extreme element, but it does not establish that the extreme is safe to discard. Correctness comes from the prefix invariant and equal-cardinality objective.",
+          "keep_earliest_deadline_only": "Deadline order determines when a constraint becomes active, not which job is immune from removal. A long early-deadline job may be the best job to discard from an infeasible prefix.",
+          "choose_shortest_globally": "Global shortest-duration order ignores which deadlines are currently binding. The prefix method combines deadline exposure with a separate removal criterion."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-005",
+      "prompt": "Two tasks both say “select as many objects as possible.” Task A selects non-overlapping unweighted intervals. Task B selects projects, but every pair of selected projects can add a compatibility bonus or penalty. Which comparison is correct?",
+      "constraints": [
+        "Task A uses half-open intervals and equal value per selected interval.",
+        "Task B has arbitrary pairwise interactions not reducible to a single ordering boundary."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "structure_differs_despite_wording",
+            "text": "Task A has a credible exchange boundary; Task B is not a greedy candidate merely because the surface objective uses the same words."
+          },
+          {
+            "id": "same_objective_same_strategy",
+            "text": "Both tasks maximize a count, so the same local rule must solve both."
+          },
+          {
+            "id": "task_b_more_greedy",
+            "text": "Pairwise bonuses make Task B more suitable for greedy selection because each choice has more local information."
+          },
+          {
+            "id": "sorting_decides_both",
+            "text": "Sort both inputs by one numeric field; the first item after sorting is the greedy choice in each task."
+          }
+        ],
+        "acceptedOptionIds": [
+          "structure_differs_despite_wording"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Greedy classification follows the interaction structure, not the wording of the objective. A single interval end can summarize future feasibility in Task A, while Task B retains set-dependent interactions.",
+        "details": "In unweighted interval selection, the consequences of the first choice can be summarized by one boundary: the end of the selected interval. An earliest-finishing choice can be exchanged into an optimum, and the residual instance remains another interval-selection problem. Task B has no comparable summary under the stated assumptions. Adding or removing one project changes several pairwise contributions, so the apparent value of a project depends on which other projects are selected.\n\nThe important transfer habit is to preserve the mechanism while varying the surface. Similar verbs such as “select,” “maximize,” or “schedule” do not imply the same strategy. Greedy recognition transfers only when the new context retains a safe local dominance relation and a residual state that captures all future consequences. Arbitrary pair interactions are a boundary signal that alternatives may need to remain visible to a state-based or combinatorial method.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_objective_same_strategy": "An objective label does not determine the dependency structure. The same count objective can be easy under interval compatibility and hard under arbitrary interactions.",
+          "task_b_more_greedy": "More local data is not the same as a safe local choice. Pairwise effects make the consequence of a choice depend on the rest of the set.",
+          "sorting_decides_both": "A sort key is useful only if it induces a dominance or exchange property. Task B provides no such field under the stated arbitrary interaction model."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "greedy-intro-learn-approach-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-greedy-intro-dlc-001",
+            "alg-greedy-intro-dlc-002",
+            "alg-greedy-intro-dlc-003",
+            "alg-greedy-intro-dlc-004",
+            "alg-greedy-intro-dlc-005",
+            "alg-greedy-intro-eai-001",
+            "alg-greedy-intro-eai-002",
+            "alg-greedy-intro-eai-003",
+            "alg-greedy-intro-eai-004",
+            "alg-greedy-intro-eai-005",
+            "alg-greedy-intro-gfs-001",
+            "alg-greedy-intro-gfs-002",
+            "alg-greedy-intro-gfs-003",
+            "alg-greedy-intro-gfs-004",
+            "alg-greedy-intro-gfs-005",
+            "alg-greedy-intro-gmr-001",
+            "alg-greedy-intro-gmr-002",
+            "alg-greedy-intro-gmr-003",
+            "alg-greedy-intro-gmr-004",
+            "alg-greedy-intro-gmr-005",
+            "alg-greedy-intro-ig-001",
+            "alg-greedy-intro-ig-002",
+            "alg-greedy-intro-ig-003",
+            "alg-greedy-intro-ig-004",
+            "alg-greedy-intro-ig-005",
+            "alg-greedy-intro-ig-006",
+            "alg-greedy-intro-psc-001",
+            "alg-greedy-intro-psc-002",
+            "alg-greedy-intro-psc-003",
+            "alg-greedy-intro-psc-004",
+            "alg-greedy-intro-psc-005",
+            "alg-greedy-intro-rgc-001",
+            "alg-greedy-intro-rgc-002",
+            "alg-greedy-intro-rgc-003",
+            "alg-greedy-intro-rgc-004",
+            "alg-greedy-intro-rgc-005",
+            "alg-greedy-intro-stg-001",
+            "alg-greedy-intro-stg-002",
+            "alg-greedy-intro-stg-003",
+            "alg-greedy-intro-stg-004",
+            "alg-greedy-intro-stg-005",
+            "alg-greedy-intro-stg-006"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

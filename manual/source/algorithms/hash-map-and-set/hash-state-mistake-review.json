@@ -1,0 +1,452 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-hash-map-and-set-hash-state-mistake-review-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-hash-map-and-set-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "hash_map_and_set",
+    "primaryMentalUnitId": "hash_state_mistake_review",
+    "patternFamilyId": "hash_map_and_set"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-hash-map-and-set-hash-state-mistake-review-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-hms-review-self-pair-after-insert",
+      "prompt": "Pseudocode for distinct-index pair existence does: insert current into seen; then test whether target - current is in seen. On input [5] with target 10 it returns true. What is the primary defect?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "current_matches_itself",
+            "text": "The insertion makes the current occurrence available as its own prior partner."
+          },
+          {
+            "id": "set_needs_count",
+            "text": "Every pair-existence algorithm requires a full frequency map."
+          },
+          {
+            "id": "hash_too_slow",
+            "text": "The lookup is not expected O(1)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "current_matches_itself"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The table includes the current occurrence before the lookup that is supposed to prove an earlier distinct partner.",
+        "details": "The failing trace exposes an operation-order mismatch. The correct invariant is that seen contains only indices smaller than the current index. Compute and query the complement first, then insert the current value. This repair preserves distinctness without requiring a precomputed frequency table.",
+        "wrongOptionExplanationsByOptionId": {
+          "set_needs_count": "A prior-presence set is sufficient for one-pass existence when the check occurs before insertion; counts are not the primary defect.",
+          "hash_too_slow": "Performance does not explain the false positive; the temporal invariant is wrong."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-review-set-used-for-count",
+      "prompt": "An implementation uses a set to answer “which value appears most often?” It returns an arbitrary seen value. What is the primary state mismatch?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "multiplicity_missing",
+            "text": "The state preserves presence but not per-value multiplicity."
+          },
+          {
+            "id": "key_direction_wrong",
+            "text": "The map direction should be index to value."
+          },
+          {
+            "id": "sorting_required",
+            "text": "The input must be sorted before any frequency decision is possible."
+          }
+        ],
+        "acceptedOptionIds": [
+          "multiplicity_missing"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A set collapses every positive count to membership, so it cannot compare frequencies.",
+        "details": "The algorithm’s output depends on the magnitude of count[value]. The state must therefore maintain numeric counts and an explicit tie rule if needed. The existing set can detect whether a value appeared, but that is a weaker function and cannot be repaired by changing iteration order.",
+        "wrongOptionExplanationsByOptionId": {
+          "key_direction_wrong": "There is no map payload at all; the missing information is count, not mapping direction.",
+          "sorting_required": "Sorting is one alternative strategy, but a value-to-count map can solve the stated problem without sorting."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-review-lossy-grouping-key",
+      "prompt": "Strings are grouped by character multiset, but the implementation uses string length as the map key. It merges “ab” and “cd”. What is the primary defect?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "lossy_equivalence_key",
+            "text": "The key omits character identity and therefore merges non-equivalent inputs."
+          },
+          {
+            "id": "bucket_payload_wrong",
+            "text": "The bucket should be a set instead of a list."
+          },
+          {
+            "id": "hash_collision_worst_case",
+            "text": "The hash table suffered an implementation collision that cannot be handled."
+          }
+        ],
+        "acceptedOptionIds": [
+          "lossy_equivalence_key"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The grouping key does not encode the full equivalence relation, so distinct classes are collapsed before hashing behavior matters.",
+        "details": "A canonical key must be equal exactly when the grouping contract says two inputs are equivalent. Length is only a necessary condition for character-multiset equality, not a complete signature. Use a sorted-character key or canonical frequency vector under the stated alphabet.",
+        "wrongOptionExplanationsByOptionId": {
+          "bucket_payload_wrong": "Changing the bucket container cannot undo the fact that unrelated records were assigned the same semantic key.",
+          "hash_collision_worst_case": "The merge is caused deliberately by equal length keys, not by a low-level hash collision; hash tables can distinguish unequal keys after collisions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-review-earliest-index-overwritten",
+      "prompt": "A value-to-index map overwrites the stored index on every duplicate, but the result must use the earliest occurrence. Which repair is required?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "write_if_absent",
+            "text": "Keep the first stored index and ignore later replacements."
+          },
+          {
+            "id": "overwrite_faster",
+            "text": "Overwrite before the lookup instead of after it."
+          },
+          {
+            "id": "use_set",
+            "text": "Replace the map with a set of values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "write_if_absent"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The map shape is plausible, but its replacement policy contradicts the earliest-index invariant.",
+        "details": "Hash-state bugs can live in payload semantics even when keys and lookups are correct. The required invariant is map[value] equals the minimum processed index, so only the first write should be retained. If the contract asked for the latest occurrence, unconditional overwrite would instead be appropriate.",
+        "wrongOptionExplanationsByOptionId": {
+          "overwrite_faster": "Moving the overwrite does not preserve earliest provenance; the payload still becomes a later index.",
+          "use_set": "A set removes the index payload entirely and makes the output even less reconstructable."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-review-worst-case-claim",
+      "prompt": "A code review states: “This algorithm is worst-case O(n) because each of its n hash operations is guaranteed O(1).” What correction is needed?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "expected_not_guaranteed",
+            "text": "Call the total expected O(n) under ordinary hashing assumptions, unless the implementation supplies a stronger worst-case guarantee."
+          },
+          {
+            "id": "total_constant",
+            "text": "Call the entire algorithm O(1) because every operation is constant."
+          },
+          {
+            "id": "always_quadratic",
+            "text": "Call it O(n^2) for every input because collisions exist."
+          }
+        ],
+        "acceptedOptionIds": [
+          "expected_not_guaranteed"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The aggregate linear result is expected, while the premise of guaranteed worst-case constant hash operations is too strong.",
+        "details": "A precise review separates the operation count from the operation model. The loop executes O(n) table operations. Under ordinary distribution and load assumptions, each is expected O(1), giving expected O(n). A different worst-case bound requires implementation-specific evidence or a different data structure.",
+        "wrongOptionExplanationsByOptionId": {
+          "total_constant": "Repeating constant expected work n times still yields linear total work, not constant total work.",
+          "always_quadratic": "A possible collision worst case does not make every execution quadratic; expected analysis remains valid under its stated assumptions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "detect_duplicate_or_membership"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-review-stored-current-not-complement",
+      "prompt": "A one-pass target-sum implementation stores seen values correctly but checks whether the target itself is in seen. Why does it miss valid pairs?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "wrong_lookup_key",
+            "text": "The query should use target - current, the prior value required by the relation."
+          },
+          {
+            "id": "wrong_container",
+            "text": "A hash set can never support pair existence."
+          },
+          {
+            "id": "need_sort_only",
+            "text": "Target-sum pairs can only be found after sorting."
+          }
+        ],
+        "acceptedOptionIds": [
+          "wrong_lookup_key"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The table is queried with a parameter rather than the value algebraically required to pair with the current element.",
+        "details": "The state structure can be correct while the key derivation is wrong. From prior + current = target, the required prior key is target - current. Checking target asks an unrelated membership question and succeeds only accidentally on special inputs.",
+        "wrongOptionExplanationsByOptionId": {
+          "wrong_container": "A prior-presence set is sufficient for existence when the complement key and operation order are correct.",
+          "need_sort_only": "Sorting with two pointers is an alternative, not a requirement; complement lookup is valid under the stated one-pass state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-review-count-payload-for-groups",
+      "prompt": "A grouping implementation maps each signature to a count, but the API must return the grouped original strings. What is the primary repair?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "count_to_bucket",
+            "text": "Replace or augment the count payload with a bucket of original strings."
+          },
+          {
+            "id": "count_to_set",
+            "text": "Replace the map with a set of signatures."
+          },
+          {
+            "id": "bigger_count",
+            "text": "Use a larger integer type for the count."
+          }
+        ],
+        "acceptedOptionIds": [
+          "count_to_bucket"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The key is suitable, but the payload answers “how many” instead of “which members.”",
+        "details": "Diagnosis should separate key correctness from payload sufficiency. A signature-to-count map is valid for a histogram and invalid for materialized grouping. Appending original strings to a bucket preserves the information required by the API; counts can be derived later from bucket length if needed.",
+        "wrongOptionExplanationsByOptionId": {
+          "count_to_set": "A set retains even less information and still cannot reconstruct any group members.",
+          "bigger_count": "Numeric range is unrelated to the missing record identities."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-review-stale-zero-key",
+      "prompt": "A mutable frequency map decrements counts but keeps keys whose count reaches zero. Later code tests only key membership and treats the value as present. What is the defect?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "membership_invariant_broken",
+            "text": "Key presence no longer means positive frequency; zero keys must be removed or membership checks must inspect the count."
+          },
+          {
+            "id": "decrement_too_slow",
+            "text": "Hash-map decrement is asymptotically too slow."
+          },
+          {
+            "id": "need_index_payload",
+            "text": "Every count entry must also store an original index."
+          }
+        ],
+        "acceptedOptionIds": [
+          "membership_invariant_broken"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The implementation mixes two conventions: absence-as-zero and retained zero entries, then interprets membership as positive count.",
+        "details": "Either convention can work if applied consistently. Canonical sparse frequency state usually deletes a key at zero so contains(key) is equivalent to count(key) > 0. If zero entries are retained, every later condition must read the numeric payload. The mismatch is not fixed by changing container type.",
+        "wrongOptionExplanationsByOptionId": {
+          "decrement_too_slow": "The observed incorrect result comes from state semantics, not from the expected cost of the update.",
+          "need_index_payload": "No provenance requirement is stated; adding indices would not repair the zero-versus-present confusion."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "advanced"
+    },
+    {
+      "id": "alg-hms-review-select-all-composite-repairs",
+      "prompt": "A pair-index implementation inserts current value to current index, then checks the complement, and overwrites earlier duplicate indices. It must return the first pair found by a left-to-right scan, using the earliest prior index for each value. Select all required repairs.",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "check_before_insert",
+            "text": "Query the complement before recording the current occurrence."
+          },
+          {
+            "id": "preserve_earliest",
+            "text": "Store an index only when the value is absent, preserving the earliest index."
+          },
+          {
+            "id": "replace_with_set",
+            "text": "Replace the map with a set of values."
+          },
+          {
+            "id": "claim_worst_constant",
+            "text": "Document every lookup as guaranteed worst-case O(1)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "check_before_insert",
+          "preserve_earliest"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Two independent invariants are broken: prior-state distinctness and earliest-index payload preservation.",
+        "details": "A complete diagnosis separates temporal and payload defects. Querying before insertion ensures any match comes from an earlier index. First-write-wins preserves the earliest origin under each value. Both repairs are needed; a set removes required provenance, and a complexity statement cannot compensate for incorrect state semantics.",
+        "wrongOptionExplanationsByOptionId": {
+          "replace_with_set": "A set would discard the earlier index required by the output and cannot enforce earliest provenance.",
+          "claim_worst_constant": "Changing the complexity claim does not repair either the self-match or overwrite defect, and the guarantee is unjustified."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "check_before_insert": "Omitting check_before_insert leaves the current occurrence eligible to satisfy its own complement lookup.",
+          "preserve_earliest": "Omitting preserve_earliest allows later duplicates to replace the provenance required by the earliest-pair contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_hash_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "A valid pair must use two distinct indices.",
+        "Among pairs with the same later index, the smaller earlier index is preferred."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

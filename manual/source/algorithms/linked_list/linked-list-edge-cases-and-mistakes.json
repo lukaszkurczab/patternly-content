@@ -1,0 +1,475 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-linked-list-linked_list_edge_cases_and_mistakes-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-linked-list-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "linked_list",
+    "primaryMentalUnitId": "linked_list_edge_cases_and_mistakes",
+    "patternFamilyId": "linked_list"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-linked-list-linked_list_edge_cases_and_mistakes-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "prompt": "A pointer-manipulation routine returns the expected value sequence on one sample, but a later traversal sometimes omits nodes or never terminates. Which diagnostic should come first?",
+      "constraints": [
+        "Duplicate payload values may occur.",
+        "The routine is expected to return an acyclic singly linked list."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "add_dummy_only",
+            "text": "Add a dummy node without changing or inspecting any other operation."
+          },
+          {
+            "id": "sort_payloads",
+            "text": "Sort the returned payloads and compare their numeric order."
+          },
+          {
+            "id": "rename_variables",
+            "text": "Rename prev and current so the code is easier to read."
+          },
+          {
+            "id": "trace_identities_and_links",
+            "text": "Trace node identities and next links to verify intended reachability, uniqueness, and termination."
+          }
+        ],
+        "acceptedOptionIds": [
+          "trace_identities_and_links"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Omitted nodes and nontermination are topology symptoms, so the diagnostic must inspect reference identity and next-link reachability.",
+        "details": "A value sequence can look correct even when equal-valued nodes were duplicated, skipped, or replaced. Tracing exact node identities exposes lost suffixes, repeated nodes, and accidental cycles. Sorting may hide order defects, variable names do not change behavior, and a sentinel cannot repair an unknown structural error by itself. After topology is verified, payload and ordering assertions can be layered on.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_payloads": "Sorting destroys the traversal order evidence and cannot reveal identity loss or cycles.",
+          "rename_variables": "Clear names help review but do not diagnose the runtime structure without a trace or invariant check.",
+          "add_dummy_only": "A sentinel addresses a specific boundary problem and does not automatically reveal or fix arbitrary link defects."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-mistakes-01-reachability-first-diagnostic",
+      "difficulty": "introductory"
+    },
+    {
+      "prompt": "A test records node identities during traversal after a mutation. Select all correctly matched symptom-to-defect pairs.",
+      "constraints": [
+        "The expected set of node identities is known from the fixture.",
+        "Traversal stops at null or at the first repeated identity."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "early_null_lost_suffix",
+            "text": "Traversal reaches null before an expected suffix node: a required link to that suffix was lost or bypassed."
+          },
+          {
+            "id": "longer_means_sorted",
+            "text": "Traversal visits more nodes than expected: the result is necessarily more sorted."
+          },
+          {
+            "id": "repeat_means_cycle",
+            "text": "The same node identity appears again before null: an unintended cycle is reachable."
+          },
+          {
+            "id": "equal_value_means_alias",
+            "text": "The same payload value appears twice: the two positions must be one aliased node."
+          }
+        ],
+        "acceptedOptionIds": [
+          "repeat_means_cycle",
+          "early_null_lost_suffix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Reference repetition diagnoses a reachable cycle, while premature termination relative to expected identities diagnoses loss or bypass of the suffix.",
+        "details": "Identity traces make structural symptoms precise. A repeated object before null means the next relation has returned to an earlier node. If traversal terminates before required nodes appear, some incoming edge was overwritten or redirected past them. Payload repetition is legal, and node-count growth says nothing about sortedness; it may instead signal duplication or an attached foreign segment.",
+        "wrongOptionExplanationsByOptionId": {
+          "equal_value_means_alias": "Distinct nodes may share a payload, so values cannot establish aliasing.",
+          "longer_means_sorted": "Unexpected length is a structural defect signal, not an ordering guarantee."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "repeat_means_cycle": "A repeated node identity is the direct observable definition of a cycle along a deterministic next path.",
+          "early_null_lost_suffix": "Premature null shows that the expected suffix is no longer reachable through the returned chain."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-mistakes-02-classify-structural-symptoms",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "Select all fixtures that materially expand a minimal structural boundary suite for a newly written linked-list routine.",
+      "constraints": [
+        "The routine's contract includes either handling or explicitly rejecting cyclic input.",
+        "Each fixture must test a structurally distinct boundary."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "self_loop",
+            "text": "S.next = S when the routine claims to detect or reject cycles."
+          },
+          {
+            "id": "single_null",
+            "text": "S is the only node and S.next = null."
+          },
+          {
+            "id": "empty",
+            "text": "head = null, so traversal begins with no node."
+          },
+          {
+            "id": "two_nodes",
+            "text": "A.next = B and B.next = null."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty",
+          "single_null",
+          "two_nodes",
+          "self_loop"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each fixture isolates a different assumption: null guarding, one-node termination, one real predecessor/successor transition, and cyclic termination behavior.",
+        "details": "The empty case detects unconditional dereferences. A one-node list tests whether null successors are handled without inventing links. Two nodes are the smallest input that exercises a real link transition between distinct objects. A self-loop is the smallest cycle and is material whenever the routine promises cycle handling or rejection. This baseline does not replace scenario-specific fixtures such as duplicate values, shared tails, or even-length conventions.",
+        "wrongOptionExplanationsByOptionId": {},
+        "omittedCorrectExplanationsByOptionId": {
+          "empty": "Without the empty fixture, an unconditional head dereference can remain hidden.",
+          "single_null": "Without the one-node fixture, null-successor and tail updates are not isolated.",
+          "two_nodes": "Without two distinct nodes, a real predecessor/successor transition is never exercised.",
+          "self_loop": "Without the minimal cycle, unsupported termination assumptions may remain undetected."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-mistakes-03-minimal-boundary-test-suite",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "A filter using dummy.next = head returns a list whose first node has the sentinel payload and whose length is one greater than the number of retained data nodes. Which defect best explains both symptoms?",
+      "constraints": [
+        "The sentinel payload is distinguishable in the failing test.",
+        "The output contract excludes implementation-only nodes."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "duplicate_values",
+            "text": "Two retained data nodes happened to share a payload."
+          },
+          {
+            "id": "returned_dummy",
+            "text": "The function returned dummy instead of dummy.next."
+          },
+          {
+            "id": "fast_too_fast",
+            "text": "A fast pointer advanced three steps per iteration."
+          },
+          {
+            "id": "lost_suffix",
+            "text": "The function overwrote the only link to the retained suffix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "returned_dummy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Returning the implementation sentinel makes it visible as an extra leading node while leaving the retained suffix otherwise reachable.",
+        "details": "The paired symptoms are diagnostic: the unexpected first payload belongs to the dummy, and exactly one extra node indicates that the sentinel was included rather than a data node duplicated. A lost suffix would reduce reachability, fast-pointer speed is unrelated to a filter builder, and duplicate data values do not add a node identity. The correction is to return dummy.next under the stated contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "lost_suffix": "Losing a suffix would shorten the result rather than add a leading sentinel node.",
+          "fast_too_fast": "The described routine and symptoms concern the returned anchor, not relative-speed traversal.",
+          "duplicate_values": "Equal payloads do not change the number of node objects in the chain."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dummy_head",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-mistakes-04-returned-sentinel-defect",
+      "difficulty": "introductory"
+    },
+    {
+      "prompt": "A routine intends to delete zero-based position k. It sets current = head, sets an integer index = k, performs no next traversal, and deletes current. Tests show it always deletes the head. What assumption is wrong?",
+      "constraints": [
+        "The only structural reference initially available is head.",
+        "No auxiliary position-to-node index exists."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "cycle_required",
+            "text": "Indexed deletion works only when the list contains a cycle."
+          },
+          {
+            "id": "integer_does_not_move_pointer",
+            "text": "Assigning index = k does not move current; the pointer must follow next links under a position invariant."
+          },
+          {
+            "id": "dummy_value_missing",
+            "text": "A sentinel with payload k would make current jump to position k."
+          },
+          {
+            "id": "head_has_wrong_value",
+            "text": "The head payload must be changed to k before deletion."
+          }
+        ],
+        "acceptedOptionIds": [
+          "integer_does_not_move_pointer"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The integer records a desired position but does not provide random access to the corresponding node or predecessor.",
+        "details": "current still references head because no link was traversed. To delete by position, the routine must follow next links while maintaining a clear count and usually stop at the predecessor. A sentinel can simplify position zero but cannot jump to k; payload changes and cycles do not provide indexed addressing. An auxiliary node array would be a different data structure with separate maintenance costs.",
+        "wrongOptionExplanationsByOptionId": {
+          "head_has_wrong_value": "Payload values do not determine structural positions or move references.",
+          "dummy_value_missing": "A sentinel payload has no addressing effect; only link traversal changes current.",
+          "cycle_required": "Cycles complicate termination and do not create numeric random access."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-mistakes-05-index-assumption-off-by-one",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "An in-place routine receives A(value=5) -> B(value=5). A faulty result is A -> A, but a test checks only the traversed values [5, 5] and passes. Which added assertion exposes the defect?",
+      "constraints": [
+        "A and B are distinct node objects with equal payloads.",
+        "The contract requires each original node exactly once."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_sum",
+            "text": "Assert that the payload sum is 10."
+          },
+          {
+            "id": "dummy_payload",
+            "text": "Assert that no sentinel payload appears."
+          },
+          {
+            "id": "first_value",
+            "text": "Assert that the first payload is 5."
+          },
+          {
+            "id": "identity_multiset",
+            "text": "Assert that the result contains exactly the original node identities A and B once each."
+          }
+        ],
+        "acceptedOptionIds": [
+          "identity_multiset"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The failing result preserves the value sequence but duplicates A and loses B, which only an identity-aware oracle detects.",
+        "details": "When payloads repeat, sums, sequences, and individual values can all match despite a structural identity defect. Recording the original node references and asserting exact once-only membership catches both duplication and loss. A sentinel check addresses a different failure mode. Identity assertions are mandatory for in-place contracts that promise to reuse specific nodes; a value-only transformation may use a different oracle.",
+        "wrongOptionExplanationsByOptionId": {
+          "value_sum": "A -> A has the same payload sum as A -> B and therefore still passes.",
+          "first_value": "Both correct and faulty results begin with payload 5.",
+          "dummy_payload": "No sentinel is involved, so this assertion does not distinguish A -> A from A -> B."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-mistakes-06-duplicate-values-mask-node-loss",
+      "difficulty": "advanced"
+    },
+    {
+      "prompt": "Trace: current = B in A -> B -> C -> D; prev = A; no other variable references C. The code executes current.next = prev and only afterward tries saved = current.next. Which root defect has occurred?",
+      "constraints": [
+        "B.next is the only reference to C before the write.",
+        "No external index or alias stores C."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "successor_overwritten",
+            "text": "The only reference from B to C was overwritten before capture, so saved becomes A and C -> D is lost from the algorithm's state."
+          },
+          {
+            "id": "payload_collision",
+            "text": "B.value must equal C.value, causing the suffix to disappear."
+          },
+          {
+            "id": "list_random_access",
+            "text": "The code should recover C by reading position 2 directly from B."
+          },
+          {
+            "id": "dummy_missing",
+            "text": "A sentinel would make current.next still reference C after the assignment."
+          }
+        ],
+        "acceptedOptionIds": [
+          "successor_overwritten"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The destructive assignment changes what current.next means before saved reads it, eliminating the only available path to C.",
+        "details": "Immediately after current.next = prev, B.next is A. Therefore saved = current.next records A, not the original successor C. With no other alias to C, the suffix is unreachable from all algorithm state. The root fix is capture-before-overwrite. Payloads, a sentinel, and imagined indexed access cannot reconstruct the lost node reference.",
+        "wrongOptionExplanationsByOptionId": {
+          "payload_collision": "Payload equality cannot change next references or erase reachability.",
+          "dummy_missing": "A sentinel supplies a predecessor but does not preserve B's overwritten successor.",
+          "list_random_access": "A singly linked node cannot recover an arbitrary position after the path is lost without an auxiliary index."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "reverse_linked_structure"
+      },
+      "id": "alg-linked-list-mistakes-07-overwrite-before-save-trace",
+      "difficulty": "advanced"
+    },
+    {
+      "prompt": "A routine is claimed to behave correctly even when two input heads share a suffix. Which fixture actually tests that claim?",
+      "constraints": [
+        "Shared suffix means shared node object identity.",
+        "The test must distinguish alias-aware behavior from value-only behavior."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "copy_equal_suffixes",
+            "text": "Build two separately allocated suffixes with equal values."
+          },
+          {
+            "id": "reuse_same_suffix",
+            "text": "Build S1 -> S2 once, then link both input prefixes to the same S1 object."
+          },
+          {
+            "id": "same_head_values",
+            "text": "Give the two distinct heads the same payload value."
+          },
+          {
+            "id": "same_lengths",
+            "text": "Use two disjoint lists with equal lengths."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reuse_same_suffix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Aliasing exists only when both paths reach the same node objects, so the fixture must reuse the exact suffix references.",
+        "details": "Separately allocated equal-valued suffixes test content similarity, not structural sharing. Linking two prefixes to one S1 creates the minimal shared-tail topology and exposes double-attachment, cross-list mutation, or incorrect identity assumptions. If the routine's formal precondition forbids aliases, a separate validation test should assert rejection instead; the fixture remains the way to exercise that boundary.",
+        "wrongOptionExplanationsByOptionId": {
+          "copy_equal_suffixes": "Equal values and shape do not create a shared node identity or aliasing side effects.",
+          "same_head_values": "Matching head payloads say nothing about whether later nodes are shared.",
+          "same_lengths": "Length equality does not establish any shared reference."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-mistakes-08-distinguishing-aliasing-fixture",
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

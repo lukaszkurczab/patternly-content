@@ -1,0 +1,856 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-tree-traversal-traversal_choice_and_complexity-candidate-001",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-tree-traversal-candidate-0001",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "tree_traversal",
+    "primaryMentalUnitId": "traversal_choice_and_complexity",
+    "patternFamilyId": "tree_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; not a human reviewer)",
+    "createdAt": "2026-07-18T16:17:19Z",
+    "contentBatchId": "algorithms-tree-traversal-traversal_choice_and_complexity-candidate-001",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tree-choice-streaming-prefix-serialization",
+      "prompt": "A serializer writes one token stream that a deserializer reads strictly from left to right. The deserializer must create each parent before recursively reading its left and right child encodings, and missing children must be reconstructible.\nWhich traversal contract matches this stream?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "preorder_with_null_markers",
+            "text": "Write the current node first, then the left and right encodings, and write an explicit null marker for every missing child."
+          },
+          {
+            "id": "inorder_without_markers",
+            "text": "Write the left subtree, current node, and right subtree without null markers."
+          },
+          {
+            "id": "postorder_forward_only",
+            "text": "Write both children before the parent and require the forward-only reader to create the parent first."
+          },
+          {
+            "id": "bfs_values_only",
+            "text": "Write only non-null values in level order and infer all missing positions from value order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "preorder_with_null_markers"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Parent-first streaming requires preorder, and explicit null tokens preserve where each recursive child slot is absent.",
+        "details": "The reader consumes a node token, creates that node, then recursively consumes exactly one left encoding and one right encoding. A null marker is itself a complete empty-subtree encoding, so arbitrary shape remains unambiguous even when values repeat. Inorder values alone do not identify the root of a generic tree, and level-order values without position markers lose gaps. Postorder can support reconstruction when the decoder reads in reverse or buffers children, but that violates the stated forward parent-first contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "inorder_without_markers": "Inorder alone does not identify the root or missing child positions for a generic binary tree. It can reconstruct a BST only with extra ordering assumptions and a declared duplicate policy.",
+          "postorder_forward_only": "The parent token arrives after its children, so a forward-only parent-first reader cannot create the requested object at the required moment. Reverse reading or buffering would change the contract.",
+          "bfs_values_only": "Without null-position information, different sparse shapes can produce the same value sequence. BFS serialization can work when it includes explicit missing slots and a finite trimming rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Node values may repeat.",
+        "The decoder cannot seek backward.",
+        "Null markers are legal stream tokens."
+      ]
+    },
+    {
+      "id": "alg-tree-choice-bst-sorted-scan",
+      "prompt": "A valid binary search tree must be streamed in nondecreasing value order using `O(h)` traversal state and no separate sorting step.\nWhich traversal should be selected?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "inorder",
+            "text": "Inorder DFS."
+          },
+          {
+            "id": "preorder",
+            "text": "Preorder DFS."
+          },
+          {
+            "id": "postorder",
+            "text": "Postorder DFS."
+          },
+          {
+            "id": "level_order",
+            "text": "Level-order BFS."
+          }
+        ],
+        "acceptedOptionIds": [
+          "inorder"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The BST invariant places smaller values in the left subtree and larger values in the right subtree, so left-node-right traversal is the sorted scan.",
+        "details": "Inorder turns the structural BST ordering into a nondecreasing stream and needs only the recursive or explicit stack of height `h`. Preorder and postorder preserve useful construction or completion orders but do not sort values. Level order groups by depth, which is unrelated to numeric rank. Without the BST precondition, none of these traversals guarantees sorted output and an explicit sort or another ordered structure would be required.",
+        "wrongOptionExplanationsByOptionId": {
+          "preorder": "Parent-first order is useful for prefix serialization and branch pruning, but a parent can precede smaller values in its left subtree.",
+          "postorder": "Child-first order is useful for subtree aggregates and deletion, but it can emit a right-subtree value before its parent and therefore does not preserve numeric rank.",
+          "level_order": "Shallowest-first order reflects depth, not the BST value relation. It is appropriate for per-level or nearest-depth objectives, not for a globally sorted value stream."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "The tree satisfies the declared BST ordering policy.",
+        "The output must be streamed without materializing all values."
+      ]
+    },
+    {
+      "id": "alg-tree-choice-parent-from-child-summaries",
+      "prompt": "At every node, a result must be computed from complete summaries returned by both child subtrees, and the implementation should avoid a traversal-wide mutable answer.\nWhich strategy is the direct fit?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "postorder_returns",
+            "text": "Postorder DFS with a subtree summary returned from each child call."
+          },
+          {
+            "id": "preorder_global",
+            "text": "Preorder DFS with one global variable that is assumed to contain both child summaries before they are visited."
+          },
+          {
+            "id": "inorder_left_only",
+            "text": "Inorder DFS that combines after the left child and ignores the right child."
+          },
+          {
+            "id": "bfs_parent_first",
+            "text": "Top-down BFS that computes a parent summary before descendants have been processed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "postorder_returns"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Both child summaries are prerequisites for the parent result, so child-before-parent postorder with explicit return values matches the dependency.",
+        "details": "A postorder call obtains the left summary, obtains the right summary, and combines them with local node data. Returning the summary keeps evidence branch-local and reusable. A global variable can hold a whole-tree answer, but it cannot magically provide two child-specific values before traversal; it would require additional maps or phases. Reverse-level processing can also become bottom-up, but ordinary top-down BFS does not satisfy the dependency directly and usually stores more intermediate state.",
+        "wrongOptionExplanationsByOptionId": {
+          "preorder_global": "Preorder reaches the parent before either child result exists. Global storage does not remove that dependency; it only hides ownership.",
+          "inorder_left_only": "The right summary is still a required input, so combining after only the left child is incomplete. Inorder fits a current action between ordered children.",
+          "bfs_parent_first": "A parent-first frontier has not computed descendants yet. A deliberately reversed BFS with stored levels could work, but it is not this option's top-down rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "compute_subtree_property"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Each parent needs both child summaries.",
+        "The summary size is bounded."
+      ]
+    },
+    {
+      "id": "alg-tree-choice-nearest-target-tree-and-graph",
+      "prompt": "Find the minimum number of edges from the root to any node satisfying predicate `P`.\nWhich choice states both the proper-tree solution and the change required if the structure becomes a cyclic unweighted graph?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bfs_then_add_visited",
+            "text": "Use BFS and stop at the first dequeued matching node; for the graph, add identity-based visited marking at enqueue time."
+          },
+          {
+            "id": "dfs_same_for_both",
+            "text": "Use ordinary recursive DFS for both and stop at the first matching node reached."
+          },
+          {
+            "id": "bfs_no_visited_for_both",
+            "text": "Use BFS for both; FIFO order alone prevents graph revisits."
+          },
+          {
+            "id": "postorder_then_min",
+            "text": "Use postorder and accept the first matching node processed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bfs_then_add_visited"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "BFS explores nondecreasing edge distance, while the graph variant additionally needs discovery state to prevent cycles and duplicate enqueues.",
+        "details": "In an unweighted structure, each BFS layer is one edge farther from the start. Therefore the first matching node dequeued has minimum distance. A proper tree reaches every node through one root path, so visited state is unnecessary. A graph may expose the same vertex through several paths or cycles, so mark identity on enqueue. DFS can compute a minimum after exploring all relevant branches, but its first match is not guaranteed nearest. Postorder deliberately sees deep descendants before their ancestors.",
+        "wrongOptionExplanationsByOptionId": {
+          "dfs_same_for_both": "First-match DFS depends on branch order and may find a deep match before a shallow sibling. Graph DFS also needs cycle handling.",
+          "bfs_no_visited_for_both": "FIFO preserves distance order but does not prevent cyclic or duplicate discovery. It is sufficient only under a proper-tree or other unique-path contract.",
+          "postorder_then_min": "Postorder completion order has no shortest-distance guarantee and may process a deep match before a shallow one. It is appropriate for bottom-up subtree properties, not first-nearest stopping."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "level_order_processing"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Every edge has unit cost.",
+        "The predicate is evaluated in constant time."
+      ]
+    },
+    {
+      "id": "alg-tree-choice-order-independent-total-sum",
+      "prompt": "The only required result is the sum of all node values in a proper binary tree, and no early stopping or per-level output is required. Select all traversal statements that are correct.",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "preorder_valid",
+            "text": "A one-visit preorder DFS can compute the sum."
+          },
+          {
+            "id": "postorder_valid",
+            "text": "A one-visit postorder DFS can compute the sum."
+          },
+          {
+            "id": "bfs_valid",
+            "text": "A one-visit level-order BFS can compute the sum."
+          },
+          {
+            "id": "inorder_requires_bst",
+            "text": "Inorder can compute the sum only when the tree is a binary search tree."
+          },
+          {
+            "id": "bfs_only",
+            "text": "Only BFS is correct because addition must proceed by level."
+          }
+        ],
+        "acceptedOptionIds": [
+          "preorder_valid",
+          "postorder_valid",
+          "bfs_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Addition over all nodes is order-independent, so any one-visit traversal is correct; the remaining choice concerns implementation and space, not the numeric result.",
+        "details": "The sum is an associative, commutative aggregate over the set of node values. Preorder, inorder, postorder, and BFS all visit that set exactly once on a proper tree. A BST invariant is irrelevant to addition. The traversal still affects peak auxiliary state, streaming order, and opportunities for early stopping, so “order-independent result” does not mean every operational property is identical. The prompt's absence of level output or child-dependent logic is the decisive boundary.",
+        "wrongOptionExplanationsByOptionId": {
+          "inorder_requires_bst": "Inorder needs a BST only to guarantee sorted output. It visits every node of any binary tree and can sum them correctly.",
+          "bfs_only": "Addition does not require level grouping. BFS becomes preferable only when the output or stopping rule is depth-based."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "preorder_valid": "Preorder visits each actual node exactly once, and addition does not depend on action position.",
+          "postorder_valid": "Postorder visits the same node set, and child-before-parent order does not alter the total.",
+          "bfs_valid": "BFS also visits the same node set once, so it produces the same total despite different frontier storage."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "compute_subtree_property"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Integer addition does not overflow the chosen numeric type.",
+        "Do not count traversal order as part of the output."
+      ]
+    },
+    {
+      "id": "alg-tree-choice-shape-dependent-space",
+      "prompt": "Compare recursive DFS and level-order BFS on two `n`-node proper trees. Tree A is complete and balanced; Tree B is a single chain. Ignore returned output and input storage. Determine the auxiliary-space bounds.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "balanced_recursive_dfs_space",
+          "balanced_bfs_space",
+          "chain_recursive_dfs_space",
+          "chain_bfs_space"
+        ],
+        "availableValuesByDimension": {
+          "balanced_recursive_dfs_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ],
+          "balanced_bfs_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ],
+          "chain_recursive_dfs_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ],
+          "chain_bfs_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "balanced_recursive_dfs_space": [
+            "O(log n)"
+          ],
+          "balanced_bfs_space": [
+            "O(n)"
+          ],
+          "chain_recursive_dfs_space": [
+            "O(n)"
+          ],
+          "chain_bfs_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "balanced_recursive_dfs_space": {},
+          "balanced_bfs_space": {},
+          "chain_recursive_dfs_space": {},
+          "chain_bfs_space": {}
+        },
+        "maxPoints": 4
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Recursive DFS stores a root-to-current path, while BFS stores a frontier; height favors DFS on a complete tree and width favors BFS on a chain.",
+        "details": "Tree A has height `Θ(log n)` and maximum width `Θ(n)`, so recursive DFS uses `O(log n)` frames while the BFS queue can hold a linear-size level. Tree B has height `n` and width one, so recursive DFS uses `O(n)` frames while the queue holds at most one node and uses `O(1)` auxiliary space. Both traversals still take `O(n)` time when each node is processed once. These are shape-dependent bounds, not universal claims that DFS or BFS always uses less memory."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "Recursive DFS stores only call frames.",
+        "BFS enqueues each non-null node once.",
+        "The complete tree's last level contains a constant fraction of all nodes."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "tree-traversal-learn-approach-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-tree-contract-subtree-size",
+            "alg-tree-contract-height-call-sequence",
+            "alg-tree-contract-root-to-leaf-existence",
+            "alg-tree-contract-tree-versus-graph-visited",
+            "alg-tree-contract-three-questions",
+            "alg-tree-contract-one-call-per-node-cost"
+          ]
+        }
+      },
+      {
+        "blueprintId": "tree-traversal-recognize-patterns-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-recognize-patterns",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "recognition_sets",
+          "ids": [
+            "tree-traversal-recognition-set-v1"
+          ]
+        }
+      },
+      {
+        "blueprintId": "tree-traversal-contrast-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-contrast-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "contrast_sets",
+          "ids": [
+            "tree-traversal-order-matters-contrast-v1",
+            "tree-traversal-global-versus-local-state-contrast-v1",
+            "tree-traversal-null-contract-contrast-v1",
+            "tree-traversal-tree-versus-graph-contrast-v1"
+          ]
+        }
+      },
+      {
+        "blueprintId": "tree-traversal-independent-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-independent-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "blueprint_controlled",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "interleaved_scope",
+          "ids": [
+            "tree-traversal-node-interleaved-scope-v1"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [
+      {
+        "setId": "tree-traversal-recognition-set-v1",
+        "setVersion": "v1",
+        "taxonomyScope": {
+          "roadmapNodeIds": [
+            "tree_traversal"
+          ],
+          "mentalUnitIds": [
+            "tree_structure_and_recursive_contract",
+            "dfs_preorder",
+            "dfs_inorder",
+            "dfs_postorder",
+            "bfs_level_order",
+            "carry_path_and_aggregate_state",
+            "subtree_return_values",
+            "tree_boundaries_and_null_cases",
+            "traversal_choice_and_complexity"
+          ],
+          "patternFamilyIds": [
+            "tree_traversal"
+          ]
+        },
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "itemIds": [
+          "alg-tree-contract-three-questions",
+          "alg-tree-contract-tree-versus-graph-visited",
+          "alg-tree-preorder-prune-before-descend",
+          "alg-tree-preorder-clone-proper-tree",
+          "alg-tree-inorder-sorted-output-precondition",
+          "alg-tree-inorder-not-a-general-graph-order",
+          "alg-tree-postorder-diameter-child-heights",
+          "alg-tree-postorder-delete-ownership-boundary",
+          "alg-tree-bfs-first-level-meeting-threshold",
+          "alg-tree-bfs-tree-versus-graph-enqueue-policy",
+          "alg-tree-path-running-sum-state",
+          "alg-tree-path-tree-versus-cyclic-graph-state",
+          "alg-tree-subtree-full-property-combine",
+          "alg-tree-subtree-proper-tree-versus-dag",
+          "alg-tree-boundary-leaf-definition",
+          "alg-tree-boundary-skewed-recursion-depth",
+          "alg-tree-choice-streaming-prefix-serialization",
+          "alg-tree-choice-bst-sorted-scan",
+          "alg-tree-choice-parent-from-child-summaries",
+          "alg-tree-choice-nearest-target-tree-and-graph",
+          "alg-tree-choice-order-independent-total-sum"
+        ],
+        "falseHeuristicIds": [
+          "global_state_is_always_simpler",
+          "null_children_need_no_contract",
+          "traversal_order_never_matters",
+          "tree_dfs_and_graph_dfs_are_identical"
+        ]
+      }
+    ],
+    "contrastSets": [
+      {
+        "setId": "tree-traversal-order-matters-contrast-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "traversal_choice_and_complexity",
+        "contrastedMentalUnitIds": [
+          "dfs_preorder",
+          "dfs_inorder",
+          "dfs_postorder",
+          "bfs_level_order"
+        ],
+        "falseHeuristicId": "traversal_order_never_matters",
+        "transferBoundary": "Order is decisive only when action timing, output sequence, stopping proof, or child-result dependency is observable.",
+        "itemIds": [
+          "alg-tree-preorder-prune-before-descend",
+          "alg-tree-inorder-kth-visit-timing",
+          "alg-tree-postorder-diameter-child-heights",
+          "alg-tree-bfs-first-level-meeting-threshold",
+          "alg-tree-choice-order-independent-total-sum",
+          "alg-tree-choice-parent-from-child-summaries"
+        ]
+      },
+      {
+        "setId": "tree-traversal-global-versus-local-state-contrast-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "tree_structure_and_recursive_contract",
+        "contrastedMentalUnitIds": [
+          "carry_path_and_aggregate_state",
+          "subtree_return_values"
+        ],
+        "falseHeuristicId": "global_state_is_always_simpler",
+        "transferBoundary": "State should be global only when one-shot side-effect ownership is explicit; branch-local inputs and subtree-local results otherwise remain in arguments or returns.",
+        "itemIds": [
+          "alg-tree-contract-subtree-size",
+          "alg-tree-path-running-sum-state",
+          "alg-tree-path-sibling-isolation",
+          "alg-tree-subtree-diameter-composite-return",
+          "alg-tree-subtree-bst-summary-sequence"
+        ]
+      },
+      {
+        "setId": "tree-traversal-null-contract-contrast-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "tree_boundaries_and_null_cases",
+        "contrastedMentalUnitIds": [
+          "dfs_preorder",
+          "dfs_inorder",
+          "dfs_postorder",
+          "bfs_level_order"
+        ],
+        "falseHeuristicId": "null_children_need_no_contract",
+        "transferBoundary": "Null behavior follows the operation's output algebra and endpoint semantics; no universal default applies.",
+        "itemIds": [
+          "alg-tree-boundary-empty-sum-and-maximum",
+          "alg-tree-boundary-leaf-definition",
+          "alg-tree-preorder-null-guard-placement",
+          "alg-tree-inorder-empty-subtree-output",
+          "alg-tree-postorder-balance-null-sentinel",
+          "alg-tree-bfs-empty-root-policy"
+        ]
+      },
+      {
+        "setId": "tree-traversal-tree-versus-graph-contrast-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "traversal_choice_and_complexity",
+        "contrastedMentalUnitIds": [
+          "tree_structure_and_recursive_contract",
+          "dfs_inorder",
+          "dfs_postorder",
+          "bfs_level_order",
+          "carry_path_and_aggregate_state",
+          "subtree_return_values",
+          "tree_boundaries_and_null_cases"
+        ],
+        "falseHeuristicId": "tree_dfs_and_graph_dfs_are_identical",
+        "transferBoundary": "Cycles, shared nodes, and multiple discovery paths add identity-based visited, memoization, or ownership requirements absent from a proper tree.",
+        "itemIds": [
+          "alg-tree-choice-nearest-target-tree-and-graph",
+          "alg-tree-contract-tree-versus-graph-visited",
+          "alg-tree-inorder-not-a-general-graph-order",
+          "alg-tree-postorder-delete-ownership-boundary",
+          "alg-tree-bfs-tree-versus-graph-enqueue-policy",
+          "alg-tree-path-tree-versus-cyclic-graph-state",
+          "alg-tree-subtree-proper-tree-versus-dag",
+          "alg-tree-boundary-duplicate-values-are-distinct-nodes"
+        ]
+      }
+    ],
+    "interleavedScopes": [
+      {
+        "scopeId": "tree-traversal-node-interleaved-scope-v1",
+        "scopeVersion": "v1",
+        "mentalUnitIds": [
+          "tree_structure_and_recursive_contract",
+          "dfs_preorder",
+          "dfs_inorder",
+          "dfs_postorder",
+          "bfs_level_order",
+          "carry_path_and_aggregate_state",
+          "subtree_return_values",
+          "tree_boundaries_and_null_cases",
+          "traversal_choice_and_complexity"
+        ],
+        "itemIds": [
+          "alg-tree-contract-subtree-size",
+          "alg-tree-contract-height-call-sequence",
+          "alg-tree-contract-root-to-leaf-existence",
+          "alg-tree-contract-tree-versus-graph-visited",
+          "alg-tree-contract-three-questions",
+          "alg-tree-contract-one-call-per-node-cost",
+          "alg-tree-preorder-prune-before-descend",
+          "alg-tree-preorder-explicit-output-sequence",
+          "alg-tree-preorder-clone-proper-tree",
+          "alg-tree-preorder-null-guard-placement",
+          "alg-tree-preorder-iterative-push-order",
+          "alg-tree-inorder-sorted-output-precondition",
+          "alg-tree-inorder-explicit-output-sequence",
+          "alg-tree-inorder-kth-visit-timing",
+          "alg-tree-inorder-empty-subtree-output",
+          "alg-tree-inorder-not-a-general-graph-order",
+          "alg-tree-postorder-diameter-child-heights",
+          "alg-tree-postorder-subtree-sum-sequence",
+          "alg-tree-postorder-delete-ownership-boundary",
+          "alg-tree-postorder-balance-null-sentinel",
+          "alg-tree-postorder-naive-balance-recomputation",
+          "alg-tree-bfs-first-level-meeting-threshold",
+          "alg-tree-bfs-level-batch-sequence",
+          "alg-tree-bfs-snapshot-before-enqueue",
+          "alg-tree-bfs-empty-root-policy",
+          "alg-tree-bfs-tree-versus-graph-enqueue-policy",
+          "alg-tree-bfs-width-space",
+          "alg-tree-path-running-sum-state",
+          "alg-tree-path-mutable-buffer-sequence",
+          "alg-tree-path-sibling-isolation",
+          "alg-tree-path-success-at-actual-leaf",
+          "alg-tree-path-tree-versus-cyclic-graph-state",
+          "alg-tree-path-copy-each-edge-cost",
+          "alg-tree-subtree-full-property-combine",
+          "alg-tree-subtree-bst-summary-sequence",
+          "alg-tree-subtree-edge-height-null-identity",
+          "alg-tree-subtree-diameter-composite-return",
+          "alg-tree-subtree-proper-tree-versus-dag",
+          "alg-tree-subtree-copy-full-list-cost",
+          "alg-tree-boundary-empty-sum-and-maximum",
+          "alg-tree-boundary-leaf-definition",
+          "alg-tree-boundary-single-node-order-collapse",
+          "alg-tree-boundary-skewed-recursion-depth",
+          "alg-tree-boundary-duplicate-values-are-distinct-nodes",
+          "alg-tree-choice-streaming-prefix-serialization",
+          "alg-tree-choice-bst-sorted-scan",
+          "alg-tree-choice-parent-from-child-summaries",
+          "alg-tree-choice-nearest-target-tree-and-graph",
+          "alg-tree-choice-order-independent-total-sum",
+          "alg-tree-choice-shape-dependent-space"
+        ],
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "minimumDiversity": 9
+      }
+    ],
+    "compatibilitySets": [
+      {
+        "id": "tree-contract-compositional-return-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-tree-contract-subtree-size"
+        ],
+        "targetItemIds": [
+          "alg-tree-contract-height-call-sequence"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "explicit subtree return contract with empty identity"
+        }
+      },
+      {
+        "id": "tree-preorder-parent-first-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-tree-preorder-prune-before-descend"
+        ],
+        "targetItemIds": [
+          "alg-tree-preorder-clone-proper-tree"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "current-node decision before descendant work"
+        }
+      },
+      {
+        "id": "tree-inorder-position-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-tree-inorder-sorted-output-precondition"
+        ],
+        "targetItemIds": [
+          "alg-tree-inorder-kth-visit-timing"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "left-node-right emission under a BST invariant"
+        }
+      },
+      {
+        "id": "tree-postorder-child-summary-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-tree-postorder-diameter-child-heights"
+        ],
+        "targetItemIds": [
+          "alg-tree-postorder-balance-null-sentinel"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "both child summaries before parent processing"
+        }
+      },
+      {
+        "id": "tree-bfs-frontier-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-tree-bfs-first-level-meeting-threshold"
+        ],
+        "targetItemIds": [
+          "alg-tree-bfs-snapshot-before-enqueue"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "complete current-depth frontier before deeper nodes"
+        }
+      },
+      {
+        "id": "tree-path-branch-state-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-tree-path-running-sum-state"
+        ],
+        "targetItemIds": [
+          "alg-tree-path-sibling-isolation"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "ancestor-derived state isolated across sibling branches"
+        }
+      },
+      {
+        "id": "tree-subtree-summary-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-tree-subtree-full-property-combine"
+        ],
+        "targetItemIds": [
+          "alg-tree-subtree-bst-summary-sequence"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "parent result derived from complete child summaries"
+        }
+      },
+      {
+        "id": "tree-null-boundary-repair-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-tree-preorder-null-guard-placement",
+          "alg-tree-inorder-empty-subtree-output",
+          "alg-tree-postorder-balance-null-sentinel",
+          "alg-tree-bfs-empty-root-policy"
+        ],
+        "targetItemIds": [
+          "alg-tree-boundary-empty-sum-and-maximum",
+          "alg-tree-boundary-leaf-definition"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "tree-null-and-empty-contract"
+        }
+      },
+      {
+        "id": "tree-order-contrast-compatibility-v1",
+        "version": "v1",
+        "relation": "compatible_contrast",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-tree-preorder-prune-before-descend",
+          "alg-tree-inorder-kth-visit-timing",
+          "alg-tree-postorder-diameter-child-heights",
+          "alg-tree-bfs-first-level-meeting-threshold"
+        ],
+        "targetItemIds": [
+          "alg-tree-choice-order-independent-total-sum",
+          "alg-tree-choice-parent-from-child-summaries"
+        ],
+        "relationMetadata": {
+          "contrastSetId": "tree-traversal-order-matters-contrast-v1"
+        }
+      },
+      {
+        "id": "tree-graph-boundary-repair-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-tree-contract-tree-versus-graph-visited",
+          "alg-tree-bfs-tree-versus-graph-enqueue-policy",
+          "alg-tree-path-tree-versus-cyclic-graph-state",
+          "alg-tree-subtree-proper-tree-versus-dag"
+        ],
+        "targetItemIds": [
+          "alg-tree-choice-nearest-target-tree-and-graph",
+          "alg-tree-boundary-duplicate-values-are-distinct-nodes"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "tree-versus-graph-state-boundary"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

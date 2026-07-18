@@ -1,0 +1,311 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-tree-traversal-dfs_postorder-candidate-001",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-tree-traversal-candidate-0001",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "tree_traversal",
+    "primaryMentalUnitId": "dfs_postorder",
+    "patternFamilyId": "tree_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; not a human reviewer)",
+    "createdAt": "2026-07-18T16:17:19Z",
+    "contentBatchId": "algorithms-tree-traversal-dfs_postorder-candidate-001",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tree-postorder-diameter-child-heights",
+      "prompt": "At each node, an algorithm must compute a candidate path length `leftHeight + rightHeight + 1`.\nWhich processing position makes both required heights available when the candidate is evaluated?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "after_both_children",
+            "text": "Evaluate the current node after recursive calls have returned the left and right subtree heights."
+          },
+          {
+            "id": "before_children",
+            "text": "Evaluate the current node before either child is visited."
+          },
+          {
+            "id": "between_children",
+            "text": "Evaluate after the left call but before the right call."
+          },
+          {
+            "id": "by_complete_levels",
+            "text": "Evaluate only after every node at the same depth has been processed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "after_both_children"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The candidate depends on two child return values, so current-node processing must occur after both subtrees complete.",
+        "details": "Postorder is child-before-parent. Each child call returns the height of its subtree, and only then can the current node form a path passing through itself. Preorder lacks both values; inorder lacks the right value. Level-order could compute heights only with additional reverse-level storage or a second phase, because top-down levels do not naturally provide descendant summaries. This dependency pattern transfers to balance checks, subtree sizes, and any parent property derived from completed child results.",
+        "wrongOptionExplanationsByOptionId": {
+          "before_children": "Parent-first processing is plausible when the parent supplies context to descendants, but no child height exists yet. It becomes valid for a top-down bound or path-prefix update.",
+          "between_children": "The left height is available, but the right height is still unknown. Inorder is useful when the current action logically belongs between ordered children, not when it needs both results.",
+          "by_complete_levels": "Level batching supplies peer proximity, not completed descendant summaries. Reverse BFS can support bottom-up processing, but it needs extra storage and is not the direct dependency match."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "compute_subtree_property"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Height is returned by each subtree call.",
+        "The candidate path may use both child branches."
+      ]
+    },
+    {
+      "id": "alg-tree-postorder-subtree-sum-sequence",
+      "prompt": "Order the operations for a helper `subtreeSum(node)` that returns the sum of values in the current subtree without using global state.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "empty_identity",
+            "text": "If `node` is null, return `0`."
+          },
+          {
+            "id": "left_sum",
+            "text": "Obtain `subtreeSum(node.left)`."
+          },
+          {
+            "id": "right_sum",
+            "text": "Obtain `subtreeSum(node.right)`."
+          },
+          {
+            "id": "return_combined",
+            "text": "Return `leftSum + rightSum + node.value`."
+          }
+        ],
+        "canonicalOrder": [
+          "empty_identity",
+          "left_sum",
+          "right_sum",
+          "return_combined"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Postorder obtains both subtree-local sums before combining them with the current value, while `0` is the empty additive identity.",
+        "details": "Each call returns a complete sum for exactly one subtree. The base case closes the recursion, the child calls compute independent results, and the final operation combines them at the parent. No global accumulator is needed, so repeated calls on different subtree roots remain independent. Left and right can swap for addition because the combine operation is commutative, but both must precede the parent return. For a non-commutative combine, sibling order may also become observable."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "compute_subtree_property"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Node values fit in the chosen numeric type.",
+        "Scoring uses preserved adjacent relations."
+      ]
+    },
+    {
+      "id": "alg-tree-postorder-delete-ownership-boundary",
+      "prompt": "A cleanup routine releases a node only after recursively releasing both children.\nUnder which input ownership contract is this postorder routine sufficient without reference counting or a visited map?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "exclusive_proper_tree",
+            "text": "Every node except the root has exactly one owning parent, and there are no cycles."
+          },
+          {
+            "id": "shared_dag",
+            "text": "Multiple parents may reference the same child, but the structure has no cycles."
+          },
+          {
+            "id": "cyclic_graph",
+            "text": "Child references may lead back to an ancestor."
+          },
+          {
+            "id": "value_unique_graph",
+            "text": "Node values are unique, even though references may be shared or cyclic."
+          }
+        ],
+        "acceptedOptionIds": [
+          "exclusive_proper_tree"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Child-before-parent release is safe by itself only when each node has one owner and cannot be reached again through another path.",
+        "details": "Postorder ensures a parent no longer needs a child before the parent is released. That sequencing solves lifetime order inside an exclusively owned tree. In a DAG, the first parent could release a shared child still needed by another parent; in a cyclic graph, recursion may not terminate and no simple leaf-to-root release order exists. Reference counting, ownership metadata, tracing, or a visited structure addresses those different contracts. Unique payload values do not establish unique ownership.",
+        "wrongOptionExplanationsByOptionId": {
+          "shared_dag": "Acyclicity gives a topological order, but shared ownership remains. The routine needs reference counts or another ownership protocol before releasing a child.",
+          "cyclic_graph": "A cycle has no leaf-first recursive release order, can recurse forever, and may retain live back-references. Cycle-aware memory management or an explicit ownership protocol is required.",
+          "value_unique_graph": "Value uniqueness does not prevent multiple references to the same node or cycles. Identity and ownership, not payload equality, determine release safety."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "`release(node)` invalidates that node immediately.",
+        "The routine has no external ownership metadata."
+      ]
+    },
+    {
+      "id": "alg-tree-postorder-balance-null-sentinel",
+      "prompt": "A one-pass balance checker returns subtree height for a balanced subtree and returns `-1` for an unbalanced subtree. Heights count nodes, so an empty subtree has height `0`.\nWhich null-case and parent rule preserve this contract?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "zero_then_propagate",
+            "text": "Return `0` for null; after both children return, propagate `-1` if either child is `-1` or their heights differ by more than one, otherwise return `1 + max(left, right)`."
+          },
+          {
+            "id": "minus_one_for_null",
+            "text": "Return `-1` for null, using the same value for an empty subtree and an unbalanced subtree."
+          },
+          {
+            "id": "check_parent_first",
+            "text": "Compare child heights before making either recursive call, then recurse only if the comparison passes."
+          },
+          {
+            "id": "ignore_missing_child",
+            "text": "Skip the null child and compare only heights returned by non-null children."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero_then_propagate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Null must use the valid empty height `0`, while the distinct `-1` sentinel is produced and propagated only after child results reveal an imbalance.",
+        "details": "The helper's return domain contains valid heights and one failure sentinel. Giving null the valid height zero preserves leaf height one and keeps `-1` unambiguous. At a parent, both child results are required: a failure propagates immediately, otherwise the height difference is checked and the valid height is formed. Reusing `-1` for null collapses “empty but balanced” with “unbalanced,” making a leaf fail. A tuple such as `{balanced, height}` is an equally valid alternative that avoids sentinels, but its null contract must still be explicit.",
+        "wrongOptionExplanationsByOptionId": {
+          "minus_one_for_null": "This appears consistent because `-1` is already a special value, but it erases the distinction between empty and invalid. It would work only with a different height convention and a different failure representation.",
+          "check_parent_first": "The parent has no child heights before recursion. A parent-first check can use static metadata, but not values computed by descendants.",
+          "ignore_missing_child": "A missing child still contributes the defined empty height. Ignoring it leaves unary nodes without a comparable second height and hides the contract's identity value."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "validate_tree_property"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "`-1` is reserved exclusively for an unbalanced subtree.",
+        "A leaf has height `1`."
+      ]
+    },
+    {
+      "id": "alg-tree-postorder-naive-balance-recomputation",
+      "prompt": "A naive balance checker recursively validates every node. At each node it separately calls `height` on the left and right subtrees, and each `height` call traverses its entire subtree. For a skewed tree with `n` nodes, determine worst-case time and auxiliary call-stack space.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)",
+            "O(2^n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(h)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n^2)"
+          ],
+          "space": [
+            "O(h)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "On a skewed tree, height work is repeated over suffixes of sizes `n, n-1, ...`, while live recursion still follows a path of length `h`.",
+        "details": "The validation recursion visits each node, but each visit launches fresh height traversals. In a chain, the total work is `n + (n-1) + ... + 1 = O(n^2)`. The calls are nested depth-first, so the maximum live stack remains proportional to tree height, `O(h)`, which is `O(n)` for the skewed case. A fused postorder helper that returns both balance status and height computes each subtree once and reduces time to `O(n)` without changing the `O(h)` stack bound. Merely saying “DFS is linear” misses the repeated helper work."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "validate_tree_property"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "The `height` routine performs no memoization.",
+        "Do not count input-tree storage.",
+        "The tree is maximally skewed."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,415 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-math-and-geometry-interval-and-angle-normalization-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-math-and-geometry-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "math_and_geometry",
+    "primaryMentalUnitId": "interval_and_angle_normalization",
+    "patternFamilyId": "math_and_geometry"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring; not a human reviewer)",
+    "createdAt": "2026-07-18T12:00:00.000Z",
+    "contentBatchId": "algorithms-math-and-geometry-interval-and-angle-normalization-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-mg-normalize-canonical-residue-interval",
+      "prompt": "A fixed-width signed integer coordinate x must wrap into [0,m), with 0<m and m possibly near the maximum representable value. The language may return a negative remainder. Which implementation preserves the cyclic value without an avoidable overflow?",
+      "constraints": [
+        "m is positive and representable in the working type.",
+        "The language remainder r=x%m is defined for the supplied inputs."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "conditional_wrap",
+            "text": "Set r=x % m; return r < 0 ? r + m : r."
+          },
+          {
+            "id": "unconditional_double_mod",
+            "text": "Return ((x % m) + m) % m in the same fixed-width signed type."
+          },
+          {
+            "id": "single_mod",
+            "text": "Return x % m."
+          },
+          {
+            "id": "clamp",
+            "text": "Return min(max(x,0),m-1)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "conditional_wrap"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Conditionally correcting only a negative remainder preserves the cyclic class and keeps the result below m.",
+        "details": "The remainder r lies between -(m-1) and m-1. When r<0, r+m is in [1,m-1]; otherwise r is already in [0,m). This avoids the unnecessary near-2m intermediate of the familiar unconditional double-mod formula in a bounded signed type. A single raw remainder may stay negative, while clamping changes a cyclic coordinate into a bounded one and discards full turns.",
+        "wrongOptionExplanationsByOptionId": {
+          "unconditional_double_mod": "It is algebraically valid with unbounded or sufficiently wide arithmetic, but the stated fixed-width contract does not guarantee that a nonnegative r plus a near-maximum m fits.",
+          "single_mod": "The stated language contract permits a negative result, which violates the target interval.",
+          "clamp": "Clamping discards full-cycle equivalence instead of wrapping it."
+        }
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-normalize-angle-endpoint-convention",
+      "prompt": "Angles are canonicalized to the half-open interval [-180,180). Under that convention, which representation is correct for an input of 540 degrees?",
+      "constraints": [
+        "Angles differing by multiples of 360 degrees are equivalent.",
+        "The upper endpoint 180 is excluded."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "minus_180",
+            "text": "-180 degrees"
+          },
+          {
+            "id": "plus_180",
+            "text": "180 degrees"
+          },
+          {
+            "id": "zero",
+            "text": "0 degrees"
+          },
+          {
+            "id": "five_forty",
+            "text": "540 degrees because canonicalization must preserve the original magnitude."
+          }
+        ],
+        "acceptedOptionIds": [
+          "minus_180"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "540 is congruent to 180 modulo 360, and the half-open convention maps the excluded +180 endpoint to -180.",
+        "details": "A canonical interval must choose exactly one representative for each direction. Because [-180,180) includes -180 but excludes +180, both 180 and 540 map to -180. Choosing [−180,180] would duplicate the same direction at both endpoints; choosing (−180,180] would instead keep +180. The convention is arbitrary but must be explicit and stable wherever equality, sorting, or shortest-turn decisions depend on it.",
+        "wrongOptionExplanationsByOptionId": {
+          "plus_180": "That endpoint is excluded by the stated half-open interval even though it is directionally equivalent.",
+          "zero": "540 differs from 0 by 540, not by an integer multiple of 360.",
+          "five_forty": "The purpose of canonicalization is to replace equivalent values with one representative, so the original magnitude is not retained."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-normalize-period-domain",
+      "prompt": "A function normalize(x,m) promises a result in [0,m). Which precondition and degenerate case are correct?",
+      "constraints": [
+        "The function uses integer cyclic normalization."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "m_positive_one_zero",
+            "text": "Require m>0; when m=1 the only result is 0, and m=0 is invalid."
+          },
+          {
+            "id": "m_zero_identity",
+            "text": "Allow m=0 and return x unchanged."
+          },
+          {
+            "id": "m_negative_interval",
+            "text": "Allow m<0 while keeping the same interval notation [0,m)."
+          },
+          {
+            "id": "m_one_values",
+            "text": "For m=1, both 0 and 1 are canonical results."
+          }
+        ],
+        "acceptedOptionIds": [
+          "m_positive_one_zero"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A positive period is required to define an increasing half-open cycle, and period one collapses all values to zero.",
+        "details": "Remainder by zero is undefined, so a zero-sized cycle must be rejected rather than silently treated as an identity transform. A negative period can be converted to a positive magnitude only if the API explicitly defines that normalization; it does not fit the stated [0,m) range. The m=1 boundary is valid and useful: every integer differs from zero by a multiple of one.",
+        "wrongOptionExplanationsByOptionId": {
+          "m_zero_identity": "Returning x would turn an invalid cyclic domain into an unrelated non-wrapping operation.",
+          "m_negative_interval": "The interval [0,m) is not ordered as stated when m is negative, so the contract would be incoherent.",
+          "m_one_values": "The half-open interval [0,1) contains only zero, and 1 is equivalent to zero."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-normalize-floating-circular-comparison",
+      "prompt": "Two floating angle calculations should represent the same direction: one produces 0.1+0.2 turns and the other 0.3 turns. After normalization to [0,1), how should equivalence be tested?",
+      "constraints": [
+        "The values come from floating arithmetic.",
+        "A positive tolerance eps is defined by the application error budget."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "circular_distance_tolerance",
+            "text": "Compute the minimum circular distance between the normalized values and compare it with eps."
+          },
+          {
+            "id": "exact_equality",
+            "text": "Compare the normalized values with ==."
+          },
+          {
+            "id": "round_to_integer",
+            "text": "Round both values to the nearest whole turn and compare."
+          },
+          {
+            "id": "compare_raw_difference",
+            "text": "Compare |a-b| only, without considering the wrap boundary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "circular_distance_tolerance"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Floating equality needs a tolerance, and cyclic values require distance measured across the wrap as well as directly.",
+        "details": "Binary floating arithmetic need not represent 0.1, 0.2, or 0.3 exactly. Even after normalization, values near 0 and 1 may represent nearly the same direction while their raw difference is close to one. A circular distance such as min(|a-b|,1-|a-b|) captures the topology of the cycle, and eps supplies the application’s acceptable error. Exact equality remains appropriate only for exact representations.",
+        "wrongOptionExplanationsByOptionId": {
+          "exact_equality": "Equivalent computations can differ by a few floating units, so == is too brittle for the stated data.",
+          "round_to_integer": "Rounding to whole turns destroys meaningful fractional-angle information.",
+          "compare_raw_difference": "Raw difference fails near the wrap, where 0.999999 and 0.000001 are close directions."
+        }
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-normalize-shortest-signed-delta",
+      "prompt": "Current heading is 170 degrees and target heading is -170 degrees. Using the canonical signed-turn interval [-180,180), what is the shortest target-current delta?",
+      "constraints": [
+        "Positive delta means counterclockwise.",
+        "The +180 endpoint is excluded."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "plus_20",
+            "text": "+20 degrees"
+          },
+          {
+            "id": "minus_340",
+            "text": "-340 degrees"
+          },
+          {
+            "id": "minus_20",
+            "text": "-20 degrees"
+          },
+          {
+            "id": "plus_340",
+            "text": "+340 degrees"
+          }
+        ],
+        "acceptedOptionIds": [
+          "plus_20"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The raw delta -340 differs from +20 by one full turn, and +20 lies in the canonical shortest-turn interval.",
+        "details": "Compute target-current=-340, then normalize it modulo 360 into [-180,180). Adding 360 gives +20, the shorter counterclockwise rotation. Taking the raw subtraction confuses coordinate representatives with the cyclic relation. At an exact 180-degree tie, the declared half-open convention chooses -180; another API could choose +180, but it must do so consistently.",
+        "wrongOptionExplanationsByOptionId": {
+          "minus_340": "That is the raw coordinate difference, not the shortest equivalent cyclic displacement.",
+          "minus_20": "A -20-degree turn from 170 reaches 150, not -170 modulo 360.",
+          "plus_340": "It reaches the target but is not the shortest signed displacement."
+        }
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-normalize-heading-use-atan2",
+      "prompt": "A nonzero direction vector is (dx,dy)=(0,-5). Which method obtains its heading before canonicalizing the angle?",
+      "constraints": [
+        "The coordinate convention uses atan2(dy,dx).",
+        "The result will be normalized to the chosen angular interval."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "atan2_then_normalize",
+            "text": "Use atan2(-5,0), then normalize the resulting angle."
+          },
+          {
+            "id": "atan_slope",
+            "text": "Use atan(dy/dx)."
+          },
+          {
+            "id": "slope_infinity",
+            "text": "Assign an arbitrary “infinite slope” and use it as the heading."
+          },
+          {
+            "id": "mod_components",
+            "text": "Normalize dx and dy separately with %360 and treat the pair as an angle."
+          }
+        ],
+        "acceptedOptionIds": [
+          "atan2_then_normalize"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "atan2 uses both components and preserves the quadrant while handling a zero x-component.",
+        "details": "The quotient dy/dx is undefined when dx=0 and, even when finite, atan of a slope cannot distinguish opposite directions without extra quadrant information. atan2(y,x) directly returns the direction of the nonzero vector. Normalization is a separate step that chooses the angle representative. A zero vector would remain a degenerate case because atan2(0,0) has no meaningful geometric direction even if a library returns a number.",
+        "wrongOptionExplanationsByOptionId": {
+          "atan_slope": "The division is undefined for this vertical vector and loses quadrant information in general.",
+          "slope_infinity": "An implementation-specific infinity token is not a complete circular heading representation.",
+          "mod_components": "Vector components are not angle coordinates; reducing them modulo 360 changes the direction."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-normalize-safe-wrap-update-order",
+      "prompt": "Order the steps for updating a signed integer cyclic coordinate position by a signed displacement.",
+      "constraints": [
+        "The canonical position range is [0,m).",
+        "m must be positive.",
+        "The sum may require a wider type than either input."
+      ],
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "validate_period",
+            "text": "Validate m>0 and establish the canonical range."
+          },
+          {
+            "id": "widen_and_add",
+            "text": "Evaluate position+delta in a type that can represent the sum."
+          },
+          {
+            "id": "take_remainder",
+            "text": "Apply the language remainder by m."
+          },
+          {
+            "id": "correct_negative",
+            "text": "If needed, add m and reduce again to obtain [0,m)."
+          },
+          {
+            "id": "store_canonical",
+            "text": "Store only the canonical result as the new position."
+          }
+        ],
+        "canonicalOrder": [
+          "validate_period",
+          "widen_and_add",
+          "take_remainder",
+          "correct_negative",
+          "store_canonical"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The period and numeric range must be valid before arithmetic, and negative remainder correction precedes storing the state invariant.",
+        "details": "A zero period makes the update undefined. Widening before addition prevents a full-cycle displacement from overflowing even though the final wrapped position is small. The language remainder then removes whole cycles, and explicit negative correction selects the canonical representative. Storing an unnormalized intermediate would leak an invalid state to later operations. The sequence transfers to ring buffers and toroidal grid coordinates."
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

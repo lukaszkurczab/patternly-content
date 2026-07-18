@@ -1,0 +1,494 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-intervals-sweep-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-intervals-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "intervals",
+    "primaryMentalUnitId": "sweep_line_intro",
+    "patternFamilyId": "intervals"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring; no human review claimed",
+    "createdAt": "2026-07-18T00:00:00+02:00",
+    "contentBatchId": "algorithms-intervals-sweep-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "algorithms-intervals-sweep-001",
+      "prompt": "How should a half-open interval [s, e) be represented for a basic active-count sweep?",
+      "constraints": [
+        "The sweep accumulates demand from left to right.",
+        "Each interval has unit demand."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "plus_start_minus_end",
+            "text": "Create +1 at s and -1 at e."
+          },
+          {
+            "id": "minus_start_plus_end",
+            "text": "Create -1 at s and +1 at e."
+          },
+          {
+            "id": "plus_both",
+            "text": "Create +1 at both s and e."
+          }
+        ],
+        "acceptedOptionIds": [
+          "plus_start_minus_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A start introduces one active interval and an end removes it, so the event deltas are +1 and -1 respectively.",
+        "details": "The sweep is a discrete derivative of the active-count function. Before s, the interval contributes zero; at s it becomes active, so add one; at e it stops contributing under [s, e), so subtract one. Prefix-summing all ordered event deltas reconstructs the number of active intervals between event coordinates. Weighted intervals replace one with the demand weight, but the signs remain the same. The endpoint contract still controls equal-coordinate ordering and whether the end transition occurs before or after starts at the same point.",
+        "wrongOptionExplanationsByOptionId": {
+          "minus_start_plus_end": "This reverses acquisition and release, producing negative active counts before intervals begin.",
+          "plus_both": "The end must remove the interval's contribution. Adding at both endpoints makes active demand grow permanently."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sweep-002",
+      "prompt": "Order the core steps of a static sweep that computes maximum interval concurrency.",
+      "constraints": [
+        "The endpoint contract supplies a deterministic same-coordinate tie rule."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "emit_events",
+            "text": "Emit the required start and end events from every interval."
+          },
+          {
+            "id": "sort_events",
+            "text": "Sort events by coordinate and the declared tie key."
+          },
+          {
+            "id": "accumulate_state",
+            "text": "Process events in order and update the active count."
+          },
+          {
+            "id": "update_answer",
+            "text": "Update the maximum from the semantically valid active states."
+          }
+        ],
+        "canonicalOrder": [
+          "emit_events",
+          "sort_events",
+          "accumulate_state",
+          "update_answer"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The prefix state has meaning only after events are created and fully ordered; the answer is then derived from that state.",
+        "details": "Event creation defines what changes at each endpoint. Sorting establishes chronological order, including what happens when several changes share a coordinate. Accumulation reconstructs the active-count prefix. The answer update reads that state after the transition points permitted by the contract. Reversing sort and accumulation combines unrelated times, while updating the maximum before state changes can miss a peak. Some implementations update the maximum inside the accumulation loop; the essential dependency is that each observed state follows its correctly ordered event transition."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sweep-003",
+      "prompt": "For half-open intervals, an end event and a start event share coordinate t. The sweep inspects active count after each event. Which tie rule is correct?",
+      "constraints": [
+        "Ending intervals are inactive at t.",
+        "Starting intervals are active at t."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "end_before_start",
+            "text": "Process end events before start events."
+          },
+          {
+            "id": "start_before_end",
+            "text": "Process start events before end events."
+          },
+          {
+            "id": "arbitrary",
+            "text": "Use any order because the net delta is the same."
+          }
+        ],
+        "acceptedOptionIds": [
+          "end_before_start"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Release precedes acquisition at a half-open boundary, so an ending interval leaves active state before a new one enters.",
+        "details": "Equal-coordinate ordering is part of the sweep contract whenever intermediate states matter. With active = 1 before t, processing start first yields 2 and may record a false overlap; processing end first yields 0 then 1, matching legal reuse. The net delta after both events is zero, which is why an implementation that only examines final grouped state can appear correct on some outputs. It must nevertheless prove that no lost intermediate state affects the requested result. Closed intervals require the opposite tie because both intervals include t.",
+        "wrongOptionExplanationsByOptionId": {
+          "start_before_end": "That temporarily counts the ending interval at a point it excludes and can create a false peak.",
+          "arbitrary": "The final count after both events is the same, but intermediate counts—and therefore the maximum or conflict result—can differ."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "detect_schedule_conflict"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sweep-004",
+      "prompt": "For closed intervals, both an ending interval and a starting interval contain coordinate t. The sweep must capture a one-point peak. Which tie rule is required?",
+      "constraints": [
+        "The active count is measured at t.",
+        "A one-point overlap is material."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_before_end",
+            "text": "Process starts before ends at t."
+          },
+          {
+            "id": "end_before_start",
+            "text": "Process ends before starts at t."
+          },
+          {
+            "id": "net_delta_only",
+            "text": "Apply only the combined net delta at t."
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_before_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The new interval becomes active at t while the ending interval is still active there, so the peak is observed before release.",
+        "details": "Closed endpoint semantics change event order, not merely the comparison syntax. If one interval ends at t and another begins at t, both sets contain t. Applying the start increment first exposes the concurrent state; applying the end first erases it. Grouping to a net zero delta also erases the peak. This matters for point-sensitive capacity or geometric intersection. If the application intentionally ignores measure-zero intersections, it must declare that alternate policy rather than silently using the half-open tie.",
+        "wrongOptionExplanationsByOptionId": {
+          "end_before_start": "That removes the ending interval before measuring the shared point and undercounts inclusive occupancy.",
+          "net_delta_only": "A +1 and -1 may cancel even though both intervals are simultaneously active at the included point."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sweep-005",
+      "prompt": "Select all statements that are true about equal-coordinate event handling.",
+      "constraints": [
+        "Select all correct statements.",
+        "The sweep may observe intermediate active states."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "contract_drives_tie",
+            "text": "The endpoint inclusion contract determines the required tie order."
+          },
+          {
+            "id": "half_open_end_first",
+            "text": "For half-open active counts, end-before-start preserves immediate reuse."
+          },
+          {
+            "id": "arbitrary_same_peak",
+            "text": "Any order yields the same peak because the final net delta is identical."
+          },
+          {
+            "id": "net_preserves_zero_crossing",
+            "text": "Combining same-time deltas into one net value always preserves whether active reached zero within that coordinate."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contract_drives_tie",
+          "half_open_end_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equal-time order is derived from the representation and observed state; final net delta alone does not preserve every peak or transition.",
+        "details": "The two correct statements connect domain semantics to event order. Half-open intervals release before acquisition, so an ending delta precedes a starting delta when intermediate counts are inspected. Arbitrary ordering can create a transient extra active interval. Aggregating to a net delta can be safe for a narrowly defined result, but it discards within-coordinate transitions such as active reaching zero and reopening. Therefore grouping is an optimization that needs a proof for the exact answer contract, not a substitute for specifying ties.",
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_same_peak": "Intermediate counts can differ even when the final count after the coordinate matches.",
+          "net_preserves_zero_crossing": "A -1 and +1 can net to zero while ordered processing either exposes or hides a zero crossing; that distinction can matter to boundary reconstruction."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "contract_drives_tie": "Omitting this treats tie-breaking as a generic sort detail instead of a semantic consequence.",
+          "half_open_end_first": "Omitting this loses the concrete half-open rule that prevents false overlap at reuse boundaries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sweep-006",
+      "prompt": "Why is sorting intervals by end not a substitute for sorting all sweep events by coordinate?",
+      "constraints": [
+        "Each interval contributes both a start and an end event.",
+        "The sweep state must follow chronological changes."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "events_need_global_coordinate_order",
+            "text": "An early start can belong to an interval with a late end, so interval-end order does not globally order all event coordinates."
+          },
+          {
+            "id": "end_sort_too_expensive",
+            "text": "Sorting intervals by end is asymptotically slower than sorting events."
+          },
+          {
+            "id": "intervals_have_no_starts",
+            "text": "End-sorted intervals lose their start values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "events_need_global_coordinate_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sweep needs a single chronological order over every start and end event, which cannot be inferred from interval end order alone.",
+        "details": "Consider [0, 100) and [50, 60). End sorting processes the shorter interval first even though the long interval's start at 0 is the earliest event. Emitting both events of each interval in that order would process time 50 before time 0 and corrupt the prefix state. The correct procedure materializes or otherwise merges all endpoint events by coordinate. End sorting can still be useful inside a different algorithm, such as a heap of active releases or an earliest-finish greedy proof, but it is not the sweep's chronological axis.",
+        "wrongOptionExplanationsByOptionId": {
+          "end_sort_too_expensive": "Both are O(n log n) comparison sorts up to a constant factor. The failure is the missing chronological event order.",
+          "intervals_have_no_starts": "The starts remain stored, but processing interval records in end order interleaves event times incorrectly."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sweep-007",
+      "prompt": "Two short intervals [5, 6) and [5.2, 5.8) overlap, while one long interval [0, 100) is alone. Which case has the greater peak active count?",
+      "constraints": [
+        "Evaluate the cases separately.",
+        "Every interval contributes unit demand."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "two_short_peak_two",
+            "text": "The two short intervals have peak 2; the single long interval has peak 1."
+          },
+          {
+            "id": "long_peak_greater",
+            "text": "The long interval has the greater peak because its duration is much larger."
+          },
+          {
+            "id": "same_length_rule",
+            "text": "The peaks cannot be compared until total durations are equal."
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_short_peak_two"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Concurrency counts simultaneous intervals; duration controls persistence but not the number of active records.",
+        "details": "During [5.2, 5.8), both short intervals contribute, so the event prefix reaches two. The long-interval case has only one +1 before its -1, so the prefix never exceeds one. A sweep makes the distinction explicit: peak is the maximum prefix sum, not the width between events. Length may matter for union measure or total resource-hours, but it cannot replace active-count accumulation. This counterexample prevents a duration-based ranking from being mistaken for overlap intensity.",
+        "wrongOptionExplanationsByOptionId": {
+          "long_peak_greater": "Duration affects how long demand persists, not how many intervals are active simultaneously.",
+          "same_length_rule": "Peak concurrency is a count at an instant and requires no duration normalization."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sweep-008",
+      "prompt": "Choose the time and extra-space complexities of a static sweep that materializes two events for each of n intervals, comparison-sorts them, and scans once.",
+      "constraints": [
+        "The event list is stored explicitly.",
+        "Endpoint comparisons are constant time."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)",
+            "O(n + U)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "There are 2n events; comparison sorting dominates at O(n log n), and the explicit event list uses O(n) space.",
+        "details": "Creating events costs O(n), sorting 2n events costs O(2n log(2n)) = O(n log n), and the final scan costs O(n). The stored event list contains O(n) records. If coordinates come from a small bounded integer universe U, a counting or difference-array approach may achieve O(n + U) time and O(U) space, but that is a different precondition and representation. Sorting intervals by end does not reduce the need for chronological event order. The cost derivation follows the number of events and the sorting model, not interval lengths."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sweep-009",
+      "prompt": "Inclusive integer interval [l, r] must be processed by a half-open difference sweep. Which conversion is correct when r + 1 is safely representable?",
+      "constraints": [
+        "The domain is discrete integers.",
+        "The sweep should count every integer l through r."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "plus_l_minus_r_plus_one",
+            "text": "Add +1 at l and -1 at r + 1."
+          },
+          {
+            "id": "plus_l_minus_r",
+            "text": "Add +1 at l and -1 at r."
+          },
+          {
+            "id": "plus_both",
+            "text": "Add +1 at both l and r + 1."
+          }
+        ],
+        "acceptedOptionIds": [
+          "plus_l_minus_r_plus_one"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Moving the removal to r + 1 converts inclusive [l, r] into the equivalent half-open [l, r + 1).",
+        "details": "On a discrete integer line, [l, r] contains l, l + 1, ..., r. The difference update +1 at l and -1 at r + 1 keeps the prefix active through r and removes it before the next integer. The conversion requires a safe successor; if r is the maximum representable value, adding one can overflow and the representation must change. This transfer reuses half-open sweep mechanics while preserving closed input meaning. It is not valid for continuous coordinates, where there is no unique next point after r.",
+        "wrongOptionExplanationsByOptionId": {
+          "plus_l_minus_r": "That removes the interval before counting r, turning an inclusive end into an exclusive one.",
+          "plus_both": "The second event must remove the contribution; adding again makes the prefix persist."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_interval_events_in_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

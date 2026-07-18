@@ -1,0 +1,535 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-prefix-sums-prefix-vs-window-tradeoff-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-prefix-sums-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "prefix_sums",
+    "primaryMentalUnitId": "prefix_vs_window_tradeoff",
+    "patternFamilyId": "prefix_sums"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-prefix-sums-prefix-vs-window-tradeoff-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-prefix-vs-window-workload-choice",
+      "prompt": "Which pairing correctly chooses between prefix accumulation and a moving window?",
+      "constraints": [
+        "The array is immutable in both cases.",
+        "The goal is to minimize total work for the stated workload."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_queries_window_scan",
+            "text": "Use a prefix for many arbitrary range-sum queries; use a moving window for the maximum sum across all fixed-length-k windows in one scan."
+          },
+          {
+            "id": "window_queries_prefix_scan",
+            "text": "Use one moving window for many arbitrary range queries; use a prefix only for one fixed-length scan."
+          },
+          {
+            "id": "sort_both",
+            "text": "Sort the input first, then the two methods are interchangeable."
+          },
+          {
+            "id": "hash_removes_choice",
+            "text": "Use a hash map in both cases because neither prefix nor window stores auxiliary state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix_queries_window_scan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefixes reuse stored boundary states across independent queries; windows reuse incremental change across neighboring intervals in one traversal.",
+        "details": "A prefix pays O(n) preprocessing and then answers arbitrary boundaries in O(1). For all windows of one fixed length, a moving sum adds one entering value and removes one leaving value, completing the scan in O(n) with O(1) extra state. The decisive signal is how interval boundaries evolve, not the word “subarray.”",
+        "wrongOptionExplanationsByOptionId": {
+          "window_queries_prefix_scan": "A single window can require large boundary movement between unrelated queries, while the fixed-length scan is exactly where incremental window updates are strongest.",
+          "sort_both": "Sorting changes interval membership and does not erase the difference between random boundary access and one evolving interval.",
+          "hash_removes_choice": "A hash map is not a universal replacement, and prefix-hash methods can use O(n) auxiliary state. The workload still determines the mechanism."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-state-ownership",
+      "prompt": "Which state description correctly separates prefix accumulation from a moving window?",
+      "constraints": [
+        "Both methods process contiguous array regions.",
+        "The comparison is about maintained information, not syntax."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "all_boundaries_vs_current_interval",
+            "text": "A prefix retains cumulative state at many boundaries; a window retains enough state for one current interval and updates it as boundaries move."
+          },
+          {
+            "id": "same_state_different_name",
+            "text": "Both store exactly one current interval and differ only in naming."
+          },
+          {
+            "id": "prefix_sorted_window_unsorted",
+            "text": "A prefix stores sorted values while a window stores unsorted values."
+          },
+          {
+            "id": "both_no_memory",
+            "text": "Neither method retains state beyond the current element."
+          }
+        ],
+        "acceptedOptionIds": [
+          "all_boundaries_vs_current_interval"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The methods differ in ownership: reusable historical boundaries versus one mutable active interval.",
+        "details": "Prefix state supports random recombination because previous boundaries remain available. Window state is intentionally local and economical; it updates by adding and removing elements as the current interval changes. Conflating them hides the actual correctness invariant and space trade-off.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_state_different_name": "A standard prefix array stores many historical states, while a standard window discards states that no longer belong to the current interval.",
+          "prefix_sorted_window_unsorted": "Neither mechanism requires sorting. Both normally preserve original order.",
+          "both_no_memory": "A prefix stores O(n) boundary values in the common representation, and a window stores at least its current aggregate and often a frequency structure."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-decision-order",
+      "prompt": "Order the decision process for choosing prefix accumulation or a moving window for a contiguous-array task.",
+      "constraints": [
+        "The decision must be justified from requirements and invariants.",
+        "Score is based on preserved adjacent relations."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "classify_output",
+            "text": "Identify whether the task answers supplied ranges or searches over intervals."
+          },
+          {
+            "id": "inspect_boundary_evolution",
+            "text": "Determine whether interval boundaries arrive arbitrarily or evolve through one controlled scan."
+          },
+          {
+            "id": "test_window_monotonicity",
+            "text": "If considering a variable window, verify that expanding or shrinking has a valid monotonic repair rule."
+          },
+          {
+            "id": "compare_costs",
+            "text": "Compare preprocessing, per-query work, scan work, and auxiliary space."
+          },
+          {
+            "id": "choose_and_state_boundary",
+            "text": "Choose the mechanism and state the condition under which the alternative would become preferable."
+          }
+        ],
+        "canonicalOrder": [
+          "classify_output",
+          "inspect_boundary_evolution",
+          "test_window_monotonicity",
+          "compare_costs",
+          "choose_and_state_boundary"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Strategy selection starts from the output and boundary behavior, then verifies invariants and costs before committing.",
+        "details": "A supplied-range query and an optimization over all intervals are different contracts even when both mention subarrays. Boundary evolution identifies whether random access or incremental maintenance can be reused. A variable window additionally needs a valid shrink rule; only after these semantic checks should asymptotic and memory costs break remaining ties."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-negative-threshold-boundary",
+      "prompt": "You must find the shortest subarray with sum at least K, and A may contain negative values. Why is a simple “expand right, shrink while valid” sum window unsafe?",
+      "constraints": [
+        "Negative values may appear anywhere.",
+        "The question asks for the shortest qualifying subarray, not supplied range sums."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sum_not_monotonic",
+            "text": "Adding an element can decrease the sum and removing a left element can increase it, so the usual monotonic repair rule does not hold."
+          },
+          {
+            "id": "prefix_needs_sorting",
+            "text": "The window fails only because prefix sums require sorted input."
+          },
+          {
+            "id": "windows_cannot_shrink",
+            "text": "Moving windows are never allowed to move the left boundary."
+          },
+          {
+            "id": "hash_has_no_space",
+            "text": "A hash map would fix the window because it uses no auxiliary state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sum_not_monotonic"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Negative values break the one-direction relationship between boundary movement and sum validity.",
+        "details": "A simple positive-number window relies on extending right never decreasing the sum and removing left never increasing it. Negative values invalidate both implications, so shrinking can skip a better future answer or fail to restore validity predictably. Prefix sums remain useful as cumulative coordinates, but this optimization may require an ordered or monotonic auxiliary structure rather than static range subtraction alone.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_needs_sorting": "Prefix sums work on unsorted signed input. The failure belongs to the window’s monotonicity assumption, not to prefix construction.",
+          "windows_cannot_shrink": "Shrinking is central to variable-window algorithms. The issue is that here shrink effects are not monotonic.",
+          "hash_has_no_space": "Hash or deque state can require linear auxiliary memory and does not automatically supply the required shortest-range ordering invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-fixed-k-tie-break",
+      "prompt": "The only task is to find the maximum sum among all subarrays of one fixed length k. Both a prefix array and a moving sum can finish in O(n). Which choice is usually more direct when no later range queries are needed?",
+      "constraints": [
+        "The array is read once and remains unchanged.",
+        "Only the single maximum value is required."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "moving_sum_lower_space",
+            "text": "Use a moving sum because adjacent windows differ by one entering and one leaving value, giving O(n) time and O(1) extra state."
+          },
+          {
+            "id": "prefix_always_better",
+            "text": "Use a prefix because any contiguous-sum problem requires prefix accumulation."
+          },
+          {
+            "id": "sort_then_prefix",
+            "text": "Sort first so the maximum fixed-length sum becomes the last k values."
+          },
+          {
+            "id": "hash_frequency",
+            "text": "Use prefix-frequency hashing to count every window sum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "moving_sum_lower_space"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "When the intervals are a fixed neighboring sequence and no random queries follow, incremental window state achieves the same time with less stored history.",
+        "details": "The first k-sum is built once; each step adds the entering value and removes the outgoing value. A prefix is still correct, but its O(n) stored boundaries provide reuse the workload never consumes. This is a tie-break by state economy, not a claim that windows are universally better.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_always_better": "A prefix is not required merely because sums and subarrays appear. Here the boundary evolution itself provides constant incremental updates.",
+          "sort_then_prefix": "Sorting changes contiguity and would choose k large values that may never form one original subarray.",
+          "hash_frequency": "The task needs one maximum over fixed-size windows, not counts by cumulative value. Hash history adds irrelevant state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-sortedness-not-signal",
+      "prompt": "An array is already sorted. Does that fact alone decide between prefix accumulation and a moving window?",
+      "constraints": [
+        "The requested output and interval behavior are not yet known.",
+        "The array order must remain unchanged."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_need_output_and_invariant",
+            "text": "No. The decision depends on the output contract, boundary evolution, and valid state invariant; sortedness alone is insufficient."
+          },
+          {
+            "id": "always_prefix",
+            "text": "Yes. Sorted input always requires a prefix array."
+          },
+          {
+            "id": "always_window",
+            "text": "Yes. Sorted input always makes a moving window monotonic for every objective."
+          },
+          {
+            "id": "both_zero_space",
+            "text": "Yes. Sorting makes both methods identical and removes their auxiliary state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_need_output_and_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sortedness can support some candidate-elimination or window proofs, but it does not define the workload or the aggregate being maintained.",
+        "details": "Many arbitrary sums still favor prefix reuse on sorted input, while a fixed-size scan may favor a window. Other sorted-array tasks may need binary search or two pointers instead. The strategy must be derived from what is asked and how state changes, not from sortedness as a universal signal.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_prefix": "Prefix sums require no sorting, and sorted input does not imply repeated cumulative range queries.",
+          "always_window": "Sorted values do not make every objective monotonic under boundary movement. The maintained condition must be proved.",
+          "both_zero_space": "A separate prefix stores linear state; windows may use constant or larger auxiliary state depending on the constraint. Sorting does not equalize them."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-cost-comparison",
+      "prompt": "For n values and q arbitrary range-sum queries, compare a separate prefix array with rescanning each query range in the worst case. Select prefix total time, rescan total time, and prefix extra space.",
+      "constraints": [
+        "A query range may contain Θ(n) elements.",
+        "The array is immutable.",
+        "The separate prefix array is counted as extra space."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "prefix_total_time",
+          "rescan_total_time",
+          "prefix_extra_space"
+        ],
+        "availableValuesByDimension": {
+          "prefix_total_time": [
+            "O(n + q)",
+            "O(nq)",
+            "O(q log n)",
+            "O(n^2)"
+          ],
+          "rescan_total_time": [
+            "O(n + q)",
+            "O(q log n)",
+            "O(nq)",
+            "O(n^2 + q)"
+          ],
+          "prefix_extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(nq)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "prefix_total_time": [
+            "O(n + q)"
+          ],
+          "rescan_total_time": [
+            "O(nq)"
+          ],
+          "prefix_extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 3
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Prefix preprocessing converts repeated linear scans into constant query work at the cost of storing one cumulative state per boundary.",
+        "details": "The prefix design costs O(n) to build and O(q) for all queries, yielding O(n + q). Rescanning a worst-case Θ(n) range for each of q queries costs O(nq). The performance gain is not free: the separate prefix requires O(n) auxiliary space, and prefix-hash variants can also retain O(n) history."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-transfer-matrix-and-updates",
+      "prompt": "Which extension preserves the prefix-over-window decision, and which stated boundary would invalidate a static prefix?",
+      "constraints": [
+        "Choose the one option whose first clause is a valid transfer and whose second clause states the correct stop condition.",
+        "The matrix or array order is fixed unless updates are explicitly allowed."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "matrix_queries_then_online_updates",
+            "text": "Many immutable rectangle-sum queries transfer to a 2D prefix; frequent online cell updates invalidate an unchanged static prefix and call for a dynamic structure."
+          },
+          {
+            "id": "matrix_sort_then_window",
+            "text": "Rectangle sums transfer by sorting all cells; online updates make a moving window automatically correct."
+          },
+          {
+            "id": "fixed_window_then_prefix_hash",
+            "text": "A one-pass fixed-k maximum requires a prefix hash; online updates remove all auxiliary-space costs."
+          },
+          {
+            "id": "all_contiguous_prefix",
+            "text": "Every contiguous problem transfers to a prefix, and no update pattern can invalidate it."
+          }
+        ],
+        "acceptedOptionIds": [
+          "matrix_queries_then_online_updates"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The reusable-boundary decision extends across dimensions for static queries, but mutation makes precomputed cumulative states stale.",
+        "details": "A 2D prefix generalizes random-access cumulative boundaries to row and column cuts. One cell update affects many downstream prefix entries, so frequent online updates require a structure designed for dynamic aggregation, such as a Fenwick or segment tree. The transfer is about reusable static state, not about contiguity alone.",
+        "wrongOptionExplanationsByOptionId": {
+          "matrix_sort_then_window": "Sorting destroys coordinate rectangles, and a moving window does not automatically support arbitrary online rectangle queries.",
+          "fixed_window_then_prefix_hash": "A fixed-k maximum is naturally maintained by a moving sum; hash-prefix frequency is unrelated, and dynamic support still needs state.",
+          "all_contiguous_prefix": "Contiguity is only a surface cue. Non-additive objectives, monotonic windows, and dynamic updates create different decision boundaries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-boundary-translation",
+      "prompt": "A moving-sum window exposes inclusive element indices [left, right], while a reusable prefix helper defines P[i] as the sum of A[0:i]. Which expression evaluates the same current interval?",
+      "constraints": [
+        "0 <= left <= right < n.",
+        "The window and prefix helper must be compared on identical interval membership."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "translate_inclusive_right",
+            "text": "P[right + 1] - P[left]"
+          },
+          {
+            "id": "reuse_right_directly",
+            "text": "P[right] - P[left]"
+          },
+          {
+            "id": "remove_left_twice",
+            "text": "P[right + 1] - P[left + 1]"
+          },
+          {
+            "id": "sort_before_compare",
+            "text": "Sort the current interval, then use P[right] - P[left]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "translate_inclusive_right"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The window names included elements, while the prefix helper names cuts between elements; the inclusive right element maps to the boundary immediately after it.",
+        "details": "A fair prefix-versus-window comparison must first normalize interval semantics. P[right + 1] includes A[right], and P[left] removes exactly the elements before the window. Using right directly omits the outgoing-side endpoint, while changing left removes the first included element. The two methods may compute the same range aggregate, but their index conventions are not interchangeable.",
+        "wrongOptionExplanationsByOptionId": {
+          "reuse_right_directly": "P[right] stops before A[right], so the compared prefix result is missing the window’s final included element.",
+          "remove_left_twice": "P[left + 1] includes A[left], so subtracting it removes the first element that belongs to the window.",
+          "sort_before_compare": "Sorting changes interval membership and does not reconcile inclusive element indices with half-open prefix boundaries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

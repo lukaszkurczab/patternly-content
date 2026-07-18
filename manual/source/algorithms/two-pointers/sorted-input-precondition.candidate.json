@@ -1,0 +1,670 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "two-pointers-sorted_input_precondition-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-two-pointers-review-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "two_pointers",
+    "primaryMentalUnitId": "sorted_input_precondition",
+    "patternFamilyId": "two_pointers"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; human review required)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "two-pointers-sorted_input_precondition-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tp-sorted-sum-rule-dependency",
+      "prompt": "Which exact precondition makes the usual low-sum/advance-left and high-sum/retreat-right rules valid for pair-sum search?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "even_length",
+            "text": "The array length is even."
+          },
+          {
+            "id": "nondecreasing_candidate_interval",
+            "text": "The candidate interval is ordered, so its endpoints are its value extremes."
+          },
+          {
+            "id": "two_indices",
+            "text": "The implementation uses two indices."
+          },
+          {
+            "id": "positive_values",
+            "text": "Every value is positive."
+          }
+        ],
+        "acceptedOptionIds": [
+          "nondecreasing_candidate_interval"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The movement rule relies on endpoints being value extrema of the remaining candidates. Nondecreasing order supplies the inequalities needed for safe elimination.",
+        "details": "A low sum eliminates left only because right is the largest partner still available to it. A high sum eliminates right only because left is the smallest partner still available to it. Positive values and array length do not establish those extremal bounds, and two indices are merely representation. The precondition is part of correctness, not an optional performance hint.",
+        "wrongOptionExplanationsByOptionId": {
+          "two_indices": "Index count does not imply ordered boundary semantics or safe candidate elimination.",
+          "positive_values": "Negative values are compatible with the method when the array remains sorted; positivity is not the required property.",
+          "even_length": "The algorithm works for odd or even lengths under the distinct-position stopping rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-sorted-unsorted-elimination-counterexample",
+      "prompt": "For unsorted values [8, 1, 6, 4] and target 10, left=0 and right=3 give sum 12. If the code retreats right because the sum is high, what valid pair can be skipped?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "eight_plus_one",
+            "text": "The pair 8+1, even though it sums to 9."
+          },
+          {
+            "id": "one_plus_four",
+            "text": "The pair 1+4, even though it sums to 5."
+          },
+          {
+            "id": "eight_plus_two_none",
+            "text": "No pair is skipped because high-sum movement is valid on any array."
+          },
+          {
+            "id": "six_plus_four",
+            "text": "The pair 6+4, because retreating right moves away from value 4 before value 6 is considered as the left endpoint."
+          }
+        ],
+        "acceptedOptionIds": [
+          "six_plus_four"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Physical right=4 is not the largest remaining value, so a high endpoint sum does not prove that value 4 is unusable. Retreating right skips the valid pair 6+4.",
+        "details": "In a sorted interval, a high sum would eliminate the maximum right value. Here value 8 sits at the left endpoint and creates the high sum, while the right endpoint 4 is still needed with the interior value 6. The standard movement rule therefore discards a viable candidate. This concrete trace shows why the order dependency cannot be replaced by pointer names or the sign of one arbitrary endpoint sum.",
+        "wrongOptionExplanationsByOptionId": {
+          "eight_plus_two_none": "The movement rule is not valid on arbitrary order; the endpoint values do not bound the interior candidates.",
+          "eight_plus_one": "8+1 remains visible and may look like a skipped combination, but it totals 9 rather than 10. A counterexample must identify a valid target pair lost by the move; here that pair is 6+4.",
+          "one_plus_four": "1+4 is indeed bypassed when right retreats, but it totals only 5 and is not a lost solution. The material counterexample is 6+4, which meets the target."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The input order is exactly [8, 1, 6, 4].",
+        "No sorting or copying occurs before the scan."
+      ]
+    },
+    {
+      "id": "alg-tp-sorted-preserve-original-indices",
+      "prompt": "An unsorted array must return original indices of a target-sum pair. Sorting is allowed and O(n) extra memory is available. Which preparation preserves the index contract for a two-pointer scan?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_value_index_pairs",
+            "text": "Create (value, originalIndex) records, sort them by value, then run two pointers over the records."
+          },
+          {
+            "id": "sort_values_only",
+            "text": "Sort only the values and return the sorted positions as original indices."
+          },
+          {
+            "id": "discard_indices",
+            "text": "Ignore the original-index requirement because two pointers is faster."
+          },
+          {
+            "id": "move_both_unsorted",
+            "text": "Keep the array unsorted and move both endpoints after each mismatch."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_value_index_pairs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The value order can be introduced without losing provenance by sorting decorated value-index records.",
+        "details": "The pointer movement needs sorted values, while the output needs original positions. Pairing each value with its source index carries that provenance through sorting. Sorting values alone destroys the mapping between sorted positions and original indices. The decorated approach costs O(n) auxiliary space plus sorting time, so it is correct only when those resources and copying are permitted.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_values_only": "Sorted positions are not original positions. Returning them would violate the output contract.",
+          "discard_indices": "Dropping indices would simplify the value search, but it violates the explicit output contract. It is valid only when the caller needs values or existence rather than original positions.",
+          "move_both_unsorted": "Moving both can reduce the interval, but without value order neither move safely eliminates a candidate class. It can skip valid pairs and cannot preserve the original-index contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Original indices are required.",
+        "Copying into O(n) auxiliary storage is allowed.",
+        "Sorting is allowed."
+      ]
+    },
+    {
+      "id": "alg-tp-sorted-copy-sort-space",
+      "prompt": "To avoid mutating an unsorted input, the algorithm copies n values, sorts the copy, and runs a two-pointer scan. The sort uses O(log n) stack space. What are the end-to-end time and auxiliary-space complexities, including the copy?",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Sorting dominates time, and the copied array dominates auxiliary space even though the pointer scan itself is in place on that copy.",
+        "details": "Copying takes O(n) time and O(n) storage, sorting takes O(n log n) time with O(log n) additional stack, and scanning takes O(n) time. The total time is O(n log n), while auxiliary space is O(n+log n)=O(n). Reporting O(1) space would ignore the copy created to satisfy the no-mutation constraint. Precondition establishment and side-effect avoidance are both part of the cost model."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The original input may not be mutated.",
+        "The copy contains n values.",
+        "Sorting takes O(n log n) time and O(log n) stack space."
+      ]
+    },
+    {
+      "id": "alg-tp-sorted-already-sorted-scan",
+      "prompt": "The input is already sorted, and a target-sum existence query uses only left, right, and a current sum. What are the scan's time and auxiliary-space complexities?",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "No preprocessing is needed; monotonic pointer movement crosses the array once with scalar state.",
+        "details": "left increases and right decreases without reversal, so their combined number of moves is O(n). The implementation stores only a constant number of indices and scalar values. This is the cost of the pointer phase when the ordering precondition is already part of the input contract. It should not be confused with the O(n log n) cost of sorting an unsorted input first."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "The input is already sorted in nondecreasing order.",
+        "Each iteration performs O(1) work."
+      ]
+    },
+    {
+      "id": "alg-tp-sorted-single-unsorted-query-strategy",
+      "prompt": "For one target-sum query on an unsorted array, original indices are required, mutation is forbidden, and O(n) memory is allowed. Which cost comparison is accurate?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "two_indices_force_choice",
+            "text": "The output has two indices, so two pointers is the only legal strategy."
+          },
+          {
+            "id": "hash_expected_linear",
+            "text": "A hash lookup can solve the query in expected O(n) time and O(n) space, while copied sort plus two pointers costs O(n log n) time and O(n) space."
+          },
+          {
+            "id": "two_pointer_always_linear",
+            "text": "Two pointers is O(n) end to end because the scan is linear, even though sorting is required."
+          },
+          {
+            "id": "sort_constant_space",
+            "text": "Copying and sorting uses O(1) auxiliary space."
+          }
+        ],
+        "acceptedOptionIds": [
+          "hash_expected_linear"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For a single unsorted query under the stated resources, hashing preserves indices without paying O(n log n) sorting time. The two-pointer scan's linear phase is not the whole cost.",
+        "details": "A hash map can store previously seen values and indices during one pass, with expected constant-time operations. A nonmutating sort-based approach must copy or decorate the data, sort it, then scan. Both use O(n) auxiliary space here, but their expected time differs. Strategy choice remains conditional on hash assumptions, deterministic requirements, and other product constraints; the key diagnostic is that sorting is visible.",
+        "wrongOptionExplanationsByOptionId": {
+          "two_pointer_always_linear": "The scan is linear only after the O(n log n) ordering phase. End-to-end time includes both.",
+          "sort_constant_space": "The no-mutation requirement forces a proportional copy, and preserving indices may require decorated records as well.",
+          "two_indices_force_choice": "Output shape does not determine algorithm family. Multiple strategies can return two indices."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "There is one query.",
+        "Original indices are required.",
+        "Mutation is forbidden.",
+        "O(n) auxiliary memory is allowed."
+      ]
+    },
+    {
+      "id": "alg-tp-sorted-repeated-query-amortization",
+      "prompt": "The same mutable array will receive q target-sum existence queries. One initial sort is allowed, and original indices are irrelevant. Which cost model describes sorting once and scanning for every query?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "linear_total",
+            "text": "O(n) total time regardless of q."
+          },
+          {
+            "id": "constant_query",
+            "text": "O(n log n + q) because each two-pointer query is O(1)."
+          },
+          {
+            "id": "sort_once_plus_q_scans",
+            "text": "O(n log n + qn) total time, with the sorting cost paid once."
+          },
+          {
+            "id": "q_sorts",
+            "text": "O(q n log n) is mandatory because the array must be sorted again for every target."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_once_plus_q_scans"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The sortedness precondition can be established once and reused, but each independent two-pointer target scan may still traverse O(n) values.",
+        "details": "Mutation is allowed and the same array persists, so repeated sorting is unnecessary. The one-time preprocessing cost is O(n log n), followed by q scans of O(n) each. This yields O(n log n+qn). Query volume can make preprocessing worthwhile, but it does not make the scans constant time or the initial sort free.",
+        "wrongOptionExplanationsByOptionId": {
+          "q_sorts": "The array remains sorted after the first preprocessing step, so repeating the sort is redundant.",
+          "linear_total": "Sorting is paid once, but each of q distinct targets may still require an O(n) scan. O(n) total would be possible only if q were a fixed constant and sorting were already excluded.",
+          "constant_query": "The array's sorted preparation is reusable, but a new target can force the two pointers to traverse the full interval. Per-query worst-case time is O(n), not O(1)."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The same array is queried repeatedly.",
+        "The array may be sorted in place once.",
+        "Original indices are irrelevant."
+      ]
+    },
+    {
+      "id": "alg-tp-sorted-palindrome-no-sort",
+      "prompt": "A string is checked for palindrome symmetry by comparing normalized symbols from both ends. Is sorted input a precondition for this two-pointer variant?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "only_even",
+            "text": "Only strings of even length require sorting."
+          },
+          {
+            "id": "no_symmetry_not_order",
+            "text": "No. The proof depends on mirrored positions and a shrinking unresolved region, not value order."
+          },
+          {
+            "id": "yes_all_two_pointer",
+            "text": "Yes. Every two-pointer algorithm requires sorted input."
+          },
+          {
+            "id": "yes_move_both",
+            "text": "Yes, because both pointers move together."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_symmetry_not_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The relevant invariant is positional symmetry. Sorting would destroy the sequence whose mirror relation is being tested.",
+        "details": "Equal endpoint symbols can be jointly verified and removed from the unresolved region without any numerical or lexical order. The proof is that all outer pairs match and only the interior remains. This demonstrates that sortedness is variant-specific, not a family-wide prerequisite. Applying sort reflexively would change the problem rather than prepare it.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_all_two_pointer": "Sortedness supports ordered elimination in pair search, but not same-direction compaction, partitioning, or mirror comparison.",
+          "yes_move_both": "Both pointers do move together after a successful mirror comparison, but that movement is licensed by jointly verifying the endpoints. It does not imply or require sorted values.",
+          "only_even": "Parity affects whether a single middle symbol remains, not whether ordering is required."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "compare_from_both_ends"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-sorted-compaction-no-sort",
+      "prompt": "A stable in-place filter keeps values satisfying P in original order. Is sorting required before the same-direction read/write scan?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_group_values",
+            "text": "Yes. Accepted values must be numerically grouped before write can move."
+          },
+          {
+            "id": "yes_two_indices",
+            "text": "Yes. Two indices are meaningful only on sorted input."
+          },
+          {
+            "id": "only_duplicates",
+            "text": "Sorting is required only when duplicate values appear."
+          },
+          {
+            "id": "no_predicate_scan",
+            "text": "No. read can evaluate P in encounter order, and write can maintain the accepted prefix directly."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_predicate_scan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The read/write invariant depends on processed-input and produced-output boundaries, not value order. Sorting may violate the required stability.",
+        "details": "read visits values in their original sequence and write records the next accepted position. The predicate itself determines acceptance independently at each read position. Prior sorting adds cost and changes encounter order, undermining the stable output contract. Sortedness is needed only if the predicate or duplicate policy explicitly depends on grouped order.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_group_values": "The scan can write accepted values as it encounters them; numerical grouping is unnecessary.",
+          "yes_two_indices": "Same-direction pointer meaning comes from the input/output boundary invariant, not sortedness.",
+          "only_duplicates": "Duplicates do not automatically require sorting for a general predicate filter. A sorted-run deduplication policy is a separate case."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-sorted-partition-no-full-sort",
+      "prompt": "A sequence only needs all P-true values before all P-false values, with no order requirement inside groups. Must it be fully sorted before a pointer partition?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_if_negative",
+            "text": "Yes, whenever values may be negative."
+          },
+          {
+            "id": "yes_move_both",
+            "text": "Yes, so both pointers know when to move together."
+          },
+          {
+            "id": "no_partition_direct",
+            "text": "No. The pointers can classify and repair predicate violations directly in O(n)."
+          },
+          {
+            "id": "yes_total_order",
+            "text": "Yes. A predicate boundary can exist only inside a totally sorted sequence."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_partition_direct"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Predicate partitioning creates the required binary boundary directly; total ordering is stronger and more expensive than the contract.",
+        "details": "The partition invariant tracks a P-true prefix, P-false suffix, and unclassified middle. It does not compare numerical ranks or require adjacent order. A direct pass can therefore finish in linear time on arbitrary input order. Sorting may be selected for additional downstream needs, but it is not a precondition of the partition mechanism.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_total_order": "A binary predicate classification is sufficient; values within a class may remain arbitrary.",
+          "yes_if_negative": "Negative values can affect arithmetic intuition, but sign does not require a full sort for binary predicate partitioning. Sorting is relevant only if the required predicate itself depends on ordered value extremes.",
+          "yes_move_both": "Pointer movement is governed by classification state, not by a prior total sort."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-sorted-sorted-does-not-mean-move-both",
+      "prompt": "The input is sorted and the current pair sum is below target. Does sortedness justify moving both pointers inward?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_sorted_both",
+            "text": "Yes. Once sorted, every mismatch eliminates both endpoints."
+          },
+          {
+            "id": "yes_faster",
+            "text": "Yes, because faster convergence preserves correctness."
+          },
+          {
+            "id": "no_move_none",
+            "text": "No pointer may move after a below-target sum."
+          },
+          {
+            "id": "no_only_left",
+            "text": "No. Sortedness proves the current left value is too small with every remaining partner, but it does not eliminate the current right value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_only_left"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sortedness supplies a one-boundary elimination proof, not permission to discard both boundaries after every mismatch.",
+        "details": "The current right endpoint is the largest partner for left. A low sum proves that left cannot work with any remaining right value, so left can advance. The same comparison leaves right viable with a larger left value. Moving both confuses the existence of an ordered precondition with the scope of the conclusion it supports.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_sorted_both": "The high endpoint may still participate in a valid pair. Sortedness does not eliminate it from a low-sum comparison.",
+          "yes_faster": "Speed of convergence is irrelevant unless every discarded candidate is proved impossible.",
+          "no_move_none": "Avoiding both moves would preserve candidates, but it also repeats the same too-small comparison forever. Sortedness safely eliminates the current left boundary, so left must advance."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The array is sorted in nondecreasing order.",
+        "The current sum is strictly below target."
+      ]
+    },
+    {
+      "id": "alg-tp-sorted-precondition-audit-order",
+      "prompt": "Order the audit used before introducing sorting to enable a two-pointer solution.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "identify_dependency",
+            "text": "Identify the exact movement or duplicate rule that depends on order."
+          },
+          {
+            "id": "choose_or_reject",
+            "text": "Choose sort plus two pointers only if correctness, output, and resource boundaries all remain legal."
+          },
+          {
+            "id": "check_given_order",
+            "text": "Determine whether the required order is already guaranteed by the input contract."
+          },
+          {
+            "id": "account_cost",
+            "text": "Account for sorting, copying, and provenance-storage costs."
+          },
+          {
+            "id": "check_semantic_side_effects",
+            "text": "If not, check whether sorting may mutate data, change required order, or lose original identity."
+          }
+        ],
+        "canonicalOrder": [
+          "identify_dependency",
+          "check_given_order",
+          "check_semantic_side_effects",
+          "account_cost",
+          "choose_or_reject"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Sortedness should be introduced only after its proof role, semantic legality, and full cost are made explicit.",
+        "details": "First tie order to a concrete movement or skip rule; otherwise sorting may be cargo-cult preprocessing. If order is already guaranteed, no preprocessing is needed. If it is absent, mutation, stable-order, and identity requirements determine whether sorting or copying is legal. Only after including those time and space costs can the strategy be compared fairly with alternatives."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_sorted_input_dependency",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      },
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

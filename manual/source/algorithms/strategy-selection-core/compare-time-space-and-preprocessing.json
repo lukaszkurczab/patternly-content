@@ -1,0 +1,401 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-strategy-selection-core-compare_time_space_and_preprocessing-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-strategy-selection-core-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "strategy_selection_core",
+    "primaryMentalUnitId": "compare_time_space_and_preprocessing",
+    "patternFamilyId": "complexity_and_constraints"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-strategy-selection-core-compare_time_space_and_preprocessing-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "ssc-compare-static-prefix-total-cost",
+      "prompt": "A static array of n values is preprocessed once into prefix sums, then q range-sum queries are answered. Choose the total asymptotic time and extra space of this strategy.",
+      "constraints": [
+        "The array is static.",
+        "Prefix sums are built exactly once.",
+        "There are q range-sum queries."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(q)",
+            "O(n)",
+            "O(n + q)",
+            "O(nq)",
+            "O(n log n + q)"
+          ],
+          "space": [
+            "O(1)",
+            "O(n)",
+            "O(q)",
+            "O(n + q)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n + q)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "Theta(n+q)": "O(n + q)",
+            "O(q+n)": "O(n + q)"
+          },
+          "space": {
+            "Theta(n)": "O(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The one-time prefix construction visits n values and each of q queries uses constant work, for O(n + q) total time and O(n) extra state.",
+        "details": "A cost model must include every lifecycle phase. Building the prefix array costs O(n); q independent range queries each perform a constant number of accesses and arithmetic operations, adding O(q). The stored prefix array contains n-scale state, so extra space is O(n). Reporting only O(1) per query hides preprocessing, while multiplying n by q incorrectly assumes every query rescans the range. The transfer rule is to express total cost as setup + operations × per-operation cost, and to keep persistent index space separate from input storage."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-single-query-scan-vs-sort",
+      "prompt": "One unsorted array of n values receives exactly one pair-sum existence query. Candidate A scans all pairs in O(n²) time and O(1) space. Candidate B sorts a copy in O(n log n) time, then uses two pointers in O(n), with O(n) extra space for the copy. Which comparison is complete?",
+      "constraints": [
+        "There is exactly one query.",
+        "The input cannot be mutated, so sorting uses a copy.",
+        "Both candidates are otherwise correct."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "full_model",
+            "text": "B improves time to O(n log n) but spends O(n) extra space; the copy and sort are part of the one-query total cost."
+          },
+          {
+            "id": "pointer_only",
+            "text": "B is O(n) because the ordered two-pointer pass is the phase that searches for the answer; copying and sorting are setup details."
+          },
+          {
+            "id": "space_only",
+            "text": "A is superior because O(1) extra space is a stronger resource result than B's O(n) copy, regardless of their different running times."
+          }
+        ],
+        "acceptedOptionIds": [
+          "full_model"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A complete comparison includes preprocessing, traversal, and extra state. Candidate B is O(n log n) total for this single query, not merely the O(n) pointer phase.",
+        "details": "Strategies are compared as complete lifecycles. The sorted-copy candidate performs O(n) copying, O(n log n) sorting, and O(n) pointer movement, dominated by O(n log n), while retaining O(n) auxiliary records. The direct pair scan uses little extra memory but O(n²) time. Neither time nor space alone determines the result; resource constraints decide whether the trade-off is acceptable. The transfer rule is to include setup and preservation adaptations whenever an appealing inner loop is preceded by sorting, indexing, copying, or transformation.",
+        "wrongOptionExplanationsByOptionId": {
+          "pointer_only": "This isolates the final phase and hides the dominant sorting cost. It would be a valid incremental cost only if the data were already sorted by a separately accounted owner.",
+          "space_only": "Constant extra space is one advantage, not an automatic winner. It becomes decisive only when the memory limit rules out the copied representation and the slower time still fits."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-memory-cap-overrides-time",
+      "prompt": "For n = 10 million, a hash-based candidate uses expected O(n) time and O(n) extra entries. A sort-in-place candidate uses O(n log n) time and O(log n) stack space. The input may be mutated, and the memory budget cannot hold the hash table. Which cost comparison controls the decision?",
+      "constraints": [
+        "n is 10 million.",
+        "Input mutation is allowed.",
+        "The hash table exceeds the memory budget.",
+        "Both algorithms are correct."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "linear_always",
+            "text": "Choose hashing because expected O(n) time asymptotically dominates O(n log n), and treat memory pressure as a secondary implementation concern."
+          },
+          {
+            "id": "space_ignore",
+            "text": "Treat auxiliary memory as a constant-factor detail because both candidates store n input values somewhere."
+          },
+          {
+            "id": "memory_feasibility",
+            "text": "The hash candidate is infeasible under the space cap; compare the sort candidate against the time limit instead of treating expected O(n) as an automatic win."
+          }
+        ],
+        "acceptedOptionIds": [
+          "memory_feasibility"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A resource limit is a feasibility boundary before it is a preference. An asymptotically faster candidate cannot be selected when its required state cannot be allocated.",
+        "details": "Time and space are separate constraints. The input already exists, but the hash table adds millions of entries with allocation and load-factor overhead; that extra state can exceed a hard memory cap. In-place sorting reuses the input representation and may need only recursion or library workspace, at the cost of O(n log n) comparisons. Once the hash candidate is infeasible, it leaves the comparison set regardless of its expected time. The transfer rule is to apply hard resource bounds as gates, then rank the remaining legal and feasible candidates.",
+        "wrongOptionExplanationsByOptionId": {
+          "linear_always": "Asymptotic time cannot override an unsatisfied memory contract. This option becomes valid only when the hash representation fits and expected-time assumptions are acceptable.",
+          "space_ignore": "Input storage and extra strategy state are different accounting categories. The claim would be reasonable only if the additional structure were bounded independently of n or supplied externally."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-copy-and-preservation-cost",
+      "prompt": "A sorting-based candidate is evaluated for a task that must preserve the caller's array and original indices. Which cost model correctly includes the adaptation?",
+      "constraints": [
+        "The caller's array must remain unchanged.",
+        "Original indices must be returned.",
+        "Duplicate values may exist."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "indexed_copy",
+            "text": "O(n) work and space to build indexed records, O(n log n) to sort them, then the strategy's ordered scan."
+          },
+          {
+            "id": "index_restore",
+            "text": "Sort the original array and reconstruct original indices afterward at no additional cost."
+          },
+          {
+            "id": "free_sort",
+            "text": "O(n log n) time and O(1) extra space because sorting is conceptually in place."
+          }
+        ],
+        "acceptedOptionIds": [
+          "indexed_copy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preserving mutation and identity contracts requires an explicit copied/indexed representation. Its construction and storage belong in the candidate's cost.",
+        "details": "A raw in-place sort would change the caller's array and detach values from their original positions. A legal adaptation pairs each value with its index or sorts an equivalent copy, adding O(n) construction time and O(n) extra state before O(n log n) sorting. Original indices generally cannot be reconstructed from values alone when duplicates exist. The transfer rule is to account for every wrapper, copy, index map, or normalization required to make a mechanism legal; adaptations are part of the strategy, not free implementation details.",
+        "wrongOptionExplanationsByOptionId": {
+          "free_sort": "This model describes a different mutability contract and hides the copied representation. It becomes accurate only when the input is privately mutable and original positions are irrelevant.",
+          "index_restore": "Duplicates and reordered values make original identity unrecoverable without retained metadata. Reconstruction is possible only if a mapping was preserved, which is itself additional state and work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-output-sensitive-lower-bound",
+      "prompt": "A task must emit every matching pair, and the maximum number of pairs is Θ(n²). Candidate X claims O(n) total time because it finds matches with hashing. Which comparison is valid?",
+      "constraints": [
+        "Every matching pair must be emitted.",
+        "The number of matching pairs may be Θ(n²).",
+        "Hash lookup cost is not the only required work."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "output_bound",
+            "text": "The lookup phase may be near linear, but total time is Ω(number of emitted pairs), which is Θ(n²) in the worst case."
+          },
+          {
+            "id": "hash_linear",
+            "text": "Hashing guarantees O(n) total time because each input is indexed once and every matching lookup is expected constant time."
+          },
+          {
+            "id": "ignore_emission",
+            "text": "Report O(n) for discovery and exclude writing the matching pairs, because output operations are not part of the core algorithm."
+          }
+        ],
+        "acceptedOptionIds": [
+          "output_bound"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Producing k distinct outputs requires Ω(k) work. An efficient discovery index cannot make a quadratic-size result appear in linear total time.",
+        "details": "Complexity must reflect the full output contract. Hashing may reduce search overhead or make each match discoverable quickly, but every required pair still has to be materialized or streamed. When k can be Θ(n²), the natural model is O(preprocessing + search overhead + k), and the worst case inherits the quadratic output term. Ignoring emission would compare candidates against a different problem that returns only existence or count. The transfer rule is to use output-sensitive notation whenever the answer may contain a variable number of records, paths, intervals, matches, or witnesses.",
+        "wrongOptionExplanationsByOptionId": {
+          "hash_linear": "Expected constant-time lookup bounds index operations, not the number of required emissions. It becomes valid for an existence query or another bounded-size output.",
+          "ignore_emission": "Complexity excludes no contractually required work by default. Ignoring output is meaningful only when the API returns a lazy representation and its later consumption is accounted separately."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-prefix-rebuild-with-updates",
+      "prompt": "A prefix-sum strategy builds an array in O(n), rebuilds the entire prefix array after each of u point updates, and answers each of q range queries in O(1). Choose its total time and extra space.",
+      "constraints": [
+        "One initial prefix build occurs.",
+        "Each point update triggers a complete rebuild.",
+        "There are u updates and q queries."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n + u + q)",
+            "O(n + un + q)",
+            "O(nq + u)",
+            "O((u + q) log n)",
+            "O(unq)"
+          ],
+          "space": [
+            "O(1)",
+            "O(n)",
+            "O(u)",
+            "O(n + q)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n + un + q)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "O(n(1+u)+q)": "O(n + un + q)",
+            "Theta(n+un+q)": "O(n + un + q)"
+          },
+          "space": {
+            "Theta(n)": "O(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "There is one O(n) build, u full O(n) rebuilds, and q constant-time queries, giving O(n + un + q) time and O(n) extra space.",
+        "details": "Static preprocessing costs can become repeated maintenance costs when data changes. The prefix array itself remains O(n) state, but each point update invalidates all later prefix entries under this naive maintenance policy, so rebuilding costs O(n) per update. The total lifecycle is O(n) + u·O(n) + q·O(1). Quoting O(1) queries alone can make the strategy look attractive even when updates dominate. The transfer rule is to model build, query, update, and rebuild frequencies separately for every preprocessed representation."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-expected-vs-worst-case",
+      "prompt": "A service contract requires a deterministic O(n log n) worst-case upper bound. Candidate H uses a conventional hash table with expected O(n) total work but possible O(n²) collision behaviour; Candidate S sorts in O(n log n) worst-case. How should the models be compared?",
+      "constraints": [
+        "The contract requires deterministic O(n log n) worst-case time or better.",
+        "The hash candidate has only an expected bound.",
+        "Both candidates are functionally correct."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "guarantee_match",
+            "text": "H has a better expected bound but does not satisfy the required worst-case guarantee; S does."
+          },
+          {
+            "id": "expected_dominates",
+            "text": "H is superior because O(n) is smaller than O(n log n), so guarantee type is irrelevant."
+          },
+          {
+            "id": "worst_hash_constant",
+            "text": "Treat H's collision case as a constant-factor issue rather than a different asymptotic guarantee."
+          }
+        ],
+        "acceptedOptionIds": [
+          "guarantee_match"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Expected and worst-case bounds answer different contracts. A candidate whose guarantee type is weaker than required is not interchangeable with a deterministic bound.",
+        "details": "Cost models must state their assumptions and guarantee semantics. A conventional hash table often performs expected constant-time operations under suitable hashing and input assumptions, but pathological collisions can degrade a sequence of operations. Sorting offers a deterministic comparison bound in the stated model. If the product contract accepts expected latency, hashing may still win; under an explicit worst-case requirement, it fails that boundary. The transfer rule is to compare amortized, expected, average, and worst-case claims only after matching them to the required guarantee.",
+        "wrongOptionExplanationsByOptionId": {
+          "expected_dominates": "The smaller expected growth rate does not satisfy a stronger worst-case contract. This option becomes valid only when expected performance is an approved guarantee for the workload.",
+          "worst_hash_constant": "A collision chain affecting many operations changes the asymptotic bound, not merely a constant. A guaranteed collision-resistant or bounded structure would need a separately stated model."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

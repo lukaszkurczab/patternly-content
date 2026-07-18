@@ -1,0 +1,470 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-prefix-sums-difference-array-updates-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-prefix-sums-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "prefix_sums",
+    "primaryMentalUnitId": "difference_array_updates",
+    "patternFamilyId": "prefix_sums"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-prefix-sums-difference-array-updates-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-prefix-difference-array-batch-update-signal",
+      "prompt": "An array of length n receives 200,000 operations of the form “add delta to every index in inclusive [l, r]”. Only the final array is needed after all operations. Which representation is the decisive prefix-family choice?",
+      "constraints": [
+        "No intermediate query must be answered.",
+        "Updates use original array indices."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "endpoint_differences",
+            "text": "Record a +delta change at l and a -delta change after r, then prefix-accumulate all changes once."
+          },
+          {
+            "id": "apply_every_element",
+            "text": "Immediately visit every index in [l, r] for each update."
+          },
+          {
+            "id": "sort_update_ranges",
+            "text": "Sort the array values before applying the updates."
+          },
+          {
+            "id": "moving_window_sum",
+            "text": "Maintain one current window sum and move it between update ranges."
+          }
+        ],
+        "acceptedOptionIds": [
+          "endpoint_differences"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The final effect changes only when an update becomes active at l and stops after r, so endpoints are sufficient until one reconstruction pass.",
+        "details": "A difference array stores changes between adjacent final values rather than materializing every update immediately. Marking diff[l] += delta and diff[r + 1] -= delta causes the running prefix of diff to equal the active accumulated update at each index. This trades O(length of range) per update for O(1) marks and one O(n) pass.",
+        "wrongOptionExplanationsByOptionId": {
+          "apply_every_element": "Direct application is correct but can cost O(n) per update, producing O(un) work in the worst case. It ignores the endpoint cancellation structure.",
+          "sort_update_ranges": "The updates are positional. Sorting values changes which indices each range refers to and does not reduce the range-write cost.",
+          "moving_window_sum": "A window represents one active interval while scanning; it does not encode many overlapping future additions to reconstruct later."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "encode_range_updates_by_differences",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "difference_array",
+        "problemArchetypeId": "batch_range_updates"
+      }
+    },
+    {
+      "id": "alg-prefix-difference-array-active-delta-invariant",
+      "prompt": "After all endpoint marks are written, what does the running prefix of diff represent at index i?",
+      "constraints": [
+        "Each update [l, r] adds +delta at l and -delta immediately after r when that boundary exists.",
+        "Updates may overlap."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "active_total_delta",
+            "text": "The total delta from all updates whose ranges include index i."
+          },
+          {
+            "id": "final_value_without_base",
+            "text": "The original A[i] even before it is added to the accumulated delta."
+          },
+          {
+            "id": "current_window_length",
+            "text": "The number of indices in one current moving window."
+          },
+          {
+            "id": "sorted_update_count",
+            "text": "The number of update deltas smaller than A[i]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "active_total_delta"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefixing the boundary changes turns start and stop events into the cumulative update active at each position.",
+        "details": "Every +delta remains in the running total from l through r, and the -delta after r removes it before the next index. Overlapping updates add naturally because their active intervals contribute simultaneously. The base array is separate: final[i] = A[i] + activeDelta[i] unless diff was initialized from A itself.",
+        "wrongOptionExplanationsByOptionId": {
+          "final_value_without_base": "The accumulated difference marks describe updates, not the original element unless the representation explicitly included A’s own differences.",
+          "current_window_length": "The running value is a sum of deltas, not a boundary distance. Many update intervals can be active at once.",
+          "sorted_update_count": "No sorting or value comparison is involved. The state is determined only by positional start and stop events."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "encode_range_updates_by_differences",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "difference_array",
+        "problemArchetypeId": "batch_range_updates"
+      }
+    },
+    {
+      "id": "alg-prefix-difference-array-update-order",
+      "prompt": "Order the operations for applying a batch of inclusive range-add updates with a difference array.",
+      "constraints": [
+        "The base array A is retained separately.",
+        "Score is based on preserved adjacent relations."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "initialize_diff",
+            "text": "Initialize diff with zeros for all required boundaries."
+          },
+          {
+            "id": "mark_starts_stops",
+            "text": "For every update, add delta at l and subtract delta at r + 1 when that boundary exists."
+          },
+          {
+            "id": "prefix_active_delta",
+            "text": "Scan left to right, accumulating diff into the active delta."
+          },
+          {
+            "id": "combine_with_base",
+            "text": "Add the active delta to A[i] to produce the final value at i."
+          },
+          {
+            "id": "emit_final_array",
+            "text": "Emit the completed final array after the reconstruction scan."
+          }
+        ],
+        "canonicalOrder": [
+          "initialize_diff",
+          "mark_starts_stops",
+          "prefix_active_delta",
+          "combine_with_base",
+          "emit_final_array"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "All endpoint events must be recorded before one cumulative reconstruction converts them into per-index effects.",
+        "details": "Writing all marks first keeps every update O(1). The reconstruction scan then integrates the changes in index order and combines the active total with the base value. Applying a base value before its active delta is known or emitting before all marks are recorded breaks the deferred-update contract."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "encode_range_updates_by_differences",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "difference_array",
+        "problemArchetypeId": "batch_range_updates"
+      }
+    },
+    {
+      "id": "alg-prefix-difference-array-right-edge",
+      "prompt": "For an inclusive update [l, n - 1], how should the stop mark be handled in a length-n diff array?",
+      "constraints": [
+        "diff has indices 0 through n - 1 only.",
+        "The reconstruction scan ends at n - 1."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "omit_out_of_bounds_stop",
+            "text": "Write diff[l] += delta and omit the stop mark because r + 1 equals n, outside the reconstructed domain."
+          },
+          {
+            "id": "subtract_at_r",
+            "text": "Write diff[n - 1] -= delta so the last element is not updated."
+          },
+          {
+            "id": "wrap_to_zero",
+            "text": "Write the stop mark at diff[0]."
+          },
+          {
+            "id": "sort_then_stop",
+            "text": "Sort diff and place the negative mark at its last value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "omit_out_of_bounds_stop"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An update that reaches the final index never needs to stop within the scanned domain.",
+        "details": "The +delta must remain active through n - 1. A stop at r would cancel it before the last element, while wrapping to zero would corrupt the whole prefix. An alternative legal representation allocates n + 1 boundaries and writes the stop at diff[n], but a length-n array must guard the write.",
+        "wrongOptionExplanationsByOptionId": {
+          "subtract_at_r": "The stop boundary is after r, not at r. Subtracting at n - 1 removes the update from the final requested position.",
+          "wrap_to_zero": "Array boundaries do not wrap. A negative mark at zero would alter every reconstructed index.",
+          "sort_then_stop": "Difference marks are positional events. Sorting destroys their boundary meaning."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "encode_range_updates_by_differences",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "difference_array",
+        "problemArchetypeId": "batch_range_updates"
+      }
+    },
+    {
+      "id": "alg-prefix-difference-array-not-window",
+      "prompt": "Why are overlapping batch range additions not equivalent to maintaining one moving window?",
+      "constraints": [
+        "All updates are known before reconstruction.",
+        "Many update ranges may overlap at one index."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "many_effects_encoded_by_events",
+            "text": "The difference array superposes start and stop events for many ranges, while one window state represents only one currently maintained interval."
+          },
+          {
+            "id": "windows_cannot_overlap",
+            "text": "Two mathematical intervals are never allowed to overlap in a window problem."
+          },
+          {
+            "id": "prefix_requires_sorting",
+            "text": "The difference array works only because update ranges are sorted by delta."
+          },
+          {
+            "id": "no_auxiliary_state",
+            "text": "The difference array is equivalent to a window because neither stores any state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "many_effects_encoded_by_events"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Difference state represents the combined effects of many intervals through boundary events; a window tracks one evolving interval.",
+        "details": "At an index, the active delta may include contributions from any number of overlapping updates. Those contributions are recovered by integrating all event marks. A moving window can overlap a previous window, but its algorithmic state still belongs to one current range and does not encode an arbitrary batch of deferred modifications.",
+        "wrongOptionExplanationsByOptionId": {
+          "windows_cannot_overlap": "Intervals may overlap in any problem. The distinction is state ownership, not a prohibition on geometric overlap.",
+          "prefix_requires_sorting": "The scan follows index order, but values and deltas need not be sorted. Event positions already define the order.",
+          "no_auxiliary_state": "A separate difference array stores O(n) boundary state. A window usually stores O(1) or bounded current-state data."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "encode_range_updates_by_differences",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "difference_array",
+        "problemArchetypeId": "batch_range_updates"
+      }
+    },
+    {
+      "id": "alg-prefix-difference-array-preserve-index-order",
+      "prompt": "A developer sorts A before applying difference-array updates because they believe prefix accumulation requires sorted input. What happens?",
+      "constraints": [
+        "Each update [l, r] names original positions.",
+        "The final result must preserve the original element order."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "updates_hit_wrong_elements",
+            "text": "The positional ranges now refer to different elements, so the updates are applied to the wrong data."
+          },
+          {
+            "id": "diff_becomes_quadratic",
+            "text": "Sorting changes every O(1) mark into O(n)."
+          },
+          {
+            "id": "negative_delta_forbidden",
+            "text": "Sorting makes negative update deltas invalid."
+          },
+          {
+            "id": "stop_mark_disappears",
+            "text": "Sorting automatically removes every r + 1 boundary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "updates_hit_wrong_elements"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Difference arrays encode index boundaries in the original domain; sorting changes the ownership of those boundaries.",
+        "details": "The algorithm needs a left-to-right index order for reconstruction, but it does not need values to be ordered. Reordering A changes which elements lie inside each update range even though the diff arithmetic still runs. Prefix accumulation and sortedness are separate concepts.",
+        "wrongOptionExplanationsByOptionId": {
+          "diff_becomes_quadratic": "The asymptotic cost of writing marks does not depend on value order. The failure is semantic, not a complexity change.",
+          "negative_delta_forbidden": "Positive and negative deltas are both valid. Sorting has no effect on their algebraic legality.",
+          "stop_mark_disappears": "Boundary positions still exist after sorting; they simply refer to the wrong elements for the original problem."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "encode_range_updates_by_differences",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "difference_array",
+        "problemArchetypeId": "batch_range_updates"
+      }
+    },
+    {
+      "id": "alg-prefix-difference-array-complexity",
+      "prompt": "For u inclusive range-add updates on an array of length n, select the total time and extra space of a separate difference array followed by one reconstruction pass.",
+      "constraints": [
+        "Each update writes at most two boundary marks.",
+        "The base array is retained separately."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "total_time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "total_time": [
+            "O(u + n)",
+            "O(un)",
+            "O(u log n + n)",
+            "O(n^2)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(u n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "total_time": [
+            "O(u + n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Each update performs constant endpoint work and one linear prefix scan materializes all final effects; the separate boundary buffer is linear.",
+        "details": "Writing u updates costs O(u), and reconstructing n positions costs O(n), so total time is O(u + n). A separate diff buffer uses O(n) extra space. It may be possible to reuse an output buffer or encode changes in place, but the prefix-family optimization does not inherently remove auxiliary memory."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "encode_range_updates_by_differences",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "difference_array",
+        "problemArchetypeId": "batch_range_updates"
+      }
+    },
+    {
+      "id": "alg-prefix-difference-array-transfer-2d-corners",
+      "prompt": "Which variation preserves the boundary-event idea but requires a genuinely two-dimensional encoding?",
+      "constraints": [
+        "Many axis-aligned rectangle additions are applied to a matrix.",
+        "Only the final matrix is needed after all updates."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "rectangle_corner_marks",
+            "text": "Use four signed corner marks per rectangle and integrate across both dimensions."
+          },
+          {
+            "id": "one_dimensional_endpoints_only",
+            "text": "Use only one +delta at the rectangle’s top-left row and one -delta after its bottom row."
+          },
+          {
+            "id": "sort_matrix_values",
+            "text": "Sort all cells and apply the rectangle by value rank."
+          },
+          {
+            "id": "single_moving_rectangle",
+            "text": "Maintain one moving rectangle and discard all prior updates."
+          }
+        ],
+        "acceptedOptionIds": [
+          "rectangle_corner_marks"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A rectangle has independent row and column boundaries, so its start/stop effect must be encoded at signed corners and integrated in two dimensions.",
+        "details": "The transfer preserves the same principle—record where an effect begins and ends—but one-dimensional endpoints cannot delimit both axes. Four corner updates apply inclusion-exclusion so a 2D prefix reconstruction activates delta exactly inside the rectangle. Sorting or one current rectangle loses spatial ownership of the batch updates.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_dimensional_endpoints_only": "Row events alone apply the delta across entire rows and cannot restrict the affected columns. Both dimensions need boundaries.",
+          "sort_matrix_values": "Rectangle membership is coordinate-based, not value-based. Sorting cells destroys the geometry.",
+          "single_moving_rectangle": "A single active rectangle cannot retain the superposed effects of many deferred updates."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "encode_range_updates_by_differences",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "difference_array",
+        "problemArchetypeId": "batch_range_updates"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

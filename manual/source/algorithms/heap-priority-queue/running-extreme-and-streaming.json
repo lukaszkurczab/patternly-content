@@ -1,0 +1,288 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-heap-priority-queue-running-extreme-and-streaming-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-heap-priority-queue-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "heap_priority_queue",
+    "primaryMentalUnitId": "running_extreme_and_streaming",
+    "patternFamilyId": "heap_priority_queue"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-heap-priority-queue-running-extreme-and-streaming-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "hpq-streaming-single-running-maximum-scalar",
+      "prompt": "A stream supports insertions only, and after each insertion the system reports the maximum value seen so far. No other rank or deletion query exists. What state is sufficient?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_scalar_max",
+            "text": "One scalar storing the running maximum."
+          },
+          {
+            "id": "max_heap_all",
+            "text": "A max-heap containing every value seen so far."
+          },
+          {
+            "id": "sorted_history",
+            "text": "A fully sorted copy of the entire stream."
+          },
+          {
+            "id": "min_heap_all",
+            "text": "A min-heap containing every value seen so far."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_scalar_max"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Insertion-only running maximum needs only max(previousMaximum, newValue); no candidate ever needs to be restored after removal.",
+        "details": "A heap is useful when several candidates must remain available because the current extreme may be removed or a deeper rank is queried. Here the maximum never leaves and only one statistic is requested, so one scalar is complete state. A heap or sorted history stores information the contract never uses. The boundary changes with deletions, kth-rank queries, or a requirement to return the next maximum after removing the current one.",
+        "wrongOptionExplanationsByOptionId": {
+          "max_heap_all": "A max-heap is correct but retains the full history unnecessarily when the current maximum is never removed.",
+          "min_heap_all": "A min-heap exposes the wrong extreme and still stores unnecessary history.",
+          "sorted_history": "Complete order is unnecessary for one monotonic running statistic."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-streaming-kth-largest-after-each-arrival",
+      "prompt": "After every insertion, a stream must report the kth largest value seen so far once at least k values exist. Which persistent update state matches the contract?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "recompute_sort_each_time",
+            "text": "Store all values and sort the full history after every insertion."
+          },
+          {
+            "id": "running_max_scalar",
+            "text": "Maintain only the maximum value seen so far."
+          },
+          {
+            "id": "fifo_last_k",
+            "text": "Keep only the most recent k values in arrival order."
+          },
+          {
+            "id": "bounded_min_heap",
+            "text": "Maintain a min-heap of the k largest values and report its root after each update."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bounded_min_heap"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The kth largest value is the smallest member of the retained top-k set, so a persistent size-k min-heap exposes it after every arrival.",
+        "details": "Each insertion either fills the heap, is discarded below the threshold, or replaces the root. Because the output is required after every update, the retained frontier must persist across arrivals. A scalar maximum loses the other k − 1 candidates, repeated sorting discards incremental structure, and a FIFO window confuses recency with rank. If k changes between queries, this fixed frontier is no longer sufficient.",
+        "wrongOptionExplanationsByOptionId": {
+          "running_max_scalar": "One scalar answers only k = 1 and cannot recover the kth-largest threshold for k > 1.",
+          "recompute_sort_each_time": "Full-history sorting can answer the query but repeats unnecessary global work after every arrival.",
+          "fifo_last_k": "The kth largest among all seen values is not restricted to the most recent arrivals."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-streaming-expiration-validity-boundary",
+      "prompt": "A max-heap is used to report the maximum value in a sliding time window. Entries expire as the window advances. What additional rule is required before reporting the root?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "assume_root_current",
+            "text": "Report the root directly because heap order guarantees it is still active."
+          },
+          {
+            "id": "delete_arbitrary_constant",
+            "text": "Delete every expired interior entry in guaranteed constant time without extra indexing."
+          },
+          {
+            "id": "discard_stale_roots",
+            "text": "Repeatedly remove root entries whose timestamps or versions are outside the active window."
+          },
+          {
+            "id": "reverse_orientation",
+            "text": "Change to a min-heap; expiration then needs no validity check."
+          }
+        ],
+        "acceptedOptionIds": [
+          "discard_stale_roots"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap order ranks keys but does not encode whether an entry is still valid for the current window.",
+        "details": "Lazy deletion keeps expired entries until they reach the root. Before answering, the algorithm must validate the root and pop stale entries until the top is active. An indexed heap can instead support targeted deletion, while a monotonic deque may be a better fit for fixed-window maximum. Orientation changes which extreme is exposed, not whether an entry has expired.",
+        "wrongOptionExplanationsByOptionId": {
+          "assume_root_current": "The largest stored key may belong to an expired element, so order alone cannot establish window membership.",
+          "delete_arbitrary_constant": "A basic heap does not locate arbitrary interior entries in constant time; indexing or lazy validation is required.",
+          "reverse_orientation": "A min-heap exposes the wrong extreme and still contains stale entries unless validity is checked."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-streaming-changing-k-boundary",
+      "prompt": "A stream receives insertions, but each query may ask for a different kth largest rank. Can one heap permanently bounded to k = 10 answer arbitrary k values exactly?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_root_relabels",
+            "text": "Yes. Relabel the same root as the requested kth value."
+          },
+          {
+            "id": "yes_switch_orientation",
+            "text": "Yes. Switching min/max orientation recovers every discarded rank."
+          },
+          {
+            "id": "not_sufficient",
+            "text": "No. Values discarded by the k = 10 frontier may be required for larger ranks."
+          },
+          {
+            "id": "yes_if_many_queries",
+            "text": "Yes. Query volume alone makes missing values reconstructable."
+          }
+        ],
+        "acceptedOptionIds": [
+          "not_sufficient"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A fixed-k heap preserves exactly one rank boundary and the candidates above it; discarded ranks cannot be reconstructed.",
+        "details": "The size-10 frontier is sufficient only for the top 10 under insertion-only updates. A query for the 50th largest needs values that may already have been discarded. Changing orientation does not restore lost state. Supporting arbitrary ranks requires a different order-statistic structure, broader retained state, offline processing, or rebuilding from preserved history. If the allowed k range is bounded, the retained frontier can be sized to that explicit maximum.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_root_relabels": "The root represents the fixed retained boundary; changing a label does not change which values were stored.",
+          "yes_switch_orientation": "Orientation changes which stored extreme is visible but cannot recover values no longer retained.",
+          "yes_if_many_queries": "More queries do not recreate discarded information; query volume affects strategy choice, not information sufficiency."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-streaming-both-extremes-boundary",
+      "prompt": "A dynamic set supports insertions and must report both the current minimum and current maximum after each update. Which diagnosis is correct?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "min_heap_last_is_max",
+            "text": "Use one min-heap for the minimum and treat its last backing-array element as the maximum."
+          },
+          {
+            "id": "max_heap_last_is_min",
+            "text": "Use one max-heap for the maximum and treat its last backing-array element as the minimum."
+          },
+          {
+            "id": "one_heap_both_roots",
+            "text": "Use one binary heap because both the minimum and maximum are guaranteed at its single root."
+          },
+          {
+            "id": "two_views_or_ordered_structure",
+            "text": "Maintain two coordinated heaps with validity tracking, or use an ordered structure that exposes both ends."
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_views_or_ordered_structure"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A standard heap guarantees one root extreme; the opposite extreme has no fixed backing-array position.",
+        "details": "Maintaining both ends may use two synchronized heaps with entry IDs and lazy deletion, a double-ended priority queue, or a balanced ordered multiset. Reading the final array entry is invalid because leaves are only constrained relative to ancestors. If only one extreme is queried, one heap orientation is sufficient and simpler. The product contract must also define duplicate and deletion synchronization.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_heap_both_roots": "A binary heap has one root and guarantees only the chosen orientation at that root.",
+          "min_heap_last_is_max": "The last leaf is not guaranteed to dominate leaves in other branches, so it need not be the maximum.",
+          "max_heap_last_is_min": "The final leaf is not a guaranteed minimum in a max-heap."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,358 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-greedy-intro-sort-then-greedy-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-greedy-intro-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "greedy_intro",
+    "primaryMentalUnitId": "sort_then_greedy",
+    "patternFamilyId": "greedy_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-greedy-intro-sort-then-greedy-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-greedy-intro-stg-001",
+      "prompt": "All jobs are available at time 0 on one non-preemptive machine. Each job has processing time p and deadline d. Which initial order is the justified greedy order for minimizing maximum lateness?",
+      "constraints": [
+        "Lateness is completion time minus deadline.",
+        "There are no release times, precedence constraints, or job weights."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "deadline_ascending",
+            "text": "Sort by nondecreasing deadline."
+          },
+          {
+            "id": "duration_ascending",
+            "text": "Sort by nondecreasing processing time."
+          },
+          {
+            "id": "duration_descending",
+            "text": "Sort by nonincreasing processing time."
+          },
+          {
+            "id": "reward_descending",
+            "text": "Sort by a reward field, even though reward is not part of the objective."
+          }
+        ],
+        "acceptedOptionIds": [
+          "deadline_ascending"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Nondecreasing deadline order is the key supported by the inversion exchange: placing an earlier deadline before a later one does not increase maximum lateness.",
+        "details": "The objective is controlled by how late each completion is relative to its own deadline. If an adjacent pair appears in decreasing deadline order, swapping the earlier-deadline job forward does not change when the pair as a whole finishes or when later jobs begin, and it does not increase the pair’s maximum lateness. Repeatedly removing such inversions yields nondecreasing deadline order.\n\nShortest-processing-time order optimizes a different objective, such as total completion time under appropriate assumptions. Longest-first and reward order have no connection to maximum lateness here. The transfer boundary is material: release times, precedence constraints, weighted lateness, or multiple machines can invalidate the simple exchange. The key is not “obvious” from the fact that the data has deadlines; it is justified by the objective-specific swap effect.",
+        "wrongOptionExplanationsByOptionId": {
+          "duration_ascending": "Short jobs first is plausible because it reduces early completion times, but maximum lateness depends on each job’s deadline. This key solves a different scheduling objective.",
+          "duration_descending": "Putting long jobs first can delay urgent short jobs and has no no-worse inversion argument for maximum lateness.",
+          "reward_descending": "Reward is outside the stated objective. Sorting on an irrelevant field cannot be justified by the lateness exchange."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-stg-002",
+      "prompt": "You must select the maximum number of pairwise compatible half-open intervals. Which sort key prepares the canonical greedy scan?",
+      "constraints": [
+        "Each interval contributes one to the objective.",
+        "The scan accepts an interval only when its start is at least currentEnd."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "finish_ascending",
+            "text": "Sort by nondecreasing finish time."
+          },
+          {
+            "id": "start_ascending",
+            "text": "Sort by nondecreasing start time."
+          },
+          {
+            "id": "duration_ascending",
+            "text": "Sort by nondecreasing duration."
+          },
+          {
+            "id": "finish_descending",
+            "text": "Sort by nonincreasing finish time."
+          }
+        ],
+        "acceptedOptionIds": [
+          "finish_ascending"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Ascending finish time exposes the feasible choice that releases the resource earliest. That is the boundary used by the exchange proof and the later scan.",
+        "details": "The scan maintains currentEnd, the end of the last accepted interval. Among feasible candidates, the interval with the smallest finish produces the smallest next currentEnd and therefore leaves the largest possible set of later intervals eligible. Sorting by finish makes that candidate appear first whenever the scan advances.\n\nStart order can commit to a very long interval; duration order can prefer a short interval that ends late; descending finish order intentionally closes the future frontier. The sort key and the acceptance predicate are separate parts of the algorithm: sorting prepares the order, while the scan still rejects intervals whose start is before currentEnd. The transfer boundary is equal contribution per interval. With weights, preserving an early boundary does not necessarily preserve value.",
+        "wrongOptionExplanationsByOptionId": {
+          "start_ascending": "Early start is not the limiting future state. An interval can start first and finish so late that it blocks several compatible choices.",
+          "duration_ascending": "Short duration does not imply early finish. A short interval placed late can be worse for the future boundary than a longer interval ending earlier.",
+          "finish_descending": "This chooses the interval that releases the resource latest, the opposite of the exchange-safe boundary for maximum count."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-stg-003",
+      "prompt": "Consider half-open intervals A=[0,3), B=[3,6), and C=[2,4). A proposed algorithm sorts by shortest duration and greedily accepts the first feasible interval. What does this instance demonstrate?",
+      "constraints": [
+        "Touching endpoints are compatible.",
+        "The objective is maximum selected count."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shortest_key_counterexample",
+            "text": "Shortest-duration order may choose C and return one interval, while earliest-finish order chooses A then B and returns two."
+          },
+          {
+            "id": "shortest_equals_finish",
+            "text": "Shortest duration and earliest finish are equivalent on every interval set."
+          },
+          {
+            "id": "touching_overlap",
+            "text": "A and B overlap because they share endpoint 3, so one interval is optimal."
+          },
+          {
+            "id": "greedy_never_works",
+            "text": "The failure of shortest duration proves that no greedy interval algorithm can be correct."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shortest_key_counterexample"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "C is shortest but ends at 4, blocking both A and B in the scan. A ends at 3 and leaves B feasible, so duration is not the decisive ordering key.",
+        "details": "The proposed key uses duration as a proxy for “leaves room,” but the actual future boundary is finish time. C has duration 2 and is chosen first by shortest duration. It overlaps A and blocks B because B starts at 3 < 4, leaving a schedule of size one. Earliest-finish order selects A, updates currentEnd to 3, then accepts B, producing size two.\n\nThe instance rejects one rule, not the entire greedy family. It also depends on the stated half-open endpoint contract: A and B are compatible at 3. The transfer lesson is to construct counterexamples around the state that the next decision sees. A sort key is credible when it directly controls that state or is proven to dominate it; an intuitive correlate such as length is insufficient.",
+        "wrongOptionExplanationsByOptionId": {
+          "shortest_equals_finish": "Duration equals end minus start, so a later start can make a short interval finish later. The two orders are not equivalent.",
+          "touching_overlap": "Under half-open intervals, A ends exactly when B starts, so they are compatible. Closed-interval semantics would require a different prompt contract.",
+          "greedy_never_works": "The counterexample refutes shortest-duration order. Earliest-finish greedy remains justified for the unweighted cardinality objective."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-stg-004",
+      "prompt": "All jobs are available at time 0 on one machine, and the objective is to minimize the sum of completion times. Which processing-time order is the justified greedy order?",
+      "constraints": [
+        "Jobs are non-preemptive and have no weights or deadlines.",
+        "Completion time includes all processing before and including the job."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "processing_time_ascending",
+            "text": "Sort by nondecreasing processing time."
+          },
+          {
+            "id": "processing_time_descending",
+            "text": "Sort by nonincreasing processing time."
+          },
+          {
+            "id": "deadline_ascending",
+            "text": "Sort by deadline even though no deadlines are present."
+          },
+          {
+            "id": "arbitrary_order",
+            "text": "Any order has the same sum because total processing time is fixed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "processing_time_ascending"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Short jobs first minimizes repeated waiting contribution. Swapping an adjacent long-before-short pair reduces the sum of their completion times without affecting later completion times.",
+        "details": "For adjacent jobs with durations a > b beginning at time t, order a,b contributes completion times (t+a) and (t+a+b). Order b,a contributes (t+b) and (t+b+a). The second job in either order finishes at the same time, but the first completion is smaller by a-b when the shorter job is first. Later jobs begin at the same time in both schedules. Repeatedly removing long-before-short inversions yields nondecreasing processing time.\n\nThe fixed total duration does not make sums equal because earlier processing is counted in multiple jobs’ completion times. This key solves a different objective from earliest-deadline or maximum-cardinality scheduling. Weights, release times, precedence, or preemption introduce new decision boundaries and may require another key or method.",
+        "wrongOptionExplanationsByOptionId": {
+          "processing_time_descending": "Long jobs first maximize rather than minimize the waiting imposed on many later jobs under this objective.",
+          "deadline_ascending": "No deadline field exists in the contract. Earliest-deadline order is tied to maximum lateness, not sum of completion times.",
+          "arbitrary_order": "Although the final makespan is fixed, individual completion times and their sum depend on the order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "minimize_or_maximize_local_cost"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-stg-005",
+      "prompt": "In earliest-deadline order for minimizing maximum lateness, two adjacent jobs have the same deadline but different processing times. What tie rule is required under the stated objective?",
+      "constraints": [
+        "All jobs are available at time 0 on one non-preemptive machine.",
+        "There is no secondary objective such as minimizing total completion time."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "either_equal_deadline_order",
+            "text": "Either order is valid for the maximum-lateness optimum because both are consistent with nondecreasing deadline order."
+          },
+          {
+            "id": "shorter_must_win",
+            "text": "The shorter job must come first or earliest-deadline order becomes incorrect."
+          },
+          {
+            "id": "longer_must_win",
+            "text": "The longer job must come first to prevent it from becoming late."
+          },
+          {
+            "id": "tie_requires_dp",
+            "text": "A deadline tie creates two states, so dynamic programming is required."
+          }
+        ],
+        "acceptedOptionIds": [
+          "either_equal_deadline_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equal deadlines create no deadline inversion. Under the single stated objective, either tied order remains an earliest-deadline schedule and preserves optimal maximum lateness.",
+        "details": "The exchange proof removes pairs with d_i > d_j. When deadlines are equal, neither order violates nondecreasing deadline order. The pair completes at the same final time in either order, and the maximum lateness of the pair is determined by that shared deadline and the pair’s completion times. Any order among equal deadlines belongs to the proven optimal family.\n\nA product may still choose a deterministic secondary key, such as stable input order, for reproducibility. That engineering choice must not be presented as required for the mathematical objective. Shorter-first would become material if a secondary sum-completion objective were added; longer-first has no general guarantee. A tie creates alternatives, but alternatives alone do not imply dynamic programming when the proof shows them equivalent.",
+        "wrongOptionExplanationsByOptionId": {
+          "shorter_must_win": "Shorter-first may improve a separate objective, but it is not required for optimal maximum lateness when deadlines are equal.",
+          "longer_must_win": "Processing the longer job first can increase the first completion time and has no special guarantee under equal deadlines.",
+          "tie_requires_dp": "Dynamic programming is needed when alternatives have materially different future consequences. These tied orders are equivalent for the stated proof and objective."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-stg-006",
+      "prompt": "For maximizing the number of jobs completed by deadlines, why is “sort once and accept whenever possible” not the full greedy process?",
+      "constraints": [
+        "Jobs have different durations and deadlines.",
+        "The canonical candidate processes deadlines and may replace an earlier retained job."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_plus_dynamic_repair",
+            "text": "Deadline sorting exposes prefix constraints, but an infeasible prefix may require removing the longest retained job, a dynamic choice over the current set."
+          },
+          {
+            "id": "sorting_never_greedy",
+            "text": "Any algorithm that also uses a heap is no longer greedy."
+          },
+          {
+            "id": "one_universal_key",
+            "text": "There must be one universal job key that simultaneously determines exposure, acceptance, and removal."
+          },
+          {
+            "id": "accept_first_prefix",
+            "text": "Every job encountered in deadline order should be permanent because sorting already fixed the optimum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_plus_dynamic_repair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The process has two distinct decisions: deadline order activates constraints, and a max-heap identifies the best local repair when the retained prefix becomes infeasible.",
+        "details": "A static sort can determine when candidates are considered without determining which selected candidate remains best to keep. In the deadline-cardinality problem, a newly considered short job may be worth keeping in place of a much longer earlier job. The feasible set and its decisive extreme change after each insertion, so the algorithm maintains selected durations and queries their maximum when repair is needed.\n\nCalling the method greedy depends on irreversible dominance decisions, not on using only one data structure. There is no requirement that one key serve every role. The transfer boundary is whether the ordered scan makes earlier acceptances permanent. When later information can safely replace a retained candidate, sorting may need a heap, stack, or running extreme to implement the proven local update.",
+        "wrongOptionExplanationsByOptionId": {
+          "sorting_never_greedy": "Greedy describes the commitment rule. A heap can implement a dynamic greedy choice without changing the strategy family.",
+          "one_universal_key": "Exposure order and repair criterion answer different questions. Forcing one key can erase the invariant the proof uses.",
+          "accept_first_prefix": "Deadline order does not make each acceptance permanent. Replacing a long retained job can preserve more jobs within the same prefix."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

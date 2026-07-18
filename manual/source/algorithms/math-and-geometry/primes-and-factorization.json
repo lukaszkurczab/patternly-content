@@ -1,0 +1,415 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-math-and-geometry-primes-and-factorization-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-math-and-geometry-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "math_and_geometry",
+    "primaryMentalUnitId": "primes_and_factorization",
+    "patternFamilyId": "math_and_geometry"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring; not a human reviewer)",
+    "createdAt": "2026-07-18T12:00:00.000Z",
+    "contentBatchId": "algorithms-math-and-geometry-primes-and-factorization-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-mg-prime-domain-boundary",
+      "prompt": "A function classifies signed integers as prime or not prime. Which boundary rule is correct?",
+      "constraints": [
+        "Prime means a positive integer with exactly two positive divisors."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "less_than_two_not_prime",
+            "text": "Every n<2 is not prime; 2 is the smallest prime."
+          },
+          {
+            "id": "one_is_prime",
+            "text": "1 is prime because it is divisible by itself."
+          },
+          {
+            "id": "negative_abs_prime",
+            "text": "A negative integer is prime whenever its absolute value is prime."
+          },
+          {
+            "id": "zero_prime",
+            "text": "0 is prime because every integer divides it."
+          }
+        ],
+        "acceptedOptionIds": [
+          "less_than_two_not_prime"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The prime domain begins at 2; zero, one, and negative integers do not have exactly two positive divisors.",
+        "details": "The number 1 has only one positive divisor, while zero has infinitely many divisors in the divisibility sense. Standard prime factorization treats a negative sign separately from the prime factors of the magnitude, but the negative integer itself is not called prime. Handling n<2 before a divisor loop prevents empty-loop logic from accidentally labelling 0 or 1 as prime.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_is_prime": "One has only one positive divisor, so it fails the defining two-divisor contract.",
+          "negative_abs_prime": "The magnitude may have prime factors, but the signed negative integer is outside the standard positive-prime domain.",
+          "zero_prime": "Having many divisors is not the same as having exactly two; zero is not prime."
+        }
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "derive_prime_factorization_or_sieve",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "prime_factorization",
+        "problemArchetypeId": "count_or_generate_primes"
+      }
+    },
+    {
+      "id": "alg-mg-prime-overflow-safe-divisor-bound",
+      "prompt": "For nonnegative signed 64-bit n and positive candidate divisor d, which trial-division condition checks d <= sqrt(n) without overflow or floating rounding?",
+      "constraints": [
+        "The exact-square divisor must be tested."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "d_le_n_div_d",
+            "text": "d <= n / d"
+          },
+          {
+            "id": "d_squared_le_n",
+            "text": "d*d <= n in signed 64-bit"
+          },
+          {
+            "id": "d_le_sqrt_double",
+            "text": "d <= (long long)sqrt((double)n)"
+          },
+          {
+            "id": "d_lt_n_div_d",
+            "text": "d < n / d"
+          }
+        ],
+        "acceptedOptionIds": [
+          "d_le_n_div_d"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The quotient condition is mathematically equivalent in the positive domain and preserves the exact-square boundary.",
+        "details": "If n has a composite factorization, at least one factor is at most sqrt(n). Testing through d<=n/d therefore suffices and avoids the potentially overflowing product d*d. The non-strict comparison includes n=d*d. Floating sqrt may round at the boundary, especially near large integers. The preconditions n≥0 and d>0 are essential; division by zero or uncontrolled signs would invalidate the rewrite.",
+        "wrongOptionExplanationsByOptionId": {
+          "d_squared_le_n": "The product can overflow before it is compared with n.",
+          "d_le_sqrt_double": "The floating square root can round below an exact integer factor and is unnecessary.",
+          "d_lt_n_div_d": "The strict relation skips an exact square factor at d*d=n."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "derive_prime_factorization_or_sieve",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "prime_factorization",
+        "problemArchetypeId": "count_or_generate_primes"
+      }
+    },
+    {
+      "id": "alg-mg-prime-factorization-step-order",
+      "prompt": "Order the steps for trial-dividing a positive integer n into prime factors with multiplicity.",
+      "constraints": [
+        "n starts at least 2.",
+        "The loop guard must avoid p*p overflow."
+      ],
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "initialize_factor_state",
+            "text": "Initialize an empty factor list or exponent map and set p to the first candidate."
+          },
+          {
+            "id": "test_bound",
+            "text": "While p <= n/p, test the current candidate."
+          },
+          {
+            "id": "extract_repeated_factor",
+            "text": "While n % p == 0, record p and replace n by n/p."
+          },
+          {
+            "id": "advance_candidate",
+            "text": "Advance p to the next candidate after all copies of the current factor are removed."
+          },
+          {
+            "id": "append_leftover",
+            "text": "After the loop, if n>1, record n as the final prime factor."
+          }
+        ],
+        "canonicalOrder": [
+          "initialize_factor_state",
+          "test_bound",
+          "extract_repeated_factor",
+          "advance_candidate",
+          "append_leftover"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "All copies of a factor must be removed before the candidate advances, and a leftover greater than one is appended only after the square-root bound has been exhausted.",
+        "details": "Repeated division records multiplicity and shrinks the remaining n, which also tightens the loop bound. Advancing p before all copies are removed loses exponents. When the loop finishes, any remaining n>1 cannot have two factors greater than the tested square-root boundary, so it is prime. For signed inputs, sign and safe magnitude handling must occur before this positive-domain sequence."
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "derive_prime_factorization_or_sieve",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "prime_factorization",
+        "problemArchetypeId": "count_or_generate_primes"
+      }
+    },
+    {
+      "id": "alg-mg-prime-leftover-factor-rule",
+      "prompt": "Trial division has removed every factor p while p <= n/p. The remaining n is 37. What must the algorithm do?",
+      "constraints": [
+        "The working n is positive.",
+        "All earlier candidate factors were fully removed."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "append_37",
+            "text": "Append 37 once as a prime factor."
+          },
+          {
+            "id": "discard_37",
+            "text": "Discard it because the loop has already passed sqrt(n)."
+          },
+          {
+            "id": "factor_by_floating_ratio",
+            "text": "Divide 37 by the last tested p in floating point and round the result."
+          },
+          {
+            "id": "append_1_and_37",
+            "text": "Append both 1 and 37 as prime factors."
+          }
+        ],
+        "acceptedOptionIds": [
+          "append_37"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A leftover greater than one after exhaustive trial division is prime and must be included exactly once.",
+        "details": "If the remaining n were composite, it would have a factor at most its square root, and that factor would have been tested before the loop ended. Because all copies of earlier candidates were removed, the leftover 37 is a single prime factor. One is never a prime factor, and floating ratios add no divisibility evidence. This rule is especially important when the original number contains one large prime factor.",
+        "wrongOptionExplanationsByOptionId": {
+          "discard_37": "Discarding the leftover loses a valid prime factor that was too large to appear as the smaller member of a tested pair.",
+          "factor_by_floating_ratio": "Exact factorization depends on divisibility, not a rounded quotient.",
+          "append_1_and_37": "One is the multiplicative identity, not a prime factor."
+        }
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "derive_prime_factorization_or_sieve",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "prime_factorization",
+        "problemArchetypeId": "count_or_generate_primes"
+      }
+    },
+    {
+      "id": "alg-mg-prime-sieve-marking-start",
+      "prompt": "In a sieve of Eratosthenes for integers up to N, p is currently known prime. Where should marking of new multiples of p begin?",
+      "constraints": [
+        "Products are evaluated in a type that can represent the index.",
+        "The outer loop runs only while p <= N/p."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_p_squared",
+            "text": "Begin at p*p, because smaller multiples of p already have a smaller prime factor."
+          },
+          {
+            "id": "start_two_p",
+            "text": "Always begin at 2*p because no smaller multiple can have been marked."
+          },
+          {
+            "id": "start_p",
+            "text": "Begin at p and mark the prime itself composite."
+          },
+          {
+            "id": "start_sqrt_p",
+            "text": "Begin at floor(sqrt(p)) because that is the first possible factor."
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_p_squared"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every composite multiple kp with k<p has already been marked when processing a prime factor of k, so p*p is the first new candidate.",
+        "details": "Starting at p*p avoids redundant work while preserving correctness. The outer guard p<=N/p prevents forming p*p when it would exceed N and helps avoid overflow; the actual multiplication still must use a safe index type. Starting at 2p is correct but needlessly repeats marks, while starting at p destroys the prime classification. This boundary transfers to segmented sieves, where the first multiple in a segment is max(p*p, ceil(L/p)*p).",
+        "wrongOptionExplanationsByOptionId": {
+          "start_two_p": "It remains correct but repeats work for multiples already handled by smaller prime factors, so it misses the decisive sieve invariant.",
+          "start_p": "That marks p itself composite even though p is known prime.",
+          "start_sqrt_p": "sqrt(p) is not generally a multiple of p and has no role as a marking index."
+        }
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "derive_prime_factorization_or_sieve",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "prime_factorization",
+        "problemArchetypeId": "count_or_generate_primes"
+      }
+    },
+    {
+      "id": "alg-mg-prime-sieve-versus-one-off-factorization",
+      "prompt": "You must answer 200,000 primality queries, and every queried value lies in [0,10^7]. Which approach best matches the workload?",
+      "constraints": [
+        "Memory for a boolean table through 10^7 is available.",
+        "All queries are known to share the same upper bound."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "precompute_sieve",
+            "text": "Build one sieve through 10^7, then answer each query by table lookup."
+          },
+          {
+            "id": "trial_divide_each",
+            "text": "Trial-divide every queried value independently up to its square root."
+          },
+          {
+            "id": "float_sqrt_cache",
+            "text": "Cache floating square roots and classify numbers by exact equality with their rounded roots."
+          },
+          {
+            "id": "gcd_with_upper_bound",
+            "text": "Compute gcd(value,10^7) and call the value prime when the gcd is 1."
+          }
+        ],
+        "acceptedOptionIds": [
+          "precompute_sieve"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A shared bounded query domain makes one preprocessing pass reusable across a large number of lookups.",
+        "details": "The sieve pays roughly O(N log log N) once and then answers each query in O(1). Independent trial division repeats work up to sqrt(value) for every query. Gcd with the upper bound does not characterize primality, and floating square roots only detect perfect squares, not general composites. The decision boundary changes for one or a few very large values or when the table memory is unavailable.",
+        "wrongOptionExplanationsByOptionId": {
+          "trial_divide_each": "It is correct with a proper boundary but wastes the shared bounded domain by repeating factor tests across 200,000 queries.",
+          "float_sqrt_cache": "A number can be composite without being a perfect square, and floating equality is not a primality test.",
+          "gcd_with_upper_bound": "Being coprime to 10^7 does not imply being prime; many composite values satisfy that gcd."
+        }
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "derive_prime_factorization_or_sieve",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "prime_factorization",
+        "problemArchetypeId": "count_or_generate_primes"
+      }
+    },
+    {
+      "id": "alg-mg-prime-sieve-complexity",
+      "prompt": "Classify the standard sieve of Eratosthenes that stores a boolean composite table for all integers 0..N and marks multiples from p*p.",
+      "constraints": [
+        "The table is not bit-compressed for the asymptotic classification."
+      ],
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(N)",
+            "O(N log log N)",
+            "O(N log N)",
+            "O(N^2)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log N)",
+            "O(N)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(N log log N)"
+          ],
+          "extra_space": [
+            "O(N)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "extra_space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The harmonic contribution over prime multiples yields O(N log log N) marking work, and the table stores one state per integer.",
+        "details": "For each prime p, the sieve marks about N/p multiples. Summing 1/p over primes up to N grows like log log N, giving O(N log log N) total work for the standard analysis. The boolean table covers N+1 indices, so extra space is O(N). A segmented sieve changes the working-memory boundary but not the basic factor-marking invariant."
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "derive_prime_factorization_or_sieve",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "prime_factorization",
+        "problemArchetypeId": "count_or_generate_primes"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

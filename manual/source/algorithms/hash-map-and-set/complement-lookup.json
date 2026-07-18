@@ -1,0 +1,423 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-hash-map-and-set-complement-lookup-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-hash-map-and-set-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "hash_map_and_set",
+    "primaryMentalUnitId": "complement_lookup",
+    "patternFamilyId": "hash_map_and_set"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-hash-map-and-set-complement-lookup-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-hms-complement-rearrange-sum-condition",
+      "prompt": "For a current value x and fixed target T, which lookup key correctly represents the prior value needed to satisfy prior + x = T?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "target_minus_current",
+            "text": "T - x"
+          },
+          {
+            "id": "target_plus_current",
+            "text": "T + x"
+          },
+          {
+            "id": "current_minus_target",
+            "text": "x - T"
+          },
+          {
+            "id": "current_itself",
+            "text": "x"
+          }
+        ],
+        "acceptedOptionIds": [
+          "target_minus_current"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Rearranging prior + x = T gives prior = T - x, so the complement is the equality key to query.",
+        "details": "Complement lookup works because the pair condition can be solved for the unknown prior value. During the scan, the current value determines one exact key to search in prior state. This derivation is the mechanism; memorizing “use a hash map for two sum” without the equation would not transfer to changed relations.",
+        "wrongOptionExplanationsByOptionId": {
+          "target_plus_current": "Adding x moves in the wrong algebraic direction and generally produces a value whose sum with x exceeds the target relation.",
+          "current_minus_target": "This is the negation of the required complement and only matches under special values not stated by the contract.",
+          "current_itself": "The current value is the needed partner only in the special case 2x = T; it is not the general lookup key."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_complement_lookup",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-complement-check-before-record",
+      "prompt": "Order the one-pass complement-lookup steps so that a value cannot pair with the same occurrence of itself.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "compute_complement",
+            "text": "Compute complement = target - current."
+          },
+          {
+            "id": "query_prior",
+            "text": "Query prior state for the complement."
+          },
+          {
+            "id": "emit_if_found",
+            "text": "If found, emit the pair using the prior occurrence."
+          },
+          {
+            "id": "store_current",
+            "text": "Store the current value for future iterations."
+          }
+        ],
+        "canonicalOrder": [
+          "compute_complement",
+          "query_prior",
+          "emit_if_found",
+          "store_current"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The table must represent earlier occurrences while the current complement query is evaluated.",
+        "details": "Checking before recording preserves the invariant that every successful lookup refers to a smaller index. If target equals twice the current value, inserting first would allow the current occurrence to satisfy its own lookup. After the check, storing the current value is correct because later elements may use it as their prior partner."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_complement_lookup",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-complement-half-target-duplicate",
+      "prompt": "The input is [3, 3] and the target is 6. A valid answer requires two distinct indices. Why does check-before-record still find the pair?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "second_finds_first",
+            "text": "The first 3 is stored after its failed check; the second 3 then finds that earlier occurrence."
+          },
+          {
+            "id": "first_matches_itself",
+            "text": "The first 3 is inserted first and immediately matches itself."
+          },
+          {
+            "id": "count_not_needed",
+            "text": "The target can be reached because the set contains one 3, even if there is only one input occurrence."
+          }
+        ],
+        "acceptedOptionIds": [
+          "second_finds_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The second occurrence queries prior state containing the first occurrence, so the two equal values still have distinct provenance.",
+        "details": "Duplicate values do not imply the same occurrence. The table’s temporal invariant separates them: on the second iteration, the stored 3 came from index 0 and the current 3 comes from index 1. A plain presence set can prove a prior duplicate exists for an existence result, while index output requires a map payload.",
+        "wrongOptionExplanationsByOptionId": {
+          "first_matches_itself": "That sequence violates the distinct-index requirement by using one occurrence twice.",
+          "count_not_needed": "For a half-target value, one occurrence is insufficient; the algorithm needs evidence of a separate earlier occurrence, which the second iteration supplies."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_complement_lookup",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-complement-index-payload",
+      "prompt": "A complement lookup must return the current index and the earlier partner index. What should prior state store?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_to_index",
+            "text": "Map each prior value to an index that satisfies the output contract."
+          },
+          {
+            "id": "value_set",
+            "text": "Store only prior values in a set."
+          },
+          {
+            "id": "index_to_value",
+            "text": "Map each prior index to its value and search by scanning the map."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_to_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The complement is the lookup key and the earlier index is the payload required to construct the answer.",
+        "details": "State direction matters. The algorithm computes a value and needs to retrieve provenance associated with that value, so value-to-index is the direct mapping. If any valid pair is acceptable, one index per value may suffice; earliest, latest, or all-pairs contracts require an explicit replacement or list policy.",
+        "wrongOptionExplanationsByOptionId": {
+          "value_set": "A set can confirm that the complement exists but cannot retrieve the earlier index required by the result.",
+          "index_to_value": "The query key is the complement value; reversing the mapping removes direct lookup and reintroduces a scan."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_complement_lookup",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-complement-all-pairs-payload",
+      "prompt": "The task changes from returning one valid index pair to returning every valid index pair. Which state change is necessary when duplicate values may occur?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_to_index_list",
+            "text": "Map each prior value to all relevant prior indices."
+          },
+          {
+            "id": "value_to_one_index",
+            "text": "Keep only one arbitrary prior index per value."
+          },
+          {
+            "id": "value_presence",
+            "text": "Store only whether each value has appeared."
+          },
+          {
+            "id": "global_pair_count",
+            "text": "Store one running number of pairs without their indices."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_to_index_list"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Enumerating all pairs turns the complement payload into a one-to-many provenance relation.",
+        "details": "The lookup equation is unchanged, but the output contract expands the information that must survive. When the current value finds its complement, it must pair with every relevant prior index stored under that key. This can increase output-sensitive work; if k pairs are returned, producing them already costs at least O(k).",
+        "wrongOptionExplanationsByOptionId": {
+          "value_to_one_index": "One index loses other valid pairs formed with additional prior occurrences of the same complement.",
+          "value_presence": "Presence loses every index and therefore cannot enumerate any concrete pair origins.",
+          "global_pair_count": "A count may report the number of pairs but cannot construct the required list of index pairs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_complement_lookup",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "advanced"
+    },
+    {
+      "id": "alg-hms-complement-set-or-frequency-boundary",
+      "prompt": "A task asks only whether two distinct input occurrences sum to the target. Values may repeat. Which statement about state is accurate?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prior_presence_suffices",
+            "text": "A prior-presence set suffices in a check-before-record scan."
+          },
+          {
+            "id": "full_frequency_required",
+            "text": "A full frequency map must be built before scanning every such input."
+          },
+          {
+            "id": "insert_then_check_safe",
+            "text": "Insert the current value, then check; distinct indices are guaranteed automatically."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prior_presence_suffices"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For existence, prior presence plus check-before-record proves a distinct earlier partner without retaining exact counts.",
+        "details": "The scan’s temporal invariant supplies the multiplicity evidence needed for the target/2 case: the current occurrence can match only an occurrence already stored. Counts become necessary if the algorithm checks against a table built without temporal separation, enforces usage limits, or must report multiplicity. Presence and frequency are not universally equivalent; the invariant determines which is sufficient.",
+        "wrongOptionExplanationsByOptionId": {
+          "full_frequency_required": "Precomputed counts are one valid approach, but they are not required when temporal prior-state membership already proves a distinct earlier occurrence.",
+          "insert_then_check_safe": "When current equals its complement, insert-then-check can use the same occurrence twice and violates the distinct-index contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_complement_lookup",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "seen_set",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "advanced"
+    },
+    {
+      "id": "alg-hms-complement-expected-cost",
+      "prompt": "A one-pass complement algorithm processes n numbers, performs one hash lookup and one insertion per number, and stores up to n prior entries. Under ordinary hashing assumptions, classify expected time and extra space.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The scan performs O(n) expected-constant hash operations and retains O(n) prior state.",
+        "details": "The complement formula is constant-time for fixed-width numbers, so the loop count dominates: n iterations give expected O(n) time. The table may hold every distinct prior value or index, giving O(n) extra space. This is an expected or amortized statement under the stated hash assumptions; a blanket worst-case O(1) claim for each operation is not justified."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_complement_lookup",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Assume fixed-width numeric arithmetic.",
+        "Assume a conventional hash table with well-distributed hashes."
+      ]
+    },
+    {
+      "id": "alg-hms-complement-transfer-directed-difference",
+      "prompt": "A scan must find an earlier value p such that current - p = D. Which prior lookup key follows from the relation?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "current_minus_d",
+            "text": "current - D"
+          },
+          {
+            "id": "d_minus_current",
+            "text": "D - current"
+          },
+          {
+            "id": "current_plus_d",
+            "text": "current + D"
+          },
+          {
+            "id": "absolute_difference",
+            "text": "|current - D|"
+          }
+        ],
+        "acceptedOptionIds": [
+          "current_minus_d"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Isolating the prior value gives p = current - D; direction is part of the lookup contract.",
+        "details": "Complement lookup is a general derivation technique, not only a sum formula. The exact key follows from solving the relation for the unknown prior value. For undirected absolute difference, both current - D and current + D may be candidates, which changes the lookup set and must be stated explicitly.",
+        "wrongOptionExplanationsByOptionId": {
+          "d_minus_current": "Rearranging current - p = D gives p = current - D, not its negation.",
+          "current_plus_d": "This would satisfy p - current = D, which reverses the directed relation.",
+          "absolute_difference": "Taking an absolute value changes the directed equation and accepts values outside the stated contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_complement_lookup",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,357 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sliding-window-answer-update-and-boundaries",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sliding-window-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sliding_window",
+    "primaryMentalUnitId": "answer_update_and_boundaries",
+    "patternFamilyId": "sliding_window"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — unreviewed candidate generation",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sliding-window-answer-update-and-boundaries",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sw-answer-longest-after-repair",
+      "prompt": "For the longest window satisfying an at-most constraint, where should `best = max(best, right - left + 1)` run?",
+      "constraints": [
+        "The right value has already been added.",
+        "A while loop removes left values while the window is invalid."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "after_repair",
+            "text": "After the repair loop, when the current window is valid."
+          },
+          {
+            "id": "before_repair",
+            "text": "Immediately after expansion, before checking validity."
+          },
+          {
+            "id": "inside_each_shrink",
+            "text": "Only inside each shrink iteration."
+          },
+          {
+            "id": "after_full_scan",
+            "text": "Only once after all right-boundary steps finish."
+          }
+        ],
+        "acceptedOptionIds": [
+          "after_repair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The longest answer must consume a legal state, and after repair the window is the longest valid suffix ending at the current right boundary.",
+        "details": "Expansion defines all candidates ending at right, but an invalid expanded range cannot be scored. The repair loop discards exactly the starts that still violate the constraint. When it ends, [left..right] is valid and any earlier start was invalid, so this is the longest valid suffix for that right endpoint. Updating only during shrink misses right steps that need no repair; updating only at the end ignores earlier endpoints. The same placement applies to at-most budgets and frequency limits.",
+        "wrongOptionExplanationsByOptionId": {
+          "before_repair": "The length may describe a constraint-violating range and can inflate the result with an illegal candidate.",
+          "inside_each_shrink": "Intermediate states can remain invalid, and no update occurs on expansions that stay valid without shrinking.",
+          "after_full_scan": "The final window is not guaranteed to be the longest one encountered across all right endpoints."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-answer-shortest-before-removal",
+      "prompt": "For the shortest positive-value window with sum at least T, when should the current length update `best` during shrinking?",
+      "constraints": [
+        "The current window is valid when the inner loop begins.",
+        "Removing the left value may make it invalid."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "before_each_removal",
+            "text": "Before each left removal while the current window still satisfies sum ≥ T."
+          },
+          {
+            "id": "after_invalid",
+            "text": "Only after a removal makes the sum fall below T."
+          },
+          {
+            "id": "once_first_valid",
+            "text": "Only for the first valid window ending at each right boundary."
+          },
+          {
+            "id": "only_end",
+            "text": "Only after the outer scan finishes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "before_each_removal"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each valid state is a legal candidate; it must be recorded before the next removal can destroy validity.",
+        "details": "For a fixed right endpoint, the valid-loop visits successively shorter windows. The current candidate exists before its outgoing value is removed, so compare its length with best first. If a removal makes the sum invalid, that post-removal range cannot be scored, and the last valid range would be lost if updates waited until then. Recording only the first valid range misses shorter valid suffixes. This answer timing is the mirror image of longest-valid repair-first timing.",
+        "wrongOptionExplanationsByOptionId": {
+          "after_invalid": "The post-removal range fails the threshold, while the immediately preceding valid candidate is no longer represented.",
+          "once_first_valid": "The first valid window for a right endpoint is generally the longest; further valid removals can improve the minimum.",
+          "only_end": "The final state may be invalid and does not summarize minimum candidates from earlier endpoints."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-answer-fixed-only-at-k",
+      "prompt": "A fixed-size window requires exactly k elements. Which condition must be true before its aggregate may update the answer?",
+      "constraints": [
+        "The implementation may temporarily hold fewer than k elements during initialization and k+1 immediately after expansion.",
+        "Only exact-size candidates are legal."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "length_exactly_k",
+            "text": "The maintained state and boundaries represent exactly k elements."
+          },
+          {
+            "id": "length_at_most_k",
+            "text": "Any range of length at most k may update the answer."
+          },
+          {
+            "id": "sum_positive",
+            "text": "The aggregate is positive, regardless of length."
+          },
+          {
+            "id": "right_moved",
+            "text": "The right boundary moved at least once."
+          }
+        ],
+        "acceptedOptionIds": [
+          "length_exactly_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Fixed-size answer legality is determined by exact boundary distance, not by aggregate value or traversal progress.",
+        "details": "Before the first k values, the state is incomplete. Immediately after adding a new value to an established window, the range can temporarily have k+1 elements until the outgoing value is removed. Neither state matches the answer contract. Updating only at length k prevents partial and oversized ranges from competing with legal candidates. Negative aggregates remain legal, and a right move alone says nothing about size. The equality check also prevents a stale aggregate from being scored if boundary movement and state removal have not completed together.",
+        "wrongOptionExplanationsByOptionId": {
+          "length_at_most_k": "This silently changes an exactly-k problem into an at-most-k problem and admits shorter ranges.",
+          "sum_positive": "Sign is irrelevant to whether a range contains the required number of elements.",
+          "right_moved": "Traversal progress does not guarantee that initialization or removal has produced size k."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-answer-no-solution-sentinel",
+      "prompt": "A shortest-threshold scan may find no valid window. Which initialization and final check preserve that boundary correctly?",
+      "constraints": [
+        "The required output distinguishes ‘no qualifying range’ from a real length.",
+        "A zero-length range is not a legal candidate."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "infinity_then_check",
+            "text": "Initialize best to an unreachable sentinel such as +∞; update only from valid windows; after the scan, translate an unchanged sentinel to the specified no-result value."
+          },
+          {
+            "id": "zero_best",
+            "text": "Initialize best to 0 because 0 is the shortest possible length."
+          },
+          {
+            "id": "n_best_always",
+            "text": "Initialize best to n and always return it, even if no range is valid."
+          },
+          {
+            "id": "negative_one_during_scan",
+            "text": "Initialize best to −1 and minimize directly against every observed length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "infinity_then_check"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accumulator must start worse than every legal positive length without impersonating an actual candidate.",
+        "details": "A minimum accumulator initialized to 0 can never be improved by positive window lengths and falsely suggests that an empty range qualified. Initializing to n is safe only if a valid length-n range is guaranteed or a separate found flag is maintained; otherwise n is ambiguous. A sentinel such as +∞ represents ‘not found yet’, accepts every real valid length, and is translated only after the scan according to the public output contract. This pattern also applies to best start/end indices by using an explicit optional result.",
+        "wrongOptionExplanationsByOptionId": {
+          "zero_best": "Zero is smaller than every legal nonempty length, so the minimum never changes and reports a fabricated empty solution.",
+          "n_best_always": "If no range qualifies, n is returned as though the whole input were valid; a found check would still be required.",
+          "negative_one_during_scan": "Direct minimization against −1 prevents any positive length from replacing it unless special-case logic is added."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-answer-expansion-without-shrink",
+      "prompt": "A longest-valid window expands with a new value and remains valid, so the shrink loop executes zero times. What should happen to the answer?",
+      "constraints": [
+        "The objective is maximum valid length.",
+        "The post-expansion range is legal."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "update_after_zero_shrinks",
+            "text": "Update the answer from the expanded valid range even though left did not move."
+          },
+          {
+            "id": "skip_without_shrink",
+            "text": "Skip the update because answer changes belong only to shrink iterations."
+          },
+          {
+            "id": "force_one_shrink",
+            "text": "Move left once so that an answer update has a shrink event."
+          },
+          {
+            "id": "defer_until_invalid",
+            "text": "Wait until a later expansion becomes invalid, then evaluate this earlier length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "update_after_zero_shrinks"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The answer is tied to a legal candidate at the current right boundary, not to whether repair work occurred.",
+        "details": "When no shrink is needed, the expanded window is already the longest valid suffix ending at right and may be longer than every prior candidate. The repair loop's role is only to restore validity when necessary. Conditioning the update on loop execution loses exactly the easy valid expansions that often build the optimum. Forcing a shrink discards legal length, and deferring cannot reconstruct every earlier boundary state reliably. Place the update after the loop so it executes for both zero and many repairs.",
+        "wrongOptionExplanationsByOptionId": {
+          "skip_without_shrink": "A valid expansion can create a new maximum; no repair event is required for candidate legitimacy.",
+          "force_one_shrink": "This deliberately shortens a valid candidate and can destroy the optimum.",
+          "defer_until_invalid": "Later state does not preserve the exact earlier window, and the answer should be updated when the candidate is known legal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-answer-count-valid-endings",
+      "prompt": "After repairing an at-most-K window for a fixed right boundary, every start index from left through right forms a valid suffix. How should a count-all answer use this state?",
+      "constraints": [
+        "The goal is to count all valid contiguous ranges, not find a longest one.",
+        "Validity is hereditary under removing more elements from the left."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "add_window_length",
+            "text": "Add right − left + 1 because that is the number of valid suffixes ending at right."
+          },
+          {
+            "id": "take_max_length",
+            "text": "Update only the maximum length and add one range for this right boundary."
+          },
+          {
+            "id": "add_left",
+            "text": "Add left because it counts how many values were removed."
+          },
+          {
+            "id": "count_only_exact_window",
+            "text": "Count only [left..right]; shorter suffixes require separate scans."
+          }
+        ],
+        "acceptedOptionIds": [
+          "add_window_length"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A repaired hereditary at-most window compactly represents one valid suffix for every start in [left..right].",
+        "details": "There are right−left+1 possible starts in the current window. Removing additional leading elements cannot violate an at-most constraint, so each suffix [s..right] for s from left to right is valid. Adding the window length counts all of them in O(1) for this endpoint. A max update answers a different question, and counting only the widest suffix undercounts. This transfer is valid only when validity is hereditary under left removal; exact-K or at-least constraints need a different counting derivation.",
+        "wrongOptionExplanationsByOptionId": {
+          "take_max_length": "Maximum length discards the number of shorter valid suffixes and solves an optimization rather than a count-all contract.",
+          "add_left": "left measures the excluded prefix, not the number of valid starts inside the current range.",
+          "count_only_exact_window": "Every shorter suffix is already known valid under an at-most predicate, so counting only one loses information represented by the boundary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

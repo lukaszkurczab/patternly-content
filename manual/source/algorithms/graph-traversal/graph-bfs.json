@@ -1,0 +1,432 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-graph-traversal-graph_bfs-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-graph-traversal-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "graph_traversal",
+    "primaryMentalUnitId": "graph_bfs",
+    "patternFamilyId": "graph_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring; human review required",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-graph-traversal-graph_bfs-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-gt-bfs-001",
+      "prompt": "In an unweighted graph, why does the first BFS discovery of vertex v establish its minimum number of edges from source s?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "layer_invariant",
+            "text": "The FIFO frontier processes vertices in nondecreasing distance layers, so any later discovery route is no shorter."
+          },
+          {
+            "id": "queue_speed",
+            "text": "Queues are faster than stacks, so the first route found must be shortest."
+          },
+          {
+            "id": "matrix_lookup",
+            "text": "BFS is shortest only when edge lookup uses an adjacency matrix."
+          },
+          {
+            "id": "tree_assumption",
+            "text": "Every graph becomes a tree before BFS begins, so each vertex has only one possible path."
+          }
+        ],
+        "acceptedOptionIds": [
+          "layer_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "FIFO processing preserves nondecreasing edge distance from the source.",
+        "details": "The source is at distance zero. When a vertex at distance d is processed, each newly discovered neighbor receives distance d + 1. All vertices already queued ahead of later layers have distance at most d + 1, so a shorter undiscovered route cannot appear later. Visited-on-discovery prevents the same vertex from being assigned by a competing longer or equal route. Weighted edges break this proof because one edge no longer contributes a uniform unit cost.",
+        "wrongOptionExplanationsByOptionId": {
+          "queue_speed": "Data-structure speed does not prove optimality; the distance-layer invariant does.",
+          "matrix_lookup": "The guarantee depends on equal edge cost and FIFO layering, not on a specific representation.",
+          "tree_assumption": "The graph may contain cycles and multiple paths; the BFS discovery tree is created during search."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_breadth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-bfs-002",
+      "prompt": "Order the actions for handling one candidate neighbor v while processing vertex u in canonical BFS. v is currently undiscovered.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "test_unseen",
+            "text": "Confirm that v has not been discovered."
+          },
+          {
+            "id": "mark_discovered",
+            "text": "Mark v discovered."
+          },
+          {
+            "id": "set_distance",
+            "text": "Set distance[v] = distance[u] + 1."
+          },
+          {
+            "id": "enqueue_v",
+            "text": "Append v to the FIFO queue."
+          }
+        ],
+        "canonicalOrder": [
+          "test_unseen",
+          "mark_discovered",
+          "set_distance",
+          "enqueue_v"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "BFS must claim v before another predecessor can enqueue it.",
+        "details": "The unseen test protects against repeated work. Marking immediately after the test establishes single discovery, then the distance is derived from the current layer and the vertex is queued. Setting distance and marking can be combined atomically in an implementation, but both logically occur before the vertex becomes available to later frontier processing. Marking only when v is dequeued allows several predecessors to enqueue copies first."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_breadth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-bfs-003",
+      "prompt": "BFS processes u with distance 4 and discovers an unvisited neighbor v through edge u → v in an unweighted graph. What distance should be assigned at discovery?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "distance_five",
+            "text": "5"
+          },
+          {
+            "id": "distance_four",
+            "text": "4"
+          },
+          {
+            "id": "distance_unknown",
+            "text": "Leave it unknown until the queue is empty."
+          },
+          {
+            "id": "distance_matrix",
+            "text": "Use the row index from the adjacency matrix instead of u’s distance."
+          }
+        ],
+        "acceptedOptionIds": [
+          "distance_five"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An unweighted edge contributes exactly one additional step from the source.",
+        "details": "Because u is reached in four edges, the discovered path to v uses five. FIFO layering ensures no path with fewer than five edges can be discovered later, provided v is claimed on discovery. This local update is the mechanical form of the BFS shortest-path invariant. If edges carry weights, adding one is not the correct cost update.",
+        "wrongOptionExplanationsByOptionId": {
+          "distance_four": "Traversing one edge increases the edge-count distance by one.",
+          "distance_unknown": "The layer invariant permits a final minimum distance at first discovery in an unweighted graph.",
+          "distance_matrix": "Vertex identifiers and storage positions are not path lengths."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_breadth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-bfs-004",
+      "prompt": "A road graph has positive travel times on edges: one direct edge s → t costs 100, while s → a and a → t each cost 10. Why is ordinary BFS not a valid minimum-travel-time algorithm?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "weights_break_layers",
+            "text": "BFS minimizes edge count, but edge count no longer matches total travel time."
+          },
+          {
+            "id": "bfs_too_slow",
+            "text": "BFS is invalid because DFS is always faster on weighted graphs."
+          },
+          {
+            "id": "matrix_missing",
+            "text": "BFS would become valid after changing the adjacency list to a matrix."
+          },
+          {
+            "id": "visit_on_dequeue",
+            "text": "Marking t only when dequeued makes the direct edge’s cost reconsidered correctly."
+          }
+        ],
+        "acceptedOptionIds": [
+          "weights_break_layers"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "One edge is not one unit of objective cost, so FIFO edge layers do not order states by travel time.",
+        "details": "Ordinary BFS would discover t via the one-edge cost-100 route before the two-edge cost-20 route, even though the latter is cheaper. Positive weighted shortest paths require a frontier ordered by tentative total distance and relaxation, such as Dijkstra’s algorithm under its preconditions. This is a transfer boundary, not a claim that BFS is generally slow.",
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_too_slow": "Neither DFS nor ordinary BFS solves positive weighted shortest paths by a universal speed rule.",
+          "matrix_missing": "Representation does not restore the equal-cost premise required by BFS distance layers.",
+          "visit_on_dequeue": "Visited timing alone does not perform weighted distance relaxation or compare accumulated costs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_breadth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-bfs-005",
+      "prompt": "A BFS must traverse a sparse graph. Which statement correctly separates traversal mechanics from representation cost?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "list_linear",
+            "text": "With adjacency lists, a full traversal is O(V + E); with a matrix, scanning neighbor rows can make it O(V²)."
+          },
+          {
+            "id": "bfs_always_linear",
+            "text": "BFS is O(V + E) under every representation because the queue is FIFO."
+          },
+          {
+            "id": "matrix_always_wrong",
+            "text": "A matrix is invalid for BFS, not merely more expensive on a sparse graph."
+          },
+          {
+            "id": "dfs_faster",
+            "text": "Switching to DFS guarantees a lower asymptotic cost."
+          }
+        ],
+        "acceptedOptionIds": [
+          "list_linear"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "BFS controls frontier order, while the representation controls how neighbors are enumerated.",
+        "details": "The queue contributes O(V) canonical frontier operations when each vertex is discovered once. Adjacency-list neighbor scans total O(E), yielding O(V + E). An adjacency matrix may inspect V columns for each of V vertices, yielding O(V²). The matrix is not universally wrong, and DFS does not automatically improve the asymptotic cost under the same storage model.",
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_always_linear": "A matrix may scan V possible neighbors for each reached vertex, so representation changes the neighbor-enumeration cost.",
+          "matrix_always_wrong": "A matrix can represent the graph correctly; the issue here is its cost profile, not correctness.",
+          "dfs_faster": "Under the same representation, full BFS and DFS usually inspect the same vertices and edge entries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_breadth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-bfs-006",
+      "prompt": "BFS starts at vertex 0 in a graph where vertices {0,1,2} form one component and {3,4} form another. What will one correct BFS invocation visit?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "source_component",
+            "text": "Only {0,1,2}, the vertices reachable from 0."
+          },
+          {
+            "id": "all_vertices",
+            "text": "All five vertices because BFS expands by global layers."
+          },
+          {
+            "id": "matrix_all",
+            "text": "All five only if the graph uses an adjacency matrix."
+          },
+          {
+            "id": "tree_all",
+            "text": "All five because the BFS tree automatically adds roots for unseen vertices."
+          }
+        ],
+        "acceptedOptionIds": [
+          "source_component"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A BFS invocation is bounded by paths from its source.",
+        "details": "The FIFO queue expands only vertices discovered through edges from 0, so the second component never enters the frontier. Whole-graph traversal or component counting must scan for an unseen vertex and start another traversal. This boundary is independent of list versus matrix representation and of BFS versus DFS.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_vertices": "Layers are measured within the reachable region; BFS cannot cross a missing edge between components.",
+          "matrix_all": "A representation cannot create reachability between vertices that have no connecting path.",
+          "tree_all": "One BFS tree has one source; a whole-graph outer loop is needed to start another tree."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_breadth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-bfs-007",
+      "prompt": "The task asks only whether t is reachable from s. Which comparison between BFS and DFS is justified?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "both_valid",
+            "text": "Both are valid with cycle-safe visited state; choose from required order, memory, and implementation constraints."
+          },
+          {
+            "id": "bfs_always",
+            "text": "BFS is always correct and faster, while DFS is not a graph-reachability algorithm."
+          },
+          {
+            "id": "dfs_no_visited",
+            "text": "DFS is valid only because recursion follows tree rules and needs no visited set."
+          },
+          {
+            "id": "dequeue_same",
+            "text": "They are equivalent only if both delay visited marking until removal from their frontier."
+          }
+        ],
+        "acceptedOptionIds": [
+          "both_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Reachability needs complete exploration, so both traversal orders are correct under the same visited contract.",
+        "details": "BFS uses a queue and DFS uses a stack or recursion. With adjacency lists, both take O(V + E) in the worst case over the reached subgraph. BFS adds a shortest-unweighted-distance guarantee; DFS may use less frontier memory on some shapes but can have deep recursion. The answer contract, not a universal speed slogan, chooses between them.",
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_always": "DFS is a standard reachability traversal; neither has a universal speed advantage for full exploration.",
+          "dfs_no_visited": "The input graph may have cycles; recursion does not convert it into a tree before discovery.",
+          "dequeue_same": "Both need a correct discovery invariant; late unguarded marking can duplicate work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_breadth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-bfs-008",
+      "prompt": "Two different shortest paths reach v at the same BFS distance. The first discovered predecessor is p1, but another predecessor p2 is processed later in the same layer. What is the canonical single-parent behavior?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "keep_first_parent",
+            "text": "Keep p1 if only one shortest path must be reconstructed; v’s minimum distance is already final."
+          },
+          {
+            "id": "replace_later",
+            "text": "Always replace p1 with p2 because later queue entries are more accurate."
+          },
+          {
+            "id": "enqueue_again",
+            "text": "Enqueue v again from p2 so BFS can decide after both copies are dequeued."
+          },
+          {
+            "id": "tree_unique",
+            "text": "This situation is impossible because a BFS tree proves the input graph has one path per vertex."
+          }
+        ],
+        "acceptedOptionIds": [
+          "keep_first_parent"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "First discovery fixes the minimum distance; a single-parent reconstruction may retain the first valid predecessor.",
+        "details": "BFS creates one traversal tree by selecting the edge that first discovers each vertex. Other edges can lead to the same vertex at the same minimum distance without invalidating that tree. If the output requires all shortest paths or their count, the state must retain additional predecessor information rather than re-enqueueing blindly. The input graph is not a tree merely because BFS produces one parent relation.",
+        "wrongOptionExplanationsByOptionId": {
+          "replace_later": "Both predecessors produce the same minimum distance; later discovery is not more accurate by itself.",
+          "enqueue_again": "Duplicate enqueues are unnecessary for one shortest path and weaken the single-discovery invariant.",
+          "tree_unique": "The BFS tree selects one discovery edge; the original graph may have several shortest paths."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "traverse_graph_breadth_first",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

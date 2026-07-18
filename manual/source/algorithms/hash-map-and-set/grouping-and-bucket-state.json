@@ -1,0 +1,425 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-hash-map-and-set-grouping-and-bucket-state-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-hash-map-and-set-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "hash_map_and_set",
+    "primaryMentalUnitId": "grouping_and_bucket_state",
+    "patternFamilyId": "hash_map_and_set"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-hash-map-and-set-grouping-and-bucket-state-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-hms-grouping-canonical-anagram-key",
+      "prompt": "Strings must be grouped when they contain the same characters with the same multiplicities, regardless of order. Which key correctly represents the equivalence relation?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sorted_characters",
+            "text": "The characters sorted into a canonical sequence."
+          },
+          {
+            "id": "original_string",
+            "text": "The original string unchanged."
+          },
+          {
+            "id": "length_only",
+            "text": "Only the string length."
+          },
+          {
+            "id": "first_character",
+            "text": "Only the first character."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sorted_characters"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A grouping key must be identical exactly for members of the intended equivalence class; sorted characters provide that canonical signature.",
+        "details": "The key is not merely a convenient label—it defines the grouping relation implemented by the map. Sorting removes order while preserving every character and multiplicity. A frequency vector could represent the same relation under a fixed alphabet; shorter lossy summaries such as length or first character merge non-equivalent inputs.",
+        "wrongOptionExplanationsByOptionId": {
+          "original_string": "Different permutations remain different keys, so equivalent strings would be split into separate buckets.",
+          "length_only": "Equal length is necessary but not sufficient; unrelated strings of the same length would be merged.",
+          "first_character": "The first character is neither order-independent nor complete enough to represent the multiset of characters."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_grouping_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-grouping-select-all-valid-signatures",
+      "prompt": "Assume lowercase English letters only. Select all keys that can exactly group strings by character multiset.",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "sorted_string",
+            "text": "The sorted string."
+          },
+          {
+            "id": "count_vector",
+            "text": "A 26-entry vector of character counts encoded canonically."
+          },
+          {
+            "id": "sum_codes",
+            "text": "The sum of character code values."
+          },
+          {
+            "id": "length",
+            "text": "The string length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sorted_string",
+          "count_vector"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Both a sorted sequence and a canonical count vector encode the full multiset; sums and lengths are lossy summaries.",
+        "details": "A valid grouping key must implement the intended equivalence relation, not merely correlate with it. Sorted strings and fixed-position count vectors are injective over character multisets in the stated alphabet. This decision is separate from the hash table’s own collision handling: the semantic key itself must not deliberately merge unequal classes.",
+        "wrongOptionExplanationsByOptionId": {
+          "sum_codes": "Different character multisets can have the same code sum, so this key creates semantic collisions even before hash-table collisions are considered.",
+          "length": "Length preserves only total multiplicity and merges every same-length string regardless of character composition."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "sorted_string": "Omitting sorted_string misses a complete canonical representation that preserves every character and multiplicity while removing order.",
+          "count_vector": "Omitting count_vector misses a complete fixed-alphabet signature whose positions identify characters and values identify multiplicities."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_grouping_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-grouping-bucket-payload",
+      "prompt": "The output must return each complete group of records. What should the map store under a canonical grouping key?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "record_bucket",
+            "text": "A list or bucket containing the original records in that group."
+          },
+          {
+            "id": "presence_only",
+            "text": "A boolean indicating that the key has appeared."
+          },
+          {
+            "id": "count_only",
+            "text": "Only the number of records assigned to the key."
+          }
+        ],
+        "acceptedOptionIds": [
+          "record_bucket"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Materialized grouping requires a key-to-members bucket; presence and count are lossy aggregates.",
+        "details": "The key decides equivalence, while the payload decides what information remains available after grouping. Appending each record to its bucket preserves the complete output. If the requirement later changes to a histogram, the bucket may be replaced by a count, but that is a different state contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "presence_only": "Presence can confirm that a group exists but cannot construct the group’s members.",
+          "count_only": "A count preserves group size but discards the record identities required by the output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_grouping_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-grouping-immutable-canonical-key",
+      "prompt": "A grouping signature is built from a mutable list of counts that will be reused for the next record. What must happen before using it as a map key?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "freeze_or_encode_copy",
+            "text": "Convert the current counts into an immutable canonical value or copied encoding."
+          },
+          {
+            "id": "reuse_mutable_object",
+            "text": "Insert the mutable list itself and then modify it for the next record."
+          },
+          {
+            "id": "store_only_length",
+            "text": "Replace the signature with the number of entries."
+          }
+        ],
+        "acceptedOptionIds": [
+          "freeze_or_encode_copy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A map key must remain a stable canonical representation of one record’s equivalence signature.",
+        "details": "The grouping invariant assumes a stored key continues to denote the same equivalence class. Reusing and mutating the same object can make previously inserted state no longer correspond to the original record or can produce identity-based keys. An immutable tuple, string encoding, or copied value preserves key stability.",
+        "wrongOptionExplanationsByOptionId": {
+          "reuse_mutable_object": "Mutating key state after insertion can change its semantic meaning or use object identity rather than the intended count values, depending on the language.",
+          "store_only_length": "The signature length is fixed and contains none of the per-character counts that define the group."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_grouping_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "advanced"
+    },
+    {
+      "id": "alg-hms-grouping-set-loses-members",
+      "prompt": "A developer replaces a key-to-record-list map with a set of canonical keys. Which capability is lost?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reconstruct_groups",
+            "text": "Reconstructing which original records belong to each group."
+          },
+          {
+            "id": "detect_existing_key",
+            "text": "Detecting whether a grouping key has appeared."
+          },
+          {
+            "id": "deduplicate_keys",
+            "text": "Keeping only one instance of each grouping key."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reconstruct_groups"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The set retains group existence but removes the association from each key to its members.",
+        "details": "Set and map keys may have the same equality semantics, yet their information contracts differ. Replacing a grouping map with a set is safe only if the output no longer needs members, counts, or aggregates. This is a common mismatch because both structures appear to “organize by key,” but only the map preserves a payload.",
+        "wrongOptionExplanationsByOptionId": {
+          "detect_existing_key": "A set still supports key membership and can detect that a category already exists.",
+          "deduplicate_keys": "Deduplicating keys is exactly what a set continues to do."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_grouping_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-grouping-create-bucket-before-append",
+      "prompt": "For grouping, the algorithm checks whether a bucket exists, creates an empty bucket if absent, and then appends the current record. Why is creating the bucket before the append safe?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bucket_initialization",
+            "text": "The new key is initialization for the current record; existence is not being used as evidence of a prior distinct record."
+          },
+          {
+            "id": "insert_always_safe",
+            "text": "Insertion before every possible check is always safe for hash algorithms."
+          },
+          {
+            "id": "counts_are_presence",
+            "text": "An empty bucket and a populated bucket mean the same thing."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bucket_initialization"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Here insertion establishes storage for the current member; it is not treated as proof that an earlier member existed.",
+        "details": "“Check before insert” is not a universal hash rule. Grouping needs a bucket to receive the current record, so creating it on first use is the correct state transition. The decisive question is what membership means at the decision point: prior evidence in duplicate/pair checks, or initialized storage in grouping.",
+        "wrongOptionExplanationsByOptionId": {
+          "insert_always_safe": "Operation order depends on the invariant. Insert-first is unsafe when membership is supposed to prove prior occurrence, such as self-pair-sensitive complement lookup.",
+          "counts_are_presence": "An empty bucket and a populated bucket differ materially; the safety comes from the explicit initialization step followed by append, not from equivalence."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_grouping_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "advanced"
+    },
+    {
+      "id": "alg-hms-grouping-sorted-signature-cost",
+      "prompt": "n strings each have length m. For each string, the algorithm sorts its characters to form a grouping key and then performs one expected O(1) hash-map bucket update. Classify expected time and extra space when the output buckets retain all input characters.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n * m)",
+            "O(n * m log m)",
+            "O(n log n)",
+            "O(n^2 * m)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(n)",
+            "O(m)",
+            "O(n * m)",
+            "O(n * m log m)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n * m log m)"
+          ],
+          "extra_space": [
+            "O(n * m)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Key construction dominates with a sort per string, while retaining all grouped content requires space proportional to total input size.",
+        "details": "Hash lookup does not make the whole grouping algorithm expected O(n). Sorting one length-m string costs O(m log m), repeated n times. Expected map updates add O(n), which is lower order. The bucketed output stores all n strings or equivalent content, so the retained structure is O(nm); whether that output is counted as auxiliary space must follow the stated convention."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_grouping_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "Assume each key is materialized from all m characters.",
+        "Count retained canonical keys and bucketed string content as extra space for this item."
+      ]
+    },
+    {
+      "id": "alg-hms-grouping-normalization-transfer",
+      "prompt": "Customer codes must be grouped after trimming surrounding spaces and ignoring letter case, while punctuation remains significant. Which key is valid?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "trim_casefold",
+            "text": "Trim surrounding spaces and apply a documented case-folding normalization, preserving punctuation."
+          },
+          {
+            "id": "remove_punctuation",
+            "text": "Trim, lower-case, and remove all punctuation."
+          },
+          {
+            "id": "raw_code",
+            "text": "Use the raw code without normalization."
+          },
+          {
+            "id": "length_only",
+            "text": "Use only the normalized code length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "trim_casefold"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The canonical key must apply exactly the equivalence transformations in the contract—no fewer and no more.",
+        "details": "Normalization is part of the grouping definition. Under-normalization splits equivalent records; over-normalization merges distinct ones. The key should therefore trim and case-fold while retaining punctuation. This rule transfers to composite business keys, locale-aware text, and normalized identifiers only when every transformation is explicitly justified.",
+        "wrongOptionExplanationsByOptionId": {
+          "remove_punctuation": "Removing punctuation changes the stated equivalence relation and can merge codes that must remain distinct.",
+          "raw_code": "Raw casing and surrounding spaces would split records that the contract declares equivalent.",
+          "length_only": "Length is a lossy summary and merges unrelated normalized codes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_grouping_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

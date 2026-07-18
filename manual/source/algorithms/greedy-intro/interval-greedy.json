@@ -1,0 +1,359 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-greedy-intro-interval-greedy-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-greedy-intro-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "greedy_intro",
+    "primaryMentalUnitId": "interval_greedy",
+    "patternFamilyId": "greedy_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-greedy-intro-interval-greedy-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-greedy-intro-ig-001",
+      "prompt": "A schedule uses half-open intervals [start, end), and currentEnd is the end of the last selected interval. Which condition makes a candidate interval compatible?",
+      "constraints": [
+        "The resource is released at end and may be reused immediately.",
+        "Zero-length intervals are outside this item’s scope."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_gte_current_end",
+            "text": "The candidate start is greater than or equal to currentEnd."
+          },
+          {
+            "id": "start_gt_current_end",
+            "text": "The candidate start is strictly greater than currentEnd."
+          },
+          {
+            "id": "end_gte_current_end",
+            "text": "The candidate end is greater than or equal to currentEnd."
+          },
+          {
+            "id": "duration_lt_gap",
+            "text": "candidate duration < currentEnd - candidate.start"
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_gte_current_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Half-open intervals exclude their end point, so a candidate beginning exactly at currentEnd does not overlap the selected interval. The acceptance boundary is start >= currentEnd.",
+        "details": "The endpoint model is part of the algorithm, not a formatting detail. A selected interval [a,currentEnd) occupies times t with a <= t < currentEnd. At t = currentEnd the resource is free, so [currentEnd,b) is compatible. Requiring a strict greater-than would incorrectly reject legal back-to-back intervals and could reduce the maximum count.\n\nChecking candidate.end against currentEnd does not establish non-overlap because an interval can end later while starting inside the occupied range. The transfer rule is to derive the inequality from the domain contract. Closed intervals, discrete inclusive ranges, cleanup gaps, or travel time between meetings can require start > currentEnd or start >= currentEnd + gap. Hidden endpoint assumptions must not appear only in feedback.",
+        "wrongOptionExplanationsByOptionId": {
+          "start_gt_current_end": "This introduces an unstated positive gap and rejects intervals that begin exactly when the previous half-open interval releases the resource.",
+          "end_gte_current_end": "A later end does not prevent overlap. Compatibility depends on the candidate start relative to the occupied boundary.",
+          "duration_lt_gap": "The expression does not represent interval overlap and can be negative or unrelated to the candidate’s start position."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_greedy_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-ig-002",
+      "prompt": "The last selected half-open interval ends at 5. Remaining candidates are X=[4,6), Y=[5,7), and Z=[7,9). Which interval should the canonical maximum-cardinality greedy scan select next?",
+      "constraints": [
+        "Candidates are compared only if they are feasible against currentEnd=5.",
+        "Every selected interval contributes one."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "select_y",
+            "text": "Select Y=[5,7)."
+          },
+          {
+            "id": "select_x",
+            "text": "Select X=[4,6)."
+          },
+          {
+            "id": "select_z",
+            "text": "Select Z=[7,9)."
+          },
+          {
+            "id": "select_none",
+            "text": "Select none because all candidates touch or cross the boundary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "select_y"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "X is infeasible because it starts before 5. Y and Z are feasible, and Y finishes earlier, so it creates the strongest next boundary.",
+        "details": "The scan performs two logically separate operations. First it filters candidates by compatibility: X starts at 4 and overlaps the selected interval, while Y starts exactly at 5 and is legal under half-open semantics; Z is also legal. Second it applies the greedy comparison among feasible candidates. Y ends at 7, earlier than Z at 9, so selecting Y leaves at least as much room for later intervals.\n\nChoosing Z would still be feasible but would abandon the earliest-finish dominance that supports maximum cardinality. Selecting none would misuse endpoint semantics. This boundary application transfers to meetings, machine reservations, or event selection when the resource is reusable immediately and every accepted interval has equal value. Setup gaps or weights change the filter or objective.",
+        "wrongOptionExplanationsByOptionId": {
+          "select_x": "X overlaps the occupied range because its start is before currentEnd. Its early finish does not make an infeasible choice legal.",
+          "select_z": "Z is feasible, but it finishes later than Y and therefore leaves a weaker residual boundary for no objective benefit.",
+          "select_none": "Y begins exactly at the half-open release point and is compatible. Touching is not overlap under the stated contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_greedy_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-ig-003",
+      "prompt": "A problem asks for the minimum number of intervals to remove so the remaining intervals do not overlap. Every removal has equal cost. Which strategy-level reformulation is valid?",
+      "constraints": [
+        "There are n intervals.",
+        "Endpoint semantics are fixed and consistent for all intervals."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "n_minus_max_compatible",
+            "text": "Maximize the number of compatible intervals with earliest-finish greedy, then return n minus the selected count."
+          },
+          {
+            "id": "remove_longest_each_overlap",
+            "text": "Whenever two intervals overlap, remove the longer one; length is always decisive."
+          },
+          {
+            "id": "remove_latest_start",
+            "text": "Remove the interval with the latest start from every conflict."
+          },
+          {
+            "id": "weighted_equivalence",
+            "text": "The same reformulation remains correct when each interval has a different removal cost."
+          }
+        ],
+        "acceptedOptionIds": [
+          "n_minus_max_compatible"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "With equal keep value and equal removal cost, minimizing removals is exactly the complement of maximizing the compatible set. The same earliest-finish boundary applies.",
+        "details": "Any feasible non-overlapping remainder contains k intervals and removes n-k. Therefore minimizing removals is equivalent to maximizing k. The canonical earliest-finish scan computes a maximum-cardinality compatible subset, and subtraction gives the minimum number removed. No separate local removal heuristic is needed.\n\nThe equivalence relies on every interval contributing the same one-unit keep value and every removal having equal cost. If removals have different penalties, maximizing the count can discard an expensive interval and produce a poor cost. The transfer habit is to check whether two objectives are algebraic complements under identical item weights. When they are, the existing greedy proof transfers; when weights enter, the boundary changes.",
+        "wrongOptionExplanationsByOptionId": {
+          "remove_longest_each_overlap": "Length is not the compatibility boundary. Removing a longer interval can still leave a later end and is not generally equivalent to earliest finish.",
+          "remove_latest_start": "Latest start does not control future availability and has no exchange proof for minimum removals.",
+          "weighted_equivalence": "Different removal costs change the objective contribution of each interval, so n-selectedCount no longer represents total cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_greedy_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-ig-004",
+      "prompt": "Intervals are still pairwise incompatible when they overlap, but each interval now has an arbitrary positive weight and the objective is maximum total weight. What is the correct boundary conclusion?",
+      "constraints": [
+        "Weights are independent of start and end times.",
+        "The problem remains offline and all intervals are known."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "earliest_finish_not_sufficient",
+            "text": "Earliest finish is no longer sufficient because its exchange can preserve feasibility and count while decreasing total weight."
+          },
+          {
+            "id": "earliest_finish_still_exact",
+            "text": "Earliest finish remains optimal because future room is the only property that matters."
+          },
+          {
+            "id": "highest_weight_greedy",
+            "text": "Choosing the highest-weight feasible interval is always optimal."
+          },
+          {
+            "id": "methods_interchangeable",
+            "text": "Greedy and dynamic programming are interchangeable, so either proof applies unchanged."
+          }
+        ],
+        "acceptedOptionIds": [
+          "earliest_finish_not_sufficient"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Weights add an objective dimension that the end boundary does not dominate. The unweighted exchange preserves one selected item, but it may replace a valuable interval with a low-value one.",
+        "details": "Earliest finish optimizes future capacity, not current weight. In the unweighted problem, exchanging one interval for another preserves the one-unit contribution. With arbitrary weights, the earlier-finishing interval may be worth far less, and the extra future room may not compensate. Conversely, choosing the heaviest interval can block a combination with greater total weight.\n\nThe usual diagnostic is to retain alternatives at a boundary such as the next compatible interval and compare include versus exclude value. That suggests dynamic programming, but this item stops at the strategy boundary rather than defining the recurrence. Greedy and dynamic programming are not interchangeable: greedy needs a local dominance theorem; dynamic programming can compare state-dependent continuations when that theorem is absent.",
+        "wrongOptionExplanationsByOptionId": {
+          "earliest_finish_still_exact": "Future room is only one part of the weighted objective. A feasible exchange can lose more weight than the extra room can recover.",
+          "highest_weight_greedy": "The heaviest interval may overlap several moderately weighted intervals whose combined value is larger.",
+          "methods_interchangeable": "The proof obligations differ. The failure of a greedy-choice property is precisely why a state-based comparison may be needed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_greedy_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-ig-005",
+      "prompt": "A meeting problem changes its output: every interval must be scheduled, and the goal is the minimum number of rooms. Why is the maximum-cardinality earliest-finish scan not the correct solution contract?",
+      "constraints": [
+        "No meeting may be removed.",
+        "Rooms may host back-to-back half-open meetings."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "must_measure_concurrency",
+            "text": "The new objective must retain all meetings and measure maximum overlap, typically with event order or a heap of active end times."
+          },
+          {
+            "id": "earliest_finish_counts_rooms",
+            "text": "The number accepted by earliest-finish scan equals the number of rooms required."
+          },
+          {
+            "id": "remove_overlaps_then_count",
+            "text": "Discard overlapping meetings first, then count the selected intervals as rooms."
+          },
+          {
+            "id": "latest_start_rooms",
+            "text": "Sort by latest start and assign one new room per accepted interval."
+          }
+        ],
+        "acceptedOptionIds": [
+          "must_measure_concurrency"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Room counting is a different archetype: overlaps are demand to accommodate, not conflicts to discard. The decisive quantity is peak concurrency, not the size of one compatible subset.",
+        "details": "The earliest-finish selection algorithm answers “How many meetings can one room host if conflicts may be rejected?” Minimum rooms asks “How many resources are needed so every meeting is retained?” These outputs treat overlap in opposite ways. Selection removes conflicting intervals; room counting must preserve them and track how many are active at once.\n\nA sweep of starts and ends or a min-heap of active end times can compute the peak. Endpoint tie rules still matter because a meeting ending at time t can release a room for one starting at t under half-open semantics. The transfer boundary is the output contract. Identical interval data can require different greedy invariants when the learner changes from selecting a subset to allocating resources.",
+        "wrongOptionExplanationsByOptionId": {
+          "earliest_finish_counts_rooms": "Accepted count measures one compatible chain, not simultaneous demand. Many rejected overlaps may require multiple rooms.",
+          "remove_overlaps_then_count": "Removing meetings violates the new contract that every meeting must be served, and the surviving count does not measure how many rooms simultaneous meetings require.",
+          "latest_start_rooms": "Latest start neither tracks the active set nor computes peak concurrency, so it cannot determine the number of rooms needed at the busiest time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_greedy_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-ig-006",
+      "prompt": "You must cover the entire segment [0,T] with the fewest available intervals, without gaps. At current covered point x, which local interval rule matches this objective?",
+      "constraints": [
+        "An interval is eligible for the next step only if start <= x.",
+        "Coverage may overlap, but it may not leave a gap.",
+        "A complete cover is guaranteed to exist."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "choose_farthest_end",
+            "text": "Among intervals with start <= x, choose one with maximum end and advance x to that end."
+          },
+          {
+            "id": "choose_earliest_end",
+            "text": "Choose the eligible interval with minimum end, as in maximum-cardinality interval selection."
+          },
+          {
+            "id": "choose_shortest",
+            "text": "Choose the eligible interval with minimum duration."
+          },
+          {
+            "id": "choose_latest_start",
+            "text": "Choose the interval whose start is closest to x, regardless of how far it reaches."
+          }
+        ],
+        "acceptedOptionIds": [
+          "choose_farthest_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Coverage minimizes the number of extensions, so the decisive boundary is how far the next eligible interval advances the covered prefix. Earliest finish optimizes a different interval objective.",
+        "details": "At point x, any next interval must begin at or before x or a gap appears. Among those eligible intervals, choosing the one with the farthest end dominates shorter-reaching choices for the current step: it uses one interval and leaves a residual uncovered suffix no larger than any alternative. The state update is x = chosen.end, and the process repeats until x >= T.\n\nThis is an interval greedy algorithm, but its key is the opposite of maximum compatible selection. In selection, an early end leaves room for more separate intervals. In coverage, a far end covers more of the required continuum with the same one-interval cost. The transfer lesson is to derive the boundary from the output contract rather than memorizing “intervals imply earliest finish.”",
+        "wrongOptionExplanationsByOptionId": {
+          "choose_earliest_end": "An early end makes less coverage progress and can force extra intervals. It is safe for a different objective: selecting many non-overlapping intervals.",
+          "choose_shortest": "Short duration does not maximize how far the covered prefix advances; repeatedly taking short intervals can require extra intervals even when a farther-reaching eligible interval exists.",
+          "choose_latest_start": "Starting near x is irrelevant if the interval barely extends the covered prefix. Eligibility and reach are separate properties."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_greedy_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

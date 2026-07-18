@@ -1,0 +1,470 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-prefix-sums-answer-range-queries-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-prefix-sums-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "prefix_sums",
+    "primaryMentalUnitId": "answer_range_queries",
+    "patternFamilyId": "prefix_sums"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-prefix-sums-answer-range-queries-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-prefix-range-query-inclusive-formula",
+      "prompt": "P[i] stores the sum of the first i elements of A. Which expression returns the sum of the inclusive range [l, r]?",
+      "constraints": [
+        "0 <= l <= r < n.",
+        "P has length n + 1 and P[0] = 0."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "right_plus_one_minus_left",
+            "text": "P[r + 1] - P[l]"
+          },
+          {
+            "id": "right_minus_left",
+            "text": "P[r] - P[l]"
+          },
+          {
+            "id": "right_plus_one_minus_left_plus_one",
+            "text": "P[r + 1] - P[l + 1]"
+          },
+          {
+            "id": "left_minus_right_plus_one",
+            "text": "P[l] - P[r + 1]"
+          }
+        ],
+        "acceptedOptionIds": [
+          "right_plus_one_minus_left"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "P[r + 1] includes every element through A[r], while P[l] contains exactly the elements before A[l].",
+        "details": "Under an exclusive boundary convention, P[x] summarizes A[0:x]. Subtracting P[l] from P[r + 1] removes A[0:l] and leaves A[l:r + 1]. The +1 on the right is not cosmetic; it converts the inclusive data endpoint r into the exclusive prefix boundary after it.",
+        "wrongOptionExplanationsByOptionId": {
+          "right_minus_left": "P[r] stops before A[r], so this expression omits the rightmost requested element. It would match the half-open range [l, r), not inclusive [l, r].",
+          "right_plus_one_minus_left_plus_one": "Subtracting P[l + 1] also removes A[l], so the leftmost requested element is lost.",
+          "left_minus_right_plus_one": "The subtraction direction is reversed. It yields the negative of the requested sum for ordinary numeric addition."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_range_from_prefix_difference",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-range-query-cancellation-invariant",
+      "prompt": "Why does P[r + 1] - P[l] isolate A[l] + ... + A[r]?",
+      "constraints": [
+        "P[i] is the sum of A[0] through A[i - 1].",
+        "Arithmetic is exact for the represented values."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shared_prefix_cancels",
+            "text": "Both states contain the contribution before l, so subtracting cancels that shared prefix and leaves the requested range."
+          },
+          {
+            "id": "array_is_sorted",
+            "text": "Values before l are smaller, so subtraction discards them after sorting."
+          },
+          {
+            "id": "window_is_current",
+            "text": "P[r + 1] is the current moving window and P[l] is the outgoing value."
+          },
+          {
+            "id": "negative_values_absent",
+            "text": "The formula works only because every prefix is nondecreasing."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shared_prefix_cancels"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The correctness argument is exact cancellation of the shared cumulative contribution, not an ordering or monotonicity property.",
+        "details": "Expand the states: P[r + 1] = A[0] + ... + A[l - 1] + A[l] + ... + A[r], while P[l] = A[0] + ... + A[l - 1]. Their difference removes the identical leading segment. Negative values are harmless because algebraic cancellation does not require increasing prefixes.",
+        "wrongOptionExplanationsByOptionId": {
+          "array_is_sorted": "The formula uses positions, not relative value sizes. Sorting is neither required nor compatible with original index ranges.",
+          "window_is_current": "A prefix is a historical boundary state, not one current interval. P[l] represents an entire earlier prefix, not just one outgoing value.",
+          "negative_values_absent": "Prefixes may decrease. The cancellation identity remains true with positive, zero, and negative values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_range_from_prefix_difference",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-range-query-reasoning-order",
+      "prompt": "Order the reasoning steps for answering an inclusive range query [l, r] from an exclusive prefix array.",
+      "constraints": [
+        "P[x] summarizes A[0:x].",
+        "Score is based on preserved adjacent relations."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "translate_right_boundary",
+            "text": "Translate inclusive r to the exclusive boundary r + 1."
+          },
+          {
+            "id": "read_right_prefix",
+            "text": "Read P[r + 1], which contains the requested range plus everything before l."
+          },
+          {
+            "id": "read_left_prefix",
+            "text": "Read P[l], which contains exactly the contribution before l."
+          },
+          {
+            "id": "subtract_shared_prefix",
+            "text": "Subtract P[l] from P[r + 1]."
+          },
+          {
+            "id": "interpret_remaining_range",
+            "text": "Interpret the remaining contribution as A[l] through A[r]."
+          }
+        ],
+        "canonicalOrder": [
+          "translate_right_boundary",
+          "read_right_prefix",
+          "read_left_prefix",
+          "subtract_shared_prefix",
+          "interpret_remaining_range"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The endpoint translation establishes which two prefix boundaries are legal before cancellation is applied.",
+        "details": "The prefix contract is half-open, so an inclusive right endpoint must first become r + 1. The right state contains the range and the shared leading segment; the left state identifies the segment to remove. The final subtraction is justified by those meanings, not by memorizing a formula detached from its convention."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_range_from_prefix_difference",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-range-query-full-array-edge",
+      "prompt": "Which expression correctly answers the full-array query [0, n - 1] under the exclusive n + 1 prefix convention?",
+      "constraints": [
+        "n is positive.",
+        "P[0] = 0 and P[n] is the sum of all n elements."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "full_minus_empty",
+            "text": "P[n] - P[0]"
+          },
+          {
+            "id": "last_prefix_only",
+            "text": "P[n - 1] - P[0]"
+          },
+          {
+            "id": "exclude_first",
+            "text": "P[n] - P[1]"
+          },
+          {
+            "id": "reverse_full",
+            "text": "P[0] - P[n]"
+          }
+        ],
+        "acceptedOptionIds": [
+          "full_minus_empty"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The full range is bounded by the empty prefix before index 0 and the complete prefix after index n - 1.",
+        "details": "This edge case confirms that the sentinel removes special branching: the same P[r + 1] - P[l] formula becomes P[n] - P[0]. Using P[n - 1] omits the last element, while subtracting P[1] omits the first. The explicit empty prefix is what makes l = 0 legal.",
+        "wrongOptionExplanationsByOptionId": {
+          "last_prefix_only": "P[n - 1] contains only the first n - 1 elements, so A[n - 1] is missing.",
+          "exclude_first": "P[1] contains A[0], so subtracting it removes the first requested element.",
+          "reverse_full": "The boundaries are correct but the subtraction direction is reversed, producing the negative total."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_range_from_prefix_difference",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-range-query-arbitrary-order-vs-window",
+      "prompt": "Queries arrive in this order: [8000, 9000], [2, 8], [5000, 5003], [0, 9999]. Why is a stored prefix preferable to carrying one moving-window sum between queries?",
+      "constraints": [
+        "The array is immutable.",
+        "Each query asks for an exact sum."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "constant_boundary_reads",
+            "text": "Each query reads two stored boundary states, while moving one window between unrelated intervals may cross thousands of elements."
+          },
+          {
+            "id": "prefix_is_sorted",
+            "text": "The prefix array is automatically sorted even when values are negative."
+          },
+          {
+            "id": "window_cannot_sum",
+            "text": "A moving window can never compute a subarray sum."
+          },
+          {
+            "id": "prefix_uses_no_space",
+            "text": "The prefix is preferable because it stores no auxiliary state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "constant_boundary_reads"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix queries are independent of previous query position; a moving window’s cost depends on how far its boundaries must travel.",
+        "details": "Once P exists, every query uses P[r + 1] and P[l] in O(1), even when intervals jump backward or overlap irregularly. A window can compute sums, but reconfiguring it between arbitrary intervals may cost O(n) per query. The trade-off is linear stored state for predictable constant-time query work.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_is_sorted": "Prefix values need not be monotonic when A contains negative values. Sortedness is not the reason for constant-time range extraction.",
+          "window_cannot_sum": "A moving window can maintain a sum efficiently during a controlled scan. Its weakness here is arbitrary query movement, not an inability to sum.",
+          "prefix_uses_no_space": "A separate prefix stores n + 1 values. Its advantage is reusable boundary access, purchased with O(n) extra space."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_range_from_prefix_difference",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-range-query-sorting-breaks-indices",
+      "prompt": "A developer sorts A before building P because they believe prefix subtraction needs sorted input. What is the primary defect?",
+      "constraints": [
+        "Queries refer to original index intervals.",
+        "The query formula itself is otherwise implemented correctly."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "interval_membership_changed",
+            "text": "The prefix now describes sorted positions, so P[r + 1] - P[l] sums a different set of elements than the original [l, r]."
+          },
+          {
+            "id": "subtraction_becomes_slow",
+            "text": "Sorting makes each subtraction O(log n)."
+          },
+          {
+            "id": "negative_values_duplicated",
+            "text": "Sorting duplicates every negative value in the prefix."
+          },
+          {
+            "id": "identity_removed",
+            "text": "Sorting changes the additive identity from 0 to the smallest value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "interval_membership_changed"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The range formula is positional; reordering the sequence changes the meaning of every boundary state.",
+        "details": "Prefix subtraction is valid in whatever order the prefix was built, but it answers ranges in that same order. If the API asks about original indices, sorting is a semantic corruption even though the arithmetic remains internally consistent. Sortedness is not a correctness precondition for sums.",
+        "wrongOptionExplanationsByOptionId": {
+          "subtraction_becomes_slow": "Reading and subtracting two array entries remains O(1) after sorting. The defect is wrong membership, not operation cost.",
+          "negative_values_duplicated": "Sorting permutes values but does not duplicate them. The incorrect result comes from changed positions.",
+          "identity_removed": "Zero remains the additive identity regardless of order. Sorting does not redefine it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_range_from_prefix_difference",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-range-query-per-query-cost",
+      "prompt": "Assume a valid prefix array is already built. Select the time and additional working space used by one range-sum query.",
+      "constraints": [
+        "The stored prefix array is pre-existing and is not counted again as per-query working space.",
+        "Reading and subtracting numeric entries is O(1)."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "query_time",
+          "query_working_space"
+        ],
+        "availableValuesByDimension": {
+          "query_time": [
+            "O(1)",
+            "O(log n)",
+            "O(r - l + 1)",
+            "O(n)"
+          ],
+          "query_working_space": [
+            "O(1)",
+            "O(log n)",
+            "O(r - l + 1)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "query_time": [
+            "O(1)"
+          ],
+          "query_working_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "One query performs two array reads and one subtraction, using a constant number of temporary values.",
+        "details": "The query does not scan the requested range, so its time is independent of range length. It uses O(1) temporary space once the O(n) prefix state has already been materialized. This distinction avoids the false claim that the overall prefix technique requires no auxiliary space: the banked state is linear even though each query’s incremental workspace is constant."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_range_from_prefix_difference",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-range-query-transfer-xor",
+      "prompt": "Which range operation can use the same two-boundary pattern with a different combine operator?",
+      "constraints": [
+        "The array is immutable.",
+        "A prefix state is stored at every boundary."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "range_xor",
+            "text": "Range XOR, using X[r + 1] XOR X[l]."
+          },
+          {
+            "id": "range_minimum_subtraction",
+            "text": "Range minimum, using minPrefix[r + 1] - minPrefix[l]."
+          },
+          {
+            "id": "range_median_subtraction",
+            "text": "Range median, using medianPrefix[r + 1] - medianPrefix[l]."
+          },
+          {
+            "id": "longest_distinct_length",
+            "text": "Longest distinct subarray, using two scalar prefix states."
+          }
+        ],
+        "acceptedOptionIds": [
+          "range_xor"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "XOR is self-inverse, so the shared leading prefix cancels just as an additive prefix cancels by subtraction.",
+        "details": "If X[i] is the XOR of A[0:i], then X[r + 1] XOR X[l] removes values before l because x XOR x = 0. Minimum and median are not recoverable by subtracting scalar prefix summaries, and a longest-distinct objective depends on window validity rather than a fixed range aggregate. The transfer boundary is invertibility of the cumulative combine operation.",
+        "wrongOptionExplanationsByOptionId": {
+          "range_minimum_subtraction": "Two prefix minima do not reveal whether the earlier minimum also occurs inside the requested range. Minimum has no inverse subtraction rule.",
+          "range_median_subtraction": "A median requires distribution information, not one scalar cumulative value. Subtracting medians has no range interpretation.",
+          "longest_distinct_length": "This asks for an optimized interval under a state constraint, not the aggregate of one supplied interval. A frequency window is the relevant mechanism."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_range_from_prefix_difference",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

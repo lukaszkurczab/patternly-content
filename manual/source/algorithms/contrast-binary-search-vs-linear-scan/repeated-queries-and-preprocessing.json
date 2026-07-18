@@ -1,0 +1,1236 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "contrast-binary-search-vs-linear-scan-repeated-queries-and-preprocessing-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-core",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-contrast-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "contrast_binary_search_vs_linear_scan",
+    "primaryMentalUnitId": "repeated_queries_and_preprocessing",
+    "patternFamilyId": "binary_search"
+  },
+  "batchKind": "contrast",
+  "contrastMetadata": {
+    "contrastedMentalUnitIds": [
+      "recognize_binary_search_signal",
+      "boundaries_and_loop_invariants",
+      "reason_about_indexed_scans"
+    ],
+    "falseHeuristicId": "binary_search_is_always_better_than_linear_scan",
+    "transferBoundary": "Pay preprocessing cost only when the query volume, mutation model, memory budget, and preserved semantics make the total workload cheaper than repeated scans."
+  },
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-18T00:00:00.000Z",
+    "contentBatchId": "contrast-binary-search-vs-linear-scan-repeated-queries-and-preprocessing-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-contrast-binary-scan-repeated-001",
+      "prompt": "A static unsorted array will receive one million exact-membership queries. Reordering is allowed and all queries use the same comparison key. Which strategy is usually the stronger asymptotic choice?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_then_binary",
+            "text": "Sort once, then binary-search each query."
+          },
+          {
+            "id": "scan_each",
+            "text": "Scan the full unsorted array for every query."
+          },
+          {
+            "id": "binary_unsorted",
+            "text": "Binary-search the unsorted array without preprocessing."
+          },
+          {
+            "id": "sort_each_query",
+            "text": "Sort the array again before every query."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_then_binary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Repeated queries can amortize a one-time ordering cost.",
+        "details": "The full workload is O(n log n + q log n) instead of O(qn), provided sorting preserves the required semantics.",
+        "wrongOptionExplanationsByOptionId": {
+          "scan_each": "This repeats O(n) work one million times.",
+          "binary_unsorted": "The midpoint comparison has no legal direction.",
+          "sort_each_query": "The static data needs preprocessing only once."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-002",
+      "prompt": "The same unsorted array will receive only one exact query. Which default asymptotic strategy is preferable when no sorted representation already exists?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan_once",
+            "text": "Scan once in O(n)."
+          },
+          {
+            "id": "sort_then_binary",
+            "text": "Sort in O(n log n) and then binary-search."
+          },
+          {
+            "id": "binary_unsorted",
+            "text": "Binary-search directly."
+          },
+          {
+            "id": "build_and_discard",
+            "text": "Build a sorted copy and discard it immediately after the query."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scan_once"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The query count changes whether preprocessing can pay for itself.",
+        "details": "A one-time scan avoids an O(n log n) setup cost when the original data lacks a legal binary-search representation.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_then_binary": "For one query, preprocessing dominates the logarithmic lookup.",
+          "binary_unsorted": "The method is incorrect on arbitrary unsorted data.",
+          "build_and_discard": "That still pays unnecessary preprocessing and space."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-003",
+      "prompt": "A sorted copy is built for repeated key lookups, but the output must return the earliest original position for each key. What must the preprocessing preserve?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "original_provenance",
+            "text": "Each indexed key must retain enough original-position provenance to answer the earliest-position contract."
+          },
+          {
+            "id": "key_only",
+            "text": "Only the sorted key value."
+          },
+          {
+            "id": "array_length",
+            "text": "Only the number of records."
+          },
+          {
+            "id": "mid_history",
+            "text": "The midpoints used during queries."
+          }
+        ],
+        "acceptedOptionIds": [
+          "original_provenance"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing is legal only when the indexed representation can answer the complete output contract.",
+        "details": "Without provenance, repeated binary lookups may be fast but return the wrong record identity; scanning the original remains correct.",
+        "wrongOptionExplanationsByOptionId": {
+          "key_only": "Equal keys may have different original positions.",
+          "array_length": "Length cannot identify the earliest matching record.",
+          "mid_history": "Search traces do not replace source identity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-004",
+      "prompt": "The dataset changes after almost every query. A sorted copy would need to be rebuilt from scratch after each update. Which factor moves the decision boundary back toward scanning?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "maintenance_cost",
+            "text": "The repeated preprocessing or maintenance cost can exceed the saved query work."
+          },
+          {
+            "id": "sorted_keyword",
+            "text": "The word sorted still makes binary search mandatory."
+          },
+          {
+            "id": "query_boolean",
+            "text": "Queries return booleans."
+          },
+          {
+            "id": "mid_constant",
+            "text": "Midpoint arithmetic remains O(1)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "maintenance_cost"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A preprocessing strategy must include update frequency and index maintenance.",
+        "details": "Static-query analysis cannot be transferred unchanged to a highly dynamic workload.",
+        "wrongOptionExplanationsByOptionId": {
+          "sorted_keyword": "A stale or repeatedly rebuilt representation changes the total workload.",
+          "query_boolean": "Return type does not determine strategy.",
+          "mid_constant": "The dominant cost may be rebuilding the representation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-005",
+      "prompt": "A stable sorted random-access array receives repeated exact queries. No preprocessing is needed. Which comparison is appropriate?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "binary_per_query",
+            "text": "Use correct binary search for O(log n) per query rather than O(n) scan per query."
+          },
+          {
+            "id": "scan_because_no_setup",
+            "text": "Scan because preprocessing cost is zero for both."
+          },
+          {
+            "id": "sort_again",
+            "text": "Sort before every query to guarantee order."
+          },
+          {
+            "id": "binary_by_name_only",
+            "text": "Use any function called binarySearch without checking its boundaries."
+          }
+        ],
+        "acceptedOptionIds": [
+          "binary_per_query"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "When the legal ordered representation already exists, repeated queries expose the direct O(log n) versus O(n) contrast.",
+        "details": "The conclusion still assumes random access and a query aligned with the sort key.",
+        "wrongOptionExplanationsByOptionId": {
+          "scan_because_no_setup": "The existing order already supplies the binary-search invariant.",
+          "sort_again": "The data is already stable and sorted.",
+          "binary_by_name_only": "The implementation still must be correct."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-006",
+      "prompt": "A sorted linked list receives many exact queries. What preprocessing can change the cost boundary most directly?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "materialize_array",
+            "text": "Materialize a stable random-access array once, then binary-search it for later queries."
+          },
+          {
+            "id": "reuse_linked_mid",
+            "text": "Repeatedly locate linked-list midpoints by traversal and call that O(log n)."
+          },
+          {
+            "id": "rename_nodes",
+            "text": "Rename nodes to left, right, and mid."
+          },
+          {
+            "id": "scan_and_sort_each",
+            "text": "Scan and sort the linked list for every query."
+          }
+        ],
+        "acceptedOptionIds": [
+          "materialize_array"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing can change the data-access model as well as its order.",
+        "details": "The one-time O(n) materialization and O(n) memory may be worthwhile for enough repeated queries.",
+        "wrongOptionExplanationsByOptionId": {
+          "reuse_linked_mid": "Midpoint access is not constant-time.",
+          "rename_nodes": "Names do not provide random access.",
+          "scan_and_sort_each": "This repeats the expensive setup."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-007",
+      "prompt": "Memory is tightly limited and a sorted copy would require O(n) additional storage. The original unsorted data receives a moderate number of queries. What should the decision include?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "time_space_tradeoff",
+            "text": "Compare repeated scan time with both preprocessing time and the O(n) memory requirement; binary search is not automatically preferable."
+          },
+          {
+            "id": "ignore_memory",
+            "text": "Choose binary search because space never affects strategy selection."
+          },
+          {
+            "id": "binary_in_place_always",
+            "text": "Sort the original in place even if original order is part of the contract."
+          },
+          {
+            "id": "scan_constant_time",
+            "text": "Treat every scan as O(1) because no extra memory is used."
+          }
+        ],
+        "acceptedOptionIds": [
+          "time_space_tradeoff"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Repeated-query optimization is constrained by legal mutation and memory budget.",
+        "details": "A scan can remain the viable strategy even when its time is higher asymptotically.",
+        "wrongOptionExplanationsByOptionId": {
+          "ignore_memory": "The sorted copy may violate the memory constraint.",
+          "binary_in_place_always": "Mutation may be illegal.",
+          "scan_constant_time": "Space and time are distinct dimensions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-008",
+      "prompt": "A preprocessed sorted index supports fast lookups, but queries sometimes use a different field than the indexed sort key. Which strategy applies to those unmatched queries?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan_or_new_index",
+            "text": "Scan for that field or build and maintain another query-aligned index if workload justifies it."
+          },
+          {
+            "id": "reuse_any_index",
+            "text": "Binary-search the existing index because any sorted order is sufficient."
+          },
+          {
+            "id": "binary_mid_field",
+            "text": "Check the other field only at mid and discard a side."
+          },
+          {
+            "id": "return_key_match",
+            "text": "Return a record matching the indexed field instead."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scan_or_new_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing is query-specific.",
+        "details": "An index transfers only to predicates aligned with its order and preserved output semantics.",
+        "wrongOptionExplanationsByOptionId": {
+          "reuse_any_index": "The query predicate is not monotonic in the unrelated key order.",
+          "binary_mid_field": "No regional implication follows.",
+          "return_key_match": "That changes the query."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-009",
+      "prompt": "Which factors determine whether sorting once and binary-searching repeated queries is worthwhile? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "query_count",
+            "text": "The number of queries q."
+          },
+          {
+            "id": "mutation_rate",
+            "text": "How often updates invalidate or require maintaining the sorted representation."
+          },
+          {
+            "id": "semantic_legality",
+            "text": "Whether reordering or the index preserves the full output contract."
+          },
+          {
+            "id": "function_name",
+            "text": "Whether the query helper is called search."
+          }
+        ],
+        "acceptedOptionIds": [
+          "query_count",
+          "mutation_rate",
+          "semantic_legality"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing decisions are workload and contract decisions.",
+        "details": "The per-query asymptotic class is only one term in the comparison.",
+        "wrongOptionExplanationsByOptionId": {
+          "function_name": "Naming has no cost or correctness effect."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "query_count": "More queries increase repeated-scan cost and amortize setup.",
+          "mutation_rate": "Maintenance can dominate.",
+          "semantic_legality": "Fast incorrect lookups are unusable."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-010",
+      "prompt": "Which costs belong in the total workload for a sorted-copy binary-search strategy? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "copy_cost",
+            "text": "Copying the original data when mutation is not allowed."
+          },
+          {
+            "id": "sort_cost",
+            "text": "Sorting or otherwise constructing the ordered index."
+          },
+          {
+            "id": "query_costs",
+            "text": "The sum of all q binary-search query costs."
+          },
+          {
+            "id": "ignore_updates",
+            "text": "No cost for updates that rebuild the index."
+          }
+        ],
+        "acceptedOptionIds": [
+          "copy_cost",
+          "sort_cost",
+          "query_costs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The total cost is preprocessing plus queries plus any maintenance.",
+        "details": "Leaving out setup or rebuild work systematically biases the comparison toward binary search.",
+        "wrongOptionExplanationsByOptionId": {
+          "ignore_updates": "Maintenance must be included when updates occur."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "copy_cost": "The representation must be created somewhere.",
+          "sort_cost": "This enables legal binary search.",
+          "query_costs": "Every query contributes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-011",
+      "prompt": "Which workloads favor repeated linear scans? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "few_queries",
+            "text": "Very few queries on unsorted data with no existing index."
+          },
+          {
+            "id": "frequent_rebuild",
+            "text": "Updates force a full index rebuild before most queries."
+          },
+          {
+            "id": "illegal_reorder",
+            "text": "The output contract depends on original order and no provenance-preserving index is available."
+          },
+          {
+            "id": "stable_many_sorted",
+            "text": "Many aligned queries on a stable sorted random-access array."
+          }
+        ],
+        "acceptedOptionIds": [
+          "few_queries",
+          "frequent_rebuild",
+          "illegal_reorder"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Scanning can win through lower setup cost, lower memory, or stronger semantic fit.",
+        "details": "Repeated binary search wins when order and access already exist or can be amortized safely.",
+        "wrongOptionExplanationsByOptionId": {
+          "stable_many_sorted": "This favors binary search."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "few_queries": "Setup may not amortize.",
+          "frequent_rebuild": "Maintenance can erase lookup savings.",
+          "illegal_reorder": "Scanning remains the correct method."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-012",
+      "prompt": "Which changes can move a workload from scan-preferred to binary-search-preferred? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "increase_q",
+            "text": "Increase the number of aligned queries while keeping data stable."
+          },
+          {
+            "id": "existing_sorted",
+            "text": "Receive the data already sorted in random-access form."
+          },
+          {
+            "id": "maintained_index",
+            "text": "Maintain an index incrementally at acceptable update cost."
+          },
+          {
+            "id": "arbitrary_predicate",
+            "text": "Change the query to an arbitrary nonmonotonic condition."
+          }
+        ],
+        "acceptedOptionIds": [
+          "increase_q",
+          "existing_sorted",
+          "maintained_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decision boundary responds to query volume, representation, and maintenance.",
+        "details": "Changing to a nonmonotonic predicate moves in the opposite direction.",
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_predicate": "That removes the binary-search invariant."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "increase_q": "The one-time setup is spread across more queries.",
+          "existing_sorted": "The preprocessing term disappears.",
+          "maintained_index": "Queries gain legal fast access."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-013",
+      "prompt": "Arrange the analysis of repeated-query preprocessing.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_workload",
+            "text": "State n, query count q, update frequency, and required outputs."
+          },
+          {
+            "id": "list_strategies",
+            "text": "Describe repeated scan and each legal preprocessed representation."
+          },
+          {
+            "id": "derive_totals",
+            "text": "Derive preprocessing, maintenance, per-query, memory, and output costs."
+          },
+          {
+            "id": "choose_boundary",
+            "text": "Choose the strategy for the actual workload and identify when the choice would flip."
+          }
+        ],
+        "canonicalOrder": [
+          "state_workload",
+          "list_strategies",
+          "derive_totals",
+          "choose_boundary"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Repeated-query decisions require a complete workload model.",
+        "details": "A per-query comparison omits the terms that usually determine the break-even point."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-014",
+      "prompt": "Arrange the lifecycle of a sorted-copy strategy for stable data.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "copy_if_needed",
+            "text": "Copy the data if original order or immutability must be preserved."
+          },
+          {
+            "id": "sort_once",
+            "text": "Sort the query representation once."
+          },
+          {
+            "id": "answer_queries",
+            "text": "Binary-search each aligned query."
+          },
+          {
+            "id": "retain_index",
+            "text": "Retain the representation for future queries instead of rebuilding it."
+          }
+        ],
+        "canonicalOrder": [
+          "copy_if_needed",
+          "sort_once",
+          "retain_index",
+          "answer_queries"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The representation must exist and persist before repeated queries can amortize it.",
+        "details": "Rebuilding per query destroys the intended cost model."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-015",
+      "prompt": "Arrange the review after an update to preprocessed search data.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "classify_update",
+            "text": "Determine whether the update preserves the index ordering and metadata."
+          },
+          {
+            "id": "repair_or_rebuild",
+            "text": "Apply the required incremental repair or full rebuild."
+          },
+          {
+            "id": "verify_freshness",
+            "text": "Verify queries will not read stale structure."
+          },
+          {
+            "id": "resume_queries",
+            "text": "Use binary search only after the ordered representation is valid again."
+          }
+        ],
+        "canonicalOrder": [
+          "classify_update",
+          "repair_or_rebuild",
+          "verify_freshness",
+          "resume_queries"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "A stale index invalidates correctness, not just performance.",
+        "details": "The maintenance cost belongs to the repeated-query comparison."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-016",
+      "prompt": "An unsorted static array of n values receives q exact queries. Compare q linear scans with sorting once and then binary-searching all queries.",
+      "constraints": [
+        "Comparison sorting costs O(n log n).",
+        "Each scan costs O(n).",
+        "Each binary search costs O(log n)."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "repeated_scan_time",
+          "preprocessed_time"
+        ],
+        "availableValuesByDimension": {
+          "repeated_scan_time": [
+            "O(n + q)",
+            "O(qn)",
+            "O(n log n)",
+            "O(q log n)"
+          ],
+          "preprocessed_time": [
+            "O(n log n + q log n)",
+            "O(qn)",
+            "O(n + q)",
+            "O(nq log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "repeated_scan_time": [
+            "O(qn)"
+          ],
+          "preprocessed_time": [
+            "O(n log n + q log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "repeated_scan_time": {
+            "q_full_scans": "O(qn)"
+          },
+          "preprocessed_time": {
+            "sort_plus_queries": "O(n log n + q log n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The workload comparison includes both setup and every query.",
+        "details": "The preprocessed strategy gains as q grows, but it is not automatically superior for small q."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-017",
+      "prompt": "Using the same model, approximately which symbolic query scale makes sorting once competitive with repeated scans for large n?",
+      "constraints": [
+        "Compare qn with n log n + q log n.",
+        "Treat n - log n as Θ(n) for large n."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "break_even_q"
+        ],
+        "availableValuesByDimension": {
+          "break_even_q": [
+            "Θ(1)",
+            "Θ(log n)",
+            "Θ(n)",
+            "Θ(n log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "break_even_q": [
+            "Θ(log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "break_even_q": {
+            "solve_workloads": "Θ(log n)"
+          }
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "The setup cost becomes amortized after roughly logarithmically many full-array scans.",
+        "details": "The exact practical crossover depends on constants, but the symbolic comparison shows why query count matters."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-018",
+      "prompt": "A sorted copy of n records is built and stores each record plus its original index. q binary searches are then performed. Select total time and additional representation space.",
+      "constraints": [
+        "Copying is O(n).",
+        "Sorting is O(n log n).",
+        "Each query is O(log n)."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "additional_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(qn)",
+            "O(n log n + q log n)",
+            "O(n + q)",
+            "O(q log n)"
+          ],
+          "additional_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(qn)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n + q log n)"
+          ],
+          "additional_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "copy_sort_queries": "O(n log n + q log n)"
+          },
+          "additional_space": {
+            "sorted_copy_with_provenance": "O(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Preserving original identity can make preprocessing correct but consumes linear extra memory.",
+        "details": "The time-space tradeoff must be checked against the workload constraints."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-019",
+      "prompt": "A dataset receives u updates. After each update, a full O(n log n) sorted index rebuild occurs, followed by r binary-search queries. Compare this with scanning each of the ur queries without an index.",
+      "constraints": [
+        "n is treated as the same scale for each update epoch.",
+        "Each query scan is O(n)."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "rebuild_strategy_time",
+          "scan_strategy_time"
+        ],
+        "availableValuesByDimension": {
+          "rebuild_strategy_time": [
+            "O(u n log n + u r log n)",
+            "O(ur n)",
+            "O(n log n + r log n)",
+            "O(u+n+r)"
+          ],
+          "scan_strategy_time": [
+            "O(u n log n)",
+            "O(ur n)",
+            "O(rn)",
+            "O(u log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "rebuild_strategy_time": [
+            "O(u n log n + u r log n)"
+          ],
+          "scan_strategy_time": [
+            "O(ur n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "rebuild_strategy_time": {
+            "per_epoch_rebuild_and_queries": "O(u n log n + u r log n)"
+          },
+          "scan_strategy_time": {
+            "all_epoch_queries_scan": "O(ur n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Update frequency creates a new break-even comparison per epoch.",
+        "details": "A large total q is not enough if every small batch of queries pays another full rebuild."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-020",
+      "prompt": "A sorted linked list is copied once into an array in O(n), then q exact queries use O(log n) binary search. Compare with q linked-list scans.",
+      "constraints": [
+        "The copied array uses O(n) additional space.",
+        "Each linked-list scan is O(n)."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "array_strategy_time",
+          "scan_time",
+          "array_strategy_space"
+        ],
+        "availableValuesByDimension": {
+          "array_strategy_time": [
+            "O(n + q log n)",
+            "O(qn)",
+            "O(n log n + q)",
+            "O(q log n)"
+          ],
+          "scan_time": [
+            "O(n + q)",
+            "O(qn)",
+            "O(q log n)",
+            "O(n log n)"
+          ],
+          "array_strategy_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(qn)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "array_strategy_time": [
+            "O(n + q log n)"
+          ],
+          "scan_time": [
+            "O(qn)"
+          ],
+          "array_strategy_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "array_strategy_time": {
+            "materialize_plus_queries": "O(n + q log n)"
+          },
+          "scan_time": {
+            "q_traversals": "O(qn)"
+          },
+          "array_strategy_space": {
+            "random_access_copy": "O(n)"
+          }
+        },
+        "maxPoints": 3
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Preprocessing can create random access as well as preserve order.",
+        "details": "The benefit must justify the linear representation space."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-021",
+      "prompt": "Each key comparison costs C. A stable sorted array receives q exact queries. Compare q binary searches with q linear scans.",
+      "constraints": [
+        "Binary search performs O(log n) comparisons per query.",
+        "A scan performs O(n) comparisons per query in the worst case."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "binary_time",
+          "scan_time"
+        ],
+        "availableValuesByDimension": {
+          "binary_time": [
+            "O(q log n)",
+            "O(qC log n)",
+            "O(qnC)",
+            "O(C log q)"
+          ],
+          "scan_time": [
+            "O(qn)",
+            "O(qC log n)",
+            "O(qnC)",
+            "O(nC)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "binary_time": [
+            "O(qC log n)"
+          ],
+          "scan_time": [
+            "O(qnC)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "binary_time": {
+            "comparisons_times_cost": "O(qC log n)"
+          },
+          "scan_time": {
+            "all_comparisons_times_cost": "O(qnC)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Expensive comparisons multiply both strategies, while binary search reduces how many comparisons are needed.",
+        "details": "The legality assumptions still precede this cost advantage."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-repeated-022",
+      "prompt": "A maintained ordered index supports O(log n) query and O(n) update. A plain array supports O(n) query and O(1) append. For q queries and u appends, compare total workload time.",
+      "constraints": [
+        "The O(n) index update includes maintaining sorted order.",
+        "Ignore output materialization."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "indexed_time",
+          "plain_time"
+        ],
+        "availableValuesByDimension": {
+          "indexed_time": [
+            "O(q log n + un)",
+            "O(qn + u)",
+            "O((q+u) log n)",
+            "O(qun)"
+          ],
+          "plain_time": [
+            "O(q log n + un)",
+            "O(qn + u)",
+            "O(q+u)",
+            "O(qu)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "indexed_time": [
+            "O(q log n + un)"
+          ],
+          "plain_time": [
+            "O(qn + u)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "indexed_time": {
+            "queries_plus_updates": "O(q log n + un)"
+          },
+          "plain_time": {
+            "scans_plus_appends": "O(qn + u)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The best representation depends jointly on query and update volume.",
+        "details": "An index with cheap queries can lose when updates are frequent and expensive."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_preprocessing_and_repeated_query_cost",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [
+      {
+        "setId": "contrast-binary-vs-scan-repeated-queries-and-preprocessing-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "repeated_queries_and_preprocessing",
+        "contrastedMentalUnitIds": [
+          "recognize_binary_search_signal",
+          "boundaries_and_loop_invariants",
+          "reason_about_indexed_scans"
+        ],
+        "falseHeuristicId": "binary_search_is_always_better_than_linear_scan",
+        "transferBoundary": "Pay preprocessing cost only when the query volume, mutation model, memory budget, and preserved semantics make the total workload cheaper than repeated scans.",
+        "itemIds": [
+          "alg-contrast-binary-scan-repeated-001",
+          "alg-contrast-binary-scan-repeated-002",
+          "alg-contrast-binary-scan-repeated-003",
+          "alg-contrast-binary-scan-repeated-004",
+          "alg-contrast-binary-scan-repeated-005",
+          "alg-contrast-binary-scan-repeated-006",
+          "alg-contrast-binary-scan-repeated-007",
+          "alg-contrast-binary-scan-repeated-008",
+          "alg-contrast-binary-scan-repeated-009",
+          "alg-contrast-binary-scan-repeated-010",
+          "alg-contrast-binary-scan-repeated-011",
+          "alg-contrast-binary-scan-repeated-012",
+          "alg-contrast-binary-scan-repeated-013",
+          "alg-contrast-binary-scan-repeated-014",
+          "alg-contrast-binary-scan-repeated-015",
+          "alg-contrast-binary-scan-repeated-016",
+          "alg-contrast-binary-scan-repeated-017",
+          "alg-contrast-binary-scan-repeated-018",
+          "alg-contrast-binary-scan-repeated-019",
+          "alg-contrast-binary-scan-repeated-020",
+          "alg-contrast-binary-scan-repeated-021",
+          "alg-contrast-binary-scan-repeated-022"
+        ]
+      }
+    ],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

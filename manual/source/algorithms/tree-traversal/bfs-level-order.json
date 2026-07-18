@@ -1,0 +1,364 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-tree-traversal-bfs_level_order-candidate-001",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-tree-traversal-candidate-0001",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "tree_traversal",
+    "primaryMentalUnitId": "bfs_level_order",
+    "patternFamilyId": "tree_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; not a human reviewer)",
+    "createdAt": "2026-07-18T16:17:19Z",
+    "contentBatchId": "algorithms-tree-traversal-bfs_level_order-candidate-001",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tree-bfs-first-level-meeting-threshold",
+      "prompt": "A proper binary tree is searched for the smallest depth at which the sum of values on that entire level reaches at least `T`.\nWhich traversal exposes the required stopping condition without first exploring deeper nodes?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "queue_by_level",
+            "text": "Breadth-first traversal with a queue and an explicit boundary for each level."
+          },
+          {
+            "id": "preorder_dfs",
+            "text": "Preorder DFS that follows one branch to its end before visiting siblings."
+          },
+          {
+            "id": "postorder_dfs",
+            "text": "Postorder DFS that completes descendants before their parents."
+          },
+          {
+            "id": "inorder_dfs",
+            "text": "Inorder DFS that visits left subtree, node, then right subtree."
+          }
+        ],
+        "acceptedOptionIds": [
+          "queue_by_level"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decision is defined over complete depths and asks for the first qualifying depth, so processing nodes in nondecreasing depth with explicit level boundaries is decisive.",
+        "details": "BFS places the root in a FIFO queue and processes all nodes at depth `d` before any node at depth `d+1`. Snapshotting the queue size at the start of a level identifies exactly the nodes whose values contribute to that level sum. Once the complete level reaches `T`, no deeper level can be the smallest qualifying depth. A DFS could compute depths and aggregate into a map, but it would need additional state and generally could not stop before exploring branches that reach deeper levels first.",
+        "wrongOptionExplanationsByOptionId": {
+          "preorder_dfs": "Preorder sees parents before descendants, which may look sufficient, but it can descend to depth three before visiting a sibling at depth one. It becomes suitable when the decision is branch-local rather than level-complete.",
+          "postorder_dfs": "Postorder deliberately delays parents until descendants finish, the opposite of shallowest-first processing. It is appropriate for bottom-up subtree properties.",
+          "inorder_dfs": "Inorder gives an ordered left-node-right sequence, not nondecreasing depth. It is appropriate when binary child position or BST order is decisive."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "level_order_processing"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "The sum must include every node on a depth before the depth can qualify.",
+        "Depth of the root is `0`."
+      ]
+    },
+    {
+      "id": "alg-tree-bfs-level-batch-sequence",
+      "prompt": "Order the repeated operations for producing one output list per tree level from a FIFO queue. The queue initially contains the non-null root.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "snapshot_level_size",
+            "text": "Record the queue's current size as `levelSize` and create a new empty `levelValues` list."
+          },
+          {
+            "id": "dequeue_fixed_batch",
+            "text": "Dequeue and process exactly `levelSize` nodes, appending each value to `levelValues`."
+          },
+          {
+            "id": "enqueue_next_level",
+            "text": "As each batch node is processed, enqueue its non-null children for the next level."
+          },
+          {
+            "id": "commit_level",
+            "text": "After all `levelSize` nodes are processed, append `levelValues` to the result."
+          }
+        ],
+        "canonicalOrder": [
+          "snapshot_level_size",
+          "dequeue_fixed_batch",
+          "enqueue_next_level",
+          "commit_level"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "A fixed size captured before child insertion separates the current frontier from the next frontier, and a fresh level accumulator makes that boundary explicit.",
+        "details": "The queue may contain nodes from exactly one current level at the start of an iteration. Capturing its size freezes that membership before children expand the queue. The processing and enqueue operations happen together for each node, but conceptually the fixed batch is consumed while next-level nodes are accumulated. Only after all current nodes are handled is the level result complete. Reusing one global `levelValues` list without resetting it would merge levels; making it local to the iteration gives the level aggregate a clear owner."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "level_order_processing"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Children are enqueued left before right.",
+        "Scoring models the conceptual dependency order; dequeue and child enqueue occur inside the same fixed-size loop.",
+        "Scoring uses preserved adjacent relations."
+      ]
+    },
+    {
+      "id": "alg-tree-bfs-snapshot-before-enqueue",
+      "prompt": "At the start of a BFS iteration, the queue contains exactly the nodes at the current depth.\nWhy must `levelSize = queue.size()` be captured before processing and enqueueing their children?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "freeze_current_frontier",
+            "text": "It freezes how many dequeues belong to the current level even though the queue grows with next-level children."
+          },
+          {
+            "id": "optimize_to_constant_space",
+            "text": "It guarantees that BFS uses `O(1)` auxiliary space."
+          },
+          {
+            "id": "avoid_null_check",
+            "text": "It makes child null checks unnecessary."
+          },
+          {
+            "id": "sort_level_values",
+            "text": "It automatically sorts values within the level."
+          }
+        ],
+        "acceptedOptionIds": [
+          "freeze_current_frontier"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Queue size is a moving value during expansion, so the pre-expansion snapshot is the boundary between the current and next frontiers.",
+        "details": "If the loop condition repeatedly used the live queue size, newly enqueued children could be consumed in the same iteration and levels would merge. The snapshot gives a stable count of current-depth nodes. It does not reduce the frontier memory, eliminate child validation, or impose any value order beyond the chosen enqueue order. An alternative implementation can use two separate queues or store `(node, depth)` pairs; those are different representations of the same frontier boundary.",
+        "wrongOptionExplanationsByOptionId": {
+          "optimize_to_constant_space": "The snapshot is one integer, but the queue may still hold up to the tree's maximum width. Space remains `O(w)`, not constant.",
+          "avoid_null_check": "Queue batching says nothing about whether child references exist. Null children must still be excluded or handled under an explicit policy.",
+          "sort_level_values": "FIFO preserves insertion order, not numeric order. Sorting requires an explicit comparison step, changes the time cost, and is valid only when sorted values are part of the output contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "level_order_processing"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The implementation uses one queue for both current and next frontiers."
+      ]
+    },
+    {
+      "id": "alg-tree-bfs-empty-root-policy",
+      "prompt": "A function returns a list of levels, with one inner list per depth. What should it return when `root` is null?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_outer_list",
+            "text": "An empty outer list and no queue initialization."
+          },
+          {
+            "id": "one_empty_level",
+            "text": "A list containing one empty inner list."
+          },
+          {
+            "id": "one_zero_level",
+            "text": "A list containing one level with the value `0`."
+          },
+          {
+            "id": "enqueue_null",
+            "text": "Enqueue null and let the normal dequeue logic determine the output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_outer_list"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An empty tree has zero levels, so the result contains no level records and traversal never enqueues a non-node.",
+        "details": "The output contract maps each actual depth to one nonempty group of actual nodes. With no root there is no depth zero and therefore no group. Returning `[[]]` invents a level with no nodes, while returning `[[0]]` invents a node value. Enqueueing null either requires special markers throughout the loop or causes a dereference failure. A serializer that intentionally records missing positions may use null markers, but that is a different output contract from a list of existing-node levels.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_empty_level": "This is plausible because some APIs represent an empty collection with an empty inner container, but it claims that one depth exists. It is valid only if the output schema explicitly reserves a root level even for an absent root.",
+          "one_zero_level": "Zero may be a real payload and cannot stand for missing structure. This fabricates both a level and a node.",
+          "enqueue_null": "Normal node processing expects fields on a real node. Null markers require a separate explicit serialization policy and termination rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "level_order_processing"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Only actual nodes appear in the output.",
+        "Every emitted level is nonempty."
+      ]
+    },
+    {
+      "id": "alg-tree-bfs-tree-versus-graph-enqueue-policy",
+      "prompt": "Compare BFS on a proper tree with BFS on a graph that may contain cycles. Which enqueue policy correctly states the boundary?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "tree_no_visited_graph_mark_on_enqueue",
+            "text": "A proper tree needs no visited set; a cyclic graph should mark a vertex visited when it is enqueued so it is not enqueued again."
+          },
+          {
+            "id": "both_no_visited",
+            "text": "Neither structure needs visited state because FIFO order prevents revisits."
+          },
+          {
+            "id": "both_mark_values",
+            "text": "Both should mark node values visited because values identify nodes."
+          },
+          {
+            "id": "graph_mark_on_dequeue_only",
+            "text": "A graph should allow repeated enqueues and mark a vertex only after it is dequeued."
+          }
+        ],
+        "acceptedOptionIds": [
+          "tree_no_visited_graph_mark_on_enqueue"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Tree structure prevents alternate routes, while a graph needs identity-based discovery state; marking on enqueue prevents duplicate frontier entries.",
+        "details": "In a proper tree, each child has one parent and there are no cycles, so every reachable node is enqueued once by construction. In a graph, several edges may discover the same vertex before its first dequeue. Marking at enqueue time claims the vertex at first discovery and preserves a bounded frontier and standard shortest-edge-distance semantics. Marking only on dequeue can still avoid repeated expansion with extra checks, but duplicates may already occupy the queue. Values are not identities unless the graph contract explicitly says so.",
+        "wrongOptionExplanationsByOptionId": {
+          "both_no_visited": "FIFO controls processing order but does not prevent a cycle from enqueueing the same vertex indefinitely. It is sufficient only for a structure with unique parent paths.",
+          "both_mark_values": "Distinct nodes may share a value, so value-based marking loses nodes. Identity-based marking is required when the graph can revisit references.",
+          "graph_mark_on_dequeue_only": "This may eventually suppress duplicate expansion, but multiple parents can enqueue the same vertex before its first dequeue. Mark-on-enqueue is the clean discovery invariant; dequeue marking is valid only with a carefully accepted duplicate-queue cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Tree nodes may have duplicate values.",
+        "Graph edges are unweighted."
+      ]
+    },
+    {
+      "id": "alg-tree-bfs-width-space",
+      "prompt": "A level-order traversal enqueues each non-null tree node once and stores no other node-indexed structure. Let `n` be node count, `h` height, and `w` maximum number of nodes on any level. Determine time and auxiliary space.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(h)",
+            "O(w)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(h)",
+            "O(w)",
+            "O(n log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(w)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Every node is dequeued once, and the queue's peak occupancy is bounded by the widest active frontier.",
+        "details": "Constant work per enqueue and dequeue across `n` nodes gives `O(n)` time. The queue contains nodes from at most the current and next frontier; asymptotically its maximum size is `O(w)`. A complete tree can have `w = Θ(n)`, while a chain has `w = 1`. This differs from recursive DFS, whose live frames are `O(h)`. Both traversals can be linear in time, so the decisive auxiliary-space parameter is tree shape and the chosen frontier representation."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "level_order_processing"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Do not count the returned level lists or the input tree.",
+        "Each node is enqueued exactly once."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

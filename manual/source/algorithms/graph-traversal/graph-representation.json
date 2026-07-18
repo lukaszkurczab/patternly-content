@@ -1,0 +1,412 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-graph-traversal-graph_representation-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-graph-traversal-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "graph_traversal",
+    "primaryMentalUnitId": "graph_representation",
+    "patternFamilyId": "graph_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring; human review required",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-graph-traversal-graph_representation-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-gt-repr-001",
+      "prompt": "A graph has 200,000 vertices and 260,000 undirected edges. The main operation is repeatedly iterating over the neighbors of a reached vertex. Which representation best matches that operation profile?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "adjacency_list",
+            "text": "An adjacency list with one neighbor collection per vertex."
+          },
+          {
+            "id": "adjacency_matrix",
+            "text": "A 200,000 × 200,000 adjacency matrix."
+          },
+          {
+            "id": "edge_list",
+            "text": "One flat list of edge pairs, scanned from the beginning whenever a vertex is expanded."
+          },
+          {
+            "id": "parent_array",
+            "text": "One parent pointer per vertex, because every traversal can be treated as a tree."
+          }
+        ],
+        "acceptedOptionIds": [
+          "adjacency_list"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sparse neighbor iteration is the decisive operation, so adjacency lists expose exactly the incident edges without quadratic storage.",
+        "details": "An adjacency list stores O(V + E) structural data and lets a traversal inspect the neighbors that actually exist. A matrix would reserve O(V²) cells and scanning a row costs O(V), even when the vertex has few neighbors. A flat edge list can represent the input, but it is not an efficient neighbor-access index unless it is transformed. The transfer rule is to choose the representation from the operations the algorithm must perform—not from the graph label alone.",
+        "wrongOptionExplanationsByOptionId": {
+          "adjacency_matrix": "A matrix gives constant-time edge membership, but its quadratic storage and row scans are disproportionate for this sparse graph.",
+          "edge_list": "An edge list is compact, but repeated neighbor expansion would rescan unrelated edges and obscure the traversal cost.",
+          "parent_array": "A general graph may contain cycles and multiple incoming edges; a parent array does not represent all legal neighbors."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_graph_representation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-repr-002",
+      "prompt": "A directed graph has 2,000 vertices, is close to complete, and a later phase performs millions of queries of the form ‘does edge u → v exist?’. Memory for roughly four million booleans is explicitly available. Which representation is justified?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "adjacency_matrix",
+            "text": "An adjacency matrix indexed by [u][v]."
+          },
+          {
+            "id": "adjacency_list",
+            "text": "An unsorted adjacency list, because matrices are categorically wrong for graphs."
+          },
+          {
+            "id": "edge_list",
+            "text": "A flat edge list searched linearly for every query."
+          },
+          {
+            "id": "bfs_precompute",
+            "text": "Run BFS from every vertex; BFS is faster than DFS, so the representation no longer matters."
+          }
+        ],
+        "acceptedOptionIds": [
+          "adjacency_matrix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "High density, affordable O(V²) storage, and dominant constant-time edge-membership queries cross the boundary where a matrix is appropriate.",
+        "details": "An adjacency matrix answers edge membership in O(1) and its O(V²) storage is already accepted by the prompt. In a near-complete graph, an adjacency list also contains Θ(V²) edge entries, so the matrix does not introduce an asymptotically different storage order. The false heuristic is that adjacency matrices are always wrong; the correct decision depends on density, memory, and the operations being optimized. This does not imply that matrix rows are always best for sparse traversal.",
+        "wrongOptionExplanationsByOptionId": {
+          "adjacency_list": "Adjacency lists remain valid, but each membership query may scan a long neighbor list; the premise explicitly makes matrix storage affordable and membership dominant.",
+          "edge_list": "A flat edge list makes each membership query proportional to E and ignores the repeated-query requirement.",
+          "bfs_precompute": "Traversal choice does not remove the need to store or query edges, and all-sources traversal would be far more work than direct matrix lookup."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_graph_representation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-repr-003",
+      "prompt": "A 4,000 × 4,000 grid allows movement to an in-bounds, non-blocked orthogonal neighbor. The task will traverse reachable cells once. How should the graph normally be represented?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "implicit_neighbors",
+            "text": "Treat each cell as a state and generate up to four legal neighbors when the cell is expanded."
+          },
+          {
+            "id": "full_matrix",
+            "text": "Materialize an adjacency matrix with one row and column for every grid cell."
+          },
+          {
+            "id": "row_tree",
+            "text": "Treat every row as a tree and use parent links between cells."
+          },
+          {
+            "id": "visited_as_representation",
+            "text": "Store only a visited set; marking on dequeue is equivalent to representing the edges."
+          }
+        ],
+        "acceptedOptionIds": [
+          "implicit_neighbors"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The grid supplies an implicit bounded-degree graph, so legal neighbors can be generated on demand without materializing edges.",
+        "details": "Map a cell (r, c) to a graph state and define an edge for each permitted move. Because every expansion checks only a constant number of directions, explicit adjacency storage adds little value and substantial memory. Bounds, obstacles, and the movement rule remain part of neighbor generation. The transfer boundary is any problem where neighbor computation itself is expensive or reused so often that an explicit index becomes justified; the default grid traversal does not cross it.",
+        "wrongOptionExplanationsByOptionId": {
+          "full_matrix": "The grid already defines local adjacency; a matrix over 16 million cells would be quadratic in the number of cells and unnecessary.",
+          "row_tree": "Grid movement can create cycles and cross-row connections, so tree parent links do not encode the legal state graph.",
+          "visited_as_representation": "Visited state records discovery, not which moves are legal, and late marking can allow duplicate frontier entries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_graph_representation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-repr-004",
+      "prompt": "Select all actions required to build an adjacency-list representation of an undirected graph with vertices 0 through n−1 from edge pairs {u, v}.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "initialize_all_vertices",
+            "text": "Create an empty neighbor collection for every vertex 0 through n−1."
+          },
+          {
+            "id": "append_both_directions",
+            "text": "For each {u, v}, add v to u’s list and u to v’s list."
+          },
+          {
+            "id": "append_input_direction_only",
+            "text": "For each {u, v}, add only v to u’s list because the input pair already names the edge."
+          },
+          {
+            "id": "mark_visited_while_building",
+            "text": "Mark u and v visited while reading the edge so traversal cannot revisit them."
+          }
+        ],
+        "acceptedOptionIds": [
+          "initialize_all_vertices",
+          "append_both_directions"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Undirected adjacency requires both directions, and the declared vertex set must exist even when a vertex has no incident edge.",
+        "details": "The representation contract has two independent parts: all declared vertices are present, and every undirected edge is navigable from both endpoints. Visited state is session-specific traversal state and must not be baked into graph construction. For directed input, only the documented direction is inserted; for an undirected input, symmetric insertion is required. This separation prevents representation errors from being misdiagnosed as BFS or DFS errors.",
+        "wrongOptionExplanationsByOptionId": {
+          "append_input_direction_only": "That construction represents a directed edge u → v and loses traversal in the reverse direction.",
+          "mark_visited_while_building": "Visited state belongs to a particular traversal, not to the static representation; marking endpoints during construction would suppress valid exploration."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "initialize_all_vertices": "Without entries for all n vertices, isolated vertices disappear from the representation.",
+          "append_both_directions": "An undirected edge must be available from either endpoint during neighbor iteration."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_graph_representation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-repr-005",
+      "prompt": "The input declares n = 6 vertices and gives only the undirected edges {0,1} and {1,2}. Which representation detail is necessary before counting connected components?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "six_entries",
+            "text": "Represent all six vertices, including empty neighbor lists for 3, 4, and 5."
+          },
+          {
+            "id": "endpoint_vertices_only",
+            "text": "Create entries only for 0, 1, and 2 because only endpoints belong to the graph."
+          },
+          {
+            "id": "bfs_discovers_missing",
+            "text": "Omit empty entries; BFS will discover the missing vertices faster than DFS."
+          },
+          {
+            "id": "parent_chain",
+            "text": "Store only 0 ← 1 ← 2 as a tree and infer the remaining vertices later."
+          }
+        ],
+        "acceptedOptionIds": [
+          "six_entries"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The vertex set is defined by n, not by the edge endpoints; isolated vertices are material graph states.",
+        "details": "A representation used for whole-graph work must preserve vertices of degree zero. Building the vertex set only from edge endpoints silently changes the problem and undercounts components. This boundary matters whenever vertices are declared separately from edges, including dependency sets with tasks that have no dependencies. Traversal strategy cannot compensate for missing states.",
+        "wrongOptionExplanationsByOptionId": {
+          "endpoint_vertices_only": "The declared vertex set includes 3, 4, and 5; each isolated vertex is a component and must remain visible.",
+          "bfs_discovers_missing": "No traversal can discover a vertex that was removed from the represented vertex set, and BFS versus DFS does not repair the omission.",
+          "parent_chain": "A tree fragment does not encode the declared isolated vertices or the full graph contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_graph_representation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "count_components"
+      }
+    },
+    {
+      "id": "alg-gt-repr-006",
+      "prompt": "Which representation rule remains correct across sparse and dense graph tasks?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "operation_profile",
+            "text": "Choose from graph density, memory limits, and the dominant operations such as neighbor iteration or edge membership."
+          },
+          {
+            "id": "lists_always",
+            "text": "Always choose adjacency lists because adjacency matrices are always wrong."
+          },
+          {
+            "id": "bfs_decides",
+            "text": "Choose the representation that makes BFS possible, because BFS is always faster than DFS."
+          },
+          {
+            "id": "visited_decides",
+            "text": "Representation is irrelevant if vertices are marked visited when dequeued."
+          }
+        ],
+        "acceptedOptionIds": [
+          "operation_profile"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Representation is a cost-model decision driven by density, memory, and required operations, not by a universal graph slogan.",
+        "details": "Adjacency lists provide proportional storage and neighbor iteration for sparse graphs. Matrices provide constant-time membership and predictable dense storage when O(V²) is acceptable. Implicit graphs generate transitions on demand. BFS versus DFS and visited timing are traversal mechanics layered on top of that representation; they are not representation-selection rules. The transfer rule is to name the operations first, then choose the data structure that supports them within constraints.",
+        "wrongOptionExplanationsByOptionId": {
+          "lists_always": "Lists are often appropriate, but dense graphs with affordable memory and dominant membership queries can justify a matrix.",
+          "bfs_decides": "Both traversals can use lists or matrices, and their full-traversal asymptotics are usually governed by representation rather than a universal speed ranking.",
+          "visited_decides": "Visited timing affects duplicate frontier work; it does not remove storage and neighbor-access costs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_graph_representation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-repr-007",
+      "prompt": "A state is a four-wheel lock code. One move increments or decrements exactly one wheel, except that forbidden codes cannot be entered. The task asks whether a target code is reachable. What representation avoids unnecessary preprocessing?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "generate_transitions",
+            "text": "Represent a code as the state and generate its legal one-move neighbors when expanded."
+          },
+          {
+            "id": "all_codes_matrix",
+            "text": "Prebuild an adjacency matrix over every pair of possible codes."
+          },
+          {
+            "id": "single_parent",
+            "text": "Assign each code one parent because search states form a tree."
+          },
+          {
+            "id": "queue_is_graph",
+            "text": "Use a queue as the representation; a queue makes the search BFS and therefore faster than DFS."
+          }
+        ],
+        "acceptedOptionIds": [
+          "generate_transitions"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The transition rule computes a small neighbor set directly, so the state graph should remain implicit.",
+        "details": "Graph representation does not require an explicit edge file. The lock codes are vertices and legal one-wheel changes are edges generated from the current code. A visited set prevents cycling during the chosen traversal, but it is distinct from the transition function. This transfers to word transformations, board states, and other search spaces where neighbors are algorithmically generated.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_codes_matrix": "Most code pairs are not adjacent; local transition generation is direct and avoids quadratic preprocessing.",
+          "single_parent": "A code can be reached by many move sequences and cycles are possible, so one static parent does not represent all transitions.",
+          "queue_is_graph": "A queue controls traversal order but does not define which code transitions are legal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_graph_representation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "graph-representation-learn-approach-candidate-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-gt-repr-001",
+            "alg-gt-repr-002",
+            "alg-gt-repr-003",
+            "alg-gt-repr-004",
+            "alg-gt-repr-005",
+            "alg-gt-repr-006",
+            "alg-gt-repr-007"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

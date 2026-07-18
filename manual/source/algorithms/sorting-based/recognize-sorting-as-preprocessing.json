@@ -1,0 +1,576 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sorting-based-recognize_sorting_as_preprocessing-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sorting-based-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sorting_based",
+    "primaryMentalUnitId": "recognize_sorting_as_preprocessing",
+    "patternFamilyId": "sorting_based"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sorting-based-recognize_sorting_as_preprocessing-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sort-recognize-01-closest-gap-signal",
+      "prompt": "A collection of unsorted sensor readings must be checked for the minimum absolute difference between any two distinct readings. Original input order is irrelevant. Which preprocessing exposes the decisive comparisons?",
+      "constraints": [
+        "There are at least two readings.",
+        "Only the minimum value difference is required, not the original positions."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "compare_first_to_all",
+            "text": "Compare only the first reading with every later reading."
+          },
+          {
+            "id": "preserve_random_order",
+            "text": "Keep the random order and compare each reading only with its current neighbor."
+          },
+          {
+            "id": "sort_by_input_position",
+            "text": "Sort by original position, which reproduces the input unchanged."
+          },
+          {
+            "id": "sort_then_neighbors",
+            "text": "Sort the readings by value, then compare adjacent values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_then_neighbors"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Value sorting makes every globally closest pair adjacent, so a linear neighbour scan becomes sufficient.",
+        "details": "In one dimension, assume a closest pair were separated by another sorted value. That intervening value would be at least as close to one endpoint, contradicting the need to inspect a non-adjacent pair first. Sorting therefore reveals the local structure that the follow-up scan consumes. The transformation is legal here because neither original order nor original indices belong to the answer contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "compare_first_to_all": "The closest pair may exclude the first reading, so this restricted comparison set has no correctness guarantee.",
+          "preserve_random_order": "Random adjacency does not correspond to numerical closeness; the decisive pair can remain far apart in the input.",
+          "sort_by_input_position": "Sorting by a key that reproduces input order reveals no value-order structure and does not reduce the required comparisons."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_structure_revealed_by_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-recognize-02-preprocess-then-consume",
+      "prompt": "Order the reasoning steps for deciding whether sorting is a valid preprocessing stage for a proposed linear follow-up pass.",
+      "constraints": [
+        "The final algorithm may transform the input only when the output contract permits it.",
+        "The goal is to justify the preprocessing, not merely to write a sort call."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_output_contract",
+            "text": "State which order, identity, and mutation guarantees the output must preserve."
+          },
+          {
+            "id": "account_total_cost",
+            "text": "Include sorting and any copied state in the final cost model."
+          },
+          {
+            "id": "prove_followup_suffices",
+            "text": "Show why the proposed scan or pointer movement covers every required candidate."
+          },
+          {
+            "id": "name_revealed_relation",
+            "text": "Name the relation that sorting would make adjacent or monotone."
+          }
+        ],
+        "canonicalOrder": [
+          "state_output_contract",
+          "name_revealed_relation",
+          "prove_followup_suffices",
+          "account_total_cost"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Legality comes first, then the revealed invariant, then coverage of candidates, and finally the complete cost.",
+        "details": "A sort-based solution is not justified by a fast-looking second phase alone. First confirm that reordering or copying is compatible with the result. Next identify the exact ordered relation—such as equal values becoming contiguous or pair sums becoming monotone. Prove that the downstream procedure cannot discard a valid answer. Only after correctness is established should the analysis combine preprocessing, scanning, and storage costs."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_structure_revealed_by_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-recognize-03-fewer-than-two-values",
+      "prompt": "A function returns the smallest gap between two distinct values after sorting. What must happen when the input contains zero or one value?",
+      "constraints": [
+        "The contract requires a pair of distinct input positions.",
+        "The API has an explicit 'no pair' result available."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "return_no_pair",
+            "text": "Return the explicit 'no pair' result before attempting the scan."
+          },
+          {
+            "id": "return_zero",
+            "text": "Return 0 because a sorted singleton has no inversion."
+          },
+          {
+            "id": "duplicate_value",
+            "text": "Duplicate the only value so a pair exists."
+          },
+          {
+            "id": "read_missing_neighbor",
+            "text": "Sort and compare positions 0 and 1 anyway."
+          }
+        ],
+        "acceptedOptionIds": [
+          "return_no_pair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting cannot create the two distinct input elements required by the result contract.",
+        "details": "The preprocessing may rearrange existing elements, but it does not change the cardinality or authorize a fabricated partner. Returning zero would claim that a real pair has gap zero, which is different from having no pair. The boundary check therefore precedes any adjacent comparison. The same rule applies to pair-sum and closest-pair preprocessing whenever the answer requires two distinct occurrences.",
+        "wrongOptionExplanationsByOptionId": {
+          "return_zero": "Zero is a valid measured gap only when two distinct occurrences with equal value actually exist; absence of a pair is a different result.",
+          "duplicate_value": "Creating an extra occurrence changes the input and violates the distinct-position requirement.",
+          "read_missing_neighbor": "Position 1 is outside the input, so the scan would be invalid rather than merely unproductive."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_structure_revealed_by_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-recognize-04-priority-order-needs-total-key",
+      "prompt": "Tasks will be sorted once and then processed from left to right. The contract requires lower priority number first; ties require earlier arrival time, then smaller task ID. Which preprocessing key is sufficient?",
+      "constraints": [
+        "The produced processing order must be deterministic.",
+        "Task IDs are unique."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "priority_only",
+            "text": "Sort by priority only and accept any order among ties."
+          },
+          {
+            "id": "priority_arrival_id",
+            "text": "Sort by (priority, arrivalTime, taskId)."
+          },
+          {
+            "id": "arrival_only",
+            "text": "Sort by arrival time only."
+          },
+          {
+            "id": "task_id_only",
+            "text": "Sort by task ID only."
+          }
+        ],
+        "acceptedOptionIds": [
+          "priority_arrival_id"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The downstream scan consumes one fixed order, so the sort key must encode every contractually significant tie-break.",
+        "details": "Sorting is useful here because it materializes the exact processing sequence before the linear pass. A comparator that treats distinct tied tasks as equal leaves their relative order dependent on stability, prior order, or implementation details. Since arrival time and task ID affect the required answer, both belong in the total key. If the contract truly accepted arbitrary tie order, the shorter key could be sufficient.",
+        "wrongOptionExplanationsByOptionId": {
+          "priority_only": "This omits two required tie-breaks and cannot guarantee the specified deterministic sequence.",
+          "arrival_only": "Arrival time is secondary; it may place a lower-priority task ahead of a higher-priority one.",
+          "task_id_only": "Task ID is the final tie-break, not the primary scheduling rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_structure_revealed_by_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-recognize-05-decorate-before-sort",
+      "prompt": "An unsorted array must be preprocessed for a pair-sum search, and the result must return original indices. Select all preparations that preserve enough identity for a correct sort-based solution.",
+      "constraints": [
+        "Two distinct occurrences may have the same value.",
+        "The returned pair must use indices from the original array."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "overwrite_with_rank",
+            "text": "Replace each array entry with its position in the sorted array."
+          },
+          {
+            "id": "decorate_value_index",
+            "text": "Create records (value, originalIndex) and sort those records by value."
+          },
+          {
+            "id": "sort_values_only",
+            "text": "Sort only the raw values and infer their old indices afterward without saved identity."
+          },
+          {
+            "id": "sort_index_permutation",
+            "text": "Sort a permutation of original indices using the corresponding values as keys."
+          }
+        ],
+        "acceptedOptionIds": [
+          "decorate_value_index",
+          "sort_index_permutation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sort-based pair search remains legal only when each ordered occurrence still carries an unambiguous original identity.",
+        "details": "Decorated records and an index permutation represent the same preservation strategy: order values for the search while retaining a stable reference to the source occurrence. Sorting raw duplicate values loses the mapping because equal occurrences become indistinguishable. A sorted rank is also not an original index. This requirement should be identified before choosing sorting as preprocessing, not patched after the search returns a pair.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_values_only": "Without saved occurrence identity, duplicate values can map to several original positions and the required pair cannot be reconstructed reliably.",
+          "overwrite_with_rank": "A sorted rank describes the transformed order and is not the original position requested by the contract."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "decorate_value_index": "Decorating values is a direct way to preserve occurrence identity through reordering.",
+          "sort_index_permutation": "An index permutation preserves the original array and still exposes values in sorted order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_structure_revealed_by_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_two_pointers",
+        "problemArchetypeId": "pair_search_after_sort"
+      }
+    },
+    {
+      "id": "alg-sort-recognize-06-single-maximum-no-sort",
+      "prompt": "An array is unsorted, and the only required output is its maximum value. Which assessment of sorting as preprocessing is correct?",
+      "constraints": [
+        "There is one query and no later need for ordered output.",
+        "A linear scan is available."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_to_preserve_order",
+            "text": "Sorting is needed to preserve the original order."
+          },
+          {
+            "id": "sort_for_correctness",
+            "text": "The maximum is undefined until the array has been sorted."
+          },
+          {
+            "id": "scan_is_sufficient",
+            "text": "Sorting reveals no additional required structure; a single O(n) scan is sufficient."
+          },
+          {
+            "id": "sort_then_last",
+            "text": "Sorting is preferable because the maximum becomes the last value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scan_is_sufficient"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing is unjustified when the target aggregate can already be computed directly in linear time.",
+        "details": "Sorting would make the maximum easy to read, but the sort performs more work than the direct invariant 'best value seen so far.' The ordered arrangement has no downstream consumer and is not part of the output. Sorting can still be reasonable when many later operations reuse the order, but a single maximum query supplies no such amortization or structural benefit.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_then_last": "Reading the last element is simple only after paying an unnecessary comparison-sort cost.",
+          "sort_for_correctness": "Maximum is defined by comparison with all values; it does not depend on an ordered representation.",
+          "sort_to_preserve_order": "Sorting changes original order rather than preserving it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_structure_revealed_by_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-recognize-07-sort-plus-scan-cost",
+      "prompt": "A comparison sort is followed by one linear scan over n items. What is the worst-case time complexity of the complete preprocessing-plus-scan solution?",
+      "constraints": [
+        "The comparison sort has worst-case O(n log n) time.",
+        "The follow-up scan performs O(1) work per item."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n^2)",
+            "O(n)",
+            "O(n log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {}
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "The O(n log n) comparison sort dominates the later O(n) pass.",
+        "details": "The total time is O(n log n + n), which simplifies to O(n log n). Calling the second phase a single scan does not erase the preprocessing cost. A linear overall bound would require stronger assumptions, such as a bounded-key counting or radix method whose own parameters support that claim; it does not follow from the generic word 'sort.'"
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_structure_revealed_by_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-recognize-08-transfer-ordered-structure",
+      "prompt": "Select all tasks where sorting the complete input can directly reveal a reusable structure for a later deterministic pass under the stated contract.",
+      "constraints": [
+        "Batch input is fully available before processing.",
+        "No selected task requires preservation of original encounter order unless stated."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "preserve_input_sequence",
+            "text": "Remove invalid records while preserving the exact relative order of every retained record."
+          },
+          {
+            "id": "run_length_counts",
+            "text": "Produce value-frequency runs in ascending value order."
+          },
+          {
+            "id": "minimum_gap",
+            "text": "Find the minimum difference between any two scalar values; original positions are irrelevant."
+          },
+          {
+            "id": "first_repeated_in_stream",
+            "text": "Report the first value that repeats while reading an online stream, at the moment it repeats."
+          }
+        ],
+        "acceptedOptionIds": [
+          "minimum_gap",
+          "run_length_counts"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting helps when the required relation becomes adjacent or contiguous and the output contract permits the reordered representation.",
+        "details": "Scalar minimum gap gains an adjacency theorem, and ascending run-length output gains contiguous equal keys. The online repeat task is defined by encounter time, which a completed sort cannot preserve or answer incrementally. Stable filtering is already a direct scan problem whose essential invariant is original relative order. Transfer therefore depends on both the mathematical relation exposed and the transformation rights granted by the contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "first_repeated_in_stream": "Sorting requires the completed batch and destroys the encounter-time boundary that defines the requested answer.",
+          "preserve_input_sequence": "A sort changes the relative order that the output must retain and reveals no needed ordering relation for the filter."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "minimum_gap": "Sorted scalar values make a globally closest pair adjacent, enabling a complete linear scan.",
+          "run_length_counts": "Sorting by value makes each equality class contiguous and directly supports run processing."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_structure_revealed_by_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "sorting-based-independent-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-independent-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "blueprint_controlled",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "interleaved_scope",
+          "ids": [
+            "sorting-based-interleaved-scope-v1"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [
+      {
+        "scopeId": "sorting-based-interleaved-scope-v1",
+        "scopeVersion": "v1",
+        "mentalUnitIds": [
+          "recognize_sorting_as_preprocessing",
+          "sort_then_scan",
+          "sort_then_two_pointers",
+          "group_equal_values_after_sort",
+          "custom_key_and_tie_breaking",
+          "preserve_original_positions",
+          "sorting_cost_and_side_effects",
+          "sorting_based_mistake_review"
+        ],
+        "itemIds": [
+          "alg-sort-recognize-01-closest-gap-signal",
+          "alg-sort-scan-01-threshold-neighbor-detection",
+          "alg-sort-two-pointers-01-pair-sum-signal",
+          "alg-sort-groups-01-contiguous-equality-signal",
+          "alg-sort-keys-01-deadline-priority-id-order",
+          "alg-sort-positions-01-provenance-required",
+          "alg-sort-cost-01-precondition-audit",
+          "alg-sort-review-01-name-invalid-assumption",
+          "alg-sort-recognize-02-preprocess-then-consume",
+          "alg-sort-scan-02-minimum-gap-scan-order",
+          "alg-sort-two-pointers-02-directional-movement-order",
+          "alg-sort-groups-02-run-state-transitions",
+          "alg-sort-keys-02-comparator-decision-chain",
+          "alg-sort-positions-02-decorate-process-undecorate",
+          "alg-sort-cost-02-copy-or-mutate-workflow",
+          "alg-sort-review-02-audit-sequence",
+          "alg-sort-recognize-03-fewer-than-two-values",
+          "alg-sort-scan-03-duplicate-zero-gap",
+          "alg-sort-two-pointers-03-duplicate-occurrence-boundary",
+          "alg-sort-groups-03-final-run-flush",
+          "alg-sort-keys-03-cyclic-comparator-invalid",
+          "alg-sort-positions-03-duplicate-occurrences-remain-distinct",
+          "alg-sort-cost-03-shared-alias-mutation",
+          "alg-sort-review-03-sort-cannot-create-pair",
+          "alg-sort-recognize-04-priority-order-needs-total-key",
+          "alg-sort-scan-04-deterministic-first-adjacent-pair",
+          "alg-sort-two-pointers-04-deterministic-tie-traversal",
+          "alg-sort-groups-04-representative-tie-key",
+          "alg-sort-keys-04-required-tie-break",
+          "alg-sort-positions-04-index-as-deterministic-final-key",
+          "alg-sort-cost-04-nondeterministic-ties-as-side-effect",
+          "alg-sort-review-04-missing-tie-rule",
+          "alg-sort-recognize-05-decorate-before-sort",
+          "alg-sort-scan-05-return-original-closest-pair",
+          "alg-sort-two-pointers-05-original-index-output",
+          "alg-sort-groups-05-membership-provenance",
+          "alg-sort-keys-05-stability-and-original-index",
+          "alg-sort-positions-05-sorted-index-is-not-source-index",
+          "alg-sort-cost-05-preserve-source-state",
+          "alg-sort-review-05-lost-original-index",
+          "alg-sort-recognize-06-single-maximum-no-sort",
+          "alg-sort-scan-06-bounded-counting-beats-sort",
+          "alg-sort-two-pointers-06-one-query-hash-alternative",
+          "alg-sort-groups-06-hash-frequency-alternative",
+          "alg-sort-keys-06-select-min-without-full-sort",
+          "alg-sort-positions-06-stable-filter-no-sort",
+          "alg-sort-cost-06-time-space-tradeoff",
+          "alg-sort-review-06-unnecessary-full-order",
+          "alg-sort-recognize-07-sort-plus-scan-cost",
+          "alg-sort-scan-07-comparison-sort-neighbor-pass",
+          "alg-sort-two-pointers-07-sort-dominates-pointer-pass",
+          "alg-sort-groups-07-sort-and-run-cost",
+          "alg-sort-keys-07-expensive-comparator-cost",
+          "alg-sort-positions-07-decoration-cost",
+          "alg-sort-cost-07-reused-sorted-copy-total-cost",
+          "alg-sort-review-07-correct-total-bound",
+          "alg-sort-recognize-08-transfer-ordered-structure",
+          "alg-sort-scan-08-transfer-adjacency-proof",
+          "alg-sort-two-pointers-08-transfer-monotone-pair-rule",
+          "alg-sort-groups-08-transfer-equivalence-key",
+          "alg-sort-keys-08-transfer-tie-materiality",
+          "alg-sort-positions-08-transfer-source-aligned-ranks",
+          "alg-sort-cost-08-transfer-noncomparison-sort",
+          "alg-sort-review-08-transfer-repair-selection"
+        ],
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "minimumDiversity": {
+          "mentalUnitCount": 8,
+          "interactionTypes": [
+            "choice",
+            "ordering",
+            "complexity"
+          ]
+        }
+      }
+    ],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

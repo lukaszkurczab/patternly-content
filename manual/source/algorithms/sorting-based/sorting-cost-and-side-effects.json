@@ -1,0 +1,484 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sorting-based-sorting_cost_and_side_effects-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sorting-based-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sorting_based",
+    "primaryMentalUnitId": "sorting_cost_and_side_effects",
+    "patternFamilyId": "sorting_based"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sorting-based-sorting_cost_and_side_effects-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sort-cost-01-precondition-audit",
+      "prompt": "Before replacing a direct scan with sort-then-scan, select all conditions that must be checked because they can change whether the solution is acceptable.",
+      "constraints": [
+        "The implementation uses a library sort whose mutation and complexity contracts are known.",
+        "The question is about solution acceptance, not only mathematical correctness after sorting."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "mutation_contract",
+            "text": "Whether the input may be reordered in place or must be copied."
+          },
+          {
+            "id": "identity_contract",
+            "text": "Whether original positions or encounter order are required later."
+          },
+          {
+            "id": "variable_name",
+            "text": "Whether the input variable is literally named sortedValues."
+          },
+          {
+            "id": "time_budget",
+            "text": "Whether O(n log n) comparison-sort time fits the input constraints."
+          }
+        ],
+        "acceptedOptionIds": [
+          "time_budget",
+          "mutation_contract",
+          "identity_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting changes asymptotic cost, mutation state, and often identity semantics, so all three belong to the strategy audit.",
+        "details": "A correct post-sort scan can still violate the problem by exceeding the time budget, mutating a shared input, or erasing source positions needed by the output. These are material algorithm contracts, not implementation decoration. A variable name supplies no guarantee about data order or allowed transformation. The audit should use documented preconditions and output requirements before selecting in-place or copied sorting.",
+        "wrongOptionExplanationsByOptionId": {
+          "variable_name": "A name is not a runtime or product guarantee and cannot replace an explicit ordering, mutation, or identity contract."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "time_budget": "Comparison sorting changes the total time class and must fit the declared constraints.",
+          "mutation_contract": "Many sort APIs reorder their receiver, which may be forbidden or observable through aliases.",
+          "identity_contract": "Original order and indices can be destroyed unless preserved deliberately."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-cost-02-copy-or-mutate-workflow",
+      "prompt": "Order the design steps for a sort-based solution when the input may be observed by other code.",
+      "constraints": [
+        "The algorithm needs sorted order internally.",
+        "The caller's mutation contract is explicit but must be inspected."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "sort_and_process",
+            "text": "Sort the chosen representation and run the downstream algorithm."
+          },
+          {
+            "id": "inspect_contract",
+            "text": "Determine whether caller-visible reordering is permitted and whether original identities are needed."
+          },
+          {
+            "id": "choose_representation",
+            "text": "Choose in-place sorting only if legal; otherwise create the required copy or decorated records."
+          },
+          {
+            "id": "report_full_cost",
+            "text": "Report time and extra space for the actual representation used."
+          }
+        ],
+        "canonicalOrder": [
+          "inspect_contract",
+          "choose_representation",
+          "sort_and_process",
+          "report_full_cost"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Representation follows the mutation and identity contract, and cost analysis must describe that concrete choice.",
+        "details": "Choosing in place before reading the contract can create a correct numeric answer with an invalid side effect. Once legality is known, the representation is fixed: mutate the original, copy values, or decorate occurrences. Sorting and processing operate on that representation. The final analysis must include both the sort and any copy, rather than quoting a generic complexity disconnected from the implemented path."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-cost-03-shared-alias-mutation",
+      "prompt": "Two modules hold references to the same mutable array. One module sorts the array in place for a local calculation; the other expects the original order afterward. What is the relevant defect?",
+      "constraints": [
+        "The sort API mutates its receiver.",
+        "No copy was made and no mutation permission was granted."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "observable_alias_side_effect",
+            "text": "The in-place sort changes shared state visible through the other reference."
+          },
+          {
+            "id": "alias_updates_only_values",
+            "text": "The alias sees value changes but never order changes."
+          },
+          {
+            "id": "sort_is_local",
+            "text": "There is no defect because the sort call appears inside a local function."
+          },
+          {
+            "id": "garbage_collection_restores",
+            "text": "The original order will return when the local function exits."
+          }
+        ],
+        "acceptedOptionIds": [
+          "observable_alias_side_effect"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Aliasing makes in-place reordering caller-visible even when the sort is invoked in a local scope.",
+        "details": "Both references identify the same mutable sequence, so changing its element order through either reference changes the shared object. Function scope does not create ownership isolation, and garbage collection does not record or restore the previous order. The safe repair is to obtain mutation permission or sort an appropriate copy, then include that copy in the space analysis.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_is_local": "Local call placement does not prevent mutation of an object shared outside the function.",
+          "alias_updates_only_values": "An alias observes every mutation of the shared sequence, including element reordering.",
+          "garbage_collection_restores": "No automatic mechanism retains and reinstates the prior order at function exit."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-cost-04-nondeterministic-ties-as-side-effect",
+      "prompt": "A build pipeline serializes records after sorting them by severity. Equal-severity order changes across platforms, producing different artifact hashes. The artifact contract requires reproducible bytes. What is the correct diagnosis?",
+      "constraints": [
+        "Record IDs are stable and unique.",
+        "The current comparator uses severity only."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_twice",
+            "text": "Running the same severity-only sort twice guarantees one cross-platform order."
+          },
+          {
+            "id": "add_deterministic_tie",
+            "text": "The comparator omits a material tie-break; sort by (severity, recordId) or another specified stable identity."
+          },
+          {
+            "id": "randomize_first",
+            "text": "Randomly shuffle records before sorting to make the output fair."
+          },
+          {
+            "id": "ignore_hash",
+            "text": "Different hashes are acceptable because severity groups are correct."
+          }
+        ],
+        "acceptedOptionIds": [
+          "add_deterministic_tie"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "When byte order is observable, comparator-equal records are not interchangeable and need a reproducible tie rule.",
+        "details": "The primary severity grouping is correct, but the serialization side effect exposes every member order. A platform may use a different stability contract or receive different prior order, so severity-only equality is insufficient. A stable unique ID closes the order. Repeating the same under-specified operation or randomizing input does not create a portable deterministic contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "ignore_hash": "The artifact contract explicitly treats byte order and therefore the hash as material output.",
+          "sort_twice": "A second application of the same incomplete comparator does not define how equal severities must be ordered across platforms.",
+          "randomize_first": "Randomization increases nondeterminism and directly conflicts with reproducible bytes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-cost-05-preserve-source-state",
+      "prompt": "A function must use sorted order internally, but callers may inspect both the original sequence order and original indices after the function returns. Select all designs that preserve the caller-visible state.",
+      "constraints": [
+        "The original mutable array must remain byte-for-byte unchanged.",
+        "The internal result may use additional memory."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "copy_decorated",
+            "text": "Build and sort a separate array of (value, originalIndex) records."
+          },
+          {
+            "id": "sort_original_only",
+            "text": "Sort the original in place because indices can be inferred from sorted positions."
+          },
+          {
+            "id": "sort_then_unsort_guess",
+            "text": "Sort the original in place and later try to reconstruct its old order from values alone."
+          },
+          {
+            "id": "sort_index_permutation",
+            "text": "Sort a separate permutation of indices by the referenced source values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "copy_decorated",
+          "sort_index_permutation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A separate decorated copy or index permutation exposes sorted traversal without mutating the source or losing occurrence identity.",
+        "details": "Both accepted designs leave the caller-owned sequence untouched. Decorated records duplicate the required values and identities, while an index permutation stores only traversal identities and reads values from the source. In-place sorting violates the state contract immediately. Attempting to unsort from values is generally impossible with duplicates and lacks a saved permutation even for distinct values.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_then_unsort_guess": "Without the original permutation, duplicate values and arbitrary input order make exact restoration impossible.",
+          "sort_original_only": "This directly violates the no-mutation requirement and confuses transformed positions with source indices."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "copy_decorated": "A separate decorated array preserves both source bytes and occurrence identity.",
+          "sort_index_permutation": "Sorting indices changes only the auxiliary traversal order, not the caller's sequence."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-cost-06-time-space-tradeoff",
+      "prompt": "An exact duplicate-existence query can use either a hash set or sort-then-scan. Select all statements that correctly describe the trade-off under ordinary comparison sorting and expected hashing.",
+      "constraints": [
+        "The input may be copied if needed.",
+        "Hash operations use expected O(1) time."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "hash_constant_space",
+            "text": "The hash-set method uses O(1) auxiliary space regardless of distinct input size."
+          },
+          {
+            "id": "sort_nlogn",
+            "text": "Sort-then-scan runs in O(n log n) comparison time and may use little extra space if in-place mutation is legal."
+          },
+          {
+            "id": "hash_expected_linear",
+            "text": "A hash-set scan can run in expected O(n) time with O(n) auxiliary space."
+          },
+          {
+            "id": "sort_always_better",
+            "text": "Sorting is always superior because ordered data is universally more useful."
+          }
+        ],
+        "acceptedOptionIds": [
+          "hash_expected_linear",
+          "sort_nlogn"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The two complete mechanisms exchange expected time, auxiliary state, determinism, and mutation constraints; neither dominates every contract.",
+        "details": "Hashing tracks seen keys directly and is expected linear but can store up to n distinct values. Comparison sorting costs O(n log n); an in-place implementation may reduce explicit auxiliary state but mutates order, while copying restores safety at O(n) space. The right choice follows the actual constraints. The mere fact that sorted data could help an unrelated future task is not evidence when no reuse is declared.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_always_better": "A transformed order has no inherent value unless the current or declared future contract consumes it.",
+          "hash_constant_space": "The set can grow with the number of distinct inputs, which is O(n) in the worst case."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "hash_expected_linear": "The stated expected hash model supports one lookup and insertion per item with linear auxiliary state.",
+          "sort_nlogn": "Comparison sorting plus a linear scan has the stated time and can trade mutation for lower explicit workspace."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-cost-07-reused-sorted-copy-total-cost",
+      "prompt": "A read-only dataset of n records is copied and comparison-sorted once, then q independent binary-search queries are answered against that copy. What are the worst-case total time and extra-space complexities?",
+      "constraints": [
+        "Each binary-search query costs O(log n).",
+        "The copied record array contains all n records and preserves the original input unchanged."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(q n log n)",
+            "O(n log n + q log n)",
+            "O(n + q)",
+            "O(n^2 + q)"
+          ],
+          "extra_space": [
+            "O(log n)",
+            "O(1)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n + q log n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "extra_space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The one-time comparison sort and all q logarithmic queries must be counted, while the defensive sorted copy retains n records.",
+        "details": "Copying costs O(n), comparison sorting costs O(n log n), and q binary searches cost O(q log n). The complete bound is therefore O(n log n + q log n); neither the linear copy nor a single query erases the preprocessing term. The sorted copy uses O(n) extra space because the source must remain unchanged. Re-sorting for every query would instead cost O(q n log n) and would violate the stated reuse design."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-cost-08-transfer-noncomparison-sort",
+      "prompt": "Select all statements that are required to justify a claimed O(n + k) counting-sort preprocessing step for n integer keys spanning a range of size k.",
+      "constraints": [
+        "The algorithm allocates a count array indexed by the key range.",
+        "The claim is about this declared non-comparison method, not a generic library sort."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "ignore_large_k",
+            "text": "The value of k can be ignored even when it is much larger than n."
+          },
+          {
+            "id": "generic_sort_linear",
+            "text": "The result proves every operation named sort is O(n)."
+          },
+          {
+            "id": "include_k_space",
+            "text": "Time and auxiliary space must include the O(k) count structure and its initialization or traversal."
+          },
+          {
+            "id": "bounded_integer_keys",
+            "text": "Keys must map to a known integer range of size k."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bounded_integer_keys",
+          "include_k_space"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A linear-looking non-comparison bound depends on an explicit key-domain parameter and its storage cost; it is not a generic property of sorting.",
+        "details": "Counting sort avoids comparison lower bounds by indexing a bounded discrete domain. Its work and memory include the range size k, so O(n + k) can be worse than comparison sorting when k is enormous. The assumption must therefore appear in the problem and cost model. This is the transfer boundary behind legitimate linear sorting claims: declare the algorithm, key representation, and range rather than generalizing from the word sort.",
+        "wrongOptionExplanationsByOptionId": {
+          "generic_sort_linear": "The bound belongs to the declared bounded-key algorithm and does not apply to arbitrary comparison sorts.",
+          "ignore_large_k": "Initializing and scanning a huge count array can dominate n and invalidate the practical or asymptotic advantage."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "bounded_integer_keys": "Direct indexing requires a finite known key range whose size is the parameter k.",
+          "include_k_space": "The count array is material auxiliary state and its construction and traversal contribute to the bound."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

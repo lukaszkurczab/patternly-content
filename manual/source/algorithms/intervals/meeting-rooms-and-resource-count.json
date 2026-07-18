@@ -1,0 +1,493 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-intervals-resources-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-intervals-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "intervals",
+    "primaryMentalUnitId": "meeting_rooms_and_resource_count",
+    "patternFamilyId": "intervals"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring; no human review claimed",
+    "createdAt": "2026-07-18T00:00:00+02:00",
+    "contentBatchId": "algorithms-intervals-resources-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "algorithms-intervals-resources-001",
+      "prompt": "Half-open meetings are [0, 10), [1, 2), [3, 4), and [5, 6). What is the minimum number of rooms required?",
+      "constraints": [
+        "A room can be reused when one meeting ends exactly as another starts.",
+        "The answer is the maximum number of simultaneously active meetings."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "two_rooms",
+            "text": "2"
+          },
+          {
+            "id": "four_rooms",
+            "text": "4"
+          },
+          {
+            "id": "three_plus_one",
+            "text": "4 because the long meeting overlaps three other meetings"
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_rooms"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The long meeting overlaps one short meeting at a time, so the active set never exceeds two meetings.",
+        "details": "From time 1 to 2, active meetings are [0, 10) and [1, 2); from 3 to 4, they are [0, 10) and [3, 4); from 5 to 6, they are [0, 10) and [5, 6). The short meetings are sequential, so no instant has more than two active intervals. Counting overlapping pairs gives three, and adding one would suggest four rooms, but pair conflicts at different times cannot be summed. The decisive quantity is maximum concurrency, obtainable from active end times or an event sweep.",
+        "wrongOptionExplanationsByOptionId": {
+          "four_rooms": "There are four meetings, but the three short meetings do not overlap each other. Counting records rather than simultaneous activity overallocates.",
+          "three_plus_one": "The long meeting creates three overlapping pairs at different times, but those pair conflicts do not occur simultaneously. Pair count is not resource count."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-resources-002",
+      "prompt": "Which min-heap procedure correctly computes the minimum number of rooms for half-open meetings?",
+      "constraints": [
+        "The input may be unsorted.",
+        "The heap stores end times of currently allocated rooms."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "release_then_push",
+            "text": "Sort meetings by start; before each meeting, remove every heap end <= its start, then push its end and record the maximum heap size."
+          },
+          {
+            "id": "sort_by_end_push",
+            "text": "Sort meetings by end and push every end without releasing until the scan finishes."
+          },
+          {
+            "id": "release_one_strict",
+            "text": "Sort by start; remove at most one end strictly less than the new start, then push."
+          }
+        ],
+        "acceptedOptionIds": [
+          "release_then_push"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Start order introduces meetings chronologically, while the min-heap exposes every room that has become reusable before the next start.",
+        "details": "Sorting by start ensures no unprocessed meeting begins earlier than the current one. The minimum end at the heap root is the earliest room release. While that end is <= current.start, the room is free under [start, end) and should be removed; multiple rooms can become free, so use a loop. Push the current end to represent its occupied room and track the maximum heap size over the scan. The final heap size alone is not sufficient because concurrency may have peaked earlier. The heap is ordered by end internally, but this does not mean the meetings themselves should be processed by end.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_by_end_push": "That counts processed meetings rather than currently active meetings and cannot model room reuse.",
+          "release_one_strict": "Several rooms may become free before one meeting, and equality also releases a room under half-open semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-resources-003",
+      "prompt": "A meeting ends at 10:00 and another starts at 10:00. Under half-open occupancy, how should a two-array or event-based room counter treat the tie?",
+      "constraints": [
+        "The room may be reused immediately.",
+        "The active count is updated at the tie."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "end_first",
+            "text": "Process the end before the start, so the same room can be reused."
+          },
+          {
+            "id": "start_first",
+            "text": "Process the start before the end, temporarily requiring another room."
+          },
+          {
+            "id": "tie_irrelevant",
+            "text": "Ignore the ordering because both events have the same timestamp."
+          }
+        ],
+        "acceptedOptionIds": [
+          "end_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Half-open meetings release their room at the end timestamp, so release precedes acquisition at an equal start.",
+        "details": "In a sorted-start/sorted-end two-pointer method, equality start[i] == end[j] advances the end pointer and decrements or reuses before adding the new meeting. In an event sweep, -1 precedes +1. Both are encodings of the same semantic rule. Reversing the tie reports a transient extra active meeting and may increase the room maximum. The tie must be tested directly with back-to-back meetings because inputs with only strict gaps or strict overlaps cannot expose the comparator defect.",
+        "wrongOptionExplanationsByOptionId": {
+          "start_first": "That treats the ending meeting as active at its exclusive end and overcounts half-open concurrency.",
+          "tie_irrelevant": "The intermediate active count changes with the order, which can change the recorded maximum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-resources-004",
+      "prompt": "Reservations use closed intervals and both reservations occupy the shared endpoint. One ends at t and another starts at t. Which event order computes the required capacity correctly?",
+      "constraints": [
+        "A one-point simultaneous occupancy consumes two units of capacity."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_before_end",
+            "text": "Process the start before the end."
+          },
+          {
+            "id": "end_before_start",
+            "text": "Process the end before the start."
+          },
+          {
+            "id": "aggregate_net_only",
+            "text": "Apply only the net delta and never consider the within-time peak."
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_before_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Closed intervals both include t, so the new reservation becomes active before the old one can be removed from the count.",
+        "details": "The equal-time order is the event-level form of the closed predicate. If active is k immediately before t, a start at t raises it to k + 1 while the ending reservation still occupies t; only after measuring that state should the end decrement. Grouping the events to a net delta of zero would erase the one-point peak. This distinction matters when the resource contract counts instantaneous occupancy, even if the duration of the overlap is zero. Continuous domains that ignore measure-zero intersections would need a different declared policy.",
+        "wrongOptionExplanationsByOptionId": {
+          "end_before_start": "That releases capacity before accounting for a reservation that is also active at t, undercounting the inclusive overlap.",
+          "aggregate_net_only": "A +1 and -1 net to zero, but the closed contract still has two active reservations at t. Net-only aggregation loses that peak."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-resources-005",
+      "prompt": "Select all methods that can correctly compute maximum concurrency for static half-open intervals when implemented with the proper equality rule.",
+      "constraints": [
+        "Select all correct methods.",
+        "The input may be unsorted."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "min_heap",
+            "text": "Sort by start and maintain a min-heap of active end times."
+          },
+          {
+            "id": "two_arrays",
+            "text": "Sort starts and ends separately and advance two pointers."
+          },
+          {
+            "id": "event_sweep",
+            "text": "Create +1/-1 events, sort by coordinate with end-before-start ties, and track the maximum prefix sum."
+          },
+          {
+            "id": "pair_count",
+            "text": "Count every overlapping pair and add one."
+          }
+        ],
+        "acceptedOptionIds": [
+          "min_heap",
+          "two_arrays",
+          "event_sweep"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap, two-array, and event-sweep methods all model active occupancy over time; overlapping-pair count does not.",
+        "details": "The three correct methods differ in representation but preserve the same invariant: active equals the number of intervals whose starts have been processed and whose ends have not yet released under the endpoint contract. The min-heap is useful when room end identities matter during the scan. Two sorted arrays reduce the state to ordered starts and ends. A delta sweep generalizes naturally to weighted demand. Counting overlapping pairs discards time alignment, so a single long interval overlapping many sequential short ones produces many pairs but only two simultaneous intervals.",
+        "wrongOptionExplanationsByOptionId": {
+          "pair_count": "Pair conflicts occurring at different times are not simultaneous, so pair count does not determine maximum active intervals."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "min_heap": "The heap directly represents active rooms and exposes the earliest reusable one.",
+          "two_arrays": "Separate sorted endpoints provide the same chronological acquire/release process without storing interval identity.",
+          "event_sweep": "A correctly ordered delta sweep computes the active-count prefix and its maximum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-resources-006",
+      "prompt": "Order the event-sweep steps for computing maximum resource demand from half-open intervals.",
+      "constraints": [
+        "Each ordinary interval contributes +1 at start and -1 at end.",
+        "Equal coordinates follow the endpoint contract."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "create_events",
+            "text": "Create start and end events for every interval."
+          },
+          {
+            "id": "sort_with_ties",
+            "text": "Sort events by coordinate and apply end-before-start at equal coordinates."
+          },
+          {
+            "id": "update_active",
+            "text": "Apply each event delta to the active count."
+          },
+          {
+            "id": "record_peak",
+            "text": "Record the greatest active count reached."
+          }
+        ],
+        "canonicalOrder": [
+          "create_events",
+          "sort_with_ties",
+          "update_active",
+          "record_peak"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Events must exist and be chronologically ordered before their deltas can define a meaningful active-count prefix and maximum.",
+        "details": "Creating events translates interval occupancy into changes. Sorting, including the half-open tie rule, establishes the temporal sequence. Applying deltas before sorting would combine unrelated times, while recording a peak before an update would miss the new state. The maximum across the prefix sums is the required capacity. If equal events are grouped, the implementation must use a grouping rule proved equivalent to the stated semantics; it cannot simply omit the tie contract. The order is independent of how the event list is physically stored."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-resources-007",
+      "prompt": "Choose the time and extra-space complexities of computing minimum rooms by sorting n meetings by start and maintaining a min-heap of active end times.",
+      "constraints": [
+        "The heap may contain O(n) end times in the worst case.",
+        "Comparison sorting is used."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Sorting costs O(n log n), and each meeting performs at most one heap push and one eventual pop, each O(log n); the heap can grow to n.",
+        "details": "The start sort is O(n log n). Across the scan, every meeting end is pushed once and removed at most once. Each heap operation costs O(log n), so all heap work is O(n log n), not O(n^2). If all meetings overlap, no end is released before the last start and the heap stores n values, giving O(n) extra space. A two-array method also uses O(n) storage when endpoint arrays are copied, while an in-place representation may account differently. The key is to derive cost from active-state size, not from the visual presence of one loop."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-resources-008",
+      "prompt": "Intervals [1, 5), [2, 6), and [3, 7) are sorted by end. Why does counting only adjacent overlapping pairs not produce the room requirement?",
+      "constraints": [
+        "All three intervals are active from time 3 to 5."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "need_active_set",
+            "text": "The room requirement is 3 because concurrency is the size of the active set, not the number of adjacent pair checks."
+          },
+          {
+            "id": "two_pairs_means_two",
+            "text": "There are two adjacent overlaps, so two rooms are enough."
+          },
+          {
+            "id": "end_order_avoids_overlap",
+            "text": "End sorting prevents more than two meetings from being active."
+          }
+        ],
+        "acceptedOptionIds": [
+          "need_active_set"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "All three intervals coexist over [3, 5), so capacity is three even though an adjacent scan performs only two pair comparisons.",
+        "details": "Maximum concurrency is a pointwise property. At any t in [3, 5), each interval contains t, giving an active set of size three. Counting adjacent overlaps in an ordered list measures comparisons, not occupancy. End sorting can support a heap's release order or a greedy selection proof, but it does not collapse simultaneous meetings. Correct algorithms maintain active end times or an event-prefix count so that every currently active interval contributes to the maximum.",
+        "wrongOptionExplanationsByOptionId": {
+          "two_pairs_means_two": "At time 3.5 all three meetings are active simultaneously. Pair-check count underrepresents the active set.",
+          "end_order_avoids_overlap": "Sorting changes processing order, not the underlying times at which meetings overlap."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-resources-009",
+      "prompt": "Each interval now carries a demand weight: [0, 4) needs 2 units and [2, 5) needs 3 units. What is the peak capacity requirement?",
+      "constraints": [
+        "Intervals are half-open.",
+        "At a start, add the interval's demand; at an end, remove it using the half-open tie rule."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "five_units",
+            "text": "5 units"
+          },
+          {
+            "id": "three_units",
+            "text": "3 units because only the larger interval matters."
+          },
+          {
+            "id": "two_rooms",
+            "text": "2 units because two intervals overlap."
+          }
+        ],
+        "acceptedOptionIds": [
+          "five_units"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "From time 2 to 4 both intervals are active, so weighted demand is 2 + 3 = 5.",
+        "details": "Ordinary meeting-room counting is the special case in which every interval contributes +1 at its start and -1 at its end. With weighted demand, use +weight and -weight events or an equivalent active-state structure. The maximum prefix sum is the capacity requirement. At time 4 the first demand is removed before any start at 4 under half-open semantics. This transfer preserves the concurrency mechanism but changes the accumulated quantity; pair counts and maximum individual demand are both insufficient.",
+        "wrongOptionExplanationsByOptionId": {
+          "three_units": "During [2, 4), both demands are active and capacity must cover their sum, not just the maximum individual weight.",
+          "two_rooms": "Counting intervals assumes unit demand. Weighted resources require summing active weights."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "count_concurrent_intervals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

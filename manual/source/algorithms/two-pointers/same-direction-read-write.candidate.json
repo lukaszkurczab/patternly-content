@@ -1,0 +1,607 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "two-pointers-same_direction_read_write-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-two-pointers-review-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "two_pointers",
+    "primaryMentalUnitId": "same_direction_read_write",
+    "patternFamilyId": "two_pointers"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; human review required)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "two-pointers-same_direction_read_write-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tp-rw-valid-prefix-invariant",
+      "prompt": "During stable in-place filtering, read has processed positions [0, read) and write marks the next output slot. Which invariant should hold before each iteration?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_is_sorted",
+            "text": "Positions [0, write) are numerically sorted."
+          },
+          {
+            "id": "write_equals_read",
+            "text": "write always equals read."
+          },
+          {
+            "id": "suffix_is_empty",
+            "text": "Positions [read, n) have already been cleared."
+          },
+          {
+            "id": "prefix_contains_kept",
+            "text": "Positions [0, write) contain exactly the kept values from [0, read), in their original relative order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix_contains_kept"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The write boundary is the length of the stable valid prefix produced from the input already consumed by read.",
+        "details": "This invariant connects the two pointers: read identifies how much input has been examined, while write identifies how much valid output has been produced. It permits write to lag behind read when rejected values are encountered. Numerical sorting is unrelated and would change the stable-order contract. The unread suffix remains original input and must not be treated as processed state.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_is_sorted": "Filtering preserves encounter order; it does not impose numerical order unless sorting is a separate explicit requirement.",
+          "write_equals_read": "Rejected values make write lag behind read. Equality holds only while every processed value has been kept.",
+          "suffix_is_empty": "The unread suffix still contains input that must be inspected. Clearing it early could destroy future values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "Kept values must preserve their original relative order.",
+        "Compaction is performed in the same array."
+      ]
+    },
+    {
+      "id": "alg-tp-rw-keep-operation",
+      "prompt": "During stable compaction, predicate P accepts a[read]. How must the output-prefix boundary be updated?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "advance_read_only",
+            "text": "Advance read and leave write unchanged."
+          },
+          {
+            "id": "swap_with_end",
+            "text": "Swap the current value with the last unprocessed value."
+          },
+          {
+            "id": "copy_then_increment_write",
+            "text": "Write the current value at position write, then increment write; read advances to the next input position."
+          },
+          {
+            "id": "increment_write_only",
+            "text": "Increment write without copying the current value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "copy_then_increment_write"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An accepted value must become the next element of the valid prefix before that prefix boundary grows.",
+        "details": "The position write is exactly where the next kept value belongs. Copying first preserves the value, and incrementing write then records that the valid prefix has grown by one. Advancing read consumes the current input after it has been handled. Swapping with an end position would not preserve stable order and belongs to a different partition contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "increment_write_only": "Growing the boundary without placing the accepted value leaves the output prefix semantically incomplete.",
+          "advance_read_only": "The accepted value would be omitted from the compacted output because write still indicates the old prefix length.",
+          "swap_with_end": "End swaps can partition but do not preserve the relative order required by stable compaction."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-rw-reject-operation",
+      "prompt": "A later iteration classifies a[read] as rejected. Which pointer state remains unchanged when that input position is consumed?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "advance_both",
+            "text": "Advance both read and write."
+          },
+          {
+            "id": "decrement_write",
+            "text": "Move write backward to erase the rejected value."
+          },
+          {
+            "id": "swap_with_previous",
+            "text": "Swap the rejected value with the previous array position."
+          },
+          {
+            "id": "advance_read_only",
+            "text": "Advance read and leave write unchanged."
+          }
+        ],
+        "acceptedOptionIds": [
+          "advance_read_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A rejected input is consumed but contributes nothing to the valid prefix, so only read advances.",
+        "details": "The output prefix already contains every kept value from the previously processed input. Rejecting the current value does not add an output element, so write must continue pointing to the same next free slot. Incrementing both would create an unfilled or incorrectly retained position. Moving write backward would remove an earlier accepted value and violate the invariant.",
+        "wrongOptionExplanationsByOptionId": {
+          "advance_both": "write counts accepted values, not processed values. Advancing it for a rejection creates a gap or preserves invalid data.",
+          "decrement_write": "The rejected value has not been added to the valid prefix, so no accepted output should be removed.",
+          "swap_with_previous": "A local swap changes order and does not make the prefix equal to the kept values seen so far."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-rw-stable-loop-order",
+      "prompt": "Order the conceptual steps for one stable read/write compaction iteration.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "consume_input",
+            "text": "Advance read to consume the current input position."
+          },
+          {
+            "id": "grow_output_if_kept",
+            "text": "If kept, increment write to extend the valid prefix."
+          },
+          {
+            "id": "write_if_kept",
+            "text": "If kept, place that value at write."
+          },
+          {
+            "id": "inspect_current",
+            "text": "Inspect the original value at read and evaluate the keep predicate."
+          }
+        ],
+        "canonicalOrder": [
+          "inspect_current",
+          "write_if_kept",
+          "grow_output_if_kept",
+          "consume_input"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The current input value must be classified before any conditional output update, and the output boundary grows only after its slot has been written.",
+        "details": "Evaluating the predicate first establishes whether the iteration contributes output. A kept value is copied to the current write position, then write advances to describe the enlarged valid prefix. Finally read advances for every input value. Conceptually separating these steps prevents unconditional write movement and makes the invariant visible even if code combines increments syntactically."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-tp-rw-all-rejected-boundary",
+      "prompt": "A stable in-place filter rejects every value in an array of length n. What should write equal after read reaches n?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "undefined",
+            "text": "The result is undefined unless the array is sorted first."
+          },
+          {
+            "id": "zero",
+            "text": "0, because the valid output prefix is empty."
+          },
+          {
+            "id": "n",
+            "text": "n, because read processed n values."
+          },
+          {
+            "id": "n_minus_one",
+            "text": "n-1, because the final input position was visited."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "write measures produced output, not consumed input. Rejecting every value leaves a valid prefix of length zero.",
+        "details": "read advances through all n positions, but write never moves because no value is copied into the output prefix. The returned compacted length is therefore zero. Confusing read progress with output length is the central boundary error this case exposes. Sortedness has no role in a predicate filter unless the predicate itself requires it.",
+        "wrongOptionExplanationsByOptionId": {
+          "n": "n is the amount of consumed input, not the number of accepted values. Advancing write on every step would retain rejected positions.",
+          "n_minus_one": "Visited index values do not define output length. No accepted output was produced at any position.",
+          "undefined": "Filtering by an arbitrary predicate does not require sorting. The result is fully defined by the acceptance rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "The result is represented by the prefix [0, write)."
+      ]
+    },
+    {
+      "id": "alg-tp-rw-none-rejected-boundary",
+      "prompt": "A stable in-place filter accepts every value. Which final state is expected?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "write_zero",
+            "text": "write remains zero because no values needed to move."
+          },
+          {
+            "id": "reverse_output",
+            "text": "The output is reversed because two pointers were used."
+          },
+          {
+            "id": "sort_output",
+            "text": "The output becomes sorted as part of compaction."
+          },
+          {
+            "id": "write_n_unchanged",
+            "text": "write equals n and the logical output prefix matches the original sequence."
+          }
+        ],
+        "acceptedOptionIds": [
+          "write_n_unchanged"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every consumed value extends the valid prefix, so write advances with read to n. Stable compaction preserves the original order.",
+        "details": "When all values are accepted, write and read remain aligned, and each conceptual copy may be a self-assignment. The invariant still holds: the prefix contains all kept values seen so far. An implementation may optimize away self-copies, but it must not change the pointer meaning or returned length. Neither reversal nor sorting is part of the output contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "write_zero": "Output length depends on accepted values, not on whether physical movement was necessary. All n values belong to the result.",
+          "reverse_output": "Same-direction pointers preserve encounter order; they do not imply an opposite-end reversal.",
+          "sort_output": "Compaction does not impose order beyond stability. Sorting would be an unrelated and more expensive transformation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-rw-unconditional-write-bug",
+      "prompt": "A filter increments write after every read position, even when the current value is rejected. Which failure follows?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_no_longer_valid",
+            "text": "write no longer equals the number of accepted values, so [0, write) can contain gaps or rejected data."
+          },
+          {
+            "id": "read_stops_early",
+            "text": "read can no longer reach the end of the array."
+          },
+          {
+            "id": "time_becomes_quadratic",
+            "text": "The loop automatically becomes O(n^2)."
+          },
+          {
+            "id": "input_becomes_sorted",
+            "text": "Rejected values are moved into sorted order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix_no_longer_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Unconditional write movement turns the output boundary into a processed-input counter and destroys the compacted-prefix invariant.",
+        "details": "write should count only values actually placed in the result. If it advances for a rejection, the next accepted value is written too far to the right, leaving invalid data inside the claimed prefix. The loop may still terminate in linear time, which makes this bug easy to miss through complexity inspection alone. Correctness depends on conditional movement, not on both pointers making progress together.",
+        "wrongOptionExplanationsByOptionId": {
+          "read_stops_early": "read can still traverse all input positions. The defect is in the claimed output prefix, not loop termination.",
+          "time_becomes_quadratic": "Each pointer can still move at most n times. The algorithm remains linear but produces the wrong output boundary.",
+          "input_becomes_sorted": "Writing every read value may resemble an in-place rearrangement, but no ordering relation is introduced. The actual failure is that rejected values enter the claimed accepted prefix."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-rw-duplicate-collapse-transfer",
+      "prompt": "A sorted array must be compacted in place so that each distinct value appears once. Which condition should control whether the current read value is written?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_each_step",
+            "text": "Sort the remaining suffix before deciding."
+          },
+          {
+            "id": "different_from_last_written",
+            "text": "Write it when write is zero or the current value differs from the last value in the compacted prefix."
+          },
+          {
+            "id": "different_from_next_unread",
+            "text": "Write it only when it differs from the next unread value."
+          },
+          {
+            "id": "write_every_value",
+            "text": "Write every value because two indices are present."
+          }
+        ],
+        "acceptedOptionIds": [
+          "different_from_last_written"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The output contract is defined relative to the last accepted representative, so the compacted prefix—not merely neighbouring unread input—controls the write decision.",
+        "details": "Because the input is sorted, equal values form runs. The first value of a run is written, and later equal values are rejected while read continues. Comparing against the last written value ties the duplicate policy directly to the valid-prefix invariant. Looking only at the next unread value can mishandle the final element or choose the last rather than the first representative without a stated reason.",
+        "wrongOptionExplanationsByOptionId": {
+          "different_from_next_unread": "This looks ahead rather than using the established output boundary and creates awkward end-of-array handling. It does not directly express ‘not already represented in the prefix.’",
+          "write_every_value": "Two indices do not make duplicates disappear. The write condition must implement the uniqueness contract.",
+          "sort_each_step": "The input is already sorted, and repeated sorting would add unnecessary cost without changing run structure."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The input is sorted in nondecreasing order.",
+        "Exactly one representative of each distinct value is required."
+      ]
+    },
+    {
+      "id": "alg-tp-rw-sorting-not-filtering",
+      "prompt": "A stable filter keeps all values satisfying P in their encounter order. A proposal sorts by P before compacting. What is the strongest objection?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "compaction_requires_reverse",
+            "text": "Stable compaction must process the array from right to left."
+          },
+          {
+            "id": "changes_contract_and_cost",
+            "text": "Sorting adds O(n log n) comparison work and can change relative order, while a direct read/write scan is O(n) and stable."
+          },
+          {
+            "id": "sorting_uses_one_pointer",
+            "text": "Sorting is invalid because it does not visibly use two pointers."
+          },
+          {
+            "id": "predicate_cannot_sort",
+            "text": "Boolean predicates can never be used as sort keys."
+          }
+        ],
+        "acceptedOptionIds": [
+          "changes_contract_and_cost"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting is stronger than the required operation: it may violate stability and costs more than a single predicate scan.",
+        "details": "The read/write method keeps accepted values in their original order and visits each input once. Sorting by the predicate groups values but may reorder accepted values unless a stable sort and suitable tie behavior are guaranteed, and even then its O(n log n) time is unnecessary. The fact that sorting could produce a partition does not make its preprocessing free. Choose the direct invariant that matches the actual output contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "sorting_uses_one_pointer": "Algorithms are not accepted or rejected by visible pointer count. The issues are output semantics and cost.",
+          "predicate_cannot_sort": "A predicate can be mapped to a key, but doing so is unnecessary and may alter required order.",
+          "compaction_requires_reverse": "Stable read/write compaction naturally processes left to right. Reversing is not required and may complicate stability."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Kept values must preserve encounter order.",
+        "Predicate evaluation is O(1)."
+      ]
+    },
+    {
+      "id": "alg-tp-rw-overwrite-safety-proof",
+      "prompt": "Why is it safe to write the current accepted value into position write during left-to-right in-place compaction?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "arrays_copy_automatically",
+            "text": "The array runtime automatically saves overwritten values."
+          },
+          {
+            "id": "write_never_ahead",
+            "text": "write never exceeds read, so the assignment cannot overwrite an unread future value."
+          },
+          {
+            "id": "values_are_sorted",
+            "text": "Sorted values can be overwritten without consequence."
+          },
+          {
+            "id": "both_move_together",
+            "text": "Safety follows because read and write always move together."
+          }
+        ],
+        "acceptedOptionIds": [
+          "write_never_ahead"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The invariant implies write <= read. Writing at write therefore touches only the current position or an already processed position, never unread input.",
+        "details": "write counts accepted values among read processed values, so it cannot be greater than read. If write equals read, the assignment is a harmless self-write; if write is smaller, the overwritten position belongs to the processed prefix and its old content is no longer needed. The unread suffix begins after read and remains intact. This inequality is the correctness argument behind in-place safety.",
+        "wrongOptionExplanationsByOptionId": {
+          "values_are_sorted": "Overwrite safety depends on pointer positions, not value order. Stable filtering works on unsorted input as well.",
+          "both_move_together": "write can lag behind read and must remain fixed on rejection. Their unequal movement is central to the proof.",
+          "arrays_copy_automatically": "Ordinary in-place assignment destroys the previous cell value. Safety must come from proving that value is no longer needed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-tp-rw-linear-constant-space",
+      "prompt": "A read pointer visits each of n array positions once. A write pointer advances at most once per accepted value, and compaction uses only scalar variables. What are the time and auxiliary-space complexities?",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Each input position is consumed once, and write never performs more advances than read. The output reuses the input array with constant scalar state.",
+        "details": "The two pointers do not create nested work: read contributes n iterations and write contributes at most n total increments inside those iterations. This yields O(n) time. Because accepted values are written back into the existing array and only indices or counters are stored, auxiliary space is O(1). The input array and returned logical prefix are not additional allocated storage."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "Predicate evaluation is O(1).",
+        "Only scalar variables are allocated."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

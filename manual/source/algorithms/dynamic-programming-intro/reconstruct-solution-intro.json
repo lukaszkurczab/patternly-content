@@ -1,0 +1,405 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-dynamic-programming-intro-reconstruct_solution_intro-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-dynamic-programming-intro-authoring-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "dynamic_programming_intro",
+    "primaryMentalUnitId": "reconstruct_solution_intro",
+    "patternFamilyId": "dynamic_programming_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-dynamic-programming-intro-reconstruct_solution_intro-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-dpintro-reconstruct-01-value-versus-witness",
+      "prompt": "A DP correctly returns the maximum value for a choose-or-skip problem. The product must also return one selected item set. What additional contract is required?",
+      "constraints": [
+        "Multiple item sets may achieve the same optimum.",
+        "The current result stores only the optimum scalar."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "trace_contract",
+            "text": "Store branch choices or define value-based recomputation that traces one optimal decision chain."
+          },
+          {
+            "id": "more_overlap",
+            "text": "Prove additional overlap so every selected item appears in more than one recursive branch."
+          },
+          {
+            "id": "faster_cache",
+            "text": "Use a faster memo table whose insertion order can be treated as the selected-item sequence."
+          }
+        ],
+        "acceptedOptionIds": [
+          "trace_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A scalar optimum does not necessarily identify a unique sequence of decisions, so reconstruction needs an explicit trace rule.",
+        "details": "Value DP answers how good the best solution is. Reconstruction answers which legal decisions attain that value and must move from the final state through consistent predecessors until a base is reached. This can use parent pointers, stored branch bits, or recomputation against retained values. Overlap and faster lookup do not supply that missing output information.",
+        "wrongOptionExplanationsByOptionId": {
+          "more_overlap": "Overlap explains value reuse but does not identify which optimal branch should be followed.",
+          "faster_cache": "Performance does not create missing decision evidence; values alone may not uniquely encode a witness."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-02-state-consistent-predecessor",
+      "prompt": "For 0/1 selection, dp(i, c) is the optimum using items i onward. If dp(i, c) equals v[i] + dp(i + 1, c - w[i]) and w[i] <= c, which reconstruction step is valid?",
+      "constraints": [
+        "The take branch is chosen under a deterministic tie rule.",
+        "Each item may be used at most once."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "record_same_capacity",
+            "text": "Record item i, then continue from (i + 1, c)."
+          },
+          {
+            "id": "record_same_item",
+            "text": "Record item i, then continue from (i, c - w[i])."
+          },
+          {
+            "id": "record_and_advance",
+            "text": "Record item i, then continue from (i + 1, c - w[i])."
+          }
+        ],
+        "acceptedOptionIds": [
+          "record_and_advance"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The reconstruction step must mirror the exact take transition: select the item, consume capacity, and advance past it.",
+        "details": "Backtracking is not an independent greedy procedure. It follows a branch only when the current value is explained by that branch and then moves to the branch's dependent state. Omitting a coordinate update breaks the invariant that the remaining state represents the unresolved suffix and resource. Every state component in the forward transition must be reflected in reconstruction.",
+        "wrongOptionExplanationsByOptionId": {
+          "record_same_capacity": "The state would fail to consume the item's weight and could reconstruct a set whose total weight exceeds capacity.",
+          "record_same_item": "Keeping i permits repeated selection and no longer matches the 0/1 transition."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-03-memoization-does-not-choose-path",
+      "prompt": "A memoized alignment solver has cached the optimum length for every reached (i, j). Is the alignment itself now determined?",
+      "constraints": [
+        "Several branches can have equal optimum value.",
+        "No parent choice was stored."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_fastest",
+            "text": "Yes. Memoization is faster, so it always returns the witness as well as the value."
+          },
+          {
+            "id": "need_trace_rule",
+            "text": "Not necessarily. Reconstruction must compare valid successor values and apply a deterministic tie rule or use stored choices."
+          },
+          {
+            "id": "yes_cache_order",
+            "text": "Yes. The order in which cache entries were inserted is the alignment."
+          }
+        ],
+        "acceptedOptionIds": [
+          "need_trace_rule"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Cached optimum values support branch checks, but they do not by themselves select one witness when alternatives tie.",
+        "details": "At state (i, j), reconstruction asks which legal transition attains the cached value. If several do, the product needs a deterministic rule such as prefer match, then skip from one side, or another documented policy. Memoization and tabulation differ in evaluation order, not in this requirement. A witness is produced by a consistent predecessor chain, not by cache insertion history.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_cache_order": "Cache insertion order reflects evaluation history, not necessarily a valid or deterministic optimal predecessor chain.",
+          "yes_fastest": "Runtime performance does not change the output represented by each cached scalar."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-04-backtrack-final-to-base",
+      "prompt": "Order the generic reconstruction process after a DP value table has been completed.",
+      "constraints": [
+        "The answer state and predecessor tests are known.",
+        "A deterministic tie rule is available."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "start_answer",
+            "text": "Start at the state representing the complete original problem."
+          },
+          {
+            "id": "test_branches",
+            "text": "Identify legal predecessor or successor branches whose stored values explain the current value."
+          },
+          {
+            "id": "record_decision",
+            "text": "Apply the tie rule, record the corresponding output decision, and move to that dependent state."
+          },
+          {
+            "id": "finish_reverse",
+            "text": "Stop at a base and reverse collected decisions if they were recorded backward."
+          }
+        ],
+        "canonicalOrder": [
+          "start_answer",
+          "test_branches",
+          "record_decision",
+          "finish_reverse"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Reconstruction follows value-consistent edges from the completed answer back to a base, reversing output order when necessary.",
+        "details": "The forward DP computes values in dependency order, but the witness trace begins at the state whose value answers the original problem. At each step, branch equations reveal which predecessor or successor can explain that value. Recording the associated decision and moving along that edge preserves optimality until a base is reached. If decisions were collected from end to start, their presentation order is then reversed."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-05-compression-needs-recovery-plan",
+      "prompt": "A one-row DP returns the correct alignment length but discards every prior row. Which claim is justified?",
+      "constraints": [
+        "The task requires an actual alignment.",
+        "No additional trace data or recomputation algorithm is specified."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_only_incomplete",
+            "text": "The value algorithm is correct, but the required witness still lacks a recovery path."
+          },
+          {
+            "id": "fully_correct",
+            "text": "The algorithm is complete because returning the optimum scalar automatically satisfies any witness requirement."
+          },
+          {
+            "id": "compression_never_valid",
+            "text": "The algorithm must restore the full table because compressed storage can never support reconstruction."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_only_incomplete"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A correct objective value is insufficient when the required witness has no retained or defined recovery path.",
+        "details": "Rolling rows can preserve all values needed for forward evaluation while discarding the historical surface used by ordinary backtracking. The implementation therefore solves a narrower value-only problem unless it adds a reconstruction mechanism. Full-table storage is one option, but not the only one. Evaluate compression against every requested output, not only the scalar score.",
+        "wrongOptionExplanationsByOptionId": {
+          "fully_correct": "Correctness must satisfy the stated output contract, which includes an alignment rather than only its length.",
+          "compression_never_valid": "Reconstruction can use additional compact choices, checkpoints, divide-and-conquer methods, or controlled recomputation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-06-deterministic-ties",
+      "prompt": "At state (i, j), two legal branches both preserve the optimum value. The task accepts any optimum alignment. What should reconstruction do?",
+      "constraints": [
+        "Both branches have been verified against the DP value.",
+        "No lexicographic output constraint exists."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "error",
+            "text": "Treat the tie as an invalid DP state."
+          },
+          {
+            "id": "random_each_time",
+            "text": "Choose randomly on every reconstruction step because all optimal paths are equivalent."
+          },
+          {
+            "id": "stable_tie_rule",
+            "text": "Choose either branch using a documented deterministic tie rule and continue consistently."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stable_tie_rule"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A tie represents multiple valid witnesses; a stable policy selects one without changing optimality.",
+        "details": "The DP value proves that both transitions can lead to an optimum. If the output contract accepts any optimum, reconstruction may select either, but deterministic behavior simplifies tests, persisted results, and learner explanations. A stronger contract such as lexicographically smallest output would determine a specific tie policy. The key invariant is that every chosen edge remains value-consistent.",
+        "wrongOptionExplanationsByOptionId": {
+          "error": "Multiple optimum witnesses are common and do not invalidate the value recurrence.",
+          "random_each_time": "Random choice may still yield an optimum, but it harms reproducibility and stable testing without adding instructional value."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-07-grid-parent-transfer",
+      "prompt": "dp[r][c] is the minimum total cost from the origin to cell (r, c), including cost[r][c]. How should one reconstruct a minimum-cost path backward from the destination?",
+      "constraints": [
+        "Moves forward were only right and down.",
+        "Ties may be resolved deterministically."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "any_parent",
+            "text": "Choose any legal above-or-left parent because every such edge belongs to some minimum-cost path."
+          },
+          {
+            "id": "value_consistent_parent",
+            "text": "Choose an above-or-left parent satisfying dp[current] = dp[parent] + cost[current], then continue to the origin."
+          },
+          {
+            "id": "smallest_cell",
+            "text": "Choose the neighboring cell with the smaller raw cost, regardless of its accumulated path cost."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_consistent_parent"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A valid reconstructed edge must exactly explain the current optimum through the same recurrence used in the forward DP.",
+        "details": "The table stores accumulated optimum costs, so the current value identifies parents that can participate in an optimum path. Raw neighbor costs ignore the cost of reaching those neighbors, and arbitrary legal parents can increase the total. Following value-consistent parents preserves the global optimum at every step. The collected reverse path is then reversed for output.",
+        "wrongOptionExplanationsByOptionId": {
+          "smallest_cell": "A locally cheap cell can lie on an expensive prefix; reconstruction must compare accumulated DP values.",
+          "any_parent": "Legality alone does not guarantee that the chosen parent attains the optimum value stored at the current cell."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [
+      {
+        "id": "dpintro-same-mechanism-reconstruct_solution_intro-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-dpintro-reconstruct-01-value-versus-witness",
+          "alg-dpintro-reconstruct-02-state-consistent-predecessor",
+          "alg-dpintro-reconstruct-03-memoization-does-not-choose-path"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-reconstruct-04-backtrack-final-to-base",
+          "alg-dpintro-reconstruct-05-compression-needs-recovery-plan",
+          "alg-dpintro-reconstruct-06-deterministic-ties",
+          "alg-dpintro-reconstruct-07-grid-parent-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "reconstruct_solution_intro"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

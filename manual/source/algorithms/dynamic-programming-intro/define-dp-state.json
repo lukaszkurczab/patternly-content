@@ -1,0 +1,406 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-dynamic-programming-intro-define_dp_state-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-dynamic-programming-intro-authoring-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "dynamic_programming_intro",
+    "primaryMentalUnitId": "define_dp_state",
+    "patternFamilyId": "dynamic_programming_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-dynamic-programming-intro-define_dp_state-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-dpintro-state-01-future-equivalence",
+      "prompt": "A solver chooses non-adjacent values from an array. At position i, whether the previous value was chosen changes whether i may be chosen. Which state is sufficient?",
+      "constraints": [
+        "The solver processes positions from left to right.",
+        "The objective is to maximize the selected sum.",
+        "No other history affects future legality."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sum_so_far",
+            "text": "dp(sumSoFar), because the objective is a maximum sum."
+          },
+          {
+            "id": "index_and_prev",
+            "text": "dp(i, previousChosen), where previousChosen records whether i - 1 was selected."
+          },
+          {
+            "id": "index_only",
+            "text": "dp(i), because i identifies the next array position."
+          }
+        ],
+        "acceptedOptionIds": [
+          "index_and_prev"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "State must distinguish the two legality conditions at the same index, so previousChosen is future-relevant.",
+        "details": "At a fixed i, one history permits choosing nums[i] and another forbids it. Those histories cannot share one cached result unless the state records that distinction. The accumulated score is usually added outside the suffix value rather than used as identity, because it does not change the suffix choices. A sufficient state is the smallest summary that makes all histories mapped to it future-equivalent.",
+        "wrongOptionExplanationsByOptionId": {
+          "index_only": "The same i can be reached with different legality for choosing i, so index alone merges states with different future options.",
+          "sum_so_far": "The accumulated sum does not identify which positions remain or whether the current position is legal; it omits future-relevant information."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_sufficient_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-state-02-index-insufficient-capacity",
+      "prompt": "A 0/1 selection problem processes item i with remaining capacity c. Why is dp(i) insufficient while dp(i, c) is sufficient?",
+      "constraints": [
+        "Each item may be used at most once.",
+        "The value of a suffix depends on which remaining items fit."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "capacity_changes_future",
+            "text": "At the same i, different c values permit different future choices and can produce different optimal suffix values."
+          },
+          {
+            "id": "two_dimensions_faster",
+            "text": "Any two-dimensional table is faster than a one-dimensional table."
+          },
+          {
+            "id": "index_never_allowed",
+            "text": "An index can never be a valid DP state by itself."
+          }
+        ],
+        "acceptedOptionIds": [
+          "capacity_changes_future"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Capacity is part of the state because it changes both transition legality and the suffix optimum.",
+        "details": "Two calls at item i with capacities 3 and 10 do not ask the same question: the latter may take items the former cannot. Caching both under i would allow a result computed for one feasible set to contaminate the other. An index-only state is not inherently wrong; it is wrong here because it fails the future-equivalence test. Start from the state meaning, then include exactly the variables that change the unresolved problem.",
+        "wrongOptionExplanationsByOptionId": {
+          "two_dimensions_faster": "Dimensionality is determined by information sufficiency, not a blanket performance rule; extra dimensions generally increase state count.",
+          "index_never_allowed": "Index-only state is valid when the index fully determines the remaining choices, as in many prefix or suffix recurrences without another resource."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_sufficient_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-state-03-memo-key-does-not-repair-state",
+      "prompt": "A top-down alignment solver is defined as solve(i, j), but the cache is keyed only by i. What is the primary defect?",
+      "constraints": [
+        "The unresolved suffixes are first[i:] and second[j:].",
+        "Both i and j can vary independently."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "memo_slow",
+            "text": "Memoization is slower than recursion for every alignment input."
+          },
+          {
+            "id": "base_only",
+            "text": "The only problem is that the empty-string base case has not been initialized."
+          },
+          {
+            "id": "cache_collision",
+            "text": "Calls with the same i and different j are merged even though they compare different suffix pairs."
+          }
+        ],
+        "acceptedOptionIds": [
+          "cache_collision"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The cache key omits j, so it reuses answers across different second-string suffixes.",
+        "details": "A memo key is the operational representation of the DP state. If the recurrence meaning depends on (i, j), the cache must distinguish every reachable pair unless a proven invariant derives one coordinate from the other. Faster lookup cannot compensate for false equivalence. Fix the state/key first; only then compare top-down and bottom-up cost.",
+        "wrongOptionExplanationsByOptionId": {
+          "memo_slow": "The defect is semantic, not a universal performance claim; a correctly keyed memo can remove substantial recomputation.",
+          "base_only": "A missing base case would be separate; even with perfect bases, the index-only key still aliases distinct suffix pairs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_sufficient_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-state-04-state-before-loop-order",
+      "prompt": "Order the DP design decisions so later choices are justified by earlier ones.",
+      "constraints": [
+        "The goal is a bottom-up implementation.",
+        "Each step must have enough information to justify the next."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_meaning",
+            "text": "Define exactly what dp[state] returns."
+          },
+          {
+            "id": "state_components",
+            "text": "Choose the minimal components that make the unresolved problem future-equivalent."
+          },
+          {
+            "id": "transition",
+            "text": "Express dp[state] using legal dependent states."
+          },
+          {
+            "id": "iteration",
+            "text": "Choose an order that makes every dependency available before it is read."
+          }
+        ],
+        "canonicalOrder": [
+          "state_meaning",
+          "state_components",
+          "transition",
+          "iteration"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "A safe loop order depends on the recurrence, and the recurrence depends on a precise state contract.",
+        "details": "Defining array dimensions before semantics often produces accidental index-only states or loops that follow storage layout rather than dependencies. First state the returned quantity, then determine which variables distinguish future behavior. The recurrence follows from legal first decisions, and its edges finally determine iteration order. The order is a reasoning dependency, not merely a preferred coding style."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_sufficient_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-state-05-compression-after-sufficiency",
+      "prompt": "A grid recurrence logically uses state (r, c), but each row reads only the previous row and the current row's left cell. Which statement is correct?",
+      "constraints": [
+        "Only the final path count is required.",
+        "The update order preserves the previous-row value until it is read."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "compression_always_safe",
+            "text": "Any 2D DP can be reduced to one row without changing behavior."
+          },
+          {
+            "id": "logical_two_storage_one",
+            "text": "The DP state remains (r, c), while storage may be compressed to one row after dependency liveness is proved."
+          },
+          {
+            "id": "state_becomes_c",
+            "text": "Compression proves that the true semantic state was only c all along."
+          }
+        ],
+        "acceptedOptionIds": [
+          "logical_two_storage_one"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The semantic state can be two-dimensional even when the evaluation schedule makes one dimension implicit in storage.",
+        "details": "dp(r, c) still denotes a result for a particular row and column. During row-by-row evaluation, the current iteration variable supplies r, while the array retains only values that remain live. This is a storage optimization, not a redefinition of the subproblem. If dependencies or reconstruction need discarded rows, the compression is invalid even though the logical state remains well-defined.",
+        "wrongOptionExplanationsByOptionId": {
+          "state_becomes_c": "The value at column c still has different meanings for different rows; the row is implicit in the evaluation phase, not absent from the semantic state.",
+          "compression_always_safe": "Some recurrences read multiple older rows, arbitrary cells, or require the full table for reconstruction."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_sufficient_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-state-06-drop-irrelevant-history",
+      "prompt": "A suffix solver returns the maximum additional score obtainable from index i onward. Past choices affect only scoreAlreadyEarned, which is added after the suffix result and imposes no future constraint. Should scoreAlreadyEarned be part of the memo key?",
+      "constraints": [
+        "Past score does not change which future choices are legal.",
+        "The function returns additional future score, not total score."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "exclude_score",
+            "text": "No. Calls with the same i have the same remaining optimization problem regardless of scoreAlreadyEarned."
+          },
+          {
+            "id": "include_score",
+            "text": "Yes. Every value mentioned by the caller must be part of the DP state."
+          },
+          {
+            "id": "no_memo",
+            "text": "No state can be memoized because different histories reached i."
+          }
+        ],
+        "acceptedOptionIds": [
+          "exclude_score"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The suffix function factors past score from future optimization, so the accumulator does not distinguish subproblems.",
+        "details": "For a fixed i, the set of remaining choices and the maximum additional score are identical across all past totals. The caller can add the already-earned amount outside the memoized function. Including it would fragment one reusable state into many copies and may eliminate overlap. The boundary changes if the accumulated value affects legality, a target, or a future reward.",
+        "wrongOptionExplanationsByOptionId": {
+          "include_score": "Only future-relevant information belongs in the key. Including an irrelevant accumulator can multiply states without changing the suffix answer.",
+          "no_memo": "Different histories may safely merge when the state contract deliberately removes history that has no effect on the future."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_sufficient_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_dp",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-state-07-alignment-two-coordinates",
+      "prompt": "For a solver that computes the length of a best alignment between suffixes a[i:] and b[j:], which state definition is sufficient?",
+      "constraints": [
+        "A transition may advance i, j, or both.",
+        "No invariant fixes j as a function of i."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "first_index",
+            "text": "dp(i), because both inputs are strings and i can stand for progress through them."
+          },
+          {
+            "id": "lengths_only",
+            "text": "dp(len(a), len(b)), because the original lengths do not change."
+          },
+          {
+            "id": "two_indices",
+            "text": "dp(i, j), representing the best alignment between both remaining suffixes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_indices"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Both suffix boundaries vary independently, so both coordinates are required to identify the unresolved pair.",
+        "details": "A state must distinguish every combination of remaining suffixes that can lead to a different answer. Because a transition can skip in either string, multiple j values are reachable at one i and vice versa. Storing only one coordinate would merge different alignment problems. This is the same sufficiency test used for grid rows and columns: include each independent axis of future behavior.",
+        "wrongOptionExplanationsByOptionId": {
+          "first_index": "The two suffixes can advance independently, so the same i can pair with many j values and different remaining matches.",
+          "lengths_only": "Constant original lengths do not identify progress; every recursive call would collide despite representing different suffixes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_sufficient_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [
+      {
+        "id": "dpintro-same-mechanism-define_dp_state-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-dpintro-state-01-future-equivalence",
+          "alg-dpintro-state-02-index-insufficient-capacity",
+          "alg-dpintro-state-03-memo-key-does-not-repair-state"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-state-04-state-before-loop-order",
+          "alg-dpintro-state-05-compression-after-sufficiency",
+          "alg-dpintro-state-06-drop-irrelevant-history",
+          "alg-dpintro-state-07-alignment-two-coordinates"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "define_dp_state"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,1041 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-dynamic-programming-intro-dp_mistake_review-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-dynamic-programming-intro-authoring-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "dynamic_programming_intro",
+    "primaryMentalUnitId": "dp_mistake_review",
+    "patternFamilyId": "dynamic_programming_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-dynamic-programming-intro-dp_mistake_review-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-dpintro-diagnose-01-overlap-not-complete-proof",
+      "prompt": "A solution note says, “The recursion repeats calls, so storing by index makes it a correct DP.” What is the best diagnosis?",
+      "constraints": [
+        "The recurrence also carries a remaining target that changes future choices.",
+        "No proof of the index-only key is given."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "insufficient_state_claim",
+            "text": "The conclusion is unsupported: overlap exists, but the cache key omits a future-relevant state component and can merge different subproblems."
+          },
+          {
+            "id": "overlap_enough",
+            "text": "The reasoning is complete because any overlap guarantees a correct index-only DP."
+          },
+          {
+            "id": "memo_speed_only",
+            "text": "The only possible issue is that memoization may be slower than tabulation."
+          }
+        ],
+        "acceptedOptionIds": [
+          "insufficient_state_claim"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Repeated work is only one DP signal; the proposed index key is invalid because remaining target changes the unresolved problem.",
+        "details": "A sound DP argument connects state meaning, complete identity, transition, bases, and evaluation. Here two calls at the same index can have different remaining targets and therefore different legal completions. Caching them together can return an answer from the wrong subproblem. The presence of overlap does not repair an incomplete state or prove the rest of the model.",
+        "wrongOptionExplanationsByOptionId": {
+          "overlap_enough": "Overlap identifies potential reuse, not which arguments define equality or whether the recurrence is correct.",
+          "memo_speed_only": "Performance is secondary; the omitted remaining target is a correctness defect in state identity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "count_ways"
+      }
+    },
+    {
+      "id": "alg-dpintro-diagnose-02-small-counterexample-state",
+      "prompt": "A solver caches choose(i, remainingCapacity) only by i. Which test most decisively exposes the bug?",
+      "constraints": [
+        "At index i, the next item has weight 5 and positive value.",
+        "Both states are reachable."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "different_indices",
+            "text": "Compare i and i + 1 with the same capacity."
+          },
+          {
+            "id": "large_random",
+            "text": "Run one large random input and check whether the final answer looks plausible."
+          },
+          {
+            "id": "capacity_collision",
+            "text": "Compare calls at the same i with capacities 4 and 5; the take branch is illegal in one and legal in the other."
+          }
+        ],
+        "acceptedOptionIds": [
+          "capacity_collision"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The capacities 4 and 5 create different legal futures under the same index key, directly refuting state sufficiency.",
+        "details": "A diagnostic counterexample should isolate the omitted variable. At the same i, crossing the next item's weight threshold changes whether taking is possible, so the two correct suffix values can differ. An index-only cache cannot store both and will reuse whichever is computed first. This collision proof is smaller and more decisive than broad random testing.",
+        "wrongOptionExplanationsByOptionId": {
+          "different_indices": "Those calls already have different keys, so they do not demonstrate a collision in the proposed cache.",
+          "large_random": "A plausible final output may miss the defect; a minimal colliding pair directly proves the key merges nonequivalent states."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-diagnose-03-performance-versus-correctness",
+      "prompt": "A memoized alignment solver returns correct values but is slower than a tabulation on dense inputs and can exhaust the recursion stack. What is the diagnosis?",
+      "constraints": [
+        "The state, cache key, transition, and base cases have been verified correct."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "tabulation_only_dp",
+            "text": "The method is not dynamic programming because only a bottom-up table can evaluate a dense state space correctly."
+          },
+          {
+            "id": "implementation_tradeoff",
+            "text": "The DP model is correct; dense reachability exposes top-down call, lookup, and stack overhead."
+          },
+          {
+            "id": "state_bug",
+            "text": "The state is incomplete because any correct memoized implementation must outperform an equivalent tabulation."
+          }
+        ],
+        "acceptedOptionIds": [
+          "implementation_tradeoff"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Correctness and evaluation cost are separate dimensions; memoization is valid here but not the best operational choice.",
+        "details": "The solver still evaluates each state consistently and returns the intended result. Dense reachability means top-down skips little work, while recursive calls, cache operations, and stack depth add costs that iterative loops may avoid. The repair is an implementation decision, not a new state or transition. Review should not mislabel every slower memoized solution as incorrect.",
+        "wrongOptionExplanationsByOptionId": {
+          "state_bug": "Runtime does not determine state sufficiency; verified correct outputs and state invariants separate this from a semantic defect.",
+          "tabulation_only_dp": "Memoized top-down evaluation is a valid DP implementation when it caches complete states and uses a correct recurrence."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-diagnose-04-direction-defect",
+      "prompt": "A 0/1 capacity DP uses the correct one-array formula but processes capacity from low to high. Outputs match an unbounded-choice solution. What is the primary defect?",
+      "constraints": [
+        "Each item should be used at most once.",
+        "The take term reads dp[c - w]."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "iteration_alias",
+            "text": "The loop reads current-item values after overwrite, changing the intended previous-layer dependency."
+          },
+          {
+            "id": "base_only",
+            "text": "The base dp[0] must be wrong because update direction cannot change a recurrence's item multiplicity."
+          },
+          {
+            "id": "overlap_missing",
+            "text": "The recurrence lacks overlapping subproblems, so the one-array formula cannot represent dynamic programming."
+          }
+        ],
+        "acceptedOptionIds": [
+          "iteration_alias"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Ascending in-place updates alias the previous-item dependency with the current layer and permit repeated use.",
+        "details": "The mathematical 0/1 recurrence reads values from the prior item layer. A descending loop preserves those values until consumption; an ascending loop overwrites lower capacities first and then reads them as if they were prior-layer states. The formula may look identical in code, but its operational meaning has changed. This is an iteration-order defect, not a base or overlap defect.",
+        "wrongOptionExplanationsByOptionId": {
+          "base_only": "The observed repeated use follows directly from ascending in-place updates even when dp[0] is correct.",
+          "overlap_missing": "Capacity states are reused; the problem is which version is read, not the absence of overlap."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-diagnose-05-compression-output-defect",
+      "prompt": "A two-row DP returns the correct optimum length, but the API also requires one optimal alignment and no reconstruction plan exists. How should review classify it?",
+      "constraints": [
+        "All value tests pass.",
+        "The discarded rows contained the ordinary predecessor trace."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "fully_correct",
+            "text": "The implementation is complete because a correct optimum scalar is sufficient evidence of an optimal alignment."
+          },
+          {
+            "id": "wrong_recurrence",
+            "text": "The recurrence is incorrect because any valid alignment recurrence must retain the full value table."
+          },
+          {
+            "id": "incomplete_output",
+            "text": "The value computation is correct, but the required witness has no retained or recomputable trace."
+          }
+        ],
+        "acceptedOptionIds": [
+          "incomplete_output"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The optimized storage satisfies only the value subproblem, not the complete witness-producing contract.",
+        "details": "Review should separate forward value correctness from output completeness. Rolling rows can preserve every dependency needed to compute the optimum while discarding the history used to recover an alignment. Without parent data, checkpoints, or recomputation, the API cannot deliver its required witness. This is a compression/output-boundary defect, not proof that the recurrence itself is wrong.",
+        "wrongOptionExplanationsByOptionId": {
+          "fully_correct": "The stated API requires a witness, so satisfying only a narrower scalar contract is insufficient.",
+          "wrong_recurrence": "The value recurrence can remain correct; the defect is information loss relative to reconstruction."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-diagnose-06-smallest-failing-state",
+      "prompt": "Order a disciplined DP mistake review using a small counterexample and an uncompressed reference.",
+      "constraints": [
+        "The reference recurrence and expected state meanings are trusted.",
+        "The implementation exposes state values or a trace."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "minimize_input",
+            "text": "Reduce the failing input while preserving the wrong result."
+          },
+          {
+            "id": "compare_bases",
+            "text": "Verify every reachable base and impossible-state sentinel on that input."
+          },
+          {
+            "id": "find_first_wrong",
+            "text": "Compare states in dependency order and identify the first value that diverges."
+          },
+          {
+            "id": "classify_cause",
+            "text": "Inspect that state's inputs, transition, and update versions to classify the defect before changing code."
+          }
+        ],
+        "canonicalOrder": [
+          "minimize_input",
+          "compare_bases",
+          "find_first_wrong",
+          "classify_cause"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The first divergent state is the narrowest point at which a wrong base, transition, or dependency version can enter the computation.",
+        "details": "A smaller counterexample reduces the number of states and branches to inspect. Bases are checked first because every later value depends on them. Comparing in dependency order then finds the earliest incorrect state, whose dependencies should still match the reference; that sharply identifies whether the local transition or update version is wrong. Editing before classification can mask one defect with another."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-diagnose-07-diagnostic-ownership-transfer",
+      "prompt": "Select all defect-to-owner mappings that are correct.",
+      "constraints": [
+        "Choose every correct mapping.",
+        "Each defect is described at its first violated contract."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "state_owner",
+            "text": "Two histories share a cache key but have different legal futures → define_dp_state."
+          },
+          {
+            "id": "order_owner",
+            "text": "A one-row update reads a current-layer value where the recurrence requires a previous layer → iteration_order."
+          },
+          {
+            "id": "base_as_transition",
+            "text": "A blocked origin is seeded with one path → define_transition."
+          },
+          {
+            "id": "reconstruct_as_overlap",
+            "text": "The optimum value is correct but no witness can be recovered → recognize_overlapping_subproblems."
+          }
+        ],
+        "acceptedOptionIds": [
+          "state_owner",
+          "order_owner"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Diagnosis should name the first broken contract and route the repair to its owning mental unit.",
+        "details": "State collisions are repaired by defining a sufficient state or key. Wrong-layer reads arise from an evaluation order that does not preserve the recurrence's dependency versions. A blocked-origin seed is a base feasibility error, while a missing witness is a reconstruction/storage-output issue. This ownership discipline keeps mistake review diagnostic rather than turning it into a second, overlapping version of every DP lesson.",
+        "wrongOptionExplanationsByOptionId": {
+          "base_as_transition": "The first violated contract is feasibility of the terminal/start state, so base_cases_and_initialization owns the repair.",
+          "reconstruct_as_overlap": "The defect concerns preserved predecessor evidence and output reconstruction, not whether equal states recur."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "state_owner": "A cache collision between nonequivalent histories is a state-sufficiency defect.",
+          "order_owner": "Reading the wrong logical layer is an iteration/update-order defect."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "dpintro-learn-approach-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-dpintro-overlap-01-same-future-state",
+            "alg-dpintro-overlap-02-full-key-equality",
+            "alg-dpintro-overlap-03-memo-overhead-boundary",
+            "alg-dpintro-overlap-04-reuse-before-order",
+            "alg-dpintro-overlap-05-overlap-not-compression-proof",
+            "alg-dpintro-overlap-06-recursive-without-overlap",
+            "alg-dpintro-overlap-07-grid-state-transfer",
+            "alg-dpintro-state-01-future-equivalence",
+            "alg-dpintro-state-02-index-insufficient-capacity",
+            "alg-dpintro-state-03-memo-key-does-not-repair-state",
+            "alg-dpintro-state-04-state-before-loop-order",
+            "alg-dpintro-state-05-compression-after-sufficiency",
+            "alg-dpintro-state-06-drop-irrelevant-history",
+            "alg-dpintro-state-07-alignment-two-coordinates",
+            "alg-dpintro-transition-01-first-decision-decomposition",
+            "alg-dpintro-transition-02-state-controls-legal-branches",
+            "alg-dpintro-transition-03-recurrence-independent-of-direction",
+            "alg-dpintro-transition-04-derive-before-schedule",
+            "alg-dpintro-transition-05-in-place-transition-alias",
+            "alg-dpintro-transition-06-impossible-branch-handling",
+            "alg-dpintro-transition-07-aggregation-transfer",
+            "alg-dpintro-base-01-empty-solution-count",
+            "alg-dpintro-base-02-complete-versus-invalid",
+            "alg-dpintro-base-03-same-bases-both-directions",
+            "alg-dpintro-base-04-initialize-before-consumer",
+            "alg-dpintro-base-05-compressed-seed-preservation",
+            "alg-dpintro-base-06-empty-input-boundary",
+            "alg-dpintro-base-07-blocked-grid-origin",
+            "alg-dpintro-memo-01-lookup-compute-store",
+            "alg-dpintro-memo-02-complete-cache-key",
+            "alg-dpintro-memo-03-sparse-reachable-states",
+            "alg-dpintro-memo-04-acyclic-progress-before-cache",
+            "alg-dpintro-memo-05-memo-table-not-rolling-state",
+            "alg-dpintro-memo-06-cached-zero-sentinel",
+            "alg-dpintro-memo-07-two-parameter-transfer",
+            "alg-dpintro-tabulation-01-explicit-state-enumeration",
+            "alg-dpintro-tabulation-02-table-shape-from-state",
+            "alg-dpintro-tabulation-03-dense-table-cost",
+            "alg-dpintro-tabulation-04-bottom-up-lifecycle",
+            "alg-dpintro-tabulation-05-compress-after-reference-table",
+            "alg-dpintro-tabulation-06-unreachable-state-initialization",
+            "alg-dpintro-tabulation-07-grid-boundary-transfer",
+            "alg-dpintro-order-01-dependency-graph-direction",
+            "alg-dpintro-order-02-state-formulation-changes-order",
+            "alg-dpintro-order-03-top-down-order-boundary",
+            "alg-dpintro-order-04-capacity-direction-zero-one",
+            "alg-dpintro-order-05-rolling-grid-left-up",
+            "alg-dpintro-order-06-diagonal-dependency",
+            "alg-dpintro-order-07-reverse-formulation-transfer",
+            "alg-dpintro-compression-01-dependency-liveness",
+            "alg-dpintro-compression-02-semantic-state-versus-storage",
+            "alg-dpintro-compression-03-rolling-row-space",
+            "alg-dpintro-compression-04-prove-before-rewrite",
+            "alg-dpintro-compression-05-reconstruction-information-loss",
+            "alg-dpintro-compression-06-overwrite-old-value",
+            "alg-dpintro-compression-07-capacity-versus-reconstruction-transfer",
+            "alg-dpintro-one-d-01-single-progress-axis",
+            "alg-dpintro-one-d-02-index-only-boundary",
+            "alg-dpintro-one-d-03-memo-or-table-one-axis",
+            "alg-dpintro-one-d-04-prefix-model-order",
+            "alg-dpintro-one-d-05-rolling-window-size",
+            "alg-dpintro-one-d-06-small-n-bounds",
+            "alg-dpintro-one-d-07-single-input-two-state-transfer",
+            "alg-dpintro-two-d-01-independent-coordinates",
+            "alg-dpintro-two-d-02-same-row-different-column",
+            "alg-dpintro-two-d-03-dense-grid-evaluation-choice",
+            "alg-dpintro-two-d-04-boundaries-before-interior",
+            "alg-dpintro-two-d-05-row-compression-condition",
+            "alg-dpintro-two-d-06-first-row-column-semantics",
+            "alg-dpintro-two-d-07-third-dimension-boundary",
+            "alg-dpintro-reconstruct-01-value-versus-witness",
+            "alg-dpintro-reconstruct-02-state-consistent-predecessor",
+            "alg-dpintro-reconstruct-03-memoization-does-not-choose-path",
+            "alg-dpintro-reconstruct-04-backtrack-final-to-base",
+            "alg-dpintro-reconstruct-05-compression-needs-recovery-plan",
+            "alg-dpintro-reconstruct-06-deterministic-ties",
+            "alg-dpintro-reconstruct-07-grid-parent-transfer",
+            "alg-dpintro-diagnose-01-overlap-not-complete-proof",
+            "alg-dpintro-diagnose-02-small-counterexample-state",
+            "alg-dpintro-diagnose-03-performance-versus-correctness",
+            "alg-dpintro-diagnose-04-direction-defect",
+            "alg-dpintro-diagnose-05-compression-output-defect",
+            "alg-dpintro-diagnose-06-smallest-failing-state",
+            "alg-dpintro-diagnose-07-diagnostic-ownership-transfer"
+          ]
+        }
+      },
+      {
+        "blueprintId": "dpintro-recognize-patterns-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-recognize-patterns",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "recognition_sets",
+          "ids": [
+            "dpintro-recognition-set-v1"
+          ]
+        }
+      },
+      {
+        "blueprintId": "dpintro-contrast-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-contrast-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "contrast_sets",
+          "ids": [
+            "dpintro-contrast-overlap-versus-model-v1",
+            "dpintro-contrast-index-versus-complete-state-v1",
+            "dpintro-contrast-memoization-versus-tabulation-v1",
+            "dpintro-contrast-recurrence-versus-schedule-v1",
+            "dpintro-contrast-value-compression-versus-full-output-v1"
+          ]
+        }
+      },
+      {
+        "blueprintId": "dpintro-weak-area-review-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-weak-area-review",
+        "requestedLengths": [
+          10,
+          20
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 1,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-dpintro-overlap-01-same-future-state",
+            "alg-dpintro-overlap-02-full-key-equality",
+            "alg-dpintro-overlap-03-memo-overhead-boundary",
+            "alg-dpintro-overlap-04-reuse-before-order",
+            "alg-dpintro-overlap-05-overlap-not-compression-proof",
+            "alg-dpintro-overlap-06-recursive-without-overlap",
+            "alg-dpintro-overlap-07-grid-state-transfer",
+            "alg-dpintro-state-01-future-equivalence",
+            "alg-dpintro-state-02-index-insufficient-capacity",
+            "alg-dpintro-state-03-memo-key-does-not-repair-state",
+            "alg-dpintro-state-04-state-before-loop-order",
+            "alg-dpintro-state-05-compression-after-sufficiency",
+            "alg-dpintro-state-06-drop-irrelevant-history",
+            "alg-dpintro-state-07-alignment-two-coordinates",
+            "alg-dpintro-transition-01-first-decision-decomposition",
+            "alg-dpintro-transition-02-state-controls-legal-branches",
+            "alg-dpintro-transition-03-recurrence-independent-of-direction",
+            "alg-dpintro-transition-04-derive-before-schedule",
+            "alg-dpintro-transition-05-in-place-transition-alias",
+            "alg-dpintro-transition-06-impossible-branch-handling",
+            "alg-dpintro-transition-07-aggregation-transfer",
+            "alg-dpintro-base-01-empty-solution-count",
+            "alg-dpintro-base-02-complete-versus-invalid",
+            "alg-dpintro-base-03-same-bases-both-directions",
+            "alg-dpintro-base-04-initialize-before-consumer",
+            "alg-dpintro-base-05-compressed-seed-preservation",
+            "alg-dpintro-base-06-empty-input-boundary",
+            "alg-dpintro-base-07-blocked-grid-origin",
+            "alg-dpintro-memo-01-lookup-compute-store",
+            "alg-dpintro-memo-02-complete-cache-key",
+            "alg-dpintro-memo-03-sparse-reachable-states",
+            "alg-dpintro-memo-04-acyclic-progress-before-cache",
+            "alg-dpintro-memo-05-memo-table-not-rolling-state",
+            "alg-dpintro-memo-06-cached-zero-sentinel",
+            "alg-dpintro-memo-07-two-parameter-transfer",
+            "alg-dpintro-tabulation-01-explicit-state-enumeration",
+            "alg-dpintro-tabulation-02-table-shape-from-state",
+            "alg-dpintro-tabulation-03-dense-table-cost",
+            "alg-dpintro-tabulation-04-bottom-up-lifecycle",
+            "alg-dpintro-tabulation-05-compress-after-reference-table",
+            "alg-dpintro-tabulation-06-unreachable-state-initialization",
+            "alg-dpintro-tabulation-07-grid-boundary-transfer",
+            "alg-dpintro-order-01-dependency-graph-direction",
+            "alg-dpintro-order-02-state-formulation-changes-order",
+            "alg-dpintro-order-03-top-down-order-boundary",
+            "alg-dpintro-order-04-capacity-direction-zero-one",
+            "alg-dpintro-order-05-rolling-grid-left-up",
+            "alg-dpintro-order-06-diagonal-dependency",
+            "alg-dpintro-order-07-reverse-formulation-transfer",
+            "alg-dpintro-compression-01-dependency-liveness",
+            "alg-dpintro-compression-02-semantic-state-versus-storage",
+            "alg-dpintro-compression-03-rolling-row-space",
+            "alg-dpintro-compression-04-prove-before-rewrite",
+            "alg-dpintro-compression-05-reconstruction-information-loss",
+            "alg-dpintro-compression-06-overwrite-old-value",
+            "alg-dpintro-compression-07-capacity-versus-reconstruction-transfer",
+            "alg-dpintro-one-d-01-single-progress-axis",
+            "alg-dpintro-one-d-02-index-only-boundary",
+            "alg-dpintro-one-d-03-memo-or-table-one-axis",
+            "alg-dpintro-one-d-04-prefix-model-order",
+            "alg-dpintro-one-d-05-rolling-window-size",
+            "alg-dpintro-one-d-06-small-n-bounds",
+            "alg-dpintro-one-d-07-single-input-two-state-transfer",
+            "alg-dpintro-two-d-01-independent-coordinates",
+            "alg-dpintro-two-d-02-same-row-different-column",
+            "alg-dpintro-two-d-03-dense-grid-evaluation-choice",
+            "alg-dpintro-two-d-04-boundaries-before-interior",
+            "alg-dpintro-two-d-05-row-compression-condition",
+            "alg-dpintro-two-d-06-first-row-column-semantics",
+            "alg-dpintro-two-d-07-third-dimension-boundary",
+            "alg-dpintro-reconstruct-01-value-versus-witness",
+            "alg-dpintro-reconstruct-02-state-consistent-predecessor",
+            "alg-dpintro-reconstruct-03-memoization-does-not-choose-path",
+            "alg-dpintro-reconstruct-04-backtrack-final-to-base",
+            "alg-dpintro-reconstruct-05-compression-needs-recovery-plan",
+            "alg-dpintro-reconstruct-06-deterministic-ties",
+            "alg-dpintro-reconstruct-07-grid-parent-transfer",
+            "alg-dpintro-diagnose-01-overlap-not-complete-proof",
+            "alg-dpintro-diagnose-02-small-counterexample-state",
+            "alg-dpintro-diagnose-03-performance-versus-correctness",
+            "alg-dpintro-diagnose-04-direction-defect",
+            "alg-dpintro-diagnose-05-compression-output-defect",
+            "alg-dpintro-diagnose-06-smallest-failing-state",
+            "alg-dpintro-diagnose-07-diagnostic-ownership-transfer"
+          ]
+        }
+      },
+      {
+        "blueprintId": "dpintro-independent-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-independent-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "blueprint_controlled",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "interleaved_scope",
+          "ids": [
+            "dpintro-interleaved-scope-v1"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [
+      {
+        "setId": "dpintro-recognition-set-v1",
+        "setVersion": "v1",
+        "taxonomyScope": {
+          "roadmapNodeIds": [
+            "dynamic_programming_intro"
+          ],
+          "mentalUnitIds": [
+            "recognize_overlapping_subproblems",
+            "define_dp_state",
+            "define_transition",
+            "base_cases_and_initialization",
+            "memoization_top_down",
+            "tabulation_bottom_up",
+            "iteration_order",
+            "optimize_state_space",
+            "one_dimensional_dp",
+            "two_dimensional_dp_intro",
+            "reconstruct_solution_intro",
+            "dp_mistake_review"
+          ]
+        },
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "itemIds": [
+          "alg-dpintro-overlap-01-same-future-state",
+          "alg-dpintro-overlap-07-grid-state-transfer",
+          "alg-dpintro-state-01-future-equivalence",
+          "alg-dpintro-state-07-alignment-two-coordinates",
+          "alg-dpintro-transition-01-first-decision-decomposition",
+          "alg-dpintro-transition-07-aggregation-transfer",
+          "alg-dpintro-base-01-empty-solution-count",
+          "alg-dpintro-base-07-blocked-grid-origin",
+          "alg-dpintro-memo-01-lookup-compute-store",
+          "alg-dpintro-memo-07-two-parameter-transfer",
+          "alg-dpintro-tabulation-01-explicit-state-enumeration",
+          "alg-dpintro-tabulation-07-grid-boundary-transfer",
+          "alg-dpintro-order-01-dependency-graph-direction",
+          "alg-dpintro-order-07-reverse-formulation-transfer",
+          "alg-dpintro-compression-01-dependency-liveness",
+          "alg-dpintro-compression-07-capacity-versus-reconstruction-transfer",
+          "alg-dpintro-one-d-01-single-progress-axis",
+          "alg-dpintro-one-d-07-single-input-two-state-transfer",
+          "alg-dpintro-two-d-01-independent-coordinates",
+          "alg-dpintro-two-d-07-third-dimension-boundary",
+          "alg-dpintro-reconstruct-01-value-versus-witness",
+          "alg-dpintro-reconstruct-07-grid-parent-transfer",
+          "alg-dpintro-diagnose-01-overlap-not-complete-proof",
+          "alg-dpintro-diagnose-07-diagnostic-ownership-transfer"
+        ],
+        "falseHeuristicIds": [
+          "dp_state_is_always_only_the_index",
+          "memoization_is_always_faster",
+          "overlapping_subproblems_alone_are_sufficient",
+          "state_compression_never_changes_correctness",
+          "transition_order_never_matters"
+        ]
+      }
+    ],
+    "contrastSets": [
+      {
+        "setId": "dpintro-contrast-overlap-versus-model-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "recognize_overlapping_subproblems",
+        "contrastedMentalUnitIds": [
+          "define_dp_state",
+          "define_transition",
+          "dp_mistake_review"
+        ],
+        "falseHeuristicId": "overlapping_subproblems_alone_are_sufficient",
+        "transferBoundary": "Repeated complete states justify reuse, but state sufficiency, recurrence correctness, and terminal semantics remain separate proofs.",
+        "itemIds": [
+          "alg-dpintro-overlap-01-same-future-state",
+          "alg-dpintro-state-01-future-equivalence",
+          "alg-dpintro-transition-01-first-decision-decomposition",
+          "alg-dpintro-diagnose-01-overlap-not-complete-proof"
+        ]
+      },
+      {
+        "setId": "dpintro-contrast-index-versus-complete-state-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "define_dp_state",
+        "contrastedMentalUnitIds": [
+          "one_dimensional_dp",
+          "two_dimensional_dp_intro",
+          "dp_mistake_review"
+        ],
+        "falseHeuristicId": "dp_state_is_always_only_the_index",
+        "transferBoundary": "An index is sufficient only when no independent resource, coordinate, or history feature changes future behavior.",
+        "itemIds": [
+          "alg-dpintro-state-02-index-insufficient-capacity",
+          "alg-dpintro-one-d-02-index-only-boundary",
+          "alg-dpintro-two-d-02-same-row-different-column",
+          "alg-dpintro-diagnose-02-small-counterexample-state"
+        ]
+      },
+      {
+        "setId": "dpintro-contrast-memoization-versus-tabulation-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "memoization_top_down",
+        "contrastedMentalUnitIds": [
+          "tabulation_bottom_up",
+          "iteration_order",
+          "dp_mistake_review"
+        ],
+        "falseHeuristicId": "memoization_is_always_faster",
+        "transferBoundary": "Top-down can skip unreachable states; dense state spaces may favor bottom-up locality and lower call overhead.",
+        "itemIds": [
+          "alg-dpintro-memo-03-sparse-reachable-states",
+          "alg-dpintro-tabulation-03-dense-table-cost",
+          "alg-dpintro-order-03-top-down-order-boundary",
+          "alg-dpintro-diagnose-03-performance-versus-correctness"
+        ]
+      },
+      {
+        "setId": "dpintro-contrast-recurrence-versus-schedule-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "iteration_order",
+        "contrastedMentalUnitIds": [
+          "define_transition",
+          "tabulation_bottom_up",
+          "dp_mistake_review"
+        ],
+        "falseHeuristicId": "transition_order_never_matters",
+        "transferBoundary": "The recurrence defines dependency edges; the schedule must respect the logical version of every dependency.",
+        "itemIds": [
+          "alg-dpintro-order-04-capacity-direction-zero-one",
+          "alg-dpintro-transition-04-derive-before-schedule",
+          "alg-dpintro-tabulation-04-bottom-up-lifecycle",
+          "alg-dpintro-diagnose-04-direction-defect"
+        ]
+      },
+      {
+        "setId": "dpintro-contrast-value-compression-versus-full-output-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "optimize_state_space",
+        "contrastedMentalUnitIds": [
+          "iteration_order",
+          "reconstruct_solution_intro",
+          "dp_mistake_review"
+        ],
+        "falseHeuristicId": "state_compression_never_changes_correctness",
+        "transferBoundary": "Compression must preserve dependency versions and every output consumer, including witness reconstruction.",
+        "itemIds": [
+          "alg-dpintro-compression-05-reconstruction-information-loss",
+          "alg-dpintro-order-05-rolling-grid-left-up",
+          "alg-dpintro-reconstruct-05-compression-needs-recovery-plan",
+          "alg-dpintro-diagnose-05-compression-output-defect"
+        ]
+      }
+    ],
+    "interleavedScopes": [
+      {
+        "scopeId": "dpintro-interleaved-scope-v1",
+        "scopeVersion": "v1",
+        "mentalUnitIds": [
+          "recognize_overlapping_subproblems",
+          "define_dp_state",
+          "define_transition",
+          "base_cases_and_initialization",
+          "memoization_top_down",
+          "tabulation_bottom_up",
+          "iteration_order",
+          "optimize_state_space",
+          "one_dimensional_dp",
+          "two_dimensional_dp_intro",
+          "reconstruct_solution_intro",
+          "dp_mistake_review"
+        ],
+        "itemIds": [
+          "alg-dpintro-overlap-01-same-future-state",
+          "alg-dpintro-overlap-02-full-key-equality",
+          "alg-dpintro-overlap-03-memo-overhead-boundary",
+          "alg-dpintro-overlap-04-reuse-before-order",
+          "alg-dpintro-overlap-05-overlap-not-compression-proof",
+          "alg-dpintro-overlap-06-recursive-without-overlap",
+          "alg-dpintro-overlap-07-grid-state-transfer",
+          "alg-dpintro-state-01-future-equivalence",
+          "alg-dpintro-state-02-index-insufficient-capacity",
+          "alg-dpintro-state-03-memo-key-does-not-repair-state",
+          "alg-dpintro-state-04-state-before-loop-order",
+          "alg-dpintro-state-05-compression-after-sufficiency",
+          "alg-dpintro-state-06-drop-irrelevant-history",
+          "alg-dpintro-state-07-alignment-two-coordinates",
+          "alg-dpintro-transition-01-first-decision-decomposition",
+          "alg-dpintro-transition-02-state-controls-legal-branches",
+          "alg-dpintro-transition-03-recurrence-independent-of-direction",
+          "alg-dpintro-transition-04-derive-before-schedule",
+          "alg-dpintro-transition-05-in-place-transition-alias",
+          "alg-dpintro-transition-06-impossible-branch-handling",
+          "alg-dpintro-transition-07-aggregation-transfer",
+          "alg-dpintro-base-01-empty-solution-count",
+          "alg-dpintro-base-02-complete-versus-invalid",
+          "alg-dpintro-base-03-same-bases-both-directions",
+          "alg-dpintro-base-04-initialize-before-consumer",
+          "alg-dpintro-base-05-compressed-seed-preservation",
+          "alg-dpintro-base-06-empty-input-boundary",
+          "alg-dpintro-base-07-blocked-grid-origin",
+          "alg-dpintro-memo-01-lookup-compute-store",
+          "alg-dpintro-memo-02-complete-cache-key",
+          "alg-dpintro-memo-03-sparse-reachable-states",
+          "alg-dpintro-memo-04-acyclic-progress-before-cache",
+          "alg-dpintro-memo-05-memo-table-not-rolling-state",
+          "alg-dpintro-memo-06-cached-zero-sentinel",
+          "alg-dpintro-memo-07-two-parameter-transfer",
+          "alg-dpintro-tabulation-01-explicit-state-enumeration",
+          "alg-dpintro-tabulation-02-table-shape-from-state",
+          "alg-dpintro-tabulation-03-dense-table-cost",
+          "alg-dpintro-tabulation-04-bottom-up-lifecycle",
+          "alg-dpintro-tabulation-05-compress-after-reference-table",
+          "alg-dpintro-tabulation-06-unreachable-state-initialization",
+          "alg-dpintro-tabulation-07-grid-boundary-transfer",
+          "alg-dpintro-order-01-dependency-graph-direction",
+          "alg-dpintro-order-02-state-formulation-changes-order",
+          "alg-dpintro-order-03-top-down-order-boundary",
+          "alg-dpintro-order-04-capacity-direction-zero-one",
+          "alg-dpintro-order-05-rolling-grid-left-up",
+          "alg-dpintro-order-06-diagonal-dependency",
+          "alg-dpintro-order-07-reverse-formulation-transfer",
+          "alg-dpintro-compression-01-dependency-liveness",
+          "alg-dpintro-compression-02-semantic-state-versus-storage",
+          "alg-dpintro-compression-03-rolling-row-space",
+          "alg-dpintro-compression-04-prove-before-rewrite",
+          "alg-dpintro-compression-05-reconstruction-information-loss",
+          "alg-dpintro-compression-06-overwrite-old-value",
+          "alg-dpintro-compression-07-capacity-versus-reconstruction-transfer",
+          "alg-dpintro-one-d-01-single-progress-axis",
+          "alg-dpintro-one-d-02-index-only-boundary",
+          "alg-dpintro-one-d-03-memo-or-table-one-axis",
+          "alg-dpintro-one-d-04-prefix-model-order",
+          "alg-dpintro-one-d-05-rolling-window-size",
+          "alg-dpintro-one-d-06-small-n-bounds",
+          "alg-dpintro-one-d-07-single-input-two-state-transfer",
+          "alg-dpintro-two-d-01-independent-coordinates",
+          "alg-dpintro-two-d-02-same-row-different-column",
+          "alg-dpintro-two-d-03-dense-grid-evaluation-choice",
+          "alg-dpintro-two-d-04-boundaries-before-interior",
+          "alg-dpintro-two-d-05-row-compression-condition",
+          "alg-dpintro-two-d-06-first-row-column-semantics",
+          "alg-dpintro-two-d-07-third-dimension-boundary",
+          "alg-dpintro-reconstruct-01-value-versus-witness",
+          "alg-dpintro-reconstruct-02-state-consistent-predecessor",
+          "alg-dpintro-reconstruct-03-memoization-does-not-choose-path",
+          "alg-dpintro-reconstruct-04-backtrack-final-to-base",
+          "alg-dpintro-reconstruct-05-compression-needs-recovery-plan",
+          "alg-dpintro-reconstruct-06-deterministic-ties",
+          "alg-dpintro-reconstruct-07-grid-parent-transfer",
+          "alg-dpintro-diagnose-01-overlap-not-complete-proof",
+          "alg-dpintro-diagnose-02-small-counterexample-state",
+          "alg-dpintro-diagnose-03-performance-versus-correctness",
+          "alg-dpintro-diagnose-04-direction-defect",
+          "alg-dpintro-diagnose-05-compression-output-defect",
+          "alg-dpintro-diagnose-06-smallest-failing-state",
+          "alg-dpintro-diagnose-07-diagnostic-ownership-transfer"
+        ],
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "minimumDiversity": 6
+      }
+    ],
+    "compatibilitySets": [
+      {
+        "id": "dpintro-same-mechanism-dp_mistake_review-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-dpintro-diagnose-01-overlap-not-complete-proof",
+          "alg-dpintro-diagnose-02-small-counterexample-state",
+          "alg-dpintro-diagnose-03-performance-versus-correctness"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-diagnose-04-direction-defect",
+          "alg-dpintro-diagnose-05-compression-output-defect",
+          "alg-dpintro-diagnose-06-smallest-failing-state",
+          "alg-dpintro-diagnose-07-diagnostic-ownership-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "dp_mistake_review"
+        }
+      },
+      {
+        "id": "dpintro-repair-overlap-model-proof-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-dpintro-diagnose-01-overlap-not-complete-proof"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-overlap-01-same-future-state"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "overlap-model-proof"
+        }
+      },
+      {
+        "id": "dpintro-repair-complete-state-key-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-dpintro-diagnose-02-small-counterexample-state"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-state-02-index-insufficient-capacity"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "complete-state-key"
+        }
+      },
+      {
+        "id": "dpintro-repair-memoization-cost-boundary-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-dpintro-diagnose-03-performance-versus-correctness"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-memo-03-sparse-reachable-states"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "memoization-cost-boundary"
+        }
+      },
+      {
+        "id": "dpintro-repair-dependency-safe-schedule-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-dpintro-diagnose-04-direction-defect"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-order-04-capacity-direction-zero-one"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "dependency-safe-schedule"
+        }
+      },
+      {
+        "id": "dpintro-repair-compression-output-contract-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-dpintro-diagnose-05-compression-output-defect"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-compression-05-reconstruction-information-loss"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "compression-output-contract"
+        }
+      },
+      {
+        "id": "dpintro-repair-smallest-boundary-case-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-dpintro-diagnose-06-smallest-failing-state"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-base-06-empty-input-boundary"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "smallest-boundary-case"
+        }
+      },
+      {
+        "id": "dpintro-repair-diagnostic-owner-routing-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "alg-dpintro-diagnose-07-diagnostic-ownership-transfer"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-reconstruct-01-value-versus-witness"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "diagnostic-owner-routing"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

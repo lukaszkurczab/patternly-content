@@ -1,0 +1,434 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-intervals-sort-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-intervals-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "intervals",
+    "primaryMentalUnitId": "sort_intervals_for_processing",
+    "patternFamilyId": "intervals"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring; no human review claimed",
+    "createdAt": "2026-07-18T00:00:00+02:00",
+    "contentBatchId": "algorithms-intervals-sort-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "algorithms-intervals-sort-001",
+      "prompt": "You need to merge an unsorted collection of intervals with one left-to-right scan after preprocessing. Which ordering best supports that scan?",
+      "constraints": [
+        "The merge scan maintains one active interval.",
+        "All intervals use one already-defined endpoint contract."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_ascending",
+            "text": "Sort by start ascending, using a deterministic end tie-break such as end descending."
+          },
+          {
+            "id": "end_ascending",
+            "text": "Sort by end ascending."
+          },
+          {
+            "id": "length_descending",
+            "text": "Sort by interval length descending."
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_ascending"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Start order guarantees that no unseen interval begins before the current one, which makes it safe to extend or emit one active interval.",
+        "details": "The merge invariant needs monotonic starts: after sorting, every unseen interval starts at or after the current interval's start. If the next start is inside the active interval, extend the active end to the maximum end; otherwise the active interval can be emitted because no future interval can reach backward to overlap it. Sorting equal starts by descending end is not required for correctness when max(end) is used, but it makes containment visible immediately and provides deterministic output. End order and length order do not establish the emission boundary needed by this scan.",
+        "wrongOptionExplanationsByOptionId": {
+          "end_ascending": "End order does not make starts monotonic. A later interval can begin before already emitted output, so a single active-tail merge can miss containment.",
+          "length_descending": "Length gives no monotonic spatial boundary. Long and short intervals can appear anywhere, so adjacent processing does not justify emission."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_sort_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sort-002",
+      "prompt": "Why is sorting intervals by descending length not a valid general preprocessing rule for overlap processing?",
+      "constraints": [
+        "The downstream algorithm needs a local scan with a justified emission or conflict boundary."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "length_not_positional",
+            "text": "Length does not make starts or ends monotonic, so local adjacency has no positional guarantee."
+          },
+          {
+            "id": "length_sort_too_slow",
+            "text": "Length sorting is asymptotically slower than endpoint sorting."
+          },
+          {
+            "id": "lengths_cannot_tie",
+            "text": "Equal-length intervals cannot be deterministically ordered."
+          }
+        ],
+        "acceptedOptionIds": [
+          "length_not_positional"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An interval's duration says how wide it is, not where it lies. A local scan needs an ordered boundary such as nondecreasing starts or event coordinates.",
+        "details": "Consider a long interval far to the right and two short overlapping intervals far to the left. Length order may process the right interval first, then move backward, invalidating any decision that previously emitted output. Conversely, a long interval can contain many shorter intervals, but length alone does not say which one starts first. The correct key follows the state that the scan must make monotonic: starts for merging, event coordinates for a sweep, or finish times for a specific greedy selection proof. Comparing key computation cost misses the real issue because all of these comparison sorts have the same asymptotic bound.",
+        "wrongOptionExplanationsByOptionId": {
+          "length_sort_too_slow": "Both use comparison sorting and normally cost O(n log n). The failure is semantic, not asymptotic.",
+          "lengths_cannot_tie": "A tie-breaker can make any key deterministic. Determinism does not make length order support the required invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_sort_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sort-003",
+      "prompt": "A merge implementation sorts [2, 3), [4, 5), [1, 10) by end, producing that same order. It emits [2, 3), then [4, 5), then merges [1, 10) only with the last output. What is the exact correction?",
+      "constraints": [
+        "Intervals are half-open.",
+        "The intended output is the union represented as non-overlapping intervals."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_by_start",
+            "text": "Sort by start before the one-pass active-interval scan."
+          },
+          {
+            "id": "keep_end_sort",
+            "text": "Keep end order and compare only with the last emitted interval."
+          },
+          {
+            "id": "sort_by_length",
+            "text": "Sort by length so [1, 10) comes first."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_by_start"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The failure occurs because end order allows a later item to start before previously emitted intervals. Start order removes that backward reach.",
+        "details": "With end sorting, the implementation first emits [2, 3) and [4, 5). When [1, 10) arrives, it overlaps both, but a tail-only merge can revise only the last output, leaving [2, 3) incorrectly separate. Start sorting yields [1, 10), [2, 3), [4, 5); each subsequent interval is contained in the active interval, so no emitted output must be revisited. The counterexample diagnoses the universal-end-sort heuristic without claiming that finish-time order is never useful. It is useful when the objective and proof are based on earliest completion, not when the scan represents a union.",
+        "wrongOptionExplanationsByOptionId": {
+          "keep_end_sort": "The late [1, 10) reaches backward across output already emitted. Last-output comparison cannot repair an order that permits backward starts.",
+          "sort_by_length": "That happens to help this example but provides no general monotonic-start guarantee for other positions and lengths."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_sort_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sort-004",
+      "prompt": "A sweep creates start and end events, sorts them by timestamp, and reads the active count after each event. For half-open intervals, what secondary sort rule is required at equal timestamps?",
+      "constraints": [
+        "A booking ending at t may release its resource to one starting at t."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "end_before_start",
+            "text": "Order end events before start events."
+          },
+          {
+            "id": "start_before_end",
+            "text": "Order start events before end events."
+          },
+          {
+            "id": "no_tie_key",
+            "text": "No secondary key is needed because timestamp equality is deterministic enough."
+          }
+        ],
+        "acceptedOptionIds": [
+          "end_before_start"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Event coordinate is the primary key, but half-open reuse requires an end-before-start tie key whenever intermediate active counts matter.",
+        "details": "Sorting by coordinate alone creates groups but does not define the order inside a group. Under [start, end), the ending interval is no longer active at t, while the starting one becomes active at t. Processing the decrement first preserves that meaning. If the algorithm aggregates all deltas at a coordinate and never observes intermediate state, it can use a grouped proof instead, but that is an explicit alternative contract—not permission to leave ties unspecified. Closed intervals reverse the order because both intervals occupy the shared coordinate.",
+        "wrongOptionExplanationsByOptionId": {
+          "start_before_end": "This creates a transient overlap at a coordinate excluded from the ending interval and can inflate the peak resource count.",
+          "no_tie_key": "A sort may choose either event first. Since intermediate active counts are observed, the result can change unless the tie is specified."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_sort_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sort-005",
+      "prompt": "Intervals are sorted by start. In a chronological conflict scan over half-open bookings, which comparison treats back-to-back bookings as reusable?",
+      "constraints": [
+        "The current interval starts no earlier than the previous interval.",
+        "Only the equality boundary is in question."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "strict_less",
+            "text": "Report conflict when current.start < previous.end."
+          },
+          {
+            "id": "less_or_equal",
+            "text": "Report conflict when current.start <= previous.end."
+          },
+          {
+            "id": "compare_lengths",
+            "text": "Report conflict when current.length <= previous.length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "strict_less"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "After start sorting, half-open overlap occurs only when the later start is strictly before the earlier end.",
+        "details": "Sorting supplies the processing order, while the endpoint contract supplies the comparator. Because current.start is the later start, the pair overlaps exactly when current.start < previous.end. Equality means the previous interval excludes the shared point and the current interval includes it, so the resource can be reused. If the domain used closed intervals, the same start order would pair with '<='. Keeping these concerns separate is essential: changing a sort key should not silently change the equality semantics, and changing endpoint semantics should be reflected in tests that touch exactly at the boundary.",
+        "wrongOptionExplanationsByOptionId": {
+          "less_or_equal": "The equality case represents legal adjacency under [start, end); '<=' would create a false conflict.",
+          "compare_lengths": "Length order is unrelated to whether the current start lies before the previous exclusive end."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_sort_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "detect_schedule_conflict"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sort-006",
+      "prompt": "A list is already sorted by start and contains pairwise non-overlapping intervals. You must insert one new interval. Which preprocessing choice preserves the linear insertion contract?",
+      "constraints": [
+        "The existing list's invariant is trusted.",
+        "The output must remain sorted by start."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reuse_start_order",
+            "text": "Keep the existing start order and scan around the new interval's position."
+          },
+          {
+            "id": "resort_by_end",
+            "text": "Re-sort all intervals by end before insertion."
+          },
+          {
+            "id": "sort_by_length",
+            "text": "Sort the list and new interval by length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reuse_start_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The input already has the exact start-order invariant required by linear insertion, so re-sorting would remove useful structure.",
+        "details": "The insertion algorithm partitions the existing sequence into intervals strictly before the new range, intervals overlapping the growing new range, and intervals strictly after it. Start order makes those regions contiguous. Because the list is also pairwise disjoint, once an interval begins after the merged new end, every later interval does too. Re-sorting by end or length weakens that guarantee and is not a harmless alternative. If the input invariant is untrusted, validate or normalize it first; do not silently assume a different ordering and then apply the same scan.",
+        "wrongOptionExplanationsByOptionId": {
+          "resort_by_end": "End order discards the invariant the three-phase insertion scan uses and adds unnecessary preprocessing.",
+          "sort_by_length": "Length does not preserve output order or identify which intervals lie before, overlap, or lie after the insertion range."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_sort_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sort-007",
+      "prompt": "Order the high-level steps that make a start-sorted interval scan safe.",
+      "constraints": [
+        "The goal is to expose why sorting precedes any irreversible emission."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "sort_starts",
+            "text": "Sort intervals by nondecreasing start."
+          },
+          {
+            "id": "initialize_active",
+            "text": "Initialize the active interval from the first sorted interval."
+          },
+          {
+            "id": "scan_with_monotonic_starts",
+            "text": "Scan later intervals, relying on the fact that their starts never move backward."
+          },
+          {
+            "id": "emit_when_gap_proved",
+            "text": "Emit the active interval only when the next start proves a gap."
+          },
+          {
+            "id": "flush_active",
+            "text": "Emit the final active interval after the scan."
+          }
+        ],
+        "canonicalOrder": [
+          "sort_starts",
+          "initialize_active",
+          "scan_with_monotonic_starts",
+          "emit_when_gap_proved",
+          "flush_active"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Start sorting must occur before state initialization and emission because it supplies the monotonic-start proof used by every later step.",
+        "details": "The critical adjacent relations are sort before initialize, initialize before scan, and scan before an emission decision. Once starts are monotonic, a next start beyond the active end proves that no unseen interval can overlap the active interval, making emission irreversible and safe. Flushing belongs after the scan because the active interval has no later gap event to emit it. This item does not require the learner to reproduce every merge update; it diagnoses whether the chosen order establishes the preprocessing invariant before output is committed."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_sort_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-sort-008",
+      "prompt": "Which statement correctly distinguishes sort keys for two different interval objectives?",
+      "constraints": [
+        "Objective A merges the union of intervals.",
+        "Objective B chooses the maximum number of mutually non-overlapping meetings under the standard earliest-finish greedy proof."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "objective_specific",
+            "text": "Use start order for A and finish-time order for B because each key supports a different invariant."
+          },
+          {
+            "id": "end_for_both",
+            "text": "Use finish-time order for both because ending earlier is always the safest interval choice."
+          },
+          {
+            "id": "start_for_both",
+            "text": "Use start order for both because chronological order is always optimal."
+          }
+        ],
+        "acceptedOptionIds": [
+          "objective_specific"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sort key is justified by the algorithm's invariant and objective, not by a universal interval convention.",
+        "details": "For union merging, nondecreasing starts ensure future intervals cannot reach behind emitted output. For maximum-cardinality unweighted interval scheduling, earliest finish leaves the most remaining room, and an exchange argument justifies the greedy choice. These are different problems even though both use intervals. The transfer rule is to state what must become monotonic or locally optimal before choosing a key. 'Sort by end' and 'sort by start' are neither universally correct nor universally wrong; each needs an objective-specific proof.",
+        "wrongOptionExplanationsByOptionId": {
+          "end_for_both": "Union merging is not selecting one interval; it must preserve every covered point. End order does not support the active-tail union invariant.",
+          "start_for_both": "Chronological starts support merging, but the maximum-cardinality selection proof relies on choosing the earliest finishing compatible meeting."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_interval_sort_key",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

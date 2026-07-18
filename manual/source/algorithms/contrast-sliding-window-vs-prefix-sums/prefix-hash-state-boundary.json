@@ -1,0 +1,1090 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "contrast-sliding-window-vs-prefix-sums-prefix-hash-state-boundary-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-core",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-contrast-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "contrast_sliding_window_vs_prefix_sums",
+    "primaryMentalUnitId": "prefix_hash_state_boundary",
+    "patternFamilyId": "sliding_window"
+  },
+  "batchKind": "contrast",
+  "contrastMetadata": {
+    "contrastedMentalUnitIds": [
+      "recognize_sliding_window_signal",
+      "recognize_prefix_accumulation_signal"
+    ],
+    "falseHeuristicId": "every_contiguous_sum_problem_is_sliding_window",
+    "transferBoundary": "Use prefix-hash state when the answer depends on an earlier cumulative value such as currentPrefix - target; store earliest indices, frequencies, or existence according to the exact result contract."
+  },
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-18T00:00:00.000Z",
+    "contentBatchId": "contrast-sliding-window-vs-prefix-sums-prefix-hash-state-boundary-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-contrast-window-prefix-hash-001",
+      "prompt": "While scanning arbitrary signed values, currentPrefix is p. Which earlier prefix value proves that a subarray ending here has exact sum k?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "p_minus_k",
+            "text": "p - k."
+          },
+          {
+            "id": "p_plus_k",
+            "text": "p + k."
+          },
+          {
+            "id": "k_only",
+            "text": "Only prefix value k."
+          },
+          {
+            "id": "zero_only",
+            "text": "Only prefix value 0."
+          }
+        ],
+        "acceptedOptionIds": [
+          "p_minus_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For boundaries j < i, prefix[i] - prefix[j] = k exactly when prefix[j] = prefix[i] - k.",
+        "details": "A hash lookup converts that algebraic condition into an expected constant-time state query.",
+        "wrongOptionExplanationsByOptionId": {
+          "p_plus_k": "That would make the subarray sum -k.",
+          "k_only": "The required earlier value depends on the current prefix.",
+          "zero_only": "That recognizes only intervals starting at index 0 when p = k."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-002",
+      "prompt": "The result asks for the number of exact-sum-k subarrays. What should the prefix hash table store?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "frequency",
+            "text": "The frequency of each previously seen prefix value."
+          },
+          {
+            "id": "existence_only",
+            "text": "Only whether each prefix occurred."
+          },
+          {
+            "id": "latest_only",
+            "text": "Only the latest index of each prefix."
+          },
+          {
+            "id": "sorted_values",
+            "text": "The input values sorted ascending."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frequency"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every earlier occurrence of p - k contributes one matching start boundary.",
+        "details": "The number of such occurrences must be added to the answer.",
+        "wrongOptionExplanationsByOptionId": {
+          "existence_only": "One prefix value may occur at several start boundaries, each defining a different subarray.",
+          "latest_only": "That loses additional valid starts needed for counting.",
+          "sorted_values": "Sorting destroys contiguous boundaries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-003",
+      "prompt": "The result asks for the longest exact-sum-k subarray. Which prefix metadata is most useful?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "earliest_index",
+            "text": "The earliest index at which each prefix value occurred."
+          },
+          {
+            "id": "frequency_only",
+            "text": "Only the number of times each prefix occurred."
+          },
+          {
+            "id": "latest_index",
+            "text": "Always overwrite with the latest index."
+          },
+          {
+            "id": "current_window",
+            "text": "Only one left pointer chosen from sum comparisons."
+          }
+        ],
+        "acceptedOptionIds": [
+          "earliest_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For a fixed ending index, the longest interval uses the earliest matching prefix boundary.",
+        "details": "The map should preserve the first occurrence rather than overwrite it.",
+        "wrongOptionExplanationsByOptionId": {
+          "frequency_only": "A count does not identify the farthest start boundary.",
+          "latest_index": "A later start makes the resulting interval shorter.",
+          "current_window": "Mixed signs provide no safe comparison direction."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-004",
+      "prompt": "Why is prefix value 0 usually seeded before scanning for exact-sum subarrays?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "start_zero",
+            "text": "It represents the boundary before index 0, allowing intervals that begin at the first element."
+          },
+          {
+            "id": "avoid_negative",
+            "text": "It prevents prefix sums from becoming negative."
+          },
+          {
+            "id": "sort_prefix",
+            "text": "It keeps hash iteration ordered."
+          },
+          {
+            "id": "one_based_only",
+            "text": "It forces all arrays to use one-based indexing."
+          }
+        ],
+        "acceptedOptionIds": [
+          "start_zero"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "If the running prefix itself equals k, then runningPrefix - k equals 0.",
+        "details": "The seeded boundary lets that interval be detected without a separate special case.",
+        "wrongOptionExplanationsByOptionId": {
+          "avoid_negative": "Prefix values may still be negative.",
+          "sort_prefix": "Seeding does not sort a table.",
+          "one_based_only": "It is a boundary convention, not an array-index restriction."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-005",
+      "prompt": "For counting non-empty exact-sum-k subarrays, why is the current prefix normally queried before its frequency is incremented?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "avoid_zero_length",
+            "text": "It prevents the current boundary from matching itself as a zero-length interval."
+          },
+          {
+            "id": "hash_speed",
+            "text": "Lookup is faster before insertion in every implementation."
+          },
+          {
+            "id": "prefix_changes",
+            "text": "Insertion changes the numeric prefix value."
+          },
+          {
+            "id": "negative_only",
+            "text": "The ordering matters only when values are negative."
+          }
+        ],
+        "acceptedOptionIds": [
+          "avoid_zero_length"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A subarray requires an earlier boundary.",
+        "details": "Storing the current prefix after counting ensures only prior prefixes contribute unless empty intervals are explicitly allowed.",
+        "wrongOptionExplanationsByOptionId": {
+          "hash_speed": "The issue is answer semantics, not a universal performance rule.",
+          "prefix_changes": "The value remains the same.",
+          "negative_only": "Self-matching can matter for k = 0 with any signs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-006",
+      "prompt": "What causes the same prefix value to occur more than once?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "zero_sum_segment",
+            "text": "The elements between two prefix boundaries sum to zero."
+          },
+          {
+            "id": "duplicate_elements_only",
+            "text": "Only duplicate individual values."
+          },
+          {
+            "id": "sorted_input",
+            "text": "The input is sorted."
+          },
+          {
+            "id": "positive_values",
+            "text": "Strictly positive values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero_sum_segment"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equal prefix values mean their difference is zero.",
+        "details": "Zeros and mixed positive/negative segments can create repeated prefix state, which is why frequency and earliest-index policies matter.",
+        "wrongOptionExplanationsByOptionId": {
+          "duplicate_elements_only": "Different sequences can sum to zero without equal elements.",
+          "sorted_input": "Order alone does not force repeated cumulative sums.",
+          "positive_values": "Strictly positive prefixes are strictly increasing and do not repeat."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-007",
+      "prompt": "The running prefix equals k at index i. Which map fact confirms the interval from index 0 through i?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "seeded_zero",
+            "text": "The seeded zero prefix exists at the boundary before the array."
+          },
+          {
+            "id": "current_stored",
+            "text": "The current prefix was inserted before lookup."
+          },
+          {
+            "id": "target_key",
+            "text": "The key k must have occurred earlier."
+          },
+          {
+            "id": "window_empty",
+            "text": "An empty window is selected."
+          }
+        ],
+        "acceptedOptionIds": [
+          "seeded_zero"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The prefix-difference formula treats the start of the array uniformly with every other boundary.",
+        "details": "The sentinel removes a special-case branch.",
+        "wrongOptionExplanationsByOptionId": {
+          "current_stored": "That would describe the current boundary, not the start boundary.",
+          "target_key": "The needed earlier value is currentPrefix - k = 0.",
+          "window_empty": "The interval contains indices 0 through i."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-008",
+      "prompt": "The result asks for the shortest exact-sum-k subarray ending at each position. Which matching prefix occurrence is locally best?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "latest_index",
+            "text": "The latest earlier index with prefix currentPrefix - k."
+          },
+          {
+            "id": "earliest_index",
+            "text": "The earliest such index."
+          },
+          {
+            "id": "frequency",
+            "text": "Only the number of occurrences."
+          },
+          {
+            "id": "sorted_prefix",
+            "text": "The smallest prefix value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "latest_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For a fixed end, length is endBoundary - startBoundary.",
+        "details": "The largest valid earlier boundary gives the shortest interval, showing that map payload depends on the result contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "earliest_index": "That produces the longest interval ending here.",
+          "frequency": "A count does not identify the nearest start.",
+          "sorted_prefix": "Exact equality, not prefix magnitude, determines the start."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-009",
+      "prompt": "Why is a plain prefix array alone insufficient for expected O(n) exact-sum existence over arbitrary signed values?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "needs_fast_prior_match",
+            "text": "It stores cumulative values but still needs an efficient way to find whether p - k occurred earlier."
+          },
+          {
+            "id": "prefix_wrong",
+            "text": "Prefix differences are invalid for negative values."
+          },
+          {
+            "id": "array_no_indices",
+            "text": "A prefix array has no boundary indices."
+          },
+          {
+            "id": "hash_contiguous",
+            "text": "A hash table creates contiguity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "needs_fast_prior_match"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The cumulative representation supplies the algebraic key.",
+        "details": "The hash table supplies expected constant-time historical lookup; scanning prior prefixes would be quadratic.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_wrong": "The identity is valid for all signs.",
+          "array_no_indices": "Its positions are boundaries.",
+          "hash_contiguous": "Contiguity comes from choosing two prefix boundaries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-010",
+      "prompt": "Which result contracts require different prefix-hash payloads? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "existence",
+            "text": "Existence may store only whether a prefix occurred."
+          },
+          {
+            "id": "count",
+            "text": "Counting requires occurrence frequencies."
+          },
+          {
+            "id": "longest",
+            "text": "Longest exact-sum interval requires earliest indices."
+          },
+          {
+            "id": "all_same",
+            "text": "Every contract can use one unchanging boolean payload without losing information."
+          }
+        ],
+        "acceptedOptionIds": [
+          "existence",
+          "count",
+          "longest"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The hash key can be the same while the associated state changes with the answer contract.",
+        "details": "Choosing the payload is part of algorithm design.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_same": "Counts and lengths require more metadata."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "existence": "A boolean presence test is enough.",
+          "count": "Every matching earlier boundary contributes.",
+          "longest": "The farthest valid start maximizes length."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-011",
+      "prompt": "Which input features make repeated prefix values possible? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "zeros",
+            "text": "Zero-valued elements."
+          },
+          {
+            "id": "mixed_sign_zero_segment",
+            "text": "A positive-and-negative segment whose total is zero."
+          },
+          {
+            "id": "strict_positive",
+            "text": "Strictly positive values only."
+          },
+          {
+            "id": "empty_boundary",
+            "text": "The seeded pre-array boundary when a later prefix returns to zero."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zeros",
+          "mixed_sign_zero_segment",
+          "empty_boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Repeated prefix state reflects zero-sum differences.",
+        "details": "Strict positivity prevents recurrence.",
+        "wrongOptionExplanationsByOptionId": {
+          "strict_positive": "Prefixes are strictly increasing."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "zeros": "A prefix may remain unchanged.",
+          "mixed_sign_zero_segment": "The prefix returns to an earlier value.",
+          "empty_boundary": "This represents a zero-sum prefix."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-012",
+      "prompt": "Which tasks are natural prefix-hash problems for arbitrary signed arrays? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "exact_exists",
+            "text": "Does any subarray sum to k?"
+          },
+          {
+            "id": "exact_count",
+            "text": "How many subarrays sum to k?"
+          },
+          {
+            "id": "longest_exact",
+            "text": "What is the longest subarray summing to k?"
+          },
+          {
+            "id": "max_fixed_window",
+            "text": "What is the maximum sum over every fixed-length adjacent window?"
+          }
+        ],
+        "acceptedOptionIds": [
+          "exact_exists",
+          "exact_count",
+          "longest_exact"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Exact cumulative-difference objectives fit hash lookup independent of signs.",
+        "details": "A sequential fixed-window aggregate does not need historical prefix lookup.",
+        "wrongOptionExplanationsByOptionId": {
+          "max_fixed_window": "A rolling sum is more direct and uses less state."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "exact_exists": "Look up p - k.",
+          "exact_count": "Use prefix frequencies.",
+          "longest_exact": "Use earliest indices."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-013",
+      "prompt": "Which implementation details are correctness-critical? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "seed",
+            "text": "Initialize the zero prefix with the payload required by the result contract."
+          },
+          {
+            "id": "lookup_before_store",
+            "text": "For non-empty intervals, use prior prefixes before adding the current boundary."
+          },
+          {
+            "id": "payload_policy",
+            "text": "Preserve earliest, latest, or frequency metadata according to the result."
+          },
+          {
+            "id": "hash_iteration",
+            "text": "Depend on the table's iteration order to define interval order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "seed",
+          "lookup_before_store",
+          "payload_policy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix hashing is more than storing sums.",
+        "details": "Boundary timing and payload semantics determine which intervals are counted or optimized.",
+        "wrongOptionExplanationsByOptionId": {
+          "hash_iteration": "Lookup by key, not iteration order, drives correctness."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "seed": "It represents intervals beginning at index 0.",
+          "lookup_before_store": "This prevents self-matching.",
+          "payload_policy": "Overwriting policy changes answers."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-014",
+      "prompt": "Which mistaken claims lose required historical prefix state? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "contiguous_window",
+            "text": "Every contiguous exact-sum problem is a sliding-window problem."
+          },
+          {
+            "id": "one_prefix_enough",
+            "text": "Keeping only the current prefix is enough for every exact-sum query."
+          },
+          {
+            "id": "frequency_for_longest",
+            "text": "A frequency alone always identifies the longest interval."
+          },
+          {
+            "id": "difference_identity",
+            "text": "Subarray sum equals the difference of two prefix values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contiguous_window",
+          "one_prefix_enough",
+          "frequency_for_longest"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The valid identity does not specify all required historical metadata.",
+        "details": "Result semantics determine the map state.",
+        "wrongOptionExplanationsByOptionId": {
+          "difference_identity": "This is the valid foundation."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "contiguous_window": "Mixed signs often require prefix lookup.",
+          "one_prefix_enough": "Earlier boundary state is required.",
+          "frequency_for_longest": "An index is needed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-015",
+      "prompt": "Arrange the exact-sum existence workflow.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "seed",
+            "text": "Insert prefix 0 before the scan."
+          },
+          {
+            "id": "accumulate",
+            "text": "Update the running prefix with the current value."
+          },
+          {
+            "id": "test",
+            "text": "Test whether runningPrefix - k exists among prior prefixes."
+          },
+          {
+            "id": "store",
+            "text": "Store the current prefix for later endings."
+          }
+        ],
+        "canonicalOrder": [
+          "seed",
+          "accumulate",
+          "test",
+          "store"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The current boundary must compare only with earlier boundaries.",
+        "details": "Seeding handles intervals that start at index 0."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-016",
+      "prompt": "Arrange the exact-sum counting workflow.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "seed_frequency",
+            "text": "Initialize frequency[0] = 1."
+          },
+          {
+            "id": "accumulate",
+            "text": "Update the running prefix."
+          },
+          {
+            "id": "add_matches",
+            "text": "Add frequency[runningPrefix - k] to the answer."
+          },
+          {
+            "id": "increment_current",
+            "text": "Increment frequency[runningPrefix]."
+          }
+        ],
+        "canonicalOrder": [
+          "seed_frequency",
+          "accumulate",
+          "add_matches",
+          "increment_current"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Every earlier matching prefix contributes one distinct start boundary.",
+        "details": "Incrementing afterward preserves the non-empty interval contract."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-017",
+      "prompt": "Arrange the longest exact-sum workflow.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "seed_index",
+            "text": "Store prefix 0 at boundary index 0."
+          },
+          {
+            "id": "accumulate",
+            "text": "Compute the next prefix boundary value."
+          },
+          {
+            "id": "measure",
+            "text": "If prefix - k exists, measure length from its earliest stored boundary."
+          },
+          {
+            "id": "preserve_first",
+            "text": "Store the current prefix only if it has not appeared before."
+          }
+        ],
+        "canonicalOrder": [
+          "seed_index",
+          "accumulate",
+          "measure",
+          "preserve_first"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The earliest matching boundary maximizes interval length.",
+        "details": "Overwriting it would weaken later candidates."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-018",
+      "prompt": "Count all exact-sum-k subarrays using prefix frequencies over n arbitrary signed values. Select expected time and auxiliary space.",
+      "constraints": [
+        "Expected hash lookup and update are O(1).",
+        "Up to n + 1 distinct prefix values may be retained."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "auxiliary_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "expected_prefix_steps": "O(n)"
+          },
+          "auxiliary_space": {
+            "frequency_map": "O(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Each array value produces one cumulative update and one expected historical lookup.",
+        "details": "The table can retain a distinct prefix for every boundary."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-019",
+      "prompt": "Find the longest exact-sum-k subarray using earliest prefix indices over n values. Select expected time and auxiliary space.",
+      "constraints": [
+        "Expected map operations are O(1).",
+        "Only the earliest boundary per distinct prefix is retained."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "auxiliary_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "expected_scan": "O(n)"
+          },
+          "auxiliary_space": {
+            "earliest_prefix_indices": "O(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The payload policy changes, but the number of stored prefix keys remains linear in the worst case.",
+        "details": "The scan processes each ending boundary once."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-hash-020",
+      "prompt": "A plain prefix array is built in O(n), then for each of n ending boundaries the algorithm linearly scans all earlier prefixes to find currentPrefix - k. Select total time and auxiliary space.",
+      "constraints": [
+        "No hash or ordered lookup structure is used."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n log n)",
+            "O(n²)",
+            "O(2^n)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n²)"
+          ],
+          "auxiliary_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "nested_prefix_search": "O(n²)"
+          },
+          "auxiliary_space": {
+            "prefix_array": "O(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Cumulative values alone do not guarantee fast historical matching.",
+        "details": "The hash state is the mechanism that removes the repeated linear search."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_prefix_hash_state_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [
+      {
+        "setId": "contrast-window-prefix-prefix-hash-state-boundary-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "prefix_hash_state_boundary",
+        "contrastedMentalUnitIds": [
+          "recognize_sliding_window_signal",
+          "recognize_prefix_accumulation_signal"
+        ],
+        "falseHeuristicId": "every_contiguous_sum_problem_is_sliding_window",
+        "transferBoundary": "Use prefix-hash state when the answer depends on an earlier cumulative value such as currentPrefix - target; store earliest indices, frequencies, or existence according to the exact result contract.",
+        "itemIds": [
+          "alg-contrast-window-prefix-hash-001",
+          "alg-contrast-window-prefix-hash-002",
+          "alg-contrast-window-prefix-hash-003",
+          "alg-contrast-window-prefix-hash-004",
+          "alg-contrast-window-prefix-hash-005",
+          "alg-contrast-window-prefix-hash-006",
+          "alg-contrast-window-prefix-hash-007",
+          "alg-contrast-window-prefix-hash-008",
+          "alg-contrast-window-prefix-hash-009",
+          "alg-contrast-window-prefix-hash-010",
+          "alg-contrast-window-prefix-hash-011",
+          "alg-contrast-window-prefix-hash-012",
+          "alg-contrast-window-prefix-hash-013",
+          "alg-contrast-window-prefix-hash-014",
+          "alg-contrast-window-prefix-hash-015",
+          "alg-contrast-window-prefix-hash-016",
+          "alg-contrast-window-prefix-hash-017",
+          "alg-contrast-window-prefix-hash-018",
+          "alg-contrast-window-prefix-hash-019",
+          "alg-contrast-window-prefix-hash-020"
+        ]
+      }
+    ],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

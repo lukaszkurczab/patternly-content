@@ -1,0 +1,475 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-linked-list-pointer_rewiring-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-linked-list-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "linked_list",
+    "primaryMentalUnitId": "pointer_rewiring",
+    "patternFamilyId": "linked_list"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-linked-list-pointer_rewiring-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "prompt": "A routine must remove node B from A -> B -> C in place. It may not allocate replacement data nodes, and C must remain reachable from A. Which state change directly satisfies the structural requirement?",
+      "constraints": [
+        "Existing data-node identities must be preserved except for the removed node becoming unreachable.",
+        "The list is singly linked."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "link_a_to_c",
+            "text": "Redirect A.next to C so B is bypassed and the suffix remains reachable."
+          },
+          {
+            "id": "clear_b_value",
+            "text": "Set B.value to null while leaving every next reference unchanged."
+          },
+          {
+            "id": "copy_c_value",
+            "text": "Copy C.value into B and leave every next reference unchanged."
+          },
+          {
+            "id": "move_head_only",
+            "text": "Move a local head variable to C without changing A.next."
+          }
+        ],
+        "acceptedOptionIds": [
+          "link_a_to_c"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Removing B structurally requires redirecting A.next to B's successor C.",
+        "details": "The output contract is about which node objects are reachable, not which values they store. Redirecting A.next to C bypasses B while preserving the suffix. Payload edits do not change reachability, and moving only a local variable leaves the original topology intact. The same signal appears in splicing and reversal: topology changes are expressed through references.",
+        "wrongOptionExplanationsByOptionId": {
+          "copy_c_value": "This changes data but leaves B reachable and therefore does not perform the stated structural removal.",
+          "clear_b_value": "Clearing a payload does not remove a node from the reference chain.",
+          "move_head_only": "Changing one local variable does not reconnect A to C or update the list structure."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-rewiring-01-in-place-link-change-signal",
+      "difficulty": "introductory"
+    },
+    {
+      "prompt": "A singly linked segment is prefixTail -> first -> ... -> last -> suffixHead. The routine will detach the segment and later reconnect it elsewhere. Before overwriting either boundary link, select all references that must be preserved when no other aliases exist.",
+      "constraints": [
+        "No external alias points into the segment or suffix.",
+        "The exact original node objects must be reused."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "preserve_first",
+            "text": "A reference to first, the segment entry."
+          },
+          {
+            "id": "preserve_values_only",
+            "text": "Only the payload values inside the segment."
+          },
+          {
+            "id": "preserve_length_only",
+            "text": "Only the number of nodes in the segment."
+          },
+          {
+            "id": "preserve_suffix",
+            "text": "A reference to suffixHead, the node after the segment."
+          }
+        ],
+        "acceptedOptionIds": [
+          "preserve_first",
+          "preserve_suffix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The segment entry and the external suffix are the two components that boundary rewrites could otherwise make unreachable.",
+        "details": "Reachability is preserved by retaining references to every component needed after a boundary overwrite. The segment must remain addressable through first, and the untouched remainder must remain addressable through suffixHead. Values and length cannot reconstruct object identity or links. If another durable alias already preserves one component, that particular capture may be redundant, but the stated constraints provide none.",
+        "wrongOptionExplanationsByOptionId": {
+          "preserve_values_only": "Payload copies cannot recover the original node objects or their internal link identities.",
+          "preserve_length_only": "A count says how many nodes exist but provides no path to any detached node."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "preserve_first": "Without the segment entry, detaching the predecessor link can lose the entire moved segment.",
+          "preserve_suffix": "Without suffixHead, changing last.next can lose the untouched remainder of the original list."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-rewiring-02-reachability-invariant",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "A helper is called with head either null or a single node S whose next is null. The helper's contract is to detach the first node and return both that node and the remaining list. Which behavior preserves the contract for both inputs?",
+      "constraints": [
+        "The input is an ordinary acyclic singly linked list.",
+        "The helper must not allocate data nodes."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "always_read_next",
+            "text": "Always evaluate head.next before checking whether head is null."
+          },
+          {
+            "id": "invent_successor",
+            "text": "Allocate a dummy successor so the single-node case has a remainder."
+          },
+          {
+            "id": "guard_and_detach",
+            "text": "If head is null return (null, null); otherwise save S, set S.next = null, and return (S, null)."
+          },
+          {
+            "id": "return_same_twice",
+            "text": "Return (S, S) for a single node so no reference is lost."
+          }
+        ],
+        "acceptedOptionIds": [
+          "guard_and_detach"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The null case has no node to rewire, while the single node can be detached with an empty remainder.",
+        "details": "Boundary-safe rewiring first establishes that the current node exists. For a single node, its successor is legitimately null; detaching it does not require a replacement node. Returning the same node as both detached and remaining would violate disjointness and can lead to accidental self-linking later. Circular inputs would need a different explicit contract because null is not their stopping signal.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_read_next": "Dereferencing head.next before the null guard is invalid for the empty input.",
+          "invent_successor": "A synthetic data node changes the logical structure and is not required by the contract.",
+          "return_same_twice": "The detached node cannot simultaneously be the head of the remaining empty list under this contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-rewiring-03-empty-and-single-node-boundary",
+      "difficulty": "introductory"
+    },
+    {
+      "prompt": "A deletion routine uses dummy.next = head. It then executes prev.next = prev.next.next without first checking that prev.next exists. Which assessment is correct?",
+      "constraints": [
+        "The routine returns dummy.next.",
+        "prev may be the last node, so prev.next may be null."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "dummy_changes_membership",
+            "text": "The sentinel makes deletion safe by becoming part of the logical result."
+          },
+          {
+            "id": "dummy_restores_lost_nodes",
+            "text": "Any node lost by a bad write can be recovered through dummy."
+          },
+          {
+            "id": "dummy_not_sufficient",
+            "text": "The sentinel simplifies deletion at the head, but the routine still needs a valid victim guard and correct link reasoning."
+          },
+          {
+            "id": "dummy_guarantees_safety",
+            "text": "The sentinel guarantees every prev.next dereference is valid."
+          }
+        ],
+        "acceptedOptionIds": [
+          "dummy_not_sufficient"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sentinel supplies a predecessor; it does not validate the victim or repair an unsafe overwrite.",
+        "details": "dummy makes the original head look like any other successor, which removes one branch. It does not ensure that prev.next is non-null, preserve a successor after an overwrite, or prevent cycles. Correctness still depends on guards and reachability invariants. The sentinel itself remains implementation scaffolding when the routine returns dummy.next.",
+        "wrongOptionExplanationsByOptionId": {
+          "dummy_guarantees_safety": "The sentinel guarantees only that a predecessor object exists before the logical head, not that every later successor exists.",
+          "dummy_changes_membership": "Logical membership is determined by the returned chain and contract, not by temporary scaffolding.",
+          "dummy_restores_lost_nodes": "A sentinel cannot reconstruct nodes after their only reachable reference has been overwritten."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dummy_head",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-rewiring-04-sentinel-does-not-preserve-links",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "A routine receives only head and integer k, then removes the node at zero-based position k by first locating its predecessor through next links. Assume 0 < k < n and no auxiliary index. What are the time and extra-space costs?",
+      "constraints": [
+        "The list is singly linked and acyclic.",
+        "Only head and k are initially available."
+      ],
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(k)",
+            "O(n log n)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(k)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(k)"
+          ],
+          "extra_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "extra_space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The predecessor is reached sequentially in k steps, after which the link overwrite is constant time.",
+        "details": "A singly linked node does not expose an address for position k-1. Starting at head, the routine follows k-1 next references, giving O(k) time; the final bypass is O(1). A fixed number of pointers and counters uses O(1) extra space. If the predecessor reference were supplied directly, the mutation itself would be O(1), which is the transfer boundary."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-rewiring-05-find-predecessor-traversal-cost",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "The contract says: 'Move existing node B after node D; allocate no data nodes; all other node identities remain unchanged.' An implementation allocates B2 with B.value, inserts B2 after D, and unlinks B. Why is it invalid?",
+      "constraints": [
+        "The operation is explicitly in place.",
+        "External code may hold aliases to B."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "position_not_changed",
+            "text": "B2 cannot appear after D because it was allocated later."
+          },
+          {
+            "id": "new_node_always_cycle",
+            "text": "Allocating B2 necessarily creates a cycle."
+          },
+          {
+            "id": "identity_contract_broken",
+            "text": "B2 has the same value but is not the existing node B required by the contract."
+          },
+          {
+            "id": "values_cannot_copy",
+            "text": "Node payload values can never be copied in any linked-list algorithm."
+          }
+        ],
+        "acceptedOptionIds": [
+          "identity_contract_broken"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The contract requires rewiring the existing object B; an equal-valued replacement has a different identity.",
+        "details": "Topology-preserving in-place operations are defined over existing node objects. Allocating B2 may reproduce B's payload, but aliases to B, identity-based metadata, and the explicit no-allocation postcondition all distinguish the substitution. New nodes can be valid in a value-only output contract, but not in this one. Allocation alone does not imply a cycle; incorrect links do.",
+        "wrongOptionExplanationsByOptionId": {
+          "values_cannot_copy": "Copying payloads is sometimes legal; it is forbidden here because the stated contract requires the existing node identity.",
+          "new_node_always_cycle": "A new node forms a cycle only if its links create a path back to itself or an ancestor.",
+          "position_not_changed": "Allocation time does not restrict where a node reference can be linked."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-rewiring-06-equal-valued-replacement-breaks-identity",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "For one in-place link reversal step, prev references the processed prefix and current references the first unprocessed node. No other reference reaches current.next. Order the operations.",
+      "constraints": [
+        "The list is singly linked.",
+        "nextNode is not already available through another alias."
+      ],
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "save_next",
+            "text": "Set nextNode = current.next."
+          },
+          {
+            "id": "reverse_link",
+            "text": "Set current.next = prev."
+          },
+          {
+            "id": "advance_prev",
+            "text": "Set prev = current."
+          },
+          {
+            "id": "advance_current",
+            "text": "Set current = nextNode."
+          }
+        ],
+        "canonicalOrder": [
+          "save_next",
+          "reverse_link",
+          "advance_prev",
+          "advance_current"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The unprocessed suffix must be saved before current.next is overwritten, then the two traversal references advance.",
+        "details": "The critical adjacent relation is save_next -> reverse_link: reversing first would erase the only path to the suffix. reverse_link -> advance_prev records the newly processed head, and advance_prev -> advance_current preserves the invariant for the next iteration. Different syntax can express the same dependencies, but any legal implementation must preserve the successor before the destructive write."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "reverse_linked_structure"
+      },
+      "id": "alg-linked-list-rewiring-07-save-before-overwrite-order",
+      "difficulty": "advanced"
+    },
+    {
+      "prompt": "A segment first..last is moved from after oldPrev to after newPrev in an acyclic singly linked list. The source and destination regions do not overlap. Select all boundary effects the final topology must have.",
+      "constraints": [
+        "The list is acyclic before the operation.",
+        "The source segment and destination insertion point do not overlap."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "leave_old_entry",
+            "text": "oldPrev.next still references first so the segment is reachable from both positions."
+          },
+          {
+            "id": "close_old_gap",
+            "text": "oldPrev.next references the node that originally followed last."
+          },
+          {
+            "id": "copy_payloads",
+            "text": "Every moved payload is copied into newly allocated nodes."
+          },
+          {
+            "id": "connect_segment_exit",
+            "text": "last.next references the node that originally followed newPrev."
+          }
+        ],
+        "acceptedOptionIds": [
+          "close_old_gap",
+          "connect_segment_exit"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A correct splice reconnects the old remainder and preserves the destination remainder after the moved segment.",
+        "details": "Moving a segment creates two external obligations. The source gap must be closed so nodes after last remain reachable, and the segment's exit must point to the old destination successor. The remaining write, newPrev.next = first, inserts the segment entry. Leaving oldPrev.next at first would not move the segment and can create duplicate paths or a cycle depending on positions. Non-overlap is material; overlapping regions need a separate proof.",
+        "wrongOptionExplanationsByOptionId": {
+          "copy_payloads": "Splicing reuses node references and does not require replacement data nodes.",
+          "leave_old_entry": "Keeping the old incoming edge fails to detach the segment and can violate acyclicity or the requested position."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "close_old_gap": "Without this edge, the source suffix becomes unreachable from the original prefix.",
+          "connect_segment_exit": "Without this edge, the destination suffix is lost after the moved segment."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      },
+      "id": "alg-linked-list-rewiring-08-sublist-splice-two-boundaries",
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

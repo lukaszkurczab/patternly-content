@@ -1,0 +1,342 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-heap-priority-queue-top-k-selection-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-heap-priority-queue-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "heap_priority_queue",
+    "primaryMentalUnitId": "top_k_selection",
+    "patternFamilyId": "heap_priority_queue"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-heap-priority-queue-top-k-selection-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "hpq-top-k-largest-retained-frontier",
+      "prompt": "A stream must retain the k largest values seen so far. Which bounded heap state makes the replacement decision directly?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "max_heap_k",
+            "text": "A max-heap of at most k retained values, with the largest retained value at the root."
+          },
+          {
+            "id": "sorted_all",
+            "text": "A fully sorted list containing every value seen so far."
+          },
+          {
+            "id": "min_heap_all",
+            "text": "A min-heap containing every value seen so far."
+          },
+          {
+            "id": "min_heap_k",
+            "text": "A min-heap of at most k retained values, with the smallest retained value at the root."
+          }
+        ],
+        "acceptedOptionIds": [
+          "min_heap_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For the k largest values, the smallest retained value is the eviction threshold, so it belongs at the root of a size-k min-heap.",
+        "details": "Until the heap reaches k entries, every value is retained. After that, a new value replaces the root only if it is larger than the current threshold. This keeps exactly the best k candidates without storing the full stream. A max-heap exposes the best retained value rather than the worst retained boundary, so it cannot make eviction as directly. If all values must later be sorted, the output contract changes.",
+        "wrongOptionExplanationsByOptionId": {
+          "max_heap_k": "The root would be the largest retained value, but top-k maintenance needs immediate access to the smallest retained value that may be evicted.",
+          "min_heap_all": "Keeping all values is unnecessary for a fixed k and loses the bounded-state advantage.",
+          "sorted_all": "A fully sorted history maintains more state and ordering than the top-k boundary requires."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "top_k",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-top-k-smallest-retained-frontier",
+      "prompt": "A stream must retain the k smallest values seen so far. Which bounded heap state makes the replacement decision directly?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "min_heap_k",
+            "text": "A min-heap of at most k retained values, with the smallest retained value at the root."
+          },
+          {
+            "id": "queue_k",
+            "text": "A FIFO queue containing the most recent k values."
+          },
+          {
+            "id": "max_heap_k",
+            "text": "A max-heap of at most k retained values, with the largest retained value at the root."
+          },
+          {
+            "id": "max_heap_all",
+            "text": "A max-heap containing every value seen so far."
+          }
+        ],
+        "acceptedOptionIds": [
+          "max_heap_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For the k smallest values, the largest retained value is the eviction threshold, so it belongs at the root of a size-k max-heap.",
+        "details": "Once k values are retained, any new value smaller than the root should replace it; a larger or equal value cannot improve the k-smallest set. The heap therefore exposes the weakest retained candidate rather than the globally smallest one. A FIFO queue tracks recency, not rank, and storing all values is unnecessary when only k retained values matter.",
+        "wrongOptionExplanationsByOptionId": {
+          "min_heap_k": "A min-heap exposes the best retained value, not the largest retained value that should be evicted when a smaller candidate arrives.",
+          "max_heap_all": "The top-k contract does not require the entire history; a bounded heap preserves the sufficient frontier.",
+          "queue_k": "Recency does not determine which values are the k smallest, so FIFO state cannot enforce the rank boundary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "top_k",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-top-k-concrete-replacement",
+      "prompt": "A size-3 min-heap represents the three largest values seen so far and currently contains {7, 9, 12}, with root 7. The next value is 10. What update preserves the contract?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "grow_heap",
+            "text": "Insert 10 and keep all four values in the top-3 heap."
+          },
+          {
+            "id": "discard_ten",
+            "text": "Discard 10 because it is smaller than the current maximum 12."
+          },
+          {
+            "id": "replace_seven",
+            "text": "Remove 7 and insert 10, leaving the retained set {9, 10, 12}."
+          },
+          {
+            "id": "replace_twelve",
+            "text": "Remove 12 and insert 10, leaving {7, 9, 10}."
+          }
+        ],
+        "acceptedOptionIds": [
+          "replace_seven"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The root 7 is the smallest retained value; 10 exceeds that threshold and must replace it.",
+        "details": "A top-3 min-heap represents the current admission boundary at its root. Comparing 10 with 7 answers the only necessary question: can 10 improve the retained set? Because it can, replacing 7 yields {9, 10, 12}. Comparing against the maximum 12 uses the wrong boundary, removing 12 discards the strongest candidate, and growing the heap violates the fixed-size state contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "discard_ten": "The incoming value need not exceed the current maximum; it only needs to exceed the smallest retained threshold.",
+          "replace_twelve": "The maximum is not the expendable candidate. Removing it would destroy a valid top-3 member.",
+          "grow_heap": "The state is defined to contain at most k values; exceeding k removes the bounded-top-k invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-top-k-k-boundaries",
+      "prompt": "Which boundary contract is correct for a function that returns the k largest values from n inputs?",
+      "constraints": [
+        "The API defines k as a nonnegative integer.",
+        "The result may be returned in any order unless separately requested."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "force_one",
+            "text": "k = 0 is treated as k = 1 so the heap is never empty."
+          },
+          {
+            "id": "reject_equal_n",
+            "text": "k = n is invalid because a bounded heap must always discard at least one input."
+          },
+          {
+            "id": "pad_missing",
+            "text": "k > n returns n real values plus invented sentinel values to reach size k."
+          },
+          {
+            "id": "explicit_boundaries",
+            "text": "k = 0 returns an empty result; k >= n retains all n values; only 0 < k < n needs eviction."
+          }
+        ],
+        "acceptedOptionIds": [
+          "explicit_boundaries"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The top-k state follows the output contract: zero requests no values, and k at least n admits every input without eviction.",
+        "details": "Boundary handling should be explicit before heap operations begin. For k = 0, no candidate can be retained. For k >= n, all available values belong to the answer, though a heap may still be used if later output requirements justify it. Only the strict interior case needs a fixed-size eviction threshold. Synthetic padding changes the meaning of the data and is not implied by top-k selection.",
+        "wrongOptionExplanationsByOptionId": {
+          "force_one": "Treating zero as one changes the caller’s requested cardinality and returns an element that was not requested.",
+          "reject_equal_n": "Requesting all n values is well-defined; no eviction is needed, but the answer still exists.",
+          "pad_missing": "Top-k is bounded by available input values unless the API explicitly defines padding semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-top-k-sufficient-state-size",
+      "prompt": "The only required final answer is the set of k largest values from a very long stream, and the discarded values will never be queried. Which state is sufficient?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "retain_only_root",
+            "text": "Retain only the current threshold value and discard the other k − 1 candidates."
+          },
+          {
+            "id": "retain_k_plus_sorted_discarded",
+            "text": "Retain the top k and also keep every discarded value sorted."
+          },
+          {
+            "id": "retain_k_only",
+            "text": "Retain at most k candidates and the current eviction threshold."
+          },
+          {
+            "id": "retain_all_history",
+            "text": "Retain every value because a heap must represent the complete stream."
+          }
+        ],
+        "acceptedOptionIds": [
+          "retain_k_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The top-k invariant makes the retained k candidates sufficient; values below the threshold cannot re-enter without a changed contract.",
+        "details": "For a fixed k with insertions only, once a value is discarded because it does not exceed the current threshold, future insertions cannot make that discarded value enter the top-k set. The heap therefore needs only the retained candidates. Keeping all history or sorted discarded values adds state with no supported query. Keeping only the root loses the identities of the other retained values needed for the final answer.",
+        "wrongOptionExplanationsByOptionId": {
+          "retain_all_history": "A fixed insertion-only top-k contract does not require values that have permanently failed the admission threshold.",
+          "retain_k_plus_sorted_discarded": "Sorting discarded history supports an unstated future query and defeats the bounded-state objective.",
+          "retain_only_root": "The root is only the boundary; the result requires all k retained candidates, not just the threshold."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-top-k-after-frequency-aggregation",
+      "prompt": "A frequency map has already counted m distinct values. The next step is to return the k most frequent values. Which heap role is correct?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "fifo_distinct_values",
+            "text": "Queue distinct values in first-seen order and take the first k."
+          },
+          {
+            "id": "heap_replaces_counting",
+            "text": "Skip the frequency map; a heap alone can infer each value’s frequency without storing counts."
+          },
+          {
+            "id": "bounded_over_frequencies",
+            "text": "Scan the m map entries and maintain a size-k min-heap keyed by frequency and any required tie-break."
+          },
+          {
+            "id": "heap_all_occurrences",
+            "text": "Insert every original occurrence into one heap and read the first k entries."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bounded_over_frequencies"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The heap selects among already aggregated candidates; it does not replace the state needed to compute their frequencies.",
+        "details": "Frequency counting and top-k selection are separate stages with different invariants. The map establishes one score per distinct value. The bounded heap then retains the k strongest scored entries, exposing the weakest retained frequency at its root. Inserting raw occurrences does not group equal values, and FIFO order does not represent frequency. If m is tiny or complete ordering is required, sorting the map entries may be simpler.",
+        "wrongOptionExplanationsByOptionId": {
+          "heap_replaces_counting": "Heap order compares supplied keys; it does not aggregate equal values into counts by itself.",
+          "heap_all_occurrences": "Raw occurrences do not directly identify the k most frequent distinct values and can duplicate the same value many times.",
+          "fifo_distinct_values": "First-seen order is unrelated to frequency rank."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "top_k",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

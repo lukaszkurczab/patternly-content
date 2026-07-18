@@ -1,0 +1,306 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-tree-traversal-dfs_preorder-candidate-001",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-tree-traversal-candidate-0001",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "tree_traversal",
+    "primaryMentalUnitId": "dfs_preorder",
+    "patternFamilyId": "tree_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; not a human reviewer)",
+    "createdAt": "2026-07-18T16:17:19Z",
+    "contentBatchId": "algorithms-tree-traversal-dfs_preorder-candidate-001",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tree-preorder-prune-before-descend",
+      "prompt": "A traversal must record every node whose value is negative and must not enter the descendants of a negative node.\nWhich processing position enforces that rule directly?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "process_before_children",
+            "text": "Inspect the current node first; if it is negative, record it and stop this branch, otherwise recurse to its children."
+          },
+          {
+            "id": "process_after_children",
+            "text": "Recurse through both subtrees first, then inspect and possibly record the current node."
+          },
+          {
+            "id": "process_between_children",
+            "text": "Traverse the left subtree, inspect the current node, then traverse the right subtree."
+          },
+          {
+            "id": "level_snapshot",
+            "text": "Place all nodes in a queue and process a complete level before deciding which branches to prune."
+          }
+        ],
+        "acceptedOptionIds": [
+          "process_before_children"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The current node decides whether its descendants are legal to visit, so that decision must occur before either child call.",
+        "details": "Preorder processing is parent-before-children. Here the parent value is not merely an output preference; it is a guard on whether child recursion may happen at all. Processing after a child would already violate the pruning rule, and inorder would still enter the left subtree before making the decision. A queue could implement parent-first pruning, but level batching is unnecessary because the requirement is branch-local rather than level-wide. The same boundary appears in permission checks, prefix validation, and subtree skipping based on ancestor nodes.",
+        "wrongOptionExplanationsByOptionId": {
+          "process_after_children": "Postorder is plausible when a parent depends on child results, but it discovers the pruning condition only after the forbidden descendants have already been visited.",
+          "process_between_children": "Inorder places the action between child traversals, so the entire left subtree is entered before the current node can stop the branch. It becomes valid when the left-before-node order is itself required and no parent-first pruning exists.",
+          "level_snapshot": "BFS can inspect a parent before enqueueing its children, but processing whole levels is not the decisive requirement. It is appropriate when outputs or decisions depend on distance from the root."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "validate_tree_property"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "A negative node itself must be recorded.",
+        "No descendant of a negative node may be visited."
+      ]
+    },
+    {
+      "id": "alg-tree-preorder-explicit-output-sequence",
+      "prompt": "Order the operations for `preorder(node, output)`, where `output` is a caller-owned list and left descendants must appear before right descendants.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "guard_null",
+            "text": "Return immediately when `node` is null."
+          },
+          {
+            "id": "append_current",
+            "text": "Append the current node's value to `output`."
+          },
+          {
+            "id": "visit_left",
+            "text": "Run `preorder(node.left, output)`."
+          },
+          {
+            "id": "visit_right",
+            "text": "Run `preorder(node.right, output)`."
+          }
+        ],
+        "canonicalOrder": [
+          "guard_null",
+          "append_current",
+          "visit_left",
+          "visit_right"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The null guard protects the node access, and preorder records the current node before the left and right recursive calls.",
+        "details": "Passing `output` explicitly makes the side effect part of the call contract rather than hidden global state. The guard must precede every dereference. Appending before both child calls establishes parent-first order, and placing the left call before the right call establishes the requested sibling order. A module-level list could produce the same sequence in one run, but it would retain data across calls unless reset and would make concurrent or nested use unsafe. The explicit accumulator is still mutable state; its ownership and lifetime are simply visible."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "The tree is a proper binary tree.",
+        "The list is initially empty for the top-level call.",
+        "Scoring uses preserved adjacent relations."
+      ]
+    },
+    {
+      "id": "alg-tree-preorder-clone-proper-tree",
+      "prompt": "A mutable `Node` can be created before its child references are assigned. The input is guaranteed to be a proper tree with no shared nodes.\nWhich cloning plan is sufficient?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "create_then_attach",
+            "text": "For each non-null node, create its clone, then recursively clone and attach the left and right children."
+          },
+          {
+            "id": "visited_map_required",
+            "text": "Create a visited map from original nodes to clones before any recursive call; cloning is incorrect without it."
+          },
+          {
+            "id": "clone_by_value",
+            "text": "Reuse one clone for every original node that has the same value."
+          },
+          {
+            "id": "children_only",
+            "text": "Clone both children but return either child clone instead of creating a clone for the current node."
+          }
+        ],
+        "acceptedOptionIds": [
+          "create_then_attach"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A proper tree reaches each node through one parent, so preorder creation followed by child attachment needs no identity map.",
+        "details": "Creating the current clone before descending mirrors parent-before-child construction and works because every input node is encountered exactly once. A graph clone needs an original-to-clone map to break cycles and preserve shared references, but those conditions are excluded by the proper-tree contract. Value equality cannot stand in for identity because duplicate values are legal. If the output node were immutable and required both children in its constructor, a child-first construction order could be more natural, but that would be a different API boundary.",
+        "wrongOptionExplanationsByOptionId": {
+          "visited_map_required": "A map is a familiar graph-cloning tool, but it solves cycles and shared identity that the stated tree contract forbids. It becomes necessary when those guarantees are removed.",
+          "clone_by_value": "Values are payload, not identity. Reusing by value would merge distinct duplicate-valued nodes; it is valid only under an explicit uniqueness-and-identity-by-value contract.",
+          "children_only": "The clone must preserve every original node, including the current parent. Returning a child drops structure and would only fit an operation intentionally removing the current node."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Duplicate node values are allowed.",
+        "The output node type is mutable during construction."
+      ]
+    },
+    {
+      "id": "alg-tree-preorder-null-guard-placement",
+      "prompt": "Consider this intended preorder skeleton:\n`visit(node) { /* missing statement */; emit(node.value); visit(node.left); visit(node.right); }`.\nWhich statement must occupy the missing position for an empty tree and missing children to be valid?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "return_if_null",
+            "text": "`if (node == null) return;`"
+          },
+          {
+            "id": "emit_null",
+            "text": "`if (node == null) emit(0);`"
+          },
+          {
+            "id": "skip_leaf",
+            "text": "`if (node.left == null && node.right == null) return;`"
+          },
+          {
+            "id": "recurse_null",
+            "text": "`if (node == null) { visit(node.left); visit(node.right); }`"
+          }
+        ],
+        "acceptedOptionIds": [
+          "return_if_null"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Null denotes an empty subtree with no node to emit, so the call must terminate before reading `value` or child references.",
+        "details": "A preorder action is defined only for a non-null node. The null call is the empty-subtree boundary and contributes no output, so an immediate return preserves both safety and semantics. Skipping leaves would omit valid nodes, while emitting a synthetic value would invent content not present in the tree. This guard also makes a top-level empty root valid without a separate wrapper case. A different API could use a sentinel object instead of null, but the sentinel would still need an explicit no-node contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "emit_null": "Substituting `0` confuses missing structure with a real payload and invents output. It would be valid only if the serialization format explicitly encoded null markers.",
+          "skip_leaf": "Leaves are real nodes and must be emitted in preorder. A leaf-only return is appropriate only after processing the leaf or for a traversal intentionally excluding terminal nodes.",
+          "recurse_null": "A null reference has no child fields, so this immediately dereferences missing structure and cannot make progress. Recursive calls belong only to non-null nodes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Null represents an empty subtree.",
+        "The output must contain only values of actual nodes."
+      ]
+    },
+    {
+      "id": "alg-tree-preorder-iterative-push-order",
+      "prompt": "An iterative preorder traversal pops a node, emits it, then pushes its non-null children onto a LIFO stack.\nThe required visit order is node, left subtree, right subtree. In which order should the children be pushed?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "push_right_then_left",
+            "text": "Push the right child first, then the left child."
+          },
+          {
+            "id": "push_left_then_right",
+            "text": "Push the left child first, then the right child."
+          },
+          {
+            "id": "push_only_left",
+            "text": "Push only the left child; the right subtree will be reached automatically."
+          },
+          {
+            "id": "either_order",
+            "text": "Either push order is equivalent because both children are eventually visited."
+          }
+        ],
+        "acceptedOptionIds": [
+          "push_right_then_left"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A stack removes the most recently pushed child first, so pushing right before left makes the left child the next node processed.",
+        "details": "Recursive preorder implicitly schedules the left call before the right call. An explicit LIFO stack reverses insertion order, so the later push must be the earlier visit. After emitting the parent, push right and then left; the left child is now on top, and its entire subtree is processed before the stored right child. Both push orders visit the same set of nodes, but they do not produce the same ordered traversal. With a FIFO queue, insertion order would be preserved rather than reversed.",
+        "wrongOptionExplanationsByOptionId": {
+          "push_left_then_right": "This looks like the recursive call order, but LIFO reverses it: the right child would be popped first. It is valid when right-before-left preorder is intended.",
+          "push_only_left": "There is no implicit link from the left subtree to its sibling. Omitting the right push permanently loses that branch.",
+          "either_order": "Node coverage is the same, but the observable sequence differs. Push order is irrelevant only when the consumer truly treats sibling order as unordered."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Children are pushed only when non-null.",
+        "The stack is LIFO."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

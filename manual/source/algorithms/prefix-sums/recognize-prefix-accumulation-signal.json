@@ -1,0 +1,549 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-prefix-sums-recognize-prefix-accumulation-signal-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-prefix-sums-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "prefix_sums",
+    "primaryMentalUnitId": "recognize_prefix_accumulation_signal",
+    "patternFamilyId": "prefix_sums"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-prefix-sums-recognize-prefix-accumulation-signal-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-prefix-recognize-signal-repeated-range-queries",
+      "prompt": "An immutable array of 200,000 integers must answer 150,000 inclusive range-sum queries [l, r]. Which observation is the decisive signal for prefix accumulation?",
+      "constraints": [
+        "The array does not change after preprocessing.",
+        "Queries may use arbitrary, non-monotonic boundaries.",
+        "The original index order must be preserved."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reuse_cumulative_boundaries",
+            "text": "Each query can be expressed as the difference between two cumulative boundary states that can be precomputed once."
+          },
+          {
+            "id": "sort_before_queries",
+            "text": "The values should be sorted so that every query becomes a contiguous interval in sorted order."
+          },
+          {
+            "id": "move_one_window",
+            "text": "A single moving window can be advanced from one query interval to the next in constant time."
+          },
+          {
+            "id": "store_value_frequency",
+            "text": "A frequency map of individual values is sufficient to recover the sum of any indexed interval."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reuse_cumulative_boundaries"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The reusable structure is a cumulative state at every index boundary. Arbitrary range sums then become a difference of two stored states.",
+        "details": "Define P[i] as the sum of the first i elements. An inclusive query [l, r] becomes P[r + 1] - P[l], so one O(n) preprocessing pass supports each query in O(1). Sorting would destroy the meaning of the original indices, and a moving window does not provide constant-time jumps between unrelated query intervals. The same signal transfers to other invertible cumulative operations, such as XOR, but not directly to range minimum.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_before_queries": "Sorting can make value-based searches easier, but it changes which elements belong to an index range. Prefix accumulation works in the original order and does not require sorted input.",
+          "move_one_window": "A moving window is efficient when boundaries evolve in a controlled scan. Arbitrary queries can jump backward or across the array, so maintaining one window would require potentially linear movement between queries.",
+          "store_value_frequency": "A value-frequency map loses positional boundaries. It can answer global frequency questions, but it cannot identify which values lie between l and r without additional indexed state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reusable_prefix_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-recognize-signal-reusable-state-invariant",
+      "prompt": "While scanning an array from left to right, which state is reusable for many later index-range sum queries?",
+      "constraints": [
+        "The later queries are not known during the scan.",
+        "The query boundaries may have different lengths and may arrive in any order."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_at_each_boundary",
+            "text": "For every boundary i, store the sum of elements with indices smaller than i."
+          },
+          {
+            "id": "current_fixed_window",
+            "text": "Store only the sum of the most recent fixed-size window."
+          },
+          {
+            "id": "sorted_prefix",
+            "text": "Store cumulative sums after sorting the values."
+          },
+          {
+            "id": "running_maximum",
+            "text": "Store only the largest element seen so far."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix_at_each_boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A boundary-indexed prefix retains exactly the information needed to remove everything before a query start.",
+        "details": "The invariant P[i] = A[0] + ... + A[i - 1] makes every stored state reusable across different query boundaries. A current window represents only one interval and discards older boundary states; a running maximum and a sorted prefix do not preserve the requested indexed sums. The state is cumulative rather than moving: it records history at all boundaries instead of maintaining one active interval.",
+        "wrongOptionExplanationsByOptionId": {
+          "current_fixed_window": "A fixed window is useful when every requested interval has the same size and the scan advances by one. It is not reusable for arbitrary starts, ends, or query order.",
+          "sorted_prefix": "A prefix over sorted values answers questions about sorted positions, not the original array intervals. Sorting is a semantic change, not a prerequisite for prefix sums.",
+          "running_maximum": "A running maximum is not invertible into an interval sum. Subtracting two maxima does not remove the contribution before l."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reusable_prefix_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-recognize-signal-decision-sequence",
+      "prompt": "Order the reasoning steps for deciding that prefix accumulation is appropriate for a static range-sum workload.",
+      "constraints": [
+        "The sequence is a decision process, not implementation code.",
+        "Score is based on preserved adjacent relations."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "identify_repetition",
+            "text": "Identify that many queries repeat the same aggregate over different index ranges."
+          },
+          {
+            "id": "define_boundary_state",
+            "text": "Define a cumulative state at each index boundary that summarizes everything before it."
+          },
+          {
+            "id": "verify_difference_rule",
+            "text": "Verify that the aggregate for one range can be isolated by combining its two boundary states."
+          },
+          {
+            "id": "accept_preprocessing",
+            "text": "Accept one preprocessing pass because it reduces every later query to constant work."
+          }
+        ],
+        "canonicalOrder": [
+          "identify_repetition",
+          "define_boundary_state",
+          "verify_difference_rule",
+          "accept_preprocessing"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Prefix accumulation is justified only after both reuse and a valid boundary-combination rule are established.",
+        "details": "The workload first supplies the reuse signal. Next, the proposed boundary state must be defined, and then the author must verify that two states isolate the requested interval; only then does the preprocessing trade-off follow. Reversing this logic risks choosing a prefix merely because a problem mentions subarrays, even when the aggregate cannot be recovered from two prefixes."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reusable_prefix_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-recognize-signal-zero-boundary",
+      "prompt": "A range-query design must support intervals that start at index 0 without a special branch. Which prefix-state convention best exposes the signal that the design is well formed?",
+      "constraints": [
+        "Array indices are zero-based.",
+        "Queries are inclusive [l, r]."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "exclusive_n_plus_one",
+            "text": "Use P of length n + 1 with P[0] = 0 and P[i] equal to the sum of the first i elements."
+          },
+          {
+            "id": "inclusive_n_no_identity",
+            "text": "Use P of length n with P[i] equal to the sum through A[i], but apply the same subtraction formula for every l."
+          },
+          {
+            "id": "window_sentinel",
+            "text": "Use a current window sum and reset it whenever l is 0."
+          },
+          {
+            "id": "sorted_identity",
+            "text": "Sort the input and use the first sorted value as the identity prefix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "exclusive_n_plus_one"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An explicit identity state before the first element makes the left boundary uniform, including l = 0.",
+        "details": "With an exclusive n + 1 prefix, [l, r] is always P[r + 1] - P[l], and P[0] represents the empty prefix. An inclusive n-length prefix can also work, but it requires a different formula when l = 0 unless another sentinel is added. The decisive issue is not coding style: a convention determines which elements each boundary state contains and therefore which subtraction is legal.",
+        "wrongOptionExplanationsByOptionId": {
+          "inclusive_n_no_identity": "An inclusive prefix is valid only with its matching boundary formula. Reusing the exclusive formula without an identity entry creates an off-by-one error, especially at l = 0.",
+          "window_sentinel": "Resetting a moving window does not create reusable states for arbitrary future boundaries. It handles one traversal state, not a range-query contract.",
+          "sorted_identity": "A data value is not the additive identity, and sorting changes interval membership. The empty prefix must contribute zero regardless of input values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reusable_prefix_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-recognize-signal-window-near-miss",
+      "prompt": "Which workload is the strongest signal for prefix accumulation rather than maintaining one moving window?",
+      "constraints": [
+        "All arrays are immutable.",
+        "Only the stated output is required."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "arbitrary_many_ranges",
+            "text": "Answer 100,000 sum queries whose [l, r] boundaries arrive in arbitrary order."
+          },
+          {
+            "id": "all_fixed_length_max",
+            "text": "Find the maximum sum among all subarrays of one fixed length k in a single left-to-right pass."
+          },
+          {
+            "id": "longest_positive_threshold",
+            "text": "Find the longest window satisfying a monotonic frequency constraint while scanning once."
+          },
+          {
+            "id": "compare_two_ends",
+            "text": "Find a pair in a sorted array by moving two endpoints according to the pair sum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "arbitrary_many_ranges"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Arbitrary repeated range queries reuse stored boundary states; a moving window is strongest when one scan updates one current interval.",
+        "details": "A prefix pays O(n) once and then answers unrelated boundaries in O(1). The fixed-length maximum is naturally maintained by adding the entering value and removing the leaving value, while a monotonic validity problem is governed by expand/shrink logic. Prefixes and windows can both involve contiguous ranges, but their state ownership and query models are different.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_fixed_length_max": "A prefix could compute every fixed-length sum, but a moving window achieves the same O(n) time with O(1) extra state. The workload does not need random range reuse.",
+          "longest_positive_threshold": "This task depends on maintaining and repairing one current validity interval. Precomputing sums does not by itself decide how to move the boundaries.",
+          "compare_two_ends": "Two-pointer pair search uses ordered candidate elimination, not cumulative interval reuse. Prefix accumulation does not supply the movement proof."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reusable_prefix_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-recognize-signal-unsorted-negative-values",
+      "prompt": "An unsorted array contains positive and negative integers. It will receive many exact index-range sum queries and no updates. Does the prefix-accumulation signal still apply?",
+      "constraints": [
+        "Queries ask for sums of original contiguous index ranges.",
+        "Negative values are allowed."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_order_preserved",
+            "text": "Yes. Cumulative addition follows original index order; neither sortedness nor non-negativity is required for range differences."
+          },
+          {
+            "id": "no_sort_required",
+            "text": "No. Prefix sums require nondecreasing values so that subtraction is valid."
+          },
+          {
+            "id": "only_if_positive",
+            "text": "Only if every value is nonnegative, because negative values make a prefix decrease."
+          },
+          {
+            "id": "only_window",
+            "text": "No. Any problem with negative values must use a moving window instead."
+          }
+        ],
+        "acceptedOptionIds": [
+          "yes_order_preserved"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix subtraction is an algebraic identity over the original sequence; prefixes may increase or decrease.",
+        "details": "P[r + 1] contains the sum before l plus the requested range, so subtracting P[l] removes the earlier contribution regardless of signs or order. Sortedness matters for strategies that eliminate candidates by order, and non-negativity matters for some monotonic sliding windows, but neither is a prefix-sum precondition. Sorting would actually invalidate index-range semantics.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_sort_required": "Subtraction remains valid for any numeric order because both prefixes were formed from the same original sequence. Sorting is unrelated to the identity.",
+          "only_if_positive": "A prefix is allowed to decrease. Non-negativity is needed for certain monotonic expand/shrink proofs, not for cumulative sums.",
+          "only_window": "Negative values can break a simple monotonic window; they do not break prefix differences. In many exact-sum problems they make prefix-based state more useful."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reusable_prefix_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "range_sum_query",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-recognize-signal-cost-model",
+      "prompt": "For n immutable values and q arbitrary range-sum queries, select the total time and extra space of building a separate prefix array and answering every query from it.",
+      "constraints": [
+        "The prefix array has n + 1 numeric entries.",
+        "Arithmetic on one stored entry is treated as O(1).",
+        "Input storage is not counted as extra space."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "total_time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "total_time": [
+            "O(n + q)",
+            "O(nq)",
+            "O(q log n)",
+            "O(n log n + q)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(q)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "total_time": [
+            "O(n + q)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The reusable state costs one linear build and one constant-time subtraction per query, while the stored boundary states occupy linear extra space.",
+        "details": "The build visits n elements, and q queries each read two prefix entries, giving O(n + q) total time. A separate n + 1 prefix array is O(n) extra space. Prefix-hash variants also allocate auxiliary state—often O(n) in the worst case—so “prefix” does not imply zero additional memory."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reusable_prefix_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-recognize-signal-transfer-predicate-counts",
+      "prompt": "Which new requirement preserves the same reusable-prefix decision boundary as static range sums?",
+      "constraints": [
+        "The source array is immutable.",
+        "The requirement must be answerable from two precomputed boundary states."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "count_even_in_ranges",
+            "text": "Answer many queries asking how many even values occur in [l, r], by prefixing a 0/1 indicator."
+          },
+          {
+            "id": "range_median_queries",
+            "text": "Answer arbitrary range medians by subtracting two scalar prefix sums."
+          },
+          {
+            "id": "online_point_updates",
+            "text": "Support point updates and immediately answer later sums using an unchanged static prefix."
+          },
+          {
+            "id": "longest_unique_subarray",
+            "text": "Find the longest subarray with all distinct values by subtracting two prefix sums."
+          }
+        ],
+        "acceptedOptionIds": [
+          "count_even_in_ranges"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A predicate count becomes an additive sequence, so two cumulative counts isolate the requested interval.",
+        "details": "Map each value to 1 when it is even and 0 otherwise, then use the same P[r + 1] - P[l] rule. A scalar sum cannot recover a median or distinctness constraint, and online updates make a static prefix stale. The transfer rule is: derive a per-position contribution whose cumulative states can be combined to recover exactly the requested range result.",
+        "wrongOptionExplanationsByOptionId": {
+          "range_median_queries": "Two scalar sums do not preserve the order statistics needed for a median. A richer data structure or offline method is required.",
+          "online_point_updates": "A static prefix bakes in every earlier value. After a point update, many later entries would need repair unless a dynamic structure is used.",
+          "longest_unique_subarray": "Uniqueness is a stateful validity condition, not an additive contribution that can be isolated by subtraction. A frequency-constrained window is the usual mechanism."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reusable_prefix_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "algorithms-prefix-sums-learn-approach-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-prefix-recognize-signal-repeated-range-queries",
+            "alg-prefix-recognize-signal-reusable-state-invariant",
+            "alg-prefix-recognize-signal-decision-sequence",
+            "alg-prefix-recognize-signal-zero-boundary",
+            "alg-prefix-recognize-signal-window-near-miss",
+            "alg-prefix-recognize-signal-unsorted-negative-values",
+            "alg-prefix-recognize-signal-cost-model",
+            "alg-prefix-recognize-signal-transfer-predicate-counts",
+            "alg-prefix-build-1d-exclusive-recurrence",
+            "alg-prefix-build-1d-loop-invariant",
+            "alg-prefix-build-1d-construction-order",
+            "alg-prefix-build-1d-empty-and-first-element",
+            "alg-prefix-build-1d-not-moving-window",
+            "alg-prefix-build-1d-preserve-original-order",
+            "alg-prefix-build-1d-cost",
+            "alg-prefix-build-1d-transfer-indicator-prefix",
+            "alg-prefix-range-query-inclusive-formula",
+            "alg-prefix-range-query-cancellation-invariant",
+            "alg-prefix-range-query-reasoning-order",
+            "alg-prefix-range-query-full-array-edge",
+            "alg-prefix-range-query-arbitrary-order-vs-window",
+            "alg-prefix-range-query-sorting-breaks-indices",
+            "alg-prefix-range-query-per-query-cost",
+            "alg-prefix-range-query-transfer-xor",
+            "alg-prefix-hash-required-prior-prefix",
+            "alg-prefix-hash-frequency-not-last-index",
+            "alg-prefix-hash-update-order",
+            "alg-prefix-hash-empty-prefix-seed",
+            "alg-prefix-hash-negative-values-vs-window",
+            "alg-prefix-hash-sorting-destroys-subarrays",
+            "alg-prefix-hash-complexity",
+            "alg-prefix-hash-transfer-remainder-frequency",
+            "alg-prefix-difference-array-batch-update-signal",
+            "alg-prefix-difference-array-active-delta-invariant",
+            "alg-prefix-difference-array-update-order",
+            "alg-prefix-difference-array-right-edge",
+            "alg-prefix-difference-array-not-window",
+            "alg-prefix-difference-array-preserve-index-order",
+            "alg-prefix-difference-array-complexity",
+            "alg-prefix-difference-array-transfer-2d-corners",
+            "alg-prefix-2d-static-rectangle-signal",
+            "alg-prefix-2d-state-invariant",
+            "alg-prefix-2d-inclusion-exclusion-order",
+            "alg-prefix-2d-full-boundary-formula",
+            "alg-prefix-2d-arbitrary-rectangles-vs-window",
+            "alg-prefix-2d-sorting-destroys-coordinates",
+            "alg-prefix-2d-complexity",
+            "alg-prefix-2d-transfer-indicator-regions",
+            "alg-prefix-index-contract-half-open-formula",
+            "alg-prefix-index-contract-single-meaning",
+            "alg-prefix-index-contract-workflow-order",
+            "alg-prefix-index-contract-empty-range",
+            "alg-prefix-index-contract-window-endpoints",
+            "alg-prefix-index-contract-sortedness-independent",
+            "alg-prefix-index-contract-complexity",
+            "alg-prefix-index-contract-transfer-2d-padding",
+            "alg-prefix-vs-window-workload-choice",
+            "alg-prefix-vs-window-state-ownership",
+            "alg-prefix-vs-window-decision-order",
+            "alg-prefix-vs-window-negative-threshold-boundary",
+            "alg-prefix-vs-window-fixed-k-tie-break",
+            "alg-prefix-vs-window-sortedness-not-signal",
+            "alg-prefix-vs-window-cost-comparison",
+            "alg-prefix-vs-window-transfer-matrix-and-updates",
+            "alg-prefix-vs-window-boundary-translation"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

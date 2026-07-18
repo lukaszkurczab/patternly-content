@@ -1,0 +1,547 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "recursion-basics-recognize-recursive-structure",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-recursion-basics-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "recursion_basics",
+    "primaryMentalUnitId": "recognize_recursive_structure",
+    "patternFamilyId": "recursion_basics"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring",
+    "createdAt": "2026-07-18T15:01:33Z",
+    "contentBatchId": "recursion-basics-recognize-recursive-structure",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "recursion-basics-recognize-recursive-structure-nested-outline-self-similarity",
+      "prompt": "A document outline is a section tree. Each section stores its own word count and zero or more subsections.\nYou need the total word count for one section and everything below it. Which decomposition exposes the\nself-similar recursive subproblem?",
+      "constraints": [
+        "The outline is finite and acyclic.",
+        "A section's direct subsections are strictly smaller subtrees."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "section_plus_children",
+            "text": "Define total(section) as the section's own words plus total(child) for each direct subsection."
+          },
+          {
+            "id": "flatten_then_sum",
+            "text": "First flatten the entire outline into one list, then sum the list."
+          },
+          {
+            "id": "repeat_same_section",
+            "text": "Define total(section) as the section's own words plus total(section)."
+          },
+          {
+            "id": "use_depth_only",
+            "text": "Compute the total from the section's depth without inspecting its subsections."
+          }
+        ],
+        "acceptedOptionIds": [
+          "section_plus_children"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each direct subsection is a smaller object governed by the same total-word-count contract.",
+        "details": "The decisive signal is recursive containment: a section contains child sections, and each child can be\nsolved by the same function that solves the parent. The parent contributes its own word count exactly once\nand delegates each smaller subtree to the same contract. A self-call on the unchanged section is only\nrecursive syntax; it is not a smaller subproblem. Flattening may still produce a correct iterative solution,\nbut it is a different decomposition and does not explain the natural recursion. This transfer works for\nacyclic nested ownership such as folders, comments, and expression nodes. A general graph needs an\nadditional visited-state contract because a child reference may lead back to an already seen node.",
+        "wrongOptionExplanationsByOptionId": {
+          "flatten_then_sum": "Flattening can be a valid separate preprocessing strategy, but it avoids rather than identifies the direct self-similar subproblem. The recursive observation is that every child is itself a complete section subtree with the same total contract.",
+          "repeat_same_section": "The self-call may look recursive, but it does not move to a smaller structure. The same section is requested again, so no recursive decomposition has been established.",
+          "use_depth_only": "Depth describes position, not the contents of the subtree. Two sections at the same depth can contain different words and descendants, so depth alone cannot represent the required subproblem."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_self_similar_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-recognize-recursive-structure-suffix-sum-recursive-shape",
+      "prompt": "Order the control-flow decisions for a recursive function sumFrom(i) that returns the sum of a[i:] in an immutable array a.",
+      "constraints": [
+        "The array is immutable during the call chain.",
+        "sumFrom(i) is defined for 0 <= i <= len(a)."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "check_empty",
+            "text": "Check whether i equals len(a)."
+          },
+          {
+            "id": "return_identity",
+            "text": "If the suffix is empty, return 0."
+          },
+          {
+            "id": "take_current",
+            "text": "Otherwise, identify a[i] as the current contribution."
+          },
+          {
+            "id": "delegate_suffix",
+            "text": "Ask sumFrom(i + 1) for the remaining suffix."
+          },
+          {
+            "id": "combine_return",
+            "text": "Return a[i] plus the returned suffix sum."
+          }
+        ],
+        "canonicalOrder": [
+          "check_empty",
+          "return_identity",
+          "take_current",
+          "delegate_suffix",
+          "combine_return"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The non-empty suffix separates into one current element and the same sum problem on a strictly shorter suffix.",
+        "details": "The order makes the recursive shape explicit. First protect the terminal state so that no element is read\nfrom an empty suffix. For a non-empty suffix, the current element is the part handled locally, while i + 1\nidentifies the complete remaining instance of the same sum contract. Only after that smaller result is\navailable can the current call return their sum. The essential recursive decision is not the syntax of the\nfunction call; it is the decomposition of a[i:] into a[i] and a[i + 1:]. The same shape transfers to\nproducts, counts, and predicates over suffixes, but the terminal value and combining operation must change\nwith the return contract."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_self_similar_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recognize-recursive-structure-palindrome-terminal-shapes",
+      "prompt": "A function isPal(l, r) checks whether s[l..r] is a palindrome. Its only recursive step first compares\ns[l] with s[r] and, if they match, calls isPal(l + 1, r - 1). Select all states that require no character-pair\ncomparison and therefore contain no smaller two-ended palindrome subproblem.",
+      "constraints": [
+        "Indices refer to an inclusive interval.",
+        "No normalization or character filtering occurs inside the recursion."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "crossed",
+            "text": "l > r"
+          },
+          {
+            "id": "single",
+            "text": "l == r"
+          },
+          {
+            "id": "two_chars",
+            "text": "l + 1 == r"
+          },
+          {
+            "id": "any_nonempty",
+            "text": "Every state with l <= r"
+          }
+        ],
+        "acceptedOptionIds": [
+          "crossed",
+          "single"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Crossed and single-position intervals have no remaining pair, even though only one of them is empty.",
+        "details": "Recursion stops when the current problem has become atomic under the chosen decomposition. A crossed\ninterval has no characters, and a single-position interval has one character but no pair to compare. Both\nare already palindromes under this contract. A two-character interval is different: its one outer pair is\nstill the material decision. This boundary shows why recursive structure is not tied to an empty-input\nkeyword. The terminal shape follows from what the recursive step removes. The same reasoning applies when\npeeling matching delimiters, trimming equal endpoints, or consuming two items per call: both zero-item and\none-item remainders may be atomic.",
+        "wrongOptionExplanationsByOptionId": {
+          "two_chars": "A two-character interval still has one material pair to compare. It may recurse to the crossed state after that comparison, but it is not yet pair-free.",
+          "any_nonempty": "Intervals with at least two positions still contain an outer pair whose equality determines whether recursion may continue. Treating all non-empty states as terminal skips the actual decision."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "crossed": "The crossed interval is the zero-character terminal shape produced after removing the last pair.",
+          "single": "A single character is already palindromic and contains no two-ended pair to decompose."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_self_similar_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "base_case_recognition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recognize-recursive-structure-expression-tree-transfer",
+      "prompt": "A nested arithmetic expression is either a number or an operator whose operands are themselves expressions.\nWhich observation is sufficient to reuse the recursive structure from totaling a nested document outline?",
+      "constraints": [
+        "The expression representation is finite and acyclic.",
+        "Operator arity is available from the node."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "child_is_expression",
+            "text": "Each operand is a complete smaller expression that can be evaluated by the same evaluate(expr) contract."
+          },
+          {
+            "id": "operators_repeat",
+            "text": "The same operator symbol may appear several times."
+          },
+          {
+            "id": "parentheses_present",
+            "text": "The source text contains parentheses."
+          },
+          {
+            "id": "depth_is_known",
+            "text": "The maximum nesting depth is known in advance."
+          }
+        ],
+        "acceptedOptionIds": [
+          "child_is_expression"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An operand is not merely related data; it is a smaller complete instance of the evaluation problem.",
+        "details": "Both an outline section and an expression node own recursively nested children. The local node contributes a\nrule—add its own words in the outline, or apply its operator in the expression—while each child is delegated\nto the same function contract. Repeated symbols, parentheses, or a known depth can be useful context, but\nnone is sufficient evidence of self-similarity. This transfer boundary also separates recursive syntax from\nrecursive structure: a flat token stream may be processed iteratively until it is parsed into nested\nexpressions. The item trains recognition of the structural contract, not a choice between preorder and\npostorder traversal.",
+        "wrongOptionExplanationsByOptionId": {
+          "operators_repeat": "Repeated vocabulary is only a surface cue. Recursion is justified by operands being complete nested expressions, not by seeing the same operator token more than once.",
+          "parentheses_present": "Parentheses can occur in a flat or already parsed representation and do not by themselves establish a smaller same-contract object. The structural relationship between an expression and its operand expressions is decisive.",
+          "depth_is_known": "A known bound can help allocate resources, but it does not define how the current result reduces to results of smaller expressions. The recursive contract comes from the child-expression structure."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_self_similar_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "generate_recursive_result"
+      }
+    },
+    {
+      "id": "recursion-basics-recognize-recursive-structure-singleton-is-atomic",
+      "prompt": "tailValue(node) returns the final node's value in the non-empty acyclic list beginning at node.\nWhich terminal shape reveals the correct atomic recursive structure?",
+      "constraints": [
+        "node is non-null for every legal call.",
+        "The list is finite and acyclic.",
+        "A node with node.next == None is a valid one-node suffix."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "last_node",
+            "text": "If node.next is None, return node.value."
+          },
+          {
+            "id": "empty_only",
+            "text": "Call tailValue(node.next) until node is None, then return a placeholder value."
+          },
+          {
+            "id": "no_base_nonempty",
+            "text": "There can be no base case because every legal call starts with a real node."
+          },
+          {
+            "id": "same_node",
+            "text": "If node.next is None, call tailValue(node) again."
+          }
+        ],
+        "acceptedOptionIds": [
+          "last_node"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A one-node suffix is a complete non-empty subproblem whose final value is stored in that node.",
+        "details": "A longer list suffix decomposes into the current node followed by the same tail-value question on node.next.\nOnce node.next is None, the current node is the final real node and no smaller legal non-empty suffix remains.\nReturning node.value preserves the contract without manufacturing an out-of-domain empty call or placeholder.\nRepeating the same node would not make progress. The transfer rule is to identify the smallest valid instance\nof the recursive structure: a leaf, singleton, or final node can be terminal even when it is not empty.",
+        "wrongOptionExplanationsByOptionId": {
+          "empty_only": "The empty node lies outside the stated non-null call domain and has no final value to return. A placeholder would weaken or corrupt the result contract.",
+          "no_base_nonempty": "A terminal subproblem need not be empty. The final real node is an atomic non-empty suffix whose answer is already known.",
+          "same_node": "The final node is already atomic. Calling on the unchanged node repeats the same request and cannot expose a smaller subproblem."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_self_similar_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "base_case_recognition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-recognize-recursive-structure-same-contract-different-arguments",
+      "prompt": "countDown(4) returns the number of decrements needed to reach 0 and calls countDown(n - 1) for n > 0.\nWhich statement correctly explains the self-similarity?",
+      "constraints": [
+        "n is a non-negative integer.",
+        "Each recursive step subtracts exactly one."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "same_question_smaller_n",
+            "text": "Every call answers the same question, but for a different smaller value of n."
+          },
+          {
+            "id": "identical_state_required",
+            "text": "Every call must receive exactly n = 4, otherwise it is not recursion."
+          },
+          {
+            "id": "different_contract_each_time",
+            "text": "Each value of n defines a different return contract."
+          },
+          {
+            "id": "only_syntax_matters",
+            "text": "The call is recursive solely because the function name appears inside itself; the state relationship is irrelevant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_question_smaller_n"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Self-similarity preserves the question being answered while the concrete state moves to a smaller instance.",
+        "details": "The function contract is uniform: countDown(n) means the number of one-step decrements from n to zero.\nCalls with 4, 3, 2, 1, and 0 therefore have different state values but identical semantic form. This\ndistinction is essential. If identical values were required, no progress could occur; if the contract\nchanged at each value, the parent could not interpret the child's return. The same principle transfers to\nsuffix indices, remaining lengths, tree children, and interval bounds: the state varies while the contract\nremains stable.",
+        "wrongOptionExplanationsByOptionId": {
+          "identical_state_required": "Recursion repeats a function contract, not an identical state value. Keeping n unchanged would prevent the subproblem from becoming smaller.",
+          "different_contract_each_time": "The arguments change, but every frame still promises the same meaning: the number of decrements from its own n to 0. Changing the contract per frame would make returned values impossible to compose reliably.",
+          "only_syntax_matters": "A self-reference identifies recursive syntax, but a usable recursive decomposition also requires the nested call to represent a legitimate smaller instance of the same problem."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_self_similar_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recognize-recursive-structure-self-call-without-smaller-node",
+      "prompt": "Consider this function on an acyclic linked structure:\n\n    size(node):\n        if node is None: return 0\n        return 1 + size(node)\n\nWhat is the most precise diagnosis?",
+      "constraints": [
+        "The structure contains no cycles.",
+        "node.next is the intended remainder of the structure."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "same_node_not_subproblem",
+            "text": "It uses recursive syntax, but size(node) is not a smaller subproblem because the same node is passed again."
+          },
+          {
+            "id": "missing_empty_base",
+            "text": "The function has no empty-input base case."
+          },
+          {
+            "id": "two_branches_exponential",
+            "text": "It is exponential because every call creates two recursive branches."
+          },
+          {
+            "id": "linked_structures_cannot_recurse",
+            "text": "Linked structures cannot be processed recursively."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_node_not_subproblem"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The unchanged node means the supposed child request is the same problem, so the base is unreachable from a non-empty start.",
+        "details": "The None base case is present, but the transition never follows node.next. Every non-empty frame asks for\nsize of the exact same node, producing an infinite chain until the runtime stack fails. This is why\nrecursion does not terminate automatically and why recognizing recursive structure requires more than\nspotting a self-call. Replacing the recursive argument with node.next exposes the intended smaller suffix of\nthe linked structure. This diagnosis transfers to unchanged indices, intervals, counters, and graph nodes:\na syntactic self-call must correspond to a strictly smaller semantic state.",
+        "wrongOptionExplanationsByOptionId": {
+          "missing_empty_base": "The node-is-None branch is an explicit empty-structure base case. The failure is that non-empty calls never move toward it.",
+          "two_branches_exponential": "There is only one recursive call per frame. The defect is repeated identical state and nontermination, not branching complexity.",
+          "linked_structures_cannot_recurse": "An acyclic linked structure has a natural smaller subproblem at node.next. Recursion is valid when the transition follows that smaller remainder."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_self_similar_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-recognize-recursive-structure-chain-versus-branching-call-shape",
+      "prompt": "Compare two recursive shapes on input size n:\n\nA. length(node) makes one call on node.next.\nB. naiveFib(n) makes calls on n - 1 and n - 2.\n\nWhich conclusion follows from the recursive structure alone?",
+      "constraints": [
+        "The linked structure is acyclic.",
+        "naiveFib uses no memoization."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "chain_vs_branch",
+            "text": "A forms one call chain, while B forms a branching tree with overlapping subproblems."
+          },
+          {
+            "id": "both_exponential",
+            "text": "Both are exponential because both functions call themselves."
+          },
+          {
+            "id": "both_linear",
+            "text": "Both are linear because every argument is smaller."
+          },
+          {
+            "id": "a_requires_memoization",
+            "text": "A is exponential unless every node result is memoized."
+          }
+        ],
+        "acceptedOptionIds": [
+          "chain_vs_branch"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The number and overlap of recursive children determine call-tree growth; recursion by itself does not.",
+        "details": "Shape A creates at most one child per frame, so n nodes produce linear total work and linear maximum depth.\nShape B creates two children for most states, and many numeric states are recomputed, which is the source of\nnaive Fibonacci's exponential work. Both functions are recursive and both progress toward a base, but their\ncall graphs are materially different. The transfer rule is to classify branching factor, subproblem sizes,\nand overlap before assigning a complexity class. This item recognizes structure; exact stack accounting is\nowned by the stack-and-complexity unit.",
+        "wrongOptionExplanationsByOptionId": {
+          "both_exponential": "Self-reference does not determine branching. A has one successor per state and visits each linked node once, so its call graph is a chain.",
+          "both_linear": "Smaller arguments prove progress, not linear work. B revisits many sizes through two branches, so the total number of calls grows much faster than its depth.",
+          "a_requires_memoization": "In an acyclic singly linked chain, each node state is reached once. Memoization would add storage without removing repeated subproblems because there are none."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_self_similar_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "divide_problem"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "recursion-basics-learn-approach-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "recursion-basics-recognize-recursive-structure-nested-outline-self-similarity",
+            "recursion-basics-recognize-recursive-structure-suffix-sum-recursive-shape",
+            "recursion-basics-recognize-recursive-structure-palindrome-terminal-shapes",
+            "recursion-basics-recognize-recursive-structure-expression-tree-transfer",
+            "recursion-basics-recognize-recursive-structure-singleton-is-atomic",
+            "recursion-basics-recognize-recursive-structure-same-contract-different-arguments",
+            "recursion-basics-recognize-recursive-structure-self-call-without-smaller-node",
+            "recursion-basics-recognize-recursive-structure-chain-versus-branching-call-shape",
+            "recursion-basics-recursion-base-case-and-result-contract-count-digits-complete-contract",
+            "recursion-basics-recursion-base-case-and-result-contract-define-contract-before-code",
+            "recursion-basics-recursion-base-case-and-result-contract-all-even-empty-suffix",
+            "recursion-basics-recursion-base-case-and-result-contract-sum-to-product-contract-transfer",
+            "recursion-basics-recursion-base-case-and-result-contract-singleton-maximum-contract",
+            "recursion-basics-recursion-base-case-and-result-contract-uniform-contract-changing-state",
+            "recursion-basics-recursion-base-case-and-result-contract-subtract-two-total-domain",
+            "recursion-basics-recursion-base-case-and-result-contract-disjoint-halves-return-contract",
+            "recursion-basics-choose-recursive-state-suffix-sum-minimal-index-state",
+            "recursion-basics-choose-recursive-state-state-selection-reduction-process",
+            "recursion-basics-choose-recursive-state-palindrome-two-boundary-state",
+            "recursion-basics-choose-recursive-state-nested-weighted-sum-depth-transfer",
+            "recursion-basics-choose-recursive-state-singleton-terminal-without-empty-flag",
+            "recursion-basics-choose-recursive-state-same-parameter-shape-changing-value",
+            "recursion-basics-choose-recursive-state-linked-search-current-node-not-fixed-head",
+            "recursion-basics-choose-recursive-state-linear-suffix-needs-no-visited-set",
+            "recursion-basics-make-progress-toward-base-case-linked-suffix-size-as-progress-measure",
+            "recursion-basics-make-progress-toward-base-case-construct-progress-proof",
+            "recursion-basics-make-progress-toward-base-case-palindrome-crossed-interval-progress",
+            "recursion-basics-make-progress-toward-base-case-balanced-split-child-ranges",
+            "recursion-basics-make-progress-toward-base-case-step-two-terminal-overshoot",
+            "recursion-basics-make-progress-toward-base-case-changing-values-prove-descent",
+            "recursion-basics-make-progress-toward-base-case-odd-even-cycle-with-base-present",
+            "recursion-basics-make-progress-toward-base-case-termination-independent-of-branching-cost",
+            "recursion-basics-combine-subproblem-results-range-sum-add-disjoint-returns",
+            "recursion-basics-combine-subproblem-results-combine-after-child-results",
+            "recursion-basics-combine-subproblem-results-subtree-size-complete-contributions",
+            "recursion-basics-combine-subproblem-results-height-uses-max-not-sum",
+            "recursion-basics-combine-subproblem-results-leaf-contribution-not-empty-only",
+            "recursion-basics-combine-subproblem-results-same-contract-distinct-child-values",
+            "recursion-basics-combine-subproblem-results-terminates-but-drops-child-result",
+            "recursion-basics-combine-subproblem-results-balanced-tournament-max-linear-work",
+            "recursion-basics-recursion-stack-and-complexity-tree-dfs-work-versus-height",
+            "recursion-basics-recursion-stack-and-complexity-sumto-stack-unwind-trace",
+            "recursion-basics-recursion-stack-and-complexity-tail-position-without-tco",
+            "recursion-basics-recursion-stack-and-complexity-balanced-range-split-cost",
+            "recursion-basics-recursion-stack-and-complexity-singleton-base-frame-count",
+            "recursion-basics-recursion-stack-and-complexity-separate-frame-local-values",
+            "recursion-basics-recursion-stack-and-complexity-terminating-chain-can-overflow",
+            "recursion-basics-recursion-stack-and-complexity-linked-chain-time-and-stack",
+            "recursion-basics-recursion-mistake-review-unchanged-n-first-failing-obligation",
+            "recursion-basics-recursion-mistake-review-smallest-counterexample-diagnostic-sequence",
+            "recursion-basics-recursion-mistake-review-empty-input-guard-after-read",
+            "recursion-basics-recursion-mistake-review-tree-search-omits-right-branch",
+            "recursion-basics-recursion-mistake-review-merge-sort-empty-only-base-self-range",
+            "recursion-basics-recursion-mistake-review-shared-global-depth-contamination",
+            "recursion-basics-recursion-mistake-review-parent-link-cycle-base-unreachable",
+            "recursion-basics-recursion-mistake-review-binary-tree-two-calls-not-exponential-in-n"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

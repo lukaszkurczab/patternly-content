@@ -1,0 +1,395 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "alg-stack-complexity-and-mistake-review-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-stack-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "stack",
+    "primaryMentalUnitId": "stack_complexity_and_mistake_review",
+    "patternFamilyId": "stack"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "alg-stack-complexity-and-mistake-review-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-stack-cost-01-nested-validation-time",
+      "prompt": "A validator scans n tokens once. Each opener is pushed once, and each matching closer pops one opener. What is the worst-case time complexity?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {}
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "The scan visits n tokens, and each token causes only constant work plus at most one matching push or pop.",
+        "details": "There are n loop iterations. Across the whole input, no opener can be popped more than once because it leaves the stack permanently when matched. The total number of stack operations is therefore at most linear in n, so the complete validator is O(n), not O(n²)."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_amortized_stack_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-cost-02-amortized-proof-components",
+      "prompt": "Select all statements that are sufficient components of the standard amortized argument for a one-pass candidate-stack scan.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "push_once",
+            "text": "Each input occurrence is pushed at most once."
+          },
+          {
+            "id": "pop_once",
+            "text": "After an occurrence is popped, that same occurrence never returns to the stack."
+          },
+          {
+            "id": "inner_loop_n_each",
+            "text": "The inner pop loop performs n pops for every input occurrence."
+          },
+          {
+            "id": "retain_all",
+            "text": "Every occurrence must remain stored until the scan ends."
+          }
+        ],
+        "acceptedOptionIds": [
+          "push_once",
+          "pop_once"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The aggregate bound follows from charging at most one push and one permanent pop to each input occurrence.",
+        "details": "A single iteration may pop several candidates, but those pops consume distinct occurrences that cannot be popped again. Summed over the entire scan, there are at most n pushes and n pops, plus O(n) outer-loop work. This aggregate accounting yields O(n) total stack operations without claiming that each individual iteration is O(1).",
+        "wrongOptionExplanationsByOptionId": {
+          "inner_loop_n_each": "That statement is the mistaken multiplication that produces O(n²); the same n candidates are not available to be popped on every iteration.",
+          "retain_all": "Permanent retention is neither required nor true for a resolving candidate stack; removal is what makes the amortized charge finite."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "push_once": "Without the one-push bound, an occurrence could re-enter repeatedly and the aggregate operation count would need a different proof.",
+          "pop_once": "Without permanent removal, the same occurrence could be charged multiple times and the linear aggregate bound would not follow."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_amortized_stack_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "problemArchetypeId": "deferred_resolution"
+      }
+    },
+    {
+      "id": "alg-stack-cost-03-expensive-iteration-linear-total",
+      "prompt": "One iteration of a candidate-stack scan pops 12 pending entries. Which complexity conclusion is justified when every entry is pushed once and popped at most once over the entire scan?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "total_linear",
+            "text": "The iteration is not O(1), but the whole scan remains O(n) in aggregate."
+          },
+          {
+            "id": "total_quadratic",
+            "text": "Any iteration with more than one pop makes the complete scan O(n²)."
+          },
+          {
+            "id": "each_pop_constant_total",
+            "text": "The expensive iteration should be called O(1) because each individual pop is O(1)."
+          },
+          {
+            "id": "same_entry_twelve_times",
+            "text": "The loop must have removed and restored the same entry 12 times."
+          }
+        ],
+        "acceptedOptionIds": [
+          "total_linear"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Amortized analysis permits an expensive iteration when its work consumes operations that cannot recur for the same entries.",
+        "details": "The 12 pops cost O(12) in that iteration, not O(1). However, each of those 12 entries has now used its only pop. Across all n iterations, the total pop count remains at most n, so outer processing plus pushes plus pops is O(n). The distinction between per-iteration worst case and whole-run aggregate cost is the decisive concept.",
+        "wrongOptionExplanationsByOptionId": {
+          "total_quadratic": "Multiple pops in one iteration do not imply n pops in every iteration; permanent removal prevents that repetition.",
+          "each_pop_constant_total": "A sequence of 12 constant-time operations is O(12), not O(1) with respect to an unbounded number of pops. The linear conclusion comes from aggregation.",
+          "same_entry_twelve_times": "A popped entry leaves the stack; the iteration consumed 12 distinct pending entries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_amortized_stack_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "problemArchetypeId": "deferred_resolution"
+      }
+    },
+    {
+      "id": "alg-stack-cost-04-candidate-stack-time-space",
+      "prompt": "A one-pass stack algorithm processes n input positions. Each position is pushed at most once and popped at most once. In the worst case, no position is popped until the end. What are the worst-case time and auxiliary-space complexities?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Bounded lifetime operations give O(n) total time, while an unresolved prefix may retain n entries at once.",
+        "details": "The outer scan and at most n pushes plus n pops produce O(n) time. Space is a peak-state question rather than an operation-count question: an input order that resolves nothing early can leave all n positions pending simultaneously. Therefore the worst-case auxiliary space is O(n), even though many other inputs use less."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_amortized_stack_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "problemArchetypeId": "deferred_resolution"
+      }
+    },
+    {
+      "id": "alg-stack-cost-05-undo-history-cost",
+      "prompt": "An editor commits n commands, storing one constant-size inverse record per command, and then performs n Undo operations. Each commit pushes once and each Undo pops once. What are the total time and maximum auxiliary-space complexities for this history?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "There are 2n constant-time stack operations, and the history can hold n inverse records before Undo begins.",
+        "details": "The sequence performs n pushes followed by n pops, so total operation count is proportional to n. Before any Undo, all n constant-size records are retained, giving O(n) peak auxiliary space. This is ordinary aggregate counting; unlike a candidate-pop loop, no hidden nested work is present."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_amortized_stack_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    },
+    {
+      "id": "alg-stack-cost-06-retention-versus-space-bound",
+      "prompt": "Which statement correctly reconciles “the stack does not always store every input item” with a worst-case O(n) space bound?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "peak_can_reach_n",
+            "text": "Some inputs remove entries early; another legal input can leave all n entries pending."
+          },
+          {
+            "id": "always_store_all",
+            "text": "O(n) space means every input must retain every item until the end."
+          },
+          {
+            "id": "space_is_constant",
+            "text": "Removing any item at any time proves the worst-case space is O(1)."
+          },
+          {
+            "id": "recursion_changes_bound",
+            "text": "The bound becomes O(1) whenever equivalent state is stored in recursive frames."
+          }
+        ],
+        "acceptedOptionIds": [
+          "peak_can_reach_n"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Worst-case space describes the largest legal peak occupancy, not mandatory occupancy on every input.",
+        "details": "A resolving stack often shrinks, so actual occupancy can be far below n. Yet a monotone or otherwise non-resolving input can keep every candidate pending, producing a peak of n records. Both statements are therefore compatible: the stack is not a permanent archive by semantics, but its worst-case frontier size is linear.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_store_all": "A Big-O upper bound does not claim equal occupancy for every input; it permits smaller states.",
+          "space_is_constant": "Occasional removal does not cap the maximum number of simultaneously pending records.",
+          "recursion_changes_bound": "Recursive call frames also consume space, and syntax does not erase the state required by the algorithm."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_amortized_stack_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "problemArchetypeId": "deferred_resolution"
+      }
+    },
+    {
+      "id": "alg-stack-cost-07-complexity-does-not-prove-correctness",
+      "prompt": "A developer replaces a stack with a queue in a nested-structure validator. Both versions still perform O(n) container operations. Which review conclusion is correct?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "same_cost_not_same_correctness",
+            "text": "The cost can remain O(n), but FIFO exposes the wrong unresolved opener."
+          },
+          {
+            "id": "equivalent_because_linear",
+            "text": "Equal O(n) time proves the queue and stack versions are behaviorally equivalent."
+          },
+          {
+            "id": "recursion_required",
+            "text": "Both linear versions remain incorrect unless recursive control flow supplies a call stack."
+          },
+          {
+            "id": "queue_is_faster",
+            "text": "A queue is necessarily asymptotically faster because it removes from the front."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_cost_not_same_correctness"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Complexity is not a correctness proof; LIFO versus FIFO changes which unresolved state is inspected.",
+        "details": "Both structures can support constant-time insertion and removal, yielding a linear count over n tokens. But nested validation requires the most recently opened unresolved delimiter, which a stack exposes and a queue does not. Replacing the structure can preserve Big-O notation while changing the algorithm's semantics. Recursion is optional if an explicit stack represents the required state.",
+        "wrongOptionExplanationsByOptionId": {
+          "equivalent_because_linear": "Big-O suppresses ordering semantics; two linear algorithms can produce different answers.",
+          "recursion_required": "An explicit stack is a complete iterative representation of the unresolved nesting state.",
+          "queue_is_faster": "With appropriate implementations, both end operations can be O(1); the decisive difference here is order, not asymptotic speed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_amortized_stack_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

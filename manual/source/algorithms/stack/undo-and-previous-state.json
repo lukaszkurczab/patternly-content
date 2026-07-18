@@ -1,0 +1,346 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "alg-stack-undo-and-previous-state-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-stack-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "stack",
+    "primaryMentalUnitId": "undo_and_previous_state",
+    "patternFamilyId": "stack"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "alg-stack-undo-and-previous-state-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-stack-undo-01-recognize-reversible-history",
+      "prompt": "An editor must support repeated Undo so that each command restores the state immediately before the most recent command that has not already been undone. Which retained state best matches this contract?",
+      "constraints": [
+        "Undo operations are processed one at a time.",
+        "The most recently applied non-undone command must be reversed first."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "stack_of_inverse_records",
+            "text": "Push one inverse record per command and pop the newest record on Undo."
+          },
+          {
+            "id": "queue_of_snapshots",
+            "text": "Enqueue prior states and restore the oldest state on Undo."
+          },
+          {
+            "id": "recompute_from_start",
+            "text": "Discard history and replay the entire document from its initial state after every Undo."
+          },
+          {
+            "id": "recursive_requirement",
+            "text": "Use recursion because Undo cannot be represented by an explicit data structure."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stack_of_inverse_records"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Undo is newest-first restoration: the last committed unresolved change is the first one that must be reversed.",
+        "details": "A command commits an inverse record or prior-state record onto a stack. Undo pops exactly the newest applicable record and uses it to restore the preceding state. A queue would expose the oldest change and violate command history. Full replay can be a separate implementation trade-off, but it is not the state discipline requested here. Recursion is unnecessary; the decisive property is LIFO restoration.",
+        "wrongOptionExplanationsByOptionId": {
+          "queue_of_snapshots": "A queue preserves history, but it restores the oldest retained state first. It becomes appropriate only for oldest-first processing, not Undo.",
+          "recompute_from_start": "Replaying from the beginning may reconstruct a prior state, but it ignores the direct newest-first restoration contract and can add unnecessary repeated work.",
+          "recursive_requirement": "Recursive control flow can use a call stack, but Undo history is directly representable with an explicit stack."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_previous_state_from_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    },
+    {
+      "id": "alg-stack-undo-02-record-before-mutate",
+      "prompt": "Order the conceptual steps for safely applying one reversible command and then undoing that same command.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "derive_inverse",
+            "text": "Derive the inverse information from the current state and the requested command."
+          },
+          {
+            "id": "push_inverse",
+            "text": "Push that inverse record onto the history stack."
+          },
+          {
+            "id": "apply_command",
+            "text": "Apply the forward command to produce the new current state."
+          },
+          {
+            "id": "pop_inverse",
+            "text": "When Undo is requested, pop the newest inverse record."
+          },
+          {
+            "id": "restore_state",
+            "text": "Apply the popped inverse record to restore the previous state."
+          }
+        ],
+        "canonicalOrder": [
+          "derive_inverse",
+          "push_inverse",
+          "apply_command",
+          "pop_inverse",
+          "restore_state"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The inverse must be captured before the forward mutation destroys information needed for restoration; Undo then consumes the newest inverse.",
+        "details": "A reversible operation first derives the information needed to reverse the change. That record is committed to history before the forward state is changed. Later, Undo pops the newest inverse and applies it. Reversing the first two steps can lose the pre-change value, while applying an inverse without popping would leave the history boundary inconsistent and allow the same record to be reused incorrectly."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_previous_state_from_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    },
+    {
+      "id": "alg-stack-undo-03-empty-history-boundary",
+      "prompt": "The current state has no committed undo record. The user requests Undo. Which behavior preserves the stack-based history contract?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "explicit_noop_or_unavailable",
+            "text": "Return the defined empty-history result and do not pop."
+          },
+          {
+            "id": "pop_sentinel_anyway",
+            "text": "Pop a fabricated sentinel and interpret it as a real prior state."
+          },
+          {
+            "id": "restore_oldest_known",
+            "text": "Restore the oldest state ever observed, even though it is not on the stack."
+          },
+          {
+            "id": "repeat_last_inverse",
+            "text": "Reuse the inverse record from the previous successful Undo."
+          }
+        ],
+        "acceptedOptionIds": [
+          "explicit_noop_or_unavailable"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An empty history stack means there is no previous committed state available through this contract.",
+        "details": "Undo may be disabled, return a defined empty-history result, or perform a documented no-op. What it cannot do is invent a prior state, reuse a record that has already been consumed, or jump to unrelated history. The empty-stack check is a material boundary because a pop requires an existing top record.",
+        "wrongOptionExplanationsByOptionId": {
+          "pop_sentinel_anyway": "A sentinel is valid only if the contract deliberately stores one with defined semantics. Fabricating it at the boundary creates a state that was never committed.",
+          "restore_oldest_known": "Oldest-known state is not equivalent to the immediately previous committed state and is not available from an empty stack.",
+          "repeat_last_inverse": "A popped inverse has already been consumed. Reusing it violates one-record-per-Undo semantics and can corrupt state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_previous_state_from_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    },
+    {
+      "id": "alg-stack-undo-04-newest-change-first",
+      "prompt": "Commands A, B, and C were committed in that order, and none has been undone. Which command must the first Undo reverse?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reverse_c",
+            "text": "Reverse C."
+          },
+          {
+            "id": "reverse_a",
+            "text": "Reverse A."
+          },
+          {
+            "id": "reverse_b",
+            "text": "Reverse B because it is in the middle."
+          },
+          {
+            "id": "reverse_all",
+            "text": "Reverse A, B, and C simultaneously."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reverse_c"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The top of the history stack is C, the newest still-applied command.",
+        "details": "The committed stack is [A, B, C] with C at the top. Undo pops C first, then B, then A on later requests. Reversing A first would expose queue-like oldest-first behavior and could invalidate later changes that depend on A. This trace diagnoses order semantics, not merely the presence of a collection named history.",
+        "wrongOptionExplanationsByOptionId": {
+          "reverse_a": "A is the oldest command. Reversing it first follows FIFO order and can invalidate B and C while they remain applied.",
+          "reverse_b": "B is neither the newest nor the top record; its position does not make it eligible before C.",
+          "reverse_all": "A single Undo consumes one history record unless the command contract explicitly groups changes into one composite record."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_previous_state_from_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    },
+    {
+      "id": "alg-stack-undo-05-bounded-history-policy",
+      "prompt": "An application retains at most the 100 most recent undo records. After a new command is committed while 100 records are already retained, which policy is consistent with bounded Undo history?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "drop_oldest_keep_newest",
+            "text": "Push the new record and discard the oldest retained record."
+          },
+          {
+            "id": "drop_newest",
+            "text": "Discard the new record so the oldest 100 remain forever."
+          },
+          {
+            "id": "keep_every_record",
+            "text": "Ignore the limit because a stack must retain every item ever pushed."
+          },
+          {
+            "id": "duplicate_top",
+            "text": "Push two copies of the new record and remove two older records."
+          }
+        ],
+        "acceptedOptionIds": [
+          "drop_oldest_keep_newest"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A bounded history preserves the newest reversible states; the stack abstraction does not require retaining every historical record forever.",
+        "details": "The logical top remains the newest command. A capacity policy may evict the oldest retained record at the bottom while preserving newest-first Undo among the remaining records. This does not change LIFO semantics for retained entries. It does change how far back Undo can travel, so that product boundary must be explicit.",
+        "wrongOptionExplanationsByOptionId": {
+          "drop_newest": "Dropping the new command removes the very record needed for the next Undo and preserves less relevant old history.",
+          "keep_every_record": "A stack defines access order, not unbounded retention. Capacity and eviction are separate policies.",
+          "duplicate_top": "Duplicating the new record would make one command appear undoable twice and violates one committed inverse per command."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_previous_state_from_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    },
+    {
+      "id": "alg-stack-undo-06-savepoint-transfer",
+      "prompt": "A parser records nested savepoints. On failure inside the deepest active savepoint, it must restore the immediately enclosing saved state. Which implementation property is essential?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "explicit_lifo_savepoints",
+            "text": "Save active states in LIFO order and restore from the top."
+          },
+          {
+            "id": "recursive_syntax",
+            "text": "The parser must be written recursively; an iterative parser cannot restore savepoints."
+          },
+          {
+            "id": "fifo_savepoints",
+            "text": "Restore the earliest savepoint first."
+          },
+          {
+            "id": "sorted_savepoints",
+            "text": "Sort savepoints by state size before choosing one."
+          }
+        ],
+        "acceptedOptionIds": [
+          "explicit_lifo_savepoints"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decisive requirement is restoration of the most recently entered active savepoint, independent of whether control flow is recursive.",
+        "details": "Nested savepoints form a containment chain. The deepest active savepoint is the newest unresolved one, so rollback must use the top record. An iterative implementation with an explicit stack preserves the same semantics as recursive call frames. Sorting or FIFO ordering ignores containment and may restore a state outside the failed scope.",
+        "wrongOptionExplanationsByOptionId": {
+          "recursive_syntax": "Recursion is one possible control-flow implementation, but the state rule is explicit LIFO restoration and works iteratively.",
+          "fifo_savepoints": "FIFO restores the outermost or oldest savepoint before the inner failure is resolved.",
+          "sorted_savepoints": "State size has no causal relation to nesting order and cannot identify the immediately enclosing savepoint."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "restore_previous_state_from_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

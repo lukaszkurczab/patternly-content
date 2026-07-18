@@ -1,0 +1,693 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "two-pointers-pointer_movement_mistake_review-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-two-pointers-review-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "two_pointers",
+    "primaryMentalUnitId": "pointer_movement_mistake_review",
+    "patternFamilyId": "two_pointers"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; human review required)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "two-pointers-pointer_movement_mistake_review-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tp-mistake-low-sum-both-move",
+      "prompt": "Trace review A: on [1, 2, 4, 8] with target 10, the first sum is 9 and the implementation jumps to the inner pair 2+4. Which one-sided repair preserves the omitted witness?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "move_left_only",
+            "text": "Keep right at 8 and advance left, preserving the candidate 2+8."
+          },
+          {
+            "id": "move_right_only",
+            "text": "Keep left at 1 and retreat right."
+          },
+          {
+            "id": "move_both",
+            "text": "Keep the existing movement because it converges faster."
+          },
+          {
+            "id": "restart",
+            "text": "Reset both pointers after every mismatch."
+          }
+        ],
+        "acceptedOptionIds": [
+          "move_left_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The low sum eliminates only value 1. Moving right as well skips the valid pair 2+8.",
+        "details": "The largest partner available to left=1 still yields a sum below target, so every pair using 1 is impossible. The right value 8 remains viable with a larger left value and must stay. This trace is a minimal counterexample to the move-both heuristic. The repair is one-sided movement derived from the ordered sum relation.",
+        "wrongOptionExplanationsByOptionId": {
+          "move_right_only": "A smaller right value cannot raise the sum, and it discards the endpoint needed for 2+8.",
+          "move_both": "Faster convergence skips an unproved right-boundary candidate and loses the solution.",
+          "restart": "Restarting revisits work and still lacks a movement invariant; it is not a bounded repair."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "The array is sorted.",
+        "The task is to find any pair summing to 10."
+      ]
+    },
+    {
+      "id": "alg-tp-mistake-high-sum-both-move",
+      "prompt": "Trace review B starts from 2+14 on [2, 5, 9, 14] for target 11, then discards both endpoints. Which still-legal witness demonstrates the defect?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "nine_plus_fourteen",
+            "text": "9+14, even though it exceeds 11."
+          },
+          {
+            "id": "none",
+            "text": "No pair is at risk because a high sum eliminates both endpoints."
+          },
+          {
+            "id": "two_plus_nine",
+            "text": "2+9, because left=2 remains viable with a smaller right value."
+          },
+          {
+            "id": "five_plus_fourteen",
+            "text": "5+14, even though it exceeds 11."
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_plus_nine"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A high sum eliminates right=14 but not left=2. Moving both skips 2+9.",
+        "details": "The smallest remaining partner with 14 already produces a sum above target, so 14 cannot participate. The value 2 can still pair with a smaller right value and reaches the target with 9. The bug mirrors the low-sum case: one comparison eliminates one boundary class. Movement symmetry is not a correctness principle.",
+        "wrongOptionExplanationsByOptionId": {
+          "five_plus_fourteen": "This pair is not a target witness and uses the already-eliminated high boundary.",
+          "nine_plus_fourteen": "It is a remaining pair after one move, but 9+14 is even farther above target and does not show why left=2 must be preserved. The decisive skipped witness is 2+9.",
+          "none": "The comparison says nothing that eliminates left=2; the trace contains a concrete skipped solution."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "The array is sorted.",
+        "The task is to find any pair summing to 11."
+      ]
+    },
+    {
+      "id": "alg-tp-mistake-self-pair-loop-bound",
+      "prompt": "A distinct-position pair search loops while left <= right. On input [1, 5, 9] with target 10, it may accept 5+5 when both pointers meet at index 1. What is the precise repair?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "strict_inequality",
+            "text": "Use left < right so the current candidate always contains two distinct positions."
+          },
+          {
+            "id": "move_both_faster",
+            "text": "Move both pointers twice per iteration."
+          },
+          {
+            "id": "sort_descending",
+            "text": "Sort the array in descending order."
+          },
+          {
+            "id": "ignore_middle",
+            "text": "Delete every middle value before searching."
+          }
+        ],
+        "acceptedOptionIds": [
+          "strict_inequality"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The loop condition must encode the distinct-position output contract. At equality, both pointers name the same element.",
+        "details": "The algorithm's candidate object is an unordered pair of positions. Such a pair exists only while the interval contains at least two positions, expressed by left < right. Using <= silently changes the contract to permit reusing one occurrence. The repair is a boundary correction, not a movement-speed or sorting change.",
+        "wrongOptionExplanationsByOptionId": {
+          "move_both_faster": "Pointer speed does not prevent the equality state from being evaluated under the wrong condition.",
+          "sort_descending": "Order direction can be handled with reversed movement rules, but it does not address self-pairing.",
+          "ignore_middle": "A middle value can participate in a valid pair with another position and must not be removed categorically."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "A value may not be paired with the same array position."
+      ]
+    },
+    {
+      "id": "alg-tp-mistake-unsorted-endpoint-rule",
+      "prompt": "A code review finds low/high pair-sum movement applied directly to unsorted input. Which defect classification is most accurate?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "wrong_variable_names",
+            "text": "The variables should be named start and end."
+          },
+          {
+            "id": "too_few_pointers",
+            "text": "Unsorted input requires three pointers."
+          },
+          {
+            "id": "duplicate_problem",
+            "text": "The only possible issue is duplicate values."
+          },
+          {
+            "id": "missing_order_precondition",
+            "text": "The endpoint values are not extrema, so a mismatch cannot safely eliminate either boundary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "missing_order_precondition"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The movement rule has been detached from the sortedness precondition that makes endpoint comparisons monotonic.",
+        "details": "On arbitrary order, a low or high sum at physical endpoints does not bound sums with interior values. Either movement can discard a value that still forms a solution. Sorting may repair the proof if mutation, index identity, and O(n log n) cost are accepted; otherwise another strategy is required. This is a correctness-precondition defect, not a naming or pointer-count issue.",
+        "wrongOptionExplanationsByOptionId": {
+          "wrong_variable_names": "Renaming can clarify code, but it cannot make physical endpoints value extrema or supply a monotonic elimination proof. The missing requirement is ordered candidate values.",
+          "too_few_pointers": "Adding a third pointer may provide more state, but it does not make unsorted endpoints extrema or justify low/high elimination. The missing relation is order, not pointer count.",
+          "duplicate_problem": "The rule can fail on all-distinct unsorted input; duplicates are not the decisive cause."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-mistake-write-advances-on-reject",
+      "prompt": "A stable filter advances write on every iteration, including rejected values. What observable postcondition can fail?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "pointers_do_not_meet",
+            "text": "The pointers may finish at different positions."
+          },
+          {
+            "id": "loop_not_quadratic",
+            "text": "The loop remains linear."
+          },
+          {
+            "id": "claimed_prefix_contains_rejections",
+            "text": "The returned prefix can contain rejected values or gaps because write counted reads, not accepted outputs."
+          },
+          {
+            "id": "input_not_sorted",
+            "text": "The input may remain unsorted."
+          }
+        ],
+        "acceptedOptionIds": [
+          "claimed_prefix_contains_rejections"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The write boundary loses its meaning as the number of accepted outputs when it moves for a rejection.",
+        "details": "read should count consumed input, while write counts values actually placed in the valid prefix. Unconditional movement makes the two counters collapse into the same quantity and leaves stale or rejected data inside the reported result. Different final pointer positions are normal, and linear runtime does not imply correct output. The repair is to advance write only after writing an accepted value.",
+        "wrongOptionExplanationsByOptionId": {
+          "input_not_sorted": "Stable filtering does not require numerical sorting, so unsorted output is not a defect under this contract.",
+          "pointers_do_not_meet": "A write pointer is expected to lag whenever values are rejected, so failure to meet is not an error. The real postcondition is that [0, write) contains exactly the accepted values.",
+          "loop_not_quadratic": "Remaining linear is not a failure; the algorithm is incorrect despite acceptable complexity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-mistake-skip-before-record",
+      "prompt": "A unique-pair enumerator finds a matching boundary pair but first skips both duplicate runs and only then tries to append the pair. What can happen?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "witness_lost",
+            "text": "The pointers may leave the matching values, so the valid pair is never recorded or the wrong values are appended."
+          },
+          {
+            "id": "array_unsorted",
+            "text": "Skipping equal values makes the array unsorted."
+          },
+          {
+            "id": "runtime_quadratic",
+            "text": "Skipping runs necessarily makes the algorithm O(n^2)."
+          },
+          {
+            "id": "extra_duplicates",
+            "text": "The pair is guaranteed to be emitted too many times."
+          }
+        ],
+        "acceptedOptionIds": [
+          "witness_lost"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The current pair is the witness that licenses duplicate-run consumption. It must be recorded before the state changes.",
+        "details": "Equal occurrences are redundant only after one representative contribution has been handled. Moving first can replace the endpoint values or cross the interval, leaving no stable reference to the found pair. The proper order is record, remember the matched values, advance, then skip equal copies. Run skipping remains linear and preserves sortedness; the issue is answer timing.",
+        "wrongOptionExplanationsByOptionId": {
+          "array_unsorted": "Skipping can look like a mutation of sequence state, but pointer movement only changes indices; it does not reorder the underlying values. The defect is losing the current witness before recording it.",
+          "runtime_quadratic": "Nested duplicate skipping can look like repeated work, but each pointer still crosses every occurrence at most once, so the scan remains O(n). The defect is recording after the witness was discarded.",
+          "extra_duplicates": "The immediate risk is omission or recording changed values, not guaranteed repetition."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Output requires every distinct value pair once."
+      ]
+    },
+    {
+      "id": "alg-tp-mistake-duplicate-multiplicity-loss",
+      "prompt": "A pair counter reports one result for a run of three 2s and a run of four 7s when target is 9. What did duplicate skipping lose?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "pointer_count",
+            "text": "One of the two pointer variables."
+          },
+          {
+            "id": "twelve_index_pairs",
+            "text": "The 3×4=12 distinct index pairs represented by the two runs."
+          },
+          {
+            "id": "one_value_pair",
+            "text": "The distinct value pair (2,7), which was already found."
+          },
+          {
+            "id": "sorted_order",
+            "text": "The input's nondecreasing order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "twelve_index_pairs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The code used a unique-value skip policy for an occurrence-count output. Run multiplicity is material to the answer.",
+        "details": "Every one of the three positions containing 2 can pair with each of the four positions containing 7, producing twelve index pairs. Recording one value pair is correct only for a value-unique output contract. A counting implementation must measure both run lengths before consuming them. The sorted order enables this aggregation; it does not make multiplicity disappear.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_value_pair": "The value pair was preserved; the missing information is how many occurrence combinations it represents.",
+          "sorted_order": "This may sound relevant because the input is sorted, but pointer skipping only changes which positions are inspected; it does not reorder the array. Sortedness remains intact and is not the missing output multiplicity.",
+          "pointer_count": "The algorithm can still have two variables; the defect is semantic loss of occurrence identity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Each distinct pair of positions counts separately.",
+        "The two value runs are disjoint."
+      ]
+    },
+    {
+      "id": "alg-tp-mistake-partition-premature-advance",
+      "prompt": "A partition scan increments left and decrements right before scanning for predicate violations. Which invariant is broken?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "pointers_move_differently",
+            "text": "The two pointers may move different distances."
+          },
+          {
+            "id": "groups_unequal",
+            "text": "The predicate groups may have unequal sizes."
+          },
+          {
+            "id": "outside_regions_unproven",
+            "text": "The crossed positions are claimed classified even though neither predicate side was checked or repaired."
+          },
+          {
+            "id": "array_not_sorted",
+            "text": "The sequence is not numerically sorted."
+          }
+        ],
+        "acceptedOptionIds": [
+          "outside_regions_unproven"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A pointer may move past a position only after that position is known to satisfy its side contract or has been repaired by a swap.",
+        "details": "The partition invariant treats positions outside [left,right] as finalized. Premature movement expands those regions without evidence and can strand a false value in the true prefix or a true value in the false suffix. Unequal group sizes and unequal pointer movement are valid. The repair is scan current boundaries first, check crossing, swap complementary violations, then consume repaired positions.",
+        "wrongOptionExplanationsByOptionId": {
+          "array_not_sorted": "A partition often resembles sorting, but its contract is only predicate grouping; numerical order is irrelevant. The bug is claiming unchecked positions as classified.",
+          "pointers_move_differently": "Independent movement is expected because each side may contain a different run of already-correct values.",
+          "groups_unequal": "The predicate distribution determines group sizes; equality is not an invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_scan",
+        "problemArchetypeId": "partition_sequence"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-tp-mistake-hidden-sort-cost",
+      "prompt": "A solution description says ‘O(n) two pointers,’ but the code first comparison-sorts the input in O(n log n) and then scans once. What is the actual end-to-end time complexity?",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "The label describes only the scan. Sorting is executed work and dominates the full algorithm.",
+        "details": "Sequential phases add: O(n log n) for sorting plus O(n) for the pointer scan. The dominant term is O(n log n). This defect often survives code review when the pattern name is mistaken for an end-to-end complexity guarantee. If sortedness is given by the input, O(n) is accurate; otherwise preprocessing must be explicit."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "opposite_ends",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "Comparison sorting takes O(n log n).",
+        "The pointer scan takes O(n)."
+      ]
+    },
+    {
+      "id": "alg-tp-mistake-nested-loop-mislabel",
+      "prompt": "A review comment calls a double loop over i and j ‘two pointers’ and therefore claims linear time. What is the most important correction?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "rename_variables",
+            "text": "Rename i and j to left and right to obtain linear time."
+          },
+          {
+            "id": "move_both",
+            "text": "Increment both loop variables together inside the nested loops."
+          },
+          {
+            "id": "sort_first",
+            "text": "Sorting automatically converts any double loop to O(n)."
+          },
+          {
+            "id": "enumerates_quadratic_pairs",
+            "text": "The indices independently enumerate Θ(n²) pairs and do not share a monotonic elimination invariant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "enumerates_quadratic_pairs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Two variables do not imply the two-pointers pattern or linear complexity. The nested enumeration visits a quadratic candidate set.",
+        "details": "A genuine pointer scan makes coordinated monotonic progress so that positions or candidate classes are not revisited. The double loop restarts j for many i values and examines Θ(n²) combinations. Pattern terminology cannot override the executed operation count. A faster replacement would need a separate invariant and preconditions, not renamed variables.",
+        "wrongOptionExplanationsByOptionId": {
+          "rename_variables": "Renaming i and j to left and right may make the code resemble a pattern, but it does not change the nested Θ(n²) enumeration or add coordinated elimination. Complexity follows executed control flow.",
+          "move_both": "Changing both loop variables without a safe-elimination argument can skip work and still does not define a correct linear method.",
+          "sort_first": "Sorting adds O(n log n) work but does not remove the nested enumeration unless the algorithm itself is redesigned."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-mistake-arbitrary-movement-no-invariant",
+      "prompt": "A method terminates and passes several examples, but its pointer movement is described only as ‘move whichever side looks worse.’ What review finding is warranted?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "needs_more_pointer_names",
+            "text": "The method needs more descriptive variable names only."
+          },
+          {
+            "id": "termination_proves_correct",
+            "text": "No finding; termination plus examples proves correctness."
+          },
+          {
+            "id": "always_move_both",
+            "text": "Replace the heuristic with moving both sides every time."
+          },
+          {
+            "id": "missing_decisive_rule",
+            "text": "The movement lacks a precise invariant and decisive boundary showing which candidate class is safely removed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "missing_decisive_rule"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Examples and termination do not establish completeness. A pointer move must be tied to a reproducible condition and safe-elimination argument.",
+        "details": "‘Looks worse’ is not a testable algorithmic contract and may behave differently on unseen inputs. The review should demand pointer-state meaning, an invariant, the exact comparison that licenses movement, and the candidates removed by that move. Termination only shows progress; it cannot show that a valid answer was preserved. Moving both replaces one unproved heuristic with another.",
+        "wrongOptionExplanationsByOptionId": {
+          "needs_more_pointer_names": "Naming can improve readability but cannot supply the absent correctness argument.",
+          "termination_proves_correct": "Incorrect algorithms can terminate and pass sampled examples while skipping untested cases.",
+          "always_move_both": "Synchronized movement may discard two candidate classes from one inconclusive comparison."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      },
+      "difficulty": "advanced"
+    },
+    {
+      "id": "alg-tp-mistake-safe-duplicate-loop-order",
+      "prompt": "A duplicate-run skip occasionally reads past the end of the array. Order the safe checks for advancing left past copies of a remembered value.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "repeat_if_equal",
+            "text": "Repeat advance and boundary check only while the values remain equal."
+          },
+          {
+            "id": "advance_once",
+            "text": "Advance left once from the already-processed representative."
+          },
+          {
+            "id": "compare_remembered",
+            "text": "Compare the current value with the remembered representative value."
+          },
+          {
+            "id": "check_boundary",
+            "text": "Check that left remains within the active interval before reading the next value."
+          }
+        ],
+        "canonicalOrder": [
+          "advance_once",
+          "check_boundary",
+          "compare_remembered",
+          "repeat_if_equal"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The pointer must leave the processed representative, then prove the next position exists before reading it. Value comparison cannot precede the boundary check.",
+        "details": "A run may extend to the end or meet the opposite pointer, so skipping cannot assume another element exists. Advancing once prevents comparing the representative with itself forever. The active-interval check protects memory and distinct-position semantics before the equality test. The same order applies symmetrically to right-run skipping."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-tp-mistake-window-rule-confusion",
+      "prompt": "A longest-valid-contiguous-range algorithm moves left whenever the endpoint sum is too large, copying the pair-sum rule instead of updating window validity. What is the category error?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "must_move_both",
+            "text": "Both window boundaries should always move together."
+          },
+          {
+            "id": "two_indices_sufficient",
+            "text": "No error; two indices make all movement rules interchangeable."
+          },
+          {
+            "id": "wrong_state_controls_movement",
+            "text": "Movement must follow the maintained validity of the contiguous window, not an endpoint-pair sum relation."
+          },
+          {
+            "id": "needs_sorted_input_only",
+            "text": "Sorting the array is the only missing step."
+          }
+        ],
+        "acceptedOptionIds": [
+          "wrong_state_controls_movement"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The code copied a movement rule across pattern families without preserving the invariant that justifies it.",
+        "details": "A sliding window represents every element in one contiguous range and updates aggregate or frequency state as elements enter and leave. Its left boundary moves to restore a declared validity condition, not because two endpoint values are too high or low. Sorting would change contiguity and usually the problem itself. Shared left/right syntax does not make pointer and window movement semantics interchangeable.",
+        "wrongOptionExplanationsByOptionId": {
+          "needs_sorted_input_only": "Sorting destroys original contiguous-range meaning and still does not define the required window state updates.",
+          "must_move_both": "Window expansion and shrinkage are intentionally asymmetric; synchronized movement can miss candidate ranges.",
+          "two_indices_sufficient": "Pattern identity and movement follow maintained state, not the number of indices."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_pointer_movement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      },
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

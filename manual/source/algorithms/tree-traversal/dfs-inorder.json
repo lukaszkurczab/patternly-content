@@ -1,0 +1,305 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-tree-traversal-dfs_inorder-candidate-001",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-tree-traversal-candidate-0001",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "tree_traversal",
+    "primaryMentalUnitId": "dfs_inorder",
+    "patternFamilyId": "tree_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; not a human reviewer)",
+    "createdAt": "2026-07-18T16:17:19Z",
+    "contentBatchId": "algorithms-tree-traversal-dfs_inorder-candidate-001",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tree-inorder-sorted-output-precondition",
+      "prompt": "An inorder traversal emits the sequence `left subtree → current node → right subtree`.\nUnder which structural guarantee does that sequence become nondecreasing by node value?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bst_ordering_guarantee",
+            "text": "Every value in a node's left subtree is at most the node value, and every value in its right subtree is at least the node value."
+          },
+          {
+            "id": "proper_tree_only",
+            "text": "The input is any proper binary tree with no cycles."
+          },
+          {
+            "id": "balanced_tree",
+            "text": "The heights of the two child subtrees differ by at most one at every node."
+          },
+          {
+            "id": "unique_values_only",
+            "text": "All node values are distinct, regardless of where they occur."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bst_ordering_guarantee"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Inorder fixes structural position, but sorted output follows only when the tree also satisfies the binary-search ordering relation.",
+        "details": "Inorder places all left-subtree outputs before the current value and all right-subtree outputs after it. That arrangement is numerically sorted only if every recursive subtree obeys the corresponding value bounds. A generic binary tree, even a balanced one with unique values, can place a large value in the left subtree and break the sorted sequence. The same inorder mechanic still visits every node on such a tree; only the sortedness conclusion fails. For a different duplicate convention, replace the non-strict inequalities with the track's declared policy.",
+        "wrongOptionExplanationsByOptionId": {
+          "proper_tree_only": "A proper-tree guarantee prevents cycles and shared nodes, but it says nothing about value placement. It is sufficient for safe traversal, not for sorted output.",
+          "balanced_tree": "Balance constrains height, not ordering. A balanced tree can still contain arbitrarily arranged values; balance becomes relevant to operation cost in a search tree, not to inorder sortedness by itself.",
+          "unique_values_only": "Uniqueness removes ties but does not place smaller values on the left. It is useful only together with the BST ordering guarantee."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Duplicate values are permitted under the stated non-strict ordering policy."
+      ]
+    },
+    {
+      "id": "alg-tree-inorder-explicit-output-sequence",
+      "prompt": "Order the operations for `inorder(node, output)`, where `output` is supplied by the caller and the required sequence is left subtree, node, right subtree.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "guard_null",
+            "text": "If `node` is null, return without changing `output`."
+          },
+          {
+            "id": "visit_left",
+            "text": "Run `inorder(node.left, output)`."
+          },
+          {
+            "id": "append_current",
+            "text": "Append the current node's value to `output`."
+          },
+          {
+            "id": "visit_right",
+            "text": "Run `inorder(node.right, output)`."
+          }
+        ],
+        "canonicalOrder": [
+          "guard_null",
+          "visit_left",
+          "append_current",
+          "visit_right"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The current-node action belongs between the two child traversals, after a null guard makes missing subtrees contribute no output.",
+        "details": "Inorder is defined by the placement of the current-node action, not merely by using recursion. The left call must complete before the value is appended, and the right call follows that append. Passing the output list makes ownership explicit and prevents stale values from leaking across top-level calls. The output could instead be returned as a newly built sequence, but naïve concatenation may add copying cost; the positional invariant remains left-node-right either way."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "The caller supplies an initially empty output list.",
+        "Scoring uses preserved adjacent relations."
+      ]
+    },
+    {
+      "id": "alg-tree-inorder-kth-visit-timing",
+      "prompt": "In a binary search tree, a traversal maintains a one-based count of emitted nodes and stops when the count reaches `k`.\nAt which moment should the count be incremented to identify the `k`th smallest value?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "between_children",
+            "text": "After finishing the left subtree and before entering the right subtree."
+          },
+          {
+            "id": "before_left",
+            "text": "Immediately when the current node is reached, before traversing the left subtree."
+          },
+          {
+            "id": "after_right",
+            "text": "After both child subtrees have been traversed."
+          },
+          {
+            "id": "on_null",
+            "text": "Whenever a null child is encountered."
+          }
+        ],
+        "acceptedOptionIds": [
+          "between_children"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The rank must follow inorder emission, so the current node receives its rank after all smaller left-subtree values and before larger right-subtree values.",
+        "details": "Under the BST invariant, inorder is the sorted sequence. The counter is therefore an index into that sequence and must advance exactly when a real node is emitted. Incrementing before the left call produces preorder ranks; incrementing after the right call produces postorder ranks. Null calls represent empty subtrees and add no element. Early termination is safe once the `k`th emission occurs because no later node can precede it in the inorder sequence.",
+        "wrongOptionExplanationsByOptionId": {
+          "before_left": "Parent-first counting is preorder, so a parent may be ranked before smaller values in its left subtree. It is valid for a preorder-position query, not a sorted-rank query.",
+          "after_right": "Child-first counting is postorder and can rank larger right-subtree values before their parent. It is useful for completion order, not BST sorted order.",
+          "on_null": "Null children are structural boundaries, not values in the sorted sequence. Counting them would make rank depend on tree shape rather than node values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "compute_subtree_property"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The BST satisfies the ordering precondition.",
+        "`1 <= k <= n`.",
+        "The counter advances only for actual nodes."
+      ]
+    },
+    {
+      "id": "alg-tree-inorder-empty-subtree-output",
+      "prompt": "An inorder helper returns a sequence rather than mutating an output list:\n`result(node) = result(node.left) + [node.value] + result(node.right)`.\nWhat must `result(null)` return for this equation to work on empty and one-node trees?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_sequence",
+            "text": "An empty sequence."
+          },
+          {
+            "id": "zero_sequence",
+            "text": "A one-element sequence containing `0`."
+          },
+          {
+            "id": "null_result",
+            "text": "A null reference that is concatenated directly."
+          },
+          {
+            "id": "parent_value",
+            "text": "A sequence containing the parent node's value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_sequence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The empty subtree contributes no inorder elements, so the concatenation identity is the empty sequence.",
+        "details": "The base result must preserve the meaning “all node values in this subtree in inorder.” An empty subtree contains no nodes, and the empty sequence is neutral under concatenation. Returning `[0]` invents a value, while returning null requires special-case concatenation and no longer represents a sequence. On a leaf, the two empty child results surround the singleton current value, producing exactly one element. Other returned aggregates may use different identities, so the base value follows the combine operation rather than a universal null rule.",
+        "wrongOptionExplanationsByOptionId": {
+          "zero_sequence": "Zero is a legitimate node value and would be emitted for every missing child. It is an identity for numeric addition, not for sequence concatenation.",
+          "null_result": "A null reference is not directly a sequence identity and forces extra branching. It can be an API-level absence marker, but then the stated concatenation equation is incomplete.",
+          "parent_value": "A null call has no current node and should not duplicate ancestor data. Ancestor-derived state belongs in parameters, not in an invented empty-subtree output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Sequence concatenation preserves element order.",
+        "Node values may include `0`."
+      ]
+    },
+    {
+      "id": "alg-tree-inorder-not-a-general-graph-order",
+      "prompt": "A directed graph vertex stores an unordered list of outgoing neighbors rather than distinguished `left` and `right` child fields.\nCan the binary-tree inorder rule be applied without adding a new graph-specific ordering contract?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_binary_positions",
+            "text": "No. Inorder requires a distinguished left region, current vertex position, and distinguished right region that the graph representation does not define."
+          },
+          {
+            "id": "yes_any_dfs",
+            "text": "Yes. Any depth-first traversal is automatically inorder."
+          },
+          {
+            "id": "yes_split_neighbors",
+            "text": "Yes. Arbitrarily call the first half of neighbors left and the second half right; the result is canonical."
+          },
+          {
+            "id": "yes_by_value",
+            "text": "Yes. Sort neighbors by value and treat smaller values as left children."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_binary_positions"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Inorder is defined by binary structural roles, not by depth-first search alone, and an unordered adjacency list supplies no canonical left-node-right partition.",
+        "details": "A graph traversal can define a deterministic neighbor order, but that creates a graph-specific DFS order rather than inheriting binary-tree inorder semantics. Graphs may also contain cycles and shared vertices, requiring visited-by-identity state that a proper tree does not. Arbitrary neighbor splitting or value sorting can be useful policies when explicitly required, but neither recovers a unique left/current/right structure. The transfer boundary is a representation such as an expression tree where child roles are named and ordered.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_any_dfs": "DFS describes depth-first expansion, not where the current action sits relative to two named child substructures. It becomes inorder only on a structure that defines those roles.",
+          "yes_split_neighbors": "An arbitrary split produces one implementation-dependent order and changes when adjacency order changes. It is valid only if that partition is declared as part of the graph problem.",
+          "yes_by_value": "Sorting neighbors introduces a value-based traversal policy that may be deterministic, but it does not create parent/left/right semantics and does not handle cycles by itself."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The graph adjacency order has no semantic meaning.",
+        "Vertices may have any out-degree."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

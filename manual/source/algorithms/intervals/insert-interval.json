@@ -1,0 +1,532 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-intervals-insert-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-intervals-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "intervals",
+    "primaryMentalUnitId": "insert_interval",
+    "patternFamilyId": "intervals"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring; no human review claimed",
+    "createdAt": "2026-07-18T00:00:00+02:00",
+    "contentBatchId": "algorithms-intervals-insert-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "algorithms-intervals-insert-001",
+      "prompt": "An existing list is sorted by start and pairwise non-overlapping. Which one-pass structure correctly inserts a new interval while preserving that invariant?",
+      "constraints": [
+        "Use the declared endpoint contract for all before/overlap comparisons.",
+        "The output must remain sorted and non-overlapping."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "three_phases",
+            "text": "Append intervals strictly before the new interval, merge every overlapping interval into it, append the remaining intervals."
+          },
+          {
+            "id": "append_then_local",
+            "text": "Append the new interval at the end and compare it only with the last old interval."
+          },
+          {
+            "id": "sort_by_length",
+            "text": "Sort all intervals by length and merge adjacent records."
+          }
+        ],
+        "acceptedOptionIds": [
+          "three_phases"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Start-sorted disjoint input makes the intervals before, overlapping, and after the new range appear as three contiguous phases.",
+        "details": "First copy every interval whose end is at or before the new start under the half-open non-overlap rule. Then, while the next interval begins before the growing new end, replace the new bounds with min(starts) and max(ends). Once an interval begins at or after the merged new end, the disjoint start order proves that all remaining intervals are also after it, so append them unchanged. The scan visits each existing interval at most once and never mutates the prepared order. The precise equality operators come from the endpoint and adjacency policy, not from the three-phase structure itself.",
+        "wrongOptionExplanationsByOptionId": {
+          "append_then_local": "The new interval may belong near the beginning or overlap several earlier intervals. A tail-only comparison does not preserve order or union.",
+          "sort_by_length": "Length order does not create the before/overlap/after regions required by insertion."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-002",
+      "prompt": "Insert [6, 10) into the sorted, non-overlapping half-open list [1, 2), [5, 7), [9, 12). What is the resulting list?",
+      "constraints": [
+        "Intervals overlap when later.start < earlier.end.",
+        "The new interval may grow while scanning."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "merged_result",
+            "text": "[1, 2), [5, 12)"
+          },
+          {
+            "id": "merge_first_only",
+            "text": "[1, 2), [5, 10), [9, 12)"
+          },
+          {
+            "id": "keep_new_separate",
+            "text": "[1, 2), [5, 7), [6, 10), [9, 12)"
+          }
+        ],
+        "acceptedOptionIds": [
+          "merged_result"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The new range first expands to [5, 10) and then to [5, 12), so both intersecting old intervals join one component.",
+        "details": "[1, 2) ends before the new start and is copied unchanged. [5, 7) overlaps [6, 10), so the growing interval becomes [5, 10). The next interval [9, 12) must be compared with that updated state, not the original new interval; because 9 < 10, it extends the end to 12. No intervals remain, so append [5, 12). This trace tests transitive growth during insertion and prevents an implementation from stopping after the first overlap or from comparing every old interval only against the original bounds.",
+        "wrongOptionExplanationsByOptionId": {
+          "merge_first_only": "After merging with [5, 7), the new active range is [5, 10), which still overlaps [9, 12). The overlap phase must continue.",
+          "keep_new_separate": "The output contains overlapping intervals and therefore violates the normalized-list contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-003",
+      "prompt": "Insert [0, 1) into [3, 5), [8, 10), where the existing list is sorted and disjoint. What should the algorithm do?",
+      "constraints": [
+        "All intervals are half-open.",
+        "The new interval ends before the first existing start."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prepend",
+            "text": "Place [0, 1) before the existing list without merging."
+          },
+          {
+            "id": "sort_by_end_first",
+            "text": "Re-sort all three intervals by end before deciding."
+          },
+          {
+            "id": "merge_with_first",
+            "text": "Merge to [0, 5) because the new interval comes first."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prepend"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Because new.end <= first.start under half-open semantics, the new interval is strictly before every existing interval.",
+        "details": "The sorted list makes this an early boundary case. [0, 1) is disjoint from [3, 5), and every later interval starts even farther right. The algorithm can append the new interval to output and then append the entire old list unchanged. No sort, heap, or pairwise scan beyond the first comparison is required for correctness, although an implementation may still use the same general loop. This case also separates ordering from overlap: an interval being first does not justify merging across a gap.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_by_end_first": "The existing start order already proves the new interval is before every old interval. Re-sorting adds work and abandons the insertion invariant.",
+          "merge_with_first": "Chronological order does not imply overlap. The first interval ends at 1 and the new interval starts at 3, so a positive gap requires them to remain separate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-004",
+      "prompt": "Insert [12, 15) into [1, 3), [6, 9), where the list is sorted and disjoint. What is the normalized output?",
+      "constraints": [
+        "The new interval begins after the last existing end."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "append_new",
+            "text": "[1, 3), [6, 9), [12, 15)"
+          },
+          {
+            "id": "merge_last",
+            "text": "[1, 3), [6, 15)"
+          },
+          {
+            "id": "end_sort",
+            "text": "[1, 3), [6, 9), [12, 15) only after re-sorting by end"
+          }
+        ],
+        "acceptedOptionIds": [
+          "append_new"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every existing interval lies strictly before the new start, so the scan copies them and appends the unchanged new interval.",
+        "details": "For each old interval, old.end <= new.start is true. Under half-open semantics equality would also be non-overlap, and here the inequalities are strict. After the before phase consumes the entire list, the algorithm appends the new interval once. This boundary catches implementations that forget to append after the loop or that force a merge with the last interval based only on order. The result remains sorted because the final old start and end are both before the new range.",
+        "wrongOptionExplanationsByOptionId": {
+          "merge_last": "There is a gap from 9 to 12. Appearing last in sorted order makes the append position clear, but it does not create an overlap that would justify merging.",
+          "end_sort": "The result is already implied by the existing start-sorted invariant; a new sort is unnecessary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-005",
+      "prompt": "Insert [3, 5) into the half-open list [1, 3), [7, 9). The product preserves back-to-back booking boundaries. What is the output?",
+      "constraints": [
+        "Equality at an endpoint is non-overlap.",
+        "Existing intervals are sorted and disjoint."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "keep_touching_separate",
+            "text": "[1, 3), [3, 5), [7, 9)"
+          },
+          {
+            "id": "merge_first",
+            "text": "[1, 5), [7, 9)"
+          },
+          {
+            "id": "merge_all",
+            "text": "[1, 9)"
+          }
+        ],
+        "acceptedOptionIds": [
+          "keep_touching_separate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The old interval with end == new.start is strictly before the new interval under the half-open, boundary-preserving policy.",
+        "details": "The before-phase condition is old.end <= new.start. Because 3 <= 3, [1, 3) is copied unchanged. The overlap phase then compares [7, 9) with [3, 5); 7 < 5 is false, so append the new interval and then the remaining old interval. A common bug uses old.end < new.start, which treats equality as potential overlap and later merges the touching ranges. Closed intervals or a coalescing union policy would use different equality behavior, so the exact loop conditions must be derived from the declared contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "merge_first": "Using '<' instead of '<=' in the before phase would incorrectly send [1, 3) into the merge phase and erase a legal boundary.",
+          "merge_all": "The new interval also has a positive gap before [7, 9), so merging all three adds uncovered time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-006",
+      "prompt": "Order the operations for inserting one interval into a start-sorted, pairwise non-overlapping sequence.",
+      "constraints": [
+        "The new interval may absorb several existing intervals.",
+        "The output length must not be extended by duplicate copies."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "copy_before",
+            "text": "Copy every existing interval that ends before or at the new start under the half-open policy."
+          },
+          {
+            "id": "merge_overlaps",
+            "text": "While the next interval overlaps the growing new interval, update the new bounds."
+          },
+          {
+            "id": "append_merged_new",
+            "text": "Append the final merged new interval exactly once."
+          },
+          {
+            "id": "copy_after",
+            "text": "Copy all remaining existing intervals unchanged."
+          }
+        ],
+        "canonicalOrder": [
+          "copy_before",
+          "merge_overlaps",
+          "append_merged_new",
+          "copy_after"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Sorted disjoint input creates contiguous before, overlap, and after regions; the new interval is appended only after its overlap region is complete.",
+        "details": "Copying before intervals first preserves order. The merge phase must precede appending the new interval because its bounds may expand with every overlapping old interval. Once the first strictly after interval is reached, the sorted-disjoint invariant proves that no later old interval can overlap the final new range. Appending the new interval before completing the merge would require editing output; appending it after copying the remainder would break order. Each adjacent relation therefore corresponds to a correctness dependency rather than a cosmetic implementation preference."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-007",
+      "prompt": "The existing intervals are sorted by end but are not guaranteed to be sorted by start or pairwise disjoint. May the standard linear insertion scan be applied unchanged?",
+      "constraints": [
+        "The scan assumes a single contiguous before/overlap/after partition."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "normalize_first",
+            "text": "No; validate or normalize to start-sorted, pairwise non-overlapping form first."
+          },
+          {
+            "id": "end_order_sufficient",
+            "text": "Yes; end sorting is sufficient for every interval scan."
+          },
+          {
+            "id": "length_check_sufficient",
+            "text": "Yes, if the new interval is shorter than every existing interval."
+          }
+        ],
+        "acceptedOptionIds": [
+          "normalize_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The insertion scan is correct because of the start-sorted, disjoint input invariant; end order alone does not provide it.",
+        "details": "Without start order, an interval that should precede the new range can appear after an interval classified as 'after.' Without pairwise disjointness, old intervals may themselves need merging, so copying a before interval can leave overlapping output. The safe action is to reject invalid canonical input or normalize it using the batch merge contract, then perform insertion. Hiding normalization inside the scan obscures complexity and error behavior. The transfer boundary is explicit: linear insertion is an optimized operation over a canonical merged sequence, not a replacement for canonicalization.",
+        "wrongOptionExplanationsByOptionId": {
+          "end_order_sufficient": "End order does not guarantee that starts are monotonic or that the overlap region is contiguous in the way insertion requires.",
+          "length_check_sufficient": "Relative length does not restore ordering or disjointness and cannot justify the three phases."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-008",
+      "prompt": "A long old interval is [0, 9). New interval X is [10, 11), while new interval Y is [5, 5.5). Which statement is correct under half-open semantics?",
+      "constraints": [
+        "Evaluate X and Y separately against the old interval."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "position_not_length",
+            "text": "X is disjoint and Y overlaps; endpoint position, not the new interval's length, decides."
+          },
+          {
+            "id": "long_old_overlaps_both",
+            "text": "The long old interval overlaps both because it is much longer."
+          },
+          {
+            "id": "short_y_disjoint",
+            "text": "Y is disjoint because it is very short."
+          }
+        ],
+        "acceptedOptionIds": [
+          "position_not_length"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Insertion classifies intervals from endpoint order: a gap separates X, while Y is contained inside the old range.",
+        "details": "For X, old.end <= X.start, so the old interval belongs to the before phase. For Y, Y.start < old.end and old.start < Y.end, so they overlap and the merged new interval would expand to [0, 9). No duration threshold appears in either decision. This counterexample prevents an insertion implementation from choosing phases based on whether the new interval is shorter, longer, or 'large enough.' Length can affect output measure but not membership in the overlap region.",
+        "wrongOptionExplanationsByOptionId": {
+          "long_old_overlaps_both": "The old interval excludes 9 and ends before X begins at 10. Duration cannot cross a positional gap.",
+          "short_y_disjoint": "Y lies entirely inside [0, 9), so even a short duration has a non-empty intersection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-009",
+      "prompt": "Choose the time and extra-space complexities for inserting one interval into n start-sorted, pairwise non-overlapping intervals with a single scan. Exclude the returned output list.",
+      "constraints": [
+        "The implementation does not re-sort.",
+        "Each existing interval is inspected at most once."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The scan may need to copy or inspect every old interval, while the growing new interval uses constant auxiliary state.",
+        "details": "Even if binary search locates an approximate insertion position in O(log n), producing the normalized output can require traversing and copying O(n) intervals, and the new range may absorb a long contiguous overlap region. Therefore the end-to-end time bound is O(n). Excluding returned output storage, the algorithm keeps only an index and the current merged new bounds, so extra space is O(1). If the list is mutated in place with expensive shifts, the concrete cost still has a linear lower bound; a different persistent data structure would need a separately declared model."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-insert-010",
+      "prompt": "The union is stored as sweep events rather than as a sorted list of disjoint intervals. An old half-open interval ends at t and the new interval starts at t. What must an insertion update preserve?",
+      "constraints": [
+        "Back-to-back booking boundaries are non-conflicting.",
+        "The event structure exposes intermediate active counts."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "end_before_start_event_update",
+            "text": "Apply an end-before-start equal-time rule and update the event structure; the list-based three-phase scan cannot be reused unchanged."
+          },
+          {
+            "id": "arbitrary_tie",
+            "text": "Insert both events in any order because equal timestamps cancel."
+          },
+          {
+            "id": "sort_by_interval_length",
+            "text": "Order the two intervals by length before adding their events."
+          }
+        ],
+        "acceptedOptionIds": [
+          "end_before_start_event_update"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Changing representation changes the update mechanics, but it must preserve the same half-open equality semantics through an explicit event tie rule.",
+        "details": "The three-phase insertion algorithm relies on a materialized start-sorted, disjoint interval sequence. An event multiset has different state and update operations, so reusing the scan would be a category error. To preserve the same booking semantics, the event representation must process release before acquisition at t when intermediate counts are meaningful. A grouped delta approach may be valid only with a proof for the exact query. This item marks the transfer boundary: endpoint semantics are reusable, while representation-specific mechanics remain separate.",
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_tie": "Intermediate active state can change with order, producing a false conflict or an unintended merged boundary.",
+          "sort_by_interval_length": "Duration does not define chronological event order or endpoint inclusion. Equal or unequal lengths can appear anywhere on the timeline, so length sorting cannot preserve insertion phases."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "insert_interval_into_merged_sequence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

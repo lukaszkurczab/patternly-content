@@ -1,0 +1,1125 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-intervals-endpoints-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-intervals-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "intervals",
+    "primaryMentalUnitId": "interval_representation_and_endpoint_semantics",
+    "patternFamilyId": "intervals"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring; no human review claimed",
+    "createdAt": "2026-07-18T00:00:00+02:00",
+    "contentBatchId": "algorithms-intervals-endpoints-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "algorithms-intervals-endpoints-001",
+      "prompt": "A calendar stores occupied time as half-open intervals [start, end). An existing booking is [09:00, 10:00), and a candidate booking is [10:00, 10:30). What is the correct conflict decision?",
+      "constraints": [
+        "Both intervals use the same half-open endpoint contract.",
+        "A conflict requires a time instant occupied by both bookings."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_conflict",
+            "text": "There is no conflict; the first booking has already ended at 10:00."
+          },
+          {
+            "id": "conflict_shared_endpoint",
+            "text": "There is a conflict because both intervals mention 10:00."
+          },
+          {
+            "id": "compare_durations",
+            "text": "The decision depends on which booking is longer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_conflict"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "In a half-open contract, an interval excludes its end. The equality existing.end == candidate.start therefore represents legal reuse, not overlap.",
+        "details": "For half-open intervals [a, b) and [c, d), overlap requires a < d and c < b. Here the second comparison is 10:00 < 10:00, which is false. The endpoint contract is the decisive input: it tells the comparison code, the resource allocator, and any same-time sweep events that an ending allocation releases the resource before a new allocation begins. The same coordinates would produce a different decision under a closed [start, end] contract, where the shared endpoint belongs to both intervals. Transfer this rule by writing the interval convention next to every API boundary and deriving the comparator from that convention rather than from remembered syntax.",
+        "wrongOptionExplanationsByOptionId": {
+          "conflict_shared_endpoint": "The shared numeral is not enough. Under [start, end), the end is excluded, so 10:00 belongs only to the second booking. This option would be correct for closed intervals.",
+          "compare_durations": "Duration does not determine whether two positions intersect. Length is relevant to how much time an interval covers, not whether the covered sets share an instant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "detect_schedule_conflict"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-002",
+      "prompt": "Two measurement ranges use the closed convention [start, end]. The ranges are [1, 4] and [4, 7]. Which statement is correct?",
+      "constraints": [
+        "Both endpoints are included.",
+        "A one-point intersection counts as overlap."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "overlap_at_four",
+            "text": "They overlap at the single point 4."
+          },
+          {
+            "id": "no_overlap_boundary_only",
+            "text": "They do not overlap because their interiors do not intersect."
+          },
+          {
+            "id": "need_lengths",
+            "text": "Their lengths must be compared before overlap can be decided."
+          }
+        ],
+        "acceptedOptionIds": [
+          "overlap_at_four"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Closed intervals include both endpoints, so the shared coordinate 4 belongs to both ranges and is a valid one-point intersection.",
+        "details": "For closed intervals [a, b] and [c, d], the overlap predicate is a <= d and c <= b, equivalently max(a, c) <= min(b, d). The equality case is not a special exception; it follows directly from endpoint inclusion. This is why code that is correct for half-open booking intervals can be wrong for closed measurement ranges even when the coordinates are identical. The transfer rule is to derive equality handling from the domain contract. Do not use one universal '<' or '<=' comparator across calendars, integer ranges, geometric segments, and event streams unless those domains have first been normalized to the same representation.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_overlap_boundary_only": "The prompt explicitly counts a one-point intersection and uses closed intervals. Excluding a boundary-only intersection would silently switch to a different contract.",
+          "need_lengths": "The intersection is determined by endpoint order and inclusion. Relative length cannot remove the common included point 4."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-003",
+      "prompt": "A system standardizes finite durations as half-open intervals [start, end). Select all statements guaranteed by that representation.",
+      "constraints": [
+        "Select all correct statements.",
+        "Assume start <= end and ordinary arithmetic without overflow."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "duration_difference",
+            "text": "The duration is end - start."
+          },
+          {
+            "id": "empty_equal_endpoints",
+            "text": "[x, x) represents an empty interval."
+          },
+          {
+            "id": "adjacent_nonconflict",
+            "text": "[a, b) and [b, c) do not occupy the same instant."
+          },
+          {
+            "id": "end_is_included",
+            "text": "The end coordinate belongs to the interval."
+          }
+        ],
+        "acceptedOptionIds": [
+          "duration_difference",
+          "empty_equal_endpoints",
+          "adjacent_nonconflict"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Half-open intervals include the start and exclude the end, yielding direct duration arithmetic, an empty [x, x), and non-overlapping adjacency.",
+        "details": "The three consequences come from one set definition rather than three unrelated conventions. [start, end) contains values t such that start <= t < end. Subtracting the bounds gives the interval's measure; no point satisfies x <= t < x, so [x, x) is empty; and a boundary b is excluded from [a, b) but included in [b, c), so adjacent durations do not overlap. These properties are useful only when the contract is applied consistently. A later component that treats the end as included will reintroduce off-by-one conflicts, transient sweep peaks, or accidental merges. Transfer the representation by carrying its inclusion semantics through serialization, comparison, validation, and tests.",
+        "wrongOptionExplanationsByOptionId": {
+          "end_is_included": "This reverses the defining property of the half-open convention. It would describe a closed right endpoint instead."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "duration_difference": "Omitting this misses a central benefit of half-open durations: subtraction gives the measure directly without an endpoint correction.",
+          "empty_equal_endpoints": "Omitting this treats a zero-width representation as if it occupied a point, which contradicts [start, end).",
+          "adjacent_nonconflict": "Omitting this loses the reuse boundary that makes consecutive ranges compose cleanly."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-004",
+      "prompt": "Order the decisions required before interval comparison logic is shared across merge, scheduling, and sweep implementations.",
+      "constraints": [
+        "The order should prevent an implementation from inventing equality behavior locally."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "identify_domain_meaning",
+            "text": "Identify what an endpoint means in the domain, including whether a point event or zero duration is representable."
+          },
+          {
+            "id": "choose_inclusion_contract",
+            "text": "Choose and document the endpoint inclusion convention."
+          },
+          {
+            "id": "derive_predicates_and_ties",
+            "text": "Derive overlap comparators and equal-coordinate event ordering from that convention."
+          },
+          {
+            "id": "apply_and_test_consistently",
+            "text": "Apply the derived rules consistently at API boundaries and in counterexample tests."
+          }
+        ],
+        "canonicalOrder": [
+          "identify_domain_meaning",
+          "choose_inclusion_contract",
+          "derive_predicates_and_ties",
+          "apply_and_test_consistently"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The domain meaning determines the representation; the representation then determines comparison and tie rules, which can finally be implemented and tested consistently.",
+        "details": "Starting with a comparator such as '<=' is backwards: it encodes a semantic decision before the domain has made one. First determine whether the model represents occupied durations, inclusive integer ranges, geometric segments, or instantaneous events. Then select a representation such as [start, end) or [start, end]. Only after that choice can the overlap predicate, merge equality, and sweep tie rule be derived. The last step is consistency: normalize external inputs, reuse the same rule in every algorithm, and test equality, emptiness, and containment. Reversing adjacent steps risks a locally plausible implementation whose behavior changes between modules."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-005",
+      "prompt": "One API emits closed intervals [start, end], while another emits half-open intervals [start, end). A service compares the raw values with one shared '<' predicate. What is the correct design action?",
+      "constraints": [
+        "The service must produce one deterministic overlap meaning.",
+        "The input APIs cannot be assumed to share endpoint semantics."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "normalize_then_compare",
+            "text": "Normalize both sources to one documented interval contract, then derive and apply its predicate."
+          },
+          {
+            "id": "use_less_equal_everywhere",
+            "text": "Replace '<' with '<=' for every source."
+          },
+          {
+            "id": "sort_by_length",
+            "text": "Sort both sources by interval length before comparing."
+          }
+        ],
+        "acceptedOptionIds": [
+          "normalize_then_compare"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Raw coordinates are not comparable until their endpoint semantics agree. Normalization is the boundary that makes one predicate meaningful.",
+        "details": "An interval is not just two numbers; it is two numbers plus an inclusion contract. Applying one comparator to mixed representations produces data-dependent errors at equality and zero width. The service should choose a canonical internal form, convert each source without losing meaning, validate unrepresentable cases, and then use the predicate derived for that form. For inclusive integer ranges, conversion to [l, r + 1) may be valid when a safe successor exists. For continuous measurements or maximal integer endpoints, a different representation may be required. Sorting, duration checks, and tie-breaking cannot repair a semantic mismatch that has not been normalized.",
+        "wrongOptionExplanationsByOptionId": {
+          "use_less_equal_everywhere": "A universal '<=' silently makes half-open adjacency overlap. It is correct only after the service deliberately adopts a contract in which equality is included.",
+          "sort_by_length": "Ordering by length does not reconcile which endpoints belong to each represented set. The semantic mismatch remains."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-006",
+      "prompt": "Under the half-open duration contract [start, end), what does [5, 5) represent?",
+      "constraints": [
+        "The representation models occupied duration, not an instantaneous event type."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_duration",
+            "text": "An empty interval that occupies no duration."
+          },
+          {
+            "id": "point_occupancy",
+            "text": "A point event occupying time 5."
+          },
+          {
+            "id": "invalid_because_short",
+            "text": "An overlapping interval because its length is zero."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_duration"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "No value satisfies 5 <= t < 5, so [5, 5) is empty and contributes no occupied time.",
+        "details": "Zero-width behavior is a direct test of whether the representation has been understood as a set. For [a, b), equality a == b yields the empty set. A scheduling system may still reject empty bookings as invalid input, but that validation decision is separate from overlap semantics. If the domain needs instantaneous markers, model them explicitly rather than pretending a zero-duration interval contains its endpoint. This distinction prevents a sweep from creating a false active count, a room allocator from reserving a resource, or a merge routine from expanding a union because of an event that occupies no duration.",
+        "wrongOptionExplanationsByOptionId": {
+          "point_occupancy": "A half-open interval contains t only when 5 <= t < 5, which is impossible. A point event needs a separate representation or different contract.",
+          "invalid_because_short": "Zero length does not create overlap. The interval is empty under the stated contract; validation may allow or reject it for product reasons, but it does not occupy a point."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-007",
+      "prompt": "A discrete integer problem supplies inclusive ranges [l, r]. When is conversion to half-open [l, r + 1) a sound normalization?",
+      "constraints": [
+        "Integer values are consecutive.",
+        "The implementation must preserve every represented integer without overflow."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "safe_successor",
+            "text": "When r + 1 is representable and the domain's successor operation preserves the intended set."
+          },
+          {
+            "id": "always_safe",
+            "text": "Always; adding one cannot change interval meaning."
+          },
+          {
+            "id": "never_safe",
+            "text": "Never; inclusive and half-open ranges cannot represent the same integers."
+          }
+        ],
+        "acceptedOptionIds": [
+          "safe_successor"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The normalization is valid only when the domain has a safe next value after r and the arithmetic cannot overflow.",
+        "details": "For discrete integers, [l, r] contains l through r, while [l, r + 1) contains the same values because r + 1 is excluded. The equivalence depends on two preconditions: the successor operation must match the domain, and it must be representable. If r is the maximum integer, blindly adding one corrupts the bound. A robust implementation can retain an explicit closed-end flag, use a wider type after proving it is sufficient, or handle the maximal endpoint separately. This is a transfer rule, not a universal rewrite: continuous intervals do not have a single next representable mathematical point.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_safe": "At the maximum representable value, r + 1 can overflow. The conversion also assumes a discrete successor relation, which continuous domains do not provide.",
+          "never_safe": "For a discrete domain with a safe successor, [l, r] and [l, r + 1) contain exactly the same integer values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-008",
+      "prompt": "Under half-open semantics, pair A is [0, 100) with [100, 101), while pair B is [40, 41) with [40.5, 40.6). Which conclusion is correct?",
+      "constraints": [
+        "All endpoints are real numbers.",
+        "Overlap means a non-empty intersection."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "position_decides",
+            "text": "Pair A is disjoint and pair B overlaps; endpoint order, not interval length, decides."
+          },
+          {
+            "id": "long_pair_overlaps",
+            "text": "Pair A overlaps because one interval is very long."
+          },
+          {
+            "id": "short_pair_disjoint",
+            "text": "Pair B is disjoint because both intervals are short."
+          }
+        ],
+        "acceptedOptionIds": [
+          "position_decides"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Overlap is a positional relation between endpoint orders. Long intervals can be disjoint, and short intervals can be nested.",
+        "details": "The correct test evaluates the represented sets. For pair A, 100 is excluded from the first interval, so there is no shared value. For pair B, every value from 40.5 up to 40.6 lies in both intervals. Comparing lengths, summing lengths, or choosing the longer interval cannot answer the intersection question without position information. This counterexample is useful whenever an implementation introduces a duration-based shortcut: retain the endpoint predicate and treat length only as a derived quantity for cost, measure, or prioritization objectives that explicitly need it.",
+        "wrongOptionExplanationsByOptionId": {
+          "long_pair_overlaps": "The long interval stops before 100, and the second starts at 100. Length cannot include an excluded endpoint.",
+          "short_pair_disjoint": "The second range lies inside the first, so their intersection is non-empty regardless of both durations being small."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-009",
+      "prompt": "A half-open occupancy model produces one end event and one start event at the same timestamp. Which equal-time order is consistent with legal resource reuse?",
+      "constraints": [
+        "The active count is sampled while processing individual events.",
+        "Intervals use [start, end)."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "end_before_start",
+            "text": "Process the end event before the start event."
+          },
+          {
+            "id": "start_before_end",
+            "text": "Process the start event before the end event."
+          },
+          {
+            "id": "arbitrary_order",
+            "text": "Either order is safe because the timestamps are equal."
+          }
+        ],
+        "acceptedOptionIds": [
+          "end_before_start"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Because a half-open interval is inactive at its end, release must be processed before acquisition at the same coordinate.",
+        "details": "An event sweep translates endpoint semantics into processing order. For [a, b), the interval stops contributing at b. If another interval begins at b, the resource is reusable: decrement first, then increment. Processing the start first would briefly count both and may allocate an unnecessary room or report a false conflict. Grouping all same-time deltas can be safe for some aggregate queries, but only after proving that no intermediate state is semantically observed. The general transfer rule is not 'end always first'; it is 'derive the tie rule from endpoint inclusion and the quantity being measured.'",
+        "wrongOptionExplanationsByOptionId": {
+          "start_before_end": "That order creates a transient count in which the old and new half-open intervals are both active at the shared boundary. It matches inclusive-end occupancy, not the stated contract.",
+          "arbitrary_order": "When the algorithm observes intermediate active counts, equal-time order changes the peak and can change conflict detection. A deterministic tie rule is required."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-endpoints-010",
+      "prompt": "A team sorts intervals by end time and then treats previous.end >= current.start as proof that touching intervals overlap. What information is still missing?",
+      "constraints": [
+        "The question is about the meaning of equality, not about selecting the best merge order."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "declare_endpoint_contract",
+            "text": "The endpoint inclusion contract; only then can equality be interpreted and the comparator chosen."
+          },
+          {
+            "id": "interval_lengths",
+            "text": "The lengths of the two intervals."
+          },
+          {
+            "id": "different_sort_only",
+            "text": "A switch to start-time sorting; that alone determines whether equality overlaps."
+          }
+        ],
+        "acceptedOptionIds": [
+          "declare_endpoint_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sort order organizes processing; it does not define whether an endpoint belongs to an interval. Equality must be derived from the representation contract.",
+        "details": "The comparison previous.end >= current.start conflates two decisions: which interval is processed first and whether equality constitutes intersection. Sorting by end can be useful for objectives such as selecting non-overlapping meetings, while start sorting supports a merge scan. Neither key supplies endpoint semantics. Under half-open occupancy, equality is non-overlap; under closed ranges, equality is overlap. The implementation must document the interval contract, normalize inputs, and then choose both the processing order and comparator required by its objective. This separation prevents a change in sort key from silently changing domain meaning.",
+        "wrongOptionExplanationsByOptionId": {
+          "interval_lengths": "Length cannot determine whether the shared coordinate belongs to either represented set.",
+          "different_sort_only": "Start sorting may support a merge invariant, but it does not decide whether an end coordinate is included. The same equality has different meanings under closed and half-open contracts."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_interval_endpoint_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "algorithms-intervals-guided-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-guided-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "algorithms-intervals-endpoints-001",
+            "algorithms-intervals-endpoints-002",
+            "algorithms-intervals-endpoints-003",
+            "algorithms-intervals-endpoints-004",
+            "algorithms-intervals-endpoints-005",
+            "algorithms-intervals-endpoints-006",
+            "algorithms-intervals-endpoints-007",
+            "algorithms-intervals-endpoints-008",
+            "algorithms-intervals-endpoints-009",
+            "algorithms-intervals-endpoints-010",
+            "algorithms-intervals-sort-001",
+            "algorithms-intervals-sort-002",
+            "algorithms-intervals-sort-003",
+            "algorithms-intervals-sort-004",
+            "algorithms-intervals-sort-005",
+            "algorithms-intervals-sort-006",
+            "algorithms-intervals-sort-007",
+            "algorithms-intervals-sort-008",
+            "algorithms-intervals-overlap-001",
+            "algorithms-intervals-overlap-002",
+            "algorithms-intervals-overlap-003",
+            "algorithms-intervals-overlap-004",
+            "algorithms-intervals-overlap-005",
+            "algorithms-intervals-overlap-006",
+            "algorithms-intervals-overlap-007",
+            "algorithms-intervals-overlap-008",
+            "algorithms-intervals-overlap-009",
+            "algorithms-intervals-merge-001",
+            "algorithms-intervals-merge-002",
+            "algorithms-intervals-merge-003",
+            "algorithms-intervals-merge-004",
+            "algorithms-intervals-merge-005",
+            "algorithms-intervals-merge-006",
+            "algorithms-intervals-merge-007",
+            "algorithms-intervals-merge-008",
+            "algorithms-intervals-merge-009",
+            "algorithms-intervals-merge-010",
+            "algorithms-intervals-insert-001",
+            "algorithms-intervals-insert-002",
+            "algorithms-intervals-insert-003",
+            "algorithms-intervals-insert-004",
+            "algorithms-intervals-insert-005",
+            "algorithms-intervals-insert-006",
+            "algorithms-intervals-insert-007",
+            "algorithms-intervals-insert-008",
+            "algorithms-intervals-insert-009",
+            "algorithms-intervals-insert-010",
+            "algorithms-intervals-resources-001",
+            "algorithms-intervals-resources-002",
+            "algorithms-intervals-resources-003",
+            "algorithms-intervals-resources-004",
+            "algorithms-intervals-resources-005",
+            "algorithms-intervals-resources-006",
+            "algorithms-intervals-resources-007",
+            "algorithms-intervals-resources-008",
+            "algorithms-intervals-resources-009",
+            "algorithms-intervals-sweep-001",
+            "algorithms-intervals-sweep-002",
+            "algorithms-intervals-sweep-003",
+            "algorithms-intervals-sweep-004",
+            "algorithms-intervals-sweep-005",
+            "algorithms-intervals-sweep-006",
+            "algorithms-intervals-sweep-007",
+            "algorithms-intervals-sweep-008",
+            "algorithms-intervals-sweep-009",
+            "algorithms-intervals-boundary-review-001",
+            "algorithms-intervals-boundary-review-002",
+            "algorithms-intervals-boundary-review-003",
+            "algorithms-intervals-boundary-review-004",
+            "algorithms-intervals-boundary-review-005",
+            "algorithms-intervals-boundary-review-006",
+            "algorithms-intervals-boundary-review-007",
+            "algorithms-intervals-boundary-review-008",
+            "algorithms-intervals-boundary-review-009",
+            "algorithms-intervals-boundary-review-010",
+            "algorithms-intervals-boundary-review-011",
+            "algorithms-intervals-boundary-review-012"
+          ]
+        }
+      },
+      {
+        "blueprintId": "algorithms-intervals-recognize-patterns-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-recognize-patterns",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "recognition_sets",
+          "ids": [
+            "recognition-set-intervals-v1"
+          ]
+        }
+      },
+      {
+        "blueprintId": "algorithms-intervals-weak-area-review-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-weak-area-review",
+        "requestedLengths": [
+          10,
+          20
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 1,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "algorithms-intervals-endpoints-001",
+            "algorithms-intervals-endpoints-002",
+            "algorithms-intervals-endpoints-003",
+            "algorithms-intervals-endpoints-004",
+            "algorithms-intervals-endpoints-005",
+            "algorithms-intervals-endpoints-006",
+            "algorithms-intervals-endpoints-007",
+            "algorithms-intervals-endpoints-008",
+            "algorithms-intervals-endpoints-009",
+            "algorithms-intervals-endpoints-010",
+            "algorithms-intervals-sort-001",
+            "algorithms-intervals-sort-002",
+            "algorithms-intervals-sort-003",
+            "algorithms-intervals-sort-004",
+            "algorithms-intervals-sort-005",
+            "algorithms-intervals-sort-006",
+            "algorithms-intervals-sort-007",
+            "algorithms-intervals-sort-008",
+            "algorithms-intervals-overlap-001",
+            "algorithms-intervals-overlap-002",
+            "algorithms-intervals-overlap-003",
+            "algorithms-intervals-overlap-004",
+            "algorithms-intervals-overlap-005",
+            "algorithms-intervals-overlap-006",
+            "algorithms-intervals-overlap-007",
+            "algorithms-intervals-overlap-008",
+            "algorithms-intervals-overlap-009",
+            "algorithms-intervals-merge-001",
+            "algorithms-intervals-merge-002",
+            "algorithms-intervals-merge-003",
+            "algorithms-intervals-merge-004",
+            "algorithms-intervals-merge-005",
+            "algorithms-intervals-merge-006",
+            "algorithms-intervals-merge-007",
+            "algorithms-intervals-merge-008",
+            "algorithms-intervals-merge-009",
+            "algorithms-intervals-merge-010",
+            "algorithms-intervals-insert-001",
+            "algorithms-intervals-insert-002",
+            "algorithms-intervals-insert-003",
+            "algorithms-intervals-insert-004",
+            "algorithms-intervals-insert-005",
+            "algorithms-intervals-insert-006",
+            "algorithms-intervals-insert-007",
+            "algorithms-intervals-insert-008",
+            "algorithms-intervals-insert-009",
+            "algorithms-intervals-insert-010",
+            "algorithms-intervals-resources-001",
+            "algorithms-intervals-resources-002",
+            "algorithms-intervals-resources-003",
+            "algorithms-intervals-resources-004",
+            "algorithms-intervals-resources-005",
+            "algorithms-intervals-resources-006",
+            "algorithms-intervals-resources-007",
+            "algorithms-intervals-resources-008",
+            "algorithms-intervals-resources-009",
+            "algorithms-intervals-sweep-001",
+            "algorithms-intervals-sweep-002",
+            "algorithms-intervals-sweep-003",
+            "algorithms-intervals-sweep-004",
+            "algorithms-intervals-sweep-005",
+            "algorithms-intervals-sweep-006",
+            "algorithms-intervals-sweep-007",
+            "algorithms-intervals-sweep-008",
+            "algorithms-intervals-sweep-009",
+            "algorithms-intervals-boundary-review-001",
+            "algorithms-intervals-boundary-review-002",
+            "algorithms-intervals-boundary-review-003",
+            "algorithms-intervals-boundary-review-004",
+            "algorithms-intervals-boundary-review-005",
+            "algorithms-intervals-boundary-review-006",
+            "algorithms-intervals-boundary-review-007",
+            "algorithms-intervals-boundary-review-008",
+            "algorithms-intervals-boundary-review-009",
+            "algorithms-intervals-boundary-review-010",
+            "algorithms-intervals-boundary-review-011",
+            "algorithms-intervals-boundary-review-012"
+          ]
+        }
+      },
+      {
+        "blueprintId": "algorithms-intervals-independent-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-independent-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "blueprint_controlled",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "interleaved_scope",
+          "ids": [
+            "interleaved-scope-intervals-v1"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [
+      {
+        "setId": "recognition-set-intervals-v1",
+        "setVersion": "v1",
+        "taxonomyScope": {
+          "roadmapNodeIds": [
+            "intervals"
+          ],
+          "patternFamilyIds": [
+            "intervals"
+          ],
+          "primaryMentalUnitIds": [
+            "interval_representation_and_endpoint_semantics",
+            "sort_intervals_for_processing",
+            "detect_overlap",
+            "merge_overlaps",
+            "insert_interval",
+            "meeting_rooms_and_resource_count",
+            "sweep_line_intro",
+            "interval_boundary_mistake_review"
+          ]
+        },
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "itemIds": [
+          "algorithms-intervals-endpoints-001",
+          "algorithms-intervals-endpoints-005",
+          "algorithms-intervals-endpoints-008",
+          "algorithms-intervals-endpoints-010",
+          "algorithms-intervals-sort-001",
+          "algorithms-intervals-sort-002",
+          "algorithms-intervals-sort-004",
+          "algorithms-intervals-sort-008",
+          "algorithms-intervals-overlap-001",
+          "algorithms-intervals-overlap-004",
+          "algorithms-intervals-overlap-006",
+          "algorithms-intervals-overlap-009",
+          "algorithms-intervals-merge-001",
+          "algorithms-intervals-merge-004",
+          "algorithms-intervals-merge-006",
+          "algorithms-intervals-merge-009",
+          "algorithms-intervals-insert-001",
+          "algorithms-intervals-insert-005",
+          "algorithms-intervals-insert-007",
+          "algorithms-intervals-insert-010",
+          "algorithms-intervals-resources-001",
+          "algorithms-intervals-resources-005",
+          "algorithms-intervals-resources-008",
+          "algorithms-intervals-resources-009",
+          "algorithms-intervals-sweep-001",
+          "algorithms-intervals-sweep-005",
+          "algorithms-intervals-sweep-006",
+          "algorithms-intervals-sweep-007",
+          "algorithms-intervals-boundary-review-001",
+          "algorithms-intervals-boundary-review-003",
+          "algorithms-intervals-boundary-review-008",
+          "algorithms-intervals-boundary-review-011",
+          "algorithms-intervals-boundary-review-012"
+        ],
+        "falseHeuristicIds": [
+          "interval_length_determines_overlap",
+          "sorting_by_end_is_always_correct",
+          "sweep_events_need_no_tie_rule",
+          "touching_endpoints_always_overlap"
+        ]
+      }
+    ],
+    "contrastSets": [],
+    "interleavedScopes": [
+      {
+        "scopeId": "interleaved-scope-intervals-v1",
+        "scopeVersion": "v1",
+        "mentalUnitIds": [
+          "interval_representation_and_endpoint_semantics",
+          "sort_intervals_for_processing",
+          "detect_overlap",
+          "merge_overlaps",
+          "insert_interval",
+          "meeting_rooms_and_resource_count",
+          "sweep_line_intro",
+          "interval_boundary_mistake_review"
+        ],
+        "itemIds": [
+          "algorithms-intervals-endpoints-004",
+          "algorithms-intervals-endpoints-007",
+          "algorithms-intervals-endpoints-010",
+          "algorithms-intervals-sort-003",
+          "algorithms-intervals-sort-007",
+          "algorithms-intervals-sort-008",
+          "algorithms-intervals-overlap-005",
+          "algorithms-intervals-overlap-006",
+          "algorithms-intervals-overlap-008",
+          "algorithms-intervals-overlap-009",
+          "algorithms-intervals-merge-003",
+          "algorithms-intervals-merge-008",
+          "algorithms-intervals-merge-009",
+          "algorithms-intervals-merge-010",
+          "algorithms-intervals-insert-002",
+          "algorithms-intervals-insert-007",
+          "algorithms-intervals-insert-009",
+          "algorithms-intervals-insert-010",
+          "algorithms-intervals-resources-005",
+          "algorithms-intervals-resources-007",
+          "algorithms-intervals-resources-008",
+          "algorithms-intervals-resources-009",
+          "algorithms-intervals-sweep-005",
+          "algorithms-intervals-sweep-006",
+          "algorithms-intervals-sweep-008",
+          "algorithms-intervals-sweep-009",
+          "algorithms-intervals-boundary-review-003",
+          "algorithms-intervals-boundary-review-004",
+          "algorithms-intervals-boundary-review-008",
+          "algorithms-intervals-boundary-review-009",
+          "algorithms-intervals-boundary-review-011",
+          "algorithms-intervals-boundary-review-012"
+        ],
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "minimumDiversity": {
+          "primaryMentalUnitCount": 4,
+          "interactionTypeCount": 2,
+          "problemArchetypeCount": 3
+        }
+      }
+    ],
+    "compatibilitySets": [
+      {
+        "id": "compat-intervals-endpoints-contract-variants-v1",
+        "version": "v1",
+        "relation": "reviewed_variant",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "algorithms-intervals-endpoints-001",
+          "algorithms-intervals-endpoints-002"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-endpoints-003",
+          "algorithms-intervals-endpoints-005"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "derive equality behavior from one declared endpoint inclusion contract"
+        }
+      },
+      {
+        "id": "compat-intervals-sort-invariant-variants-v1",
+        "version": "v1",
+        "relation": "reviewed_variant",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "algorithms-intervals-sort-001",
+          "algorithms-intervals-sort-003"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-sort-007",
+          "algorithms-intervals-sort-008"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "choose a sort key from the objective-specific monotonic invariant"
+        }
+      },
+      {
+        "id": "compat-intervals-overlap-predicate-variants-v1",
+        "version": "v1",
+        "relation": "reviewed_variant",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "algorithms-intervals-overlap-001",
+          "algorithms-intervals-overlap-003"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-overlap-005",
+          "algorithms-intervals-overlap-007"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "evaluate half-open overlap consistently across direct and event representations"
+        }
+      },
+      {
+        "id": "compat-intervals-merge-chain-variants-v1",
+        "version": "v1",
+        "relation": "reviewed_variant",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "algorithms-intervals-merge-001",
+          "algorithms-intervals-merge-002"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-merge-003",
+          "algorithms-intervals-merge-008"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "maintain one active union component with maximum end"
+        }
+      },
+      {
+        "id": "compat-intervals-insert-phase-variants-v1",
+        "version": "v1",
+        "relation": "reviewed_variant",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "algorithms-intervals-insert-001",
+          "algorithms-intervals-insert-002"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-insert-005",
+          "algorithms-intervals-insert-006"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "partition a sorted-disjoint sequence into before, overlap, and after phases"
+        }
+      },
+      {
+        "id": "compat-intervals-resource-active-state-variants-v1",
+        "version": "v1",
+        "relation": "reviewed_variant",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "algorithms-intervals-resources-001",
+          "algorithms-intervals-resources-002"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-resources-005",
+          "algorithms-intervals-resources-008"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "derive capacity from maximum active demand rather than pair count"
+        }
+      },
+      {
+        "id": "compat-intervals-sweep-tie-variants-v1",
+        "version": "v1",
+        "relation": "reviewed_variant",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "algorithms-intervals-sweep-003",
+          "algorithms-intervals-sweep-004"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-sweep-005",
+          "algorithms-intervals-sweep-009"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "derive same-coordinate event behavior from endpoint semantics"
+        }
+      },
+      {
+        "id": "compat-intervals-boundary-diagnosis-variants-v1",
+        "version": "v1",
+        "relation": "reviewed_variant",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "algorithms-intervals-boundary-review-001",
+          "algorithms-intervals-boundary-review-003",
+          "algorithms-intervals-boundary-review-005"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-boundary-review-006",
+          "algorithms-intervals-boundary-review-010",
+          "algorithms-intervals-boundary-review-012"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "diagnose endpoint, tie, and false-heuristic defects using decisive counterexamples"
+        }
+      },
+      {
+        "id": "repair-intervals-half-open-comparator-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "algorithms-intervals-boundary-review-001",
+          "algorithms-intervals-boundary-review-010"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-overlap-001",
+          "algorithms-intervals-overlap-003"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "repair-half-open-overlap-equality"
+        }
+      },
+      {
+        "id": "repair-intervals-half-open-event-tie-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "algorithms-intervals-boundary-review-003"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-resources-003",
+          "algorithms-intervals-sweep-003"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "repair-half-open-end-before-start"
+        }
+      },
+      {
+        "id": "repair-intervals-merge-equality-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "algorithms-intervals-boundary-review-005"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-merge-004",
+          "algorithms-intervals-merge-005"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "repair-merge-endpoint-policy"
+        }
+      },
+      {
+        "id": "repair-intervals-insert-before-condition-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "algorithms-intervals-boundary-review-006"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-insert-005",
+          "algorithms-intervals-insert-007"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "repair-insert-before-overlap-partition"
+        }
+      },
+      {
+        "id": "repair-intervals-sort-invariant-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "algorithms-intervals-boundary-review-011"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-sort-001",
+          "algorithms-intervals-sort-003"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "repair-merge-start-order-invariant"
+        }
+      },
+      {
+        "id": "repair-intervals-length-heuristic-v1",
+        "version": "v1",
+        "relation": "repair",
+        "direction": "directed",
+        "sourceItemIds": [
+          "algorithms-intervals-boundary-review-012"
+        ],
+        "targetItemIds": [
+          "algorithms-intervals-endpoints-008",
+          "algorithms-intervals-overlap-004"
+        ],
+        "relationMetadata": {
+          "repairScopeId": "repair-overlap-from-endpoint-order"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

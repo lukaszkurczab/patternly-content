@@ -1,0 +1,338 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-strategy-selection-core-choose_for_single_vs_repeated_queries-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-strategy-selection-core-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "strategy_selection_core",
+    "primaryMentalUnitId": "choose_for_single_vs_repeated_queries",
+    "patternFamilyId": "complexity_and_constraints"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-strategy-selection-core-choose_for_single_vs_repeated_queries-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "ssc-queries-single-range-sum",
+      "prompt": "A static array receives exactly one range-sum query, the requested range may cover most of the array, and extra memory should be minimized. Which strategy best matches this query volume?",
+      "constraints": [
+        "Exactly one range-sum query will occur.",
+        "The array is static.",
+        "Extra memory should be minimized."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan_once",
+            "text": "Scan the requested range once and accumulate the sum."
+          },
+          {
+            "id": "prefix_once",
+            "text": "Build an O(n)-space prefix array, answer the one query, then discard it."
+          },
+          {
+            "id": "sort_first",
+            "text": "Sort the values before adding the requested range."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scan_once"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "With one query, a full prefix index has no repeated-query work to amortize and consumes O(n) extra space. A direct range scan satisfies the contract with minimal setup.",
+        "details": "Query volume changes the lifecycle calculation. For one range, direct scanning costs O(length of range) and O(1) extra space. Building prefix sums costs O(n) time and O(n) space before a single O(1) query, so it offers no asymptotic total-time advantage when the range can be n and can perform more work for a short range. Sorting is illegal for positional range semantics and adds unrelated cost. The transfer rule is to prefer low-setup direct work when a reusable index will not be reused, unless latency or another explicit constraint requires preprocessing.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_once": "Prefix sums are correct, but their setup and O(n) state are not amortized by one query. They become preferable when many later queries reuse the same static prefix array or when a strict per-query latency requirement justifies setup.",
+          "sort_first": "Sorting changes which values occupy the requested indices and therefore violates range semantics. It would be relevant only for an order-insensitive query whose mechanism needs sorted values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-queries-many-static-range-sums",
+      "prompt": "A static array of n values will answer q = 1,000,000 arbitrary range-sum queries. Which strategy best uses the repeated-query workload?",
+      "constraints": [
+        "q is one million.",
+        "The array is unchanged between queries.",
+        "Queries ask additive ranges.",
+        "O(n) extra memory is available."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_reuse",
+            "text": "Build prefix sums once in O(n), retain the O(n) cumulative array, and answer each of the one million range queries in O(1)."
+          },
+          {
+            "id": "rescan_each",
+            "text": "Scan every requested range independently so no preprocessing state is stored, even though the same array serves one million queries."
+          },
+          {
+            "id": "sort_each",
+            "text": "Before each query, sort the array and then add the values whose sorted positions fall between l and r."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix_reuse"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The static prefix state is reusable across all one million queries. Its O(n) setup is amortized while per-query work drops to O(1).",
+        "details": "For repeated static range sums, the complete models are O(n + q) time and O(n) extra space for prefix sums versus up to O(nq) time and O(1) extra space for rescanning. The array does not change, so the index remains valid, and the query operation is algebraically recoverable from two prefix values. Sorting neither preserves positional ranges nor needs to be repeated. The transfer rule is to invest in reusable preprocessing when the same data supports many compatible queries and the index remains valid for their entire lifetime.",
+        "wrongOptionExplanationsByOptionId": {
+          "rescan_each": "A scan is attractive for one query, but repeating it up to a million times multiplies the data work by q. It becomes competitive when q is very small, ranges are tiny, or memory forbids the index.",
+          "sort_each": "Sorting changes positional range semantics and repeating it compounds the cost. Sorting can help repeated order-based queries only when performed once and when the output contract is compatible with reordered data."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-queries-repeated-membership",
+      "prompt": "A catalog of n immutable identifiers must answer many exact membership queries. Which workload-aware strategy is strongest when O(n) extra memory is acceptable?",
+      "constraints": [
+        "Identifiers do not change.",
+        "There are many exact membership queries.",
+        "O(n) extra memory is available."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan_catalog",
+            "text": "Scan all n identifiers for every membership request so the service avoids building and retaining any auxiliary lookup index."
+          },
+          {
+            "id": "build_set",
+            "text": "Build one O(n)-space hash set in expected O(n) time, then reuse it for expected O(1) membership answers across the full query workload."
+          },
+          {
+            "id": "sort_per_query",
+            "text": "For each request, copy and sort the catalog, then binary-search the requested identifier in that newly ordered copy."
+          }
+        ],
+        "acceptedOptionIds": [
+          "build_set"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Many queries can reuse one membership index. The setup cost is paid once rather than repeating a full scan.",
+        "details": "A hash set changes the lifecycle from O(qn) repeated scans to expected O(n + q) operations with O(n) extra state. The exact output is membership, so no ordering or original-position witness is required. A one-time sorted index could also be a legal candidate with O(n log n + q log n), but sorting a fresh copy per query discards reuse. The transfer rule is to align the preprocessed state with the query primitive—membership, rank, range aggregate, predecessor, or nearest relation—and reuse it across the workload.",
+        "wrongOptionExplanationsByOptionId": {
+          "scan_catalog": "Scanning avoids setup and can be best for one or very few queries, but repeated full passes make total work grow with qn. It becomes preferable when q is small or memory is too constrained for an index.",
+          "sort_per_query": "This repeats the most expensive setup instead of reusing it. A single sorted copy could be considered when deterministic bounds or ordered queries matter."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-queries-online-queries-after-build",
+      "prompt": "The complete dataset is loaded before service starts. Queries then arrive online one at a time and require immediate answers, but the dataset remains unchanged. Which interpretation of query timing is correct?",
+      "constraints": [
+        "All data is available before the first query.",
+        "Queries arrive later and are not known in advance.",
+        "The data remains static."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prebuild_then_online",
+            "text": "Preprocessing may be completed before service starts, then the stable index can answer online queries."
+          },
+          {
+            "id": "no_preprocessing",
+            "text": "Online query arrival forbids all preprocessing."
+          },
+          {
+            "id": "rebuild_each",
+            "text": "The index must be rebuilt before every online query because the query was not known in advance."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prebuild_then_online"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Online query arrival does not forbid preprocessing when the data is already complete and stable. It only prevents preprocessing that depends on future query contents.",
+        "details": "Two timelines matter: when the data becomes available and when each answer is due. Here the dataset can be indexed during startup, and that index remains valid while unknown future queries arrive. The system cannot precompute each exact answer because query parameters are unknown, but it can precompute reusable structure such as a set, sorted copy, or prefix aggregates. Rebuilding per request would throw away the amortization benefit. The transfer rule is to separate data-offline/query-online workloads from true streaming-data workloads.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_preprocessing": "This confuses unknown future queries with unavailable data. The claim becomes valid only when the dataset itself arrives online or preprocessing cannot finish before the first required answer.",
+          "rebuild_each": "A query-independent index is reusable even when query arguments are not known. Rebuilding is necessary only when intervening data updates invalidate the structure."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-queries-updates-break-reuse",
+      "prompt": "A range-sum workload alternates one point update with one query. The only proposed index is a plain prefix array that would be rebuilt in O(n) after every update. Which query-volume decision is justified?",
+      "constraints": [
+        "Each query is preceded by a point update.",
+        "A plain prefix array requires a full rebuild.",
+        "No update-aware alternative is part of the candidate set."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_repeated",
+            "text": "Choose prefix sums because any repeated range query justifies preprocessing."
+          },
+          {
+            "id": "ignore_updates",
+            "text": "Build the prefix array once and answer from it even after values change."
+          },
+          {
+            "id": "no_automatic_prefix",
+            "text": "Do not choose the prefix array merely because queries repeat; its O(n) rebuild removes the static-query advantage."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_automatic_prefix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Repeated queries justify preprocessing only when the preprocessed state remains reusable at acceptable maintenance cost. Alternating updates invalidate a plain prefix array.",
+        "details": "The workload lifecycle is not q queries over one immutable snapshot. Under the stated maintenance policy, each update triggers O(n) work, so u updates and q queries cost O(un + q) after setup. That can be no better than direct rescanning for this balanced workload and uses additional state. Keeping the old prefix values would be incorrect. The transfer rule is to include update frequency and index-maintenance cost in every repeated-query decision; query count alone is not a preprocessing mandate.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_repeated": "The heuristic ignores that each update destroys reuse. It becomes valid for static data or when an approved update-aware structure maintains the required query faster.",
+          "ignore_updates": "This preserves low query latency by returning stale answers, violating correctness. It is legal only if updates are deferred to a new immutable version and queries target the old version explicitly."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-queries-preprocessing-break-even-conditions",
+      "prompt": "Select all conditions that must be checked before repeated queries justify a reusable preprocessing strategy.",
+      "constraints": [
+        "Select all required decision checks.",
+        "Query-independent preprocessing is allowed.",
+        "Updates and resource limits may exist."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "query_unknown",
+            "text": "Future query parameters are unknown, so no query-independent index can be built."
+          },
+          {
+            "id": "enough_reuse",
+            "text": "The saved per-query work, multiplied by query count, is large enough to repay setup."
+          },
+          {
+            "id": "state_stays_valid",
+            "text": "The preprocessed state remains valid or can be maintained within the workload budget."
+          },
+          {
+            "id": "repeated_word",
+            "text": "The statement uses the word repeated, so preprocessing is automatically optimal."
+          },
+          {
+            "id": "resource_fit",
+            "text": "The index fits the permitted memory and preprocessing latency."
+          }
+        ],
+        "acceptedOptionIds": [
+          "enough_reuse",
+          "state_stays_valid",
+          "resource_fit"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Amortization, validity lifetime, and resource feasibility jointly determine whether preprocessing is justified. The label 'repeated' is not a complete cost model.",
+        "details": "A reusable strategy should be evaluated with a break-even inequality: setup + maintenance + q·indexedQueryCost must beat the relevant alternative while satisfying memory and latency limits. Reuse disappears if updates invalidate the state, and an index that cannot be allocated is infeasible. Future query arguments may remain unknown as long as the index supports the query class rather than precomputing exact answers. The transfer rule is to check reuse count, index lifetime, and resource fit as separate gates before turning repeated work into preprocessing.",
+        "wrongOptionExplanationsByOptionId": {
+          "repeated_word": "Repeated use is a signal to calculate amortization, not proof of a win. The statement becomes true only after the saved work exceeds setup and maintenance under the resource limits.",
+          "query_unknown": "Unknown parameters prevent precomputing exact results, but not building a query-independent index. This would block preprocessing only when the index itself depends on knowing all future queries."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "enough_reuse": "Without a break-even check, setup may cost more than the work it saves over the actual number of queries.",
+          "state_stays_valid": "Without an index-lifetime check, updates can force rebuilds or make answers stale.",
+          "resource_fit": "Without resource feasibility, an otherwise attractive index may exceed memory or startup latency."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

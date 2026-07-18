@@ -1,0 +1,480 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "recursion-basics-combine-subproblem-results",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-recursion-basics-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "recursion_basics",
+    "primaryMentalUnitId": "combine_subproblem_results",
+    "patternFamilyId": "recursion_basics"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring",
+    "createdAt": "2026-07-18T15:01:33Z",
+    "contentBatchId": "recursion-basics-combine-subproblem-results",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "recursion-basics-combine-subproblem-results-range-sum-add-disjoint-returns",
+      "prompt": "rangeSum(lo, hi) returns the sum of a[lo:hi). For a range longer than one element it splits at mid,\nrecursively obtains left = rangeSum(lo, mid) and right = rangeSum(mid, hi), then must return the parent result.\nWhich combination is correct?",
+      "constraints": [
+        "The split ranges are [lo, mid) and [mid, hi).",
+        "Each child returns the complete sum of its own range.",
+        "The array is not mutated during recursion."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "left_plus_right",
+            "text": "Return left + right."
+          },
+          {
+            "id": "left_only",
+            "text": "Return left because the right call has already executed."
+          },
+          {
+            "id": "left_plus_right_plus_mid",
+            "text": "Return left + right + a[mid]."
+          },
+          {
+            "id": "max_children",
+            "text": "Return max(left, right)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "left_plus_right"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The child ranges form a disjoint partition of the parent, so their complete sums are added exactly once.",
+        "details": "Assume each recursive call satisfies the same contract for its own half-open range. The left result accounts for indices lo through mid - 1, and the right result accounts for mid through hi - 1. These sets are disjoint and their union is the parent range, so addition reconstructs the exact parent sum. The combiner must match both the return meaning and the partition geometry. This transfers to any additive aggregate over disjoint subproblems; it stops transferring when subproblems overlap or when the requested result is not additive.",
+        "wrongOptionExplanationsByOptionId": {
+          "left_only": "Executing a child does not automatically contribute its value. Returning only left drops every element in [mid, hi).",
+          "left_plus_right_plus_mid": "The right half [mid, hi) already includes a[mid], so adding it again double counts the split element.",
+          "max_children": "max combines child maxima, not child sums. It discards the contribution of one non-empty half under a sum contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "combine_recursive_return_values",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "divide_problem"
+      }
+    },
+    {
+      "id": "recursion-basics-combine-subproblem-results-combine-after-child-results",
+      "prompt": "Order the conceptual steps for a non-terminal divide-and-combine call after its split point has been chosen.",
+      "constraints": [
+        "The child subproblems are independent and both are required by the parent contract.",
+        "The interaction asks for conceptual data dependencies; language-specific evaluation order is not the learning objective."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "obtain_left",
+            "text": "Obtain the complete return value for the left subproblem."
+          },
+          {
+            "id": "obtain_right",
+            "text": "Obtain the complete return value for the right subproblem."
+          },
+          {
+            "id": "apply_parent_combiner",
+            "text": "Apply the parent contract's combining rule to the local contribution and both child values."
+          },
+          {
+            "id": "return_parent_value",
+            "text": "Return the resulting value as the complete answer for the current subproblem."
+          }
+        ],
+        "canonicalOrder": [
+          "obtain_left",
+          "obtain_right",
+          "apply_parent_combiner",
+          "return_parent_value"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The parent can combine only completed child contracts, then must return one value satisfying the same contract at its own scope.",
+        "details": "A divide-and-combine frame relies on the recursive hypothesis: each child call returns a complete answer for that child's subproblem. The two child evaluations may sometimes be swapped when they are independent, but both must be available before a pure binary combiner can use them. The parent then incorporates any local contribution exactly once and returns a value with the same semantic type and meaning. Skipping the final return drops the constructed result; combining before a child completes relies on undeclared side effects. The sequence is a reasoning scaffold, not a requirement that every language evaluate left before right."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "combine_recursive_return_values",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "divide_problem"
+      }
+    },
+    {
+      "id": "recursion-basics-combine-subproblem-results-subtree-size-complete-contributions",
+      "prompt": "size(node) returns the number of real nodes in a binary tree rooted at node. Select all contributions that\nbelong in the result for a non-null node when size(None) returns 0.",
+      "constraints": [
+        "The structure is a tree, so the left and right subtrees do not share real nodes.",
+        "size(None) is defined as 0.",
+        "The requested result is node count, not height."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "current_node_one",
+            "text": "One for the current non-null node."
+          },
+          {
+            "id": "left_size",
+            "text": "size(node.left)."
+          },
+          {
+            "id": "right_size",
+            "text": "size(node.right)."
+          },
+          {
+            "id": "second_current_node",
+            "text": "Another one for the current node after both calls return."
+          },
+          {
+            "id": "larger_child_only",
+            "text": "Only max(size(node.left), size(node.right))."
+          }
+        ],
+        "acceptedOptionIds": [
+          "current_node_one",
+          "left_size",
+          "right_size"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Subtree size is one local node plus both disjoint child-subtree sizes; empty children contribute the neutral value zero.",
+        "details": "The recursive contract partitions a non-null subtree into three disjoint parts: the root node, the left subtree, and the right subtree. Each part must contribute exactly once, giving 1 + leftSize + rightSize. A missing child returns zero, which is neutral for addition and therefore does not require a special parent branch. Selecting only the larger child changes the quantity to something height-like, while adding the root twice violates the partition. This accounting rule transfers to additive tree aggregates whenever child regions are disjoint.",
+        "wrongOptionExplanationsByOptionId": {
+          "second_current_node": "The current node appears once in the subtree. A second local contribution double counts it.",
+          "larger_child_only": "Subtree size includes nodes in both branches. max is appropriate for height, not cardinality."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "current_node_one": "Omitting the local one makes every leaf contribute zero and undercounts every non-null subtree.",
+          "left_size": "Omitting the left return loses every node reachable only through the left child.",
+          "right_size": "Omitting the right return loses every node reachable only through the right child."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "combine_recursive_return_values",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-combine-subproblem-results-height-uses-max-not-sum",
+      "prompt": "height(node) returns the number of real nodes on the longest downward path from node, with height(None) == 0.\nWhich non-null combination is correct?",
+      "constraints": [
+        "Height is measured in real nodes.",
+        "A downward path cannot branch into both children.",
+        "The empty tree has height 0."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_plus_max",
+            "text": "Return 1 + max(height(node.left), height(node.right))."
+          },
+          {
+            "id": "one_plus_sum",
+            "text": "Return 1 + height(node.left) + height(node.right)."
+          },
+          {
+            "id": "max_without_one",
+            "text": "Return max(height(node.left), height(node.right))."
+          },
+          {
+            "id": "left_plus_right",
+            "text": "Return height(node.left) + height(node.right)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_plus_max"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A longest downward path includes the current node and then continues through exactly one child, so the child results combine with max.",
+        "details": "The same tree decomposition can support different result algebras. For size, both child subtrees contribute and addition is correct. For height, the parent result represents one path; after counting the current node, that path chooses the longer of the two child paths. Summing would combine mutually exclusive alternatives. The transfer rule is to derive the combiner from what one valid parent result may contain, not from familiarity with a previous recursive function over the same structure.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_plus_sum": "Adding both branch lengths counts nodes from two incompatible paths. A single downward path can choose only one child.",
+          "max_without_one": "This finds the longer child path but omits the current node, so every non-null result is one too small.",
+          "left_plus_right": "This both omits the current node and joins two branches that no single downward path can traverse consecutively."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "combine_recursive_return_values",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-combine-subproblem-results-leaf-contribution-not-empty-only",
+      "prompt": "A proposed leafCount function uses leafCount(None) = 0 and, for every non-null node, returns\nleafCount(node.left) + leafCount(node.right). What is wrong?",
+      "constraints": [
+        "A leaf is a real node with no real children.",
+        "Null child references are not themselves leaves.",
+        "The tree has no shared nodes."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "leaf_needs_local_one",
+            "text": "A non-null node with no children must contribute 1; otherwise every leaf contributes 0."
+          },
+          {
+            "id": "none_should_return_one",
+            "text": "leafCount(None) should return 1 so empty children are counted as leaves."
+          },
+          {
+            "id": "addition_is_never_valid",
+            "text": "Recursive child results must never be added."
+          },
+          {
+            "id": "must_reach_empty_only",
+            "text": "The function is correct because recursion should define a base only for empty input."
+          }
+        ],
+        "acceptedOptionIds": [
+          "leaf_needs_local_one"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A leaf is a terminal non-empty subproblem whose result is one; summing two empty-child zeros cannot manufacture that contribution.",
+        "details": "The function's current non-null rule delegates everything to children. At a leaf, both child calls return zero, so the proposed parent returns zero and no real node is ever counted as a leaf. The repair is to recognize the non-empty atomic shape: if both children are None, return one; otherwise sum the child leaf counts. This diagnoses the empty-only base heuristic through its effect on result combination. A neutral empty return is useful, but it cannot replace local contributions that belong to a non-empty terminal object.",
+        "wrongOptionExplanationsByOptionId": {
+          "none_should_return_one": "Null references are not real leaves. Returning one would count absent children and make the result depend on representation gaps rather than tree nodes.",
+          "addition_is_never_valid": "Addition is exactly right for disjoint sets of leaves once the leaf case contributes one. The problem is the missing local terminal contribution.",
+          "must_reach_empty_only": "A leaf is an atomic non-empty subtree with a known answer. Ignoring that terminal shape makes the combiner erase every actual leaf."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "combine_recursive_return_values",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "base_case_recognition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-combine-subproblem-results-same-contract-distinct-child-values",
+      "prompt": "treeSum(node) is called on a node whose left subtree sums to 4 and right subtree sums to 9.\nA teammate computes left = treeSum(node.left) and returns node.value + 2 * left because both child calls\nwould use the same function. Which review is correct?",
+      "constraints": [
+        "The left and right child subtrees are distinct.",
+        "The function returns a value rather than mutating one shared sum."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "compute_both_distinct_returns",
+            "text": "Call both children and combine node.value + left + right; the contracts match but the states and values can differ."
+          },
+          {
+            "id": "double_left_valid",
+            "text": "Doubling left is valid because every recursive call has identical state."
+          },
+          {
+            "id": "use_one_child_arbitrarily",
+            "text": "Either child result can stand for both because recursion guarantees symmetry."
+          },
+          {
+            "id": "add_function_names",
+            "text": "The parent should add the two function names rather than store two returns."
+          }
+        ],
+        "acceptedOptionIds": [
+          "compute_both_distinct_returns"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Uniform recursive contracts make child values comparable, not interchangeable; each distinct child state must supply its own result.",
+        "details": "Both calls promise “sum of the subtree rooted at this argument,” which lets the parent use the same addition rule. But node.left and node.right identify different subtrees and can return different values. Reusing left for right silently assumes symmetry that the data does not guarantee. This distinction generalizes to all branching recursion: identical parameter shapes and function names establish semantic uniformity, while concrete state values determine the actual return that must be combined.",
+        "wrongOptionExplanationsByOptionId": {
+          "double_left_valid": "Calls share a state schema and result meaning, not the same node or return value. The right subtree is a distinct subproblem whose sum is 9, not 4.",
+          "use_one_child_arbitrarily": "The tree shape and stored values need not be symmetric. No contract permits substituting one child's answer for another's.",
+          "add_function_names": "A function definition is not a computed child value. The parent needs the results produced for each concrete child state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "combine_recursive_return_values",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-combine-subproblem-results-terminates-but-drops-child-result",
+      "prompt": "Consider:\n\n    count(node):\n        if node is None: return 0\n        count(node.next)\n        return 1\n\nThe list is finite and acyclic. What is the defect?",
+      "constraints": [
+        "The list is finite and acyclic.",
+        "The language evaluates the recursive call even when its return value is not assigned.",
+        "The intended result is the number of nodes from node onward."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "discarded_child_return",
+            "text": "It terminates but discards the child count, so every non-empty call returns 1."
+          },
+          {
+            "id": "no_base_case",
+            "text": "It fails because the function has no reachable base case."
+          },
+          {
+            "id": "unchanged_state",
+            "text": "It recurses on the unchanged node and therefore cannot progress."
+          },
+          {
+            "id": "exponential_branching",
+            "text": "It branches recursively and therefore creates exponentially many calls."
+          }
+        ],
+        "acceptedOptionIds": [
+          "discarded_child_return"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Termination only brings the child result back; the parent must still incorporate and return it.",
+        "details": "The call chain reaches None and unwinds correctly. However, the expression count(node.next) is evaluated and then ignored. Every non-null frame returns the constant one, so a list of any positive length is reported as length one. The correct combination is 1 + count(node.next). This boundary is important in review: a reachable base and strict progress prove termination, but they do not prove that recursive information is propagated into the final answer.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_base_case": "The node-is-None rule is a valid reachable base for a finite acyclic list. The failure occurs after the child returns.",
+          "unchanged_state": "The code calls node.next, so the remaining list becomes smaller. The state transition is not the defect.",
+          "exponential_branching": "There is one child call per frame, producing a linear chain. The wrong result comes from omission, not call-tree growth."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "combine_recursive_return_values",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-combine-subproblem-results-balanced-tournament-max-linear-work",
+      "prompt": "tournamentMax(lo, hi) splits a non-empty array range into two disjoint halves, recursively finds each half's\nmaximum, and returns max(leftMax, rightMax). Each one-element range is terminal. Which cost explanation is correct?",
+      "constraints": [
+        "Every split produces disjoint halves whose union is the parent range.",
+        "Each one-element range is visited once.",
+        "The max operation is constant time."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "each_element_one_leaf",
+            "text": "The call tree has one leaf per element and O(1) combining work per internal node, so total time is O(n)."
+          },
+          {
+            "id": "two_calls_exponential",
+            "text": "Two recursive calls automatically make the running time O(2^n)."
+          },
+          {
+            "id": "max_discards_work",
+            "text": "The time is O(log n) because max keeps only one child result."
+          },
+          {
+            "id": "memo_required",
+            "text": "The algorithm is linear only if every range result is memoized."
+          }
+        ],
+        "acceptedOptionIds": [
+          "each_element_one_leaf"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Disjoint child ranges create a branching tree with linear node count; branching alone does not imply exponential overlap.",
+        "details": "The recurrence is T(n) = T(floor(n/2)) + T(ceil(n/2)) + O(1). Across any level, the subranges partition the n elements, and the full binary recursion tree has n leaves and fewer than n internal nodes. Therefore total work is O(n), while maximum stack depth is O(log n) for balanced splits. The combiner max is valid because the parent maximum is one of the child maxima. This item counters the exponential-recursion heuristic without moving the primary target away from combining complete disjoint results.",
+        "wrongOptionExplanationsByOptionId": {
+          "two_calls_exponential": "The children divide n elements rather than both retaining size n - 1. Their subproblems are disjoint, so work is not repeatedly duplicated across the same elements.",
+          "max_discards_work": "Both child calls execute before max combines their values. Logarithmic depth does not eliminate the n leaves that must inspect all elements.",
+          "memo_required": "Each range in this fixed binary partition is reached once, so no overlapping state is recomputed. Memoization would add storage without removing repeated work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "combine_recursive_return_values",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "divide_problem"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

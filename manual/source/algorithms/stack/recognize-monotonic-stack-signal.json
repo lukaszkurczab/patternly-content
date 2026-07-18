@@ -1,0 +1,386 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "alg-stack-recognize-monotonic-stack-signal-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-stack-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "stack",
+    "primaryMentalUnitId": "recognize_monotonic_stack_signal",
+    "patternFamilyId": "monotonic_stack"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "alg-stack-recognize-monotonic-stack-signal-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-stack-mono-signal-01-deferred-nearest-boundary",
+      "prompt": "For every position in a sequence, return the first later position whose value is strictly greater. Which structural signal most strongly supports a monotonic stack?",
+      "constraints": [
+        "The answer must be the nearest qualifying position to the right.",
+        "Positions may remain unresolved until a later value arrives."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "dominated_pending_candidates",
+            "text": "A new value resolves a suffix of pending candidates, which then leave the frontier."
+          },
+          {
+            "id": "all_pairs_needed",
+            "text": "Every pair of positions must remain available for comparison until the end."
+          },
+          {
+            "id": "oldest_pending_first",
+            "text": "The oldest unresolved position must always be resolved before newer ones."
+          },
+          {
+            "id": "recursive_only",
+            "text": "The sequence must be recursively divided before any pending candidate can resolve."
+          }
+        ],
+        "acceptedOptionIds": [
+          "dominated_pending_candidates"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decisive signal is deferred nearest-boundary resolution: an incoming value can settle a top suffix of candidates that are now dominated.",
+        "details": "Scanning left to right, unresolved positions are kept in an order that lets the current value resolve the nearest eligible candidates at the top. Once a position finds its first strictly greater value, it is removed because later values cannot improve that answer. The pattern is not merely 'there is a sequence' or 'a stack could be used'; it is the combination of deferred answers, nearest direction, and one-way candidate domination.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_pairs_needed": "Keeping every pair describes brute-force comparison, not the candidate-elimination signal that makes a monotonic stack useful.",
+          "oldest_pending_first": "Resolution is not FIFO. A new value first resolves the newest pending candidates that it dominates at the stack top.",
+          "recursive_only": "Recursion is unrelated to the applicability signal; an iterative scan with an explicit stack is sufficient."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_dominated_candidate_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "next_greater_smaller"
+      }
+    },
+    {
+      "id": "alg-stack-mono-signal-02-dominated-suffix",
+      "prompt": "A next-greater scan currently holds unresolved values [9, 7, 5] from bottom to top. The next value is 8. Which observation identifies the monotonic-stack signal?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "resolve_top_suffix",
+            "text": "8 resolves 5 and 7, then stops at 9; the affected candidates form a top suffix."
+          },
+          {
+            "id": "resolve_oldest_first",
+            "text": "8 must compare with and remove 9 first because 9 arrived earliest."
+          },
+          {
+            "id": "retain_all_forever",
+            "text": "All four values must stay in the stack until the scan ends."
+          },
+          {
+            "id": "pop_same_candidate_repeatedly",
+            "text": "A resolved candidate should remain so it can be popped again by later values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "resolve_top_suffix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The incoming 8 dominates the newest smaller candidates 5 and 7, which are exposed consecutively at the top.",
+        "details": "For a strictly next-greater query, [9, 7, 5] is decreasing from bottom to top. Value 8 gives both 5 and 7 their first greater value to the right, so those candidates are resolved and removed. It cannot resolve 9, so the process stops there. The top-suffix property is what permits local stack operations instead of scanning every unresolved position.",
+        "wrongOptionExplanationsByOptionId": {
+          "resolve_oldest_first": "9 is not smaller than 8 and is not exposed by LIFO candidate resolution. Arrival age does not override the comparison rule.",
+          "retain_all_forever": "Resolved candidates no longer need to remain. A monotonic stack stores unresolved candidates, not every item permanently.",
+          "pop_same_candidate_repeatedly": "A position is removed once when its answer is determined; it cannot remain available for repeated pops."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_dominated_candidate_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-signal-03-reject-arbitrary-range-maximum",
+      "prompt": "A system receives arbitrary offline queries asking for the maximum value between any two indices in a fixed array. No nearest boundary or one-direction deferred resolution is requested. Is a monotonic stack the primary signal?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_missing_domination_contract",
+            "text": "No. The task lacks a nearest or permanently dominated candidate boundary."
+          },
+          {
+            "id": "yes_any_maximum",
+            "text": "Yes. Any use of the word maximum implies a monotonic stack."
+          },
+          {
+            "id": "yes_store_every_value",
+            "text": "Yes. A monotonic stack works because it retains every array value in sorted order."
+          },
+          {
+            "id": "yes_if_recursive",
+            "text": "Yes. Recursive range splitting creates the missing candidate-domination rule."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_missing_domination_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An extremum keyword alone is insufficient; arbitrary range maxima do not expose the same nearest-boundary domination rule.",
+        "details": "Monotonic stacks are effective when a directional scan can discard candidates because a newly seen value permanently determines or dominates their role. Arbitrary range-maximum queries may revisit overlapping ranges and generally require preprocessing or another query structure. This is a transfer boundary: similar comparison vocabulary does not imply the same candidate lifecycle.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_any_maximum": "Maximum is only surface wording. Without directional nearest resolution or permanent domination, the core monotonic-stack mechanism is absent.",
+          "yes_store_every_value": "A monotonic stack does not maintain a globally sorted copy of every input value; it retains only currently relevant candidates.",
+          "yes_if_recursive": "Recursion does not create the missing candidate-elimination property."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_dominated_candidate_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "next_greater_smaller"
+      }
+    },
+    {
+      "id": "alg-stack-mono-signal-04-strictness-changes-signal",
+      "prompt": "A task asks for the next value to the right that is greater than or equal to the current value, not strictly greater. Which statement is correct before choosing the pop rule?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "equality_is_material",
+            "text": "Equality changes which candidates qualify, so the comparison must implement ≥."
+          },
+          {
+            "id": "same_as_strict",
+            "text": "Equality never affects a monotonic stack; use the strict-greater rule unchanged."
+          },
+          {
+            "id": "keep_all_equals_permanently",
+            "text": "Equal values must all remain forever because no stack may remove duplicates."
+          },
+          {
+            "id": "use_queue_for_equals",
+            "text": "The presence of equal values changes the structure from a stack to a queue."
+          }
+        ],
+        "acceptedOptionIds": [
+          "equality_is_material"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Strict versus non-strict qualification changes which candidates are dominated and therefore changes the pop condition.",
+        "details": "For a 'greater than or equal' answer, an incoming equal value is a valid boundary for a pending candidate. For a strictly greater answer, it is not. The data structure family may remain a monotonic stack, but the exact invariant and equality handling are part of the problem contract. Failing to state that boundary creates ambiguous or incorrect duplicate behavior.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_as_strict": "Strict and non-strict outputs differ on duplicates; reusing the same inequality can skip valid equal boundaries or resolve invalid ones.",
+          "keep_all_equals_permanently": "Duplicates are retained or removed according to the answer contract, not because stacks require permanent storage.",
+          "use_queue_for_equals": "Equality changes the comparison boundary, not the need for top-suffix candidate resolution."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_dominated_candidate_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "next_greater_smaller"
+      }
+    },
+    {
+      "id": "alg-stack-mono-signal-05-unresolved-not-all-items",
+      "prompt": "After processing a prefix of a sequence for next-smaller-to-the-right answers, what should a monotonic stack conceptually contain?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "only_unresolved_candidates",
+            "text": "Only unresolved candidates that still satisfy the frontier invariant."
+          },
+          {
+            "id": "every_seen_position",
+            "text": "Every position seen so far, even after its answer is fixed."
+          },
+          {
+            "id": "only_final_answers",
+            "text": "Only positions whose final answer has already been produced."
+          },
+          {
+            "id": "call_frames",
+            "text": "Only recursive call frames; explicit candidates are unnecessary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "only_unresolved_candidates"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The stack is a frontier of unresolved viable candidates, not an archive of the entire input.",
+        "details": "When an incoming value resolves a candidate's nearest-smaller answer, that candidate leaves the stack. Positions that are dominated or completed do not remain merely for historical completeness. The stack can still reach O(n) space in a worst-case prefix where no candidate is resolved, but that bound is different from claiming that it always stores every item.",
+        "wrongOptionExplanationsByOptionId": {
+          "every_seen_position": "Resolved or dominated positions no longer participate in future decisions. Keeping them obscures the frontier and can break the invariant.",
+          "only_final_answers": "Completed positions are output state, not pending candidates; the stack holds the opposite set.",
+          "call_frames": "The algorithm can be iterative, and candidate identity—not recursive control flow—is the required state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_dominated_candidate_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_increasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-signal-06-why-stack-not-queue",
+      "prompt": "Why is a stack, rather than a queue, useful when an incoming value invalidates the newest candidates until the remaining order is restored?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "violations_form_top_suffix",
+            "text": "Invariant violations form a top suffix, so repeated pop removes exactly the invalid candidates."
+          },
+          {
+            "id": "oldest_always_dominated",
+            "text": "The oldest candidate is always the first one invalidated, regardless of value."
+          },
+          {
+            "id": "stack_sorts_input",
+            "text": "The stack globally sorts every input value as it arrives."
+          },
+          {
+            "id": "stack_invokes_recursion",
+            "text": "A stack is useful because every push starts a recursive call."
+          }
+        ],
+        "acceptedOptionIds": [
+          "violations_form_top_suffix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The invariant arranges candidates so every current violation is exposed in a contiguous top suffix.",
+        "details": "A monotonic order means that once the top satisfies the comparison with the new value, deeper candidates satisfy the stopping condition relevant to this update. Repeated pop therefore removes exactly the newly dominated suffix. A queue exposes the oldest candidate, which need not be the first violation and cannot reveal the suffix locally.",
+        "wrongOptionExplanationsByOptionId": {
+          "oldest_always_dominated": "Domination is determined by values and the invariant, not by age alone. The affected candidates are newest-at-top.",
+          "stack_sorts_input": "The stack preserves an invariant among retained candidates; it does not globally sort the input or retain all values.",
+          "stack_invokes_recursion": "Push and pop are explicit operations and do not imply recursive control flow."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_dominated_candidate_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-signal-07-stock-span-transfer",
+      "prompt": "For each daily price, compute how many consecutive days ending today have price less than or equal to today's price. Which signal supports a monotonic stack?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "merge_dominated_spans",
+            "text": "Today's price absorbs the top suffix of lower-or-equal spans."
+          },
+          {
+            "id": "compare_every_prior_day",
+            "text": "Every prior day must remain independently comparable forever."
+          },
+          {
+            "id": "serve_oldest_day_first",
+            "text": "The oldest unresolved day must be processed first, so FIFO order is decisive."
+          },
+          {
+            "id": "recurse_over_calendar",
+            "text": "Recursively divide the calendar until each price has a one-day span."
+          }
+        ],
+        "acceptedOptionIds": [
+          "merge_dominated_spans"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A new price permanently absorbs the consecutive suffix of lower-or-equal candidates, exposing a monotonic candidate boundary.",
+        "details": "Each retained candidate summarizes a price and the span it already dominates. While the top price is less than or equal to today's price, its whole span can be merged because no future computation needs that candidate separately for today's boundary. The process stops at the first greater price. This transfers the domination signal without asking for an explicit next-greater output.",
+        "wrongOptionExplanationsByOptionId": {
+          "compare_every_prior_day": "Brute-force backward comparison works but misses the permanent suffix compression that provides the monotonic-stack signal.",
+          "serve_oldest_day_first": "The relevant consecutive boundary is discovered from the newest prior days backward, not from the oldest day forward.",
+          "recurse_over_calendar": "The temporal ordering does not require recursive decomposition; a one-pass explicit stack captures the frontier."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_dominated_candidate_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

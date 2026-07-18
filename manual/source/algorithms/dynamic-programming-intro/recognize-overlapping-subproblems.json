@@ -1,0 +1,423 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-dynamic-programming-intro-recognize_overlapping_subproblems-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-dynamic-programming-intro-authoring-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "dynamic_programming_intro",
+    "primaryMentalUnitId": "recognize_overlapping_subproblems",
+    "patternFamilyId": "dynamic_programming_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-dynamic-programming-intro-recognize_overlapping_subproblems-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-dpintro-overlap-01-same-future-state",
+      "prompt": "A recursive solver counts ways to reach step n using moves of 1 or 2. Which observation is the strongest evidence that it recomputes an overlapping subproblem?",
+      "constraints": [
+        "A call solve(i) means: number of ways to reach n starting from step i.",
+        "The recursion makes calls solve(i + 1) and solve(i + 2)."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "same_state",
+            "text": "Different branches invoke solve(5), whose remaining choices and required result are identical."
+          },
+          {
+            "id": "same_depth",
+            "text": "Two calls appear at the same depth of the recursion tree but use different i values."
+          },
+          {
+            "id": "same_answer",
+            "text": "Two different states happen to return the same numeric answer on this input."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decisive signal is repetition of the same complete state, not a similar position in the call tree or an equal output.",
+        "details": "solve(5) has one fixed meaning: count all valid continuations from step 5. When two branches reach that state, both would traverse the same descendant subproblems, so the second computation can reuse the first result. Repeated depth or repeated numeric answers do not establish this identity. The same test applies in other recurrences: compare every state component that can change future choices or the returned value.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_depth": "Recursion depth is a presentation property, not the subproblem identity. Different i values ask about different suffixes even when they occur at the same depth.",
+          "same_answer": "Equal output values do not prove equal future work. Distinct states can coincidentally have the same count while requiring different transitions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reused_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "count_ways"
+      }
+    },
+    {
+      "id": "alg-dpintro-overlap-02-full-key-equality",
+      "prompt": "A recursive chooser uses solve(i, remainingBudget). Select all pairs that represent the same reusable subproblem.",
+      "constraints": [
+        "Items i through n - 1 remain available.",
+        "The answer is the maximum value achievable without exceeding remainingBudget."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "pair_b",
+            "text": "solve(7, 12) and solve(7, 9)"
+          },
+          {
+            "id": "pair_c",
+            "text": "solve(6, 12) and solve(7, 12)"
+          },
+          {
+            "id": "pair_d",
+            "text": "Two independently reached calls whose arguments are both (7, 12)"
+          },
+          {
+            "id": "pair_a",
+            "text": "solve(7, 12) and solve(7, 12)"
+          }
+        ],
+        "acceptedOptionIds": [
+          "pair_a",
+          "pair_d"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Reuse is keyed by the complete state, here both i and remainingBudget.",
+        "details": "The memoized result is valid only for calls with the same available suffix and the same capacity. Two paths through the recursion may converge on (7, 12), and that convergence is the overlap to exploit. A matching index with a different budget is not reuse because it changes which items fit; a matching budget with a different index changes which items remain. This boundary is what prevents an index-only cache from merging semantically different subproblems.",
+        "wrongOptionExplanationsByOptionId": {
+          "pair_b": "The same index does not make these states equivalent because the legal future choices differ with the remaining budget.",
+          "pair_c": "The same budget is insufficient: the available suffix begins at a different item, so the remaining decision problem differs."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "pair_a": "Identical arguments identify the same suffix and the same budget-constrained decision.",
+          "pair_d": "How the state was reached is irrelevant once the complete arguments and state meaning match."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reused_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-overlap-03-memo-overhead-boundary",
+      "prompt": "A recursion has n distinct states. With memoization, every state is reached and each transition does O(1) work. Select its asymptotic time and extra space.",
+      "constraints": [
+        "Cache lookup and insertion are O(1) expected time.",
+        "The recursion depth is O(n).",
+        "The memo table stores one value per reached state."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(n)",
+            "O(n log n)",
+            "O(2^n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(2^n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Memoization evaluates each of the n states once, but it does not make the entire computation constant-time.",
+        "details": "The duplicated branches collapse to n distinct state evaluations, and each evaluation performs constant transition work, so time is O(n). The cache contains O(n) entries and the recursive call stack can also reach O(n), leaving total extra space O(n). Memoization is a large improvement over exponential recomputation here, but tabulation can have the same asymptotic time and space with different constant and stack costs. The presence of overlap explains the improvement; it does not guarantee top-down is universally faster."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reused_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "count_ways"
+      }
+    },
+    {
+      "id": "alg-dpintro-overlap-04-reuse-before-order",
+      "prompt": "Order the reasoning steps for converting a repeated-state recursion into a valid bottom-up computation.",
+      "constraints": [
+        "The recurrence is acyclic.",
+        "The goal is to reuse each state exactly once."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "define_meaning",
+            "text": "State what result each subproblem represents."
+          },
+          {
+            "id": "detect_repeat",
+            "text": "Confirm that multiple paths reach the same complete state."
+          },
+          {
+            "id": "list_dependencies",
+            "text": "Record which states each state reads."
+          },
+          {
+            "id": "choose_order",
+            "text": "Choose an evaluation order in which every read is already available."
+          }
+        ],
+        "canonicalOrder": [
+          "define_meaning",
+          "detect_repeat",
+          "list_dependencies",
+          "choose_order"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Overlap identifies reusable work, but dependency direction determines a safe bottom-up order.",
+        "details": "A repeated label is meaningful only after the state meaning is fixed. Once repeated complete states are confirmed, the recurrence exposes directed dependencies among them. A bottom-up schedule must then be a topological order of that dependency graph. Reversing the last two steps risks choosing loops from array shape rather than from what each transition reads."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reused_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-overlap-05-overlap-not-compression-proof",
+      "prompt": "A two-string recurrence has many repeated states (i, j). Which conclusion is justified by that fact alone?",
+      "constraints": [
+        "The recurrence and reconstruction requirements have not yet been inspected."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reconstruction_safe",
+            "text": "Discarding earlier rows cannot affect reconstruction of an optimal alignment."
+          },
+          {
+            "id": "memo_possible",
+            "text": "Caching a result by the complete state can avoid recomputing that same state."
+          },
+          {
+            "id": "one_row_safe",
+            "text": "The full 2D table can safely be replaced by one row."
+          }
+        ],
+        "acceptedOptionIds": [
+          "memo_possible"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Overlap supports caching by complete state; it does not establish which stored values can be discarded.",
+        "details": "When (i, j) is reached again, a cached value for that exact pair can be reused. Whether one row is enough is a separate liveness question: which previous cells will future transitions read, and in what order? Reconstruction adds another consumer of historical information. Treat overlap as evidence for reuse, then prove compression against the dependency and output contracts.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_row_safe": "Repeated states justify reuse, not a particular retention window. One-row compression depends on exact dependencies and update order.",
+          "reconstruction_safe": "Reconstruction may need predecessor values or stored choices from rows that value-only evaluation could discard."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reused_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-overlap-06-recursive-without-overlap",
+      "prompt": "Which recursion has no overlapping subproblems under the stated state definition?",
+      "constraints": [
+        "Inputs contain no shared graph nodes unless stated.",
+        "State identity is the complete function argument."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "tree_nodes",
+            "text": "A traversal calls solve(leftChild) and solve(rightChild) on a proper tree in which every node has one parent."
+          },
+          {
+            "id": "fib_like",
+            "text": "solve(k) calls solve(k - 1) and solve(k - 2), so solve(k - 2) is reached through multiple branches."
+          },
+          {
+            "id": "grid_paths",
+            "text": "A path counter reaches cell (r, c) from both (r - 1, c) and (r, c - 1)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "tree_nodes"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A proper tree gives each node-state one incoming path, so the recursive calls do not converge on the same state.",
+        "details": "The two child calls branch, but their subtrees are disjoint and no node argument is revisited. In the Fibonacci-style and grid examples, different branches converge on identical states and therefore repeat future work. Memoization does not automatically improve every recursion; the diagnostic question is whether the recursion graph is a tree or a DAG with merged states.",
+        "wrongOptionExplanationsByOptionId": {
+          "fib_like": "The same integer state is reached more than once, which is the standard overlap pattern.",
+          "grid_paths": "Both predecessor paths converge on the same cell state, so the remaining path-count problem is repeated."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reused_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-overlap-07-grid-state-transfer",
+      "prompt": "A grid path solver may remove at most one blocked cell. Which pair is definitely the same reusable subproblem?",
+      "constraints": [
+        "State solve(r, c, removalsLeft) returns the number of valid paths from (r, c) to the destination.",
+        "Future moves depend on removalsLeft."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "same_cell_diff_resource",
+            "text": "solve(4, 6, 1) reached from above and solve(4, 6, 0) reached from the left."
+          },
+          {
+            "id": "same_resource_diff_cell",
+            "text": "solve(4, 6, 1) reached from above and solve(5, 6, 1) reached from the left."
+          },
+          {
+            "id": "identical_tuple",
+            "text": "solve(4, 6, 1) reached from above and solve(4, 6, 1) reached from the left."
+          }
+        ],
+        "acceptedOptionIds": [
+          "identical_tuple"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The two paths merge only when position and remaining removal budget are both identical.",
+        "details": "Arrival history can be discarded because the state definition says only the current cell and remaining removal affect future choices. Thus two routes reaching (4, 6, 1) ask exactly the same suffix question. The same cell with a different budget is a different subproblem even though its geometric coordinate matches. This transfer rule generalizes: compare the complete state contract, not just the visually obvious coordinate.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_cell_diff_resource": "The remaining removal changes which future blocked cells can be crossed, so these calls have different continuation sets.",
+          "same_resource_diff_cell": "A matching resource count does not make different positions equivalent; the remaining grid region differs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_reused_subproblem",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [
+      {
+        "id": "dpintro-same-mechanism-recognize_overlapping_subproblems-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-dpintro-overlap-01-same-future-state",
+          "alg-dpintro-overlap-02-full-key-equality",
+          "alg-dpintro-overlap-03-memo-overhead-boundary"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-overlap-04-reuse-before-order",
+          "alg-dpintro-overlap-05-overlap-not-compression-proof",
+          "alg-dpintro-overlap-06-recursive-without-overlap",
+          "alg-dpintro-overlap-07-grid-state-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "recognize_overlapping_subproblems"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,615 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-intervals-boundary-review-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-intervals-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "intervals",
+    "primaryMentalUnitId": "interval_boundary_mistake_review",
+    "patternFamilyId": "intervals"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring; no human review claimed",
+    "createdAt": "2026-07-18T00:00:00+02:00",
+    "contentBatchId": "algorithms-intervals-boundary-review-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "algorithms-intervals-boundary-review-001",
+      "prompt": "A half-open overlap function uses `a.start <= b.end && b.start <= a.end`. It reports [1, 3) and [3, 5) as overlapping. What is the exact defect?",
+      "constraints": [
+        "Inputs are normalized half-open intervals.",
+        "Equality at a handoff is non-overlap."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "inclusive_comparator_bug",
+            "text": "The function uses inclusive comparisons and therefore treats an exclusive end as occupied."
+          },
+          {
+            "id": "sort_order_bug",
+            "text": "The intervals were not sorted by end."
+          },
+          {
+            "id": "length_bug",
+            "text": "The intervals are too short for the formula."
+          }
+        ],
+        "acceptedOptionIds": [
+          "inclusive_comparator_bug"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Half-open overlap requires strict cross-end comparisons; '<=' introduces a false intersection at the shared endpoint.",
+        "details": "The correct predicate is a.start < b.end and b.start < a.end. For [1, 3) and [3, 5), the second strict comparison is 3 < 3, which is false. The buggy '<=' version changes that boundary to true and reports a conflict. This is not fixed by sorting, swapping interval order, or checking duration. A minimal regression test must include exactly equal end and start values because cases with positive gaps or positive-width intersections pass under both comparators.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_order_bug": "Pairwise overlap needs no sorting. The wrong result comes from equality handling inside the predicate.",
+          "length_bug": "Duration does not select the overlap comparator. The defect occurs exactly at endpoint equality, so the endpoint contract—not interval length—determines whether equality counts."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "detect_schedule_conflict"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-002",
+      "prompt": "Closed ranges use the predicate `a.start < b.end && b.start < a.end`. The test [1, 4] against [4, 7] returns false. Which correction is required?",
+      "constraints": [
+        "A one-point shared endpoint counts as overlap."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "use_inclusive_comparisons",
+            "text": "Use `a.start <= b.end && b.start <= a.end`."
+          },
+          {
+            "id": "subtract_one_from_ends",
+            "text": "Subtract one from both ends before comparing."
+          },
+          {
+            "id": "sort_by_length",
+            "text": "Sort the ranges by length before applying the strict predicate."
+          }
+        ],
+        "acceptedOptionIds": [
+          "use_inclusive_comparisons"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Closed intervals include the shared coordinate, so equality must satisfy the cross-end comparisons.",
+        "details": "The strict predicate is the half-open form. Closed separation is b.end < a.start or a.end < b.start; negating it yields inclusive comparisons. Changing the coordinates to force a strict predicate is only legitimate if a proven normalization preserves the set—for example, converting inclusive integer [l, r] to [l, r + 1) with a safe successor. Here the direct fix is to use the comparator required by the declared closed contract and retain a boundary-only regression case.",
+        "wrongOptionExplanationsByOptionId": {
+          "subtract_one_from_ends": "That changes the represented sets and is invalid without a discrete normalization contract.",
+          "sort_by_length": "Sorting by length changes neither the omitted equality case nor the endpoint contract. The same touching pair will still be classified with the wrong strictness."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-003",
+      "prompt": "A half-open room counter sorts equal-time events with starts before ends. For [1, 3) and [3, 5), it records a peak of 2. What is the root cause?",
+      "constraints": [
+        "The active count is inspected after each event."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "wrong_tie_order",
+            "text": "The equal-time tie is reversed; ends must be processed before starts."
+          },
+          {
+            "id": "too_few_intervals",
+            "text": "The input needs a third interval to make the count meaningful."
+          },
+          {
+            "id": "need_end_sort_only",
+            "text": "The original intervals should be sorted by end instead of using event ties."
+          }
+        ],
+        "acceptedOptionIds": [
+          "wrong_tie_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Start-before-end temporarily counts the ending half-open interval at a coordinate it excludes.",
+        "details": "Immediately before 3, active is one. Processing the start at 3 first raises active to two and may update the maximum; processing the end afterward returns it to one. The correct half-open transition is end first, yielding zero then one. The final active count after both events is identical, which can hide the bug if tests assert only final state. Tests must inspect the maximum or conflict output at an equal-time handoff. Closed intervals would intentionally use the opposite order.",
+        "wrongOptionExplanationsByOptionId": {
+          "too_few_intervals": "Two back-to-back intervals are the minimal case that exposes the false transient peak.",
+          "need_end_sort_only": "Global interval order does not define the order of simultaneous endpoint events."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "interval_resource_count",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-004",
+      "prompt": "A closed-interval capacity sweep processes ends before starts at the same coordinate. It reports peak 1 for [1, 3] and [3, 5]. What error is present?",
+      "constraints": [
+        "The shared point 3 consumes capacity for both intervals."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "closed_tie_undercount",
+            "text": "End-before-start removes the first interval before measuring the inclusive shared point; starts must come first."
+          },
+          {
+            "id": "closed_should_be_half_open",
+            "text": "Closed intervals are invalid and should always be reinterpreted as half-open."
+          },
+          {
+            "id": "durations_too_short",
+            "text": "The intervals need positive overlap duration to require two units."
+          }
+        ],
+        "acceptedOptionIds": [
+          "closed_tie_undercount"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For closed ranges, both intervals are active at 3, so the start transition must be measured before the end transition.",
+        "details": "The implementation has reused a half-open tie rule in a closed domain. With active one before 3, processing the new start first exposes active two at the included point, then the end returns it to one. End-first ordering erases the simultaneous state. A net-zero grouped delta also loses the peak. The fix is semantic: select tie order from endpoint inclusion and the answer contract. If the application chooses to ignore measure-zero concurrency, that must be a separate documented policy rather than an accidental comparator side effect.",
+        "wrongOptionExplanationsByOptionId": {
+          "closed_should_be_half_open": "The domain contract explicitly uses closed ranges. Reinterpreting them changes the modeled occupancy.",
+          "durations_too_short": "The prompt makes a one-point overlap material, so duration is not the deciding boundary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-005",
+      "prompt": "A half-open merge uses `next.start <= active.end` and turns [1, 3), [3, 5) into [1, 5), even though booking boundaries must be preserved. Which line-level change is required?",
+      "constraints": [
+        "Touching is non-overlap in this normalization policy."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "use_strict_overlap",
+            "text": "Change the merge condition to `next.start < active.end`."
+          },
+          {
+            "id": "sort_by_end",
+            "text": "Keep '<=' but sort by end instead."
+          },
+          {
+            "id": "compare_lengths",
+            "text": "Merge only when the next interval is shorter."
+          }
+        ],
+        "acceptedOptionIds": [
+          "use_strict_overlap"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The merge condition must use the same strict equality rule as the half-open conflict contract.",
+        "details": "With starts already ordered, the only boundary in question is whether next.start equals active.end. The batch policy keeps such intervals separate, so equality must take the gap branch and emit the active interval. Changing sort order cannot repair a semantic comparator. Some systems deliberately coalesce adjacent half-open coverage, in which case '<=' can be a valid output policy even though the intervals do not conflict. The implementation and tests must distinguish those two product contracts rather than calling one universally correct.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_by_end": "Sort order does not change whether equality belongs to the overlap predicate.",
+          "compare_lengths": "Length is unrelated to the equality boundary and would fail containment and crossing cases."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-006",
+      "prompt": "In half-open insertion, the 'copy intervals before the new one' loop uses `old.end < new.start`. With old [1, 3) and new [3, 5), the old interval enters the merge phase. What is the correction?",
+      "constraints": [
+        "Back-to-back intervals remain separate."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "use_less_equal_before",
+            "text": "Use `old.end <= new.start` for the before phase."
+          },
+          {
+            "id": "use_start_sort_descending",
+            "text": "Sort starts descending so the new interval is seen first."
+          },
+          {
+            "id": "compare_duration",
+            "text": "Copy the old interval only if it is shorter than the new one."
+          }
+        ],
+        "acceptedOptionIds": [
+          "use_less_equal_before"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Under [start, end), equality proves the old interval is completely before the new interval and belongs in the copy phase.",
+        "details": "The three-phase insertion conditions must partition all intervals without ambiguity. old.end <= new.start means the old range finishes no later than the new range begins, so it is disjoint and safely copied. Using only '<' leaves equality for the overlap phase, which later expands the new range and erases the handoff. The corresponding after condition is new.end <= old.start. Closed intervals would use strict separation instead. Boundary tests should exercise equality on both sides of the new interval.",
+        "wrongOptionExplanationsByOptionId": {
+          "use_start_sort_descending": "Descending order destroys the three contiguous insertion phases and does not fix equality semantics.",
+          "compare_duration": "Duration cannot determine whether two ranges share occupied time. A long interval may be disjoint and a short interval may overlap; relative endpoint order is decisive."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "insert_interval",
+        "problemArchetypeId": "insert_into_merged_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-007",
+      "prompt": "A half-open sweep converts [5, 5) into +1 and -1 events, processes the start first, and records peak 1. What should the implementation do?",
+      "constraints": [
+        "The interval model represents occupied duration, not point events."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "treat_empty_as_no_occupancy",
+            "text": "Recognize [5, 5) as empty and reject or omit it from occupancy events according to validation policy."
+          },
+          {
+            "id": "keep_start_first",
+            "text": "Keep both events and accept peak 1 because every interval record occupies something."
+          },
+          {
+            "id": "make_it_longer",
+            "text": "Extend the end to 6 so the interval has positive length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "treat_empty_as_no_occupancy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A zero-width half-open interval is empty, so it must not create active demand.",
+        "details": "This defect combines missing input semantics with a tie artifact. Emitting separate +1 and -1 events for an empty duration and processing +1 first fabricates a transient active interval. A canonical system should define whether empty intervals are valid-but-no-op or invalid input; either way, they do not consume duration resources. Simply processing -1 first can create a negative transient, so event order alone is not the complete fix. A separate point-event type is required if instantaneous markers are material.",
+        "wrongOptionExplanationsByOptionId": {
+          "keep_start_first": "No value satisfies 5 <= t < 5, so the record contributes no occupancy. Start-first invents a point event.",
+          "make_it_longer": "Silently extending an interval invents occupancy that is absent from the input and violates the data contract. The correct repair is to interpret the declared endpoints consistently."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "count_concurrent_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-008",
+      "prompt": "A service receives closed ranges from one source and half-open ranges from another, stores only two numbers, and compares them with one global predicate. Failures occur only when endpoints are equal. What is the root design defect?",
+      "constraints": [
+        "The source contract is not retained in storage."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "semantic_metadata_lost",
+            "text": "Endpoint semantics were discarded, so the service cannot interpret equality or normalize safely."
+          },
+          {
+            "id": "not_sorted_by_end",
+            "text": "The stored pairs were not sorted by end."
+          },
+          {
+            "id": "insufficient_duration",
+            "text": "Equal endpoints produce intervals too short to compare."
+          }
+        ],
+        "acceptedOptionIds": [
+          "semantic_metadata_lost"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Two coordinates are insufficient to reconstruct interval meaning once sources with different inclusion contracts are mixed.",
+        "details": "The service has made a lossy representation choice. At a strict crossing, closed and half-open predicates agree, so most tests pass. Equality is where the omitted metadata becomes decisive. The fix is to preserve source semantics until normalization, convert into one canonical internal representation with validated edge cases, and then discard redundant metadata if safe. Choosing '<' or '<=' globally only selects which source is wrong. No sort key, tie rule, or length check can recover information that storage removed.",
+        "wrongOptionExplanationsByOptionId": {
+          "not_sorted_by_end": "Sorting cannot reconstruct whether an end was inclusive after that metadata has been lost.",
+          "insufficient_duration": "The ambiguity is not caused by interval duration. It comes from the missing inclusion contract, because the shared coordinate may belong to both intervals or only one."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-009",
+      "prompt": "Inclusive integer ranges are normalized with [l, r + 1). A test using r = MAX_INT wraps r + 1 to MIN_INT. What is the correct diagnosis?",
+      "constraints": [
+        "The arithmetic type is fixed-width signed integer.",
+        "Overflow is not permitted by the content contract."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "successor_overflow",
+            "text": "The normalization's safe-successor precondition is violated; use a wider or explicit endpoint representation."
+          },
+          {
+            "id": "sort_overflowed_range",
+            "text": "Sorting the wrapped range will restore the intended order."
+          },
+          {
+            "id": "ignore_max_endpoint",
+            "text": "Drop ranges ending at MAX_INT."
+          }
+        ],
+        "acceptedOptionIds": [
+          "successor_overflow"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The r + 1 conversion is conditional; at the maximum representable endpoint it corrupts the range rather than creating a valid exclusive bound.",
+        "details": "The mathematical equivalence [l, r] = [l, r + 1) on integers assumes r + 1 exists in the representation. Fixed-width overflow violates that assumption and can invert or wrap the interval. Safe alternatives include a wider proven type, an explicit inclusive-end flag, a sentinel outside the value domain, or a branch for maximal r. The chosen representation must remain orderable and serializable. This is a transfer-boundary failure, not a sorting failure or an acceptable edge-case omission.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_overflowed_range": "Sorting cannot recover the lost numeric value or represented set after overflow.",
+          "ignore_max_endpoint": "Silently deleting valid input is not a semantic correction and changes the problem."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sweep_line_intro",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-010",
+      "prompt": "A half-open overlap test suite contains only pairs with positive gaps or positive-width intersections. Which additional case most directly detects an accidental '<=' comparator?",
+      "constraints": [
+        "Choose the smallest discriminating counterexample."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "touching_case",
+            "text": "[1, 3) with [3, 5)"
+          },
+          {
+            "id": "clear_overlap",
+            "text": "[1, 4) with [2, 3)"
+          },
+          {
+            "id": "clear_gap",
+            "text": "[1, 2) with [4, 5)"
+          }
+        ],
+        "acceptedOptionIds": [
+          "touching_case"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Only the equality case makes strict and inclusive overlap predicates disagree.",
+        "details": "A good boundary test isolates the decision boundary with minimal unrelated structure. [1, 3) and [3, 5) share endpoint coordinates but no occupied instant under [start, end). The strict predicate returns false; the inclusive bug returns true. Clear overlap and clear separation exercise ordinary cases where both implementations agree. The same testing principle applies to event ties, insertion loop conditions, and merge equality: include exact handoffs, zero-width inputs, containment, and maximal numeric endpoints.",
+        "wrongOptionExplanationsByOptionId": {
+          "clear_overlap": "Both '<' and '<=' correctly report this as overlap, so it cannot discriminate the comparator boundary.",
+          "clear_gap": "Both predicates correctly report a gap, so the equality defect remains hidden."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "detect_schedule_conflict"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-011",
+      "prompt": "A one-pass merge sorts [2, 3), [4, 5), [1, 10) by end and never revisits earlier output. It returns [2, 3), [1, 10). What defect should the review record?",
+      "constraints": [
+        "The intended output is one union interval [1, 10)."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "wrong_sort_invariant",
+            "text": "The merge uses end order even though its tail-only emission proof requires nondecreasing starts."
+          },
+          {
+            "id": "wrong_endpoint_contract",
+            "text": "The only defect is that the intervals are half-open."
+          },
+          {
+            "id": "long_interval_special_case",
+            "text": "The implementation needs a special rule for intervals longer than all previous intervals."
+          }
+        ],
+        "acceptedOptionIds": [
+          "wrong_sort_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The late containing interval starts before output already emitted, which a tail-only merge cannot repair.",
+        "details": "End sorting permits [1, 10) to arrive last. By then [2, 3) has been committed separately. Merging the containing interval with only the last output cannot revisit that earlier component, so the result still overlaps. Sorting by start places [1, 10) first and makes both shorter intervals contained in one active component. The review should name the violated monotonic-start invariant rather than adding a special case based on length or changing endpoint equality.",
+        "wrongOptionExplanationsByOptionId": {
+          "wrong_endpoint_contract": "Containment and the missed earlier output occur regardless of half-open versus closed equality.",
+          "long_interval_special_case": "A special length rule treats a symptom. Start order provides the general invariant for all containment cases."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    },
+    {
+      "id": "algorithms-intervals-boundary-review-012",
+      "prompt": "A function predicts overlap when the sum of interval lengths exceeds the distance between their starts. It falsely reports overlap for [0, 100) with [100, 101), and for [0, 1) with [1.5, 100). What should replace the heuristic?",
+      "constraints": [
+        "All intervals are half-open linear ranges."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "use_cross_endpoint_predicate",
+            "text": "Use the direct cross-end predicate `a.start < b.end && b.start < a.end`."
+          },
+          {
+            "id": "adjust_length_threshold",
+            "text": "Increase the length threshold until both examples classify correctly."
+          },
+          {
+            "id": "sort_by_length_first",
+            "text": "Sort by length and compare the longer interval's end with the shorter interval's length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "use_cross_endpoint_predicate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Overlap is a set-intersection relation defined by endpoint order; duration-only formulas are incomplete.",
+        "details": "The first pair contains a very long interval but is disjoint because the half-open endpoint 100 belongs only to the second interval. The second pair is also disjoint: there is a positive gap from 1 to 1.5, yet the very long second interval makes the sum-of-lengths test pass. These counterexamples show that duration magnitude is not sufficient to establish intersection. The cross-end predicate uses exactly the relative endpoint information required by half-open semantics. If the input is closed, change equality according to that contract rather than tuning a length threshold. Review feedback should remove the heuristic, not adjust its constant.",
+        "wrongOptionExplanationsByOptionId": {
+          "adjust_length_threshold": "No global duration threshold captures position, containment, gaps, and equality across arbitrary intervals.",
+          "sort_by_length_first": "Sorting by duration still omits the intervals' relative coordinates. Containment and overlap are determined by endpoint order, so length-first processing cannot repair the heuristic."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_interval_endpoint_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_overlaps",
+        "problemArchetypeId": "merge_or_compare_intervals"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,438 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "alg-stack-maintain-monotonic-stack-invariant-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-stack-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "stack",
+    "primaryMentalUnitId": "maintain_monotonic_stack_invariant",
+    "patternFamilyId": "monotonic_stack"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "alg-stack-maintain-monotonic-stack-invariant-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-stack-mono-invariant-01-decreasing-order-for-next-greater",
+      "prompt": "Scanning left to right for each position's next strictly greater value, which retained-value invariant is appropriate before the next input value is processed?",
+      "constraints": [
+        "Equal values do not resolve one another.",
+        "The stack holds unresolved positions."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "non_increasing_bottom_to_top",
+            "text": "Values are non-increasing from bottom to top; equal values may coexist."
+          },
+          {
+            "id": "non_decreasing_bottom_to_top",
+            "text": "Values are non-decreasing from bottom to top."
+          },
+          {
+            "id": "fifo_arrival_order",
+            "text": "Values are ordered only by arrival time at a queue front."
+          },
+          {
+            "id": "globally_sorted_all_input",
+            "text": "All values seen so far remain globally sorted in the stack."
+          }
+        ],
+        "acceptedOptionIds": [
+          "non_increasing_bottom_to_top"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For next-strictly-greater resolution, any incoming larger value must encounter smaller unresolved candidates consecutively at the top.",
+        "details": "After all smaller top values are resolved and popped, the current value is pushed. The remaining stack is non-increasing from bottom to top, allowing equal unresolved values because equality is not strictly greater. This is an invariant over the retained frontier, not a global sort of every value encountered.",
+        "wrongOptionExplanationsByOptionId": {
+          "non_decreasing_bottom_to_top": "With smaller values below larger ones, an incoming value could fail to reach deeper dominated candidates through top-only access.",
+          "fifo_arrival_order": "Arrival order alone does not expose the value violations that must be removed.",
+          "globally_sorted_all_input": "Resolved candidates are removed, so the stack is not a complete sorted archive of the prefix."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_stack_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-invariant-02-restore-invariant-before-push",
+      "prompt": "Order the conceptual steps for processing one current value in a left-to-right next-strictly-greater scan.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "inspect_top",
+            "text": "Inspect the top unresolved candidate."
+          },
+          {
+            "id": "resolve_smaller",
+            "text": "If the top value is smaller than the current value, record the current position as that candidate's answer."
+          },
+          {
+            "id": "pop_resolved",
+            "text": "Pop the resolved candidate."
+          },
+          {
+            "id": "repeat_check",
+            "text": "Repeat the top check while another smaller candidate is exposed."
+          },
+          {
+            "id": "push_current",
+            "text": "Push the current position as a new unresolved candidate."
+          }
+        ],
+        "canonicalOrder": [
+          "inspect_top",
+          "resolve_smaller",
+          "pop_resolved",
+          "repeat_check",
+          "push_current"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "All candidates violated by the current value must be resolved and removed before the current position is pushed.",
+        "details": "The top is inspected first because only exposed candidates can be resolved. For each smaller top, the current position is the first qualifying value to its right, so the answer is recorded and that candidate is popped. The check repeats until the stack is empty or its top is not smaller. Only then can the current position be pushed without violating the non-increasing frontier."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_stack_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-invariant-03-while-not-if",
+      "prompt": "The unresolved stack values are [8, 6, 4] from bottom to top, and the next value is 7. Why must the update use a while-loop rather than a single if-check?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "two_violations",
+            "text": "7 resolves both 4 and 6; one pop leaves the order invalid."
+          },
+          {
+            "id": "pop_8_too",
+            "text": "A while-loop is needed to pop 8 even though 8 is greater than 7."
+          },
+          {
+            "id": "same_item_many_times",
+            "text": "A while-loop repeatedly pops the same candidate until the invariant returns."
+          },
+          {
+            "id": "while_is_faster_syntax",
+            "text": "A while-loop is required only because its syntax is asymptotically faster than if."
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_violations"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "One incoming value may expose and resolve several distinct top candidates before the stopping condition is reached.",
+        "details": "Value 7 first resolves 4. After 4 is removed, 6 becomes the top and is also smaller than 7, so it must be resolved and removed. The next top is 8, which stops the loop. Each pop removes a different candidate once; the repetition handles a suffix of violations, not repeated removal of one item.",
+        "wrongOptionExplanationsByOptionId": {
+          "pop_8_too": "8 does not violate the non-increasing order with current value 7 and has not found a greater value.",
+          "same_item_many_times": "A popped occurrence leaves the stack permanently. The loop processes multiple distinct candidates.",
+          "while_is_faster_syntax": "The loop form is required for correctness because the number of current violations is data-dependent, not because `while` has a special complexity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_stack_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-invariant-04-strict-equality-policy",
+      "prompt": "For next strictly greater values, the current value equals the value at the stack top. What should the invariant update do?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "keep_equal_candidate",
+            "text": "Keep the equal top unresolved, then push the current position."
+          },
+          {
+            "id": "pop_equal_as_resolved",
+            "text": "Pop the equal top and record the current position as its strictly greater answer."
+          },
+          {
+            "id": "discard_current",
+            "text": "Discard the current position because an equal value already exists."
+          },
+          {
+            "id": "move_equal_to_queue",
+            "text": "Move equal candidates to a queue and resolve them in arrival order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "keep_equal_candidate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equality does not satisfy a strictly-greater answer, and a non-increasing frontier permits equal retained values.",
+        "details": "The current equal value cannot resolve the top candidate. Both positions may need a later strictly greater value, so both identities remain relevant and may be stored. A non-strict next-greater-or-equal contract would use a different comparison. Equality policy therefore belongs to the authored answer boundary, not to a generic stack rule.",
+        "wrongOptionExplanationsByOptionId": {
+          "pop_equal_as_resolved": "An equal value is not strictly greater, so recording it would violate the output contract.",
+          "discard_current": "The current position has its own future answer and cannot be merged away unless the problem proves identity is irrelevant and supplies a valid aggregation rule.",
+          "move_equal_to_queue": "Duplicate handling changes the comparison condition, not the access discipline."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_stack_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-invariant-05-store-indices-for-distance",
+      "prompt": "The output for each position is the distance to its next strictly greater position. What must the monotonic stack retain?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "indices_or_index_value_pairs",
+            "text": "Store indices, or index-value pairs, to preserve distance and identity."
+          },
+          {
+            "id": "values_only",
+            "text": "Values only; duplicate values uniquely identify their positions."
+          },
+          {
+            "id": "answers_only",
+            "text": "Only completed distances, with no unresolved candidate identity."
+          },
+          {
+            "id": "recursion_depth",
+            "text": "Only recursion depth, because index identity can be reconstructed from call frames."
+          }
+        ],
+        "acceptedOptionIds": [
+          "indices_or_index_value_pairs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The invariant compares values, but the output requires candidate identity and index distance.",
+        "details": "A value-only stack loses which occurrence is being resolved, especially when duplicates exist. Retaining indices allows the algorithm to read each candidate's value from the input and compute `currentIndex - candidateIndex` when popped. The maintained order is still value-based, but the stored representation must satisfy the output contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "values_only": "Equal values can occur at different positions and require different distances, so value alone is not sufficient identity.",
+          "answers_only": "Completed answers do not identify unresolved candidates or support future comparisons.",
+          "recursion_depth": "Call depth is not equivalent to input position and recursion is not required."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_stack_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-invariant-06-increasing-order-for-next-smaller",
+      "prompt": "Scanning left to right for each position's next strictly smaller value, which update preserves the appropriate unresolved frontier?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "pop_larger_then_push",
+            "text": "Pop larger top candidates until order is restored, then push the current position."
+          },
+          {
+            "id": "pop_smaller_then_push",
+            "text": "While the top value is smaller than the current value, pop it; then push the current position."
+          },
+          {
+            "id": "remove_oldest",
+            "text": "Remove the oldest retained candidate before comparing values at the top."
+          },
+          {
+            "id": "retain_all_sorted",
+            "text": "Retain every input item and sort the stack after each step."
+          }
+        ],
+        "acceptedOptionIds": [
+          "pop_larger_then_push"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For next-smaller resolution, the retained values are non-decreasing from bottom to top, so a smaller current value removes larger top candidates.",
+        "details": "This is the inequality-dual of next-greater processing. Each larger top candidate has just encountered its first smaller value to the right and can be resolved. Cleanup stops at an equal or smaller top for a strict contract, after which the current position is pushed. Reversing the inequality maintains the wrong frontier and produces incorrect answers.",
+        "wrongOptionExplanationsByOptionId": {
+          "pop_smaller_then_push": "That direction supports a next-greater-style frontier, not next-smaller resolution.",
+          "remove_oldest": "The relevant violations are exposed at the top by value order, not at the bottom by age.",
+          "retain_all_sorted": "The stack is updated locally and discards resolved candidates; global sorting would lose nearest-direction semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_stack_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_increasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-invariant-07-candidate-lifecycle",
+      "prompt": "Which statement about one input-position occurrence is required by the normal monotonic-stack candidate lifecycle?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "push_once_pop_at_most_once",
+            "text": "It is pushed at most once and, if resolved or dominated, popped at most once."
+          },
+          {
+            "id": "pop_reinsert_repeatedly",
+            "text": "The same occurrence is repeatedly popped and reinserted whenever a later value arrives."
+          },
+          {
+            "id": "must_remain_to_end",
+            "text": "It must remain in the stack until the entire scan finishes."
+          },
+          {
+            "id": "queue_after_pop",
+            "text": "After a pop it moves to a queue so it can be popped again."
+          }
+        ],
+        "acceptedOptionIds": [
+          "push_once_pop_at_most_once"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Once a candidate occurrence is removed, its role in the maintained frontier is finished.",
+        "details": "Each input occurrence enters the frontier once. It may remain unresolved through many later inputs, but when a qualifying value resolves it or a domination rule removes it, that exact occurrence leaves permanently. Repeated values are separate occurrences, not repeated pops of one item. This lifecycle is part of the invariant's meaning and later supports amortized analysis.",
+        "wrongOptionExplanationsByOptionId": {
+          "pop_reinsert_repeatedly": "Reinserting a resolved occurrence would make it pending again without a valid answer contract and could duplicate work.",
+          "must_remain_to_end": "Resolved candidates are removed; only a worst-case unresolved prefix may keep all occurrences until the end.",
+          "queue_after_pop": "A removed candidate has no remaining frontier role and is not transferred for later popping."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_stack_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-mono-invariant-08-reverse-scan-answer-timing",
+      "prompt": "The same next-strictly-greater-to-the-right problem is scanned from right to left. Which conceptual update is correct?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "discard_non_greater_query_top_push",
+            "text": "Pop non-greater candidates, use the surviving top as the answer, then push the current position."
+          },
+          {
+            "id": "resolve_popped_with_current",
+            "text": "Treat every popped right-side candidate as having the current value as its next greater answer."
+          },
+          {
+            "id": "fifo_right_side",
+            "text": "Enqueue right-side positions and use the oldest retained one as the answer."
+          },
+          {
+            "id": "recursive_sort",
+            "text": "Recursively sort the right-side suffix and choose its maximum as the boundary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "discard_non_greater_query_top_push"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "With reverse traversal, popped candidates are invalid answers for the current position; the nearest surviving greater top is queried after cleanup.",
+        "details": "Scanning right to left changes answer timing. Candidates to the right that are less than or equal to the current value cannot answer the current position and are removed. The closest surviving greater candidate is then exposed at the top, after which the current position joins the frontier. In the left-to-right formulation, the current value instead resolves popped earlier positions. The invariant remains ordered, but the semantic role of a pop changes with traversal.",
+        "wrongOptionExplanationsByOptionId": {
+          "resolve_popped_with_current": "Those popped candidates lie to the right of the current position, so the current value is not to their right and cannot be their next-right answer.",
+          "fifo_right_side": "Nearest qualifying order is preserved by the invariant and top cleanup, not by oldest-first suffix access.",
+          "recursive_sort": "Sorting destroys nearest-position information and recursion does not repair that loss."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_stack_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_decreasing_stack"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

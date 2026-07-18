@@ -1,0 +1,341 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-heap-priority-queue-k-way-merge-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-heap-priority-queue-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "heap_priority_queue",
+    "primaryMentalUnitId": "k_way_merge",
+    "patternFamilyId": "heap_priority_queue"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-heap-priority-queue-k-way-merge-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "hpq-k-way-one-frontier-entry-per-source",
+      "prompt": "For k ascending sources, what is the minimal heap frontier needed to emit the next globally smallest value?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "source_lengths",
+            "text": "Only each source length, without any current values."
+          },
+          {
+            "id": "all_remaining_values",
+            "text": "Every value not yet emitted from every source."
+          },
+          {
+            "id": "current_head_tagged",
+            "text": "One current head from each nonempty source, tagged with its source and next position."
+          },
+          {
+            "id": "one_global_source",
+            "text": "Only the head of the source that produced the previous output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "current_head_tagged"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sortedness makes each current source head its only candidate for the next global output.",
+        "details": "A later value in a source cannot precede that source’s current head. The next output is therefore the minimum among at most k heads. Tagging each heap entry with source identity and position is necessary so the algorithm can advance exactly the source that supplied the popped value. Loading all remaining values abandons the frontier bound, while tracking only one source can miss a smaller head elsewhere.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_remaining_values": "Per-source sortedness proves that values behind the head cannot compete yet, so loading them is unnecessary.",
+          "one_global_source": "After an output, another source may have the next smallest head; all active sources must remain represented.",
+          "source_lengths": "Lengths do not reveal the values needed to choose the next output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-k-way-pop-advance-push-order",
+      "prompt": "Order the core steps of a heap-based merge after the sources and output buffer are available.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "seed_heads",
+            "text": "Insert the first value of every nonempty source with its source position."
+          },
+          {
+            "id": "pop_smallest",
+            "text": "Remove the smallest frontier entry."
+          },
+          {
+            "id": "append_output",
+            "text": "Append that value to the merged output."
+          },
+          {
+            "id": "advance_source",
+            "text": "Advance only the source recorded in the popped entry."
+          },
+          {
+            "id": "push_successor",
+            "text": "If that source has another value, insert its new head."
+          }
+        ],
+        "canonicalOrder": [
+          "seed_heads",
+          "pop_smallest",
+          "append_output",
+          "advance_source",
+          "push_successor"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Each pop commits one output and opens exactly one successor candidate from the same source.",
+        "details": "Seeding creates the complete initial frontier. Popping selects the smallest eligible value, and appending records it before source state advances. Only the source that supplied the value can expose a new eligible head. Pushing that successor restores one frontier entry for the source. Repeating the pop-to-successor chain preserves both global output order and the one-head-per-source invariant."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-k-way-concrete-frontier-trace",
+      "prompt": "Sources are A = [1, 7], B = [2, 3], and C = [4]. After emitting 1 from A and then 2 from B, which frontier is correct before the next pop?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "advance_every_source",
+            "text": "{7 from A}"
+          },
+          {
+            "id": "keep_emitted_heads",
+            "text": "{1 from A, 2 from B, 4 from C}"
+          },
+          {
+            "id": "load_all_remaining",
+            "text": "{3 from B, 4 from C, 7 from A, plus every later value already loaded}"
+          },
+          {
+            "id": "heads_7_3_4",
+            "text": "{3 from B, 4 from C, 7 from A}"
+          }
+        ],
+        "acceptedOptionIds": [
+          "heads_7_3_4"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each emitted head is replaced only by the successor from the same source, so A contributes 7, B contributes 3, and C still contributes 4.",
+        "details": "The initial frontier is {1A, 2B, 4C}. Popping 1A exposes 7A. Popping 2B exposes 3B. C has not advanced because its head has not been emitted. The next pop is therefore 3B. Retaining emitted heads would duplicate output, while loading values beyond the current head is unnecessary and weakens the frontier invariant.",
+        "wrongOptionExplanationsByOptionId": {
+          "advance_every_source": "Only the source of the popped value advances. Advancing C before emitting 4 would skip an eligible value.",
+          "keep_emitted_heads": "Values already appended to output must leave the frontier or they can be emitted again.",
+          "load_all_remaining": "The sorted-source invariant makes only one value per source eligible; later values do not belong in the current frontier."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-k-way-frontier-size-cost-cause",
+      "prompt": "Why does the per-output heap work in k-way merge depend on k rather than directly on total element count N?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "all_n_are_hidden",
+            "text": "All N elements are in the heap but hidden entries do not affect its height."
+          },
+          {
+            "id": "frontier_bounded_by_sources",
+            "text": "The heap holds at most one current head per nonempty source, so its height is O(log k)."
+          },
+          {
+            "id": "source_lengths_are_equal",
+            "text": "The bound holds only because all sources must have equal length."
+          },
+          {
+            "id": "peek_is_only_operation",
+            "text": "The algorithm only peeks and never removes or inserts frontier entries."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frontier_bounded_by_sources"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The active heap size is bounded by the number of sources, because only one head per source is eligible.",
+        "details": "Each emitted value causes a pop and, unless its source is exhausted, one push on a heap of size at most k. The total number of values N determines how many such iterations occur; k determines the cost of each frontier update. Equal source lengths are unnecessary. This item identifies the state-size cause; the full asymptotic derivation is handled separately by the complexity unit.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_n_are_hidden": "Heap height depends on every stored entry. The algorithm achieves the k bound precisely by not storing all N values.",
+          "peek_is_only_operation": "Merge must remove the selected head and usually insert its successor, so mutation cost is material.",
+          "source_lengths_are_equal": "Sources may have different lengths; only the number of simultaneously nonempty sources bounds the frontier."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-k-way-empty-and-exhausted-sources",
+      "prompt": "How should empty sources and newly exhausted sources be represented in the k-way merge heap?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "restart_source",
+            "text": "Wrap an exhausted source back to its first value so the heap remains size k."
+          },
+          {
+            "id": "omit_no_candidate",
+            "text": "Do not insert an empty source, and do not reinsert a source after its last value is emitted."
+          },
+          {
+            "id": "reuse_last_value",
+            "text": "Keep the source’s last value in the heap after exhaustion."
+          },
+          {
+            "id": "sentinel_infinity",
+            "text": "Insert a permanent +∞ sentinel for every empty or exhausted source and emit it later."
+          }
+        ],
+        "acceptedOptionIds": [
+          "omit_no_candidate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A source with no remaining value has no eligible candidate and therefore no frontier entry.",
+        "details": "The heap models actual next values, not source identities by themselves. Empty sources are skipped during seeding. When a source’s last value is popped, no successor is pushed. This may shrink the heap below k, which is correct. Sentinels or repeated last values create outputs that are not in the input, and restarting a source duplicates data.",
+        "wrongOptionExplanationsByOptionId": {
+          "sentinel_infinity": "A sentinel is internal control state, not an input value to emit; keeping it in the frontier complicates termination and can corrupt output.",
+          "reuse_last_value": "The last value has already been emitted. Retaining it would duplicate that value.",
+          "restart_source": "Restarting violates one-pass source consumption and creates an infinite or duplicated merge."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-k-way-unsorted-source-boundary",
+      "prompt": "One of the k sources may yield values out of order. Can the standard one-head-per-source heap merge still guarantee globally sorted output?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_heap_repairs_source",
+            "text": "Yes. The heap automatically sorts values that have not yet been exposed by that source."
+          },
+          {
+            "id": "yes_if_min_heap",
+            "text": "Yes, provided the frontier uses a min-heap rather than a max-heap."
+          },
+          {
+            "id": "yes_if_k_small",
+            "text": "Yes, provided k is small enough."
+          },
+          {
+            "id": "no_precondition_broken",
+            "text": "No. A smaller value may be hidden behind a larger head, so the frontier proof is invalid."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_precondition_broken"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Per-source sortedness is the precondition that makes each head representative of every later value in that source.",
+        "details": "Suppose a source exposes 10 while a hidden next value is 1. The frontier cannot compare the hidden 1, so it may emit other values before 1 and violate global order. Heap orientation and small k do not repair missing candidate visibility. The source must be sorted, buffered enough to establish an ordered frontier, or handled by a different strategy. With exactly two sorted sources, direct merge remains a simpler transfer.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_heap_repairs_source": "The heap can order only inserted entries. It cannot compare a value that the source has not yet exposed.",
+          "yes_if_min_heap": "A min-heap chooses the smallest visible head, but visibility remains incomplete when a source is unsorted.",
+          "yes_if_k_small": "Reducing the number of sources does not restore the missing per-source order invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

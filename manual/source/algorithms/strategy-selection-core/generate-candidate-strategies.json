@@ -1,0 +1,325 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-strategy-selection-core-generate_candidate_strategies-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-strategy-selection-core-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "strategy_selection_core",
+    "primaryMentalUnitId": "generate_candidate_strategies",
+    "patternFamilyId": "complexity_and_constraints"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-strategy-selection-core-generate_candidate_strategies-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "ssc-generate-range-query-candidate-set",
+      "prompt": "A static array must answer range-sum queries [l, r]. At this stage you are generating candidates, not selecting one. Which list contains materially distinct legal approaches worth carrying forward?",
+      "constraints": [
+        "The array is static.",
+        "Queries are range sums.",
+        "Candidate generation precedes cost comparison."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_favorite",
+            "text": "Keep only prefix sums because the prompt contains range queries, and postpone considering any direct or offline-specific alternative."
+          },
+          {
+            "id": "syntax_variants",
+            "text": "Use a for-loop scan, a while-loop scan, or a recursive scan, treating each control-flow form as a separate candidate."
+          },
+          {
+            "id": "distinct_mechanisms",
+            "text": "Scan each requested range; precompute prefix sums; or precompute only a bounded known query set if all queries are known offline."
+          }
+        ],
+        "acceptedOptionIds": [
+          "distinct_mechanisms"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The useful candidate set spans distinct cost and information mechanisms. Control-flow syntax variants do not create different strategy trade-offs.",
+        "details": "Candidate generation should expose alternatives whose preprocessing, per-query work, memory, or information requirements differ. Direct scanning pays for each range; prefix sums pay one global preprocessing cost and constant work per query; offline memoization of a small known query set occupies a narrower middle ground. A for loop and while loop implement the same scan mechanism, while immediately keeping only the familiar prefix strategy hides the decision boundary. The transfer rule is to generate one representative per materially different mechanism, together with its preconditions, rather than one representative per coding style.",
+        "wrongOptionExplanationsByOptionId": {
+          "syntax_variants": "These alternatives preserve the same state, invariant, and asymptotic cost; they are implementation forms of one candidate. They would become distinct only if control flow changed the legal information or cost model.",
+          "one_favorite": "Prefix sums are plausible, but candidate generation must not pre-commit before query volume, memory, mutation, and update costs are compared. A single favoured answer is appropriate only after later legality and cost gates."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-generate-reference-baseline",
+      "prompt": "For a difficult pair-selection problem, an O(n²) enumeration is correct but too slow for the maximum input. Why can it still belong in the candidate set during analysis?",
+      "constraints": [
+        "The baseline is correct.",
+        "The baseline is infeasible at maximum n.",
+        "The question concerns candidate-generation purpose."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "final_choice",
+            "text": "Every correct approach must remain eligible as the final production strategy regardless of constraints."
+          },
+          {
+            "id": "reference_role",
+            "text": "It provides a correctness baseline and reveals exactly which repeated work an optimized candidate must avoid."
+          },
+          {
+            "id": "complexity_ignored",
+            "text": "Asymptotic cost matters only after code has been written and benchmarked."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reference_role"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A slow but correct baseline can define semantics and expose optimization opportunities. Its presence as a reference does not make it feasible for deployment.",
+        "details": "Candidate generation and final selection serve different purposes. A complete enumeration often clarifies the answer contract, supplies small-instance oracle tests, and shows duplicated computations or searches that a faster approach can index, order, or amortize. The later feasibility gate can reject it for the target constraints while retaining its explanatory and testing value. The transfer rule is to distinguish a reference candidate used to establish correctness from a deployable candidate required to meet the operation budget.",
+        "wrongOptionExplanationsByOptionId": {
+          "final_choice": "Correctness is necessary but not sufficient for the final strategy when the contract includes resource limits. The statement would be valid only for genuinely small bounded inputs where the quadratic cost fits.",
+          "complexity_ignored": "The maximum constraints are part of the problem contract before implementation. Benchmarking can refine constants, but it cannot rescue a growth rate that exceeds the operation budget by orders of magnitude."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-generate-pair-sum-mechanisms",
+      "prompt": "For a pair-sum existence task, which candidate list varies the underlying mechanism rather than only the traversal syntax?",
+      "constraints": [
+        "The task asks only whether a pair exists.",
+        "All three candidate families may be considered before constraints are applied.",
+        "The distinction must be algorithmic, not syntactic."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "container_set",
+            "text": "Store the array in a list, vector, or another contiguous container and run the same scan."
+          },
+          {
+            "id": "mechanism_set",
+            "text": "Nested enumeration; one-pass complement lookup in a set; sort then move two pointers using ordered comparisons."
+          },
+          {
+            "id": "loop_set",
+            "text": "Nested for loops; nested while loops; a recursive nested scan."
+          }
+        ],
+        "acceptedOptionIds": [
+          "mechanism_set"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Enumeration, indexed lookup, and order-guided pointer movement obtain the answer through different information and cost mechanisms.",
+        "details": "A meaningful candidate set should reveal the major strategy axes. Nested enumeration retains no auxiliary index and checks pairs directly. A complement set spends memory to answer membership queries during one pass. Sorting creates order, after which two pointers can discard impossible pairs by comparison. Loop syntax and equivalent contiguous containers do not change the invariant or dominant work. The transfer rule is to name candidates by the information they create or maintain—lookup index, ordering, window state, monotonic frontier—not by syntax.",
+        "wrongOptionExplanationsByOptionId": {
+          "loop_set": "All three entries implement the same exhaustive pair relation and therefore share the same state and O(n²) work. They would be different strategies only if recursion introduced a distinct subproblem structure or pruning invariant.",
+          "container_set": "Changing equivalent sequence containers does not create a new decision mechanism. Container choice becomes strategic only when it changes supported operations, ordering, memory, or mutation guarantees."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-generate-read-only-candidate-adaptation",
+      "prompt": "The input array is read-only, but a sorting-based mechanism remains worth considering. Which candidate set correctly adapts to that constraint without silently discarding alternatives?",
+      "constraints": [
+        "The caller's input is read-only.",
+        "Auxiliary storage is not yet ruled out.",
+        "Candidate generation must not hide adaptation costs."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "illegal_in_place",
+            "text": "Sort the caller's array in place and ignore the read-only contract."
+          },
+          {
+            "id": "hash_only",
+            "text": "Keep only hash lookup because every sorting strategy mutates its input."
+          },
+          {
+            "id": "adapted_candidates",
+            "text": "Hash-based lookup on the original array; sort a copied array or indexed records; and a direct scan baseline."
+          }
+        ],
+        "acceptedOptionIds": [
+          "adapted_candidates"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A mechanism may remain legal through an explicit adaptation whose copy and mapping costs are later compared. Candidate generation should preserve that distinction.",
+        "details": "Read-only input rules out in-place mutation, not every use of ordering. A copied array can be sorted, and indexed records can preserve original witnesses, but those adaptations add O(n) space and copying work that must remain visible. Hash lookup is another candidate, and a direct scan can remain the reference. Discarding all sorting candidates too early hides a potentially useful time-space trade-off; ignoring the constraint creates an illegal candidate. The transfer rule is to adapt a mechanism only by making every added resource and preservation obligation explicit.",
+        "wrongOptionExplanationsByOptionId": {
+          "illegal_in_place": "This option is attractive because it preserves the usual sort-based procedure, but it violates a stated contract. It becomes legal only when mutation is permitted or the array is privately owned.",
+          "hash_only": "Sorting itself is not synonymous with mutating the caller's object. This option would be justified only if copying were also forbidden or its required memory exceeded the resource limit."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-generate-online-offline-alternatives",
+      "prompt": "A duplicate-detection requirement may be deployed either as an offline batch job or as an online stream monitor. Which candidate-generation statement is strongest?",
+      "constraints": [
+        "One deployment is offline.",
+        "One deployment requires online prefix answers.",
+        "Candidates must be labeled with legal availability assumptions."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_universal",
+            "text": "Generate one sort-and-scan candidate and assume its complete-input workflow can serve both the batch result and every streaming alert."
+          },
+          {
+            "id": "assumption_labeled",
+            "text": "Generate an offline sort-and-scan candidate and an online incremental-set candidate, labeling the availability assumption for each."
+          },
+          {
+            "id": "deployment_ignored",
+            "text": "List every duplicate-detection technique you recall, but omit whether it needs complete input or can answer each arriving prefix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "assumption_labeled"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The deployments expose different information. Candidate generation should retain both mechanisms and attach the assumption that makes each legal.",
+        "details": "Offline processing can delay the answer until all data is present and may reorder a copy. An online monitor must answer each prefix and therefore needs incrementally maintainable state. These are not merely two implementations of one strategy; they have different answer-timing contracts. A useful candidate record names the mechanism, required information, state, and answer timing so later rejection and cost comparison can operate on explicit facts. The transfer rule is to generate alternatives per material execution model—offline, online, repeated-query, mutable, or memory-constrained—rather than claiming one unlabeled universal approach.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_universal": "End-of-batch sorting cannot answer earlier prefixes, so it does not cover the online contract. It becomes universal only if the stream monitor is allowed to postpone every answer until termination.",
+          "deployment_ignored": "An unbounded list without preconditions cannot be evaluated coherently and tends to include illegal or duplicate strategies. Broad brainstorming is useful only after candidates are normalized by mechanism and assumptions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-generate-candidate-generation-workflow",
+      "prompt": "Order the steps for producing a compact, evaluable candidate set after the decision signals have already been extracted.",
+      "constraints": [
+        "Decision signals are already available.",
+        "Candidates must be materially distinct.",
+        "Final selection is outside this workflow."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "baseline",
+            "text": "State a simple correct reference mechanism."
+          },
+          {
+            "id": "alternatives",
+            "text": "Add mechanisms with materially different state, preprocessing, or discard rules."
+          },
+          {
+            "id": "annotations",
+            "text": "Annotate each candidate's required preconditions and coarse time-space model."
+          },
+          {
+            "id": "handoff",
+            "text": "Hand the normalized set to legality rejection and comparative selection."
+          }
+        ],
+        "canonicalOrder": [
+          "baseline",
+          "alternatives",
+          "annotations",
+          "handoff"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "A reference anchors semantics, mechanism-diverse alternatives expose choices, and explicit annotations make later rejection and comparison possible.",
+        "details": "Candidate generation is neither unstructured brainstorming nor final selection. The simple baseline clarifies the relation being computed. Alternatives should then differ in the information they build or the invariant they exploit, not merely in syntax. Each candidate is incomplete until its preconditions and coarse costs are attached; otherwise later analysis must guess why it works. The final handoff deliberately leaves legality and ranking unresolved. Adjacent-relation scoring captures that alternatives depend on a known contract and evaluation depends on normalized annotations. The transfer rule is to keep this boundary in any domain: generation ends with normalized candidates, while rejection and ranking remain separate decisions."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sliding-window-fixed-size-window",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sliding-window-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sliding_window",
+    "primaryMentalUnitId": "fixed_size_window",
+    "patternFamilyId": "sliding_window"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — unreviewed candidate generation",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sliding-window-fixed-size-window",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sw-fixed-first-complete-window",
+      "prompt": "For k = 3, the right boundary has processed values at indices 0 and 1, so the current range has length 2. What is the correct answer action?",
+      "constraints": [
+        "Only ranges of exactly three elements are legal candidates.",
+        "The running aggregate already contains indices 0 and 1."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "wait_for_length_k",
+            "text": "Do not evaluate yet; the first legal window exists only after index 2 is added."
+          },
+          {
+            "id": "evaluate_partial",
+            "text": "Evaluate the length-2 range because it is the best available so far."
+          },
+          {
+            "id": "pad_zero",
+            "text": "Treat a missing third value as zero and evaluate."
+          },
+          {
+            "id": "move_left",
+            "text": "Advance the left boundary to keep the incomplete range small."
+          }
+        ],
+        "acceptedOptionIds": [
+          "wait_for_length_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A fixed-size answer may be updated only when the maintained range has exactly k elements.",
+        "details": "During initialization, the running state is useful but does not yet represent a legal candidate. For k=3, indices [0..1] form a partial window, so comparing its sum or average against the answer would mix different answer contracts. Add index 2 first; then [0..2] is the first legal window. Padding invents data, and moving left delays completion. The same boundary applies to every fixed-length aggregate, regardless of whether the values are positive, negative, or categorical.",
+        "wrongOptionExplanationsByOptionId": {
+          "evaluate_partial": "This changes the objective from exactly k elements to at most k elements and can select an illegal candidate.",
+          "pad_zero": "The input contract contains no synthetic value; padding creates a range that does not exist.",
+          "move_left": "Before the first complete window, shrinking only makes the range farther from the required size."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-slide-state-order",
+      "prompt": "Order the state operations for processing a new right-boundary value after the first fixed-size window has already been formed.",
+      "constraints": [
+        "The maintained range must end with exactly k elements.",
+        "The aggregate is a running sum."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "add_incoming",
+            "text": "Add the new right-boundary value to the running sum."
+          },
+          {
+            "id": "remove_outgoing",
+            "text": "Subtract the value currently at the left boundary because the range is now too large."
+          },
+          {
+            "id": "advance_left",
+            "text": "Advance the left boundary past the removed value."
+          },
+          {
+            "id": "evaluate_window",
+            "text": "Evaluate the resulting length-k window."
+          }
+        ],
+        "canonicalOrder": [
+          "add_incoming",
+          "remove_outgoing",
+          "advance_left",
+          "evaluate_window"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "After expansion creates k+1 elements, remove the old left value, advance left, and only then evaluate the restored length-k state.",
+        "details": "The order ties each state mutation to the element it describes. Adding the incoming value first makes the temporary overlength explicit. The outgoing value is still available at the current left index, so subtract it before advancing left. Once the boundary moves, the sum and interval agree again and the answer can be evaluated. Advancing first risks subtracting the new leftmost value, while evaluating before removal scores k+1 elements. This sequence transfers to counts and frequency maps by replacing sum addition/subtraction with the corresponding state updates."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-rolling-vs-recompute",
+      "prompt": "You need the sum of every contiguous block of length k. After computing the first block, which update preserves the fixed-window state without rescanning the block?",
+      "constraints": [
+        "Successive blocks shift right by one position.",
+        "The aggregate is ordinary addition."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "subtract_add",
+            "text": "nextSum = currentSum − outgoingValue + incomingValue"
+          },
+          {
+            "id": "resum_all",
+            "text": "Recompute the sum of all k values for every block."
+          },
+          {
+            "id": "add_only",
+            "text": "nextSum = currentSum + incomingValue"
+          },
+          {
+            "id": "subtract_incoming",
+            "text": "nextSum = currentSum − incomingValue + outgoingValue"
+          }
+        ],
+        "acceptedOptionIds": [
+          "subtract_add"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Adjacent fixed windows share k−1 elements, so only the outgoing and incoming contributions change.",
+        "details": "If the current window is [l..r], the next one is [l+1..r+1]. Every element except a[l] and a[r+1] appears in both sums, so cancellation gives nextSum = currentSum − a[l] + a[r+1]. Rescanning is correct but discards the overlap and costs O(k) per shift. Adding only causes the maintained state to grow beyond the window, and reversing the signs updates in the wrong direction. The rule transfers to any aggregate with correct incremental add/remove operations.",
+        "wrongOptionExplanationsByOptionId": {
+          "resum_all": "This is functionally correct but fails the maintenance objective; it turns the full scan into O(nk) work instead of O(n).",
+          "add_only": "The outgoing value would remain in the sum even though it is outside the new boundaries.",
+          "subtract_incoming": "This removes the value entering the new range and restores the value that should leave it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-k-boundaries",
+      "prompt": "For an input of length n and a requirement of exactly k consecutive elements, which statement handles the boundary cases correctly?",
+      "constraints": [
+        "Empty padding is not allowed.",
+        "A candidate must contain exactly k input elements."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "correct_boundaries",
+            "text": "k = 1 gives n singleton windows; k = n gives one window; k > n gives no legal window."
+          },
+          {
+            "id": "always_n_minus_k",
+            "text": "The number of windows is always n − k."
+          },
+          {
+            "id": "k_gt_n_whole_input",
+            "text": "When k > n, use the whole input as a shortened window."
+          },
+          {
+            "id": "k_n_zero",
+            "text": "When k = n, there are zero windows because no slide occurs."
+          }
+        ],
+        "acceptedOptionIds": [
+          "correct_boundaries"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The exact-length candidate count is n − k + 1 when 1 ≤ k ≤ n, and zero when k > n.",
+        "details": "A window is identified by its start index. For 1 ≤ k ≤ n, valid starts are 0 through n−k inclusive, giving n−k+1 candidates. Thus k=1 yields n starts and k=n yields start 0 only. If k>n, no start can fit k elements and the operation must return the explicit no-candidate result defined by the caller. Silently shortening the window changes the problem contract. A separate input contract should also define whether k <= 0 is rejected; this item deliberately covers only the declared positive-size cases.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_n_minus_k": "This omits the inclusive start at n−k; for k=n it incorrectly produces zero instead of one.",
+          "k_gt_n_whole_input": "Using fewer than k elements violates the exact-size requirement and hides an invalid configuration or no-result case.",
+          "k_n_zero": "A slide is not required for a candidate to exist; the entire input is one legal length-n window."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-frequency-transfer",
+      "prompt": "For every contiguous block of exactly k events, report how many distinct event types it contains. Which maintained state correctly transfers the fixed-window mechanism from sums to categories?",
+      "constraints": [
+        "Window length is always exactly k.",
+        "Event types may repeat."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "frequency_and_distinct",
+            "text": "Keep a frequency map and a distinct counter; increment the incoming type, decrement the outgoing type, and change distinct only on zero↔one transitions."
+          },
+          {
+            "id": "set_only_remove",
+            "text": "Keep a set; always remove the outgoing type and add the incoming type."
+          },
+          {
+            "id": "running_numeric_sum",
+            "text": "Convert event labels to integers and keep their sum."
+          },
+          {
+            "id": "sort_each_window",
+            "text": "Sort every block and count changes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frequency_and_distinct"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A fixed window still uses one-out/one-in updates, but repeated categories require multiplicity-aware frequency state.",
+        "details": "The boundary movement is unchanged from a sum window. What changes is the aggregate. Adding a type whose count was zero increases distinct; removing a type whose count becomes zero decreases distinct. A set alone loses multiplicity: removing one copy would erase a type that may still occur elsewhere in the window. Numeric label sums do not identify distinctness, and sorting each block discards the intended incremental update. This is the transfer rule from scalar to categorical fixed-window state.",
+        "wrongOptionExplanationsByOptionId": {
+          "set_only_remove": "A set cannot distinguish one remaining copy from zero remaining copies after an outgoing duplicate is removed.",
+          "running_numeric_sum": "Different multisets can have the same numeric sum but different distinct counts.",
+          "sort_each_window": "Sorting can compute the answer but costs repeated work and is not the maintained fixed-window state requested."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

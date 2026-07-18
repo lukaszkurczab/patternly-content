@@ -1,0 +1,471 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-prefix-sums-prefix-sum-with-hash-state-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-prefix-sums-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "prefix_sums",
+    "primaryMentalUnitId": "prefix_sum_with_hash_state",
+    "patternFamilyId": "prefix_sums"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-prefix-sums-prefix-sum-with-hash-state-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-prefix-hash-required-prior-prefix",
+      "prompt": "While scanning an array, the current prefix sum is s. To count subarrays ending at the current index whose sum is exactly k, which prior prefix value must be matched?",
+      "constraints": [
+        "Prefix sums are taken before and through the current position under one consistent convention.",
+        "The array may contain negative values."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "s_minus_k",
+            "text": "A prior prefix equal to s - k."
+          },
+          {
+            "id": "s_plus_k",
+            "text": "A prior prefix equal to s + k."
+          },
+          {
+            "id": "k_only",
+            "text": "Any prior prefix equal to k, regardless of s."
+          },
+          {
+            "id": "current_s",
+            "text": "Only a prior prefix equal to the current s."
+          }
+        ],
+        "acceptedOptionIds": [
+          "s_minus_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "If currentPrefix - priorPrefix = k, then priorPrefix must equal currentPrefix - k.",
+        "details": "A subarray sum is the difference between two prefix states. Rearranging s - p = k gives p = s - k, so a frequency map can report how many valid starts exist for the current end. The rule does not require sorted or nonnegative values; it relies only on algebraic cancellation and on querying prior state.",
+        "wrongOptionExplanationsByOptionId": {
+          "s_plus_k": "This would make s - priorPrefix = -k, not k. The sign follows directly from rearranging the range-difference equation.",
+          "k_only": "The required prior state changes with the current prefix s. A fixed lookup of k ignores where the current scan has accumulated to.",
+          "current_s": "Matching s counts zero-sum subarrays, because s - s = 0. It is correct only when k = 0."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_required_prior_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    },
+    {
+      "id": "alg-prefix-hash-frequency-not-last-index",
+      "prompt": "To count all subarrays with sum k, what should the hash map store for each prefix value?",
+      "constraints": [
+        "Different start boundaries may have the same prefix value.",
+        "The output is a count, not one example subarray."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "frequency_of_prior_prefixes",
+            "text": "The number of prior boundaries that produced that prefix value."
+          },
+          {
+            "id": "last_index_only",
+            "text": "Only the most recent index where the prefix value occurred."
+          },
+          {
+            "id": "sorted_values",
+            "text": "The sorted list of input values seen so far."
+          },
+          {
+            "id": "current_window_length",
+            "text": "The length of the current moving window."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frequency_of_prior_prefixes"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every prior occurrence of s - k defines a distinct valid start boundary, so multiplicity is part of the answer.",
+        "details": "When the current prefix is s, the answer increases by frequency[s - k]. Storing only one index can find one candidate but loses other starts with the same cumulative value. The map represents historical boundary multiplicity, not a moving window or a sorted value summary.",
+        "wrongOptionExplanationsByOptionId": {
+          "last_index_only": "A last-index map is sufficient for some existence or longest-length variants, but it undercounts when multiple prior boundaries have the required value.",
+          "sorted_values": "Sorting values loses the prefix-by-position relation. The needed key is a cumulative boundary value, and the needed payload is its count.",
+          "current_window_length": "Negative values can make valid starts non-monotonic, so one current window does not enumerate all subarrays ending here."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_required_prior_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    },
+    {
+      "id": "alg-prefix-hash-update-order",
+      "prompt": "Order the operations for counting subarrays with sum k during one left-to-right prefix-hash scan.",
+      "constraints": [
+        "The frequency map contains only prefix boundaries that occur before the current boundary when the lookup happens.",
+        "Score is based on preserved adjacent relations."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "seed_empty_prefix",
+            "text": "Initialize frequency[0] = 1 for the empty prefix."
+          },
+          {
+            "id": "extend_current_prefix",
+            "text": "Add the current array value to the running prefix s."
+          },
+          {
+            "id": "lookup_required_prior",
+            "text": "Read frequency[s - k] and add it to the answer."
+          },
+          {
+            "id": "record_current_prefix",
+            "text": "Increment frequency[s]."
+          },
+          {
+            "id": "advance_scan",
+            "text": "Advance to the next array position."
+          }
+        ],
+        "canonicalOrder": [
+          "seed_empty_prefix",
+          "extend_current_prefix",
+          "lookup_required_prior",
+          "record_current_prefix",
+          "advance_scan"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The lookup must see prior boundaries but not count the current boundary as its own earlier start.",
+        "details": "Seeding zero represents the boundary before index 0. After extending s, the scan counts prior p = s - k, then records the current boundary for future ends. Recording first is wrong when k = 0 because it can count an empty current-to-current interval; the required relation is lookup-before-insert for the current prefix."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_required_prior_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    },
+    {
+      "id": "alg-prefix-hash-empty-prefix-seed",
+      "prompt": "Why must frequency[0] start at 1 before scanning when counting subarrays with sum k?",
+      "constraints": [
+        "The running prefix before reading any element is 0.",
+        "Subarrays may start at index 0."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "represent_boundary_before_zero",
+            "text": "It represents the one boundary before index 0, allowing a current prefix equal to k to count a subarray starting at 0."
+          },
+          {
+            "id": "avoid_negative_prefixes",
+            "text": "It prevents the running prefix from becoming negative."
+          },
+          {
+            "id": "sort_hash_keys",
+            "text": "It makes hash-map iteration sorted by key."
+          },
+          {
+            "id": "remove_extra_space",
+            "text": "It lets the algorithm run without storing any other prefix values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "represent_boundary_before_zero"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The empty prefix is a real start boundary with cumulative value zero.",
+        "details": "If s = k at index r, then the required prior prefix is s - k = 0. The seeded occurrence corresponds to the boundary before A[0], so the subarray [0, r] is counted uniformly. Omitting the seed forces a special case and misses these ranges; adding it does not control signs, ordering, or storage size.",
+        "wrongOptionExplanationsByOptionId": {
+          "avoid_negative_prefixes": "The running sum may legitimately be negative. The seed exists for boundary completeness, not monotonicity.",
+          "sort_hash_keys": "A hash map does not become sorted because one key is initialized. Lookup order is irrelevant to correctness.",
+          "remove_extra_space": "The algorithm still stores frequencies for potentially O(n) distinct prefix values. One seed does not eliminate auxiliary state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_required_prior_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    },
+    {
+      "id": "alg-prefix-hash-negative-values-vs-window",
+      "prompt": "Why is prefix sum plus hash frequency suitable for counting exact-sum subarrays when A may contain negative values?",
+      "constraints": [
+        "All subarrays with sum k must be counted.",
+        "No sorting or reordering is permitted."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "matches_nonmonotonic_history",
+            "text": "It matches the required prior cumulative value even when the running sum rises and falls, so no monotonic shrink rule is needed."
+          },
+          {
+            "id": "negatives_become_positive",
+            "text": "The hash map converts every negative value into a positive value."
+          },
+          {
+            "id": "window_and_prefix_same",
+            "text": "It is simply a moving window stored in a hash table."
+          },
+          {
+            "id": "sort_then_hash",
+            "text": "It first sorts the array so all negative values appear before positive values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "matches_nonmonotonic_history"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The lookup equation works over non-monotonic cumulative history; it does not depend on a one-direction window repair rule.",
+        "details": "With negative values, increasing the right boundary can increase or decrease the sum, so a simple “shrink while too large” window can miss solutions. Prefix-hash matching asks only whether prior s - k states exist, preserving every legal start boundary. It remains a prefix-history method, not a window hidden inside a map.",
+        "wrongOptionExplanationsByOptionId": {
+          "negatives_become_positive": "Hashing does not change values. Correctness comes from exact key equality on cumulative sums, including negative keys.",
+          "window_and_prefix_same": "A window maintains one current interval and moves its boundaries. Prefix-hash state retains many prior boundaries simultaneously.",
+          "sort_then_hash": "Sorting destroys subarray contiguity and is unnecessary. The scan must follow original order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_required_prior_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    },
+    {
+      "id": "alg-prefix-hash-sorting-destroys-subarrays",
+      "prompt": "A developer sorts A before running the prefix-hash algorithm for subarray sum k. Why is that invalid?",
+      "constraints": [
+        "A subarray means a contiguous segment of the original sequence.",
+        "The output counts original subarrays."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "contiguity_changed",
+            "text": "Sorting changes which values are adjacent, so prefix differences describe subarrays of a different sequence."
+          },
+          {
+            "id": "hash_requires_order",
+            "text": "Hash maps require insertion keys in descending order."
+          },
+          {
+            "id": "prefix_must_increase",
+            "text": "The running prefix must be increasing, and sorting cannot guarantee that with duplicates."
+          },
+          {
+            "id": "frequency_lost",
+            "text": "Sorting prevents storing a frequency for the same key twice."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contiguity_changed"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The prefix-hash equation is positional; reordering changes the set of contiguous segments being counted.",
+        "details": "The algorithm works on the original scan because each pair of prefix boundaries identifies one original subarray. Sorting creates new adjacencies and therefore a different family of boundary pairs. Hash keys may arrive in any order, and prefix sums need not increase.",
+        "wrongOptionExplanationsByOptionId": {
+          "hash_requires_order": "Hash lookup has no sorted insertion requirement. Arbitrary cumulative values are valid keys.",
+          "prefix_must_increase": "Prefixes can rise, fall, or repeat. The matching equation uses equality, not monotonicity.",
+          "frequency_lost": "A frequency map explicitly supports repeated keys. Sorting does not prevent repetition; it changes the sequence semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_required_prior_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    },
+    {
+      "id": "alg-prefix-hash-complexity",
+      "prompt": "Select the expected time and worst-case extra space for one prefix-hash scan that counts subarrays with sum k.",
+      "constraints": [
+        "Hash lookup and update are expected O(1).",
+        "Up to n + 1 distinct prefix sums may occur.",
+        "The input array is not counted as extra space."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "expected_time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "expected_time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "expected_time": [
+            "O(n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The scan performs expected constant hash work per element and may retain a distinct frequency entry for every prefix boundary.",
+        "details": "There are n iterations, each with one required-prior lookup and one current-prefix update, giving expected O(n) time. In the worst case all n + 1 prefix values are distinct, so the map uses O(n) extra space. The rolling sum itself is constant state, but the historical frequency map is the essential auxiliary memory."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_required_prior_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    },
+    {
+      "id": "alg-prefix-hash-transfer-remainder-frequency",
+      "prompt": "Which problem transfers the required-prior-prefix idea by storing a normalized prefix state instead of the raw sum?",
+      "constraints": [
+        "Subarrays are contiguous in the original order.",
+        "All qualifying subarrays must be counted."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sum_divisible_by_m",
+            "text": "Count subarrays whose sum is divisible by m by matching equal normalized prefix remainders."
+          },
+          {
+            "id": "range_minimum",
+            "text": "Answer range minima by subtracting two prefix remainders."
+          },
+          {
+            "id": "online_sorting",
+            "text": "Maintain the sorted order of values by hashing each prefix sum."
+          },
+          {
+            "id": "fixed_window_max",
+            "text": "Find the maximum fixed-size window by matching equal prefix frequencies only."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sum_divisible_by_m"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Two prefixes with the same remainder modulo m differ by a multiple of m, so equality of normalized states is the match condition.",
+        "details": "For current remainder r, every prior boundary with the same normalized remainder defines a subarray sum divisible by m. The map still stores frequencies, and negative language remainders may need normalization into [0, m). Range minimum has no inverse, while a fixed-size maximum is governed by window movement rather than frequency matching.",
+        "wrongOptionExplanationsByOptionId": {
+          "range_minimum": "Equal or subtractable remainders do not encode minima. Minimum is not derived from a pair of scalar cumulative states.",
+          "online_sorting": "Hashing prefix sums does not maintain value order. This is neither a sorting contract nor a contiguous-subarray condition.",
+          "fixed_window_max": "A fixed-size maximum can be maintained by adding the entering value and removing the leaving value. Prefix-frequency equality is not the decision rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_required_prior_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "prefix_hash_frequency",
+        "problemArchetypeId": "count_subarrays_by_prefix"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

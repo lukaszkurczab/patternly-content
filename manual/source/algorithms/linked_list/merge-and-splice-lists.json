@@ -1,0 +1,471 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-linked-list-merge_and_splice_lists-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-linked-list-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "linked_list",
+    "primaryMentalUnitId": "merge_and_splice_lists",
+    "patternFamilyId": "linked_list"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-linked-list-merge_and_splice_lists-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "prompt": "Two disjoint singly linked lists are sorted in nondecreasing order. Existing nodes must be reused to build one sorted result. Which maintained state directly supports the merge?",
+      "constraints": [
+        "Both inputs are acyclic, sorted, and node-disjoint.",
+        "No replacement data nodes may be allocated."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "heads_and_tail",
+            "text": "References to each current unmerged head and to the last node of the merged output."
+          },
+          {
+            "id": "cycle_meeting",
+            "text": "A fast/slow pointer pair on each input."
+          },
+          {
+            "id": "value_frequency_only",
+            "text": "A frequency table of values with no node references."
+          },
+          {
+            "id": "random_midpoints",
+            "text": "Random-access midpoint indices for both lists."
+          }
+        ],
+        "acceptedOptionIds": [
+          "heads_and_tail"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sortedness makes the two current heads the only candidates for the next output node, while tail records where to attach it.",
+        "details": "All nodes behind an input head are at least as large as that head, so comparing the two heads is sufficient. Appending the chosen existing node to tail and advancing only its source preserves both sortedness and reachability. Midpoint indices are unavailable, a value table loses node identity, and fast/slow convergence solves a different structural problem.",
+        "wrongOptionExplanationsByOptionId": {
+          "random_midpoints": "Singly linked lists do not provide direct midpoint access, and merging needs the smallest remaining front, not a midpoint.",
+          "value_frequency_only": "Values alone cannot reuse or preserve the original node objects required by the contract.",
+          "cycle_meeting": "Relative-speed traversal does not choose the next sorted candidate or maintain the output tail."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-merge-splice-01-current-head-merge-signal",
+      "difficulty": "introductory"
+    },
+    {
+      "prompt": "During a node-reusing merge of two sorted lists, select all statements that form the loop invariant immediately before the next comparison.",
+      "constraints": [
+        "Input nodes are reused and each input is individually sorted.",
+        "The output is built by next-link attachment at tail."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "tail_is_larger_input",
+            "text": "tail must always be the node with the larger current payload."
+          },
+          {
+            "id": "sources_at_first_unmerged",
+            "text": "l1 and l2 are null or reference the first not-yet-selected node of each input."
+          },
+          {
+            "id": "merged_prefix_sorted",
+            "text": "The chain ending at tail contains exactly the already selected nodes in sorted order."
+          },
+          {
+            "id": "both_sources_advance",
+            "text": "Both l1 and l2 must have advanced on every prior iteration."
+          }
+        ],
+        "acceptedOptionIds": [
+          "merged_prefix_sorted",
+          "sources_at_first_unmerged"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The merge partitions nodes into one sorted output prefix and two intact unconsumed suffixes.",
+        "details": "tail marks the last node already committed to the output. l1 and l2 retain the entry references to all remaining nodes, so choosing the smaller head is safe and loses no suffix. Only the source that supplied the chosen node advances. tail's payload need not be the larger current input; it is the largest value already emitted under nondecreasing order.",
+        "wrongOptionExplanationsByOptionId": {
+          "tail_is_larger_input": "tail belongs to the emitted prefix and is not selected as the larger of the two current candidates.",
+          "both_sources_advance": "Advancing both would skip the unchosen input node and lose it from the result."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "merged_prefix_sorted": "Without sorted-prefix correctness, choosing a head cannot establish the result order.",
+          "sources_at_first_unmerged": "Without intact source frontiers, unselected nodes can be skipped or duplicated."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-merge-splice-02-merge-loop-invariant",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "During a sorted merge, l1 becomes null while l2 references X -> Y -> Z, an intact sorted suffix. tail is the last output node. What is the correct completion step?",
+      "constraints": [
+        "l2 is an intact sorted suffix.",
+        "The two inputs are disjoint and acyclic."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reverse_remainder",
+            "text": "Reverse X -> Y -> Z before attachment."
+          },
+          {
+            "id": "copy_first_only",
+            "text": "Copy X.value into tail and discard X, Y, and Z."
+          },
+          {
+            "id": "attach_remainder",
+            "text": "Set tail.next = l2 and finish."
+          },
+          {
+            "id": "advance_null",
+            "text": "Advance l1 until it becomes non-null again."
+          }
+        ],
+        "acceptedOptionIds": [
+          "attach_remainder"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The remaining l2 suffix is already sorted and all of its nodes are still reachable from l2, so one link preserves the entire remainder.",
+        "details": "All values in the emitted prefix are no greater than the current remaining candidates. Once l1 is exhausted, no future comparison is needed; l2's internal order is already valid. Linking tail.next to l2 retains every remaining node. Copying one value loses identities and nodes, null cannot advance, and reversing would violate nondecreasing order.",
+        "wrongOptionExplanationsByOptionId": {
+          "copy_first_only": "This drops the remaining node chain and violates node reuse and completeness.",
+          "advance_null": "A null source has no successor and cannot become non-null by traversal.",
+          "reverse_remainder": "The suffix is already in the required order; reversing it makes the result unsorted."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-merge-splice-03-append-nonempty-remainder",
+      "difficulty": "introductory"
+    },
+    {
+      "prompt": "A merge initializes dummy and tail = dummy, attaches all selected data nodes through tail.next, and completes successfully. Which return value satisfies a contract that excludes implementation sentinels?",
+      "constraints": [
+        "dummy is not part of the logical data model.",
+        "The merged result is singly linked from its first data node."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "original_l1",
+            "text": "Return the original first-list head regardless of which input node was selected first."
+          },
+          {
+            "id": "tail_only",
+            "text": "Return tail, which is the last data node."
+          },
+          {
+            "id": "dummy_itself",
+            "text": "Return dummy so its payload becomes the first result value."
+          },
+          {
+            "id": "dummy_next",
+            "text": "Return dummy.next, the first selected data node in the merged result."
+          }
+        ],
+        "acceptedOptionIds": [
+          "dummy_next"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "dummy.next is the first selected data node, while dummy itself is only the stable anchor used during construction.",
+        "details": "The sentinel removes the first-attachment special case because tail always designates an existing node. It does not change which data node is smallest or become part of the requested result. tail ends at the last node, not the head, and the original l1 head may not be first. Returning dummy.next exposes exactly the constructed logical chain.",
+        "wrongOptionExplanationsByOptionId": {
+          "dummy_itself": "This leaks implementation scaffolding into a result whose contract excludes the sentinel.",
+          "tail_only": "The tail reference cannot reach earlier nodes in a singly linked result.",
+          "original_l1": "The first output node is determined by values and emptiness, not by which input was named first."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dummy_head",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-merge-splice-04-return-after-dummy",
+      "difficulty": "introductory"
+    },
+    {
+      "prompt": "Two disjoint sorted singly linked lists contain m and n nodes. A merge reuses nodes, compares current heads, and appends the untouched remainder. What are the time and extra-space costs?",
+      "constraints": [
+        "Input nodes are reused rather than copied.",
+        "The inputs are already sorted and acyclic."
+      ],
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log(m+n))",
+            "O(m+n)",
+            "O(mn)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log(m+n))",
+            "O(m+n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(m+n)"
+          ],
+          "extra_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "extra_space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Every input node is consumed at most once through sequential links, and only a fixed set of head/tail references is retained.",
+        "details": "The loop advances one source pointer per selected node and then attaches one remaining suffix. Across both inputs, at most m+n nodes are processed, yielding O(m+n) time. A dummy, tail, l1, and l2 are constant auxiliary references, so extra space is O(1). No random-access insertion or element shifting is involved."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-merge-splice-05-sequential-merge-cost",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "l1 references X(value=4) and l2 references Y(value=4). X and Y are distinct nodes, and the output must contain every input node. What should the merge do at this tie?",
+      "constraints": [
+        "X and Y are separately allocated and the input lists are disjoint.",
+        "The merge is not a deduplication operation."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "replace_with_new",
+            "text": "Allocate one new node with value 4 and discard X and Y."
+          },
+          {
+            "id": "collapse_duplicate",
+            "text": "Include only one because equal values mean X and Y are the same node."
+          },
+          {
+            "id": "link_x_to_x",
+            "text": "Attach X and set X.next = X to record both equal occurrences."
+          },
+          {
+            "id": "choose_one_then_other",
+            "text": "Choose one according to the declared tie rule, advance only that source, and later include the other node too."
+          }
+        ],
+        "acceptedOptionIds": [
+          "choose_one_then_other"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equal payloads create an ordering tie, not an identity equivalence; completeness requires both distinct nodes.",
+        "details": "A deterministic tie rule—often choosing from the first list—can preserve stability, but either choice is compatible with sortedness if specified. Only the chosen source advances, leaving the other equal-valued node for a later iteration. Collapsing nodes silently changes a merge into deduplication, a self-link creates a cycle, and a replacement loses both original identities.",
+        "wrongOptionExplanationsByOptionId": {
+          "collapse_duplicate": "Equal payloads do not make separately allocated nodes identical, and the output contract requires every node.",
+          "link_x_to_x": "A self-cycle neither represents Y nor produces a valid sorted linear result.",
+          "replace_with_new": "This violates node reuse and discards two required identities."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-merge-splice-06-equal-values-preserve-both-nodes",
+      "difficulty": "intermediate"
+    },
+    {
+      "prompt": "chosen references the smaller current source node, and chosenNext stores its original successor. tail is the last output node. Order the merge updates.",
+      "constraints": [
+        "chosenNext was captured before any chosen.next overwrite.",
+        "tail and chosen are distinct before this step."
+      ],
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "attach_chosen",
+            "text": "Set tail.next = chosen."
+          },
+          {
+            "id": "advance_source",
+            "text": "Set the chosen source head = chosenNext."
+          },
+          {
+            "id": "advance_tail",
+            "text": "Set tail = chosen."
+          },
+          {
+            "id": "preserve_output_exit",
+            "text": "Leave tail.next as the link that will be assigned on the next iteration or to the final remainder."
+          }
+        ],
+        "canonicalOrder": [
+          "attach_chosen",
+          "advance_source",
+          "advance_tail",
+          "preserve_output_exit"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The chosen node is first attached to the existing output, its source frontier advances using the saved successor, and only then does tail become chosen.",
+        "details": "attach_chosen -> advance_tail is the critical builder relation: if tail becomes chosen first and code then assigns tail.next = chosen, it creates a self-cycle. The source can advance safely because chosenNext already preserves its suffix. After tail advances, its next field is the output exit to be set by the next selected node or the final remainder. Equivalent code may combine assignments, but it must preserve these dependencies."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-merge-splice-07-attach-before-tail-advance",
+      "difficulty": "advanced"
+    },
+    {
+      "prompt": "Two sorted input heads eventually reach the same node S, so their tails are structurally shared. A standard node-reusing merge assumes disjoint inputs. What is the correct assessment?",
+      "constraints": [
+        "S is the same node object on both input paths.",
+        "The algorithm reuses nodes and does not clone the shared suffix."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "dummy_fixes_alias",
+            "text": "Adding a dummy output head automatically removes the shared-tail hazard."
+          },
+          {
+            "id": "append_twice",
+            "text": "Appending S from each source produces two logical copies without allocation."
+          },
+          {
+            "id": "values_make_safe",
+            "text": "The standard loop is safe as long as S.value is ordered correctly."
+          },
+          {
+            "id": "needs_alias_handling",
+            "text": "The precondition is violated; the merge must detect the shared suffix and attach it once or reject the input."
+          }
+        ],
+        "acceptedOptionIds": [
+          "needs_alias_handling"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A shared node is one object reachable from both sources, so consuming it twice is not equivalent to consuming two distinct nodes.",
+        "details": "The standard invariant partitions disjoint nodes between two unconsumed suffixes. Structural sharing breaks that partition: once one path attaches S, the other source may later designate the same object. Naive updates can duplicate a reference in the logical plan or create a cycle when the tail already reaches S. An alias-aware implementation can stop when l1 is l2 and attach the common suffix once; otherwise the input should be rejected.",
+        "wrongOptionExplanationsByOptionId": {
+          "values_make_safe": "Sorted payloads do not eliminate identity aliasing or prevent attaching one object twice.",
+          "append_twice": "One node object cannot represent two independent occurrences in a linear chain without copying, and repeated attachment can create a cycle.",
+          "dummy_fixes_alias": "A sentinel simplifies the first output edge but does not change input sharing."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      },
+      "id": "alg-linked-list-merge-splice-08-shared-tail-precondition",
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

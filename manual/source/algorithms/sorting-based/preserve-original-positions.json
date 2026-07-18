@@ -1,0 +1,471 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sorting-based-preserve_original_positions-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sorting-based-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sorting_based",
+    "primaryMentalUnitId": "preserve_original_positions",
+    "patternFamilyId": "sorting_based"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sorting-based-preserve_original_positions-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sort-positions-01-provenance-required",
+      "prompt": "A solution will sort values to find the closest pair, but the API must return the two original array indices. What must be part of the preprocessing representation?",
+      "constraints": [
+        "Equal values may appear at different source indices.",
+        "The result must identify occurrences, not only values."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "index_only",
+            "text": "Discard values and sort original indices numerically."
+          },
+          {
+            "id": "value_only",
+            "text": "Sort raw values and use their sorted positions as source indices."
+          },
+          {
+            "id": "value_with_index",
+            "text": "Store each occurrence as (value, originalIndex) before sorting."
+          },
+          {
+            "id": "count_only",
+            "text": "Store only a frequency count for each value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_with_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Reordering is compatible with an index-returning contract only when every moved occurrence retains its source identity.",
+        "details": "The value field supplies the order needed by the closest-pair scan, while originalIndex records where that exact occurrence came from. Duplicate values make value-only reverse lookup ambiguous, and sorted positions identify the transformed array. Counts preserve multiplicity but not member identity. Provenance must be attached before sorting because the transformation itself is what would otherwise erase the mapping.",
+        "wrongOptionExplanationsByOptionId": {
+          "value_only": "Sorted coordinates are not source coordinates and cannot distinguish duplicate occurrences reliably.",
+          "index_only": "Index order reveals nothing about value closeness, so the intended sorted scan loses its correctness basis.",
+          "count_only": "A count cannot name the two exact original occurrences required by the result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_identity_through_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-positions-02-decorate-process-undecorate",
+      "prompt": "Order the steps for using sorting internally while returning a result aligned with original input positions.",
+      "constraints": [
+        "The internal algorithm needs value order.",
+        "The external result is indexed by the source array."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "project_to_source",
+            "text": "Build the returned indices or source-aligned output from the saved identities."
+          },
+          {
+            "id": "sort_decorated",
+            "text": "Sort the decorated records by the algorithm's primary value key and legal tie-breaks."
+          },
+          {
+            "id": "decorate",
+            "text": "Attach original identity to every input occurrence."
+          },
+          {
+            "id": "process_sorted",
+            "text": "Run the scan, grouping, or pointer logic on the ordered records."
+          }
+        ],
+        "canonicalOrder": [
+          "decorate",
+          "sort_decorated",
+          "process_sorted",
+          "project_to_source"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Identity must be captured before reordering and used only after the sorted computation selects or annotates occurrences.",
+        "details": "Decoration creates a stable link between each record and its source location. Sorting then changes processing order without changing identity. The core algorithm works in sorted coordinates but carries those identities through every selected result or annotation. The final projection converts internal ordered state back to the API's source coordinate system. Decorating after sorting cannot reconstruct which duplicate occurrence moved where."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_identity_through_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-positions-03-duplicate-occurrences-remain-distinct",
+      "prompt": "The input is [4, 1, 4]. After decorating and sorting by (value, originalIndex), which ordered records are correct?",
+      "constraints": [
+        "Original indices are zero-based.",
+        "Both occurrences of value 4 must remain distinct."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "merged_identity",
+            "text": "[(1, 1), (4, [0, 2])] as a single occurrence record"
+          },
+          {
+            "id": "deduplicated",
+            "text": "[(1, 1), (4, 0)]"
+          },
+          {
+            "id": "sorted_positions",
+            "text": "[(1, 0), (4, 1), (4, 2)]"
+          },
+          {
+            "id": "correct_records",
+            "text": "[(1, 1), (4, 0), (4, 2)]"
+          }
+        ],
+        "acceptedOptionIds": [
+          "correct_records"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Decoration preserves one record per source occurrence, and the original index tie-break orders equal values without merging them.",
+        "details": "The value 1 from index 1 moves first. The two 4s remain separate records whose original indices are 0 and 2. Sorting does not authorize deduplication or replacement of source indices with sorted positions. A grouped list of indices could be a later output representation, but it is not the occurrence-level decorated sequence consumed by algorithms that need two distinct records.",
+        "wrongOptionExplanationsByOptionId": {
+          "deduplicated": "Removing one 4 destroys multiplicity and can erase a valid pair or group member.",
+          "sorted_positions": "The second tuple component must remain the source index, not be overwritten by the new sorted position.",
+          "merged_identity": "Merging occurrences changes the representation and no longer supplies one sortable record per source element."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_identity_through_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-positions-04-index-as-deterministic-final-key",
+      "prompt": "Equal values must preserve original encounter order even though the available sorting implementation is not stable. Which comparator key makes that requirement explicit?",
+      "constraints": [
+        "Every decorated record contains value and unique originalIndex.",
+        "The required primary order is ascending value."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_then_index",
+            "text": "(value, originalIndex)"
+          },
+          {
+            "id": "value_then_negative_index",
+            "text": "(value, -originalIndex)"
+          },
+          {
+            "id": "value_only",
+            "text": "value"
+          },
+          {
+            "id": "index_then_value",
+            "text": "(originalIndex, value)"
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_then_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Original index as the final ascending key reconstructs stable encounter order inside every equal-value class.",
+        "details": "Value remains primary, so the internal algorithm receives the required numerical order. When values tie, smaller originalIndex appears first, exactly matching encounter order. A value-only comparator leaves an unstable sort free to permute ties. Putting index first would reproduce source order globally and defeat value sorting, while a negative index would intentionally reverse equal-value occurrences.",
+        "wrongOptionExplanationsByOptionId": {
+          "value_only": "An unstable sort provides no guarantee that equal-value records retain encounter order.",
+          "index_then_value": "Original index as primary prevents the intended value ordering across different values.",
+          "value_then_negative_index": "The negative index orders later occurrences before earlier ones inside a tie."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_identity_through_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-positions-05-sorted-index-is-not-source-index",
+      "prompt": "A sorted two-pointer search finds its answer at sorted positions 1 and 4. The programmer returns [1, 4] as original indices without carrying any provenance. What is the defect?",
+      "constraints": [
+        "The input was not already guaranteed sorted.",
+        "Duplicate values may exist."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "positions_always_same",
+            "text": "There is no defect because sorting preserves every index numerically."
+          },
+          {
+            "id": "coordinate_confusion",
+            "text": "The returned positions belong to the sorted array and need not identify the source occurrences."
+          },
+          {
+            "id": "pointers_cannot_return",
+            "text": "Two-pointer algorithms can never return indices."
+          },
+          {
+            "id": "only_reverse_needed",
+            "text": "The only required fix is to reverse [1, 4]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "coordinate_confusion"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting creates a new coordinate system; positions in that system are not original indices unless identity was preserved explicitly.",
+        "details": "An occurrence can move to any sorted position, and duplicates make value-based recovery ambiguous. Left and right correctly identify ordered search state, but the API asks for source coordinates. The algorithm must carry originalIndex with each occurrence or sort an index permutation. Reversing the two sorted positions changes order but not their meaning, so it cannot repair the lost mapping.",
+        "wrongOptionExplanationsByOptionId": {
+          "pointers_cannot_return": "Pointers can return original indices when decorated records preserve them through sorting.",
+          "positions_always_same": "Sorting generally permutes positions; numerical equality between old and new indices is accidental, not guaranteed.",
+          "only_reverse_needed": "Reordering two wrong coordinates does not convert them into source identities."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_identity_through_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_two_pointers",
+        "problemArchetypeId": "pair_search_after_sort"
+      }
+    },
+    {
+      "id": "alg-sort-positions-06-stable-filter-no-sort",
+      "prompt": "A function must remove invalid records while preserving the relative order of every retained record and return their original indices. Which approach best matches the contract?",
+      "constraints": [
+        "Validity can be tested independently in O(1) per record.",
+        "No ordered-by-value output is requested."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_by_validity",
+            "text": "Sort valid records before invalid records and return the new leading indices."
+          },
+          {
+            "id": "deduplicate_then_filter",
+            "text": "Remove equal records before testing validity."
+          },
+          {
+            "id": "stable_linear_filter",
+            "text": "Scan in source order and append each valid record's original index."
+          },
+          {
+            "id": "sort_then_filter",
+            "text": "Sort by record value first, then filter and return sorted positions."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stable_linear_filter"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The source order and original indices are already the required structure, so sorting would destroy rather than reveal it.",
+        "details": "A stable linear filter preserves every retained record's relative position by construction and can emit source indices directly. Sorting by value or validity changes the order and creates transformed positions that do not satisfy the API. Sorting can be useful when the requested output is ordered by a key, but here original encounter order is the decisive invariant, making preprocessing both unnecessary and harmful.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_then_filter": "The sort violates the relative-order contract and the returned sorted positions are not source indices.",
+          "sort_by_validity": "Partitioning moves retained records unless a separate stable mechanism is guaranteed and still supplies no benefit over the direct scan.",
+          "deduplicate_then_filter": "Deduplication is not requested and can remove distinct valid occurrences."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_identity_through_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-positions-07-decoration-cost",
+      "prompt": "A solution creates n decorated (value, originalIndex) records, comparison-sorts them, scans once, and produces a constant-size result. What are the worst-case time and extra-space complexities?",
+      "constraints": [
+        "The decorated record array is separate from the input and counts as extra space.",
+        "Comparison sorting has O(n log n) worst-case time."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n^2)",
+            "O(n log n)",
+            "O(n)"
+          ],
+          "extra_space": [
+            "O(log n)",
+            "O(1)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "extra_space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Comparison sorting dominates time, and preserving one identity record per occurrence requires linear additional storage.",
+        "details": "Decoration and the scan each cost O(n). The comparison sort costs O(n log n), producing the total O(n log n) bound. The separate decorated sequence stores n pairs, so extra space is O(n), independent of the constant-size returned answer. An index permutation is also O(n) state. In-place sorting could reduce storage but would need another way to satisfy the provenance contract."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_identity_through_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-positions-08-transfer-source-aligned-ranks",
+      "prompt": "Values must receive dense ascending ranks, and the output array must align with original positions. Equal values share one rank. Select all required steps.",
+      "constraints": [
+        "Dense ranks increase by one for each new distinct value.",
+        "The input is [value] occurrences with zero-based original positions."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "advance_rank_on_new_value",
+            "text": "Increment the rank only when the current sorted value differs from the previous value."
+          },
+          {
+            "id": "decorate_and_sort",
+            "text": "Sort (value, originalIndex) records by value."
+          },
+          {
+            "id": "rank_by_sorted_position",
+            "text": "Assign rank equal to sorted position + 1, even across equal values."
+          },
+          {
+            "id": "write_by_original_index",
+            "text": "Store each assigned rank into output[originalIndex]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "decorate_and_sort",
+          "advance_rank_on_new_value",
+          "write_by_original_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Dense ranking combines sorted value groups with preserved source identity and a projection back to original positions.",
+        "details": "Sorting decorated records makes equal values contiguous while retaining the output slot for each occurrence. The rank changes only at a new distinct value, so duplicates share a rank. Writing through originalIndex restores source alignment even though processing occurred in value order. Using sorted position as rank implements neither dense ties nor source-aligned output and would assign different ranks to equal values.",
+        "wrongOptionExplanationsByOptionId": {
+          "rank_by_sorted_position": "Sorted position changes across duplicates and does not implement dense equal-value ranking or original alignment."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "decorate_and_sort": "The sorted decorated sequence supplies both value-group order and preserved source identity.",
+          "advance_rank_on_new_value": "Dense rank changes at distinct-value boundaries rather than at every occurrence.",
+          "write_by_original_index": "Projection through originalIndex places each rank in the API's source-aligned coordinate system."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_original_identity_through_sorting",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

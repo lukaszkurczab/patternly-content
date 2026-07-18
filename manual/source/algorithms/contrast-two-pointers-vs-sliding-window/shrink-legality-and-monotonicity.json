@@ -1,0 +1,376 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-contrast-two-pointers-vs-sliding-window-slam-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-content-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-contrast-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "contrast_two_pointers_vs_sliding_window",
+    "primaryMentalUnitId": "shrink_legality_and_monotonicity",
+    "patternFamilyId": "two_pointers"
+  },
+  "batchKind": "contrast",
+  "contrastMetadata": {
+    "contrastedMentalUnitIds": [
+      "recognize_two_pointer_signal",
+      "recognize_sliding_window_signal"
+    ],
+    "falseHeuristicId": "any_solution_with_two_indices_is_two_pointers",
+    "transferBoundary": "A variable window is legal only when removing elements from the left changes the validity measure predictably enough to restore validity without revisiting discarded starts; signed or non-monotone effects cross this boundary."
+  },
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring; human review required",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-contrast-two-pointers-vs-sliding-window-slam-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-ctpsw-slam-01",
+      "prompt": "For nonnegative values, an algorithm seeks the longest contiguous segment with sum at most B. Why is “while sum > B, remove a[left] and increment left” a legal repair rule?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "nonnegative_monotonicity",
+            "text": "Removing a nonnegative value cannot increase the sum, so each shrink moves the window toward or into validity."
+          },
+          {
+            "id": "two_indices",
+            "text": "The rule is legal because left and right both move."
+          },
+          {
+            "id": "longest_objective",
+            "text": "Any longest-segment problem permits shrinking."
+          },
+          {
+            "id": "linear_target",
+            "text": "The rule is legal because the desired complexity is O(n)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "nonnegative_monotonicity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Nonnegativity gives the monotone effect required for shrink to restore the budget predicate.",
+        "details": "When the current sum exceeds B, extending the same start farther right cannot repair the violation because all future additions are nonnegative. Removing the oldest nonnegative member cannot make the sum larger, so repeated shrinkage eventually restores validity or empties the window. Once a start is removed under this argument, it need not be reconsidered for future right endpoints. The pointer count, optimization objective, and desired complexity do not provide this correctness proof.",
+        "wrongOptionExplanationsByOptionId": {
+          "two_indices": "Two moving indices do not establish how removal changes the validity measure.",
+          "longest_objective": "A longest-range objective can involve nonmonotone constraints; the objective alone does not prove that removing the leftmost member moves the predicate toward validity.",
+          "linear_target": "An O(n) target is a performance requirement, not a correctness argument; it cannot show that discarded starts will never be needed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "Every input value is at least zero.",
+        "Validity is currentSum <= B."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-02",
+      "prompt": "The same longest-segment-under-budget algorithm is applied to arbitrary signed values. Which observation breaks the previous shrink proof?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "remove_negative_increases",
+            "text": "Removing a negative left value can increase the remaining sum, so shrink may move farther from sum <= B."
+          },
+          {
+            "id": "right_moves",
+            "text": "Right still moves forward."
+          },
+          {
+            "id": "sum_is_scalar",
+            "text": "The state is only one scalar."
+          },
+          {
+            "id": "contiguous_answer",
+            "text": "The answer is still contiguous."
+          }
+        ],
+        "acceptedOptionIds": [
+          "remove_negative_increases"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Signed contributions destroy the monotone relation between removing left and reducing the sum.",
+        "details": "With arbitrary signs, the current total does not determine how the total will change when the oldest element is removed. If that element is negative, the remaining sum increases. A start that appears unhelpful at one right endpoint may also become useful after future negative values arrive, so permanently discarding it requires a different proof. The task remains contiguous and may still use two indices in some specialized method, but the simple sliding-window repair rule is not justified. This item diagnoses the boundary without prescribing the replacement algorithm.",
+        "wrongOptionExplanationsByOptionId": {
+          "right_moves": "Forward movement is compatible with many algorithms and does not restore monotonicity.",
+          "sum_is_scalar": "State size does not determine whether removing an element changes it predictably.",
+          "contiguous_answer": "Contiguity is necessary for a window candidate but not sufficient for a valid shrink rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Values may be positive, zero, or negative.",
+        "No additional monotone structure is guaranteed."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-03",
+      "prompt": "A proposal for finding a contiguous segment with sum exactly T says: “expand right; whenever sum is not T, increment left.” The input constraints do not state whether values are positive, zero, or negative. What is the correct review?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "missing_monotonicity",
+            "text": "Reject the rule: without sign constraints, ‘sum is not T’ gives no safe direction for shrink."
+          },
+          {
+            "id": "always_window",
+            "text": "Accept it: exact-sum contiguous problems are always sliding-window problems."
+          },
+          {
+            "id": "always_two_pointers",
+            "text": "Accept it as two pointers because both endpoints move."
+          },
+          {
+            "id": "shrink_on_inequality",
+            "text": "Accept it if left moves for both sum < T and sum > T."
+          }
+        ],
+        "acceptedOptionIds": [
+          "missing_monotonicity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The predicate “sum is not T” does not identify whether removing left moves the total toward T.",
+        "details": "Correct shrink behavior depends on the ordering of possible sums under expansion and removal. With strictly positive values, a sum above T can be reduced by shrinking, while a sum below T should generally expand; zeros require care but retain nondecreasing expansion. With arbitrary signed values, neither comparison safely determines which start can be discarded. The proposal hides these preconditions and therefore has no valid monotonicity proof. Familiar pointer syntax cannot repair the missing reasoning.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_window": "Exact-sum contiguity alone does not guarantee monotone expansion and shrink.",
+          "always_two_pointers": "Two endpoints merely represent a candidate; without assumptions about element signs, they do not determine whether moving left safely repairs or eliminates anything.",
+          "shrink_on_inequality": "Shrinking when the sum is below T can discard a start that a future positive value would complete, and signed values make both directions unpredictable."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "Element signs are unspecified.",
+        "The algorithm must be justified for every input permitted by the prompt."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-04",
+      "prompt": "For a longest substring with at most K distinct characters, why can left advance while the current distinct count exceeds K?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "distinct_monotone",
+            "text": "Removing characters cannot add a distinct value, so shrink cannot worsen the violation and eventually can restore validity."
+          },
+          {
+            "id": "map_exists",
+            "text": "A frequency map automatically makes every shrink rule correct."
+          },
+          {
+            "id": "characters_ordered",
+            "text": "Character codes are ordered."
+          },
+          {
+            "id": "longest_requires_shrink",
+            "text": "Every longest-substring problem must shrink."
+          }
+        ],
+        "acceptedOptionIds": [
+          "distinct_monotone"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The at-most-K predicate is monotone under removal from the left.",
+        "details": "The frequency map makes the predicate observable, but monotonicity comes from set membership: deleting occurrences can leave the distinct count unchanged or reduce it, never increase it. Therefore an invalid window with more than K distinct characters can be repaired by removing old characters. Once valid, its length can be considered for the longest answer. A different predicate, such as exactly K or at least K, requires a separate answer-timing and discard argument even if it uses the same frequency map.",
+        "wrongOptionExplanationsByOptionId": {
+          "map_exists": "A data structure reports state; it does not by itself prove that boundary movement is safe.",
+          "characters_ordered": "The numeric ordering of character codes does not affect how deleting occurrences changes the number of distinct values in the current substring.",
+          "longest_requires_shrink": "Some longest-substring objectives have no monotone repair operation; “longest” alone does not prove that advancing left preserves the optimum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "K is nonnegative.",
+        "The candidate is a contiguous substring."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-05",
+      "prompt": "A reviewer notes that a proposed window loop terminates and each index moves at most n times, but the author cannot explain why a discarded start can never be needed after future right expansions. What conclusion follows?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "complexity_not_correctness",
+            "text": "The O(n) movement bound does not establish correctness; shrink legality is still missing."
+          },
+          {
+            "id": "termination_suffices",
+            "text": "Termination proves the discarded starts are safe."
+          },
+          {
+            "id": "linear_suffices",
+            "text": "Any two-boundary O(n) loop is a valid sliding window."
+          },
+          {
+            "id": "rename_two_pointers",
+            "text": "Rename the technique two pointers and the proof is no longer needed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "complexity_not_correctness"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A linear movement count is a cost argument, not a proof that eliminated candidates are irrelevant.",
+        "details": "Sliding-window correctness has two separate obligations: state must match the current range, and advancing left must safely remove candidate starts under the objective and constraints. An algorithm can satisfy the amortized O(n) movement bound while returning the wrong answer because it discarded a start too early. Relabeling the code does not help; two-pointers methods also require a discard proof. The appropriate review is to block the algorithm until the monotonicity or dominance argument is explicit.",
+        "wrongOptionExplanationsByOptionId": {
+          "termination_suffices": "Termination only shows that the loop ends, not that it preserves the answer.",
+          "linear_suffices": "An O(n) bound only counts operations; it does not prove that a removed start cannot become part of the optimal candidate after later expansions.",
+          "rename_two_pointers": "Changing the technique label cannot replace the invariant or elimination theorem required to show that discarded candidates are irrelevant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "No countervailing theorem about future expansions has been supplied."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-06",
+      "prompt": "Select all statements that correctly describe transfer of the rule “shrink while currentSum > B” for a longest contiguous segment with sum at most B.",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "nonnegative_valid",
+            "text": "The rule remains justified when every value is nonnegative."
+          },
+          {
+            "id": "signed_breaks",
+            "text": "Allowing arbitrary signed values invalidates the monotone-removal proof."
+          },
+          {
+            "id": "contiguity_enough",
+            "text": "The rule remains justified for signed values because the answer is contiguous."
+          },
+          {
+            "id": "two_indices_enough",
+            "text": "The rule remains justified whenever the implementation uses left and right."
+          }
+        ],
+        "acceptedOptionIds": [
+          "nonnegative_valid",
+          "signed_breaks"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The proof transfers with nonnegative contributions and fails when removal can increase the sum.",
+        "details": "Under nonnegative contributions, an over-budget total can only stay the same or decrease when left members are removed, and future expansions cannot rescue an already over-budget start without first shrinking. Arbitrary signed values break both claims: removing a negative can raise the total, and future negative additions can make an earlier start useful again. Contiguity and pointer syntax remain present in both versions, showing why they are insufficient as decision rules.",
+        "wrongOptionExplanationsByOptionId": {
+          "contiguity_enough": "Contiguity identifies the candidate shape but does not guarantee monotone validity under removal.",
+          "two_indices_enough": "Index variables only mark boundaries; they do not determine whether removing the outgoing value decreases currentSum or preserves future optimal candidates."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "nonnegative_valid": "Omitting this loses the positive case in which removal is monotone and the original proof is valid.",
+          "signed_breaks": "Omitting this misses the decisive counterexample boundary introduced by negative values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "More than one statement may be correct."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [
+      {
+        "setId": "contrast-set-ctpsw-slam-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "shrink_legality_and_monotonicity",
+        "contrastedMentalUnitIds": [
+          "recognize_two_pointer_signal",
+          "recognize_sliding_window_signal"
+        ],
+        "falseHeuristicId": "any_solution_with_two_indices_is_two_pointers",
+        "transferBoundary": "A variable window is legal only when removing elements from the left changes the validity measure predictably enough to restore validity without revisiting discarded starts; signed or non-monotone effects cross this boundary.",
+        "itemIds": [
+          "alg-ctpsw-slam-01",
+          "alg-ctpsw-slam-02",
+          "alg-ctpsw-slam-03",
+          "alg-ctpsw-slam-04",
+          "alg-ctpsw-slam-05",
+          "alg-ctpsw-slam-06"
+        ]
+      }
+    ],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

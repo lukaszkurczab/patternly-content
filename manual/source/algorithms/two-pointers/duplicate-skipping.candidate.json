@@ -1,0 +1,613 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "two-pointers-duplicate_skipping-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-two-pointers-review-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "two_pointers",
+    "primaryMentalUnitId": "duplicate_skipping",
+    "patternFamilyId": "two_pointers"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; human review required)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "two-pointers-duplicate_skipping-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tp-dup-unique-pairs-after-hit",
+      "prompt": "A sorted array may contain duplicates, and the output must list each distinct value pair summing to target exactly once. After recording a matching pair (x, y), what movement is appropriate?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "skip_before_record",
+            "text": "Skip all duplicates before recording the current pair."
+          },
+          {
+            "id": "skip_both_runs",
+            "text": "Advance left past every remaining x and retreat right past every remaining y before continuing."
+          },
+          {
+            "id": "move_left_once",
+            "text": "Advance left once but leave all duplicate y values for later output."
+          },
+          {
+            "id": "stop_always",
+            "text": "Stop after the first pair even though all unique pairs are required."
+          }
+        ],
+        "acceptedOptionIds": [
+          "skip_both_runs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Once (x, y) has been recorded, later occurrences of x or y at those boundaries can only reproduce the same value pair. Skipping their runs preserves unique-pair completeness.",
+        "details": "The sorted order groups equal values contiguously. Every combination using the same boundary values x and y has already been represented by the recorded pair, so those duplicates add multiplicity but no new value pair. The algorithm must record before skipping because the current representatives may be the only witness. This rule is valid for unique value-pair output, not for counting index pairs.",
+        "wrongOptionExplanationsByOptionId": {
+          "move_left_once": "Leaving duplicate y values can emit the same value pair repeatedly when another x or the same x run is encountered.",
+          "stop_always": "Existence queries may stop, but an all-unique-pairs contract requires continued search after consuming the duplicate runs.",
+          "skip_before_record": "Skipping first can remove the current valid pair without ever adding it to the output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "The array is sorted in nondecreasing order.",
+        "Each distinct value pair must appear once.",
+        "Index-pair multiplicity is irrelevant."
+      ]
+    },
+    {
+      "id": "alg-tp-dup-process-representative-first",
+      "prompt": "Why must a duplicate-skipping loop evaluate the current boundary values before skipping their run?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "duplicates_are_invalid",
+            "text": "Duplicate input values are illegal and must be deleted before search."
+          },
+          {
+            "id": "representative_may_be_solution",
+            "text": "The first occurrence is the run's representative and may form a valid result that would be lost if the run were skipped first."
+          },
+          {
+            "id": "sorting_may_break",
+            "text": "Skipping duplicates makes the array unsorted."
+          },
+          {
+            "id": "both_must_move",
+            "text": "Both pointers must move before any comparison in every two-pointer algorithm."
+          }
+        ],
+        "acceptedOptionIds": [
+          "representative_may_be_solution"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Duplicate elimination is safe only after the current value class has been processed for the active output contract.",
+        "details": "Equal occurrences are interchangeable for distinct-value output, but the value itself is not irrelevant. The current pair may be the one valid pair involving that value class. Processing one representative establishes whether to record it or which boundary class can be eliminated. Only then may equivalent occurrences be skipped without losing a distinct solution.",
+        "wrongOptionExplanationsByOptionId": {
+          "sorting_may_break": "Pointer movement does not reorder the array; sortedness remains intact. The risk is lost output, not lost order.",
+          "both_must_move": "Movement follows the current relation. Preemptive movement can skip the only representative that should have been evaluated.",
+          "duplicates_are_invalid": "Duplicates are legal input. The algorithm must interpret them according to the requested output multiplicity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-tp-dup-low-sum-skip-left-run",
+      "prompt": "A distinct-value pair scan sees a below-target sum at a left boundary containing a run of equal x values. Which argument licenses consuming that whole left run while preserving the current right endpoint?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "right_already_used",
+            "text": "The right value may be used only once across the entire algorithm."
+          },
+          {
+            "id": "same_too_small_sum",
+            "text": "Every duplicate x produces the same too-small sum with the current maximum partner, so no pair using value x can reach target."
+          },
+          {
+            "id": "duplicates_never_solve",
+            "text": "Duplicate values can never participate in valid pairs."
+          },
+          {
+            "id": "move_both_faster",
+            "text": "Skipping both boundary runs is always faster and therefore correct."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_too_small_sum"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "All occurrences in the left duplicate run represent the same value, and even its largest remaining partner yields a sum below target.",
+        "details": "The ordinary elimination proof removes the value x after a low sum. Because every adjacent duplicate has the same value, repeating the comparison would produce the same result and no new distinct value pair. Skipping the whole run compresses redundant work without changing the set of value-pair candidates. The current right value remains viable with a larger left value and must not be skipped.",
+        "wrongOptionExplanationsByOptionId": {
+          "duplicates_never_solve": "Duplicates can form valid pairs, including x+x when at least two positions exist. They are skipped only after their value class is proved redundant for the current state.",
+          "move_both_faster": "Faster movement is not sufficient. The right boundary has not been eliminated by a low sum.",
+          "right_already_used": "Two-pointer search does not globally consume a boundary value after one comparison; it remains until its candidate class is eliminated or recorded under the output contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The array is sorted.",
+        "The output contains distinct value pairs, not index-pair counts."
+      ]
+    },
+    {
+      "id": "alg-tp-dup-high-sum-skip-right-run",
+      "prompt": "At the opposite boundary, an equal-value run y ends at right and the endpoint sum exceeds the target. What proves that the complete y run may be consumed without moving left?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "skip_both_runs",
+            "text": "Every mismatch eliminates both value runs."
+          },
+          {
+            "id": "duplicates_break_order",
+            "text": "Duplicate values invalidate sorted order and must be removed."
+          },
+          {
+            "id": "same_too_large_sum",
+            "text": "Every duplicate y produces the same too-large sum with the current minimum partner, so no pair using value y can reach target."
+          },
+          {
+            "id": "right_values_are_used",
+            "text": "Values on the right may be compared only once."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_too_large_sum"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The high-sum proof eliminates the right boundary value, and all equal occurrences represent the same eliminated value class.",
+        "details": "The current left value is the smallest remaining partner. If y with that partner is already too large, any larger left value paired with y is also too large. Repeating the comparison for another y occurrence cannot create a new distinct pair, so the full run can be skipped. The left value remains a possible partner for a smaller right value and must stay.",
+        "wrongOptionExplanationsByOptionId": {
+          "right_values_are_used": "Candidates are eliminated by value-order reasoning, not by a one-comparison usage quota.",
+          "skip_both_runs": "The comparison eliminates only y. The current left value may still succeed with a smaller right value.",
+          "duplicates_break_order": "Equal adjacent values are compatible with nondecreasing order. Their run structure is what makes skipping efficient."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The array is sorted.",
+        "The output contains distinct value pairs."
+      ]
+    },
+    {
+      "id": "alg-tp-dup-multiplicity-boundary",
+      "prompt": "The task changes from listing distinct value pairs to counting all distinct index pairs whose values sum to target. Can the algorithm still skip duplicate runs immediately after finding one matching value pair?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_again",
+            "text": "Only after sorting the already sorted array again."
+          },
+          {
+            "id": "no_count_runs",
+            "text": "No. It must account for the number of occurrences on each side because those multiplicities create multiple index pairs."
+          },
+          {
+            "id": "yes_same_output",
+            "text": "Yes. Duplicate occurrences never change any pair-count result."
+          },
+          {
+            "id": "yes_move_both_once",
+            "text": "Yes. Moving both pointers once counts every duplicate combination automatically."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_count_runs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Duplicate skipping is governed by output identity. Index-pair counting must preserve run multiplicity rather than collapse it to one value pair.",
+        "details": "If x occurs cL times and y occurs cR times with x != y, the matching value pair contributes cL*cR index pairs. If x==y, the contribution is choose(c,2). A distinct-value enumerator deliberately collapses those combinations, but a counting task cannot. The pointer framework may still be used, yet the run must be measured before both pointers leave it.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_same_output": "Changing from value-pair identity to index-pair identity changes the answer. Duplicate occurrences now create additional valid results.",
+          "yes_move_both_once": "One movement does not encode how many combinations were present. The run lengths must be counted explicitly.",
+          "sort_again": "The array is already ordered; repeated sorting does not recover multiplicity after it has been skipped."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The array is sorted.",
+        "Each pair of distinct positions counts separately."
+      ]
+    },
+    {
+      "id": "alg-tp-dup-all-equal-edge",
+      "prompt": "The sorted array is [3, 3, 3, 3], target is 6, and output requires distinct value pairs. What should be emitted?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "four_pairs",
+            "text": "Emit one entry for each occurrence."
+          },
+          {
+            "id": "no_pair",
+            "text": "Emit nothing because the two values are equal."
+          },
+          {
+            "id": "one_pair",
+            "text": "Emit (3, 3) exactly once."
+          },
+          {
+            "id": "six_pairs",
+            "text": "Emit six entries because there are six index pairs."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_pair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The pair uses two distinct positions but has one distinct value identity, so unique-value output contains a single (3, 3) result.",
+        "details": "At least two occurrences exist, so the equal-value pair is legal. Once recorded, advancing past the complete run exhausts every candidate with value 3. The six combinatorial index pairs are intentionally collapsed by the distinct-value contract. If the task counted index pairs, six would be the correct multiplicity instead.",
+        "wrongOptionExplanationsByOptionId": {
+          "six_pairs": "Six is the index-pair count, not the number of distinct value pairs requested here.",
+          "four_pairs": "Individual occurrences do not define separate value-pair outputs under the stated contract.",
+          "no_pair": "Equal values are permitted when they come from distinct positions, and the array contains enough occurrences."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "The two members must use distinct positions.",
+        "Output is unique by value pair."
+      ]
+    },
+    {
+      "id": "alg-tp-dup-match-consumption-order",
+      "prompt": "Order the actions after a matching pair is found when enumerating distinct value pairs in a sorted array.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "advance_boundaries",
+            "text": "Move left rightward and right leftward at least once."
+          },
+          {
+            "id": "resume_search",
+            "text": "Resume comparison if left remains less than right."
+          },
+          {
+            "id": "remember_values",
+            "text": "Retain the matched left and right values as the runs to consume."
+          },
+          {
+            "id": "record_pair",
+            "text": "Record the current value pair."
+          },
+          {
+            "id": "skip_equal_runs",
+            "text": "Continue moving past values equal to the remembered matched values."
+          }
+        ],
+        "canonicalOrder": [
+          "record_pair",
+          "remember_values",
+          "advance_boundaries",
+          "skip_equal_runs",
+          "resume_search"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The valid pair is recorded before its representative values are consumed, and duplicate runs are skipped before the next comparison.",
+        "details": "Recording first protects the current result. Remembering the boundary values identifies exactly which equal runs are redundant. Each pointer then leaves the current positions, after which the skip loops consume only equal copies. The distinct-position boundary must be checked during skipping and before resuming so an all-equal or exhausted interval remains safe."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Output requires every distinct value pair once.",
+        "The array is sorted."
+      ]
+    },
+    {
+      "id": "alg-tp-dup-read-write-transfer",
+      "prompt": "A sorted sequence must be compacted in place to one copy of each value. Which duplicate-skipping principle transfers from unique pair enumeration?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "move_two_boundaries",
+            "text": "Always move an opposite-end left and right pointer together."
+          },
+          {
+            "id": "count_index_pairs",
+            "text": "Multiply left-run and right-run sizes."
+          },
+          {
+            "id": "sort_each_run",
+            "text": "Sort every equal run separately."
+          },
+          {
+            "id": "keep_one_representative",
+            "text": "Process one representative of each equal run, then skip the remaining equivalent occurrences for the value-unique output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "keep_one_representative"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Both tasks define output identity by value, so one processed representative preserves the result while later equal occurrences are redundant.",
+        "details": "In compaction, read sees every input value but write grows only when a value is not already represented in the output prefix. That is the same semantic boundary as recording one unique pair before consuming duplicate runs: equivalent occurrences add no new value-identified result. The pointer geometry changes from opposite ends to same direction, so the movement recipe itself does not transfer. The output contract, not the number of indices, is the shared mechanism.",
+        "wrongOptionExplanationsByOptionId": {
+          "move_two_boundaries": "Same-direction compaction does not have two converging extremes. Copying a movement schedule across variants would be incorrect.",
+          "count_index_pairs": "Multiplying run lengths is correct when the output counts distinct index pairs. Stable duplicate compaction instead keeps one representative per value, so multiplicity is intentionally discarded.",
+          "sort_each_run": "Equal runs are already grouped by the sorted input, and sorting identical values adds no information."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-tp-dup-nonmatch-move-both-bug",
+      "prompt": "During unique-pair enumeration, a nonmatching sum is below target. The code skips the duplicate runs at both left and right before continuing. What is wrong?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "must_stop",
+            "text": "Any nonmatch ends unique-pair enumeration."
+          },
+          {
+            "id": "right_run_not_eliminated",
+            "text": "Only the left value class is proved too small; the right value class may still form a valid pair with a larger left value."
+          },
+          {
+            "id": "left_run_not_eliminated",
+            "text": "A low sum proves nothing about the left value class."
+          },
+          {
+            "id": "duplicates_forbid_search",
+            "text": "Pair search cannot operate on duplicate values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "right_run_not_eliminated"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A low sum licenses skipping the eliminated left value run, not the still-viable right run.",
+        "details": "All copies of the current left value are redundant because even the largest current partner leaves their sum below target. No analogous statement holds for the current right value: a larger left value may pair with it successfully. Skipping both runs applies a match-consumption rule to a mismatch and can lose a distinct solution. Duplicate handling must remain subordinate to the same one-boundary elimination proof as ordinary pair search.",
+        "wrongOptionExplanationsByOptionId": {
+          "left_run_not_eliminated": "The low-sum extremal argument does eliminate every pair using the current left value, including all equal copies of it.",
+          "duplicates_forbid_search": "Sorted duplicate runs are compatible with two-pointer search; they simply require an explicit output policy.",
+          "must_stop": "Enumeration continues after mismatches by eliminating the one boundary class proved impossible."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-tp-dup-sort-and-skip-time",
+      "prompt": "An unsorted array is sorted in O(n log n), then a duplicate-aware two-pointer scan moves each pointer monotonically across the array once. What is the end-to-end time complexity?",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "Skipping duplicate runs keeps the scan linear, but sorting still dominates the complete algorithm.",
+        "details": "The skip loops do not restart over processed values; each occurrence is crossed at most once by its pointer, so the scan is O(n). Preceding comparison sorting costs O(n log n), yielding O(n log n+n)=O(n log n). Duplicate optimization reduces repeated comparisons but cannot make the preprocessing disappear. If the input is already sorted, the scan alone is O(n)."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "introductory",
+      "constraints": [
+        "Comparison sorting takes O(n log n).",
+        "Each input position is crossed by a pointer at most once after sorting."
+      ]
+    },
+    {
+      "id": "alg-tp-dup-output-contract-before-skip",
+      "prompt": "A solution says, ‘There are two pointers and duplicate values, so equal neighbours can always be skipped.’ What missing decision determines whether that statement is correct?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "pointer_names",
+            "text": "Whether the pointers are named i and j."
+          },
+          {
+            "id": "array_length_parity",
+            "text": "Whether the array length is even."
+          },
+          {
+            "id": "both_move_speed",
+            "text": "Whether moving both pointers is faster in practice."
+          },
+          {
+            "id": "output_identity",
+            "text": "The output identity and whether one representative of the equal run has already been processed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "output_identity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Duplicate equivalence is defined by the output contract. Equal occurrences are skippable only when they cannot create a materially new required result.",
+        "details": "For unique value pairs or one-copy compaction, later equal occurrences may be redundant after one representative is processed. For index-pair enumeration or counting, those occurrences remain distinct evidence and must be preserved or aggregated. The pointer configuration does not answer this semantic question. A correctness argument must name what identity the result uses and the point at which the value class has been consumed.",
+        "wrongOptionExplanationsByOptionId": {
+          "pointer_names": "Names such as left and right may suggest a familiar template, but they do not define whether results are unique by value or by index. The output contract must decide whether a duplicate run may be skipped.",
+          "array_length_parity": "Even or odd length may affect a middle position but not whether equal occurrences represent distinct outputs.",
+          "both_move_speed": "Runtime preference cannot justify discarding required multiplicity or an unprocessed representative."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "skip_duplicates_without_losing_solutions",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "duplicate_skip",
+        "problemArchetypeId": "find_pair_in_sorted_input"
+      },
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,475 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "recursion-basics-choose-recursive-state",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-recursion-basics-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "recursion_basics",
+    "primaryMentalUnitId": "choose_recursive_state",
+    "patternFamilyId": "recursion_basics"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring",
+    "createdAt": "2026-07-18T15:01:33Z",
+    "contentBatchId": "recursion-basics-choose-recursive-state",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "recursion-basics-choose-recursive-state-suffix-sum-minimal-index-state",
+      "prompt": "An immutable array a is available to every call. sumFrom(i) must return the sum of a[i:].\nWhich recursive parameter set is minimal and sufficient?",
+      "constraints": [
+        "The input array is immutable and available to every recursive call.",
+        "The function returns the sum of the remaining suffix rather than mutating an external accumulator."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "index_only",
+            "text": "Pass only i."
+          },
+          {
+            "id": "index_and_running_sum",
+            "text": "Pass i and a running sum accumulated so far."
+          },
+          {
+            "id": "copied_suffix",
+            "text": "Pass a newly copied array a[i:] to every call."
+          },
+          {
+            "id": "global_cursor",
+            "text": "Pass no parameter and advance one shared global cursor."
+          }
+        ],
+        "acceptedOptionIds": [
+          "index_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The index alone distinguishes every remaining suffix; all other required information is fixed or derivable.",
+        "details": "Recursive state should contain the information that changes the meaning of the current subproblem and cannot be reconstructed from stable context. Because a is immutable and shared, i uniquely identifies a[i:]. The child state is i + 1, and len(a) is derivable from a. A running total belongs to a different accumulator-style contract, while a copied suffix represents the same state less efficiently. This boundary transfers to any shared immutable sequence: use a position or interval when it uniquely identifies the remaining region; carry extra data only when the answer truly depends on it and it is not derivable.",
+        "wrongOptionExplanationsByOptionId": {
+          "index_and_running_sum": "A running sum describes work performed by ancestors, not the remaining suffix. It is unnecessary for a return-value contract and makes the call depend on history that the suffix itself does not need.",
+          "copied_suffix": "The copied suffix is sufficient, but it is not minimal: i already identifies the same immutable suffix. Copying also introduces avoidable allocation and obscures the stable source array.",
+          "global_cursor": "A mutable global cursor hides the subproblem identity outside the call. Independent calls, retries, and branching would interfere, so the state is neither explicit nor safely compositional."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_minimal_recursive_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-choose-recursive-state-state-selection-reduction-process",
+      "prompt": "Order the reasoning steps for choosing recursive state after the function's current subproblem has been stated in words.",
+      "constraints": [
+        "The recursive result contract and stable input context have already been identified.",
+        "The task is to minimize explicit recursive state, not to redesign the algorithm's output."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "list_changing_facts",
+            "text": "List the facts that can change the answer for the current subproblem."
+          },
+          {
+            "id": "remove_fixed_or_derived",
+            "text": "Remove facts fixed for the whole run or derivable from other listed facts."
+          },
+          {
+            "id": "separate_distinct_subproblems",
+            "text": "Check that different remaining states that can produce different answers are still distinguishable."
+          },
+          {
+            "id": "verify_child_construction",
+            "text": "Verify that each recursive child state can be constructed without recovering discarded history."
+          }
+        ],
+        "canonicalOrder": [
+          "list_changing_facts",
+          "remove_fixed_or_derived",
+          "separate_distinct_subproblems",
+          "verify_child_construction"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Minimal state is found by retaining answer-relevant distinctions, removing redundancy, and then testing both identity and transition sufficiency.",
+        "details": "First enumerate information that may change the result, otherwise an essential dimension can disappear before it is considered. Next remove global constants and values derivable from retained state. The remaining representation must distinguish materially different subproblems: if two states collapse but can have different answers, the representation is incomplete. Finally, every legal recursive transition must be constructible from the retained state and stable context. This last check prevents a seemingly compact state from depending on hidden ancestor history. The sequence applies to indices, intervals, tree nodes, remaining capacities, and other recursive representations without prescribing any particular data structure."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_minimal_recursive_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-choose-recursive-state-palindrome-two-boundary-state",
+      "prompt": "A shared immutable string s is available to every call. palindrome(l, r) may be invoked on any inclusive\nsubstring s[l..r]. Select all pieces of information that must be represented in the recursive state so the\ncurrent substring is uniquely identified.",
+      "constraints": [
+        "The function supports arbitrary inclusive substrings, not only prefixes or suffixes.",
+        "The string is immutable and shared across the recursion."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "left_boundary",
+            "text": "The left boundary l."
+          },
+          {
+            "id": "right_boundary",
+            "text": "The right boundary r."
+          },
+          {
+            "id": "substring_length",
+            "text": "The substring length r - l + 1."
+          },
+          {
+            "id": "matched_outer_pairs",
+            "text": "The number of outer pairs already matched."
+          },
+          {
+            "id": "string_value",
+            "text": "A separate copy of s in every frame."
+          }
+        ],
+        "acceptedOptionIds": [
+          "left_boundary",
+          "right_boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Both endpoints are necessary to identify an arbitrary remaining substring; length and prior progress are derivable or irrelevant.",
+        "details": "An interval state must preserve location as well as size. Keeping only l would not reveal where the requested substring ends, and keeping only r would not reveal where it begins. Keeping only length collapses different regions that may have different characters. Once l and r are present, the length and terminal conditions l >= r are derivable, while the shared string remains fixed context. This is a general transfer rule for recursive interval problems: retain every boundary needed to name the region, but do not duplicate values computed from those boundaries.",
+        "wrongOptionExplanationsByOptionId": {
+          "substring_length": "Length is derivable from l and r and cannot replace either boundary: many different substrings have the same length.",
+          "matched_outer_pairs": "That count is ancestor history. The current interval already captures the remaining work, and the Boolean answer does not depend on how many pairs were removed.",
+          "string_value": "The string is stable shared context. Repassing or copying it does not distinguish subproblems and therefore is not part of the minimal changing state."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "left_boundary": "Without l, the state cannot distinguish substrings that end at the same position but begin at different positions.",
+          "right_boundary": "Without r, the state cannot distinguish substrings that begin at the same position but end at different positions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_minimal_recursive_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "base_case_recognition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-choose-recursive-state-nested-weighted-sum-depth-transfer",
+      "prompt": "A nested value is either an integer or a list of nested values. weighted(value, depth) returns the sum of\neach integer multiplied by its nesting depth, with the root list at depth 1. Which state is minimal and sufficient?",
+      "constraints": [
+        "The recursive call receives the current nested value directly.",
+        "Each call returns its own weighted contribution rather than updating a shared total."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_and_depth",
+            "text": "The current nested value and its current depth."
+          },
+          {
+            "id": "value_only",
+            "text": "Only the current nested value."
+          },
+          {
+            "id": "value_depth_running_total",
+            "text": "The current value, depth, and the total accumulated by ancestors."
+          },
+          {
+            "id": "root_and_path",
+            "text": "The root value and the complete index path from the root."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_and_depth"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Depth must be carried because it changes a leaf's contribution and cannot be derived from the current value alone.",
+        "details": "Recursive structure alone does not determine minimal state; the result contract determines which contextual facts matter. The current nested value identifies what remains to traverse, while depth determines the multiplier applied to every leaf below it. A call on the same value at depth 2 and depth 4 has a different answer, so those states must remain distinct. By contrast, an ancestor running total is not required because each call can return its local contribution. The transfer boundary is precise: omit depth for a depth-independent aggregate such as plain sum, but retain it whenever the output or legal operation depends on nesting level.",
+        "wrongOptionExplanationsByOptionId": {
+          "value_only": "The same nested value can contribute a different amount when reached at a different depth, so value alone collapses subproblems with different answers.",
+          "value_depth_running_total": "The running total is not needed when each call returns the contribution of its own nested value. It couples the child to ancestor history and is redundant under the stated contract.",
+          "root_and_path": "A full path can reconstruct the current value and depth, but it is not minimal. Passing the current value and depth names the same subproblem directly."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_minimal_recursive_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-choose-recursive-state-singleton-terminal-without-empty-flag",
+      "prompt": "lastValue(i) returns the final element of the non-empty suffix a[i:] and is called only with 0 <= i < len(a).\nA teammate proposes state (i, reachedEmpty) so recursion can stop on an empty suffix. Which review is correct?",
+      "constraints": [
+        "The array is non-empty.",
+        "The function is never called with i == len(a).",
+        "The array and its length are shared immutable context."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "index_only_singleton_base",
+            "text": "Keep only i and stop when i == len(a) - 1."
+          },
+          {
+            "id": "add_empty_flag",
+            "text": "Add reachedEmpty because a valid recursive function must terminate only on empty input."
+          },
+          {
+            "id": "copy_remaining_suffix",
+            "text": "Replace i with a copied suffix and stop after copying an empty array."
+          },
+          {
+            "id": "store_last_value_too",
+            "text": "Pass both i and a[len(a) - 1] so the base can return the saved value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "index_only_singleton_base"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The terminal singleton is derivable from i, so an empty-state flag adds no information and violates minimality.",
+        "details": "Base cases correspond to atomic instances of the declared subproblem, not universally to empty inputs. Here every legal state denotes a non-empty suffix. The state i == len(a) - 1 identifies a singleton suffix, whose answer is already known. Because terminal status and the final value are derivable from i and the shared array, neither an empty flag nor a saved last value belongs in minimal state. The transfer rule is to define the valid recursive domain first: if emptiness is outside that domain, do not add state merely to manufacture an empty terminal case.",
+        "wrongOptionExplanationsByOptionId": {
+          "add_empty_flag": "The premise is false. A singleton suffix is the smallest valid instance of this non-empty contract, and the flag duplicates a terminal fact already derivable from i and len(a).",
+          "copy_remaining_suffix": "Copying changes representation without solving the misconception. It adds allocation and extends the state outside the function's declared non-empty domain.",
+          "store_last_value_too": "The last value is stable data derivable from the shared array. Repassing it does not distinguish recursive subproblems and is redundant state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_minimal_recursive_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "base_case_recognition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-choose-recursive-state-same-parameter-shape-changing-value",
+      "prompt": "distanceToZero(n) returns how many decrements turn a non-negative n into 0 and calls distanceToZero(n - 1).\nWhich statement about its recursive state is correct?",
+      "constraints": [
+        "The input is a non-negative integer.",
+        "The function returns the remaining distance from the current n, not the total from a separately stored origin."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_field_changing_value",
+            "text": "Every frame uses the same one-field state schema, but the value of n is different."
+          },
+          {
+            "id": "identical_state_each_call",
+            "text": "Every frame has identical state because the parameter is named n each time."
+          },
+          {
+            "id": "add_call_number",
+            "text": "A call-number parameter is required to make frames different."
+          },
+          {
+            "id": "copy_original_n",
+            "text": "Both originalN and n must be passed so each frame knows where recursion began."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_field_changing_value"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Minimal state can keep the same field names in every frame while their values identify different subproblems.",
+        "details": "Recursive state has two levels: its shape, such as one integer field, and its value in a particular frame. Self-similarity normally preserves the shape because each call solves the same kind of problem. Progress changes the value. Here n uniquely determines the remaining number of decrements, so adding a call counter or original input would be redundant. This distinction transfers broadly: identical parameter lists are expected; identical parameter values are suspicious when a strict progress measure should change.",
+        "wrongOptionExplanationsByOptionId": {
+          "identical_state_each_call": "A parameter name defines the schema, not its runtime value. States n = 4 and n = 3 identify different remaining subproblems.",
+          "add_call_number": "The changing n already distinguishes the subproblems and determines the remaining distance. A call number is derivable from the starting value and current n and adds no answer-relevant information.",
+          "copy_original_n": "The return value depends only on the current distance n. The original start is ancestor history and is unnecessary under the stated contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_minimal_recursive_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-choose-recursive-state-linked-search-current-node-not-fixed-head",
+      "prompt": "contains(node, target) searches an acyclic singly linked list from node onward. target is fixed for the whole search.\nWhich changing recursive state is minimal?",
+      "constraints": [
+        "The list is acyclic.",
+        "The target value does not change during the search.",
+        "The return value is Boolean membership, not the found position."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "current_node",
+            "text": "The current node; recurse with node.next."
+          },
+          {
+            "id": "original_head",
+            "text": "The original head; recursively call again with the same head until the None base case is reached."
+          },
+          {
+            "id": "current_node_and_step",
+            "text": "The current node and an explicit step counter."
+          },
+          {
+            "id": "target_only",
+            "text": "Only target, because the list is reachable from a global head."
+          }
+        ],
+        "acceptedOptionIds": [
+          "current_node"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The current node is the minimal identity of the remaining list; a fixed head repeats the same subproblem indefinitely.",
+        "details": "A state representation must make the current subproblem explicit. For a linked list, the node reference names the entire remaining suffix because following next reaches everything below it. The target is stable context, while a step count is irrelevant to membership. Merely defining node is None as a base case does not make an unchanged head advance toward it. This item uses termination as a diagnostic consequence, but the primary decision is state identity: choose the node that denotes the remaining structure, not the ancestor root that denotes the original problem.",
+        "wrongOptionExplanationsByOptionId": {
+          "original_head": "The original head identifies the same full-list subproblem in every frame. A None base case cannot be reached when the changing state never advances.",
+          "current_node_and_step": "The counter is not required to answer membership or identify the remaining list. The current node already names the suffix and node.next constructs the child.",
+          "target_only": "Without the current node, the call cannot identify which suffix remains. A mutable global traversal cursor would hide essential state and prevent independent calls."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_minimal_recursive_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-choose-recursive-state-linear-suffix-needs-no-visited-set",
+      "prompt": "countFrom(i) returns the number of elements in a[i:] and makes exactly one recursive call, countFrom(i + 1),\nuntil i == len(a). Which state design is justified?",
+      "constraints": [
+        "The function makes exactly one recursive call for every non-terminal state.",
+        "The index strictly increases by one and the array does not change."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "index_only",
+            "text": "Use only i; no visited set is needed."
+          },
+          {
+            "id": "index_and_visited",
+            "text": "Use i plus a set of visited indices because recursive code otherwise revisits states exponentially."
+          },
+          {
+            "id": "entire_prefix_history",
+            "text": "Pass every previously visited index so the child knows recursion is progressing."
+          },
+          {
+            "id": "memo_by_index_required",
+            "text": "Memoize every index because every recursive function requires dynamic programming."
+          }
+        ],
+        "acceptedOptionIds": [
+          "index_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "One strictly advancing child produces a chain of unique suffix states, so i is sufficient and memo state is redundant.",
+        "details": "Recursion does not imply overlapping subproblems. The state graph here is i -> i + 1 -> ... -> len(a), with exactly one visit to each index. The index completely identifies the remaining suffix, and neither a visited set nor a memo table changes the asymptotic work. Additional state becomes justified when branching transitions can converge on the same state, as in naive Fibonacci or many grid paths. The transfer boundary is therefore call-graph overlap, not the presence of recursive syntax.",
+        "wrongOptionExplanationsByOptionId": {
+          "index_and_visited": "This call graph is a single chain. Each increasing index occurs once, so a visited set records facts the control flow already guarantees and does not prevent any repeated work.",
+          "entire_prefix_history": "The ordered history is derivable from the start and current i and is irrelevant to the suffix count. It makes state grow without changing the answer.",
+          "memo_by_index_required": "Memoization is useful when the same state can be reached through multiple paths. Here each state has only one predecessor in the actual call chain, so no overlap exists."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_minimal_recursive_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tail_recursion_intro",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,288 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-heap-priority-queue-heap-mistake-review-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-heap-priority-queue-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "heap_priority_queue",
+    "primaryMentalUnitId": "heap_mistake_review",
+    "patternFamilyId": "heap_priority_queue"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-heap-priority-queue-heap-mistake-review-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "hpq-mistake-backing-array-as-sorted-output",
+      "prompt": "A developer emits the backing array of a min-heap directly and claims the values are in ascending order. What is the correct diagnosis and repair?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "array_already_sorted",
+            "text": "The claim is correct because every parent precedes every descendant and sibling."
+          },
+          {
+            "id": "partial_not_total_order",
+            "text": "The claim is wrong: heap order constrains parent-child paths but not a total left-to-right order."
+          },
+          {
+            "id": "reverse_array",
+            "text": "Reverse the backing array to obtain ascending order."
+          },
+          {
+            "id": "read_leaves_first",
+            "text": "Emit all leaves first, then internal nodes, to recover sorted order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "partial_not_total_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap order exposes one extreme and constrains parent-child pairs; it does not provide a linear sorted traversal of the backing array.",
+        "details": "Siblings and nodes in separate subtrees are not ordered relative to one another. Therefore array iteration, reversal, or leaf-first traversal cannot guarantee sorted output. Repeated pop produces extremes in order while consuming the heap; operating on a copy preserves the original. If complete order is the only required output, sorting may be the simpler primary strategy.",
+        "wrongOptionExplanationsByOptionId": {
+          "array_already_sorted": "The invariant does not compare siblings or arbitrary descendants across branches, so linear array order is not total order.",
+          "reverse_array": "Reversal cannot create missing comparisons between unrelated heap positions.",
+          "read_leaves_first": "Leaves are not mutually ordered and do not form a sorted prefix or suffix."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mistake-root-access-vs-repair-cost",
+      "prompt": "A developer states: “Heap insertion and removal are O(1) because both operations know the root or append position immediately.” What is missing?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "full_sort_cost",
+            "text": "Every insertion and removal performs a complete O(h log h) sort of all heap entries."
+          },
+          {
+            "id": "orientation_cost",
+            "text": "The cost difference comes from orientation: min-heaps are O(1), while max-heaps are O(log h)."
+          },
+          {
+            "id": "linear_search_cost",
+            "text": "Every insertion first scans all h existing entries to find the only legal append position."
+          },
+          {
+            "id": "repair_path_cost",
+            "text": "Push and pop may repair along heap height, so worst-case cost is O(log h) even though root access is O(1)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "repair_path_cost"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Direct access identifies where mutation starts; it does not eliminate the sift path required to restore the invariant.",
+        "details": "Push appends in O(1) and may then sift upward through the complete-tree height. Pop reads the root in O(1), moves the last leaf, and may sift downward. The repair path has O(log h) levels. Neither operation performs a full sort or full scan, and min/max orientation changes comparison direction rather than asymptotic height.",
+        "wrongOptionExplanationsByOptionId": {
+          "full_sort_cost": "Heap mutation repairs one path and does not sort all h entries.",
+          "linear_search_cost": "Push does not search for a location; complete-tree shape fixes the append position.",
+          "orientation_cost": "Min-heaps and max-heaps have the same structural height and asymptotic mutation cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mistake-top-k-full-history",
+      "prompt": "A correct implementation keeps all n stream values in a heap to return the k largest values at the end. The product will never ask for any other rank. What is the most precise review finding?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "orientation_irrelevant",
+            "text": "The only issue is whether min-heap and max-heap names are used consistently; size never matters."
+          },
+          {
+            "id": "must_sort_inside_heap",
+            "text": "The implementation becomes correct only if the heap array is fully sorted after each insertion."
+          },
+          {
+            "id": "incorrect_due_to_heap",
+            "text": "Any heap containing more than k values produces an incorrect top-k result."
+          },
+          {
+            "id": "correct_but_oversized_state",
+            "text": "The result can be correct, but the state is unnecessarily O(n); a bounded size-k frontier is sufficient."
+          }
+        ],
+        "acceptedOptionIds": [
+          "correct_but_oversized_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The implementation may be functionally correct, but it violates the sufficient-state boundary by retaining candidates that can never affect the fixed-k answer.",
+        "details": "Correctness and efficiency are separate review dimensions. Keeping all n values can still support repeated extraction of the k largest, but fixed-k insertion-only selection needs only k retained candidates and one eviction boundary. The repair is not to sort the heap array; it is to maintain the bounded invariant deliberately. If future arbitrary-rank queries are introduced, retaining broader state may become justified.",
+        "wrongOptionExplanationsByOptionId": {
+          "incorrect_due_to_heap": "An oversized heap can still produce the right values; the defect is unnecessary state and cost, not automatic wrong output.",
+          "must_sort_inside_heap": "Heap order is sufficient for priority extraction; globally sorting after every insertion is unrelated to the state-size defect.",
+          "orientation_irrelevant": "Orientation affects how the boundary is exposed, while size determines whether the state remains bounded; both can matter."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-mistake-top-k-wrong-orientation",
+      "prompt": "To retain the k largest values, an implementation uses a max-heap. Whenever size exceeds k, it pops the root. What set does this update rule tend to retain?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "k_largest",
+            "text": "The k largest values, because max orientation always means largest-k retention."
+          },
+          {
+            "id": "k_smallest",
+            "text": "The k smallest values, because each overflow removes the current largest."
+          },
+          {
+            "id": "last_k_arrivals",
+            "text": "The k most recent values, because pop removes the oldest."
+          },
+          {
+            "id": "arbitrary_k",
+            "text": "An arbitrary set with no systematic rank effect."
+          }
+        ],
+        "acceptedOptionIds": [
+          "k_smallest"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Popping the maximum on every overflow discards the strongest candidate, leaving the smaller values behind.",
+        "details": "A bounded retained set must evict its worst member relative to the desired answer. For k largest, the worst retained member is the minimum, so a min-heap should expose it. The described max-heap rule does the opposite and systematically converges toward k smallest. Max orientation is appropriate for retaining k smallest under the symmetric overflow rule.",
+        "wrongOptionExplanationsByOptionId": {
+          "k_largest": "The heap name does not determine the retained objective; the overflow eviction rule removes the root, here the largest value.",
+          "last_k_arrivals": "Heap order is based on value, not age, unless arrival is explicitly part of the key.",
+          "arbitrary_k": "The rule has a systematic effect: repeatedly removing maxima preserves smaller candidates."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "top_k",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-mistake-stale-root-after-lazy-deletion",
+      "prompt": "A streaming maximum implementation inserts new versions into a max-heap and marks old versions inactive, but peek returns the root without checking activity. Which repair restores the state contract?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "clear_heap_every_query",
+            "text": "Delete the entire heap and lose all active candidates before every answer."
+          },
+          {
+            "id": "switch_to_min_heap",
+            "text": "Use a min-heap so inactive versions move away from the root automatically."
+          },
+          {
+            "id": "purge_stale_before_answer",
+            "text": "Before answering, pop root entries while their version is inactive, then return the first active root."
+          },
+          {
+            "id": "trust_priority_order",
+            "text": "Return the root because the largest key remains correct even when its entry is inactive."
+          }
+        ],
+        "acceptedOptionIds": [
+          "purge_stale_before_answer"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Lazy deletion separates priority order from validity; the answer boundary must remove stale roots until the exposed candidate is active.",
+        "details": "The heap may legitimately contain obsolete versions because deleting arbitrary interior entries is inconvenient. A separate active-version map or timestamp contract determines validity. Before peek or pop is used as an application answer, stale roots must be discarded. Clearing the heap loses valid state, and changing orientation does not encode activity. If stale entries grow without bound, the design may also need periodic compaction or an indexed heap.",
+        "wrongOptionExplanationsByOptionId": {
+          "trust_priority_order": "A stale entry can have the largest key yet no longer represent a legal candidate, so priority alone is insufficient.",
+          "clear_heap_every_query": "Discarding all entries removes valid candidates and destroys incremental state.",
+          "switch_to_min_heap": "Orientation changes which key is extreme but does not distinguish active from inactive versions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "schedule_by_priority"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,400 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-dynamic-programming-intro-iteration_order-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-dynamic-programming-intro-authoring-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "dynamic_programming_intro",
+    "primaryMentalUnitId": "iteration_order",
+    "patternFamilyId": "dynamic_programming_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-dynamic-programming-intro-iteration_order-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-dpintro-order-01-dependency-graph-direction",
+      "prompt": "For dp[i] = min(cost[i] + dp[i + 1], cost[i] + dp[i + 2]), which bottom-up iteration is dependency-safe?",
+      "constraints": [
+        "dp[n] and dp[n + 1] are initialized terminal states.",
+        "The answer is dp[0]."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "descending",
+            "text": "Iterate i from n - 1 down to 0."
+          },
+          {
+            "id": "ascending",
+            "text": "Iterate i from 0 up to n - 1."
+          },
+          {
+            "id": "any_order",
+            "text": "Use any order because every state will eventually be visited."
+          }
+        ],
+        "acceptedOptionIds": [
+          "descending"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each dp[i] depends on larger indices, so those successor states must be computed first.",
+        "details": "The recurrence defines directed edges from i to i + 1 and i + 2. Starting near the terminal bases and moving downward is a topological order of those edges. An increasing loop could be valid only after reformulating the state as a prefix that reads smaller indices. Overlap motivates reuse, but dependency direction determines order.",
+        "wrongOptionExplanationsByOptionId": {
+          "ascending": "Each state would read larger-index successors that have not yet been computed under this formulation.",
+          "any_order": "Visiting all states is insufficient when a state reads a value before that value is finalized."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_dependency_safe_iteration_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-order-02-state-formulation-changes-order",
+      "prompt": "Two formulations solve the same staircase count. Prefix dp[i] counts ways to reach i from 0; suffix ways(i) counts ways to reach n from i. Which statement is correct?",
+      "constraints": [
+        "Moves have length 1 or 2.",
+        "All necessary boundary values are initialized."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "always_increase",
+            "text": "Both must increase i because the state is indexed by one integer."
+          },
+          {
+            "id": "always_decrease",
+            "text": "Both must decrease i because DP should start from the target."
+          },
+          {
+            "id": "opposite_orders",
+            "text": "Prefix tabulation naturally increases i, while suffix tabulation naturally decreases i."
+          }
+        ],
+        "acceptedOptionIds": [
+          "opposite_orders"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Index dimensionality does not determine direction; the state meaning and recurrence edges do.",
+        "details": "The prefix state is built from ways to reach earlier steps, so increasing i follows its dependencies. The suffix state is built from counts starting at later steps, so decreasing i follows its dependencies. Both are one-dimensional, yet they require opposite traversal. This is why loop direction cannot be chosen from the presence of an index alone.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_increase": "The suffix recurrence reads larger indices, so increasing order would read unresolved successors.",
+          "always_decrease": "The prefix recurrence reads smaller indices, so decreasing order would read unresolved predecessors."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_dependency_safe_iteration_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_dp",
+        "problemArchetypeId": "count_ways"
+      }
+    },
+    {
+      "id": "alg-dpintro-order-03-top-down-order-boundary",
+      "prompt": "Which statement accurately compares dependency order in memoization and tabulation?",
+      "constraints": [
+        "The recurrence graph is intended to be acyclic."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "memo_always_faster",
+            "text": "Memoization is always faster because on-demand recursion avoids the cost of choosing an explicit loop order."
+          },
+          {
+            "id": "on_demand_vs_explicit",
+            "text": "Memoized recursion follows dependencies on demand; tabulation chooses an explicit topological order. Both need an acyclic recurrence."
+          },
+          {
+            "id": "memo_any_cycle",
+            "text": "Memoization makes cyclic recurrences safe because an in-progress state can use its eventual cached value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "on_demand_vs_explicit"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Top-down traversal schedules dependencies implicitly, but it does not remove termination or cost constraints.",
+        "details": "A memoized call recursively requests exactly the states named by its transition and returns only after they are solved, which is an on-demand topological traversal for a DAG. Tabulation performs the same dependency ordering explicitly. A cycle among unfinished states is not repaired by a result cache, and dense computations may favor iterative locality. The difference is scheduling strategy, not freedom from dependency rules.",
+        "wrongOptionExplanationsByOptionId": {
+          "memo_any_cycle": "An unfinished state can recursively revisit itself before a value exists, causing nontermination or an invalid placeholder result.",
+          "memo_always_faster": "Recursive calls, cache lookups, stack depth, and dense reachability can make tabulation faster despite explicit loops."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_dependency_safe_iteration_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "memoization",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-order-04-capacity-direction-zero-one",
+      "prompt": "A 0/1 item of weight w and value v updates dp[c] = max(dp[c], v + dp[c - w]) in one array. Which capacity order is correct?",
+      "constraints": [
+        "Each item may be used at most once.",
+        "Before this item, dp contains results from earlier items only."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "descending",
+            "text": "Process c from capacity down to w."
+          },
+          {
+            "id": "ascending",
+            "text": "Process c from w up to capacity."
+          },
+          {
+            "id": "arbitrary",
+            "text": "Process capacities in any order because max is associative."
+          }
+        ],
+        "acceptedOptionIds": [
+          "descending"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Descending order keeps every lower-capacity source cell on the previous item layer until it is read.",
+        "details": "In the full 2D recurrence, the take branch reads the row for earlier items. A descending one-array loop emulates that row because c - w is lower than c and has not yet been updated for the current item. Ascending order uses current-row values and changes the model to unbounded reuse. The decisive boundary is item multiplicity, not a general preference for one direction.",
+        "wrongOptionExplanationsByOptionId": {
+          "ascending": "Ascending order can read dp[c - w] after it already includes the current item, allowing repeated use.",
+          "arbitrary": "Associativity of max does not resolve which logical item layer each read represents."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_dependency_safe_iteration_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "choose_or_skip"
+      }
+    },
+    {
+      "id": "alg-dpintro-order-05-rolling-grid-left-up",
+      "prompt": "A one-row grid path update uses dp[c] = dp[c] + dp[c - 1], where old dp[c] is from above and updated dp[c - 1] is from the left. Which column order is correct?",
+      "constraints": [
+        "Rows are processed top to bottom.",
+        "The first-column boundary is handled separately."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "right_to_left",
+            "text": "Process columns from right to left."
+          },
+          {
+            "id": "parallel",
+            "text": "Update all columns simultaneously from the same old row."
+          },
+          {
+            "id": "left_to_right",
+            "text": "Process columns from left to right."
+          }
+        ],
+        "acceptedOptionIds": [
+          "left_to_right"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Left-to-right order gives each cell the old up value and the newly computed current-row left value.",
+        "details": "Before an update, dp[c] still stores the previous row. After updating c - 1, that lower index stores the current row. Processing left to right therefore supplies exactly the two logical dependencies in the full recurrence. Reversing the loop changes the version of the left read. One-row compression is correct only together with this version-aware order.",
+        "wrongOptionExplanationsByOptionId": {
+          "right_to_left": "Then dp[c - 1] still belongs to the previous row rather than the current row, so the left dependency is wrong.",
+          "parallel": "A simultaneous update would omit current-row left values unless a second buffer is used."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_dependency_safe_iteration_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-order-06-diagonal-dependency",
+      "prompt": "A one-row alignment update for cell (r, c) needs up = old dp[c], left = new dp[c - 1], and diagonal = old dp[c - 1]. What extra step is required?",
+      "constraints": [
+        "Columns are processed left to right.",
+        "Writing dp[c - 1] destroys its previous-row value."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reverse_columns",
+            "text": "Process right to left and use dp[c - 1] as diagonal without any other change."
+          },
+          {
+            "id": "save_diagonal",
+            "text": "Carry a scalar holding old dp[c - 1] before it is overwritten, and advance that scalar after each cell."
+          },
+          {
+            "id": "use_left",
+            "text": "Use new dp[c - 1] for both left and diagonal."
+          }
+        ],
+        "acceptedOptionIds": [
+          "save_diagonal"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The diagonal and left dependencies occupy the same array slot at different logical times, so the old diagonal must be saved before overwrite.",
+        "details": "At the start of a cell update, dp[c] is up and dp[c - 1] has already become left. The previous-row value at c - 1 would be lost unless carried in a scalar from the prior iteration. After using it as diagonal, the old up value becomes the diagonal for the next column. This is a local version-management requirement created by compression.",
+        "wrongOptionExplanationsByOptionId": {
+          "use_left": "The new value belongs to the current row, while diagonal must come from the previous row and previous column.",
+          "reverse_columns": "That may preserve diagonal but breaks the current-row left dependency under the stated recurrence."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_dependency_safe_iteration_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-order-07-reverse-formulation-transfer",
+      "prompt": "A prefix alignment recurrence reads cells above, left, and diagonal-up-left. Can the table be filled from bottom-right to top-left without changing the recurrence?",
+      "constraints": [
+        "No cells are precomputed except the prefix boundary row and column."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_reformulate",
+            "text": "No. Reverse traversal needs a suffix recurrence whose dependencies point down and right."
+          },
+          {
+            "id": "yes_same_formula",
+            "text": "Yes. Visiting every cell once makes the original above-and-left recurrence valid in either direction."
+          },
+          {
+            "id": "yes_commutative",
+            "text": "Yes. Commutativity of min or max removes the need to respect dependency direction."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_reformulate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Loop reversal must be paired with a state and recurrence whose dependencies point toward already computed cells.",
+        "details": "A prefix table accumulates from smaller coordinates, so top-left to bottom-right is a topological order. Bottom-right to top-left naturally matches a suffix formulation that reads larger coordinates. Both can be correct, but they are not the same operational recurrence. This transfer boundary prevents mechanical loop reversal from silently changing which values are available.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_same_formula": "The same formula would consume cells that have not been finalized, so visitation coverage alone is insufficient.",
+          "yes_commutative": "Commutativity of aggregation does not make unresolved dependency values valid."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_dependency_safe_iteration_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tabulation",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [
+      {
+        "id": "dpintro-same-mechanism-iteration_order-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-dpintro-order-01-dependency-graph-direction",
+          "alg-dpintro-order-02-state-formulation-changes-order",
+          "alg-dpintro-order-03-top-down-order-boundary"
+        ],
+        "targetItemIds": [
+          "alg-dpintro-order-04-capacity-direction-zero-one",
+          "alg-dpintro-order-05-rolling-grid-left-up",
+          "alg-dpintro-order-06-diagonal-dependency",
+          "alg-dpintro-order-07-reverse-formulation-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "iteration_order"
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

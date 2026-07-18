@@ -1,0 +1,305 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-greedy-intro-prove-safe-choice-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-greedy-intro-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "greedy_intro",
+    "primaryMentalUnitId": "prove_safe_choice",
+    "patternFamilyId": "greedy_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-greedy-intro-prove-safe-choice-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-greedy-intro-psc-001",
+      "prompt": "Let g be the feasible interval with the earliest finish, and let an optimal maximum-cardinality schedule begin with interval o. Which statement proves that choosing g first is safe?",
+      "constraints": [
+        "Intervals are half-open and unweighted.",
+        "g.end <= o.end by definition of g."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "replace_o_with_g",
+            "text": "Replace o with g; every interval that followed o still starts after g ends, so feasibility and selected count are preserved."
+          },
+          {
+            "id": "g_is_shortest",
+            "text": "g must be the shortest interval, so it consumes the least resource time."
+          },
+          {
+            "id": "g_appears_first_sorted",
+            "text": "g appears first after sorting, and the first sorted element is always safe."
+          },
+          {
+            "id": "examples_show_safety",
+            "text": "A few schedules start with g and reach the optimum count, so the choice is proven for all inputs."
+          }
+        ],
+        "acceptedOptionIds": [
+          "replace_o_with_g"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Safety follows from a no-worse exchange: g ends no later than the optimal first interval, so replacing that interval with g preserves every later choice and the schedule size.",
+        "details": "The proof must connect the local choice to an arbitrary optimum. Start with an optimal schedule O whose first interval is o. Since g has the earliest feasible end, g.end <= o.end. Every later interval in O starts at or after o.end; therefore it also starts at or after g.end. Replacing o with g yields another feasible schedule with exactly the same number of intervals. Consequently at least one optimum begins with g, so committing to g does not discard all optimal solutions.\n\nThis is the greedy-choice property. It is not derived from g being short, from its position in a sorted array, or from observed examples. The transfer rule is to identify what the replacement improves or preserves: the residual feasibility boundary must be no worse, and the exchanged choice must contribute the same amount to the objective. If either condition changes, the proof must change.",
+        "wrongOptionExplanationsByOptionId": {
+          "g_is_shortest": "Earliest finish does not imply shortest duration, and duration is not the boundary used by later compatibility. A short interval can still finish late.",
+          "g_appears_first_sorted": "Sorting defines processing order but does not prove that selecting the first item preserves an optimum. The exchange relation supplies that proof.",
+          "examples_show_safety": "Examples cannot quantify over every optimal schedule. A proof must show why any optimum can be transformed without loss."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_greedy_choice_safety",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-psc-002",
+      "prompt": "A deadline-ordered prefix becomes infeasible after a job is added. The candidate algorithm removes the selected job with greatest duration. Which argument makes that removal safe for maximizing completed-job count?",
+      "constraints": [
+        "Exactly one selected job must be removed to reduce the prefix count by one.",
+        "All retained jobs contribute one unit to the objective."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "minimum_remaining_duration",
+            "text": "For the same retained count, removing the longest gives the smallest possible remaining total duration among all one-job removals, leaving the strongest prefix for future deadlines."
+          },
+          {
+            "id": "long_jobs_are_bad",
+            "text": "Long jobs are generally undesirable, so deleting one is intuitively optimal."
+          },
+          {
+            "id": "heap_top_is_proof",
+            "text": "The job is at the top of the max-heap, which makes it the mathematically correct deletion."
+          },
+          {
+            "id": "new_job_caused_failure",
+            "text": "The new job caused the overflow, so removing the longest is safe only when the new job is also the longest."
+          }
+        ],
+        "acceptedOptionIds": [
+          "minimum_remaining_duration"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The proof compares all one-job repairs of the same prefix. Removing the longest minimizes the retained total duration without changing retained count, so no alternative repair leaves more time for later jobs.",
+        "details": "When the prefix is infeasible, retaining all selected jobs is impossible under the current deadline. Any repair that keeps the maximum possible cardinality at this moment removes one job. Among those repairs, deleting the maximum duration minimizes the total time of the remaining jobs. This remaining state dominates every other one-job repair: it has the same count and no larger time consumption. Later deadline checks therefore start from at least as much free time.\n\nThe proof depends on the objective counting jobs equally. If jobs have unequal reward, the longest job may also carry most of the value, and minimum retained duration no longer dominates total reward. It also depends on deadline prefixes being the relevant constraints. The heap merely returns the longest duration efficiently; the safety argument is the comparison between residual states.",
+        "wrongOptionExplanationsByOptionId": {
+          "long_jobs_are_bad": "Length is not globally bad by itself. The precise fact is comparative: within the same selected prefix and one-job removal, deleting the longest minimizes remaining time.",
+          "heap_top_is_proof": "A data structure can implement an extreme query but cannot establish that the queried extreme preserves the objective or invariant.",
+          "new_job_caused_failure": "The new job need not be the best job to remove. An earlier, longer job may be replaced by the new shorter job to improve the residual prefix."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_greedy_choice_safety",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-psc-003",
+      "prompt": "In an exchange proof, replacing an optimal interval o with an earlier-finishing interval g keeps every later interval feasible. What additional fact is still required before the exchange proves safety?",
+      "constraints": [
+        "The prompt does not state whether intervals are weighted.",
+        "The replacement changes only the first selected interval."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "preserve_objective_value",
+            "text": "The exchange must also show that replacing o with g does not reduce the objective value under the actual scoring contract."
+          },
+          {
+            "id": "g_has_earlier_start",
+            "text": "g must start earlier than o, even though later feasibility depends on end time."
+          },
+          {
+            "id": "sorting_is_stable",
+            "text": "The input sort must be stable so equal keys keep their original order."
+          },
+          {
+            "id": "greedy_label_suffices",
+            "text": "No additional fact is needed because feasibility preservation alone proves every greedy objective."
+          }
+        ],
+        "acceptedOptionIds": [
+          "preserve_objective_value"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A safe exchange preserves both feasibility and the optimized quantity. Earlier finish protects future choices, but arbitrary weights can make the replacement lose value.",
+        "details": "Correctness has two independent dimensions. Feasibility asks whether the transformed solution still satisfies all constraints. Objective preservation asks whether its score is at least as good as the original optimum. For unweighted maximum-cardinality intervals, a one-for-one replacement preserves the count automatically. For weighted intervals, g may finish earlier but have much lower weight than o, so the transformed schedule can be feasible and still cease to be optimal.\n\nThis distinction is a useful review tool for every greedy proof. Identify the exact constraint preserved by the local dominance relation, then identify the exact objective quantity preserved or improved. A proof that addresses only one side is incomplete. Stable sorting and start time are irrelevant unless the problem contract makes them material. The greedy label never supplies a missing objective argument.",
+        "wrongOptionExplanationsByOptionId": {
+          "g_has_earlier_start": "The future compatibility boundary is the finish time. Earlier start neither follows from earliest finish nor repairs a loss in objective value.",
+          "sorting_is_stable": "Stable order can matter for reproducibility, but it does not show that exchanging selected items preserves the optimization score.",
+          "greedy_label_suffices": "Feasibility alone is insufficient. A feasible transformed solution can have a lower score than the optimum it replaced."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_greedy_choice_safety",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-psc-004",
+      "prompt": "Suppose a proof has shown that some optimal solution begins with the greedy choice g. What statement is needed to justify solving the rest by applying the same greedy rule again?",
+      "constraints": [
+        "The residual instance contains exactly the choices compatible with g.",
+        "The objective is additive over selected choices or counts them equally."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "residual_must_be_optimal",
+            "text": "The suffix of that optimal solution must itself be optimal for the residual instance; otherwise replacing the suffix would improve the original solution."
+          },
+          {
+            "id": "same_code_path",
+            "text": "The implementation calls the same loop again, so the residual problem is automatically optimal."
+          },
+          {
+            "id": "dp_and_greedy_same",
+            "text": "Dynamic programming has optimal substructure, so greedy may use the same proof without a greedy-choice property."
+          },
+          {
+            "id": "future_choices_irrelevant",
+            "text": "Once the first choice is safe, any feasible sequence of later choices is globally optimal."
+          }
+        ],
+        "acceptedOptionIds": [
+          "residual_must_be_optimal"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A safe first choice is only the first induction step. The remainder of an optimum must be optimal for the residual instance, allowing the same argument to repeat.",
+        "details": "Assume an optimal full solution starts with g. Remove g and consider the remaining compatible choices. If the suffix were not optimal for that residual instance, a better residual solution could replace it, producing a full solution better than the supposed optimum. That contradiction establishes optimal substructure for the restricted problem. The greedy-choice proof can then be applied inductively at the next boundary.\n\nThis does not make greedy and dynamic programming interchangeable. Both may use optimal substructure, but greedy additionally discards alternatives after proving one local choice safe. Dynamic programming may retain several states when no such choice property exists. The transfer condition is state sufficiency: the updated boundary must capture every past consequence relevant to future feasibility and value. If hidden history remains, repeatedly applying the same local rule is not justified.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_code_path": "Reusing code does not prove that the mathematical residual instance has the same objective or that its chosen suffix is optimal.",
+          "dp_and_greedy_same": "Optimal substructure alone is not the greedy-choice property. Greedy needs a safe commitment that dynamic programming does not assume.",
+          "future_choices_irrelevant": "A safe first choice can still be followed by a suboptimal suffix. The residual choices must be optimized, not chosen arbitrarily."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_greedy_choice_safety",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "running_best_choice",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-psc-005",
+      "prompt": "A vehicle passes fuel stations in order. Whenever it cannot reach the next station or target, it retroactively refuels at the passed station with the largest available fuel, using a max-heap. Which invariant best justifies the greedy choice?",
+      "constraints": [
+        "A station can be used at most once.",
+        "Only already passed and therefore reachable stations are in the heap.",
+        "The objective is to minimize the number of refueling stops."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "max_reach_for_stop_count",
+            "text": "After any fixed number of refuels, the greedy choices reach at least as far as any strategy using the same number of already available refuels."
+          },
+          {
+            "id": "largest_station_is_nearest",
+            "text": "The station with the largest fuel is also the nearest station, so it is always feasible."
+          },
+          {
+            "id": "heap_order_proves_minimum",
+            "text": "Because a max-heap returns the largest value in logarithmic time, the number of stops is minimal."
+          },
+          {
+            "id": "refuel_at_every_station",
+            "text": "Taking fuel at every station cannot hurt because more fuel always improves reach."
+          }
+        ],
+        "acceptedOptionIds": [
+          "max_reach_for_stop_count"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The stays-ahead invariant compares reach after the same number of stops. Selecting the largest fuel from the reachable frontier cannot leave the vehicle behind another equal-stop strategy.",
+        "details": "When another refuel becomes necessary, every station in the heap has already been passed and was reachable before the current failure point. For a fixed number of refuels, replacing any smaller chosen fuel amount with the largest available one cannot reduce total fuel obtained or reachable distance. Therefore the greedy strategy stays at least as far ahead as any alternative using the same number of stops. If greedy needs another stop, no strategy with fewer stops could have reached farther using only the same previously reachable stations.\n\nThe heap implements the frontier maximum, but the invariant proves the stop count. The transfer boundary matters: candidates must already be feasible and their benefit must combine monotonically. If selecting fuel changed which earlier stations had been reachable, or if fuel had penalties coupled across choices, the stays-ahead comparison would need a different state and might fail.",
+        "wrongOptionExplanationsByOptionId": {
+          "largest_station_is_nearest": "Fuel amount and station position are different attributes. Feasibility comes from the station already being in the passed frontier, not from it being nearest.",
+          "heap_order_proves_minimum": "Logarithmic access cost is an efficiency fact. It does not compare the number of refuels with alternative strategies.",
+          "refuel_at_every_station": "The objective counts stops. Refueling unnecessarily can worsen the objective even if it increases fuel."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_greedy_choice_safety",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "minimize_or_maximize_local_cost"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

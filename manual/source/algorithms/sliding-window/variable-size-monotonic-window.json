@@ -1,0 +1,359 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sliding-window-variable-size-monotonic-window",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sliding-window-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sliding_window",
+    "primaryMentalUnitId": "variable_size_monotonic_window",
+    "patternFamilyId": "sliding_window"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — unreviewed candidate generation",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sliding-window-variable-size-monotonic-window",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sw-variable-shortest-positive-threshold",
+      "prompt": "All values are positive. While seeking the shortest range with sum at least T, the current window first reaches sum ≥ T. What should the shrink rule do?",
+      "constraints": [
+        "Every value is positive.",
+        "The objective is minimum length."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shrink_while_valid",
+            "text": "Record the current length, remove the leftmost value, and repeat while the sum remains at least T."
+          },
+          {
+            "id": "stop_at_first_valid",
+            "text": "Stop shrinking after the first valid window because it is already the earliest ending at this right boundary."
+          },
+          {
+            "id": "shrink_until_answer_changes",
+            "text": "Remove values only until the global best length changes."
+          },
+          {
+            "id": "reset_window",
+            "text": "Clear the entire window after recording one valid range."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shrink_while_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For a shortest objective, every valid left removal produces a shorter candidate ending at the same right boundary.",
+        "details": "Positivity makes each left removal decrease the sum. Once expansion reaches validity, the algorithm should test the current length, remove one left value, and continue while the threshold still holds. The final valid state before the sum drops below T is the shortest candidate ending at this right boundary. Stopping after one candidate can miss a shorter one, and clearing the range discards overlap needed for later endings. The loop condition is validity, not whether the global answer happened to change.",
+        "wrongOptionExplanationsByOptionId": {
+          "stop_at_first_valid": "The first valid window for this right boundary is usually the longest of the valid suffixes, not the shortest.",
+          "shrink_until_answer_changes": "The answer may remain unchanged even though more left removals are required to find the locally minimal valid candidate.",
+          "reset_window": "A full reset discards starts that can combine with future values and is not justified by the monotone invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-variable-longest-valid-restoration",
+      "prompt": "A window tracks nonnegative costs and must keep total cost at most B while maximizing length. After adding a value makes the window invalid, which rule is correct?",
+      "constraints": [
+        "All costs are nonnegative.",
+        "Validity is totalCost ≤ B.",
+        "The objective is maximum length."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shrink_until_valid",
+            "text": "Advance left and remove costs while totalCost > B; once valid, consider the resulting length."
+          },
+          {
+            "id": "record_invalid_then_shrink",
+            "text": "Record the over-budget length first, then shrink once."
+          },
+          {
+            "id": "shrink_while_valid",
+            "text": "Keep shrinking while totalCost ≤ B."
+          },
+          {
+            "id": "move_right_back",
+            "text": "Move the right boundary backward until the prior window is restored."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shrink_until_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For a longest-valid objective, invalid state must be repaired before the current range can update the answer.",
+        "details": "With nonnegative costs, removing values from the left cannot increase total cost, so repeated left moves eventually restore totalCost ≤ B. After repair, the remaining window is the longest valid suffix ending at the current right boundary because any earlier left position was still invalid when removed. Recording the over-budget range scores an illegal candidate; shrinking while already valid discards length without need; moving right backward breaks the one-pass monotone traversal. Zero-cost removals preserve rather than reduce total cost, but left still advances; nonnegative state direction and pointer progress keep the repair rule sound.",
+        "wrongOptionExplanationsByOptionId": {
+          "record_invalid_then_shrink": "The current length violates the budget and cannot be compared with valid answers.",
+          "shrink_while_valid": "This rule belongs to minimum-length at-least-threshold objectives; here it would throw away valid length.",
+          "move_right_back": "A legal monotone window never needs to retract the right boundary; left repairs the current ending."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-variable-monotonic-precondition",
+      "prompt": "Which condition is sufficient for the standard one-pass window that finds the longest contiguous range with sum at most B?",
+      "constraints": [
+        "The algorithm only moves left and right forward.",
+        "It repairs an over-budget sum by removing values from the left."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "nonnegative_values",
+            "text": "Every value is nonnegative, so expansion cannot reduce the sum and left removal cannot increase it."
+          },
+          {
+            "id": "distinct_values",
+            "text": "Every value is distinct."
+          },
+          {
+            "id": "sorted_values",
+            "text": "Values are sorted in ascending order."
+          },
+          {
+            "id": "integer_values",
+            "text": "Every value is an integer, possibly negative."
+          }
+        ],
+        "acceptedOptionIds": [
+          "nonnegative_values"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Nonnegative values make the budget-validity predicate monotone under the two boundary moves.",
+        "details": "The repair rule assumes that an over-budget window cannot become valid by expanding farther and can become valid by removing a prefix. Nonnegative values provide both facts: adding cannot lower the sum, and removing cannot raise it. Distinctness and sorted order do not guarantee those directional effects if negative values are present. Integer type alone is irrelevant. The same precondition supports shortest-at-least sum windows, with the valid/invalid shrink regime adjusted to the objective.",
+        "wrongOptionExplanationsByOptionId": {
+          "distinct_values": "Distinct values can still be negative, so the sum may move in the wrong direction for a safe discard rule.",
+          "sorted_values": "A sorted sequence may contain negative values; ordering by value does not make boundary removal monotone for every window.",
+          "integer_values": "Signed integers allow expansion and shrinkage to change the sum in either direction."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "contiguous_range_optimum"
+      }
+    },
+    {
+      "id": "alg-sw-variable-negative-counterexample",
+      "prompt": "A positive-value shortest-sum window is applied unchanged to [1, -1, 5] with T = 5. It reaches sum 5 for the whole range, records length 3, removes 1, gets sum 4, and stops shrinking. Why does it miss the optimal range [5]?",
+      "constraints": [
+        "The attempted algorithm stops shrinking as soon as the current sum is below T.",
+        "Negative values are allowed in this trace."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "removing_negative_increases_sum",
+            "text": "Removing the next left value −1 would increase the sum from 4 to 5, so ‘currently invalid’ does not imply that further shrinking stays invalid."
+          },
+          {
+            "id": "right_must_move_backward",
+            "text": "The right boundary must move backward after every failed shrink."
+          },
+          {
+            "id": "length_formula_wrong",
+            "text": "The only issue is using r − l instead of r − l + 1."
+          },
+          {
+            "id": "target_too_small",
+            "text": "The window method works only when T exceeds every individual value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "removing_negative_increases_sum"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A negative outgoing value reverses the assumed shrink direction: removing it can increase the sum and restore validity.",
+        "details": "The positive-value algorithm stops when one removal makes sum < T because, with nonnegative values, every later removal can only decrease or preserve the sum. Here the next outgoing value is −1. Removing it raises the sum from 4 to 5 and exposes the length-1 valid range [5]. The algorithm therefore discarded the possibility by treating invalidity as monotone under further shrinkage. This concrete trace isolates why signed shortest-sum problems need a different mechanism, such as prefix sums with a monotonic deque for the general shortest-at-least problem.",
+        "wrongOptionExplanationsByOptionId": {
+          "right_must_move_backward": "The missed candidate already ends at the current right boundary; the failure is the unsafe stopping rule for left moves.",
+          "length_formula_wrong": "An off-by-one error would change reported lengths but would not explain why the [5] candidate is never examined.",
+          "target_too_small": "The relation between T and individual values is not the required precondition; the sign of contributions controls monotonicity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-variable-repair-needs-while",
+      "prompt": "For a longest window with nonnegative total cost at most 10, adding the next value raises the sum to 15. Removing the leftmost value 2 leaves sum 13. Why must the repair use a while loop rather than a single if?",
+      "constraints": [
+        "The objective allows a variable window length.",
+        "The window is valid only when sum ≤ 10."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_removal_may_not_restore",
+            "text": "One removal may leave the invariant violated, so left must continue moving until sum ≤ 10."
+          },
+          {
+            "id": "while_improves_answer",
+            "text": "A while loop is required only because each iteration must improve the global answer."
+          },
+          {
+            "id": "right_added_twice",
+            "text": "The sum 15 proves the incoming value was added twice."
+          },
+          {
+            "id": "if_is_never_valid",
+            "text": "An if statement is never correct in any sliding-window algorithm."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_removal_may_not_restore"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A variable window has no guarantee that one outgoing element is enough to restore its validity invariant.",
+        "details": "The invalid state is sum=15 and the first removal yields 13, which is still over budget. The algorithm must keep removing left contributions until the maintained state is legal. The loop is controlled by validity, not by answer changes. An if can be correct for a fixed-size slide where exactly one excess element exists, but not for a general variable constraint that may require several repairs after one expansion. After every removal, state must be updated before the condition is checked again; otherwise the loop can stop on stale invalidity or remove too much.",
+        "wrongOptionExplanationsByOptionId": {
+          "while_improves_answer": "Repair iterations may not improve the answer at all; they are required to re-establish a legal state.",
+          "right_added_twice": "A legitimate large incoming value can create a sum of 15; the trace gives no evidence of duplicate addition.",
+          "if_is_never_valid": "Fixed-size windows commonly need at most one removal per expansion. The issue is the variable validity condition, not the syntax itself."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-variable-zero-values-transfer",
+      "prompt": "The shortest-sum-at-least-T window is changed from strictly positive values to nonnegative values that may include zero. Does the same monotonic shrink rule remain valid?",
+      "constraints": [
+        "No value is negative.",
+        "The left boundary advances on every shrink iteration, even when the removed value is zero."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "yes_nonnegative",
+            "text": "Yes. Expansion cannot decrease the sum and removal cannot increase it; zeros may preserve the sum but do not reverse the direction."
+          },
+          {
+            "id": "no_zero_breaks",
+            "text": "No. A zero means the sum does not change, so the algorithm can never make progress."
+          },
+          {
+            "id": "only_if_sorted",
+            "text": "Only if all zeros appear before positive values."
+          },
+          {
+            "id": "only_fixed_size",
+            "text": "Zeros permit only a fixed-size window, never a variable one."
+          }
+        ],
+        "acceptedOptionIds": [
+          "yes_nonnegative"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Nonnegative values preserve the directional sum invariant; pointer movement, not strict sum change, guarantees progress through zeros.",
+        "details": "Strict positivity is stronger than necessary for correctness. With zeros, adding still never lowers the sum and removing still never raises it. A shrink iteration that removes zero may leave the sum unchanged, but left advances, so the algorithm cannot loop forever and can expose a shorter candidate with the same sum. The boundary fails only when a negative value can reverse the effect. This transfer sharpens the precondition from ‘positive’ to the materially sufficient ‘nonnegative’.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_zero_breaks": "The state need not change on every iteration; the left index changes, so the candidate becomes shorter and the loop progresses.",
+          "only_if_sorted": "The location of zeros does not affect the nonnegative direction of additions and removals.",
+          "only_fixed_size": "Variable windows work with zero contributions as long as the validity predicate remains monotone and pointer progress is explicit."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

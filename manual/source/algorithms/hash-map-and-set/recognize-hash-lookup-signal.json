@@ -1,0 +1,525 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-hash-map-and-set-recognize-hash-lookup-signal-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-hash-map-and-set-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "hash_map_and_set",
+    "primaryMentalUnitId": "recognize_hash_lookup_signal",
+    "patternFamilyId": "hash_map_and_set"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-hash-map-and-set-recognize-hash-lookup-signal-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-hms-signal-repeated-membership",
+      "prompt": "A stream contains unsorted integer IDs. For every new ID, the program must immediately report whether that ID has appeared earlier. Which state signal most directly supports the requirement?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "seen_membership",
+            "text": "Maintain a hash set of IDs already observed."
+          },
+          {
+            "id": "sorted_prefix",
+            "text": "Sort the processed prefix again after every arrival."
+          },
+          {
+            "id": "last_only",
+            "text": "Store only the most recently observed ID."
+          }
+        ],
+        "acceptedOptionIds": [
+          "seen_membership"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decisive signal is repeated equality membership against previously seen values, not an ordering requirement.",
+        "details": "A seen set represents exactly the state needed by the query: whether each value has occurred before. Each arrival performs one membership test and then records the value. The reasoning transfers to duplicate detection and deduplication whenever presence alone is sufficient; it stops transferring when the output needs counts, positions, or grouped members.",
+        "wrongOptionExplanationsByOptionId": {
+          "sorted_prefix": "Repeated sorting can answer membership, but it performs unnecessary ordering work and does not exploit the immediate equality-lookup requirement.",
+          "last_only": "The last ID represents only one prior value, so it cannot answer whether an arbitrary incoming ID appeared anywhere in the earlier stream."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_lookup_state_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "seen_set",
+        "problemArchetypeId": "detect_duplicate_or_membership"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-signal-derived-lookup-key",
+      "prompt": "While scanning numbers, the program must determine whether a prior number can combine with the current number to reach a fixed target. Which observation is the strongest signal for hash lookup?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "derived_prior_key",
+            "text": "For current value x, the needed prior value is the directly computable key target - x."
+          },
+          {
+            "id": "two_values_exist",
+            "text": "The answer contains two values, regardless of their relationship."
+          },
+          {
+            "id": "input_is_numeric",
+            "text": "The input consists of numbers rather than strings."
+          },
+          {
+            "id": "single_pass_requested",
+            "text": "The prompt mentions one pass, even if no lookup key can be derived."
+          }
+        ],
+        "acceptedOptionIds": [
+          "derived_prior_key"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The computable complement converts a pair condition into one equality lookup against prior state.",
+        "details": "The equation prior + current = target can be rearranged to prior = target - current. That derived key is the mechanism that makes a hash lookup useful during a scan. The signal transfers to other relations only when the current value determines a concrete key to search for; merely mentioning pairs or speed is not enough.",
+        "wrongOptionExplanationsByOptionId": {
+          "two_values_exist": "A two-value output does not by itself imply hashing; sorted two-pointer scans or other structures may be more appropriate depending on constraints.",
+          "input_is_numeric": "Hash lookup depends on equality-addressable state, not on the primitive type of the values.",
+          "single_pass_requested": "A one-pass request is useful only when the needed prior state can be defined; without a lookup key or invariant, it is not a complete strategy signal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_lookup_state_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-signal-count-requirement",
+      "prompt": "Which requirement is a direct signal that presence-only hash state is insufficient?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "exact_multiplicity",
+            "text": "Report how many times each value occurs."
+          },
+          {
+            "id": "duplicate_boolean",
+            "text": "Report whether any duplicate exists."
+          },
+          {
+            "id": "membership_query",
+            "text": "Report whether a specified value has appeared."
+          }
+        ],
+        "acceptedOptionIds": [
+          "exact_multiplicity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Exact multiplicity requires a value-to-count mapping; presence collapses all positive counts into the same state.",
+        "details": "A set can distinguish zero occurrences from one-or-more occurrences, but it cannot distinguish one from five. The requirement therefore signals a frequency map rather than a seen set. This boundary also applies to multiset comparison and threshold counts; it does not apply to simple duplicate existence or membership.",
+        "wrongOptionExplanationsByOptionId": {
+          "duplicate_boolean": "A boolean duplicate decision can be made from prior presence; exact multiplicity is not required.",
+          "membership_query": "Membership asks only whether a key exists, so a set can represent the needed state without a numeric payload."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_lookup_state_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-signal-equivalence-buckets",
+      "prompt": "A program must collect all strings that share the same normalized signature into the same output group. Which state shape does that requirement signal?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "signature_to_bucket",
+            "text": "A hash map from normalized signature to a bucket of original strings."
+          },
+          {
+            "id": "signature_presence",
+            "text": "A hash set containing only the signatures that have appeared."
+          },
+          {
+            "id": "global_count",
+            "text": "One integer containing the total number of processed strings."
+          }
+        ],
+        "acceptedOptionIds": [
+          "signature_to_bucket"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Grouping requires a canonical equivalence key and a payload that accumulates every member of that equivalence class.",
+        "details": "The normalized signature defines which inputs are equivalent, and the bucket stores the original members that must be returned. A set is sufficient only when the output asks whether a class exists. The same signal transfers to bucketing records by category, normalized attributes, or composite keys, provided the key exactly represents the intended equivalence relation.",
+        "wrongOptionExplanationsByOptionId": {
+          "signature_presence": "Presence can report that a signature exists, but it discards the members required to construct each output group.",
+          "global_count": "A single count has neither the equivalence key nor the association between a key and its members."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_lookup_state_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-signal-order-statistic-near-miss",
+      "prompt": "A service repeatedly asks for the smallest stored value greater than a threshold. Which fact makes ordinary hash lookup an incomplete primary strategy?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "needs_order_successor",
+            "text": "The query needs an ordered successor, not just equality membership."
+          },
+          {
+            "id": "values_are_unique",
+            "text": "The input guarantees that values are unique."
+          },
+          {
+            "id": "many_queries",
+            "text": "The service receives many queries."
+          },
+          {
+            "id": "memory_available",
+            "text": "The service may allocate additional memory."
+          }
+        ],
+        "acceptedOptionIds": [
+          "needs_order_successor"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Hash state addresses equality keys; a successor query requires order-aware state or an ordering step.",
+        "details": "The decisive operation is not “is threshold present?” but “which stored value is the least value above threshold?” A plain hash set has no ordering relation to navigate. Hashing may still support auxiliary membership checks, but the primary structure must preserve order, such as a sorted array with binary search or an ordered tree.",
+        "wrongOptionExplanationsByOptionId": {
+          "values_are_unique": "Uniqueness does not supply the ordering relation needed to find the next greater value.",
+          "many_queries": "Repeated queries justify preprocessing, but they do not determine whether equality hashing or an ordered structure answers the query.",
+          "memory_available": "Extra memory permits several structures; it does not make a hash table support successor queries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_lookup_state_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "detect_duplicate_or_membership"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-signal-prior-state-sequence",
+      "prompt": "Order the conceptual steps for a one-pass pair-existence scan so that the lookup state represents only earlier elements.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "derive_key",
+            "text": "Derive the prior value required by the current element."
+          },
+          {
+            "id": "check_prior",
+            "text": "Check whether that required value is already in the prior-state table."
+          },
+          {
+            "id": "handle_match",
+            "text": "If present, record or return the valid pair outcome."
+          },
+          {
+            "id": "record_current",
+            "text": "Insert the current value into the prior-state table for later elements."
+          }
+        ],
+        "canonicalOrder": [
+          "derive_key",
+          "check_prior",
+          "handle_match",
+          "record_current"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The current value must not enter prior state until the lookup that decides whether an earlier partner exists.",
+        "details": "The invariant is that the table contains exactly the values from indices smaller than the current index. Deriving and checking the needed key under that invariant prevents the current element from matching itself. After the decision, recording the current value makes it available to later iterations. Check-after-insert is valid only when the membership test is not intended to prove prior occurrence."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_lookup_state_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "complement_lookup",
+        "problemArchetypeId": "find_pair_with_condition"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-signal-scan-cost-model",
+      "prompt": "A scan of n values performs one hash membership check and at most one insertion per value. Under ordinary well-distributed hashing assumptions, classify the expected time and extra space.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "There are O(n) hash operations with expected O(1) cost each, and the state may retain O(n) distinct keys.",
+        "details": "Expected constant cost per lookup does not make the entire scan constant; the loop still processes n elements. The table can grow with the number of distinct values, which is O(n) in the worst input-size case. The time statement is expected or amortized under the stated hash assumptions, not a universal worst-case guarantee for every implementation and input."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_lookup_state_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "seen_set",
+        "problemArchetypeId": "detect_duplicate_or_membership"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Assume a conventional resizable hash table with well-distributed hashes.",
+        "Count the lookup state as extra space."
+      ]
+    },
+    {
+      "id": "alg-hms-signal-output-needs-index",
+      "prompt": "A pair-finding task must return the two original indices rather than only report that a pair exists. Which lookup-state signal follows from the output contract?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_to_index",
+            "text": "Store each relevant prior value with an original index payload."
+          },
+          {
+            "id": "value_presence",
+            "text": "Store only whether each prior value exists."
+          },
+          {
+            "id": "target_presence",
+            "text": "Store only whether the target value itself appears."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_to_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The required output includes provenance, so the hash state must retain value-to-index information rather than presence alone.",
+        "details": "State selection follows the information needed at the moment a match is found. A set can answer the existence question but loses the original position. A map from value to an appropriate index preserves enough provenance; if all valid pairs are required, the payload may need a list of indices instead of one index.",
+        "wrongOptionExplanationsByOptionId": {
+          "value_presence": "Presence can establish that a partner exists, but it cannot reconstruct which earlier position produced that partner.",
+          "target_presence": "The target is a relation parameter, not the provenance of the values that form the pair."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_lookup_state_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "lookup_by_value",
+        "problemArchetypeId": "preserve_original_index"
+      },
+      "difficulty": "intermediate"
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "hash-map-and-set-independent-practice",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-independent-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "blueprint_controlled",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "interleaved_scope",
+          "ids": [
+            "hash-map-and-set-node-v1"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [
+      {
+        "scopeId": "hash-map-and-set-node-v1",
+        "scopeVersion": "v1",
+        "mentalUnitIds": [
+          "recognize_hash_lookup_signal",
+          "choose_set_vs_map_state",
+          "complement_lookup",
+          "frequency_counting",
+          "grouping_and_bucket_state",
+          "preserve_indices_and_provenance",
+          "expected_complexity_and_hash_assumptions",
+          "hash_state_mistake_review"
+        ],
+        "itemIds": [
+          "alg-hms-signal-repeated-membership",
+          "alg-hms-signal-derived-lookup-key",
+          "alg-hms-signal-count-requirement",
+          "alg-hms-signal-equivalence-buckets",
+          "alg-hms-signal-order-statistic-near-miss",
+          "alg-hms-signal-prior-state-sequence",
+          "alg-hms-signal-scan-cost-model",
+          "alg-hms-signal-output-needs-index",
+          "alg-hms-state-presence-only-set",
+          "alg-hms-state-exact-count-map",
+          "alg-hms-state-original-index-map",
+          "alg-hms-state-group-bucket-map",
+          "alg-hms-state-distinct-prior-membership-order",
+          "alg-hms-state-select-all-multiplicity-contracts",
+          "alg-hms-state-complexity-does-not-choose-payload",
+          "alg-hms-state-earliest-index-update-policy",
+          "alg-hms-state-output-contract-switch",
+          "alg-hms-complement-rearrange-sum-condition",
+          "alg-hms-complement-check-before-record",
+          "alg-hms-complement-half-target-duplicate",
+          "alg-hms-complement-index-payload",
+          "alg-hms-complement-all-pairs-payload",
+          "alg-hms-complement-set-or-frequency-boundary",
+          "alg-hms-complement-expected-cost",
+          "alg-hms-complement-transfer-directed-difference",
+          "alg-hms-frequency-increment-invariant",
+          "alg-hms-frequency-multiset-equality",
+          "alg-hms-frequency-decrement-remove-zero",
+          "alg-hms-frequency-threshold-crossing-order",
+          "alg-hms-frequency-most-common-state",
+          "alg-hms-frequency-count-versus-bucket",
+          "alg-hms-frequency-expected-cost",
+          "alg-hms-frequency-weighted-events-transfer",
+          "alg-hms-grouping-canonical-anagram-key",
+          "alg-hms-grouping-select-all-valid-signatures",
+          "alg-hms-grouping-bucket-payload",
+          "alg-hms-grouping-immutable-canonical-key",
+          "alg-hms-grouping-set-loses-members",
+          "alg-hms-grouping-create-bucket-before-append",
+          "alg-hms-grouping-sorted-signature-cost",
+          "alg-hms-grouping-normalization-transfer",
+          "alg-hms-provenance-value-to-first-index",
+          "alg-hms-provenance-first-wins-overwrite",
+          "alg-hms-provenance-complement-index-order",
+          "alg-hms-provenance-all-indices-one-to-many",
+          "alg-hms-provenance-set-loss-diagnosis",
+          "alg-hms-provenance-count-loss-diagnosis",
+          "alg-hms-provenance-index-map-cost",
+          "alg-hms-provenance-select-all-required-fields",
+          "alg-hms-complexity-expected-versus-worst",
+          "alg-hms-complexity-n-hash-operations",
+          "alg-hms-complexity-resize-amortization",
+          "alg-hms-complexity-string-key-cost",
+          "alg-hms-complexity-adversarial-guarantee-boundary",
+          "alg-hms-complexity-set-map-same-cost-different-state",
+          "alg-hms-complexity-presence-count-same-cost",
+          "alg-hms-complexity-order-not-decided-by-o1",
+          "alg-hms-review-self-pair-after-insert",
+          "alg-hms-review-set-used-for-count",
+          "alg-hms-review-lossy-grouping-key",
+          "alg-hms-review-earliest-index-overwritten",
+          "alg-hms-review-worst-case-claim",
+          "alg-hms-review-stored-current-not-complement",
+          "alg-hms-review-count-payload-for-groups",
+          "alg-hms-review-stale-zero-key",
+          "alg-hms-review-select-all-composite-repairs"
+        ],
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "minimumDiversity": 4
+      }
+    ],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

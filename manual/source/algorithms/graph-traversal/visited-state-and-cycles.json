@@ -1,0 +1,436 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-graph-traversal-visited_state_and_cycles-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-graph-traversal-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "graph_traversal",
+    "primaryMentalUnitId": "visited_state_and_cycles",
+    "patternFamilyId": "graph_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring; human review required",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-graph-traversal-visited_state_and_cycles-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-gt-visited-001",
+      "prompt": "An undirected graph contains the cycle 0—1—2—0. A traversal starts at 0 and must process each vertex once. Which visited-state rule is sufficient for ordinary reachability traversal?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "mark_before_expand",
+            "text": "When a vertex is first accepted into the traversal frontier, mark it discovered; expand only discovered vertices that have not yet been processed."
+          },
+          {
+            "id": "no_visited_tree",
+            "text": "Use no visited state because every traversal creates a tree before it follows any edge."
+          },
+          {
+            "id": "mark_after_all_neighbors",
+            "text": "Mark a vertex only after recursively exploring every neighbor, with no active-state guard."
+          },
+          {
+            "id": "matrix_prevents_cycle",
+            "text": "Use an adjacency matrix; matrix storage prevents repeated visits automatically."
+          }
+        ],
+        "acceptedOptionIds": [
+          "mark_before_expand"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Cycle safety comes from recording discovery before another path can schedule the same state.",
+        "details": "A graph may have back edges, cross edges, and multiple paths to one vertex. Marking at first discovery establishes the invariant that each vertex is accepted into the frontier at most once. The resulting parent relation is a tree or forest, but that does not make the input graph a tree. Adjacency lists and matrices both require separate traversal state.",
+        "wrongOptionExplanationsByOptionId": {
+          "no_visited_tree": "The traversal tree is a result of selecting discovery edges; the input still contains non-tree edges that can lead back to an earlier vertex.",
+          "mark_after_all_neighbors": "On the cycle, 0 can call 1, 1 can call 2, and 2 can call 0 before any call is marked complete.",
+          "matrix_prevents_cycle": "A representation records edges but does not record which states this traversal has already discovered."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_graph_visited_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-visited-002",
+      "prompt": "Order the discovery-state actions for considering neighbor v from a dequeued BFS vertex u so that v is scheduled at most once.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "test_unseen",
+            "text": "Test whether v is still unseen."
+          },
+          {
+            "id": "mark_discovered",
+            "text": "Mark v discovered."
+          },
+          {
+            "id": "record_parent",
+            "text": "Record any discovery metadata, such as parent or distance."
+          },
+          {
+            "id": "enqueue",
+            "text": "Enqueue v."
+          }
+        ],
+        "canonicalOrder": [
+          "test_unseen",
+          "mark_discovered",
+          "record_parent",
+          "enqueue"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The unseen test and discovery mark must precede publication of v to the queue.",
+        "details": "Once v is enqueued, another predecessor may be processed before v is dequeued. Marking v before enqueue closes that race in the logical traversal: later edges see v as discovered and do not add another copy. Parent or distance metadata belongs to the same first-discovery event. Delaying the mark until dequeue can be made correct only with extra duplicate guards, and it changes the operational invariant."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_graph_visited_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-visited-003",
+      "prompt": "Recursive DFS explores an undirected graph. When processing edge u—v, v is already visited. What may be concluded from that fact alone?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "need_parent_context",
+            "text": "Nothing about a cycle yet; v may be u's parent, so parent or equivalent context is needed."
+          },
+          {
+            "id": "cycle_always",
+            "text": "Every edge to a visited vertex proves a cycle."
+          },
+          {
+            "id": "no_cycle_ever",
+            "text": "A visited neighbor can never participate in a cycle because DFS already chose a tree edge."
+          },
+          {
+            "id": "bfs_only",
+            "text": "Only BFS can classify this case because BFS is always faster than DFS."
+          }
+        ],
+        "acceptedOptionIds": [
+          "need_parent_context"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "In an undirected graph, the parent edge returns to an already visited vertex without forming a new cycle witness.",
+        "details": "The visited set prevents repeated traversal, while parent context interprets a visited neighbor. If v is the parent of u, the edge is the same undirected tree edge seen from the other endpoint. If v is visited and is not the parent, the edge closes a cycle. Directed cycle detection uses a different state distinction, so this rule does not transfer unchanged.",
+        "wrongOptionExplanationsByOptionId": {
+          "cycle_always": "The reverse representation of the tree edge to u's parent is expected in an undirected adjacency list.",
+          "no_cycle_ever": "An edge to a visited non-parent vertex is precisely the relevant undirected-cycle signal.",
+          "bfs_only": "Traversal speed is not the classification rule; DFS with parent context can detect this condition correctly."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_graph_visited_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-visited-004",
+      "prompt": "A directed graph must be checked for a cycle with DFS. Why is one boolean visited flag per vertex insufficient for interpreting an edge u → v?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "need_active_finished",
+            "text": "Because visited must be refined into at least active-on-current-path versus fully finished state."
+          },
+          {
+            "id": "visited_never_needed",
+            "text": "Because directed graphs are trees when traversed recursively, so no state is needed."
+          },
+          {
+            "id": "every_visited_cycle",
+            "text": "Because every edge to any visited vertex is automatically a directed cycle."
+          },
+          {
+            "id": "matrix_colors",
+            "text": "Because only adjacency matrices can store the required DFS colors."
+          }
+        ],
+        "acceptedOptionIds": [
+          "need_active_finished"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A directed back edge is an edge to a vertex still active on the current DFS path, not merely any previously visited vertex.",
+        "details": "Use a three-state model such as unseen, active, and finished. Entering a vertex changes it to active; leaving after all outgoing edges changes it to finished. An edge to active state closes a directed cycle on the current recursion stack. An edge to finished state does not. The ordinary visited set remains enough to avoid repeated reachability work, but the richer diagnostic question requires richer state.",
+        "wrongOptionExplanationsByOptionId": {
+          "visited_never_needed": "Directed graphs can contain cycles and converging paths; recursion does not remove them.",
+          "every_visited_cycle": "An edge to a fully finished vertex may be a cross or forward edge and need not close the current recursion path.",
+          "matrix_colors": "DFS colors are traversal metadata independent of whether edges are stored in lists, matrices, or generated implicitly."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_graph_visited_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "order_dependencies"
+      }
+    },
+    {
+      "id": "alg-gt-visited-005",
+      "prompt": "In BFS, source s has edges to a and b, and both a and b have an edge to c. c is initially unseen. What operational difference arises if c is marked visited only when dequeued, with no separate queued-state check?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "duplicate_frontier",
+            "text": "Both a and b can enqueue c, creating duplicate frontier entries before the first copy is dequeued."
+          },
+          {
+            "id": "shorter_distance",
+            "text": "The second copy gives c a shorter distance than the first."
+          },
+          {
+            "id": "missed_vertex",
+            "text": "c will never be processed because dequeue marking suppresses both copies."
+          },
+          {
+            "id": "dfs_conversion",
+            "text": "The queue silently becomes a DFS stack when duplicate entries exist."
+          }
+        ],
+        "acceptedOptionIds": [
+          "duplicate_frontier"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Until the first copy is dequeued, every predecessor still observes c as unseen.",
+        "details": "Discovery-time marking prevents duplicate publication. A dequeue-time design can remain correct if it checks and skips stale copies, but it no longer has the same one-enqueue-per-vertex invariant and may use more queue space. If duplicate copies are expanded without a processed guard, their outgoing edges can cause further repeated work. Therefore the two timings are not universally equivalent even when final reachability happens to match.",
+        "wrongOptionExplanationsByOptionId": {
+          "shorter_distance": "Both copies are generated from the same BFS layer, so they imply the same candidate distance.",
+          "missed_vertex": "At least the first dequeued copy can still be processed; the issue is duplicate scheduling, not guaranteed omission.",
+          "dfs_conversion": "Duplicate entries do not change FIFO into LIFO; they change work and memory behavior."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_graph_visited_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-visited-006",
+      "prompt": "A maze state includes the current cell and a bitmask of collected keys. Reaching cell x with keymask 001 and later reaching x with keymask 101 can enable different future moves. What should the visited identity be?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "cell_and_keys",
+            "text": "The pair (cell, keymask), because future legal transitions depend on both components."
+          },
+          {
+            "id": "cell_only",
+            "text": "The cell only; a vertex may never be visited twice in any graph traversal."
+          },
+          {
+            "id": "keys_only",
+            "text": "The keymask only; location is merely representation detail."
+          },
+          {
+            "id": "no_visited",
+            "text": "No visited state, because a grid is a tree when obstacles are fixed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "cell_and_keys"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Visited identity must contain every variable that changes the set or cost of future transitions.",
+        "details": "A graph vertex is an abstract state, not necessarily a physical object. Here (x, 001) and (x, 101) have different capabilities and therefore are different vertices in the implicit state graph. The visited key must match that full state identity. The transfer rule applies to remaining obstacle removals, direction, turn count, resource budget, or any other history summarized into future-relevant state.",
+        "wrongOptionExplanationsByOptionId": {
+          "cell_only": "These are distinct search states even though they share a physical coordinate; collapsing them can discard a solvable route.",
+          "keys_only": "Legal next moves also depend on the current cell, so keymask alone merges unrelated states.",
+          "no_visited": "Grid movement commonly permits cycles, and the augmented state graph can revisit coordinates under different key sets."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_graph_visited_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-visited-007",
+      "prompt": "The same immutable graph receives two independent reachability queries with different sources. How should ordinary visited state be scoped?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "per_query",
+            "text": "Use fresh logical visited state per query, possibly implemented with a query-generation stamp."
+          },
+          {
+            "id": "permanent",
+            "text": "Keep vertices permanently visited after the first query so later traversals are faster."
+          },
+          {
+            "id": "representation_owned",
+            "text": "Store visited flags inside the adjacency list as part of the graph's permanent representation."
+          },
+          {
+            "id": "bfs_global",
+            "text": "BFS may reuse permanent visited state because it is always faster than DFS."
+          }
+        ],
+        "acceptedOptionIds": [
+          "per_query"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Visited means discovered in this traversal, not globally exhausted for all future questions.",
+        "details": "Each query has its own source and target contract. Clearing an O(V) boolean array is one implementation; a generation counter can avoid explicit clearing while preserving logical isolation. Reusing old marks without a query identity can suppress valid paths. Persistent preprocessing is possible only when it computes a different reusable structure, such as connected-component labels, rather than pretending one traversal's visited set answers every query.",
+        "wrongOptionExplanationsByOptionId": {
+          "permanent": "A vertex reached from the first source may still need to be explored to answer a later query; permanent marks change the second query's semantics.",
+          "representation_owned": "Visited state belongs to one traversal execution, while adjacency is static input structure.",
+          "bfs_global": "Neither traversal order authorizes carrying state across logically independent queries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_graph_visited_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-visited-008",
+      "prompt": "Select all statements that correctly separate tree traversal state from general graph traversal state.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "tree_parent_may_suffice",
+            "text": "In a guaranteed undirected tree, carrying the parent can prevent immediately traversing the same edge backward."
+          },
+          {
+            "id": "graph_needs_discovered",
+            "text": "In a general graph, a discovered set is needed because a vertex may be reached through non-parent edges."
+          },
+          {
+            "id": "tree_rule_general",
+            "text": "The parent-only rule applies unchanged to every graph, including graphs with longer cycles."
+          },
+          {
+            "id": "matrix_is_visited",
+            "text": "An adjacency matrix makes a discovered set unnecessary because repeated edges occupy the same cell."
+          }
+        ],
+        "acceptedOptionIds": [
+          "tree_parent_may_suffice",
+          "graph_needs_discovered"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A tree's structural promise can reduce traversal state; a general graph has no such promise.",
+        "details": "In an undirected tree, every non-root vertex has one path from the root, so excluding the parent is enough to avoid the immediate reverse edge. In a general graph, a vertex may be exposed from several branches or through a cycle, so global per-traversal discovery state is required. Representation does not replace this invariant. The decisive question is whether acyclicity and unique paths are guaranteed by the input contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "tree_rule_general": "A cycle can return to an ancestor or reach a previously explored branch without using the immediate parent edge.",
+          "matrix_is_visited": "Edge storage deduplicates an edge representation, not traversal arrivals through different paths."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "tree_parent_may_suffice": "The guaranteed tree structure removes all cycles except the immediate representation of the parent edge.",
+          "graph_needs_discovered": "General graphs permit converging paths and cycles, so parent context alone cannot identify every prior discovery."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_graph_visited_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_dfs",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

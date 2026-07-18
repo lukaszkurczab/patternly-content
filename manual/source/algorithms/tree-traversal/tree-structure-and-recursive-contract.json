@@ -1,0 +1,365 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-tree-traversal-tree_structure_and_recursive_contract-candidate-001",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-tree-traversal-candidate-0001",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "tree_traversal",
+    "primaryMentalUnitId": "tree_structure_and_recursive_contract",
+    "patternFamilyId": "tree_traversal"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate author; not a human reviewer)",
+    "createdAt": "2026-07-18T16:17:19Z",
+    "contentBatchId": "algorithms-tree-traversal-tree_structure_and_recursive_contract-candidate-001",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-tree-contract-subtree-size",
+      "prompt": "A recursive helper `size(node)` must return the number of nodes in the subtree rooted at `node`.\nWhich contract makes every call independently usable by its parent?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "return_subtree_count",
+            "text": "`size(null) = 0`; otherwise return `1 + size(node.left) + size(node.right)`."
+          },
+          {
+            "id": "increment_global_counter",
+            "text": "Increment one global counter at every non-null node and return nothing."
+          },
+          {
+            "id": "return_leaf_only",
+            "text": "Return `1` for a leaf and `0` for every internal node."
+          },
+          {
+            "id": "count_children_only",
+            "text": "Return the number of non-null immediate children of `node`."
+          }
+        ],
+        "acceptedOptionIds": [
+          "return_subtree_count"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The parent needs a complete result for each child subtree, so the helper must return a subtree-local count with `0` as the empty-subtree identity.",
+        "details": "A recursive contract states what one call means, including the null case. Here, `size(node)` means “the number of nodes in exactly this subtree.” The null subtree contributes zero, each non-null call adds its own node, and the two child results compose without hidden context. A global counter can compute one whole-tree total, but it does not give the caller two independent child results and becomes fragile when the helper is reused, invoked twice, or tested on a subtree. The same contract shape transfers to subtree sums and other additive properties by changing the identity and combine operation.",
+        "wrongOptionExplanationsByOptionId": {
+          "increment_global_counter": "A global counter can look simpler for one traversal, but it hides the result outside the call contract and cannot directly represent independent left- and right-subtree results. It is only reasonable when the operation is deliberately a one-shot side effect and reentrancy is irrelevant.",
+          "return_leaf_only": "Leaf detection is relevant, but counting only leaves changes the requested property. It would be valid for a helper whose declared contract is `leafCount(node)`, not `size(node)`.",
+          "count_children_only": "Immediate degree is not subtree size. This option ignores all descendants below the children and would be valid only for a local branching-factor query."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "compute_subtree_property"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "The input is a proper binary tree.",
+        "The helper may be called on any subtree root."
+      ]
+    },
+    {
+      "id": "alg-tree-contract-height-call-sequence",
+      "prompt": "Order the conceptual obligations of one call to `height(node)` when height is measured as the number of nodes on the longest downward path and `height(null) = 0`.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "check_empty",
+            "text": "If `node` is null, return the contract's empty-subtree value `0`."
+          },
+          {
+            "id": "obtain_left",
+            "text": "Obtain the height promised by the call on `node.left`."
+          },
+          {
+            "id": "obtain_right",
+            "text": "Obtain the height promised by the call on `node.right`."
+          },
+          {
+            "id": "fulfill_parent",
+            "text": "Return `1 + max(leftHeight, rightHeight)` for this subtree."
+          }
+        ],
+        "canonicalOrder": [
+          "check_empty",
+          "obtain_left",
+          "obtain_right",
+          "fulfill_parent"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The current call can fulfill its promise only after the base case is settled and both child contracts have produced their values.",
+        "details": "This order follows the dependency graph of the contract. The null case must terminate before dereferencing the node. For a non-null node, the parent result depends on both child heights, so those subproblem results must exist before the combine step. Left and right may be evaluated in either order for this symmetric property, but each child-to-parent adjacency must precede the final return. Replacing `max` with another combine rule can preserve the same dependency order, while a parent-first side effect would be a different contract rather than an equivalent rearrangement."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "compute_subtree_property"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "The order between the two child calls is chosen as left then right for the canonical sequence.",
+        "Scoring uses preserved adjacent relations."
+      ]
+    },
+    {
+      "id": "alg-tree-contract-root-to-leaf-existence",
+      "prompt": "A helper must decide whether any root-to-leaf path has sum `target`. Select all statements that belong in a coherent recursive contract.",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "state_is_remaining_sum",
+            "text": "Each call receives the sum still required after accounting for ancestors."
+          },
+          {
+            "id": "return_is_exists_boolean",
+            "text": "Each call returns whether a qualifying root-to-leaf path exists inside its subtree under that incoming state."
+          },
+          {
+            "id": "global_found_required",
+            "text": "Every call must write to a global `found` flag because Boolean return values cannot combine branches."
+          },
+          {
+            "id": "null_is_success",
+            "text": "Reaching a null child means the target path has been completed successfully."
+          }
+        ],
+        "acceptedOptionIds": [
+          "state_is_remaining_sum",
+          "return_is_exists_boolean"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The contract must separate ancestor-derived input state from the subtree-local Boolean result, and success is checked at a leaf rather than at an arbitrary null child.",
+        "details": "One useful contract is `exists(node, remaining)`: `remaining` describes what the current subtree must still supply, and the return value describes whether this subtree contains a valid root-to-leaf completion. At a leaf, compare the leaf value with `remaining`; at an internal node, recurse with an updated remaining sum and combine child results with OR. A global flag is unnecessary because Boolean results compose directly and preserve short-circuiting. Treating null as success loses the requirement that a path end at an actual leaf and can accept a path that stops at a missing child of an internal node.",
+        "wrongOptionExplanationsByOptionId": {
+          "global_found_required": "A global flag is plausible because the query asks whether any path exists, but OR over child return values expresses the same condition with a reusable call contract. A global flag is only a deliberate alternative when the API is explicitly side-effect based.",
+          "null_is_success": "Null often marks a recursive base case, but it is not itself a tree node or a root-to-leaf endpoint. Null could represent success in a different contract that intentionally consumes an edge beyond a leaf, but not in this node-path contract."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "state_is_remaining_sum": "Without explicit ancestor-derived state, the call cannot know what contribution its subtree must supply.",
+          "return_is_exists_boolean": "Without a subtree-local Boolean result, the parent has no compositional way to combine the two branch outcomes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "A leaf is a non-null node with no children.",
+        "The path must start at the root and end at a leaf."
+      ]
+    },
+    {
+      "id": "alg-tree-contract-tree-versus-graph-visited",
+      "prompt": "The input contract guarantees a proper rooted binary tree: every non-root node has exactly one parent, and there are no cycles.\nWhat is the correct visited-state policy for a recursive traversal from the root?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_visited_for_tree",
+            "text": "Do not maintain a visited set; recurse only through the two child references."
+          },
+          {
+            "id": "always_use_visited",
+            "text": "Always maintain a visited set because every DFS requires cycle detection."
+          },
+          {
+            "id": "mark_values_visited",
+            "text": "Track visited node values so equal values are not processed twice."
+          },
+          {
+            "id": "reset_visited_per_branch",
+            "text": "Create a fresh visited set for each child call."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_visited_for_tree"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The structural tree contract already guarantees one acyclic route to every reachable node, so a visited set adds no correctness information.",
+        "details": "In a proper rooted tree, child edges move strictly away from the root and no node is shared by two parents. A traversal therefore reaches each node once by construction. Graph DFS has a different subproblem contract because cycles or multiple incoming paths can revisit the same vertex, so visited state is part of correctness there. Tracking values is especially wrong because node identity, not value equality, determines whether two nodes are distinct. If the input were only “node references that may form a graph,” the contract would change and a visited set would become necessary.",
+        "wrongOptionExplanationsByOptionId": {
+          "always_use_visited": "This imports a graph invariant into a stronger tree contract. It becomes correct when the structure may contain cycles or shared nodes, but it is unnecessary for a guaranteed proper tree.",
+          "mark_values_visited": "Equal values do not make two tree nodes the same object. Value-based deduplication would skip legitimate duplicate-valued nodes; it is only valid if value uniqueness is an explicit identity contract.",
+          "reset_visited_per_branch": "A fresh set per branch would not prevent cross-branch revisits in a graph and still adds no value in a proper tree. A single shared visited set is the relevant graph policy."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "foundational",
+      "constraints": [
+        "Node identity is independent of node value.",
+        "The structure satisfies the stated proper-tree contract."
+      ]
+    },
+    {
+      "id": "alg-tree-contract-three-questions",
+      "prompt": "Before writing a recursive tree helper, which question set most directly defines the subproblem contract?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "input_return_base",
+            "text": "What does a call receive, what exactly does it return or effect for this subtree, and what is that meaning on an empty subtree?"
+          },
+          {
+            "id": "syntax_template",
+            "text": "Which recursion syntax template is shortest, which variable names are conventional, and whether the language supports tail calls?"
+          },
+          {
+            "id": "global_then_order",
+            "text": "Which global variable stores the answer, which traversal name sounds familiar, and which child should be called first?"
+          },
+          {
+            "id": "leaf_only",
+            "text": "What happens at a leaf; all internal-node behavior can be inferred later from examples."
+          }
+        ],
+        "acceptedOptionIds": [
+          "input_return_base"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A usable subproblem is defined by its inputs, its promised subtree result or effect, and its boundary meaning; implementation syntax follows from that contract.",
+        "details": "The three questions make every recursive call interpretable in isolation. Inputs identify ancestor context or parameters. The promised result or effect tells the parent what it may rely on. The empty-subtree meaning closes the recursion and supplies an identity, sentinel, or failure value. Traversal order is then chosen from data dependencies and timing requirements. Starting with a global variable or a memorized traversal name often leaves hidden assumptions about reuse, null children, and branch combination.",
+        "wrongOptionExplanationsByOptionId": {
+          "syntax_template": "Syntax can affect implementation details, but it does not define the mathematical meaning of a call. Tail-call support may matter later for execution constraints, not for the core subtree contract.",
+          "global_then_order": "A global answer and a traversal label are implementation choices, not a complete specification. This approach hides what child calls promise and when null is valid.",
+          "leaf_only": "Leaf behavior is one boundary, but internal nodes are the inductive step that must be stated explicitly. Example-based inference can leave different callers assuming incompatible meanings."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "validate_tree_property"
+      },
+      "difficulty": "foundational"
+    },
+    {
+      "id": "alg-tree-contract-one-call-per-node-cost",
+      "prompt": "A recursive helper is called exactly once for each non-null node, performs constant local work, and makes calls only to the node's children. Let `n` be the number of nodes and `h` the tree height measured in nodes. Determine its asymptotic time and auxiliary call-stack space.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(h)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(h)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The call contract creates one constant-work call per node, while simultaneous recursive frames follow one root-to-leaf chain of length at most `h`.",
+        "details": "Summing constant local work over exactly `n` non-null calls gives `O(n)` time. The two child calls do not remain active as two full subtrees at once; depth-first execution completes one branch before the other, so the maximum number of live frames is the current path length, `O(h)`. On a balanced tree, `h = O(log n)`; on a skewed tree, `h = O(n)`. The result changes if the call contract revisits subtrees, copies path-sized state, or stores an explicit frontier, because those add work or memory not present in the stated contract."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "traverse_tree"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Do not count storage occupied by the input tree.",
+        "The implementation performs no path copying or memoization."
+      ]
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

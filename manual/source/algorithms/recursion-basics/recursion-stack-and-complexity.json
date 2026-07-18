@@ -1,0 +1,490 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "recursion-basics-recursion-stack-and-complexity",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-recursion-basics-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "recursion_basics",
+    "primaryMentalUnitId": "recursion_stack_and_complexity",
+    "patternFamilyId": "recursion_basics"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring",
+    "createdAt": "2026-07-18T15:01:33Z",
+    "contentBatchId": "recursion-basics-recursion-stack-and-complexity",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "recursion-basics-recursion-stack-and-complexity-tree-dfs-work-versus-height",
+      "prompt": "A depth-first recursive traversal visits each of n real tree nodes once. Let h be the number of real nodes\non the longest root-to-leaf path. Which asymptotic statement is correct?",
+      "constraints": [
+        "The structure is a tree with no shared or cyclic nodes.",
+        "Each real node is visited exactly once.",
+        "Per-node local work is O(1)."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "time_n_stack_h",
+            "text": "Time is O(n), and recursion-stack space is O(h)."
+          },
+          {
+            "id": "time_h_stack_n",
+            "text": "Time is O(h), and recursion-stack space is O(n)."
+          },
+          {
+            "id": "time_n_stack_n_always",
+            "text": "Time is O(n), and recursion-stack space is always O(n)."
+          },
+          {
+            "id": "time_exponential",
+            "text": "Time and stack space are exponential because each node may make two recursive calls."
+          }
+        ],
+        "acceptedOptionIds": [
+          "time_n_stack_h"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Total work counts all visited nodes, while stack space counts only the longest active ancestor path.",
+        "details": "Depth-first recursion suspends a parent while one descendant path is explored. At any instant, the active frames correspond to one root-to-current path, so the extra call stack is proportional to tree height h. Across the complete run, however, each of the n nodes is entered and processed, giving O(n) time when per-node work is constant. A skewed tree has h = n; a balanced tree has h = O(log n). This distinction between total call count and maximum simultaneous call depth is the central accounting boundary.",
+        "wrongOptionExplanationsByOptionId": {
+          "time_h_stack_n": "Height bounds one active path, not the total nodes visited. Every node contributes work even when the tree is shallow.",
+          "time_n_stack_n_always": "O(n) is a valid worst-case upper bound, but it loses the decisive shape parameter. A balanced tree has h = O(log n), so only one root-to-leaf path is active.",
+          "time_exponential": "The calls go to disjoint child subtrees and each real node is visited once. Branching does not imply repeated exponential states."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_recursive_call_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-stack-and-complexity-sumto-stack-unwind-trace",
+      "prompt": "Order the runtime events for sumTo(2), where sumTo(0) returns 0 and sumTo(n) returns n + sumTo(n - 1).",
+      "constraints": [
+        "Evaluation of n + sumTo(n - 1) waits for the recursive call to return.",
+        "The runtime uses ordinary last-in, first-out call-stack semantics."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "frame_two_suspends",
+            "text": "The frame for n = 2 is created and suspends while requesting sumTo(1)."
+          },
+          {
+            "id": "frame_one_suspends",
+            "text": "The frame for n = 1 is created and suspends while requesting sumTo(0)."
+          },
+          {
+            "id": "base_returns_zero",
+            "text": "The frame for n = 0 returns 0."
+          },
+          {
+            "id": "frame_one_returns",
+            "text": "The n = 1 frame resumes, computes 1 + 0, and returns 1."
+          },
+          {
+            "id": "frame_two_returns",
+            "text": "The n = 2 frame resumes, computes 2 + 1, and returns 3."
+          }
+        ],
+        "canonicalOrder": [
+          "frame_two_suspends",
+          "frame_one_suspends",
+          "base_returns_zero",
+          "frame_one_returns",
+          "frame_two_returns"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Recursive calls push suspended frames until the base returns, then results flow back in reverse call order.",
+        "details": "A non-terminal frame cannot finish its addition until the child value exists, so it remains live with its parameter and return continuation. The n = 0 frame supplies the first completed result. Stack discipline is last-in, first-out: n = 1 resumes before n = 2, and each frame combines its local n with the child result. At maximum depth, three frames are simultaneously alive. The same mechanism explains why recursive local variables do not overwrite one another and why extra space follows depth rather than total calls."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_recursive_call_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-stack-and-complexity-tail-position-without-tco",
+      "prompt": "factorialAcc(n, acc) returns acc when n == 0; otherwise it returns factorialAcc(n - 1, acc * n).\nThe target runtime does not guarantee tail-call optimization. What is the correct stack conclusion?",
+      "constraints": [
+        "n is a non-negative integer.",
+        "The runtime does not guarantee tail-call optimization.",
+        "Arithmetic cost and overflow are outside this item's scope."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "linear_stack_without_tco",
+            "text": "The call is in tail position, but maximum stack usage is O(n) without a guaranteed optimization."
+          },
+          {
+            "id": "constant_stack_by_syntax",
+            "text": "Stack usage is O(1) because a tail-position call automatically reuses the frame."
+          },
+          {
+            "id": "exponential_stack",
+            "text": "Stack usage is O(2^n) because factorial grows exponentially in value."
+          },
+          {
+            "id": "zero_stack",
+            "text": "No stack frame is needed because acc contains the partial result."
+          }
+        ],
+        "acceptedOptionIds": [
+          "linear_stack_without_tco"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Tail recursion changes the continuation shape, but stack complexity remains runtime-dependent unless tail-call elimination is guaranteed.",
+        "details": "The recursive call is the final operation, so the current frame has no pending arithmetic after the child returns. A compiler or runtime may exploit that fact by replacing the call with a jump and reusing one frame. The content contract, however, states that such optimization is not guaranteed. Under ordinary call semantics, n, acc, and return control are represented by one frame per call, giving depth O(n). The transfer rule is to separate source-level tail position from an implementation-level tail-call guarantee.",
+        "wrongOptionExplanationsByOptionId": {
+          "constant_stack_by_syntax": "Tail position makes frame reuse possible, not mandatory. Without a language/runtime guarantee, ordinary calls can retain one frame per decrement.",
+          "exponential_stack": "Numeric result magnitude does not determine call depth. There is one recursive child and n decrements.",
+          "zero_stack": "The accumulator removes post-return arithmetic, but the function call itself still needs runtime control state unless optimized into iteration."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_recursive_call_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tail_recursion_intro",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-stack-and-complexity-balanced-range-split-cost",
+      "prompt": "A function processes a range of n elements. For n > 1 it splits the range into two disjoint halves,\nrecursively processes both halves, and does O(1) local combining work. Each one-element range is terminal.\nSelect the tight time and extra recursion-stack complexities.",
+      "constraints": [
+        "The halves are disjoint and together cover the parent range.",
+        "Local work and local frame data are O(1).",
+        "The split is balanced to within one element.",
+        "The implementation evaluates recursively using depth-first call-stack semantics."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(2^n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(2^n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The disjoint recursion tree contains O(n) total nodes, while balanced depth keeps only O(log n) frames active at once.",
+        "details": "The time recurrence is T(n) = 2T(n/2) + O(1). The n one-element leaves and fewer than n internal combine nodes give total O(n) work. Stack space is not the sum of frames across the whole tree: depth-first evaluation completes one branch before its sibling, so only one root-to-leaf path plus constant sibling bookkeeping is active. Balanced halving produces O(log n) depth. The result changes if each frame allocates an n-sized copy or if the split is highly unbalanced; those costs are excluded by the stated constraints."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_recursive_call_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "divide_problem"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-stack-and-complexity-singleton-base-frame-count",
+      "prompt": "maxFrom(i) returns the maximum of the non-empty suffix a[i:] in an array of length n > 0.\nIt stops at i == n - 1 and otherwise calls maxFrom(i + 1). What is the maximum number of simultaneously\nactive maxFrom frames from maxFrom(0)?",
+      "constraints": [
+        "The input array is non-empty.",
+        "The function is never called with i == n.",
+        "The runtime does not perform tail-call optimization because comparison remains after the child returns."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "n_frames",
+            "text": "n frames, including the singleton base frame."
+          },
+          {
+            "id": "n_plus_one_empty",
+            "text": "n + 1 frames because every recursive function must add an empty-suffix base frame."
+          },
+          {
+            "id": "one_frame",
+            "text": "One frame because each call replaces the previous call."
+          },
+          {
+            "id": "two_power_n",
+            "text": "2^n frames because recursive maximum is exponential."
+          }
+        ],
+        "acceptedOptionIds": [
+          "n_frames"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The legal suffix states are i = 0 through n - 1, and all n corresponding frames are live at the deepest point.",
+        "details": "The base case is the one-element suffix, not an invented empty suffix. Starting at i = 0, recursion creates frames for every valid index through n - 1. Just before the singleton returns, n frames are active. The parent frames are suspended because each still needs to compare its local element with the child's return. This directly counters the empty-only base heuristic and shows its resource consequence: stack accounting follows actual reachable states, not a universal template that adds one more empty call.",
+        "wrongOptionExplanationsByOptionId": {
+          "n_plus_one_empty": "The declared domain is non-empty suffixes, and i == n - 1 already supplies the atomic answer. An empty frame is neither called nor required.",
+          "one_frame": "The parent still needs its a[i] value and continuation to compare with the child maximum, so ordinary calls remain suspended until unwinding.",
+          "two_power_n": "There is one child per non-terminal frame, creating a chain rather than a branching call tree."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_recursive_call_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "base_case_recognition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-stack-and-complexity-separate-frame-local-values",
+      "prompt": "sumFrom(i) computes rest = sumFrom(i + 1) and then returns a[i] + rest.\nWhile processing a three-element suffix, which statement about rest is correct?",
+      "constraints": [
+        "rest is a function-local variable.",
+        "No global or captured mutable variable named rest is used.",
+        "The runtime uses ordinary call frames."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_rest_per_frame",
+            "text": "Each active frame owns a separate rest slot that receives its own child's return value."
+          },
+          {
+            "id": "one_shared_rest",
+            "text": "All calls share one rest variable because the source code uses the same name."
+          },
+          {
+            "id": "rest_exists_only_base",
+            "text": "rest exists only in the base frame."
+          },
+          {
+            "id": "rest_values_identical",
+            "text": "Every rest value is identical because every call executes the same statement."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_rest_per_frame"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A recursive invocation creates a new frame, so identically named parameters and locals are isolated per call.",
+        "details": "When sumFrom(0) calls sumFrom(1), the first frame remains suspended with its own i and future rest slot. The child creates a second frame, and so on. During unwinding, each child sum is stored in the rest slot of its immediate parent, producing different values for different suffixes. This frame isolation is why ordinary recursive code can retain ancestor context without explicit arrays. Shared behavior occurs only for deliberately global, captured mutable, or reference-shared objects—not merely because local names repeat.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_shared_rest": "A local variable belongs to a call frame. Reusing its source-level name does not make the storage or value global.",
+          "rest_exists_only_base": "The base may return directly, while every non-terminal parent needs its own rest value after the child completes.",
+          "rest_values_identical": "The same statement runs on different suffix states, whose sums can differ. Uniform code does not imply uniform local values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_recursive_call_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-stack-and-complexity-terminating-chain-can-overflow",
+      "prompt": "countdown(n) has a correct base n == 0 and calls countdown(n - 1). For a very large n on a runtime with a\nbounded call stack and no tail-call optimization, which conclusion is correct?",
+      "constraints": [
+        "n is finite and non-negative.",
+        "The runtime stack is bounded.",
+        "Tail-call optimization is not guaranteed."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "terminates_in_model_may_overflow",
+            "text": "The recurrence terminates mathematically, but execution may raise stack overflow before reaching the base."
+          },
+          {
+            "id": "base_guarantees_execution",
+            "text": "The base case guarantees successful execution for every finite n."
+          },
+          {
+            "id": "overflow_means_nonterminating",
+            "text": "A stack overflow proves the recursive transition does not make progress."
+          },
+          {
+            "id": "runtime_converts_to_loop",
+            "text": "The runtime must convert any one-call recursion into a loop."
+          }
+        ],
+        "acceptedOptionIds": [
+          "terminates_in_model_may_overflow"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Strict descent proves a finite call sequence, while bounded stack capacity imposes an independent maximum practical depth.",
+        "details": "The measure n decreases to zero, so the abstract computation has finite depth n + 1. Under ordinary call semantics, however, all ancestor frames remain live until the base returns. A runtime with a smaller stack limit can fail partway through that finite sequence. This is not logical nontermination; it is resource exhaustion. The transfer rule is to evaluate both obligations: prove progress for correctness, then compare maximum depth and per-frame cost with the execution environment or replace deep recursion with iteration.",
+        "wrongOptionExplanationsByOptionId": {
+          "base_guarantees_execution": "A termination proof does not guarantee sufficient runtime resources. O(n) simultaneous frames can exceed a fixed stack limit.",
+          "overflow_means_nonterminating": "The transition can strictly decrease n and still exhaust finite memory before the terminal state is reached.",
+          "runtime_converts_to_loop": "Such optimization is language- and implementation-dependent and cannot be assumed under the stated constraints."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_recursive_call_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "tail_recursion_intro",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-stack-and-complexity-linked-chain-time-and-stack",
+      "prompt": "length(node) returns 0 for None and otherwise returns 1 + length(node.next).\nThe input is an acyclic list of n real nodes, and each frame does O(1) local work.\nSelect the tight time and extra recursion-stack complexities.",
+      "constraints": [
+        "The list is finite and acyclic.",
+        "Each node is reached exactly once.",
+        "Per-frame local data is O(1).",
+        "The runtime does not eliminate these non-tail frames."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)",
+            "O(2^n)"
+          ],
+          "space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)",
+            "O(2^n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "One call is created per node and all ancestor frames remain active until the None result unwinds.",
+        "details": "The call graph is a single path through n real nodes plus one terminal None call, so total call count and time are O(n). Because each parent must add one after its child returns, ordinary evaluation retains the entire chain of frames at maximum depth, giving O(n) extra stack space. No branch duplicates work, so exponential time is unsupported. The distinction also shows why replacing recursion with an iterative pointer walk can preserve O(n) time while reducing auxiliary control space to O(1)."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_recursive_call_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

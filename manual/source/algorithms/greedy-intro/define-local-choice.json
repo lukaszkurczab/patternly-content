@@ -1,0 +1,313 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-greedy-intro-define-local-choice-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-greedy-intro-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "greedy_intro",
+    "primaryMentalUnitId": "define_local_choice",
+    "patternFamilyId": "greedy_intro"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-greedy-intro-define-local-choice-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-greedy-intro-dlc-001",
+      "prompt": "You are building a maximum-cardinality schedule from half-open intervals [start, end). Which statement defines the local greedy rule completely?",
+      "constraints": [
+        "Touching endpoints are compatible.",
+        "currentEnd is the end of the last selected interval."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "min_end_among_feasible",
+            "text": "Among intervals with start >= currentEnd, choose one with minimum end, append it, and set currentEnd to that end."
+          },
+          {
+            "id": "globally_shortest_interval",
+            "text": "Choose the globally shortest remaining interval and delete every interval that overlaps it."
+          },
+          {
+            "id": "earliest_start_without_filter",
+            "text": "Choose the interval with minimum start, regardless of whether it overlaps the current schedule."
+          },
+          {
+            "id": "latest_start_feasible",
+            "text": "Among feasible intervals, choose the one with the latest start because it commits as late as possible."
+          }
+        ],
+        "acceptedOptionIds": [
+          "min_end_among_feasible"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A usable local rule must identify the feasible frontier, the direction of comparison, and the state update. Here those are start >= currentEnd, minimum end, and currentEnd = selected.end.",
+        "details": "“Pick the earliest-finishing interval” is incomplete unless the current feasibility boundary is part of the rule. After an interval has been selected, only intervals starting at or after currentEnd are candidates. Minimizing end within that set releases the resource as early as possible, and assigning that end to currentEnd defines the residual instance for the next decision.\n\nThe distractors each omit or optimize the wrong component. Short duration does not necessarily produce an early end; earliest start can select an overlapping or very long interval; latest start does not control how long the resource remains occupied. When transferring a greedy rule, write it as a state transition: candidate predicate, comparison key and direction, tie contract if material, selected action, and updated boundary. That formulation can then be tested and proved rather than treated as an intuitive slogan.",
+        "wrongOptionExplanationsByOptionId": {
+          "globally_shortest_interval": "Duration appears economical, but a short interval may finish later than another feasible interval and block more future choices. It also ignores the current feasibility frontier.",
+          "earliest_start_without_filter": "This choice can overlap the current schedule and therefore is not even a legal candidate. Earliest start also does not minimize the future boundary.",
+          "latest_start_feasible": "A late start can still have a very late end. The residual candidate set is controlled by end time, not by how late the selected interval begins."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-002",
+      "prompt": "The interval constraints stay the same, but the objective changes from maximizing the number of selected intervals to maximizing their total weight. What should happen to the local-rule specification?",
+      "constraints": [
+        "Weights are arbitrary positive numbers.",
+        "Intervals remain half-open and pairwise non-overlap is required."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "rule_must_be_rejustified",
+            "text": "The earliest-finish rule cannot be reused as a complete rule without a new proof, because a one-for-one exchange may preserve count but lose weight."
+          },
+          {
+            "id": "same_rule_new_label",
+            "text": "Keep earliest finish; changing the objective label does not affect the greedy choice."
+          },
+          {
+            "id": "max_weight_each_step",
+            "text": "Choose the currently highest-weight feasible interval; the largest local contribution must maximize the total."
+          },
+          {
+            "id": "best_weight_duration_ratio",
+            "text": "Choose the greatest weight-to-duration ratio; ratios always convert weighted selection into a greedy problem."
+          }
+        ],
+        "acceptedOptionIds": [
+          "rule_must_be_rejustified"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A local rule is defined relative to an objective. Earliest finish preserves future room and cardinality, but it does not preserve arbitrary weight when one interval is exchanged for another.",
+        "details": "The unweighted proof exchanges one selected interval for another and keeps the number of selected intervals unchanged. Once intervals have different weights, the same exchange may reduce the objective even when it improves the future boundary. Therefore the old key is not a valid complete rule for the new problem unless an additional property of the weights restores dominance.\n\nChoosing the largest weight or the best ratio is also only a hypothesis. Either choice can block a combination of smaller intervals with greater total weight. The usual weighted-interval formulation retains alternatives by state, but constructing that solution is outside this item. The diagnostic transfer rule is simple: when the objective changes, identify exactly what an exchange or dominance step must preserve. If the old local comparison preserves only a different quantity, the rule must be replaced or re-proved.",
+        "wrongOptionExplanationsByOptionId": {
+          "same_rule_new_label": "The objective is part of the correctness contract. Preserving the number of intervals is insufficient when the score is their total weight.",
+          "max_weight_each_step": "A single heavy interval may overlap several moderately weighted intervals whose combined value is larger. Immediate contribution does not establish dominance.",
+          "best_weight_duration_ratio": "Ratio greedy is valid for some divisible-resource problems, not for arbitrary indivisible interval conflicts. Overlap structure can defeat the ratio order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-003",
+      "prompt": "At the current boundary, two feasible unweighted intervals have the same minimum end time but different start times. What is the correct tie rule for maximum-cardinality interval selection?",
+      "constraints": [
+        "Both intervals are feasible against the already selected schedule.",
+        "The objective counts intervals and assigns no secondary preference."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "either_same_end",
+            "text": "Either tied interval may be selected because both contribute one and create the same next currentEnd."
+          },
+          {
+            "id": "prefer_shorter",
+            "text": "The shorter tied interval must be selected because duration is always the secondary greedy key."
+          },
+          {
+            "id": "prefer_earlier_start",
+            "text": "The earlier-starting tied interval must be selected to preserve chronological order."
+          },
+          {
+            "id": "tie_invalidates_greedy",
+            "text": "Any tie means the local rule is ambiguous and greedy cannot be correct."
+          }
+        ],
+        "acceptedOptionIds": [
+          "either_same_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Under the stated objective, equal-end feasible intervals are equivalent: they add the same count and expose the same future boundary. No extra key is needed unless the product contract adds another objective.",
+        "details": "The decisive state for future compatibility is currentEnd. If two feasible choices have the same end, selecting either one produces the same residual candidate set: every later interval must start at or after that shared end. Both also contribute exactly one to the cardinality objective. Their different start times therefore do not affect the proof under the stated assumptions.\n\nA tie rule is not decorative. It must be explicit when tied choices can change provenance, secondary optimization, stability, or future feasibility. For example, if the objective also minimized idle time, preserved original order, or used weights, the start time or another attribute could become material. The transfer boundary is equivalence: arbitrary tie-breaking is safe only after showing that all tied choices have identical consequences for every part of the accepted-answer contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefer_shorter": "Shorter duration does not change the next boundary when end times are already equal. It would be a new secondary objective not stated in the problem.",
+          "prefer_earlier_start": "Chronological order is already respected by feasibility. Earlier start provides no additional future room when the end is tied.",
+          "tie_invalidates_greedy": "Ties are harmless when tied choices are equivalent under the invariant and objective. They require a contract, not automatic rejection of the strategy."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-004",
+      "prompt": "Jobs are processed in nondecreasing deadline order. After tentatively adding the next job, total selected duration exceeds the current deadline. Which local rule is fully specified for maximizing the number of completed jobs?",
+      "constraints": [
+        "Every retained job contributes one to the objective.",
+        "The selected jobs are represented by a max-heap keyed by duration."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "remove_longest_selected",
+            "text": "Remove the selected job with maximum duration, update total duration, and keep the remaining prefix set."
+          },
+          {
+            "id": "remove_new_job",
+            "text": "Always remove the job that was just added because it caused the violation."
+          },
+          {
+            "id": "remove_smallest_selected",
+            "text": "Remove the shortest selected job so the remaining jobs are individually substantial."
+          },
+          {
+            "id": "remove_latest_deadline",
+            "text": "Remove the selected job with the latest deadline, even though the current prefix is already deadline-ordered."
+          }
+        ],
+        "acceptedOptionIds": [
+          "remove_longest_selected"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The local repair chooses among currently selected jobs and removes the longest, which frees the most time for the same one-job loss. The heap represents that candidate set efficiently.",
+        "details": "The local state is the set of jobs tentatively retained from the current deadline prefix plus their total duration. Once the prefix becomes infeasible, keeping the same cardinality is impossible, so the rule must remove exactly one job. Removing the maximum duration gives the remaining set the minimum possible total duration among all one-job removals from that state. This is the strongest residual state for accommodating later jobs.\n\nThe newly added job is not automatically the worst; it may be short and valuable to keep for cardinality. Removing the shortest releases the least time. Deadline order determines when a prefix constraint is checked, while duration determines the repair choice. The transfer boundary is equal value and prefix feasibility. With unequal rewards or dependencies, “remove longest” may discard too much objective value and requires a different optimization contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "remove_new_job": "The new job may be shorter than an earlier retained job. Discarding it can leave a larger total duration than another one-job removal.",
+          "remove_smallest_selected": "This frees the least time and therefore produces the weakest remaining prefix for future deadlines.",
+          "remove_latest_deadline": "All considered jobs belong to the active prefix. Deadline order exposes the constraint; it does not identify which selected job consumes the most scarce time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-005",
+      "prompt": "Which elements must be explicit before a local greedy rule can be evaluated on edge cases and submitted for a correctness proof? Select all statements that apply.",
+      "constraints": [
+        "The rule may be used repeatedly until the instance is exhausted.",
+        "Deterministic behavior is required for equivalent inputs."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "candidate_predicate",
+            "text": "The predicate that defines which actions are currently feasible candidates."
+          },
+          {
+            "id": "comparison_and_ties",
+            "text": "The comparison key, direction, and any material tie-breaking contract."
+          },
+          {
+            "id": "state_transition",
+            "text": "The state or boundary update after accepting or rejecting a candidate."
+          },
+          {
+            "id": "greedy_label",
+            "text": "A statement that the method is greedy, which is enough to infer the missing mechanics."
+          },
+          {
+            "id": "examples_replace_contract",
+            "text": "Several passing examples, which can stand in for an explicit rule on untested cases."
+          }
+        ],
+        "acceptedOptionIds": [
+          "candidate_predicate",
+          "comparison_and_ties",
+          "state_transition"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Candidate eligibility, comparison semantics, and the resulting state transition are all part of the local rule. A label or example set cannot supply missing behavior at boundaries or ties.",
+        "details": "A greedy rule is a deterministic state transition, not a slogan. The candidate predicate prevents illegal choices from entering the comparison. The comparison key and direction identify the local preference, while the tie contract determines whether equivalent-looking inputs can diverge. The state transition records the consequence of the choice and defines the candidate set for the next step.\n\nOnly after these parts are explicit can a reviewer construct counterexamples, verify endpoint behavior, or prove an invariant. Saying “use greedy” omits every decision that matters. Passing examples exercise only a few paths and cannot define behavior for ties, empty candidate sets, or conflicting constraints. This specification template transfers directly: sort-then-greedy defines an order and scan state; interval greedy defines a compatibility boundary; running-best defines the maintained extreme; heap greedy defines the dynamic candidate set and repair operation.",
+        "wrongOptionExplanationsByOptionId": {
+          "greedy_label": "The label names a strategy family but does not identify what is selected, how ties behave, or how the residual state changes.",
+          "examples_replace_contract": "Examples can expose defects, but they do not define untested behavior or prove that the same rule applies to every legal instance."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "candidate_predicate": "Without candidate eligibility, the rule may compare or select actions that violate the current feasibility boundary.",
+          "comparison_and_ties": "Without comparison direction and tie semantics, the local choice is ambiguous and cannot be reproduced or proved.",
+          "state_transition": "Without the state update, the residual problem is undefined and later choices may use stale feasibility information."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

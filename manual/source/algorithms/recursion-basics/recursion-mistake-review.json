@@ -1,0 +1,476 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "recursion-basics-recursion-mistake-review",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-recursion-basics-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "recursion_basics",
+    "primaryMentalUnitId": "recursion_mistake_review",
+    "patternFamilyId": "recursion_basics"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro candidate authoring",
+    "createdAt": "2026-07-18T15:01:33Z",
+    "contentBatchId": "recursion-basics-recursion-mistake-review",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "recursion-basics-recursion-mistake-review-unchanged-n-first-failing-obligation",
+      "prompt": "Consider:\n\n    digitSum(n):\n        if n < 10: return n\n        return n % 10 + digitSum(n)\n\nFrom n = 42, which diagnosis is most precise?",
+      "constraints": [
+        "n is a non-negative integer.",
+        "Integer digit sum is the intended result.",
+        "The shown recursive argument is exactly n."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_progress_same_n",
+            "text": "The recursive state is unchanged, so 42 calls 42 repeatedly and the terminal range is unreachable."
+          },
+          {
+            "id": "wrong_empty_base",
+            "text": "The only defect is that the base case should check an empty input."
+          },
+          {
+            "id": "wrong_combiner",
+            "text": "Addition should be replaced by multiplication."
+          },
+          {
+            "id": "exponential_branching",
+            "text": "The function terminates but takes exponential time."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_progress_same_n"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The first recursive call preserves n, creating an immediate self-loop before the result combiner can matter.",
+        "details": "Diagnose recursive code in dependency order. The base contract for single-digit values is coherent, and n % 10 is the correct local contribution for a digit sum. But the transition digitSum(n) does not remove the last digit; the state graph contains a self-loop at every n >= 10. Therefore no recursive result is ever available to add. A precise review should name the earliest broken contract—progress on state—rather than proposing unrelated base, combination, or complexity changes.",
+        "wrongOptionExplanationsByOptionId": {
+          "wrong_empty_base": "The numeric contract has no empty input. Values below ten are valid atomic states; the failure is that larger values never move toward them.",
+          "wrong_combiner": "Addition matches digit sum. The child call never returns, so changing the combiner would not repair the first failing obligation.",
+          "exponential_branching": "There is one recursive call per frame, and it repeats the same state forever. The issue is nontermination, not a finite branching cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_nonterminating_or_incomplete_recursion",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-mistake-review-smallest-counterexample-diagnostic-sequence",
+      "prompt": "Order the steps for diagnosing a recursive function that returns a wrong result or fails at runtime.",
+      "constraints": [
+        "The goal is code and trace diagnosis, not greenfield algorithm design.",
+        "The function may have more than one visible defect, but the review must identify the first material violation."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_contract",
+            "text": "State the legal input domain and what one call promises to return."
+          },
+          {
+            "id": "smallest_trace",
+            "text": "Trace the smallest input that exhibits the symptom, including every recursive argument and return."
+          },
+          {
+            "id": "first_violation",
+            "text": "Identify the first violated obligation: terminal coverage, strict progress, state isolation, or result combination."
+          },
+          {
+            "id": "bounded_fix_check",
+            "text": "Check a bounded repair against a neighboring case and the ownership boundary before analyzing performance."
+          },
+          {
+            "id": "cost_after_correctness",
+            "text": "Only after correctness obligations hold, derive total work and maximum stack depth."
+          }
+        ],
+        "canonicalOrder": [
+          "state_contract",
+          "smallest_trace",
+          "first_violation",
+          "bounded_fix_check",
+          "cost_after_correctness"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "A reliable review anchors the contract, exposes the first failing state transition or return, verifies a bounded repair, and postpones cost claims until behavior is coherent.",
+        "details": "Without a domain and return promise, a base value or trace cannot be judged. The smallest failing input minimizes noise and reveals whether the fault occurs before a call, on a recursive edge, during shared-state mutation, or while combining returns. Naming the first violated obligation prevents secondary symptoms—such as stack overflow—from being mistaken for root causes. A proposed fix must be checked on an adjacent boundary so it does not merely patch one trace. Complexity analysis comes last because a nonterminating or semantically incomplete recurrence has no meaningful successful cost contract."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_nonterminating_or_incomplete_recursion",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-mistake-review-empty-input-guard-after-read",
+      "prompt": "Consider a shared immutable array a:\n\n    containsFrom(i, target):\n        if a[i] == target: return true\n        if i == len(a): return false\n        return containsFrom(i + 1, target)\n\nWhat fails when i == len(a)?",
+      "constraints": [
+        "i may equal len(a).",
+        "Array indexing is valid only for 0 <= i < len(a).",
+        "The array is not padded with a sentinel element."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "read_before_terminal_guard",
+            "text": "The code reads a[i] before recognizing the empty suffix, so the terminal state causes an out-of-bounds access."
+          },
+          {
+            "id": "missing_target_state",
+            "text": "target must change in every recursive call."
+          },
+          {
+            "id": "wrong_boolean_combiner",
+            "text": "The function must combine two child Booleans with AND."
+          },
+          {
+            "id": "only_complexity_problem",
+            "text": "The code is correct but uses O(n) instead of O(log n)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "read_before_terminal_guard"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A base predicate protects terminal-state operations only when it is checked before those operations.",
+        "details": "The state i == len(a) is a legal empty suffix under the function's contract. Accessing a[i] is invalid there, so the terminal guard must precede the element comparison. Merely having the correct predicate later in the function does not cover the state. This is distinct from non-progress: i advances correctly and would reach the terminal index, but the function violates the domain before it can return. The transfer rule applies whenever terminal states lack resources used by the recursive case, such as a node value, array element, child pointer, or divisor.",
+        "wrongOptionExplanationsByOptionId": {
+          "missing_target_state": "The target is stable search context. Keeping it unchanged is correct and unrelated to the invalid read.",
+          "wrong_boolean_combiner": "This is a one-child suffix search and may return immediately on a match. No second child result exists.",
+          "only_complexity_problem": "The terminal input crashes before a result is returned. Performance comparisons cannot repair an uncovered execution state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_nonterminating_or_incomplete_recursion",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "base_case_recognition",
+        "problemArchetypeId": "compute_from_smaller_input"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-mistake-review-tree-search-omits-right-branch",
+      "prompt": "A binary-tree search is written as:\n\n    contains(node, target):\n        if node is None: return false\n        if node.value == target: return true\n        return contains(node.left, target)\n\nThe tree is finite. Which diagnosis is correct?",
+      "constraints": [
+        "The binary tree may store the target in either subtree.",
+        "The tree has no cycles.",
+        "The function is intended to search the complete subtree rooted at node."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "right_subproblem_omitted",
+            "text": "The function terminates but is incomplete because it never incorporates the right-subtree search."
+          },
+          {
+            "id": "nonterminating",
+            "text": "It is nonterminating because recursion appears in a return statement."
+          },
+          {
+            "id": "base_false_wrong",
+            "text": "contains(None, target) must return true."
+          },
+          {
+            "id": "must_use_global_flag",
+            "text": "A global found flag is required because recursive Booleans cannot be combined."
+          }
+        ],
+        "acceptedOptionIds": [
+          "right_subproblem_omitted"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decomposition has two child subproblems, but the return path includes only one of them.",
+        "details": "Base behavior and left-branch progress are valid, so traces that place the target on a left path can pass. A target reachable only through node.right is invisible. The complete parent contract is localMatch OR contains(left) OR contains(right), with short-circuiting permitted. This transfers a familiar one-child list search to a branching structure and exposes the boundary: when the recursive structure has multiple independent children, the parent must include every child relevant to the requested result.",
+        "wrongOptionExplanationsByOptionId": {
+          "nonterminating": "The call descends through left children of a finite tree and reaches None. The problem is missing coverage, not progress.",
+          "base_false_wrong": "An empty subtree does not contain the target. Changing the base would create false positives rather than search the omitted right branch.",
+          "must_use_global_flag": "The parent can combine pure child results with OR or short-circuit evaluation; global state is unnecessary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_nonterminating_or_incomplete_recursion",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-mistake-review-merge-sort-empty-only-base-self-range",
+      "prompt": "A half-open recursive sort uses:\n\n    sort(lo, hi):\n        if lo == hi: return\n        mid = lo + (hi - lo) // 2\n        sort(lo, mid)\n        sort(mid, hi)\n        merge(lo, mid, hi)\n\nWhat happens on a one-element range hi - lo == 1?",
+      "constraints": [
+        "Ranges are half-open.",
+        "mid uses floor integer division.",
+        "The sort must support one-element ranges."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "right_child_repeats_parent",
+            "text": "mid == lo, so sort(mid, hi) repeats the same one-element range and never reaches merge."
+          },
+          {
+            "id": "both_children_empty",
+            "text": "Both child ranges are empty, so the function returns correctly."
+          },
+          {
+            "id": "merge_duplicates_element",
+            "text": "The only issue is that merge will duplicate the element."
+          },
+          {
+            "id": "two_calls_make_exponential",
+            "text": "The input sorts correctly but in exponential time."
+          }
+        ],
+        "acceptedOptionIds": [
+          "right_child_repeats_parent"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For a one-element half-open range, floor splitting creates one unchanged child unless size one is terminal.",
+        "details": "Empty ranges are not the only atomic inputs for sorting: a one-element range is already sorted. With hi - lo == 1, mid equals lo. The first child is empty and returns, but the second child is [lo, hi), exactly the parent state. The correct terminal region is hi - lo <= 1. This is a high-value boundary diagnosis because the code visibly contains an empty base and a conventional split, yet the reachable singleton state violates strict progress.",
+        "wrongOptionExplanationsByOptionId": {
+          "both_children_empty": "The left child [lo, mid) is empty, but the right child [mid, hi) equals the original one-element range.",
+          "merge_duplicates_element": "merge is never reached because the right recursive call repeats the one-element parent range and does not return; no merge-side duplication can occur before termination is repaired.",
+          "two_calls_make_exponential": "The immediate defect is an unchanged child state and nontermination. A cost classification cannot treat it as a completed algorithm."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_nonterminating_or_incomplete_recursion",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "base_case_recognition",
+        "problemArchetypeId": "divide_problem"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-mistake-review-shared-global-depth-contamination",
+      "prompt": "A tree traversal records each leaf's depth using one global variable depth:\n\n    visit(node):\n        if node is None: return\n        depth += 1\n        if node is a leaf: record(depth)\n        visit(node.left)\n        visit(node.right)\n\nThere is no decrement before a frame returns. What is the defect?",
+      "constraints": [
+        "The traversal may visit both left and right children.",
+        "depth is one mutable global variable.",
+        "No restoration occurs on return."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sibling_inherits_prior_branch",
+            "text": "The left traversal leaves depth increased, so the right sibling is measured using state from the completed left branch."
+          },
+          {
+            "id": "all_frames_must_share_depth",
+            "text": "The code is correct because every recursive call has identical state and therefore should use one global depth."
+          },
+          {
+            "id": "base_should_increment",
+            "text": "The None base case should increment depth to balance the traversal."
+          },
+          {
+            "id": "only_stack_overflow",
+            "text": "The values are correct; the only risk is stack overflow."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sibling_inherits_prior_branch"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A mutable path-dependent value must be frame-local or restored on unwind; otherwise completed branches contaminate later siblings.",
+        "details": "Each call conceptually has a current depth derived from its parent. A parameter such as visit(node, depth) naturally gives every frame its own value. A shared mutable alternative can work only with a strict push/pop discipline: increment before children and decrement before returning. The shown code never restores depth, so after the left subtree finishes, the global value still reflects its deepest path when the right subtree begins. The false heuristic is confusing identical recursive schema with identical or globally shared runtime state.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_frames_must_share_depth": "Calls share a contract, not one mutable contextual value. Different active paths require distinct depths or disciplined restore behavior.",
+          "base_should_increment": "Null children are not real path steps. Incrementing there adds more error and does not restore ancestor state.",
+          "only_stack_overflow": "Even on a shallow tree, recorded right-branch depths can be wrong because the global variable is not restored after the left branch."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_nonterminating_or_incomplete_recursion",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-mistake-review-parent-link-cycle-base-unreachable",
+      "prompt": "Directory objects expose both children and a parent link. A recursive walk calls itself on every neighboring\ndirectory and stops only when the directory is None. Starting at child C whose parent is P, what can happen?",
+      "constraints": [
+        "Parent links are included in the neighbor collection.",
+        "The walk has no visited set and does not exclude the previous node.",
+        "C and P are both non-None."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bounce_across_parent_edge",
+            "text": "The walk can follow C -> P -> C indefinitely because the non-None base does not prevent revisiting."
+          },
+          {
+            "id": "none_eventually_automatic",
+            "text": "The walk eventually receives None because recursion automatically exhausts neighbors."
+          },
+          {
+            "id": "parent_link_ignored_by_runtime",
+            "text": "The runtime recognizes parent links and excludes them from recursive traversal."
+          },
+          {
+            "id": "only_duplicate_output",
+            "text": "The only effect is one duplicated directory in the output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bounce_across_parent_edge"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A base case for absent nodes cannot terminate a reachable cycle among present nodes.",
+        "details": "The data is no longer an acyclic rooted tree when parent links are traversed as ordinary neighbors. C can call P, and P can call C again, creating an infinite state cycle. The repair boundary is explicit: exclude the edge just used, maintain visited identity, or traverse only declared child links. The broader diagnostic rule is that progress assumptions belong to the actual traversed graph, not to a label such as “directory tree.” A visible None base does not guarantee that every path reaches None.",
+        "wrongOptionExplanationsByOptionId": {
+          "none_eventually_automatic": "The C-P back-edge supplies a reachable cycle of non-None states. No transition forces the walk toward None.",
+          "parent_link_ignored_by_runtime": "The runtime executes the neighbor loop as written. Structural semantics such as parent versus child require explicit logic.",
+          "only_duplicate_output": "Without a visited set or previous-node exclusion, the cycle can create unbounded calls rather than a bounded duplicate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_nonterminating_or_incomplete_recursion",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "recursive_decomposition",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    },
+    {
+      "id": "recursion-basics-recursion-mistake-review-binary-tree-two-calls-not-exponential-in-n",
+      "prompt": "nodeCount(node) returns 0 for None and otherwise returns\n1 + nodeCount(node.left) + nodeCount(node.right) on a finite binary tree containing n real nodes.\nA review labels it O(2^n) because every frame has two call sites. Which correction is precise?",
+      "constraints": [
+        "The input is a tree rather than a DAG with shared child nodes.",
+        "Per-node local work is O(1).",
+        "h denotes tree height in nodes."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "linear_by_distinct_nodes",
+            "text": "It is O(n) time because each real node is the argument of exactly one non-null call; stack space is O(h)."
+          },
+          {
+            "id": "exponential_call_sites",
+            "text": "The O(2^n) label is correct whenever source code contains two recursive calls."
+          },
+          {
+            "id": "log_time_balanced",
+            "text": "It is O(log n) time on a balanced tree because height is logarithmic."
+          },
+          {
+            "id": "constant_after_base",
+            "text": "It is O(1) because each child eventually returns the constant 0 base."
+          }
+        ],
+        "acceptedOptionIds": [
+          "linear_by_distinct_nodes"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The recursion follows disjoint child ownership, so total calls scale with actual nodes while simultaneous frames scale with height.",
+        "details": "Each non-null call owns one distinct real node and creates calls only for that node's children. In a tree, no child has two parents, so no non-null state is recomputed. There are n non-null calls and O(n) null-child calls, yielding O(n) time. During depth-first execution, at most one root-to-current path is active, giving O(h) stack space. A full tree can have roughly 2^h nodes, but that is still linear in n; expressing cost in height does not justify calling it exponential in the input size n.",
+        "wrongOptionExplanationsByOptionId": {
+          "exponential_call_sites": "Call sites do not determine repeated states. The child subtrees are disjoint and the finite input contains only n real nodes to visit.",
+          "log_time_balanced": "Balanced height reduces maximum stack depth, but all n nodes still contribute to the count and must be visited.",
+          "constant_after_base": "The base is reached through a number of calls proportional to the tree's nodes and null edges; terminal values do not erase traversal work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_nonterminating_or_incomplete_recursion",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "divide_and_combine",
+        "problemArchetypeId": "traverse_recursive_structure"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -1,0 +1,776 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "alg-stack-recognize-lifo-signal-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-stack-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "stack",
+    "primaryMentalUnitId": "recognize_lifo_signal",
+    "patternFamilyId": "stack"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "alg-stack-recognize-lifo-signal-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-stack-lifo-01-last-unresolved-context",
+      "prompt": "A single-pass validator opens nested contexts and must close the most recently opened context that is still unresolved. Which state discipline matches that requirement?",
+      "constraints": [
+        "Only unresolved contexts need to remain available.",
+        "A closing event always applies to the most recently opened unresolved context."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "use_stack",
+            "text": "Keep unresolved contexts on a stack and inspect the top."
+          },
+          {
+            "id": "use_queue",
+            "text": "Keep unresolved contexts in a queue and inspect the front."
+          },
+          {
+            "id": "use_recursion_only",
+            "text": "Use recursion; an explicit data structure cannot represent this rule."
+          }
+        ],
+        "acceptedOptionIds": [
+          "use_stack"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decisive signal is “most recently opened and still unresolved,” which is exactly a LIFO boundary.",
+        "details": "Each opening event pushes one unresolved context. A closing event must compare against the top because no earlier context may close while a newer nested context remains open. A queue exposes the oldest context and therefore reverses the required dependency. Recursion can internally use a call stack, but it is not required; the learning decision is the LIFO state rule itself.",
+        "wrongOptionExplanationsByOptionId": {
+          "use_queue": "A queue is plausible because it also stores pending work, but it exposes the oldest pending context. It becomes valid only when the next action must serve arrival order rather than close nested work.",
+          "use_recursion_only": "Recursion can create LIFO call frames, but the problem does not require recursive control flow. An explicit stack is sufficient whenever the input is processed iteratively."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_last_unresolved_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "deferred_resolution"
+      }
+    },
+    {
+      "id": "alg-stack-lifo-02-minimal-unresolved-state",
+      "prompt": "Select all statements that correctly describe why a stack is sufficient for a newest-first unresolved-state process.",
+      "constraints": [
+        "A resolved record is never needed again.",
+        "Each record is pushed at most once."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "last_unresolved",
+            "text": "The next decision depends on the most recently added unresolved record."
+          },
+          {
+            "id": "discard_resolved",
+            "text": "A record may be removed permanently once it is resolved."
+          },
+          {
+            "id": "oldest_first",
+            "text": "The oldest unresolved record must always be processed first."
+          },
+          {
+            "id": "keep_every_record",
+            "text": "Every record must remain stored for the entire scan."
+          },
+          {
+            "id": "repeat_pop_same_record",
+            "text": "The same pushed record may be popped repeatedly without being pushed again."
+          }
+        ],
+        "acceptedOptionIds": [
+          "last_unresolved",
+          "discard_resolved"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A stack is sufficient because only the newest unresolved record is actionable, and resolved records leave the state permanently.",
+        "details": "The stack represents the unresolved suffix of the process, not a full historical log. Pushing introduces a record once; popping removes that particular stack entry once. Oldest-first service would require queue semantics, while retaining every processed record is unnecessary unless a separate audit requirement exists. This one-way lifecycle is also the basis for later amortized analysis.",
+        "wrongOptionExplanationsByOptionId": {
+          "oldest_first": "Oldest-first service is a FIFO contract. It would justify a queue, not a stack.",
+          "keep_every_record": "A full audit log may retain every record, but that is a separate requirement. The LIFO decision state needs only unresolved records.",
+          "repeat_pop_same_record": "After an entry is popped it is no longer in the stack. It can be removed again only if a new entry is pushed."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "last_unresolved": "Without the newest-first dependency, LIFO is not the decisive state rule.",
+          "discard_resolved": "If resolved records never leave, the structure is being used as history rather than as the minimal unresolved state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_last_unresolved_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "deferred_resolution"
+      }
+    },
+    {
+      "id": "alg-stack-lifo-03-nested-closure-order",
+      "prompt": "A process opens context A, then opens context B, and then receives one generic close event. Which context must be closed first under a valid nested-state contract?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "close_b",
+            "text": "Close B, because B is the most recently opened unresolved context."
+          },
+          {
+            "id": "close_a",
+            "text": "Close A, because A entered the process first."
+          },
+          {
+            "id": "close_both",
+            "text": "Close both A and B because a stack stores all active contexts together."
+          }
+        ],
+        "acceptedOptionIds": [
+          "close_b"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Nested resolution closes B first because the most recent unresolved context is on top.",
+        "details": "After opening A and then B, the unresolved stack is [A, B] with B on top. Closing A first would cross the nesting boundary and leave B suspended inside a context that no longer exists. The stack may contain multiple active contexts, but one close event resolves exactly the top entry unless the contract explicitly states otherwise.",
+        "wrongOptionExplanationsByOptionId": {
+          "close_a": "Arrival order is a queue signal. It becomes valid only for oldest-first work, not nested closure.",
+          "close_both": "The presence of multiple entries does not make one event resolve all of them. Bulk closure would need an explicit separate rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_last_unresolved_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-lifo-04-oldest-pending-boundary",
+      "prompt": "A support system must always process the request that has waited the longest. Which conclusion is correct?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "queue_boundary",
+            "text": "This is a FIFO boundary, so a queue matches the decision rule."
+          },
+          {
+            "id": "stack_boundary",
+            "text": "A stack is still equivalent because both structures remove one pending request."
+          },
+          {
+            "id": "recursion_boundary",
+            "text": "The requirement implies recursive processing rather than a queue."
+          }
+        ],
+        "acceptedOptionIds": [
+          "queue_boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decisive requirement is oldest-first service, which is FIFO rather than LIFO.",
+        "details": "Both stacks and queues can hold pending requests, but their removal order is not interchangeable. A stack would repeatedly favor the newest request and could starve older work. Recursion says nothing about which pending request should be chosen. The transfer boundary is the service order, not the existence of a container.",
+        "wrongOptionExplanationsByOptionId": {
+          "stack_boundary": "Removing one item does not make order irrelevant. A stack chooses the newest pending request, which violates the stated contract.",
+          "recursion_boundary": "Recursive control flow does not establish oldest-first service. The required state discipline is a queue."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_last_unresolved_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "problemArchetypeId": "deferred_resolution"
+      }
+    },
+    {
+      "id": "alg-stack-lifo-05-explicit-stack-not-recursion",
+      "prompt": "An editor processes a flat stream of commands and must undo the most recent committed command. Which implementation conclusion follows from the requirement alone?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "explicit_stack_sufficient",
+            "text": "An explicit stack of inverse commands or prior states is sufficient."
+          },
+          {
+            "id": "recursion_required",
+            "text": "The feature requires recursive functions because every stack operation is recursion."
+          },
+          {
+            "id": "retain_all_in_monotonic_order",
+            "text": "The commands must be kept in monotonic value order before undo can work."
+          }
+        ],
+        "acceptedOptionIds": [
+          "explicit_stack_sufficient"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Undo needs newest-first history, not recursive decomposition or numeric monotonic order.",
+        "details": "Each committed command can push either an inverse operation or the state needed to restore the previous version. Undo pops the newest entry and applies it. The command stream may be processed iteratively, and command values need not be ordered. A call stack is one possible runtime mechanism, but it is not the product-level decision being trained.",
+        "wrongOptionExplanationsByOptionId": {
+          "recursion_required": "Recursion is plausible because language runtimes use a call stack, but undo history is explicit application state and can be managed iteratively.",
+          "retain_all_in_monotonic_order": "Monotonic order is useful for dominated-candidate problems, not for chronological undo. Undo order is determined by recency."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_last_unresolved_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    },
+    {
+      "id": "alg-stack-lifo-06-navigation-history-transfer",
+      "prompt": "A navigation controller is on page C. Before visiting B it stored A, and before visiting C it stored B. The back-history stack is therefore [A, B] with B on top. What happens after two Back actions?",
+      "constraints": [
+        "Each Back action pops exactly one history entry and makes it current."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "restore_b_then_a",
+            "text": "The controller restores B, then A."
+          },
+          {
+            "id": "restore_a_then_b",
+            "text": "The controller restores A, then B."
+          },
+          {
+            "id": "restore_b_twice",
+            "text": "The controller restores B twice because B was most recent."
+          }
+        ],
+        "acceptedOptionIds": [
+          "restore_b_then_a"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each Back action consumes one newest history entry, so B is restored before A.",
+        "details": "The first pop removes B and makes it current; the second pop removes A. The same stack entry cannot be popped twice, and a queue would reverse the navigation order. This transfer works because Back is explicitly newest-first. A forward-history feature would require a separate stack or another state contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "restore_a_then_b": "That is FIFO history replay. It would skip the most recent prior page.",
+          "restore_b_twice": "Once B is popped, that entry is gone. Repeating B would require pushing a new B entry."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_last_unresolved_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "undo_or_previous_state",
+        "problemArchetypeId": "undo_previous_state"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "alg-stack-learn-approach-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-stack-lifo-01-last-unresolved-context",
+            "alg-stack-lifo-02-minimal-unresolved-state",
+            "alg-stack-lifo-03-nested-closure-order",
+            "alg-stack-lifo-04-oldest-pending-boundary",
+            "alg-stack-ops-01-trace-mixed-operations",
+            "alg-stack-ops-02-safe-read-and-remove",
+            "alg-stack-ops-03-top-is-nonmutating",
+            "alg-stack-ops-06-stack-versus-queue-trace",
+            "alg-stack-nested-01-recognize-proper-nesting",
+            "alg-stack-nested-02-validation-sequence",
+            "alg-stack-nested-05-leftover-opener",
+            "alg-stack-undo-01-recognize-reversible-history",
+            "alg-stack-undo-02-record-before-mutate",
+            "alg-stack-mono-signal-01-deferred-nearest-boundary",
+            "alg-stack-mono-signal-02-dominated-suffix",
+            "alg-stack-mono-signal-05-unresolved-not-all-items",
+            "alg-stack-mono-invariant-01-decreasing-order-for-next-greater",
+            "alg-stack-mono-invariant-02-restore-invariant-before-push",
+            "alg-stack-mono-invariant-07-candidate-lifecycle",
+            "alg-stack-nearest-01-nearest-not-largest",
+            "alg-stack-nearest-02-current-resolves-popped",
+            "alg-stack-cost-01-nested-validation-time",
+            "alg-stack-cost-02-amortized-proof-components"
+          ]
+        }
+      },
+      {
+        "blueprintId": "alg-stack-guided-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-guided-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-stack-lifo-01-last-unresolved-context",
+            "alg-stack-lifo-02-minimal-unresolved-state",
+            "alg-stack-lifo-03-nested-closure-order",
+            "alg-stack-lifo-04-oldest-pending-boundary",
+            "alg-stack-lifo-05-explicit-stack-not-recursion",
+            "alg-stack-lifo-06-navigation-history-transfer",
+            "alg-stack-ops-01-trace-mixed-operations",
+            "alg-stack-ops-02-safe-read-and-remove",
+            "alg-stack-ops-03-top-is-nonmutating",
+            "alg-stack-ops-04-empty-stack-boundary",
+            "alg-stack-ops-05-entry-removed-once",
+            "alg-stack-ops-06-stack-versus-queue-trace",
+            "alg-stack-nested-01-recognize-proper-nesting",
+            "alg-stack-nested-02-validation-sequence",
+            "alg-stack-nested-03-mismatched-closer",
+            "alg-stack-nested-04-premature-closer",
+            "alg-stack-nested-05-leftover-opener",
+            "alg-stack-nested-06-queue-fails-nesting",
+            "alg-stack-nested-07-iterative-validation",
+            "alg-stack-nested-08-tag-transfer",
+            "alg-stack-undo-01-recognize-reversible-history",
+            "alg-stack-undo-02-record-before-mutate",
+            "alg-stack-undo-03-empty-history-boundary",
+            "alg-stack-undo-04-newest-change-first",
+            "alg-stack-undo-05-bounded-history-policy",
+            "alg-stack-undo-06-savepoint-transfer",
+            "alg-stack-mono-signal-01-deferred-nearest-boundary",
+            "alg-stack-mono-signal-02-dominated-suffix",
+            "alg-stack-mono-signal-04-strictness-changes-signal",
+            "alg-stack-mono-signal-05-unresolved-not-all-items",
+            "alg-stack-mono-signal-06-why-stack-not-queue",
+            "alg-stack-mono-invariant-01-decreasing-order-for-next-greater",
+            "alg-stack-mono-invariant-02-restore-invariant-before-push",
+            "alg-stack-mono-invariant-03-while-not-if",
+            "alg-stack-mono-invariant-04-strict-equality-policy",
+            "alg-stack-mono-invariant-05-store-indices-for-distance",
+            "alg-stack-mono-invariant-06-increasing-order-for-next-smaller",
+            "alg-stack-mono-invariant-07-candidate-lifecycle",
+            "alg-stack-mono-invariant-08-reverse-scan-answer-timing",
+            "alg-stack-nearest-01-nearest-not-largest",
+            "alg-stack-nearest-02-current-resolves-popped",
+            "alg-stack-nearest-03-nearest-trace",
+            "alg-stack-nearest-04-duplicate-strict-boundary",
+            "alg-stack-nearest-05-unresolved-sentinel",
+            "alg-stack-nearest-06-distance-output",
+            "alg-stack-nearest-07-previous-smaller-direction",
+            "alg-stack-cost-01-nested-validation-time",
+            "alg-stack-cost-02-amortized-proof-components",
+            "alg-stack-cost-03-expensive-iteration-linear-total",
+            "alg-stack-cost-04-candidate-stack-time-space",
+            "alg-stack-cost-05-undo-history-cost",
+            "alg-stack-cost-06-retention-versus-space-bound"
+          ]
+        }
+      },
+      {
+        "blueprintId": "alg-stack-recognize-patterns-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-recognize-patterns",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "recognition_sets",
+          "ids": [
+            "alg-stack-recognition-set-v1"
+          ]
+        }
+      },
+      {
+        "blueprintId": "alg-stack-contrast-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-contrast-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "contrast_sets",
+          "ids": [
+            "alg-stack-lifo-vs-monotonic-contrast-v1"
+          ]
+        }
+      },
+      {
+        "blueprintId": "alg-stack-weak-area-review-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-weak-area-review",
+        "requestedLengths": [
+          10,
+          20
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 1,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "alg-stack-lifo-02-minimal-unresolved-state",
+            "alg-stack-lifo-05-explicit-stack-not-recursion",
+            "alg-stack-ops-03-top-is-nonmutating",
+            "alg-stack-ops-04-empty-stack-boundary",
+            "alg-stack-ops-05-entry-removed-once",
+            "alg-stack-nested-03-mismatched-closer",
+            "alg-stack-nested-04-premature-closer",
+            "alg-stack-nested-05-leftover-opener",
+            "alg-stack-nested-07-iterative-validation",
+            "alg-stack-undo-03-empty-history-boundary",
+            "alg-stack-undo-04-newest-change-first",
+            "alg-stack-undo-05-bounded-history-policy",
+            "alg-stack-mono-signal-04-strictness-changes-signal",
+            "alg-stack-mono-signal-05-unresolved-not-all-items",
+            "alg-stack-mono-invariant-03-while-not-if",
+            "alg-stack-mono-invariant-04-strict-equality-policy",
+            "alg-stack-mono-invariant-07-candidate-lifecycle",
+            "alg-stack-nearest-03-nearest-trace",
+            "alg-stack-nearest-04-duplicate-strict-boundary",
+            "alg-stack-nearest-05-unresolved-sentinel",
+            "alg-stack-cost-02-amortized-proof-components",
+            "alg-stack-cost-03-expensive-iteration-linear-total",
+            "alg-stack-cost-06-retention-versus-space-bound",
+            "alg-stack-cost-07-complexity-does-not-prove-correctness"
+          ]
+        }
+      },
+      {
+        "blueprintId": "alg-stack-independent-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-independent-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "blueprint_controlled",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "interleaved_scope",
+          "ids": [
+            "alg-stack-interleaved-scope-v1"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [
+      {
+        "setId": "alg-stack-recognition-set-v1",
+        "setVersion": "v1",
+        "taxonomyScope": {
+          "roadmapNodeIds": [
+            "stack"
+          ],
+          "mentalUnitIds": [
+            "recognize_lifo_signal",
+            "push_pop_top_mechanics",
+            "nested_structure_validation",
+            "undo_and_previous_state",
+            "recognize_monotonic_stack_signal",
+            "next_greater_smaller_boundaries"
+          ],
+          "patternFamilyIds": [
+            "stack",
+            "monotonic_stack"
+          ]
+        },
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "itemIds": [
+          "alg-stack-lifo-01-last-unresolved-context",
+          "alg-stack-lifo-03-nested-closure-order",
+          "alg-stack-lifo-04-oldest-pending-boundary",
+          "alg-stack-lifo-05-explicit-stack-not-recursion",
+          "alg-stack-lifo-06-navigation-history-transfer",
+          "alg-stack-ops-06-stack-versus-queue-trace",
+          "alg-stack-nested-01-recognize-proper-nesting",
+          "alg-stack-nested-06-queue-fails-nesting",
+          "alg-stack-nested-07-iterative-validation",
+          "alg-stack-nested-08-tag-transfer",
+          "alg-stack-undo-01-recognize-reversible-history",
+          "alg-stack-mono-signal-01-deferred-nearest-boundary",
+          "alg-stack-mono-signal-02-dominated-suffix",
+          "alg-stack-mono-signal-03-reject-arbitrary-range-maximum",
+          "alg-stack-mono-signal-04-strictness-changes-signal",
+          "alg-stack-mono-signal-07-stock-span-transfer",
+          "alg-stack-nearest-01-nearest-not-largest"
+        ]
+      }
+    ],
+    "contrastSets": [
+      {
+        "setId": "alg-stack-lifo-vs-monotonic-contrast-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "recognize_lifo_signal",
+        "contrastedMentalUnitIds": [
+          "recognize_monotonic_stack_signal"
+        ],
+        "falseHeuristicId": "monotonic_stack_stores_every_item",
+        "transferBoundary": "Use an ordinary stack when the next action targets the most recent unresolved state; use a monotonic stack only when an ordered candidate frontier permits permanent domination and suffix removal.",
+        "itemIds": [
+          "alg-stack-lifo-01-last-unresolved-context",
+          "alg-stack-lifo-02-minimal-unresolved-state",
+          "alg-stack-lifo-03-nested-closure-order",
+          "alg-stack-lifo-04-oldest-pending-boundary",
+          "alg-stack-lifo-05-explicit-stack-not-recursion",
+          "alg-stack-lifo-06-navigation-history-transfer",
+          "alg-stack-mono-signal-01-deferred-nearest-boundary",
+          "alg-stack-mono-signal-02-dominated-suffix",
+          "alg-stack-mono-signal-03-reject-arbitrary-range-maximum",
+          "alg-stack-mono-signal-04-strictness-changes-signal",
+          "alg-stack-mono-signal-05-unresolved-not-all-items",
+          "alg-stack-mono-signal-06-why-stack-not-queue",
+          "alg-stack-mono-signal-07-stock-span-transfer"
+        ]
+      }
+    ],
+    "interleavedScopes": [
+      {
+        "scopeId": "alg-stack-interleaved-scope-v1",
+        "scopeVersion": "v1",
+        "mentalUnitIds": [
+          "recognize_lifo_signal",
+          "push_pop_top_mechanics",
+          "nested_structure_validation",
+          "undo_and_previous_state",
+          "recognize_monotonic_stack_signal",
+          "maintain_monotonic_stack_invariant",
+          "next_greater_smaller_boundaries",
+          "stack_complexity_and_mistake_review"
+        ],
+        "itemIds": [
+          "alg-stack-lifo-06-navigation-history-transfer",
+          "alg-stack-nested-08-tag-transfer",
+          "alg-stack-undo-06-savepoint-transfer",
+          "alg-stack-mono-signal-03-reject-arbitrary-range-maximum",
+          "alg-stack-mono-signal-06-why-stack-not-queue",
+          "alg-stack-mono-signal-07-stock-span-transfer",
+          "alg-stack-mono-invariant-05-store-indices-for-distance",
+          "alg-stack-mono-invariant-06-increasing-order-for-next-smaller",
+          "alg-stack-mono-invariant-08-reverse-scan-answer-timing",
+          "alg-stack-nearest-06-distance-output",
+          "alg-stack-nearest-07-previous-smaller-direction",
+          "alg-stack-nearest-08-circular-next-greater",
+          "alg-stack-cost-04-candidate-stack-time-space",
+          "alg-stack-cost-05-undo-history-cost",
+          "alg-stack-cost-07-complexity-does-not-prove-correctness"
+        ],
+        "legalLearningStages": [
+          "pattern_mechanics"
+        ],
+        "minimumDiversity": 4
+      }
+    ],
+    "compatibilitySets": [
+      {
+        "id": "alg-stack-lifo-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-stack-lifo-01-last-unresolved-context"
+        ],
+        "targetItemIds": [
+          "alg-stack-lifo-06-navigation-history-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "identify_last_unresolved_state",
+          "candidateOnly": true
+        }
+      },
+      {
+        "id": "alg-stack-ops-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-stack-ops-01-trace-mixed-operations"
+        ],
+        "targetItemIds": [
+          "alg-stack-ops-06-stack-versus-queue-trace"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "trace_stack_operation",
+          "candidateOnly": true
+        }
+      },
+      {
+        "id": "alg-stack-nested-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-stack-nested-01-recognize-proper-nesting"
+        ],
+        "targetItemIds": [
+          "alg-stack-nested-08-tag-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "match_nested_structure_with_stack",
+          "candidateOnly": true
+        }
+      },
+      {
+        "id": "alg-stack-undo-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-stack-undo-01-recognize-reversible-history"
+        ],
+        "targetItemIds": [
+          "alg-stack-undo-06-savepoint-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "restore_previous_state_from_stack",
+          "candidateOnly": true
+        }
+      },
+      {
+        "id": "alg-stack-mono-signal-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-stack-mono-signal-01-deferred-nearest-boundary"
+        ],
+        "targetItemIds": [
+          "alg-stack-mono-signal-07-stock-span-transfer"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "identify_dominated_candidate_signal",
+          "candidateOnly": true
+        }
+      },
+      {
+        "id": "alg-stack-mono-invariant-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-stack-mono-invariant-01-decreasing-order-for-next-greater"
+        ],
+        "targetItemIds": [
+          "alg-stack-mono-invariant-08-reverse-scan-answer-timing"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "maintain_monotonic_stack_order",
+          "candidateOnly": true
+        }
+      },
+      {
+        "id": "alg-stack-nearest-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-stack-nearest-01-nearest-not-largest"
+        ],
+        "targetItemIds": [
+          "alg-stack-nearest-08-circular-next-greater"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "resolve_nearest_greater_or_smaller",
+          "candidateOnly": true
+        }
+      },
+      {
+        "id": "alg-stack-cost-same-mechanism-v1",
+        "version": "v1",
+        "relation": "same_mechanism",
+        "direction": "symmetric",
+        "sourceItemIds": [
+          "alg-stack-cost-01-nested-validation-time"
+        ],
+        "targetItemIds": [
+          "alg-stack-cost-07-complexity-does-not-prove-correctness"
+        ],
+        "relationMetadata": {
+          "mechanismBoundary": "explain_amortized_stack_processing",
+          "candidateOnly": true
+        }
+      }
+    ],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

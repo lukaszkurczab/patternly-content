@@ -1,0 +1,379 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-strategy-selection-core-reject_illegal_strategies-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-strategy-selection-core-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "strategy_selection_core",
+    "primaryMentalUnitId": "reject_illegal_strategies",
+    "patternFamilyId": "complexity_and_constraints"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-strategy-selection-core-reject_illegal_strategies-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "ssc-reject-binary-search-without-half-discard",
+      "prompt": "A candidate proposes binary search over indices of an unsorted array to find a target value. No predicate over index is monotonic. What is the decisive evaluation?",
+      "constraints": [
+        "The array is unsorted.",
+        "No monotonic predicate over indices is given.",
+        "The candidate claims binary search on index."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "accept_log",
+            "text": "Accept it because inspecting a midpoint always reduces the remaining index interval."
+          },
+          {
+            "id": "accept_numeric",
+            "text": "Accept it because target equality is a Boolean predicate."
+          },
+          {
+            "id": "reject_no_discard",
+            "text": "Reject it: a midpoint comparison cannot prove that either half contains no valid answer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_no_discard"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Binary search is legal only when each observation justifies discarding a contiguous part of the search domain. An arbitrary unsorted index domain provides no such implication.",
+        "details": "Shrinking an interval is not sufficient; the discarded interval must be proven irrelevant. In sorted exact search, comparison with the midpoint establishes which side can still contain the target. In answer-space search, a monotonic feasibility predicate establishes a boundary. Here equal and unequal values can appear anywhere, so a midpoint observation says nothing about either half. The transfer rule is to state the legal half-discard implication explicitly before accepting any logarithmic search.",
+        "wrongOptionExplanationsByOptionId": {
+          "accept_log": "Mechanically moving a boundary can make the loop short while making the result wrong. This option becomes valid only when an ordering or monotonic predicate proves the discarded half impossible.",
+          "accept_numeric": "Every equality test is Boolean, but Boolean output is not the same as monotonicity over the search domain. It becomes useful for binary search only when false and true values form an ordered boundary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-window-with-negative-values",
+      "prompt": "A candidate uses a variable sliding window for the shortest subarray with sum at least T: expand when the sum is too small and shrink when it is large enough. Values may be negative. Is the strategy legal?",
+      "constraints": [
+        "The answer must be contiguous.",
+        "Values may be negative.",
+        "The proposed rule moves each boundary only forward."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reject_nonmonotone",
+            "text": "Reject it: adding or removing a value can move the sum in either direction, so the local repair rule can skip the optimum."
+          },
+          {
+            "id": "accept_linear",
+            "text": "Accept it because each boundary advances at most n times, which gives linear work and therefore guarantees the optimal window is retained."
+          },
+          {
+            "id": "accept_contiguous",
+            "text": "Accept it because the desired answer is contiguous, so two forward-moving boundaries are sufficient to represent every relevant candidate."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_nonmonotone"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Contiguity does not guarantee a monotone validity repair rule. Negative values break the movement implication used by the proposed window.",
+        "details": "The standard variable-window argument needs more than two boundaries: it needs a predictable relationship between boundary motion and validity. With nonnegative values, expanding cannot reduce the sum and shrinking cannot increase it, so local movement is safe. With negative values, removing a negative can increase the sum and adding a negative can decrease it; a window deemed unhelpful may contain the start of the optimum. Linear pointer movement proves only the running time of the implemented process, not its correctness. The transfer rule is to reject a window whenever validity is not repairable by one-direction boundary moves under the stated value domain.",
+        "wrongOptionExplanationsByOptionId": {
+          "accept_contiguous": "Contiguity makes a window representation possible, but not sufficient. The option becomes valid only when the aggregate and constraints also support a monotone repair rule.",
+          "accept_linear": "An O(n) execution can still return the wrong answer. The movement count becomes relevant only after the invariant proves that every discarded window is safely excluded."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-two-pointers-without-order",
+      "prompt": "To find whether any two values sum to T, a candidate places pointers at the two ends of the original unsorted array and moves left or right according to whether the current sum is below or above T. What should happen?",
+      "constraints": [
+        "The original array is unsorted.",
+        "The candidate uses sum comparison to move endpoints.",
+        "No preprocessing is included."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "accept_two_ends",
+            "text": "Accept it because opposite-end pointers cover the whole array and every move reduces the number of unexamined endpoint pairs."
+          },
+          {
+            "id": "accept_if_unique",
+            "text": "Accept it when all values are distinct, because removing duplicate ambiguity makes the sum comparison determine a safe movement direction."
+          },
+          {
+            "id": "reject_no_order",
+            "text": "Reject it: without an ordering relation, moving either pointer does not safely eliminate all pairs involving that endpoint."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_no_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The sum comparison guides pointer movement only when the remaining values are ordered. Original endpoints in an unsorted array carry no discard implication.",
+        "details": "In a sorted array, a sum below T proves that the current smallest value cannot pair with any remaining value to reach T, so advancing the left pointer is safe. A sum above T similarly justifies decreasing the right pointer. In an unsorted array, either endpoint may have a better partner inside, and moving it can discard the only solution. Distinctness removes duplicate values but does not create order. The transfer rule is to identify the comparison-to-discard implication behind every pointer move; pointer count and geometry alone do not establish legality.",
+        "wrongOptionExplanationsByOptionId": {
+          "accept_two_ends": "Opposite ends are a representation, not a proof. They become a legal movement scheme only when ordering or another invariant makes an endpoint provably dominated.",
+          "accept_if_unique": "Unique values avoid duplicate handling but do not tell which direction changes the sum. The claim becomes valid only after a suitable ordering or monotone relation is established."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-prefix-minimum-subtraction",
+      "prompt": "A candidate builds prefix minima P[i] = min(a[0..i]) and claims that the minimum of any range [l, r] can be recovered by 'subtracting' P[l-1] from P[r], analogous to prefix sums. Is the mechanism legal?",
+      "constraints": [
+        "The array is static.",
+        "The query asks for arbitrary range minima.",
+        "The candidate stores only one prefix minimum per position."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "accept_static",
+            "text": "Accept it because the array never changes, so every prefix minimum remains valid and can be reused for any later range query."
+          },
+          {
+            "id": "accept_prefix_name",
+            "text": "Accept it because every prefix aggregate supports constant-time range queries."
+          },
+          {
+            "id": "reject_noninvertible",
+            "text": "Reject it: minimum has no inverse operation that removes the contribution of the earlier prefix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_noninvertible"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix range recovery requires an aggregate that can remove the earlier prefix contribution. Minimum is not invertible by subtraction or an equivalent cancellation rule.",
+        "details": "Prefix sums work because sum([l, r]) = prefix[r] - prefix[l-1]; the earlier values can be algebraically cancelled. For prefix minima, P[r] may be determined by a value before l, and P[l-1] does not reveal the second-smallest value that remains in [l, r]. Static input makes preprocessing stable but does not create missing information. The transfer rule is to reject a prefix-derived range query unless the stored aggregate and recovery operation preserve enough information to isolate the requested range.",
+        "wrongOptionExplanationsByOptionId": {
+          "accept_prefix_name": "The word prefix describes where data was aggregated, not whether arbitrary subranges are recoverable. The claim is valid for aggregates with a suitable inverse or richer structure, not for every operation.",
+          "accept_static": "Static data prevents stale preprocessing, but the representation can still be insufficient. Static range minimum needs a different structure or additional information."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-hash-iteration-order",
+      "prompt": "A candidate inserts all distinct values into a hash set and returns the set's iteration order as the required ascending list. What is the correct legality decision?",
+      "constraints": [
+        "Output values must be distinct.",
+        "Output values must be ascending.",
+        "The candidate performs no sorting step."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "accept_expected",
+            "text": "Accept it because expected O(1) insertion implies ordered output."
+          },
+          {
+            "id": "reject_order_contract",
+            "text": "Reject it: membership uniqueness does not provide the required ascending-order invariant."
+          },
+          {
+            "id": "accept_unique",
+            "text": "Accept it because removing duplicates is the only hard part."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_order_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A hash set can establish uniqueness, but it does not establish ascending order. The candidate fails the output contract unless it adds an ordering step.",
+        "details": "Strategies must preserve every required output property, not merely compute a related set. Hashing is a good mechanism for presence and uniqueness, but ordinary hash iteration has no sorted-order guarantee. A legal composite candidate could deduplicate with a set and then sort the distinct values, but that has a different cost model. Expected insertion time says nothing about iteration order. The transfer rule is to reject any candidate whose maintained state omits a required ordering, ranking, witness, or multiplicity property.",
+        "wrongOptionExplanationsByOptionId": {
+          "accept_unique": "Uniqueness is necessary but incomplete because the output explicitly requires ascending order. This becomes valid only when the contract permits arbitrary order.",
+          "accept_expected": "Expected lookup complexity is unrelated to ordering semantics. The statement would require an ordered set or a separate sorting mechanism, not a faster hash operation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-monotonic-stack-output-lower-bound",
+      "prompt": "For every index, a task must output all greater values to its right. A candidate claims an O(n) monotonic stack can pop dominated values permanently and still enumerate every required pair. What is the decisive response?",
+      "constraints": [
+        "Every greater pair must be emitted.",
+        "The candidate pops values permanently.",
+        "Output size may be quadratic."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reject_lost_pairs",
+            "text": "Reject it: popped values can remain required for other outputs, and the result itself can contain Θ(n²) pairs."
+          },
+          {
+            "id": "accept_greater",
+            "text": "Accept it because the comparison asks for greater values to the right, which is the defining signal for a decreasing monotonic stack."
+          },
+          {
+            "id": "accept_each_once",
+            "text": "Accept it because each value is pushed and popped at most once, so all required greater relationships can be reported within linear work."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_lost_pairs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The standard pop-once invariant supports nearest or next-greater queries, not enumeration of all greater pairs. The output size alone can exceed linear time.",
+        "details": "A monotonic stack discards candidates that are dominated for a specific future query, such as the nearest greater element. When every greater relation must be output, a value popped for one comparison may still participate in many later result pairs, so permanent discard loses required information. For a strictly increasing array, the number of reported pairs is n(n-1)/2, establishing an output-sensitive lower bound. The push/pop amortization proves the internal stack work only for a legal invariant; it cannot erase required output. The transfer rule is to match a dominance discard rule to the exact answer contract and account for output size.",
+        "wrongOptionExplanationsByOptionId": {
+          "accept_each_once": "Push/pop accounting proves linear stack operations, but not that the stack retains all required relationships. It becomes valid for contracts such as nearest greater where dominated candidates are truly irrelevant.",
+          "accept_greater": "A surface keyword is insufficient. Monotonic stacks require a specific nearest/dominance boundary; they are not universal for every comparison involving greater values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-cross-family-legality-audit",
+      "prompt": "Select all candidates that must be rejected under the stated contracts.",
+      "constraints": [
+        "Evaluate legality, not relative performance.",
+        "Select all candidates whose stated preconditions are insufficient.",
+        "Do not infer unstated sorting, positivity, or mutation constraints."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "unsorted_binary",
+            "text": "Binary search for a value in an unsorted array with no monotonic predicate."
+          },
+          {
+            "id": "sorted_two_pointer",
+            "text": "Opposite-end two pointers for pair sum after values are sorted."
+          },
+          {
+            "id": "negative_window",
+            "text": "A sum-based variable window that shrinks when too large even though values may be negative."
+          },
+          {
+            "id": "static_prefix_sum",
+            "text": "Prefix sums for many static range-sum queries."
+          }
+        ],
+        "acceptedOptionIds": [
+          "unsorted_binary",
+          "negative_window"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The binary-search and window candidates lack their required discard or movement invariants. The sorted two-pointer and static prefix-sum candidates have the stated preconditions needed for legality.",
+        "details": "A legality audit asks whether each candidate's proof obligations hold before any efficiency ranking. Unsorted exact search supplies no half-discard implication, and negative values make the proposed window repair rule nonmonotone. Sorting establishes the order needed to eliminate pair-sum endpoints, while a static array and additive aggregate make prefix range recovery valid. This item intentionally combines families: the transferable test is to name the invariant that licenses every discard, movement, or recovery operation. The transfer rule is to apply the same invariant gate to unfamiliar mechanisms before comparing their advertised performance.",
+        "wrongOptionExplanationsByOptionId": {
+          "sorted_two_pointer": "This candidate is legal because sorting makes the sum comparison informative: a too-small sum safely eliminates the current minimum endpoint. It could still lose on mutation or cost, but those are later concerns.",
+          "static_prefix_sum": "This candidate is legal because sums are cancellable and the array does not change after preprocessing. It may be unnecessary for one query, but inefficiency or overengineering is not illegality."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "unsorted_binary": "Omitting this rejection accepts interval halving without any proof that the discarded half lacks the target.",
+          "negative_window": "Omitting this rejection accepts a local movement rule whose sum can reverse direction when boundaries move."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

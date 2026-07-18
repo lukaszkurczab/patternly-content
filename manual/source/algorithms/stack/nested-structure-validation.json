@@ -1,0 +1,410 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "alg-stack-nested-structure-validation-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-stack-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach",
+    "algorithms-guided-practice",
+    "algorithms-recognize-patterns",
+    "algorithms-contrast-practice",
+    "algorithms-weak-area-review",
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "stack",
+    "primaryMentalUnitId": "nested_structure_validation",
+    "patternFamilyId": "stack"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "alg-stack-nested-structure-validation-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-stack-nested-01-recognize-proper-nesting",
+      "prompt": "A token stream contains several kinds of opening and closing delimiters. Validity requires every closer to match the most recent unmatched opener. Which strategy directly represents that contract?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "stack_openers",
+            "text": "Keep unmatched openers on a stack and compare each closer with the top."
+          },
+          {
+            "id": "queue_openers",
+            "text": "Enqueue openers; for each closer, compare with and remove the oldest opener."
+          },
+          {
+            "id": "count_only",
+            "text": "Track only the total number of openers and closers."
+          },
+          {
+            "id": "recursive_required",
+            "text": "Use recursion because an iterative validator cannot preserve nested opener order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stack_openers"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The decisive requirement is matching each closer to the most recent unmatched opener, not merely balancing counts.",
+        "details": "The top of the stack is exactly the opener whose scope is currently innermost. A queue exposes the outermost opener, and a count loses delimiter type and order. Recursion can traverse nested structures, but a flat token stream can be validated iteratively with an explicit stack. Correctness comes from preserving the unmatched-opener sequence.",
+        "wrongOptionExplanationsByOptionId": {
+          "queue_openers": "Oldest-first matching reverses nesting. It would be appropriate only for a FIFO protocol, not properly nested delimiters.",
+          "count_only": "Equal counts do not prove valid order or matching types; `([)]` is balanced by count but invalid.",
+          "recursive_required": "Recursion is optional control flow. The explicit stack directly stores unmatched openers."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-02-validation-sequence",
+      "prompt": "Order the conceptual checks for processing a delimiter stream with a stack.",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "handle_opener",
+            "text": "When the token is an opener, push it."
+          },
+          {
+            "id": "guard_closer",
+            "text": "When the token is a closer, first require a non-empty stack."
+          },
+          {
+            "id": "match_and_pop",
+            "text": "Require the top opener to match the closer, then pop it."
+          },
+          {
+            "id": "final_empty",
+            "text": "After the scan, require the stack to be empty."
+          }
+        ],
+        "canonicalOrder": [
+          "handle_opener",
+          "guard_closer",
+          "match_and_pop",
+          "final_empty"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Openers create unresolved state, closers must guard and match that state before removing it, and final emptiness proves no opener remains unresolved.",
+        "details": "The first three relations describe per-token behavior: openers are recorded, while a closer must not access an empty stack and may pop only a matching top. The final check is separate because a stream can contain no invalid closer yet still end with unmatched openers. Adjacent-relation scoring focuses on these dependencies rather than arbitrary wording order."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-03-mismatched-closer",
+      "prompt": "While scanning `([)]`, the parser reaches `)` and the stack top is `[`. What should it do?",
+      "constraints": [
+        "Each closer must match the most recent unmatched opener of the same type."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reject_now",
+            "text": "Reject immediately because `)` does not match the top opener `[`."
+          },
+          {
+            "id": "search_deeper",
+            "text": "Search deeper in the stack for `(` and leave `[` pending."
+          },
+          {
+            "id": "rotate_queue",
+            "text": "Move `[` to the back so `(` can be matched first."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_now"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A closer may match only the top opener; searching below it would cross an unresolved inner boundary.",
+        "details": "The unmatched `[` was opened after `(`, so it must close first. Reaching `)` while `[` remains on top proves that the nesting order is crossed, not merely delayed. Searching deeper or rotating entries would discard the invariant that the stack order mirrors nesting order. The earliest decisive mismatch is enough to reject.",
+        "wrongOptionExplanationsByOptionId": {
+          "search_deeper": "Finding the right type deeper in the stack is tempting, but it skips an unresolved inner opener. It would accept crossed nesting.",
+          "rotate_queue": "Reordering unresolved openers changes the input's nesting structure. Queue-like rotation is not a legal repair."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-04-premature-closer",
+      "prompt": "The first delimiter in a stream is `]`. The stack is empty. Which result follows?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "invalid_premature_close",
+            "text": "The stream is invalid because no unresolved opener exists."
+          },
+          {
+            "id": "push_closer",
+            "text": "Push `]` and wait for a matching opener later."
+          },
+          {
+            "id": "assume_default_open",
+            "text": "Assume an implicit `[` so the stream can continue."
+          }
+        ],
+        "acceptedOptionIds": [
+          "invalid_premature_close"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A closer requires a prior unresolved opener; an empty stack proves that prerequisite is absent.",
+        "details": "Proper nesting is directional: an opener creates a pending context, and a later closer resolves it. Pushing a closer or inventing an opener reverses or hides that contract. This boundary is distinct from a mismatched non-empty top because there is no candidate opener at all.",
+        "wrongOptionExplanationsByOptionId": {
+          "push_closer": "A closer is not unresolved opening state. This would accept sequences whose order is reversed.",
+          "assume_default_open": "Implicit state would fabricate input and hide a structural error. It is valid only if the language explicitly defines omitted openers."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-05-leftover-opener",
+      "prompt": "The scan of `(()` finishes without any mismatched closer, but the stack still contains one `(`. What is the correct result?",
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "invalid_leftover",
+            "text": "Invalid; one opener remains unresolved at end of input."
+          },
+          {
+            "id": "valid_no_bad_closer",
+            "text": "Valid; only mismatched closing tokens can make the stream invalid."
+          },
+          {
+            "id": "valid_stack_retains_history",
+            "text": "Valid; a stack is expected to keep every opener after processing."
+          }
+        ],
+        "acceptedOptionIds": [
+          "invalid_leftover"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Final emptiness is required because every opener must be resolved exactly once.",
+        "details": "The scan can avoid premature or mismatched closers and still be incomplete. A remaining opener means a nested context was never closed. The stack is not a permanent history: matched openers are popped, and only unresolved state should remain. End-of-input converts any residual state into a decisive failure.",
+        "wrongOptionExplanationsByOptionId": {
+          "valid_no_bad_closer": "Absence of a bad closer proves only that no closing event violated the top. It does not prove that all openers were closed.",
+          "valid_stack_retains_history": "The validation stack stores unresolved openers, not every opener forever. Retaining a matched opener would corrupt later matching."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-06-queue-fails-nesting",
+      "prompt": "For the valid sequence `([])`, why would a queue of openers fail when the parser reaches `]`?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "queue_exposes_outer",
+            "text": "The queue exposes `(`, the oldest opener, while `]` must match the newer `[`."
+          },
+          {
+            "id": "queue_cannot_store_tokens",
+            "text": "A queue cannot retain delimiter tokens with stable identities."
+          },
+          {
+            "id": "queue_pops_too_many",
+            "text": "A queue always removes every stored opener at once."
+          }
+        ],
+        "acceptedOptionIds": [
+          "queue_exposes_outer"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Proper nesting needs access to the newest unmatched opener, while a queue exposes the oldest.",
+        "details": "After reading `(` then `[`, the unresolved order is outer-to-inner. The closer `]` belongs to the inner `[`, so the newest entry must be inspected first. A queue can store the tokens, but its FIFO removal contract surfaces the wrong boundary. The data type is rejected because of order, not storage capability.",
+        "wrongOptionExplanationsByOptionId": {
+          "queue_cannot_store_tokens": "A queue can store arbitrary records. Its failure is semantic order, not element type.",
+          "queue_pops_too_many": "A normal dequeue removes one entry. The problem is which entry becomes available first."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-07-iterative-validation",
+      "prompt": "The input is a flat array of delimiter tokens. Which statement about recursion is correct?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "iteration_with_stack",
+            "text": "An iterative scan with an explicit stack can fully validate the nesting contract."
+          },
+          {
+            "id": "recursion_mandatory",
+            "text": "Recursion is mandatory because nested syntax cannot be represented iteratively."
+          },
+          {
+            "id": "no_state_needed",
+            "text": "Neither recursion nor an explicit stack is needed if opener and closer counts match."
+          }
+        ],
+        "acceptedOptionIds": [
+          "iteration_with_stack"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Nested dependency requires LIFO state, but that state can be explicit in an iterative scan.",
+        "details": "The token array already provides a natural linear traversal. The explicit stack records unmatched openers and reproduces the needed nesting state without recursive calls. Recursion may be appropriate when traversing an already recursive syntax tree, but it is not required for validating a flat token stream. Counts alone still lose order and type.",
+        "wrongOptionExplanationsByOptionId": {
+          "recursion_mandatory": "This confuses a nested data relationship with a required control-flow style. The explicit stack is a complete iterative representation.",
+          "no_state_needed": "Balanced counts can still hide crossed or mismatched nesting. Some ordered state is required."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-08-tag-transfer",
+      "prompt": "Which tag sequence satisfies the same stack invariant as correctly nested delimiters?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "proper_tags",
+            "text": "`<a><b></b></a>`"
+          },
+          {
+            "id": "crossed_tags",
+            "text": "`<a><b></a></b>`"
+          },
+          {
+            "id": "premature_close",
+            "text": "`</a><a>`"
+          }
+        ],
+        "acceptedOptionIds": [
+          "proper_tags"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The inner tag `b` closes before the outer tag `a`, preserving newest-unmatched-first order.",
+        "details": "Opening `<a>` then `<b>` pushes two unresolved tag identities. `</b>` matches and removes the top, and `</a>` then matches the remaining top. The crossed sequence attempts to close the outer tag while the inner tag is unresolved, and the premature sequence closes with an empty stack. Matched tags leave the stack; they are not retained as permanent validation state.",
+        "wrongOptionExplanationsByOptionId": {
+          "crossed_tags": "The tag names exist, but their closure order crosses the nesting boundary. `</a>` does not match the top `<b>`.",
+          "premature_close": "The first token has no prior opener, so the stack is empty at the closing event."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

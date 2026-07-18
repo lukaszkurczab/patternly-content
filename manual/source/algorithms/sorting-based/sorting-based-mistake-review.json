@@ -1,0 +1,460 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sorting-based-sorting_based_mistake_review-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sorting-based-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sorting_based",
+    "primaryMentalUnitId": "sorting_based_mistake_review",
+    "patternFamilyId": "sorting_based"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sorting-based-sorting_based_mistake_review-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sort-review-01-name-invalid-assumption",
+      "prompt": "A proposed solution sorts customer events by amount, scans adjacent events for duplicates, and returns the first duplicate customer's original earliest event. The prompt requires preserving encounter order. Which assumption is the first one to challenge?",
+      "constraints": [
+        "A customer may have several events with different amounts.",
+        "The required answer is defined by earliest encounter time, not by smallest amount."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "duplicates_need_three",
+            "text": "That a customer is duplicated only after three events."
+          },
+          {
+            "id": "adjacent_loop_is_too_short",
+            "text": "That one forward scan is never enough after sorting."
+          },
+          {
+            "id": "amounts_cannot_compare",
+            "text": "That numeric amounts can be sorted."
+          },
+          {
+            "id": "sort_preserves_answer_semantics",
+            "text": "That reordering by amount preserves the encounter-time answer contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_preserves_answer_semantics"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The transformation changes the temporal order that defines the answer before any duplicate scan is evaluated.",
+        "details": "A sorting-based review begins by restating the output contract. Here 'earliest' refers to encounter time, but sorting by amount replaces that order with an unrelated one. Even a perfectly implemented adjacent scan would solve a different problem, and customer equality is not guaranteed to align with amount adjacency. The first defect is therefore the unjustified preprocessing assumption, not loop length or comparability.",
+        "wrongOptionExplanationsByOptionId": {
+          "adjacent_loop_is_too_short": "A single scan can be complete when the correct grouping key has made equal records contiguous; the deeper issue is the wrong transformation and key.",
+          "duplicates_need_three": "Two occurrences are enough unless a different multiplicity threshold is stated.",
+          "amounts_cannot_compare": "Amounts are sortable; their order is simply not the semantic order required by this result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-review-02-audit-sequence",
+      "prompt": "Order the review steps for diagnosing a suspicious sorting-based solution before proposing a repair.",
+      "constraints": [
+        "The reviewer has the prompt, proposed algorithm, and stated complexity.",
+        "The goal is to isolate the earliest violated contract rather than patch symptoms randomly."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "recompute_cost_side_effects",
+            "text": "Recompute total time, extra space, and caller-visible mutation for the actual implementation."
+          },
+          {
+            "id": "verify_consumer_proof",
+            "text": "Verify that the scan, runs, or pointer moves cover every candidate under that order."
+          },
+          {
+            "id": "inspect_sort_relation",
+            "text": "Check whether the sort key and tie rules reveal the relation consumed later."
+          },
+          {
+            "id": "state_contract",
+            "text": "State the required output order, identities, mutation rights, and resource limits."
+          }
+        ],
+        "canonicalOrder": [
+          "state_contract",
+          "inspect_sort_relation",
+          "verify_consumer_proof",
+          "recompute_cost_side_effects"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Review proceeds from the external contract to the ordered relation, then downstream correctness, and finally the complete implementation cost.",
+        "details": "Without an explicit contract, a reviewer cannot tell whether reordering or tie nondeterminism is a defect. Once legality is known, the sort key must be tested against the intended adjacency, grouping, or monotonicity. The consumer proof then determines whether any valid candidate was discarded. Cost and side effects describe the concrete repaired or rejected implementation; they cannot rescue an algorithm that is already semantically wrong."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-review-03-sort-cannot-create-pair",
+      "prompt": "A pair-sum implementation sorts the input and initializes left = 0, right = n - 1. What must it do for n = 0 or n = 1 when two distinct occurrences are required?",
+      "constraints": [
+        "The API has an explicit no-pair outcome.",
+        "One occurrence cannot be used twice."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "return_no_pair",
+            "text": "Return the no-pair outcome before entering the pointer loop."
+          },
+          {
+            "id": "reuse_singleton",
+            "text": "For n = 1, use index 0 as both left and right."
+          },
+          {
+            "id": "append_zero",
+            "text": "Append a zero so every input has two elements."
+          },
+          {
+            "id": "read_negative_index",
+            "text": "For n = 0, treat right = -1 as the last valid element."
+          }
+        ],
+        "acceptedOptionIds": [
+          "return_no_pair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting changes order but cannot satisfy the minimum cardinality required by a two-occurrence answer.",
+        "details": "The pair contract itself rules out empty and singleton inputs. Reusing index 0 violates distinct identity, appending a value changes the problem, and a negative boundary does not identify a real occurrence in the abstract algorithm. A reviewer should name this as a missing precondition or base-case guard rather than treating an out-of-range pointer failure as an incidental implementation bug.",
+        "wrongOptionExplanationsByOptionId": {
+          "reuse_singleton": "One source occurrence cannot satisfy a contract requiring two distinct positions.",
+          "append_zero": "Fabricating an element changes both the input and the set of possible sums.",
+          "read_negative_index": "No valid array occurrence exists at right = -1 under the algorithm's index contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_two_pointers",
+        "problemArchetypeId": "pair_search_after_sort"
+      }
+    },
+    {
+      "id": "alg-sort-review-04-missing-tie-rule",
+      "prompt": "A report sorts incidents by severity and emits them in that order. The contract requires timestamp ascending and incident ID ascending within each severity. The comparator uses severity only. Which review finding is precise?",
+      "constraints": [
+        "Incident IDs are unique.",
+        "The complete emitted order is externally visible."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan_must_reverse",
+            "text": "The only defect is that the report should be scanned from right to left."
+          },
+          {
+            "id": "incomplete_total_order",
+            "text": "The comparator collapses records that the output contract still distinguishes; add timestamp and ID tie-breaks."
+          },
+          {
+            "id": "stable_sort_invents_ties",
+            "text": "Any stable sort automatically orders equal severities by timestamp and ID."
+          },
+          {
+            "id": "severity_not_sortable",
+            "text": "Severity cannot be a primary sort key."
+          }
+        ],
+        "acceptedOptionIds": [
+          "incomplete_total_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The emitted order is observable, so comparator equality may occur only after all required tie fields agree.",
+        "details": "Severity can remain primary, but the comparator must refine each severity class by timestamp and then ID. Stability preserves an existing prior order; it does not infer those fields unless the input was deliberately preordered under a documented stable multi-pass design. Reversing traversal changes severity direction and still leaves tie order unresolved. The defect is an incomplete total order, not a scanning orientation problem.",
+        "wrongOptionExplanationsByOptionId": {
+          "severity_not_sortable": "Severity is a legal primary key; the missing secondary rules are the problem.",
+          "scan_must_reverse": "Traversal direction cannot synthesize timestamp and ID ordering inside a severity tie.",
+          "stable_sort_invents_ties": "Stability preserves prior tie order but does not create the specified timestamp and ID relation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-review-05-lost-original-index",
+      "prompt": "A solution sorts raw values, finds a valid adjacent pair, and returns the two positions from the sorted array even though the prompt asks for source indices. Which review label fits the defect?",
+      "constraints": [
+        "The input can contain duplicate values.",
+        "No original index or permutation was stored."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "only_formatting",
+            "text": "The values are correct, so replacing parentheses with brackets repairs the result."
+          },
+          {
+            "id": "wrong_pair_relation",
+            "text": "Adjacent pairs are never valid candidates after sorting."
+          },
+          {
+            "id": "lost_provenance",
+            "text": "The sort discarded occurrence provenance, so sorted positions cannot satisfy the source-index contract."
+          },
+          {
+            "id": "too_many_indices",
+            "text": "The function should return one index rather than two."
+          }
+        ],
+        "acceptedOptionIds": [
+          "lost_provenance"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The algorithm found candidates in transformed coordinates but never preserved the source identities requested by the output.",
+        "details": "Sorted adjacency can be mathematically correct for a closest-value objective while the returned coordinates remain wrong. Duplicate values make post hoc value lookup ambiguous, and even distinct values require a saved permutation to map positions reliably. The repair is to decorate occurrences or sort indices before the transformation. This is a provenance defect, not an adjacency theorem or formatting issue.",
+        "wrongOptionExplanationsByOptionId": {
+          "wrong_pair_relation": "Some objectives, such as minimum scalar gap, do have a complete adjacent-pair proof after sorting.",
+          "too_many_indices": "A pair result correctly requires two identities; the problem is which coordinate system they use.",
+          "only_formatting": "Changing syntax does not reconstruct source occurrence identities lost during sorting."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-review-06-unnecessary-full-order",
+      "prompt": "A proposed solution sorts n numbers solely to compute their sum in one pass. What is the strongest review finding?",
+      "constraints": [
+        "There is one sum query.",
+        "Reordering provides no overflow or numeric-stability guarantee in this problem."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_changes_sum",
+            "text": "Sorting necessarily changes the mathematical sum of the same values."
+          },
+          {
+            "id": "sum_requires_order",
+            "text": "A sum is undefined until the values are sorted."
+          },
+          {
+            "id": "scan_after_sort_linear_total",
+            "text": "The solution is O(n) overall because the final accumulation loop is linear."
+          },
+          {
+            "id": "unnecessary_preprocessing",
+            "text": "Sorting reveals no needed structure and raises time from O(n) to O(n log n)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "unnecessary_preprocessing"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The aggregate is permutation-invariant and directly computable, so full ordering adds cost without changing the answer mechanism.",
+        "details": "Summation visits each input once while maintaining an accumulator. Under the stated numeric model, permutation does not create a new correctness property. Comparison sorting therefore computes unused order information and dominates the total time. The mathematical sum of the same multiset remains unchanged; the defect is unnecessary work, not a different answer. Numeric overflow or floating-order concerns would require separate explicit constraints.",
+        "wrongOptionExplanationsByOptionId": {
+          "sum_requires_order": "Addition over the given model is defined without ordering the inputs.",
+          "scan_after_sort_linear_total": "The final loop is linear, but the complete solution includes O(n log n) preprocessing.",
+          "sort_changes_sum": "Reordering a fixed multiset does not change its mathematical integer sum under the stated assumptions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-review-07-correct-total-bound",
+      "prompt": "A review note claims that comparison-sort plus one scan is O(n) because 'the algorithm has one scan loop.' What is the correct worst-case time bound?",
+      "constraints": [
+        "The sort has O(n log n) worst-case time.",
+        "The scan is O(n)."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {}
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "The review must include every phase, and O(n log n) sorting dominates the linear scan.",
+        "details": "The combined cost is O(n log n + n), which simplifies to O(n log n). Counting only the explicit scan loop ignores library work performed before it. Conversely, the pipeline is not automatically O(n^2); that would require a quadratic sort, comparator, or consumer not stated here. A precise review names the sort contract rather than inferring complexity from surface loop count."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-review-08-transfer-repair-selection",
+      "prompt": "Select all proposed repairs that address the stated sorting defect without silently changing the output contract.",
+      "constraints": [
+        "Each option is independent.",
+        "A repair must preserve the original problem's semantics and state guarantees."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "decorate_for_indices",
+            "text": "When source indices are required, sort (value, originalIndex) records instead of raw values."
+          },
+          {
+            "id": "drop_sort_cost",
+            "text": "When the scan is linear, report O(n) and omit comparison-sort time."
+          },
+          {
+            "id": "invent_default_tie",
+            "text": "When tie order is unspecified, silently choose a random tie-break and document no behaviour change."
+          },
+          {
+            "id": "copy_for_immutability",
+            "text": "When caller-visible input order must remain unchanged, sort an appropriate copy and include its O(n) space."
+          }
+        ],
+        "acceptedOptionIds": [
+          "decorate_for_indices",
+          "copy_for_immutability"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Valid repairs preserve required identity and state while making their added representation and cost explicit.",
+        "details": "Decoration repairs provenance without changing which source occurrences exist. A defensive copy repairs forbidden mutation while honestly adding linear storage. Random tie-breaking introduces nondeterminism and may create a new observable contract rather than clarifying the old one. Omitting sort cost changes only the report, not the work performed. Review handoff should distinguish semantic repair from concealment or undocumented policy invention.",
+        "wrongOptionExplanationsByOptionId": {
+          "invent_default_tie": "Random ordering is not a stable repair and can create an observable behaviour not authorized by the prompt.",
+          "drop_sort_cost": "Misreporting complexity does not reduce the preprocessing work or satisfy the cost contract."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "decorate_for_indices": "Carrying originalIndex directly repairs the lost mapping while retaining sorted value order.",
+          "copy_for_immutability": "Sorting a separate representation protects caller-visible state and makes the space trade-off explicit."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

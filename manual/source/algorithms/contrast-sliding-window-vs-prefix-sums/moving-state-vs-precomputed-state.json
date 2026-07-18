@@ -1,0 +1,1017 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "contrast-sliding-window-vs-prefix-sums-moving-state-vs-precomputed-state-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-core",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-contrast-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "contrast_sliding_window_vs_prefix_sums",
+    "primaryMentalUnitId": "moving_state_vs_precomputed_state",
+    "patternFamilyId": "sliding_window"
+  },
+  "batchKind": "contrast",
+  "contrastMetadata": {
+    "contrastedMentalUnitIds": [
+      "recognize_sliding_window_signal",
+      "recognize_prefix_accumulation_signal"
+    ],
+    "falseHeuristicId": "every_contiguous_sum_problem_is_sliding_window",
+    "transferBoundary": "Use a moving window when one sequential traversal can maintain exactly the state for the current contiguous interval; use prefix state when arbitrary interval values must be reconstructed from precomputed cumulative information."
+  },
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-18T00:00:00.000Z",
+    "contentBatchId": "contrast-sliding-window-vs-prefix-sums-moving-state-vs-precomputed-state-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-contrast-window-prefix-state-001",
+      "prompt": "A single pass must report the maximum sum among all contiguous blocks of exactly k elements. Which state model is most direct?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "moving_sum",
+            "text": "Maintain the current k-element sum, subtract the outgoing value, and add the incoming value."
+          },
+          {
+            "id": "all_prefix_queries",
+            "text": "Build a full prefix array and issue one query for every block because precomputation is mandatory."
+          },
+          {
+            "id": "recompute_each",
+            "text": "Recompute each block sum from its k elements."
+          },
+          {
+            "id": "sort_values",
+            "text": "Sort values before comparing block sums."
+          }
+        ],
+        "acceptedOptionIds": [
+          "moving_sum"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The blocks are visited in adjacent order and differ by one outgoing and one incoming value.",
+        "details": "A moving aggregate reuses exactly that overlap and needs only the current sum plus boundaries.",
+        "wrongOptionExplanationsByOptionId": {
+          "all_prefix_queries": "Prefix sums are correct, but the full array is not required for this one sequential sweep.",
+          "recompute_each": "This repeats overlapping work and can cost O(nk).",
+          "sort_values": "Sorting destroys contiguous positions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-002",
+      "prompt": "An immutable array receives many queries asking for the sum from index l through r. Which representation is most reusable?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_array",
+            "text": "Precompute cumulative sums so each interval is one subtraction."
+          },
+          {
+            "id": "one_moving_window",
+            "text": "Keep one current window and move it to every arbitrary query."
+          },
+          {
+            "id": "sort_first",
+            "text": "Sort the array before answering ranges."
+          },
+          {
+            "id": "scan_every_query",
+            "text": "Rescan l through r for every query regardless of query volume."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix_array"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Random interval queries need a representation independent of one current boundary pair.",
+        "details": "With P[i + 1] = P[i] + a[i], rangeSum(l, r) = P[r + 1] - P[l].",
+        "wrongOptionExplanationsByOptionId": {
+          "one_moving_window": "Arbitrary queries may jump and resize, so one moving state is not naturally reusable.",
+          "sort_first": "Sorting changes interval membership.",
+          "scan_every_query": "This ignores reusable static preprocessing."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-003",
+      "prompt": "A fixed-size window moves from [l, r] to [l + 1, r + 1]. Which update preserves its sum?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "remove_add",
+            "text": "Subtract a[l] and add a[r + 1]."
+          },
+          {
+            "id": "add_both",
+            "text": "Add both boundary values."
+          },
+          {
+            "id": "subtract_both",
+            "text": "Subtract both boundary values."
+          },
+          {
+            "id": "prefix_difference",
+            "text": "Subtract the entire old sum from the new sum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "remove_add"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Adjacent equal-length windows share every interior element.",
+        "details": "Only the outgoing left value and incoming right value change the aggregate.",
+        "wrongOptionExplanationsByOptionId": {
+          "add_both": "The old left value leaves the interval.",
+          "subtract_both": "The new right value enters the interval.",
+          "prefix_difference": "That is circular and does not define the new sum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-004",
+      "prompt": "Using P[0] = 0 and P[i + 1] = P[i] + a[i], which formula gives the inclusive range sum a[l] + ... + a[r]?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_difference",
+            "text": "P[r + 1] - P[l]."
+          },
+          {
+            "id": "wrong_left",
+            "text": "P[r] - P[l]."
+          },
+          {
+            "id": "wrong_right",
+            "text": "P[r + 1] - P[l + 1]."
+          },
+          {
+            "id": "add_prefixes",
+            "text": "P[r + 1] + P[l]."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix_difference"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The prefix through r contains the desired range plus everything before l.",
+        "details": "Subtracting P[l] removes exactly the elements before the interval.",
+        "wrongOptionExplanationsByOptionId": {
+          "wrong_left": "This omits a[r].",
+          "wrong_right": "This omits a[l].",
+          "add_prefixes": "The shared prefix must be removed, not added."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-005",
+      "prompt": "Values arrive as a stream, and after each arrival the system must output the sum of the most recent k values. Which state is appropriate?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "rolling_state",
+            "text": "Maintain a rolling sum and enough state to remove the value leaving the last-k window."
+          },
+          {
+            "id": "future_prefix_queries",
+            "text": "Wait until the entire stream ends, then build a prefix array."
+          },
+          {
+            "id": "sort_stream",
+            "text": "Sort all values seen so far."
+          },
+          {
+            "id": "recompute_history",
+            "text": "Rescan all prior values after every arrival."
+          }
+        ],
+        "acceptedOptionIds": [
+          "rolling_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The result is tied to one evolving interval at the stream frontier.",
+        "details": "A rolling sum plus a queue or circular buffer for the outgoing value supports online updates.",
+        "wrongOptionExplanationsByOptionId": {
+          "future_prefix_queries": "The outputs are required online.",
+          "sort_stream": "Sorting destroys recency order.",
+          "recompute_history": "Only the last k values matter."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-006",
+      "prompt": "A static array must answer sums for intervals requested in arbitrary order, including repeated and overlapping ranges. Which distinction is decisive?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "precomputed_independent",
+            "text": "Prefix state makes every query independent of the previously answered interval."
+          },
+          {
+            "id": "moving_previous",
+            "text": "A sliding window is automatically O(1) for any jump from the previous query."
+          },
+          {
+            "id": "contiguous_keyword",
+            "text": "The word contiguous proves sliding window."
+          },
+          {
+            "id": "one_loop",
+            "text": "A solution with one loop is always preferable."
+          }
+        ],
+        "acceptedOptionIds": [
+          "precomputed_independent"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix sums encode every boundary relative to a common origin.",
+        "details": "That supports random access, whereas a moving window is centered on one current interval.",
+        "wrongOptionExplanationsByOptionId": {
+          "moving_previous": "Moving a window across a large jump can require many updates.",
+          "contiguous_keyword": "Both methods reason about contiguous ranges.",
+          "one_loop": "Loop count does not define reusable state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-007",
+      "prompt": "A valid prefix array for the current immutable data already exists. A new range-sum query arrives. What should the algorithm do?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reuse_prefix",
+            "text": "Use the stored prefix difference directly."
+          },
+          {
+            "id": "build_window",
+            "text": "Scan from the previous query's interval to the new one."
+          },
+          {
+            "id": "rebuild_prefix",
+            "text": "Recompute all prefix sums for every query."
+          },
+          {
+            "id": "sort_query",
+            "text": "Sort the queried interval first."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reuse_prefix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing should be credited when it is already available and valid.",
+        "details": "The query cost is the boundary subtraction, not another full construction.",
+        "wrongOptionExplanationsByOptionId": {
+          "build_window": "Existing prefix state already answers the query in constant time.",
+          "rebuild_prefix": "The data is unchanged, so rebuilding wastes O(n) work.",
+          "sort_query": "The sum does not require reordering."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-008",
+      "prompt": "Both a rolling sum and prefix sums can compute every length-k block sum in O(n) total time. Which additional fact often favors the rolling sum?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "less_auxiliary",
+            "text": "It can use O(1) aggregate state instead of an O(n) prefix array."
+          },
+          {
+            "id": "handles_random_queries",
+            "text": "It answers arbitrary later intervals without retaining data."
+          },
+          {
+            "id": "works_after_updates_free",
+            "text": "It makes all future array updates free."
+          },
+          {
+            "id": "removes_contiguity",
+            "text": "It can ignore original positions."
+          }
+        ],
+        "acceptedOptionIds": [
+          "less_auxiliary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "When the workload is one sequential enumeration of equal-length intervals, a full prefix table may store more state than needed.",
+        "details": "Both are correct; the space and reuse requirements decide between them.",
+        "wrongOptionExplanationsByOptionId": {
+          "handles_random_queries": "A single rolling state only represents the current block.",
+          "works_after_updates_free": "Updates still change later block values.",
+          "removes_contiguity": "The method depends on contiguous movement."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-009",
+      "prompt": "A variable window maintains the invariant \"current interval is valid\" while the right boundary advances. What distinguishes this from a prefix array?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "decision_state",
+            "text": "The window state drives boundary decisions for one evolving candidate interval."
+          },
+          {
+            "id": "prefix_moves",
+            "text": "A prefix array itself decides which left boundary to remove."
+          },
+          {
+            "id": "same_structure",
+            "text": "They are identical because both store sums."
+          },
+          {
+            "id": "prefix_no_contiguous",
+            "text": "Prefix sums cannot represent contiguous intervals."
+          }
+        ],
+        "acceptedOptionIds": [
+          "decision_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sliding window couples an aggregate to a boundary-update rule.",
+        "details": "Prefix sums answer what an interval contains once its boundaries are known; they do not automatically choose those boundaries.",
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_moves": "Prefix values provide interval arithmetic but not the window's validity policy.",
+          "same_structure": "They organize state for different access patterns.",
+          "prefix_no_contiguous": "They represent them by differences."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-010",
+      "prompt": "A task needs the sum and count of flagged elements for many static interval queries. Which extension is natural?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "parallel_prefixes",
+            "text": "Build one prefix sequence for sums and another for flag counts."
+          },
+          {
+            "id": "one_current_window",
+            "text": "Maintain one current interval and assume all queries share it."
+          },
+          {
+            "id": "sort_flags",
+            "text": "Sort flagged values away from their positions."
+          },
+          {
+            "id": "recompute_metrics",
+            "text": "Scan every interval twice."
+          }
+        ],
+        "acceptedOptionIds": [
+          "parallel_prefixes"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Additive interval features can each use cumulative state.",
+        "details": "The query subtracts matching prefixes for every requested metric.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_current_window": "Arbitrary queries can have unrelated boundaries.",
+          "sort_flags": "That breaks interval identity.",
+          "recompute_metrics": "Both additive metrics can be precomputed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-011",
+      "prompt": "Which workload properties justify retaining only one evolving interval? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "adjacent_candidates",
+            "text": "Candidate intervals are visited in adjacent boundary order."
+          },
+          {
+            "id": "local_update",
+            "text": "The aggregate can be updated from outgoing and incoming elements."
+          },
+          {
+            "id": "online_output",
+            "text": "The answer is needed as a stream frontier advances."
+          },
+          {
+            "id": "arbitrary_queries",
+            "text": "Queries jump among arbitrary static intervals."
+          }
+        ],
+        "acceptedOptionIds": [
+          "adjacent_candidates",
+          "local_update",
+          "online_output"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Moving windows are strongest when one evolving interval captures the workload.",
+        "details": "Random interval access is a different state requirement.",
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_queries": "This favors precomputed prefix state."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "adjacent_candidates": "Overlap can be reused incrementally.",
+          "local_update": "This avoids recomputing shared interior work.",
+          "online_output": "A moving state supports online emission."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-012",
+      "prompt": "Which workload properties justify cumulative state at every boundary? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "many_static_ranges",
+            "text": "Many interval queries over unchanged data."
+          },
+          {
+            "id": "random_boundaries",
+            "text": "Queries arrive in arbitrary boundary order."
+          },
+          {
+            "id": "additive_metric",
+            "text": "The interval value is a difference of cumulative additive state."
+          },
+          {
+            "id": "single_frontier",
+            "text": "Only the current last-k stream interval is ever requested."
+          }
+        ],
+        "acceptedOptionIds": [
+          "many_static_ranges",
+          "random_boundaries",
+          "additive_metric"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix state is a reusable static index for additive interval information.",
+        "details": "A single frontier-local interval does not need the whole index.",
+        "wrongOptionExplanationsByOptionId": {
+          "single_frontier": "A rolling window is more direct."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "many_static_ranges": "One build is reused.",
+          "random_boundaries": "Each query is independent.",
+          "additive_metric": "Prefix subtraction reconstructs it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-013",
+      "prompt": "Which tasks can be solved correctly by either a moving sum or prefix sums? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "all_fixed_blocks",
+            "text": "Compute all length-k block sums in one static array."
+          },
+          {
+            "id": "one_fixed_block",
+            "text": "Compute the sum of one known interval."
+          },
+          {
+            "id": "max_fixed_block",
+            "text": "Find the maximum length-k block sum."
+          },
+          {
+            "id": "online_last_k",
+            "text": "Emit the last-k sum before future values are known using only offline prefix construction."
+          }
+        ],
+        "acceptedOptionIds": [
+          "all_fixed_blocks",
+          "one_fixed_block",
+          "max_fixed_block"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Correctness alone may leave both state models available.",
+        "details": "Online timing and memory determine whether full precomputation is legal or useful.",
+        "wrongOptionExplanationsByOptionId": {
+          "online_last_k": "Offline prefix construction cannot satisfy the online timing contract."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "all_fixed_blocks": "Both can achieve O(n) total time.",
+          "one_fixed_block": "A direct scan, prefix difference, or prepared moving pass can all be correct.",
+          "max_fixed_block": "Both can enumerate block sums."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-014",
+      "prompt": "Which observations are insufficient by themselves to choose sliding window? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "contiguous_word",
+            "text": "The prompt mentions a contiguous subarray."
+          },
+          {
+            "id": "sum_word",
+            "text": "The objective contains the word sum."
+          },
+          {
+            "id": "two_indices",
+            "text": "The implementation might use left and right indices."
+          },
+          {
+            "id": "adjacent_update",
+            "text": "Each next candidate removes one value and adds one value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contiguous_word",
+          "sum_word",
+          "two_indices"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Surface wording does not identify the required state model.",
+        "details": "A legal incremental transition between adjacent candidates is real evidence.",
+        "wrongOptionExplanationsByOptionId": {
+          "adjacent_update": "This is a substantive moving-state signal."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "contiguous_word": "Prefix sums also operate on contiguous ranges.",
+          "sum_word": "Both methods can maintain sums.",
+          "two_indices": "Variable names do not establish a discard rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-015",
+      "prompt": "Arrange the fixed-size moving-sum workflow.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "initial_sum",
+            "text": "Compute the first k-element sum."
+          },
+          {
+            "id": "record",
+            "text": "Use it to initialize the requested result."
+          },
+          {
+            "id": "slide",
+            "text": "For each next position, subtract the outgoing value and add the incoming value."
+          },
+          {
+            "id": "update_result",
+            "text": "Evaluate the new interval and update the result."
+          }
+        ],
+        "canonicalOrder": [
+          "initial_sum",
+          "record",
+          "slide",
+          "update_result"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The first interval establishes state; every later interval reuses its overlap.",
+        "details": "Updating before evaluating ensures the aggregate matches the new boundaries."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-016",
+      "prompt": "Arrange the prefix-sum range-query workflow.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "allocate",
+            "text": "Create a prefix sequence with a zero sentinel."
+          },
+          {
+            "id": "build",
+            "text": "Accumulate P[i + 1] = P[i] + a[i] for the static data."
+          },
+          {
+            "id": "receive_query",
+            "text": "Receive boundaries l and r."
+          },
+          {
+            "id": "subtract",
+            "text": "Return P[r + 1] - P[l]."
+          }
+        ],
+        "canonicalOrder": [
+          "allocate",
+          "build",
+          "receive_query",
+          "subtract"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Prefix preprocessing is independent of any one later query.",
+        "details": "The sentinel convention makes inclusive interval formulas uniform."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-017",
+      "prompt": "Arrange the decision process between moving and precomputed state.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_workload",
+            "text": "State whether intervals are sequential candidates or arbitrary queries."
+          },
+          {
+            "id": "state_timing",
+            "text": "State whether answers are online or may wait for preprocessing."
+          },
+          {
+            "id": "state_reuse",
+            "text": "Determine whether cumulative state will serve many future requests."
+          },
+          {
+            "id": "compare_resources",
+            "text": "Compare legal time, auxiliary space, and update invalidation."
+          }
+        ],
+        "canonicalOrder": [
+          "state_workload",
+          "state_timing",
+          "state_reuse",
+          "compare_resources"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The distinction follows access pattern and state lifetime.",
+        "details": "The word contiguous does not replace this workload analysis."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-state-018",
+      "prompt": "Compute all length-k sums in a static array of n values. Compare a rolling-sum scan with building an n-sized prefix array and querying all n - k + 1 windows.",
+      "constraints": [
+        "Each arithmetic operation is O(1).",
+        "Output is streamed and excluded from auxiliary space."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "rolling_time",
+          "rolling_auxiliary_space",
+          "prefix_time",
+          "prefix_auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "rolling_time": [
+            "O(k)",
+            "O(n)",
+            "O(nk)",
+            "O(n log n)"
+          ],
+          "rolling_auxiliary_space": [
+            "O(1)",
+            "O(k)",
+            "O(n)",
+            "O(nk)"
+          ],
+          "prefix_time": [
+            "O(k)",
+            "O(n)",
+            "O(nk)",
+            "O(n log n)"
+          ],
+          "prefix_auxiliary_space": [
+            "O(1)",
+            "O(k)",
+            "O(n)",
+            "O(nk)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "rolling_time": [
+            "O(n)"
+          ],
+          "rolling_auxiliary_space": [
+            "O(1)"
+          ],
+          "prefix_time": [
+            "O(n)"
+          ],
+          "prefix_auxiliary_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "rolling_time": {
+            "initial_plus_slides": "O(n)"
+          },
+          "rolling_auxiliary_space": {
+            "moving_sum": "O(1)"
+          },
+          "prefix_time": {
+            "build_plus_queries": "O(n)"
+          },
+          "prefix_auxiliary_space": {
+            "prefix_array": "O(n)"
+          }
+        },
+        "maxPoints": 4
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Both strategies are linear for this workload.",
+        "details": "The moving sum uses less retained state, while the prefix array remains reusable for other interval queries."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_moving_window_from_precomputed_prefix",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "contrast-sliding-window-vs-prefix-sums-practice-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-contrast-practice",
+        "requestedLengths": [
+          10,
+          20,
+          40
+        ],
+        "defaultRequestedLength": 20,
+        "shortening": "allowed",
+        "minimumActualLength": 10,
+        "composition": {
+          "kind": "contrast_sets",
+          "ids": [
+            "contrast-window-prefix-moving-state-vs-precomputed-state-v1",
+            "contrast-window-prefix-negative-values-break-simple-window-v1",
+            "contrast-window-prefix-one-query-vs-many-queries-v1",
+            "contrast-window-prefix-positive-monotonic-window-boundary-v1",
+            "contrast-window-prefix-prefix-hash-state-boundary-v1",
+            "contrast-window-prefix-threshold-objective-vs-exact-sum-v1",
+            "contrast-window-prefix-time-space-tradeoff-v1",
+            "contrast-window-prefix-transfer-sliding-window-vs-prefix-sums-v1"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [
+      {
+        "setId": "contrast-window-prefix-moving-state-vs-precomputed-state-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "moving_state_vs_precomputed_state",
+        "contrastedMentalUnitIds": [
+          "recognize_sliding_window_signal",
+          "recognize_prefix_accumulation_signal"
+        ],
+        "falseHeuristicId": "every_contiguous_sum_problem_is_sliding_window",
+        "transferBoundary": "Use a moving window when one sequential traversal can maintain exactly the state for the current contiguous interval; use prefix state when arbitrary interval values must be reconstructed from precomputed cumulative information.",
+        "itemIds": [
+          "alg-contrast-window-prefix-state-001",
+          "alg-contrast-window-prefix-state-002",
+          "alg-contrast-window-prefix-state-003",
+          "alg-contrast-window-prefix-state-004",
+          "alg-contrast-window-prefix-state-005",
+          "alg-contrast-window-prefix-state-006",
+          "alg-contrast-window-prefix-state-007",
+          "alg-contrast-window-prefix-state-008",
+          "alg-contrast-window-prefix-state-009",
+          "alg-contrast-window-prefix-state-010",
+          "alg-contrast-window-prefix-state-011",
+          "alg-contrast-window-prefix-state-012",
+          "alg-contrast-window-prefix-state-013",
+          "alg-contrast-window-prefix-state-014",
+          "alg-contrast-window-prefix-state-015",
+          "alg-contrast-window-prefix-state-016",
+          "alg-contrast-window-prefix-state-017",
+          "alg-contrast-window-prefix-state-018"
+        ]
+      }
+    ],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

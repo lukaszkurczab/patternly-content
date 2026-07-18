@@ -1,0 +1,465 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sorting-based-custom_key_and_tie_breaking-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sorting-based-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sorting_based",
+    "primaryMentalUnitId": "custom_key_and_tie_breaking",
+    "patternFamilyId": "sorting_based"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sorting-based-custom_key_and_tie_breaking-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sort-keys-01-deadline-priority-id-order",
+      "prompt": "A scheduler must order jobs by earliest deadline, then by higher priority number, then by smaller job ID. Which key expresses the required total order for an ascending sort?",
+      "constraints": [
+        "Job IDs are unique.",
+        "Higher numeric priority must come earlier."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "deadline_only",
+            "text": "deadline"
+          },
+          {
+            "id": "priority_deadline_id",
+            "text": "(-priority, deadline, jobId)"
+          },
+          {
+            "id": "deadline_neg_priority_id",
+            "text": "(deadline, -priority, jobId)"
+          },
+          {
+            "id": "deadline_priority_id",
+            "text": "(deadline, priority, jobId)"
+          }
+        ],
+        "acceptedOptionIds": [
+          "deadline_neg_priority_id"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The tuple preserves the required precedence and reverses only the descending priority component.",
+        "details": "Lexicographic tuple comparison first separates deadlines. Only equal deadlines compare -priority, so larger original priority produces a smaller key and comes earlier. Job ID resolves the remaining tie deterministically. Moving priority ahead of deadline changes the primary contract, while using positive priority reverses its direction. A deadline-only key leaves answer-relevant ties unresolved.",
+        "wrongOptionExplanationsByOptionId": {
+          "deadline_priority_id": "Ascending positive priority places lower-priority jobs first within an equal deadline.",
+          "priority_deadline_id": "This makes priority primary and can place a later-deadline job before an earlier-deadline job.",
+          "deadline_only": "It omits the required priority and ID tie-breaks, so distinct jobs can remain unordered under the contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_total_sort_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-keys-02-comparator-decision-chain",
+      "prompt": "Order the decision chain for comparing two records under the contract: smaller category first, then larger score, then smaller unique ID.",
+      "constraints": [
+        "The comparator must be deterministic and transitive.",
+        "It returns equality only after all contract fields compare equal."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "compare_category",
+            "text": "Compare category; return its ascending result if different."
+          },
+          {
+            "id": "compare_id",
+            "text": "If both prior fields tie, compare unique ID ascending."
+          },
+          {
+            "id": "compare_score",
+            "text": "If categories tie, compare score in descending direction and return if different."
+          },
+          {
+            "id": "return_equal",
+            "text": "Return equality only if category, score, and ID all tie."
+          }
+        ],
+        "canonicalOrder": [
+          "compare_category",
+          "compare_score",
+          "compare_id",
+          "return_equal"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Each later comparison is reachable only when every more important component is tied.",
+        "details": "A hierarchical comparator is a sequence of guarded decisions. Returning on the first difference enforces the precedence contract and avoids letting a secondary field overturn a primary result. The final unique ID makes distinct records comparable. Returning equality earlier would create a partial order relative to the stated output, while comparing score before category would implement a different ranking entirely."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_total_sort_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-keys-03-cyclic-comparator-invalid",
+      "prompt": "A comparator orders labels with the rules A < B, B < C, and C < A. What is the fundamental defect?",
+      "constraints": [
+        "The sort implementation requires a consistent comparison relation.",
+        "All three labels may appear in one input."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "needs_more_duplicates",
+            "text": "The comparator fails only because each label appears once."
+          },
+          {
+            "id": "needs_stable_sort",
+            "text": "The rules are valid as long as the sorting algorithm is stable."
+          },
+          {
+            "id": "reverse_output",
+            "text": "The relation becomes valid by reversing the final array after sorting."
+          },
+          {
+            "id": "violates_transitivity",
+            "text": "The relation is cyclic and violates transitivity, so no valid sorted order can satisfy all comparisons."
+          }
+        ],
+        "acceptedOptionIds": [
+          "violates_transitivity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A total order cannot contain A < B < C < A; the comparison relation must be transitive.",
+        "details": "Sorting algorithms assume that comparison outcomes describe one coherent order. From A < B and B < C, transitivity requires A < C, which conflicts with C < A. Stability only preserves input order among comparator-equal records; it cannot repair contradictory strict comparisons. Reversing output also reverses every relation and leaves a cycle. The comparator contract itself must be redesigned.",
+        "wrongOptionExplanationsByOptionId": {
+          "needs_stable_sort": "Stability addresses equality ties, not an inconsistent cycle among strict ordering results.",
+          "needs_more_duplicates": "Multiplicity does not change the logical contradiction in the relation.",
+          "reverse_output": "Reversal cannot convert a cyclic relation into a transitive total order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_total_sort_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-keys-04-required-tie-break",
+      "prompt": "A leaderboard must be reproducible across devices. Players are ordered by descending score, then ascending completion time, then ascending player ID. A proposed comparator stops after score. Why is it insufficient?",
+      "constraints": [
+        "Player IDs are unique.",
+        "The complete displayed order is part of the product contract."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "missing_material_ties",
+            "text": "It treats players with equal scores as equivalent even though completion time and ID must order them."
+          },
+          {
+            "id": "score_cannot_sort",
+            "text": "Numeric scores cannot be used in a comparator."
+          },
+          {
+            "id": "ids_must_be_primary",
+            "text": "Player ID must always be the first comparator field."
+          },
+          {
+            "id": "stable_sort_solves_all",
+            "text": "It is sufficient because every stable sort invents the required completion-time and ID order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "missing_material_ties"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Comparator equality is legal only when the output contract regards the tied records as interchangeable.",
+        "details": "Equal scores do not end the comparison because the displayed ranking distinguishes players by completion time and then ID. A stable sort would preserve whatever prior order happened to exist, which is not the specified secondary relation unless that prior order was deliberately constructed and documented. Adding the required fields creates one reproducible total order without changing score's primary status.",
+        "wrongOptionExplanationsByOptionId": {
+          "score_cannot_sort": "Numeric comparison is valid; the problem is incomplete handling of equal scores.",
+          "stable_sort_solves_all": "Stability preserves prior order among ties but does not synthesize the required tie-break semantics.",
+          "ids_must_be_primary": "ID is the final tie-break and must not override score or completion time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_total_sort_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-keys-05-stability-and-original-index",
+      "prompt": "The contract says records with equal business keys must remain in their original relative order. Select all implementations that can satisfy this requirement deliberately.",
+      "constraints": [
+        "Original position is available before sorting.",
+        "The chosen approach must not rely on undocumented library behaviour."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "reverse_equal_blocks",
+            "text": "Sort by businessKey and reverse every equal-key block."
+          },
+          {
+            "id": "documented_stable_sort",
+            "text": "Use a sorting algorithm whose contract guarantees stability and compare only the business key."
+          },
+          {
+            "id": "unstable_key_only",
+            "text": "Use an unstable sort by businessKey and assume equal-key records keep their order."
+          },
+          {
+            "id": "index_final_key",
+            "text": "Decorate each record with originalIndex and sort by (businessKey, originalIndex)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "documented_stable_sort",
+          "index_final_key"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Original tie order can be preserved either by a guaranteed stable algorithm or by making original position an explicit final key.",
+        "details": "Stability is a property of the sorting operation, not of the business-key comparator itself. When the library contract guarantees it, equal-key records retain encounter order. Decorating with originalIndex makes the same requirement explicit and works even with an otherwise unstable sort. Merely hoping for stability is not a contract, and reversing equal blocks intentionally violates the required relative order.",
+        "wrongOptionExplanationsByOptionId": {
+          "unstable_key_only": "An unstable sort may permute comparator-equal records, so the required order is not guaranteed.",
+          "reverse_equal_blocks": "Reversal produces the opposite of stable original order inside every tie class."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "documented_stable_sort": "A documented stability guarantee preserves original order among comparator-equal records.",
+          "index_final_key": "Original index as a final key explicitly reconstructs stable order regardless of the sort implementation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_total_sort_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-keys-06-select-min-without-full-sort",
+      "prompt": "A service needs only the single record with minimum key (riskScore, createdAt, recordId). Which strategy best matches that output contract?",
+      "constraints": [
+        "There is one query and no need to retain the remaining records in key order.",
+        "Key comparison is O(1)."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "random_record",
+            "text": "Return any record because only one output is needed."
+          },
+          {
+            "id": "linear_argmin",
+            "text": "Scan once while retaining the best record under the full key."
+          },
+          {
+            "id": "compare_ids_only",
+            "text": "Return the smallest record ID without checking risk or creation time."
+          },
+          {
+            "id": "full_sort_first",
+            "text": "Sort every record by the key and return the first."
+          }
+        ],
+        "acceptedOptionIds": [
+          "linear_argmin"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A full total order is unnecessary when the contract asks only for its minimum element.",
+        "details": "The same composite key still defines which candidate beats the current best, so the scan preserves the ordering semantics without materializing all pairwise order relations. It runs in O(n) time and O(1) extra state. Full sorting is valid but adds O(n log n) work that no downstream operation reuses. The output count of one does not permit ignoring the primary key or choosing arbitrarily.",
+        "wrongOptionExplanationsByOptionId": {
+          "full_sort_first": "Sorting computes much more order information than the single minimum query consumes.",
+          "compare_ids_only": "Record ID is only the final tie-break and cannot replace the primary risk and time fields.",
+          "random_record": "The output remains constrained by the minimum-key contract even though it contains one record."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_total_sort_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-keys-07-expensive-comparator-cost",
+      "prompt": "A comparison sort performs O(n log n) comparisons. Each comparison recomputes a normalized key of length m for both records in O(m) time. What is the resulting worst-case time bound, ignoring constant factors?",
+      "constraints": [
+        "Keys are not cached or precomputed.",
+        "Comparing two already-computed normalized keys is O(m) in the worst case and is included in the O(m) comparison cost."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(m n log n)",
+            "O(n log n)",
+            "O(n^2 m)",
+            "O(n + m)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(m n log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {}
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "The O(m) comparator cost is paid across O(n log n) comparisons.",
+        "details": "Comparison count and comparison cost multiply. Recomputing or scanning an m-length normalized key during each comparison yields O(m n log n) time. Precomputing one key per record could change the bound to O(nm + n log n) plus the cost of comparing cached representations, depending on representation. Counting only sort calls or loop syntax would hide the dominant work inside the comparator."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_total_sort_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sort-keys-08-transfer-tie-materiality",
+      "prompt": "Select all contracts where an explicit final tie-break is materially required rather than merely cosmetic.",
+      "constraints": [
+        "The primary and secondary business fields can tie.",
+        "The implementation must satisfy only the stated contract, not an unstated preference."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "aggregate_only",
+            "text": "All tied records are summed into one scalar, and member order has no effect on the sum."
+          },
+          {
+            "id": "any_tie_order",
+            "text": "The result is a mathematical set, and any order among equal keys is explicitly accepted."
+          },
+          {
+            "id": "stable_original_order",
+            "text": "Equal business keys must preserve original encounter order."
+          },
+          {
+            "id": "reproducible_serialization",
+            "text": "The byte-for-byte serialized record order must be reproducible across runs."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reproducible_serialization",
+          "stable_original_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Tie-breaks are required when tied-record order is observable through determinism or stable-order semantics.",
+        "details": "Reproducible serialization needs one unique order, so a stable unique field can close the key. Stable original order also makes position material, implemented by guaranteed stability or original index. A set-valued result that explicitly ignores order and a commutative aggregate do not distinguish permutations of tied members. Adding a tie-break there may still be convenient, but it is not required by the learning contract.",
+        "wrongOptionExplanationsByOptionId": {
+          "any_tie_order": "The contract declares tied permutations equivalent, so comparator equality is semantically sufficient.",
+          "aggregate_only": "A commutative sum is invariant to member order, making an ordering tie-break unnecessary for correctness."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "reproducible_serialization": "Reproducible bytes require one deterministic order even among otherwise equal records.",
+          "stable_original_order": "Original encounter order is an observable tie rule and must be preserved deliberately."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_total_sort_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

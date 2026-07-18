@@ -1,0 +1,1215 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "contrast-hash-map-vs-sorting-single-pass-vs-repeated-queries-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-core",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-contrast-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "contrast_hash_map_vs_sorting",
+    "primaryMentalUnitId": "single_pass_vs_repeated_queries",
+    "patternFamilyId": "hash_map_and_set"
+  },
+  "batchKind": "contrast",
+  "contrastMetadata": {
+    "contrastedMentalUnitIds": [
+      "recognize_hash_lookup_signal",
+      "recognize_sorting_as_preprocessing"
+    ],
+    "falseHeuristicId": "hash_map_is_always_faster_than_sorting",
+    "transferBoundary": "For one query, a scan or direct one-pass hash may dominate preprocessing; for repeated workloads, compare the full build-plus-query cost and update invalidation of hashing and sorting."
+  },
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-18T00:00:00.000Z",
+    "contentBatchId": "contrast-hash-map-vs-sorting-single-pass-vs-repeated-queries-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-contrast-hash-sort-queries-001",
+      "prompt": "An unsorted array receives exactly one exact-membership query, and no later reuse is possible. Which baseline should be considered first?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "linear_scan",
+            "text": "A direct O(n) scan with O(1) auxiliary space."
+          },
+          {
+            "id": "sort_first",
+            "text": "Always sort in O(n log n) before one query."
+          },
+          {
+            "id": "hash_always",
+            "text": "Always build an O(n)-space hash set because expected lookup is O(1)."
+          },
+          {
+            "id": "binary_unsorted",
+            "text": "Binary-search the unsorted array."
+          }
+        ],
+        "acceptedOptionIds": [
+          "linear_scan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For one query, preprocessing must earn back its cost inside the same workload.",
+        "details": "A scan is often simplest and asymptotically no worse than building a hash set once.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_first": "Preprocessing may cost more than the single scan.",
+          "hash_always": "The build still scans all n values and uses extra memory.",
+          "binary_unsorted": "No sorted search invariant exists."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-002",
+      "prompt": "A static array will receive millions of arbitrary-order exact-membership queries. Which signal strongly favors hashing?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reused_membership",
+            "text": "One expected O(n) set build can serve expected O(1) queries."
+          },
+          {
+            "id": "sort_groups",
+            "text": "Ordered grouping is the primary result."
+          },
+          {
+            "id": "scan_each",
+            "text": "Repeated O(n) scans are preferable regardless of q."
+          },
+          {
+            "id": "mutation_only",
+            "text": "Input mutation is the only relevant factor."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reused_membership"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A large repeated equality workload can amortize hash preprocessing.",
+        "details": "Memory, collision guarantees, and updates still belong in the final comparison.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_groups": "The workload is equality membership.",
+          "scan_each": "They can total O(qn).",
+          "mutation_only": "Query volume is decisive here."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-003",
+      "prompt": "A static dataset receives many ordered range queries whose answers must be emitted in value order. Which preprocessing is naturally reusable?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_once",
+            "text": "Sort once, then locate boundaries and traverse each requested range."
+          },
+          {
+            "id": "hash_only",
+            "text": "Use only a plain hash set."
+          },
+          {
+            "id": "scan_each",
+            "text": "Scan all values for every range without considering q."
+          },
+          {
+            "id": "frequency_only",
+            "text": "Store only counts and discard values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_once"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The repeated query relation is ordered, so sorted preprocessing is directly reusable.",
+        "details": "Hashing may assist equality, but it does not replace the order structure required by range queries.",
+        "wrongOptionExplanationsByOptionId": {
+          "hash_only": "A set does not provide ordered range boundaries.",
+          "scan_each": "Repeated full scans can be much more expensive.",
+          "frequency_only": "Range output needs the values or ordered keys."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-004",
+      "prompt": "The dataset changes after almost every query. What must be included before choosing preprocessing?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "update_cost",
+            "text": "The cost and legality of maintaining or rebuilding the hash or sorted representation after updates."
+          },
+          {
+            "id": "queries_only",
+            "text": "Only the query cost after a hypothetical free build."
+          },
+          {
+            "id": "sort_once_forever",
+            "text": "A sorted snapshot remains correct after arbitrary updates."
+          },
+          {
+            "id": "hash_static",
+            "text": "A hash table cannot support updates."
+          }
+        ],
+        "acceptedOptionIds": [
+          "update_cost"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing is useful only while the derived representation remains valid.",
+        "details": "Dynamic workloads require build, update, query, and memory costs in one model.",
+        "wrongOptionExplanationsByOptionId": {
+          "queries_only": "Frequent invalidation can dominate.",
+          "sort_once_forever": "Updates can invalidate order and contents.",
+          "hash_static": "It can, but update costs and guarantees matter."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-005",
+      "prompt": "The future number of queries is unknown and may be zero. Which design can be reasonable?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "lazy_preprocess",
+            "text": "Start with direct scans and build a reusable representation only after observed workload justifies it, if the contract permits."
+          },
+          {
+            "id": "eager_always",
+            "text": "Always pay the largest preprocessing cost immediately."
+          },
+          {
+            "id": "no_strategy",
+            "text": "An unknown q makes analysis impossible."
+          },
+          {
+            "id": "hash_word",
+            "text": "Choose hashing because queries are mentioned."
+          }
+        ],
+        "acceptedOptionIds": [
+          "lazy_preprocess"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An adaptive strategy can avoid sunk preprocessing when demand is absent.",
+        "details": "The transition point should be based on measured or modeled cumulative cost.",
+        "wrongOptionExplanationsByOptionId": {
+          "eager_always": "The work may never be reused.",
+          "no_strategy": "Threshold or adaptive strategies can be modeled.",
+          "hash_word": "The actual volume and relation remain unknown."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-006",
+      "prompt": "A single pass must detect any duplicate, and memory is plentiful. Does this alone prove hashing is the only valid strategy?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_multiple_valid",
+            "text": "No. Hashing is expected linear, but sorting and scanning can also be correct if mutation and O(n log n) time are acceptable."
+          },
+          {
+            "id": "yes_only_hash",
+            "text": "Yes. Duplicate detection cannot use sorting."
+          },
+          {
+            "id": "yes_one_pass_word",
+            "text": "Yes, because the phrase single pass forbids all preprocessing choices."
+          },
+          {
+            "id": "scan_adjacent",
+            "text": "Yes, comparing adjacent unsorted values is always enough."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_multiple_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A one-off duplicate query may have several correct strategies.",
+        "details": "The decision depends on time budget, memory, mutation, online stopping, and guarantee requirements.",
+        "wrongOptionExplanationsByOptionId": {
+          "yes_only_hash": "Sorting makes duplicates adjacent.",
+          "yes_one_pass_word": "The implementation constraint must be explicit; the problem result alone does not prove one family.",
+          "scan_adjacent": "Separated duplicates would be missed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-007",
+      "prompt": "The same key-count query is repeated many times over immutable data. Which preprocessing avoids recomputing counts?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "frequency_map",
+            "text": "Build key counts once and answer each equality-count query from the map."
+          },
+          {
+            "id": "sort_each_query",
+            "text": "Resort the data for every query."
+          },
+          {
+            "id": "scan_each_query",
+            "text": "Recount the entire array for every key without considering q."
+          },
+          {
+            "id": "discard_counts",
+            "text": "Delete the count table after every answer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frequency_map"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The repeated query asks for equality-keyed aggregate state.",
+        "details": "One frequency map build amortizes across all later count lookups.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_each_query": "The same preprocessing should be reused.",
+          "scan_each_query": "This totals O(qn).",
+          "discard_counts": "That prevents reuse."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-008",
+      "prompt": "Input is already sorted and receives many exact-membership queries. What should the analysis credit?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "existing_preprocessing",
+            "text": "The sorted representation already exists, so binary search needs no new sorting cost."
+          },
+          {
+            "id": "sort_cost_again",
+            "text": "Charge O(n log n) sorting before every analysis."
+          },
+          {
+            "id": "hash_required",
+            "text": "Build a hash set because expected O(1) always dominates existing order."
+          },
+          {
+            "id": "scan_only",
+            "text": "Ignore binary search because hashing is the only reusable method."
+          }
+        ],
+        "acceptedOptionIds": [
+          "existing_preprocessing"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Cost comparison begins from the actual representation supplied by the contract.",
+        "details": "Existing sorted order can make binary search attractive without any preprocessing or mutation.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_cost_again": "Known input state is reusable preprocessing.",
+          "hash_required": "The memory and build may not be justified.",
+          "scan_only": "Sorted order directly supports logarithmic queries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-009",
+      "prompt": "Which workload facts should be modeled before preprocessing? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "q",
+            "text": "Number and type of queries."
+          },
+          {
+            "id": "updates",
+            "text": "Frequency and cost of updates or invalidation."
+          },
+          {
+            "id": "existing_state",
+            "text": "Whether data is already sorted or indexed."
+          },
+          {
+            "id": "variable_name",
+            "text": "Whether the query function is named lookup."
+          }
+        ],
+        "acceptedOptionIds": [
+          "q",
+          "updates",
+          "existing_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing decisions depend on the complete lifecycle of the derived representation.",
+        "details": "Query vocabulary alone is insufficient.",
+        "wrongOptionExplanationsByOptionId": {
+          "variable_name": "Naming does not determine workload cost."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "q": "Reuse depends on volume and relation.",
+          "updates": "Derived state may need maintenance.",
+          "existing_state": "Preprocessing may already be paid."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-010",
+      "prompt": "Which situations often favor a direct one-pass or one-query approach? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "one_query",
+            "text": "Exactly one query with no future reuse."
+          },
+          {
+            "id": "tiny_input",
+            "text": "Very small input where setup and allocation dominate."
+          },
+          {
+            "id": "stream_early_exit",
+            "text": "An online query can terminate before the stream ends."
+          },
+          {
+            "id": "millions_static",
+            "text": "Millions of repeated equality queries on static data."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_query",
+          "tiny_input",
+          "stream_early_exit"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing is weakest when reuse is absent or early streaming termination is valuable.",
+        "details": "Large static repeated workloads are the opposite case.",
+        "wrongOptionExplanationsByOptionId": {
+          "millions_static": "This strongly favors reusable preprocessing."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "one_query": "Build cost may not be recovered.",
+          "tiny_input": "Constants and simplicity can matter.",
+          "stream_early_exit": "Offline sorting cannot exploit the same early stop."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-011",
+      "prompt": "Which repeated workloads directly reuse a hash table's equality-keyed state? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "membership",
+            "text": "Many exact membership queries."
+          },
+          {
+            "id": "counts",
+            "text": "Many key-frequency queries."
+          },
+          {
+            "id": "updates_hashable",
+            "text": "Frequent insert/delete updates on hashable keys when expected table updates are acceptable."
+          },
+          {
+            "id": "ordered_ranges",
+            "text": "Many ordered range reports in key order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "membership",
+          "counts",
+          "updates_hashable"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Hash preprocessing is reusable for equality-keyed queries and updates.",
+        "details": "Ordered range workloads consume sorted order instead.",
+        "wrongOptionExplanationsByOptionId": {
+          "ordered_ranges": "A plain hash table lacks range structure."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "membership": "Expected O(1) lookup directly serves them.",
+          "counts": "Stored counts avoid rescans.",
+          "updates_hashable": "A hash table can maintain equality state incrementally."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-012",
+      "prompt": "Which repeated workloads directly consume a sorted representation? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "binary_membership",
+            "text": "Many exact queries when the data is already sorted or sorting is acceptable."
+          },
+          {
+            "id": "ranges",
+            "text": "Many lower-bound, upper-bound, or range-report queries."
+          },
+          {
+            "id": "ordered_output",
+            "text": "Repeated deterministic ordered traversals."
+          },
+          {
+            "id": "online_first_seen",
+            "text": "One online first-repeat query before the stream ends."
+          }
+        ],
+        "acceptedOptionIds": [
+          "binary_membership",
+          "ranges",
+          "ordered_output"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorted preprocessing is strongest when the query relation is ordered or the representation already exists.",
+        "details": "Online arrival-order queries favor incremental hash state.",
+        "wrongOptionExplanationsByOptionId": {
+          "online_first_seen": "Full sorted preprocessing conflicts with the online contract."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "binary_membership": "Binary search reuses order.",
+          "ranges": "Order directly supports boundaries.",
+          "ordered_output": "The sorted representation is already in result order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-013",
+      "prompt": "Arrange the workload-modeling process.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "define_operations",
+            "text": "List builds, queries, updates, and required outputs."
+          },
+          {
+            "id": "parameterize",
+            "text": "Introduce n, q, update count, distinct-key count, and total reported output where relevant."
+          },
+          {
+            "id": "derive_candidates",
+            "text": "Derive complete hash, sort, and direct-scan costs under aligned assumptions."
+          },
+          {
+            "id": "choose_threshold",
+            "text": "Choose a strategy or adaptive threshold that satisfies correctness and minimizes the relevant workload cost."
+          }
+        ],
+        "canonicalOrder": [
+          "define_operations",
+          "parameterize",
+          "derive_candidates",
+          "choose_threshold"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Query-volume decisions require cumulative rather than per-operation analysis.",
+        "details": "The break-even point follows from complete cost expressions."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-014",
+      "prompt": "Arrange a reusable hash-membership workflow.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "build",
+            "text": "Scan n values and build the set."
+          },
+          {
+            "id": "retain",
+            "text": "Keep the set valid while the dataset remains unchanged or maintain it through legal updates."
+          },
+          {
+            "id": "query",
+            "text": "Answer each exact membership query from the set."
+          },
+          {
+            "id": "release",
+            "text": "Release the representation after the workload ends."
+          }
+        ],
+        "canonicalOrder": [
+          "build",
+          "retain",
+          "query",
+          "release"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The one-time build is amortized only while the retained state remains valid and reused.",
+        "details": "Memory lifetime is part of the preprocessing tradeoff."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-015",
+      "prompt": "Arrange a reusable sorted-query workflow.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "prepare",
+            "text": "Reuse existing sorted order or sort a legal representation once."
+          },
+          {
+            "id": "retain",
+            "text": "Keep the sorted representation valid across the query workload."
+          },
+          {
+            "id": "locate",
+            "text": "Use binary-search boundaries for each query."
+          },
+          {
+            "id": "report",
+            "text": "Traverse and emit any required ordered range, then account for output size."
+          }
+        ],
+        "canonicalOrder": [
+          "prepare",
+          "retain",
+          "locate",
+          "report"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Sorting preprocessing creates reusable order for both exact and range queries.",
+        "details": "Range output cost remains in addition to logarithmic boundary location."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-016",
+      "prompt": "Answer one exact-membership query by scanning an unsorted array of n values. Select worst-case time and auxiliary space.",
+      "constraints": [
+        "No preprocessing or retained index is available."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "auxiliary_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "one_scan": "O(n)"
+          },
+          "auxiliary_space": {
+            "constant_state": "O(1)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "A missing target can require inspecting every value.",
+        "details": "The scan needs only an index or iterator and comparison state."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-017",
+      "prompt": "Answer q independent exact-membership queries by rescanning the same unsorted n-value array each time. Select total time and auxiliary space.",
+      "constraints": [
+        "No preprocessing is retained between queries."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n + q)",
+            "O(q log n)",
+            "O(qn)",
+            "O(n log n)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(q)",
+            "O(n)",
+            "O(qn)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(qn)"
+          ],
+          "auxiliary_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "q_full_scans": "O(qn)"
+          },
+          "auxiliary_space": {
+            "streaming_queries": "O(1)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Without reusable state, worst-case linear query cost repeats q times.",
+        "details": "The approach minimizes memory but may be too slow for large q."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-018",
+      "prompt": "Build a hash set once from n values and answer q exact membership queries under expected O(1) operations. Select expected total time and auxiliary space.",
+      "constraints": [
+        "The set remains valid for all queries."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n + q)",
+            "O(n log n + q)",
+            "O(qn)",
+            "O(n²)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(q)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n + q)"
+          ],
+          "auxiliary_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "build_and_queries": "O(n + q)"
+          },
+          "auxiliary_space": {
+            "set": "O(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The build cost is paid once and expected constant lookup is reused.",
+        "details": "The table remains live for the query workload."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-019",
+      "prompt": "Sort n values once and answer q exact queries by binary search. Select total time and auxiliary space for an in-place O(n log n) sort using O(log n) stack.",
+      "constraints": [
+        "Input mutation is legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n + q)",
+            "O(n log n + q log n)",
+            "O(qn)",
+            "O(n²)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(q)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n + q log n)"
+          ],
+          "auxiliary_space": [
+            "O(log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "sort_and_queries": "O(n log n + q log n)"
+          },
+          "auxiliary_space": {
+            "sort_stack": "O(log n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The one-time ordering cost is followed by logarithmic queries.",
+        "details": "The path also provides reusable ordered traversal not offered by a plain hash set."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-020",
+      "prompt": "Compare q full scans, O(qn), with sorting once and binary-searching, O(n log n + q log n). What asymptotic query volume is sufficient for the sorting path to break even when n is large?",
+      "constraints": [
+        "Assume comparison and scan primitive costs are comparable.",
+        "Use an asymptotic threshold rather than an exact machine-dependent constant."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "break_even_q"
+        ],
+        "availableValuesByDimension": {
+          "break_even_q": [
+            "Θ(1)",
+            "Θ(log n)",
+            "Θ(n)",
+            "Θ(n log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "break_even_q": [
+            "Θ(log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "break_even_q": {
+            "solve_costs": "Θ(log n)"
+          }
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "Equating qn with n log n + q log n gives q approximately n log n divided by n - log n, which is Θ(log n).",
+        "details": "Exact crossover depends on constants, existing order, mutation, and query semantics."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-021",
+      "prompt": "A dataset is rebuilt completely u times. Across all versions, q exact queries are answered. Select expected hash-workload time and sorted-workload time.",
+      "constraints": [
+        "Each hash rebuild costs expected O(n), and each hash query expected O(1).",
+        "Each sorted rebuild costs O(n log n), and each binary-search query O(log n)."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "hash_time",
+          "sort_time"
+        ],
+        "availableValuesByDimension": {
+          "hash_time": [
+            "O(un + q)",
+            "O(un log n + q)",
+            "O(qn)",
+            "O(uq)"
+          ],
+          "sort_time": [
+            "O(un + q)",
+            "O(un log n + q log n)",
+            "O(qn)",
+            "O(uq)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "hash_time": [
+            "O(un + q)"
+          ],
+          "sort_time": [
+            "O(un log n + q log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "hash_time": {
+            "rebuilds_and_queries": "O(un + q)"
+          },
+          "sort_time": {
+            "resorts_and_queries": "O(un log n + q log n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Frequent complete invalidation multiplies preprocessing by u.",
+        "details": "A realistic dynamic comparison must include that lifecycle cost."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-hash-sort-queries-022",
+      "prompt": "Sort n values once, answer q ordered range queries with two binary-search boundaries each, and emit T total values across all query results. Select total time and output space.",
+      "constraints": [
+        "Each boundary search costs O(log n).",
+        "T counts all materialized reported values."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "output_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n log n + q log n)",
+            "O(n log n + q log n + T)",
+            "O(qn)",
+            "O(n + T)"
+          ],
+          "output_space": [
+            "O(1)",
+            "O(q)",
+            "O(T)",
+            "O(nT)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n + q log n + T)"
+          ],
+          "output_space": [
+            "O(T)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "sort_boundaries_output": "O(n log n + q log n + T)"
+          },
+          "output_space": {
+            "reported_values": "O(T)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Ordered preprocessing reduces boundary location but cannot remove the cost of emitting required results.",
+        "details": "This is a workload where sorting provides a relation that a plain hash table does not."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_hash_or_sort_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [
+      {
+        "setId": "contrast-hash-vs-sort-single-pass-vs-repeated-queries-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "single_pass_vs_repeated_queries",
+        "contrastedMentalUnitIds": [
+          "recognize_hash_lookup_signal",
+          "recognize_sorting_as_preprocessing"
+        ],
+        "falseHeuristicId": "hash_map_is_always_faster_than_sorting",
+        "transferBoundary": "For one query, a scan or direct one-pass hash may dominate preprocessing; for repeated workloads, compare the full build-plus-query cost and update invalidation of hashing and sorting.",
+        "itemIds": [
+          "alg-contrast-hash-sort-queries-001",
+          "alg-contrast-hash-sort-queries-002",
+          "alg-contrast-hash-sort-queries-003",
+          "alg-contrast-hash-sort-queries-004",
+          "alg-contrast-hash-sort-queries-005",
+          "alg-contrast-hash-sort-queries-006",
+          "alg-contrast-hash-sort-queries-007",
+          "alg-contrast-hash-sort-queries-008",
+          "alg-contrast-hash-sort-queries-009",
+          "alg-contrast-hash-sort-queries-010",
+          "alg-contrast-hash-sort-queries-011",
+          "alg-contrast-hash-sort-queries-012",
+          "alg-contrast-hash-sort-queries-013",
+          "alg-contrast-hash-sort-queries-014",
+          "alg-contrast-hash-sort-queries-015",
+          "alg-contrast-hash-sort-queries-016",
+          "alg-contrast-hash-sort-queries-017",
+          "alg-contrast-hash-sort-queries-018",
+          "alg-contrast-hash-sort-queries-019",
+          "alg-contrast-hash-sort-queries-020",
+          "alg-contrast-hash-sort-queries-021",
+          "alg-contrast-hash-sort-queries-022"
+        ]
+      }
+    ],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

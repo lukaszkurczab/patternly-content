@@ -1,0 +1,460 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-sorting-based-sort_then_scan-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-sorting-based-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-independent-practice"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "sorting_based",
+    "primaryMentalUnitId": "sort_then_scan",
+    "patternFamilyId": "sorting_based"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate author",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-sorting-based-sort_then_scan-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-sort-scan-01-threshold-neighbor-detection",
+      "prompt": "An unsorted list of scalar measurements must answer whether any two distinct values differ by at most D. Which sort-based follow-up is sufficient?",
+      "constraints": [
+        "D is nonnegative.",
+        "Only existence is required, and original positions are not part of the output."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan_adjacent_differences",
+            "text": "Sort ascending and test every adjacent difference."
+          },
+          {
+            "id": "scan_first_against_all",
+            "text": "Sort ascending and compare only the smallest value with every other value."
+          },
+          {
+            "id": "scan_every_other_pair",
+            "text": "Sort ascending and compare positions 0-1, 2-3, 4-5, and so on."
+          },
+          {
+            "id": "scan_original_neighbors",
+            "text": "Do not sort; test only pairs that were adjacent in the input."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scan_adjacent_differences"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "If any sorted pair is within D, some adjacent pair inside that interval is also within D.",
+        "details": "Let x < y be a qualifying non-adjacent sorted pair. Every value between them partitions y - x into adjacent nonnegative gaps, so at least one of those gaps cannot exceed the whole distance and therefore is also at most D. Testing all adjacent gaps is complete. Comparing only selected neighbours or preserving arbitrary input adjacency can miss the local gap that witnesses existence.",
+        "wrongOptionExplanationsByOptionId": {
+          "scan_first_against_all": "A qualifying close pair can occur among larger values even when the smallest value is far from every other value.",
+          "scan_every_other_pair": "Skipping alternating adjacent boundaries can omit the only pair whose difference is at most D.",
+          "scan_original_neighbors": "Input adjacency is unrelated to numerical distance when the input is unsorted."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "exploit_adjacent_order_after_sort",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-scan-02-minimum-gap-scan-order",
+      "prompt": "Order the operations for a correct minimum-gap scan after receiving an unsorted array with at least two values.",
+      "constraints": [
+        "The output is the minimum absolute value difference.",
+        "Original order and indices are irrelevant."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "return_best",
+            "text": "Return best after every adjacent boundary has been considered."
+          },
+          {
+            "id": "scan_remaining_neighbors",
+            "text": "Visit each remaining adjacent pair and update best when its gap is smaller."
+          },
+          {
+            "id": "initialize_from_first_pair",
+            "text": "Initialize best from the difference between sorted positions 0 and 1."
+          },
+          {
+            "id": "sort_values",
+            "text": "Sort the values in ascending order."
+          }
+        ],
+        "canonicalOrder": [
+          "sort_values",
+          "initialize_from_first_pair",
+          "scan_remaining_neighbors",
+          "return_best"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The scan state is meaningful only after ordering, and the result is final only after every adjacent boundary is covered.",
+        "details": "Sorting establishes the invariant that only neighbouring values need comparison. Initializing from a real pair avoids an arbitrary sentinel and requires the stated n >= 2 boundary. The loop then examines each unprocessed adjacent relation exactly once. Returning before the loop completes would treat a prefix optimum as a global optimum, while scanning before sorting would compare unrelated input neighbours."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "exploit_adjacent_order_after_sort",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-scan-03-duplicate-zero-gap",
+      "prompt": "After sorting [9, 4, 9, 15], a minimum-gap scan encounters adjacent values 9 and 9. What conclusion is valid?",
+      "constraints": [
+        "The pair may use distinct positions with equal values.",
+        "Differences are nonnegative."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "deduplicate_then_restart",
+            "text": "Remove one 9 and restart the algorithm before recording a result."
+          },
+          {
+            "id": "return_zero",
+            "text": "The global minimum gap is 0, so the scan may return immediately."
+          },
+          {
+            "id": "skip_equal_values",
+            "text": "Equal adjacent values must be skipped because they are duplicates."
+          },
+          {
+            "id": "continue_for_negative",
+            "text": "Continue because a later pair could have a negative gap."
+          }
+        ],
+        "acceptedOptionIds": [
+          "return_zero"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Zero is the smallest possible absolute difference, and the equal values belong to distinct input positions.",
+        "details": "The sorted scan has found a valid pair and reached the lower bound of the objective. No later adjacent difference can improve on zero, so early termination is correct. Deduplicating would erase a material occurrence and could change the answer. This boundary differs from problems that explicitly require distinct values rather than distinct positions; that stronger contract would need to be stated.",
+        "wrongOptionExplanationsByOptionId": {
+          "skip_equal_values": "Duplicates are precisely the evidence for a zero gap when distinct occurrences are allowed.",
+          "continue_for_negative": "Absolute differences cannot be negative, so zero is already optimal.",
+          "deduplicate_then_restart": "Removing an occurrence changes the input multiplicity and discards the valid optimal pair."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "exploit_adjacent_order_after_sort",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-scan-04-deterministic-first-adjacent-pair",
+      "prompt": "Records are sorted by score and then scanned from left to right to return the first adjacent equal-score pair. The contract says that among all such pairs, the lexicographically smallest pair of record IDs must be returned. Which change makes the scan deterministic and contract-complete?",
+      "constraints": [
+        "Record IDs are unique.",
+        "Several records may share the same score."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_score_only",
+            "text": "Sort by score only and return the first equal pair produced by the implementation."
+          },
+          {
+            "id": "reverse_each_run",
+            "text": "Sort by score only, reverse every equal-score run, and return its first pair."
+          },
+          {
+            "id": "sort_score_then_id",
+            "text": "Sort by (score, recordId), then scan each equal-score run and choose its first two IDs."
+          },
+          {
+            "id": "return_last_pair",
+            "text": "Keep the score-only order but return the final equal pair instead."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_score_then_id"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Because scan position selects the answer, the comparator must order tied records by the ID rule that defines the required first pair.",
+        "details": "A left-to-right scan is deterministic only relative to its complete sorted order. Treating all equal scores as comparator-equal leaves their internal order dependent on input order, sort stability, or implementation. Adding record ID as the tie-break makes the first two members of each score run the lexicographically smallest IDs. A different pair-selection pass could also work, but the stated scan requires this total key.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_score_only": "The result can vary among legal score-only orders and therefore does not satisfy the lexicographic pair contract.",
+          "reverse_each_run": "Reversal deterministically chooses large IDs first, the opposite of the requested lexicographic minimum.",
+          "return_last_pair": "Changing scan position does not define the required tie order and can still depend on unstable input ordering."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "exploit_adjacent_order_after_sort",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-scan-05-return-original-closest-pair",
+      "prompt": "A minimum-gap scan must return the original indices of the chosen pair, with smaller original index first. Which representation should the sorted scan consume?",
+      "constraints": [
+        "Duplicate values are allowed.",
+        "The output requires two original indices, not positions in the sorted array."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "values_only",
+            "text": "Only sorted values; use their sorted positions as the answer."
+          },
+          {
+            "id": "index_only",
+            "text": "Only original indices sorted numerically, without values."
+          },
+          {
+            "id": "value_frequency",
+            "text": "Only a frequency table, without occurrence identities."
+          },
+          {
+            "id": "value_index_records",
+            "text": "Records (value, originalIndex), sorted by value and then originalIndex."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_index_records"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The scan needs value adjacency for correctness and original occurrence identity for the required output.",
+        "details": "Decorated records preserve both axes. The primary value key establishes the nearest-neighbour theorem, while the index field lets the selected adjacent occurrences map back to the source. An index tie-break makes duplicate-value ordering deterministic but does not replace the final normalization of the returned pair. Raw sorted positions and aggregate frequencies cannot identify which source occurrences were chosen.",
+        "wrongOptionExplanationsByOptionId": {
+          "values_only": "Sorted positions describe the transformed array and lose the original-index contract, especially for duplicates.",
+          "index_only": "Original-index order reveals no value closeness and therefore cannot support the scan proof.",
+          "value_frequency": "Frequencies can reveal that a zero gap exists but cannot return the two required occurrence indices."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "exploit_adjacent_order_after_sort",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-scan-06-bounded-counting-beats-sort",
+      "prompt": "Values are integers from 0 through 1000, and the task is to report which values occur at least twice. Output order is irrelevant. Which assessment is strongest?",
+      "constraints": [
+        "n may be very large.",
+        "An array of 1001 counters is permitted."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "count_directly",
+            "text": "Use the fixed counter array in O(n + 1001) time; sorting is unnecessary."
+          },
+          {
+            "id": "pairwise_compare",
+            "text": "Compare every pair because counters cannot represent duplicates."
+          },
+          {
+            "id": "sort_then_binary_search",
+            "text": "Sort and binary-search every value to confirm its duplicate count."
+          },
+          {
+            "id": "sort_required",
+            "text": "Sort first because duplicate detection always needs adjacent equal values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "count_directly"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The bounded key domain supplies direct grouping state, so sorting adds cost without enabling a missing relation.",
+        "details": "A fixed frequency array visits each input once and then inspects a bounded domain. It computes exactly the required predicate while using constant space with respect to n. Sort-then-scan is valid, but not automatically preferable. The choice changes if the domain is huge, memory is constrained, or ascending output is required; those conditions are absent here.",
+        "wrongOptionExplanationsByOptionId": {
+          "sort_required": "Adjacency is one way to detect duplicates, not a necessary precondition when direct frequency state is available.",
+          "pairwise_compare": "The counter indexed by value aggregates all occurrences without quadratic comparisons.",
+          "sort_then_binary_search": "Binary-searching after a sort repeats work; a single sorted scan would suffice, but the bounded counter is still cheaper here."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "exploit_adjacent_order_after_sort",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grouping_after_sort",
+        "problemArchetypeId": "group_equal_values"
+      }
+    },
+    {
+      "id": "alg-sort-scan-07-comparison-sort-neighbor-pass",
+      "prompt": "An in-place comparison sort with O(n log n) worst-case time is followed by a complete adjacent scan with O(1) work per boundary. What is the total worst-case time?",
+      "constraints": [
+        "The input has n items.",
+        "No bounded-key non-comparison sorting assumption is available."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {}
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "The linear neighbour pass is dominated by the comparison sort's O(n log n) work.",
+        "details": "The scan contributes n - 1 constant-time comparisons, so its cost is O(n). Adding it to O(n log n) yields O(n log n + n) = O(n log n). The fact that the post-sort phase is one loop does not make the complete algorithm linear. Space depends on the concrete sort implementation and is intentionally not checked by this item."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "exploit_adjacent_order_after_sort",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    },
+    {
+      "id": "alg-sort-scan-08-transfer-adjacency-proof",
+      "prompt": "Select all objectives for which checking every adjacent pair after sorting by a single scalar key is, by itself, a complete candidate search.",
+      "constraints": [
+        "All inputs are finite batch collections.",
+        "No additional geometry or graph structure is encoded by the scalar key."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "minimum_scalar_gap",
+            "text": "Minimum absolute difference between any two scalar values."
+          },
+          {
+            "id": "closest_2d_points_by_x",
+            "text": "Closest Euclidean pair of two-dimensional points after sorting only by x-coordinate."
+          },
+          {
+            "id": "duplicate_exists",
+            "text": "Whether any scalar value occurs at least twice."
+          },
+          {
+            "id": "pair_xor_target",
+            "text": "Whether any two integers have bitwise XOR equal to a target after sorting numerically."
+          }
+        ],
+        "acceptedOptionIds": [
+          "minimum_scalar_gap",
+          "duplicate_exists"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Scalar closeness and equality have adjacent witnesses in sorted value order; the other predicates do not.",
+        "details": "A globally minimum scalar gap must appear between neighbours, and duplicate values form an adjacent equality boundary. In two dimensions, points close in Euclidean distance can be separated by many points with intermediate x-values, so an adjacent-x-only scan is incomplete. Numeric ordering also gives no monotone rule for XOR equality. The transfer test is the proof of candidate locality, not the visual presence of sorted data.",
+        "wrongOptionExplanationsByOptionId": {
+          "closest_2d_points_by_x": "Sorting by x is useful in stronger geometric algorithms, but comparing only adjacent x-neighbours does not cover every closest pair.",
+          "pair_xor_target": "Bitwise XOR does not vary monotonically with numeric order, so a valid pair can be non-adjacent without an adjacent witness."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "minimum_scalar_gap": "One-dimensional order guarantees that any closer non-adjacent pair would contain an at-least-as-close adjacent pair.",
+          "duplicate_exists": "Equal keys occupy one contiguous sorted run, so a duplicate creates an adjacent equal pair."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "exploit_adjacent_order_after_sort",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "sort_then_scan",
+        "problemArchetypeId": "reveal_ordered_structure"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

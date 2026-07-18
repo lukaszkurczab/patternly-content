@@ -1,0 +1,452 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-strategy-selection-core-extract_constraints_and_output_contract-candidate-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-strategy-selection-core-candidate-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "strategy_selection_core",
+    "primaryMentalUnitId": "extract_constraints_and_output_contract",
+    "patternFamilyId": "complexity_and_constraints"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro — candidate authoring assistant",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-strategy-selection-core-extract_constraints_and_output_contract-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "ssc-extract-boolean-vs-witness",
+      "prompt": "A task receives an integer array and asks only whether any value occurs at least twice. Which statement is the most important output-contract signal to record before considering algorithms?",
+      "constraints": [
+        "Only a Boolean result is required.",
+        "No duplicate value or original index must be returned.",
+        "The item asks for a decision signal, not a final algorithm."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "array_word",
+            "text": "The input is called an array, so an array-specific pattern must be used."
+          },
+          {
+            "id": "integers",
+            "text": "The values are integers, so numeric ordering is the decisive requirement."
+          },
+          {
+            "id": "boolean_only",
+            "text": "The output is only an existence decision; no duplicate value, index, or pair must be returned."
+          }
+        ],
+        "acceptedOptionIds": [
+          "boolean_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The required output is a Boolean existence result. That contract permits strategies that discard witness identity and original position.",
+        "details": "Strategy selection starts by fixing what must be produced, not by reacting to a data-structure noun. Here the learner does not need a duplicate value, the first duplicate, a pair of indices, or the number of duplicate groups. That distinction changes what state must be retained and which transformations are safe. A presence set, sorting followed by an adjacent comparison, or even a quadratic reference scan can all answer existence, while a requirement to return original indices would add preservation obligations. The transfer rule is to rewrite the output as a precise contract—existence, witness, count, ordering, optimum, or full enumeration—before judging any candidate.",
+        "wrongOptionExplanationsByOptionId": {
+          "array_word": "The container type is a surface description, not the decisive output contract. It may suggest available operations, but it does not say whether identity, order, or a witness must be preserved; it would matter only together with those explicit requirements.",
+          "integers": "Integer values do not by themselves require an order-based strategy. Numeric ordering becomes decisive only when the output or legal mechanism depends on comparisons, rank, ranges, or monotonicity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-preserve-indices-and-input",
+      "prompt": "A pair-sum task must return the two original indices, and the caller forbids modifying the input array. Select all constraints that must be carried into strategy selection.",
+      "constraints": [
+        "Return original indices.",
+        "Input mutation is forbidden.",
+        "No adjacency or positivity assumption is stated.",
+        "Select all materially relevant constraints."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "positive_values",
+            "text": "All values may be assumed positive."
+          },
+          {
+            "id": "read_only_input",
+            "text": "The strategy must not sort or otherwise mutate the caller's array in place."
+          },
+          {
+            "id": "original_indices",
+            "text": "The strategy must preserve a mapping to original indices."
+          },
+          {
+            "id": "contiguous_pair",
+            "text": "The two chosen values must be adjacent in the original array."
+          }
+        ],
+        "acceptedOptionIds": [
+          "original_indices",
+          "read_only_input"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Original-index output and read-only input are material constraints. They affect whether sorting is legal directly and whether auxiliary index state or a copy is required.",
+        "details": "The output contract requires identity in the original coordinate system, while the mutability contract forbids an in-place transformation that destroys that system. A sorting-based candidate is not automatically impossible, but it must sort indexed pairs or a copy and include that extra time and space in its cost model. A hash-based one-pass candidate can preserve original indices directly. Neither adjacency nor positivity follows from the prompt, so introducing either would silently change the problem. The transfer rule is to extract preservation and mutation requirements explicitly whenever a candidate strategy reorders, aggregates, or discards input information.",
+        "wrongOptionExplanationsByOptionId": {
+          "contiguous_pair": "Adjacency sounds plausible because the data is an array, but the task asks for any pair. It would become material only if the output contract explicitly required a contiguous pair or subarray.",
+          "positive_values": "Positivity can enable certain monotone pointer or window arguments, but it is not stated here. It would be a valid decision signal only if the value domain explicitly excluded zero and negative values."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "original_indices": "Omitting original-index preservation leaves a strategy free to lose the exact witnesses that the output must return.",
+          "read_only_input": "Omitting the read-only constraint can make an in-place sort appear legal even though it violates the caller contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-scale-to-operation-budget",
+      "prompt": "An input may contain 200,000 elements and the operation must finish within a typical interactive time limit. Which extracted signal most directly constrains the candidate operation budget?",
+      "constraints": [
+        "n may be 200,000.",
+        "The task must handle the maximum case.",
+        "The question asks for a constraint signal, not a complete implementation."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "integer_type",
+            "text": "The elements are integers, so every arithmetic operation has constant cost."
+          },
+          {
+            "id": "single_test",
+            "text": "The statement presents one example, so only that example needs to run quickly."
+          },
+          {
+            "id": "n_scale",
+            "text": "The maximum input size makes a quadratic number of pair checks infeasible."
+          }
+        ],
+        "acceptedOptionIds": [
+          "n_scale"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The maximum input size is the relevant scaling signal. At 200,000 elements, quadratic enumeration implies tens of billions of pair checks.",
+        "details": "Constraints become useful only after they are translated into an approximate operation budget. For n = 200,000, O(n²) work is about 40 billion pair interactions, while O(n log n) and expected O(n) candidates remain in a plausible range. The numeric type does not erase the number of operations, and examples do not replace worst-case constraints. The transfer rule is to convert maximum sizes, query counts, and update counts into the dominant number of primitive operations before generating or ranking approaches.",
+        "wrongOptionExplanationsByOptionId": {
+          "integer_type": "Constant-time arithmetic affects the cost of one operation, not how many operations execute. It would become decisive only if numeric width, big-integer arithmetic, or overflow changed the per-operation model.",
+          "single_test": "Examples illustrate behaviour but do not bound production input. A single-test assumption would be valid only if the contract explicitly guaranteed one small fixed instance."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-online-arrival",
+      "prompt": "Readings arrive one at a time, cannot be replayed, and the program must emit whether a duplicate has appeared after each arrival. Which signal must be extracted before proposing a strategy?",
+      "constraints": [
+        "Readings arrive incrementally.",
+        "Past input cannot be replayed.",
+        "An answer is required after every arrival."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "online_incremental",
+            "text": "The task is online: state must support incremental updates and answers without revisiting future data."
+          },
+          {
+            "id": "fixed_window",
+            "text": "One-at-a-time arrival implies a fixed-size sliding window."
+          },
+          {
+            "id": "eventual_sort",
+            "text": "The readings are numeric, so they can always be sorted after all input arrives."
+          }
+        ],
+        "acceptedOptionIds": [
+          "online_incremental"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The input and output are online. A legal strategy must update retained state and answer each prefix before future readings are known.",
+        "details": "Offline preprocessing assumes the complete dataset is available before answers are required. That assumption fails here: every prefix has an observable answer, and the stream cannot be replayed. A retained membership structure is a plausible later candidate because it supports incremental queries, while sorting only after the stream ends misses the required answer times. Streaming does not imply a window unless old data expires under an explicit horizon. The transfer rule is to extract when data becomes available and when answers are due; those timing contracts can rule out otherwise efficient offline strategies.",
+        "wrongOptionExplanationsByOptionId": {
+          "eventual_sort": "Sorting after the final reading may answer one offline duplicate query, but it cannot produce the required answer after each arrival. It becomes legal only when all answers are deferred until the complete input is available.",
+          "fixed_window": "Streaming and windowing are different constraints. A fixed window becomes relevant only when the contract limits the answer to the most recent k readings or explicitly expires old state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-negative-values-boundary",
+      "prompt": "A task asks for the shortest contiguous subarray whose sum is at least T, and array values may be negative. Which value-domain signal must be recorded explicitly?",
+      "constraints": [
+        "The selected segment must be contiguous.",
+        "Values may be negative.",
+        "The target T may be positive."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "negatives_allowed",
+            "text": "Negative values are allowed, so extending or shrinking a window need not change the sum monotonically."
+          },
+          {
+            "id": "array_contiguous",
+            "text": "The input is contiguous in memory, so window validity is automatically monotone."
+          },
+          {
+            "id": "target_positive",
+            "text": "T is positive, so every useful window sum increases when the right boundary moves."
+          }
+        ],
+        "acceptedOptionIds": [
+          "negatives_allowed"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Allowing negative values destroys the simple monotonic relationship between window movement and sum. That is a legality signal, not a minor edge case.",
+        "details": "For nonnegative values, extending a window cannot decrease its sum and removing a leftmost value cannot increase it; those facts support a standard variable-window repair rule. With negative values, either movement may change the sum in the opposite direction, so the same local movement rule can skip the optimum. The target being positive does not restore monotonicity, and memory contiguity is unrelated to the mathematical invariant. The transfer rule is to extract sign, duplicates, bounded ranges, and ordering guarantees whenever a candidate relies on monotone progress.",
+        "wrongOptionExplanationsByOptionId": {
+          "target_positive": "A positive threshold does not constrain individual values. The claim becomes valid only when the input values are also nonnegative or another invariant guarantees monotone window sums.",
+          "array_contiguous": "Physical or logical contiguity identifies the output shape, not monotonicity of the aggregate. It would matter for locality costs, but it cannot justify a movement rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-contiguity-vs-subsequence",
+      "prompt": "A problem asks for the maximum-sum block of consecutive entries, not an arbitrary subset or subsequence. Which structural signal should be written into the decision contract?",
+      "constraints": [
+        "The answer is one block of consecutive entries.",
+        "Original order defines the block.",
+        "The problem asks for a structural signal."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "maximum_word",
+            "text": "The word maximum implies binary search on the answer."
+          },
+          {
+            "id": "contiguous_segment",
+            "text": "The chosen elements must form one contiguous segment in original order."
+          },
+          {
+            "id": "numeric_values",
+            "text": "The entries are numeric, so sorting is always legal."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contiguous_segment"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Contiguity is the decisive structural requirement. It limits legal states and distinguishes window or prefix-based reasoning from arbitrary selection.",
+        "details": "A contiguous segment is defined by boundaries in the original sequence; reordering destroys that object even if the same values remain. A subsequence preserves order but may skip elements, while a subset may ignore order entirely. The presence of numeric values or an optimization word does not determine a pattern without a supporting invariant. The transfer rule is to classify whether the answer concerns a prefix, suffix, interval, subsequence, subset, pair, or global ordering before considering mechanisms.",
+        "wrongOptionExplanationsByOptionId": {
+          "numeric_values": "Sorting changes which elements are consecutive, so it can violate the output object. It becomes legal only if the task is order-insensitive or if original positions are retained and the proof accounts for them.",
+          "maximum_word": "Optimization does not imply binary search. Binary search on an answer requires a monotonic feasibility predicate over an ordered answer domain, which is not supplied by the word maximum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-signal-extraction-sequence",
+      "prompt": "Order the analysis steps so that strategy candidates receive a complete decision contract rather than guessed assumptions.",
+      "constraints": [
+        "All material assumptions must be explicit before candidate generation.",
+        "The step order is scored by preserved adjacent relations.",
+        "No final strategy is chosen in this workflow."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "output",
+            "text": "State the exact output object and required witness or ordering."
+          },
+          {
+            "id": "structure",
+            "text": "Record structural, mutation, arrival, and value-domain constraints."
+          },
+          {
+            "id": "scale",
+            "text": "Quantify input size, query volume, update volume, and resource limits."
+          },
+          {
+            "id": "handoff",
+            "text": "Hand the normalized signals to candidate generation without choosing a strategy yet."
+          }
+        ],
+        "canonicalOrder": [
+          "output",
+          "structure",
+          "scale",
+          "handoff"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The output contract anchors what must be preserved, constraints define legality, and scale defines feasibility. Candidate generation should consume those signals rather than invent them.",
+        "details": "Starting with a favoured algorithm can cause the analyst to reinterpret the prompt around that algorithm. A safer sequence first fixes the answer semantics, then records properties that constrain legal transformations and invariants, then translates sizes and operation counts into resource budgets. Only after those facts are explicit should another mental unit generate candidates. Adjacent-relation scoring reflects the dependencies: constraints refine a known output, scale evaluates work over a known operation model, and the handoff occurs only after both are available. The transfer rule is to preserve this ordering whenever a new domain tempts you to choose a familiar mechanism before its answer and workload contracts are explicit."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [
+      {
+        "blueprintId": "strategy-selection-core-learn-approach-v1",
+        "blueprintVersion": "v1",
+        "modeId": "algorithms-learn-approach",
+        "requestedLengths": [
+          10
+        ],
+        "defaultRequestedLength": 10,
+        "shortening": "allowed",
+        "minimumActualLength": 5,
+        "composition": {
+          "kind": "item_ids",
+          "ids": [
+            "ssc-extract-boolean-vs-witness",
+            "ssc-extract-preserve-indices-and-input",
+            "ssc-extract-scale-to-operation-budget",
+            "ssc-extract-online-arrival",
+            "ssc-extract-negative-values-boundary",
+            "ssc-extract-contiguity-vs-subsequence",
+            "ssc-extract-signal-extraction-sequence",
+            "ssc-generate-range-query-candidate-set",
+            "ssc-generate-reference-baseline",
+            "ssc-generate-pair-sum-mechanisms",
+            "ssc-generate-read-only-candidate-adaptation",
+            "ssc-generate-online-offline-alternatives",
+            "ssc-generate-candidate-generation-workflow",
+            "ssc-reject-binary-search-without-half-discard",
+            "ssc-reject-window-with-negative-values",
+            "ssc-reject-two-pointers-without-order",
+            "ssc-reject-prefix-minimum-subtraction",
+            "ssc-reject-hash-iteration-order",
+            "ssc-reject-monotonic-stack-output-lower-bound",
+            "ssc-reject-cross-family-legality-audit",
+            "ssc-compare-static-prefix-total-cost",
+            "ssc-compare-single-query-scan-vs-sort",
+            "ssc-compare-memory-cap-overrides-time",
+            "ssc-compare-copy-and-preservation-cost",
+            "ssc-compare-output-sensitive-lower-bound",
+            "ssc-compare-prefix-rebuild-with-updates",
+            "ssc-compare-expected-vs-worst-case",
+            "ssc-queries-single-range-sum",
+            "ssc-queries-many-static-range-sums",
+            "ssc-queries-repeated-membership",
+            "ssc-queries-online-queries-after-build",
+            "ssc-queries-updates-break-reuse",
+            "ssc-queries-preprocessing-break-even-conditions",
+            "ssc-correctness-proven-slower-over-broken-faster",
+            "ssc-correctness-preserve-original-indices",
+            "ssc-correctness-safe-optimization-sequence",
+            "ssc-correctness-proven-nlogn-vs-speculative-linear",
+            "ssc-correctness-numeric-width-correctness",
+            "ssc-correctness-differential-evidence-before-replacement",
+            "ssc-justify-complete-evidence-chain",
+            "ssc-justify-hash-membership-justification",
+            "ssc-justify-two-pointer-movement-proof",
+            "ssc-justify-prefix-range-formula",
+            "ssc-justify-binary-search-answer-proof",
+            "ssc-justify-justification-sequence",
+            "ssc-transfer-ledger-interval-totals",
+            "ssc-transfer-badge-stream-duplicate",
+            "ssc-transfer-minimum-machine-speed",
+            "ssc-transfer-advertising-budget-window",
+            "ssc-transfer-next-taller-building",
+            "ssc-transfer-sorted-shipment-pair",
+            "ssc-transfer-range-keyword-nontransfer"
+          ]
+        }
+      }
+    ],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

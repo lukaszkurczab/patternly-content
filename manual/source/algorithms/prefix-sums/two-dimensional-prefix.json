@@ -1,0 +1,481 @@
+{
+  "schemaVersion": "algorithms-manual-source-v2",
+  "batchId": "algorithms-prefix-sums-two-dimensional-prefix-v1",
+  "trackId": "algorithms",
+  "familyId": "algorithms",
+  "contentVersion": "algorithms-prefix-sums-candidate-2026-07-18-v1",
+  "taxonomyVersion": "algorithms-taxonomy-v2",
+  "declaredModes": [
+    "algorithms-learn-approach"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "prefix_sums",
+    "primaryMentalUnitId": "two_dimensional_prefix",
+    "patternFamilyId": "prefix_sums"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring)",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "algorithms-prefix-sums-two-dimensional-prefix-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-prefix-2d-static-rectangle-signal",
+      "prompt": "An immutable R × C matrix must answer many axis-aligned rectangle-sum queries. Which state most directly supports constant-time queries after preprocessing?",
+      "constraints": [
+        "Rectangle boundaries may arrive in arbitrary order.",
+        "No matrix cell is updated after preprocessing."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "padded_2d_prefix",
+            "text": "A padded 2D prefix P where P[r][c] stores the sum of rows [0, r) and columns [0, c)."
+          },
+          {
+            "id": "one_row_window",
+            "text": "One moving sum for the current row only."
+          },
+          {
+            "id": "sorted_cells",
+            "text": "All matrix values sorted into a one-dimensional list."
+          },
+          {
+            "id": "row_minima",
+            "text": "One minimum value per row."
+          }
+        ],
+        "acceptedOptionIds": [
+          "padded_2d_prefix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A rectangle is bounded independently on two axes, so reusable cumulative state must summarize every row-column boundary pair.",
+        "details": "A 2D prefix stores the sum of each top-left half-open rectangle. Any query rectangle is then isolated by inclusion-exclusion of four stored states. One row window, sorted cells, or row minima loses either column boundaries, original geometry, or additive information.",
+        "wrongOptionExplanationsByOptionId": {
+          "one_row_window": "A row-only window cannot isolate arbitrary vertical boundaries or combine many rows in constant time.",
+          "sorted_cells": "Sorting destroys cell coordinates, so a rectangle no longer corresponds to a contiguous geometric region.",
+          "row_minima": "Per-row minima are neither additive nor sufficient to reconstruct a rectangle sum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-state-invariant",
+      "prompt": "Under the padded convention, what must P[r][c] mean for the standard four-term rectangle formula to be valid?",
+      "constraints": [
+        "P has dimensions (R + 1) × (C + 1).",
+        "Row 0 and column 0 are zero sentinels."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "top_left_half_open_sum",
+            "text": "The sum of matrix cells with row < r and column < c."
+          },
+          {
+            "id": "single_cell_value",
+            "text": "Only the value at matrix cell (r, c)."
+          },
+          {
+            "id": "current_rectangle_window",
+            "text": "The sum of whichever rectangle was queried most recently."
+          },
+          {
+            "id": "sorted_rank_sum",
+            "text": "The sum of the r × c smallest matrix values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "top_left_half_open_sum"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each prefix state must own a fixed top-left half-open rectangle so overlapping regions can be added and removed consistently.",
+        "details": "P[r][c] covers rows [0, r) and columns [0, c). This stable geometric invariant lets the query use one bottom-right prefix, subtract two outside strips, and add back their double-subtracted overlap. A dynamic current rectangle or sorted rank has no fixed spatial ownership for inclusion-exclusion.",
+        "wrongOptionExplanationsByOptionId": {
+          "single_cell_value": "One cell does not summarize the top-left region, so four such values cannot reconstruct an arbitrary rectangle sum.",
+          "current_rectangle_window": "A current rectangle changes meaning between queries and provides no reusable state at all boundary pairs.",
+          "sorted_rank_sum": "Value rank ignores coordinates. Inclusion-exclusion requires geometric containment, not sorted magnitude."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-inclusion-exclusion-order",
+      "prompt": "Order the conceptual inclusion-exclusion operations for the inclusive rectangle with corners (r1, c1) and (r2, c2), using padded P.",
+      "constraints": [
+        "P[r][c] sums rows [0, r) and columns [0, c).",
+        "Score is based on preserved adjacent relations."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "take_bottom_right",
+            "text": "Start with P[r2 + 1][c2 + 1], the top-left region through the query’s bottom-right cell."
+          },
+          {
+            "id": "subtract_top_strip",
+            "text": "Subtract P[r1][c2 + 1], the rows above the query."
+          },
+          {
+            "id": "subtract_left_strip",
+            "text": "Subtract P[r2 + 1][c1], the columns left of the query."
+          },
+          {
+            "id": "add_overlap",
+            "text": "Add P[r1][c1], the top-left overlap subtracted twice."
+          },
+          {
+            "id": "interpret_rectangle",
+            "text": "Interpret the remaining contribution as exactly the requested rectangle."
+          }
+        ],
+        "canonicalOrder": [
+          "take_bottom_right",
+          "subtract_top_strip",
+          "subtract_left_strip",
+          "add_overlap",
+          "interpret_rectangle"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "The two outside strips are removed independently, and their shared overlap must be restored once.",
+        "details": "The bottom-right prefix includes the target plus cells above and left of it. Subtracting the top and left prefixes removes those outside regions, but the top-left corner lies in both and is removed twice. Adding P[r1][c1] restores that overlap, completing inclusion-exclusion."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-full-boundary-formula",
+      "prompt": "Which formula returns the inclusive rectangle (r1, c1) through (r2, c2) under the padded half-open prefix convention?",
+      "constraints": [
+        "0 <= r1 <= r2 < R and 0 <= c1 <= c2 < C.",
+        "P has a zero sentinel row and column."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "four_term_padded",
+            "text": "P[r2 + 1][c2 + 1] - P[r1][c2 + 1] - P[r2 + 1][c1] + P[r1][c1]"
+          },
+          {
+            "id": "omit_overlap_add",
+            "text": "P[r2 + 1][c2 + 1] - P[r1][c2 + 1] - P[r2 + 1][c1]"
+          },
+          {
+            "id": "use_data_indices_directly",
+            "text": "P[r2][c2] - P[r1][c2] - P[r2][c1] + P[r1][c1]"
+          },
+          {
+            "id": "two_term_diagonal",
+            "text": "P[r2 + 1][c2 + 1] - P[r1][c1]"
+          }
+        ],
+        "acceptedOptionIds": [
+          "four_term_padded"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The padded boundaries convert both inclusive lower-right coordinates to +1 and inclusion-exclusion restores the doubly removed top-left overlap.",
+        "details": "The first term includes the rectangle plus outside top and left regions. The next two remove those strips, and the last adds back their overlap. Omitting +1 excludes the bottom row or right column, while using only two diagonal prefixes cannot remove the L-shaped outside area.",
+        "wrongOptionExplanationsByOptionId": {
+          "omit_overlap_add": "The top-left outside region belongs to both subtracted strips, so it would be removed twice without the compensating addition.",
+          "use_data_indices_directly": "P uses exclusive boundaries. Direct data indices stop before r2 and c2, excluding requested cells.",
+          "two_term_diagonal": "Subtracting one top-left prefix removes only a rectangle, not the separate top and left strips contained in the bottom-right prefix."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-arbitrary-rectangles-vs-window",
+      "prompt": "Why is one moving rectangular window not equivalent to a 2D prefix for arbitrary rectangle queries?",
+      "constraints": [
+        "Queries can jump between unrelated row and column boundaries.",
+        "The matrix is immutable."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "four_boundary_random_access",
+            "text": "A 2D prefix answers from four stored boundary states independent of the previous query, while moving a rectangle may cross many rows and columns."
+          },
+          {
+            "id": "rectangles_cannot_move",
+            "text": "A window rectangle is mathematically forbidden from changing size."
+          },
+          {
+            "id": "prefix_values_sorted",
+            "text": "The 2D prefix is useful because all prefix entries are sorted."
+          },
+          {
+            "id": "prefix_no_memory",
+            "text": "The 2D prefix stores no state, unlike a window."
+          }
+        ],
+        "acceptedOptionIds": [
+          "four_boundary_random_access"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix queries are stateless random access over precomputed geometry; a moving rectangle’s update cost depends on how its prior boundaries change.",
+        "details": "Four reads and fixed arithmetic isolate any rectangle, regardless of query order. A moving rectangular window can be efficient for a controlled sweep of fixed shape, but arbitrary jumps can require updating many entering and leaving cells. The prefix gains predictable O(1) queries by storing O(RC) cumulative state.",
+        "wrongOptionExplanationsByOptionId": {
+          "rectangles_cannot_move": "Moving windows can change position and sometimes size. The issue is the cost and invariant of those updates, not a mathematical prohibition.",
+          "prefix_values_sorted": "Negative cells can make prefix values non-monotonic. Sortedness is unrelated to inclusion-exclusion.",
+          "prefix_no_memory": "A padded 2D prefix stores (R + 1)(C + 1) entries, which is O(RC) extra space."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-sorting-destroys-coordinates",
+      "prompt": "Why must matrix cells remain in their original coordinates when building a 2D prefix for rectangle queries?",
+      "constraints": [
+        "Queries identify rectangles by row and column indices.",
+        "Cell values may be in any order and may be negative."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "geometry_must_be_preserved",
+            "text": "The prefix summarizes geometric top-left regions, so sorting cells would change rectangle membership."
+          },
+          {
+            "id": "addition_needs_sorted_rows",
+            "text": "Row sums are valid only when each row is sorted."
+          },
+          {
+            "id": "negative_cells_forbidden",
+            "text": "A 2D prefix cannot contain negative intermediate sums."
+          },
+          {
+            "id": "columns_must_be_monotonic",
+            "text": "Inclusion-exclusion requires every column to be nondecreasing."
+          }
+        ],
+        "acceptedOptionIds": [
+          "geometry_must_be_preserved"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "2D prefix correctness is spatial, not order-statistical: every state is tied to fixed coordinates.",
+        "details": "Addition and inclusion-exclusion work for arbitrary signs and value order. What cannot change is which cell lies inside each top-left region and each query rectangle. Sorting rows, columns, or all cells would answer a different geometric problem.",
+        "wrongOptionExplanationsByOptionId": {
+          "addition_needs_sorted_rows": "Addition has no sorted-row precondition. The recurrence uses neighboring cumulative regions regardless of value order.",
+          "negative_cells_forbidden": "Prefix entries may be negative. Inclusion-exclusion remains an exact algebraic identity.",
+          "columns_must_be_monotonic": "Monotonic columns are irrelevant. The formula relies on containment and cancellation of regions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-complexity",
+      "prompt": "Select preprocessing time, one-query time, and extra space for a separate padded 2D prefix over an R × C matrix.",
+      "constraints": [
+        "Each prefix entry is computed in O(1) from neighboring states and one cell.",
+        "A query reads four prefix entries.",
+        "The input matrix is not counted as extra space."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "preprocessing_time",
+          "query_time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "preprocessing_time": [
+            "O(R + C)",
+            "O(RC)",
+            "O(RC log(RC))",
+            "O(R^2 C^2)"
+          ],
+          "query_time": [
+            "O(1)",
+            "O(log R + log C)",
+            "O(R + C)",
+            "O(RC)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(R + C)",
+            "O(RC)",
+            "O(R^2 C^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "preprocessing_time": [
+            "O(RC)"
+          ],
+          "query_time": [
+            "O(1)"
+          ],
+          "extra_space": [
+            "O(RC)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 3
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Every cell contributes to one prefix entry, each query uses four states, and the padded table stores one state per row-column boundary pair.",
+        "details": "The (R + 1) × (C + 1) table is built in O(RC) time and occupies O(RC) extra space. Inclusion-exclusion performs a fixed number of reads and arithmetic operations, so each query is O(1). The constant query time is purchased with a full 2D auxiliary structure; it is not a zero-space prefix method."
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-transfer-indicator-regions",
+      "prompt": "Which requirement transfers directly to the same 2D prefix mechanism after changing each cell’s contribution?",
+      "constraints": [
+        "The matrix is immutable.",
+        "Queries ask about arbitrary axis-aligned rectangles."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "count_obstacles",
+            "text": "Count obstacle cells in each rectangle by prefixing 1 for an obstacle and 0 otherwise."
+          },
+          {
+            "id": "rectangle_median",
+            "text": "Find the median cell value by subtracting four scalar prefix sums."
+          },
+          {
+            "id": "online_cell_updates",
+            "text": "Change cells online while keeping an unchanged static 2D prefix."
+          },
+          {
+            "id": "largest_valid_rectangle",
+            "text": "Find the largest rectangle satisfying a constraint using one four-term query only."
+          }
+        ],
+        "acceptedOptionIds": [
+          "count_obstacles"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A 0/1 cell contribution remains additive over rectangles, so the same four-term inclusion-exclusion isolates the count.",
+        "details": "The geometry and boundary formula stay unchanged; only the per-cell contribution becomes an indicator. A scalar sum does not encode a median, online updates stale many prefix entries, and optimizing over all possible rectangles requires a search or different invariant beyond one region query.",
+        "wrongOptionExplanationsByOptionId": {
+          "rectangle_median": "Four scalar sums retain only total magnitude, not the distribution needed for a median.",
+          "online_cell_updates": "Changing one cell affects every prefix region below and to its right. A static table cannot remain correct without updates or a dynamic structure.",
+          "largest_valid_rectangle": "A four-term query evaluates one supplied rectangle. It does not choose the best rectangle among many candidates."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    }
+  ],
+  "modeStructures": {
+    "practiceBlueprints": [],
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

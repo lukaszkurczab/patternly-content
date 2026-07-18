@@ -56,10 +56,17 @@ async function sourceCommit(root, override) {
   if (override) return text(override, "sourceRepositoryCommit");
   try { return (await git(root, ["rev-parse", "HEAD"])).stdout.trim(); } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "A buildable source repository must have a current Git commit."); }
 }
+async function technicalInputCommit(root, override) {
+  if (override) return sourceCommit(root, override);
+  try {
+    const { stdout } = await git(root, ["log", "-1", "--format=%H", "--", "manual/source", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json"]);
+    return text(stdout.trim(), "technicalInputCommit", "SOURCE_COMMIT_UNAVAILABLE");
+  } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "A buildable source repository must have a technical input commit."); }
+}
 async function assertCleanSource(root, override) {
   if (override) return sourceCommit(root, override); // Test-only injected identity; CLI never supplies it.
   const commit = await sourceCommit(root);
-  const { stdout } = await git(root, ["status", "--porcelain", "--untracked-files=all", "--", "manual", "config", "schemas/publishing", "scripts/publishing", "reports/technical-evidence"]);
+  const { stdout } = await git(root, ["status", "--porcelain", "--untracked-files=all", "--", "manual", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json", "evidence"]);
   if (stdout.trim()) throw new PublishingFailure("DIRTY_SOURCE", "Canonical publishing inputs contain staged, unstaged, or untracked changes.");
   return commit;
 }
@@ -380,15 +387,76 @@ export async function inspectTrack({ root = ROOT, trackId, sourceRepositoryCommi
   const source = track.familyId === "algorithms" ? validateAlgorithmsSource(batches, track, family, taxonomy, technicalInputFingerprint, commit) : validateCertificationSource(batches, track, family, technicalInputFingerprint, commit);
   return { track, family, taxonomy, source, sourceRepositoryCommit: commit };
 }
-async function technicalEvidenceRecords(root, trackId) { const base = join(root, "reports", "technical-evidence", trackId); const paths = (await files(base)).filter((path) => path.endsWith(".json")).sort(compare); const records = []; for (const path of paths) { const value = await json(path); records.push(...(Array.isArray(value) ? value : [value])); } return records; }
+const DURABLE_EVIDENCE_SCHEMA_VERSION = 1;
+const DURABLE_EVIDENCE_GENERATOR_VERSION = "algorithms-release-evidence-v1";
+function durableIdentity(value) { const { generatedAt, evidenceSha256, ...identity } = value; return identity; }
+function durableEvidence(value) { return { ...value, evidenceSha256: canonicalHash(durableIdentity(value)) }; }
+async function sourceManifestSha256(root, trackId) {
+  const paths = ["manual/source", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json"];
+  const entries = [];
+  for (const path of paths) {
+    const target = join(root, path);
+    try {
+      const info = await stat(target);
+      if (info.isDirectory()) for (const child of await files(target)) entries.push([relative(root, child), hash(await readFile(child))]);
+      else entries.push([path, hash(await readFile(target))]);
+    } catch (error) { if (error?.code !== "ENOENT") throw error; }
+  }
+  return canonicalHash({ trackId, files: entries.sort(([a], [b]) => compare(a, b)) });
+}
+function simulationCoverage(inspected) {
+  const pools = inspected.source.modeStructures.simulationPools; const profiles = inspected.source.modeStructures.simulationProfiles;
+  if (pools.length !== 1 || profiles.length !== 1) throw new PublishingFailure("INVALID_SIMULATION_EVIDENCE", "Algorithms release evidence requires exactly one simulation pool and profile.");
+  const [pool] = pools; const [profile] = profiles;
+  if (profile.poolId !== pool.poolId) throw new PublishingFailure("INVALID_SIMULATION_EVIDENCE", "Simulation profile must reference the covered pool.");
+  const byId = new Map(inspected.source.items.map((item) => [item.id, item])); const itemIds = [...pool.itemIds].sort(compare); const selected = itemIds.map((id) => byId.get(id));
+  if (selected.some((item) => !item)) throw new PublishingFailure("INVALID_SIMULATION_EVIDENCE", "Simulation pool references an unavailable item.");
+  const coverage = (project) => [...new Set(selected.map(project).filter((value) => value !== undefined && value !== null))].sort(compare);
+  return {
+    profileId: profile.profileId, profileVersion: profile.profileVersion, poolId: pool.poolId, poolSha256: canonicalHash(pool), itemCount: itemIds.length, uniqueItemCount: new Set(itemIds).size, itemIds,
+    roadmapNodeCoverage: coverage((item) => item.resolvedTaxonomy.roadmapNodeId), mentalUnitCoverage: coverage((item) => item.resolvedTaxonomy.primaryMentalUnitId), patternFamilyCoverage: coverage((item) => item.resolvedTaxonomy.patternFamilyId), patternVariantCoverage: coverage((item) => item.resolvedTaxonomy.patternVariantId), problemArchetypeCoverage: coverage((item) => item.resolvedTaxonomy.problemArchetypeId), primarySkillAtomCoverage: coverage((item) => item.resolvedTaxonomy.primarySkillAtomId), interactionTypeCoverage: coverage((item) => item.interactionType), learningStageCoverage: coverage((item) => item.resolvedTaxonomy.learningStage), coveragePolicyVersion: "algorithms-simulation-coverage-v1"
+  };
+}
+function durableEnvelope({ evidenceKind, inspected, sourceCommit: sourceCommitValue, inputManifestSha256, payload }) {
+  return durableEvidence({ schemaVersion: DURABLE_EVIDENCE_SCHEMA_VERSION, evidenceKind, familyId: inspected.family.familyId, trackId: inspected.track.trackId, sourceCommit: sourceCommitValue, technicalInputCommit: sourceCommitValue, contentVersion: inspected.source.contentVersion, taxonomyVersion: inspected.source.taxonomyVersion, generatedAt: new Date().toISOString(), generatorVersion: DURABLE_EVIDENCE_GENERATOR_VERSION, inputManifestSha256, ...payload });
+}
+async function readDurableEvidence(path, expected) {
+  let prior;
+  try { prior = await json(path); } catch (error) { if (error?.code === "ENOENT") return undefined; throw error; }
+  if (prior.evidenceSha256 !== canonicalHash(durableIdentity(prior)) || (expected && canonicalJson(durableIdentity(prior)) !== canonicalJson(durableIdentity(expected)))) throw new PublishingFailure("IMMUTABLE_EVIDENCE", `Durable evidence differs from its canonical identity: ${path}`);
+  return prior;
+}
+async function technicalEvidenceRecords(root, trackId, technicalCommit) {
+  const path = join(root, "evidence", trackId, "technical", `${technicalCommit}.json`); const envelope = await readDurableEvidence(path);
+  if (!envelope) return { path, envelope: undefined, records: [] };
+  if (envelope.evidenceKind !== "technical-validation" || !Array.isArray(envelope.technicalEvidence)) throw new PublishingFailure("INVALID_DURABLE_EVIDENCE", "Technical durable evidence has an invalid shape.");
+  return { path, envelope, records: envelope.technicalEvidence };
+}
+async function retainedTechnicalEvidenceRecords(root, trackId) {
+  const base = join(root, "evidence", trackId, "technical"); const paths = (await files(base)).filter((path) => path.endsWith(".json")).sort(compare); const records = [];
+  for (const path of paths) { const envelope = await readDurableEvidence(path); if (envelope?.evidenceKind === "technical-validation" && Array.isArray(envelope.technicalEvidence)) records.push(...envelope.technicalEvidence); }
+  return records;
+}
 function evidenceIdentity(value) { if (Array.isArray(value)) return value.map(evidenceIdentity); const { validatedAtSourceCommit, evidenceId, ...identity } = value; return identity; }
-export async function emitTechnicalEvidence({ root = ROOT, trackId, sourceRepositoryCommit }) { const cleanCommit = await assertCleanSource(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: cleanCommit }); const payload = inspected.source.technicalEvidence; const path = join(root, "reports", "technical-evidence", trackId, `${canonicalHash(payload.map((entry) => entry.evidenceId))}.json`); try { const prior = JSON.parse(await readFile(path, "utf8")); if (canonicalJson(evidenceIdentity(prior)) !== canonicalJson(evidenceIdentity(payload))) throw new PublishingFailure("IMMUTABLE_EVIDENCE", "Technical evidence identity already exists with different bytes."); return { evidence: prior, path, technicalInputFingerprint: inspected.source.technicalInputFingerprint }; } catch (error) { if (error?.code !== "ENOENT") throw error; await mkdir(dirname(path), { recursive: true }); await writeFile(path, canonicalJson(payload)); } return { evidence: payload, path, technicalInputFingerprint: inspected.source.technicalInputFingerprint }; }
+export async function emitTechnicalEvidence({ root = ROOT, trackId, sourceRepositoryCommit }) {
+  await assertCleanSource(root, sourceRepositoryCommit); const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId);
+  const technical = durableEnvelope({ evidenceKind: "technical-validation", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: { technicalEvidence: inspected.source.technicalEvidence } });
+  const coverage = inspected.family.familyId === "algorithms" ? durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) }) : undefined;
+  const technicalPath = join(root, "evidence", trackId, "technical", `${technicalCommit}.json`); const coveragePath = coverage && join(root, "evidence", trackId, "simulation", `${coverage.profileId}.coverage.json`);
+  const priorTechnical = await readDurableEvidence(technicalPath, technical); const priorCoverage = coverage && await readDurableEvidence(coveragePath);
+  if (!priorTechnical) { await mkdir(dirname(technicalPath), { recursive: true }); await writeFile(technicalPath, canonicalJson(technical)); }
+  if (coverage && (!priorCoverage || canonicalJson(durableIdentity(priorCoverage)) !== canonicalJson(durableIdentity(coverage)))) { await mkdir(dirname(coveragePath), { recursive: true }); await writeFile(coveragePath, canonicalJson(coverage)); }
+  const resolvedCoverage = coverage && (priorCoverage && canonicalJson(durableIdentity(priorCoverage)) === canonicalJson(durableIdentity(coverage)) ? priorCoverage : coverage);
+  return { evidence: (priorTechnical ?? technical).technicalEvidence, path: technicalPath, coveragePath, technicalEvidenceSha256: (priorTechnical ?? technical).evidenceSha256, coverageSha256: resolvedCoverage?.evidenceSha256, technicalInputFingerprint: inspected.source.technicalInputFingerprint, technicalInputCommit: technicalCommit };
+}
 export async function validateTrack({ root = ROOT, trackId, sourceRepositoryCommit }) {
-  const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit }); const [evidenceSchema, approvalSchema, activationSchema] = await Promise.all([json(join(root, "schemas", "publishing", "technical-validation-evidence.schema.json")), json(join(root, "schemas", "publishing", "editorial-approval-record.schema.json")), json(join(root, "schemas", "publishing", "content-activation-record.schema.json"))]); const evidence = await technicalEvidenceRecords(root, trackId); evidence.forEach((entry, index) => validateJsonSchema(entry, evidenceSchema, `technical evidence ${index}`)); const expectedEvidence = new Map(inspected.source.technicalEvidence.map((entry) => [entry.evidenceId, entry])); const currentEvidence = evidence.filter((entry) => entry.result === "passed" && entry.technicalInputFingerprint === inspected.source.technicalInputFingerprint && expectedEvidence.has(entry.evidenceId) && canonicalJson(evidenceIdentity(entry)) === canonicalJson(evidenceIdentity(expectedEvidence.get(entry.evidenceId)))); if (currentEvidence.length !== expectedEvidence.size) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching immutable passed technical evidence."); const approvalRecords = (await discoverRecords(root, "approvals", trackId)).map(({ value }) => value); approvalRecords.forEach((entry, index) => validateJsonSchema(entry, approvalSchema, `editorial approval ${index}`)); const activationRecords = (await discoverRecords(root, "activations", trackId)).map(({ value }) => value); activationRecords.forEach((entry, index) => validateJsonSchema(entry, activationSchema, `activation record ${index}`)); const approvals = validateApprovals(approvalRecords, inspected, evidence); const approvalCoverage = validateActivation(activationRecords, inspected, approvals); return { ...inspected, approvalCoverage };
+  const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId); const [evidenceSchema, approvalSchema, activationSchema] = await Promise.all([json(join(root, "schemas", "publishing", "technical-validation-evidence.schema.json")), json(join(root, "schemas", "publishing", "editorial-approval-record.schema.json")), json(join(root, "schemas", "publishing", "content-activation-record.schema.json"))]); const technical = await technicalEvidenceRecords(root, trackId, technicalCommit); if (!technical.envelope || technical.envelope.familyId !== inspected.family.familyId || technical.envelope.contentVersion !== inspected.source.contentVersion || technical.envelope.taxonomyVersion !== inspected.source.taxonomyVersion || technical.envelope.inputManifestSha256 !== inputManifestSha256 || technical.envelope.sourceCommit !== technicalCommit || technical.envelope.technicalInputCommit !== technicalCommit) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching tracked durable technical evidence."); const evidence = technical.records; evidence.forEach((entry, index) => validateJsonSchema(entry, evidenceSchema, `technical evidence ${index}`)); const expectedEvidence = new Map(inspected.source.technicalEvidence.map((entry) => [entry.evidenceId, entry])); const currentEvidence = evidence.filter((entry) => entry.result === "passed" && entry.technicalInputFingerprint === inspected.source.technicalInputFingerprint && expectedEvidence.has(entry.evidenceId) && canonicalJson(evidenceIdentity(entry)) === canonicalJson(evidenceIdentity(expectedEvidence.get(entry.evidenceId)))); if (currentEvidence.length !== expectedEvidence.size) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching immutable passed technical evidence.");
+  if (inspected.family.familyId === "algorithms") { const expectedCoverage = durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) }); const coveragePath = join(root, "evidence", trackId, "simulation", `${expectedCoverage.profileId}.coverage.json`); const coverage = await readDurableEvidence(coveragePath, expectedCoverage); if (!coverage) throw new PublishingFailure("MISSING_SIMULATION_COVERAGE", "Current simulation pool needs matching tracked durable coverage evidence."); }
+  const approvalRecords = (await discoverRecords(root, "approvals", trackId)).map(({ value }) => value); approvalRecords.forEach((entry, index) => validateJsonSchema(entry, approvalSchema, `editorial approval ${index}`)); const activationRecords = (await discoverRecords(root, "activations", trackId)).map(({ value }) => value); activationRecords.forEach((entry, index) => validateJsonSchema(entry, activationSchema, `activation record ${index}`)); const approvals = validateApprovals(approvalRecords, inspected, await retainedTechnicalEvidenceRecords(root, trackId)); const approvalCoverage = validateActivation(activationRecords, inspected, approvals); return { ...inspected, approvalCoverage };
 }
 function bankFor(validated) { if (validated.track.familyId !== "algorithms") return { formatVersion: 1, trackId: validated.track.trackId, familyId: validated.track.familyId, contentVersion: validated.source.contentVersion, items: validated.source.items }; const modes = compileModeDeclarations(validated.source.modeStructures); return Object.freeze({ formatVersion: 1, trackId: "algorithms", familyId: "algorithms", contentVersion: validated.source.contentVersion, items: Object.freeze(validated.source.items.map((item) => compilePublishedAlgorithmsItem(item, item.compatibilityMemberships, item.itemFingerprint))), ...modes, approvalActivationIdentity: validated.approvalCoverage.identity }); }
 export async function buildTrack({ root = ROOT, trackId, outputRoot = join(ROOT, "artifacts"), sourceRepositoryCommit }) {
-  const cleanCommit = await assertCleanSource(root, sourceRepositoryCommit); const validated = await validateTrack({ root, trackId, sourceRepositoryCommit: cleanCommit }); const bank = bankFor(validated); const artifactBytes = canonicalJson({ envelopeVersion: 1, schemaVersion: "published-bank-v1", contentVersion: validated.source.contentVersion, taxonomyVersion: validated.source.taxonomyVersion, bank });
+  const cleanCommit = await assertCleanSource(root, sourceRepositoryCommit); const validated = await validateTrack({ root, trackId, ...(sourceRepositoryCommit ? { sourceRepositoryCommit } : {}) }); const bank = bankFor(validated); const artifactBytes = canonicalJson({ envelopeVersion: 1, schemaVersion: "published-bank-v1", contentVersion: validated.source.contentVersion, taxonomyVersion: validated.source.taxonomyVersion, bank });
   const artifact = { trackId, familyId: validated.track.familyId, contentVersion: validated.source.contentVersion, taxonomyVersion: validated.source.taxonomyVersion, schemaVersion: "published-bank-v1", checksumSha256: hash(artifactBytes), sourceRepositoryCommit: cleanCommit, approvalCoverage: { identity: validated.approvalCoverage.identity, itemIds: validated.approvalCoverage.itemIds }, declaredModes: validated.source.declaredModes, artifactBytes };
   const versionDirectory = join(outputRoot, "tracks", trackId, artifact.contentVersion); const out = join(versionDirectory, "track-artifact.json"); const reportPath = join(versionDirectory, "build-report.json");
   try { await stat(versionDirectory); throw new PublishingFailure("IMMUTABLE_VERSION", `Artifact version already exists: ${trackId}/${artifact.contentVersion}.`); } catch (error) { if (error?.code !== "ENOENT") throw error; }

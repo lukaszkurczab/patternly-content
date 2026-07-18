@@ -118,7 +118,7 @@ test("build rejects modified and untracked technical evidence outside the commit
     try {
       const evidence = await cleanGitReleaseFixture(path);
       if (kind === "modified") await writeFile(evidence.path, `${await readFile(evidence.path, "utf8")} `);
-      else await writeFile(join(path, "reports/technical-evidence/algorithms/untracked.json"), "{}\n");
+      else { const untracked = join(path, "evidence/algorithms/technical/untracked.json"); await mkdir(dirname(untracked), { recursive: true }); await writeFile(untracked, "{}\n"); }
       await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out") }), fails("DIRTY_SOURCE"));
     } finally { await rm(path, { recursive: true }); }
   }
@@ -223,8 +223,8 @@ test("approvals and activations bind exact immutable fingerprints", async () => 
   const path = await root({ algorithms: algorithmsBatch() });
   try {
     const source = join(path, "manual/source/algorithms/fixture.json"); const batch = JSON.parse(await readFile(source, "utf8")); batch.items[0].prompt = "Select all changed learner-visible invariants."; await writeFile(source, JSON.stringify(batch));
-    await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit" });
-    await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit" }), fails("MISSING_APPROVAL"));
+    await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit-changed" });
+    await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit-changed" }), fails("MISSING_APPROVAL"));
   } finally { await rm(path, { recursive: true }); }
 });
 
@@ -240,9 +240,9 @@ test("an unchanged item approval is reusable across a later content version with
   const path = await root({ algorithms: algorithmsBatch() });
   try {
     const sourcePath = join(path, "manual/source/algorithms/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.contentVersion = "algorithms-fixture-v3"; await writeFile(sourcePath, JSON.stringify(source));
-    await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
+    await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit-v3" });
     const activationPath = join(path, "manual/activations/algorithms/fixture-activation.json"); const activation = JSON.parse(await readFile(activationPath, "utf8")); activation.contentVersion = source.contentVersion; await writeFile(activationPath, JSON.stringify(activation));
-    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }));
+    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit-v3" }));
   } finally { await rm(path, { recursive: true }); }
 });
 

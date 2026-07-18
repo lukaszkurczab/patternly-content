@@ -62,9 +62,18 @@ test("canonical discovery is deterministic and ignores legacy content", async ()
 });
 
 test("publisher accepts only exact application Algorithms mode IDs", async () => {
-  assert.deepEqual(JSON.parse(await readFile("config/families/algorithms.json", "utf8")).modeBlueprintRequirements.map((entry) => entry.modeId), APPLICATION_ALGORITHM_MODE_IDS);
+  const track = JSON.parse(await readFile("config/tracks/algorithms.json", "utf8")); assert.deepEqual([...track.modeConfiguration.practiceBlueprints.map((entry) => entry.modeId), track.modeConfiguration.simulationBlueprint.modeId], APPLICATION_ALGORITHM_MODE_IDS);
   const path = await root({ algorithms: algorithmsBatch({ declaredModes: ["retired-local-mode-id"] }), approvals: false });
   try { await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_MODE")); } finally { await rm(path, { recursive: true }); }
+});
+
+test("Algorithms track configuration owns six practice blueprints and rejects batch-owned blueprints", async () => {
+  const path = await root({ algorithms: algorithmsBatch(), approvals: false });
+  try {
+    const trackPath = join(path, "config/tracks/algorithms.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); assert.equal(track.modeConfiguration.practiceBlueprints.length, 6); assert.equal(track.modeConfiguration.simulationBlueprint.modeId, "algorithms-interview-simulation");
+    delete track.modeConfiguration; await writeFile(trackPath, JSON.stringify(track)); await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_TRACK_MODE_CONFIGURATION"));
+    await fixtureRoot(path, { algorithms: algorithmsBatch(), approvals: false }); const sourcePath = join(path, "manual/source/algorithms/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.modeStructures.practiceBlueprints = []; await writeFile(sourcePath, JSON.stringify(source)); await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_SCHEMA"));
+  } finally { await rm(path, { recursive: true }); }
 });
 
 test("constraints and difficulty compile as the application contract's legal optional fields", async () => {

@@ -6,6 +6,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const PLANNING_ROOT = join(ROOT, "planning", "algorithms");
 const TAXONOMY_PATH = join(ROOT, "config", "taxonomy", "algorithms.json");
 const compare = (left, right) => left === right ? 0 : left < right ? -1 : 1;
+const isFilesystemMetadata = (name) => name === ".DS_Store";
 const kebab = (value) => value.replaceAll("_", "-");
 const title = (value) => value.split("_").map((part) => part === "dp" ? "DP" : part === "dfs" ? "DFS" : part === "bfs" ? "BFS" : part === "lifo" ? "LIFO" : part === "gcd" ? "GCD" : part === "lcm" ? "LCM" : part[0].toUpperCase() + part.slice(1)).join(" ");
 const quoted = (value) => JSON.stringify(value);
@@ -15,7 +16,7 @@ const markdownList = (values) => values.length ? values.map((value) => `- \`${va
 async function files(path) {
   let entries;
   try { entries = await readdir(path, { withFileTypes: true }); } catch (error) { if (error.code === "ENOENT") return []; throw error; }
-  return (await Promise.all(entries.sort((left, right) => compare(left.name, right.name)).map((entry) => entry.isDirectory() ? files(join(path, entry.name)) : [join(path, entry.name)]))).flat();
+  return (await Promise.all(entries.filter((entry) => !isFilesystemMetadata(entry.name)).sort((left, right) => compare(left.name, right.name)).map((entry) => entry.isDirectory() ? files(join(path, entry.name)) : [join(path, entry.name)]))).flat();
 }
 
 function assertTaxonomy(taxonomy) {

@@ -263,6 +263,7 @@ function trackModeConfiguration(track) {
     if (value.modeId === "algorithms-weak-area-review" && canonicalJson(ids(value.reviewSources, "Algorithms weak-area review sources", "INVALID_TRACK_MODE_CONFIGURATION").sort(compare)) !== canonicalJson(["due_queue", "session_misses"])) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Weak Area Review sources must be due_queue and session_misses.");
   }
   const simulation = record(configuration.simulationBlueprint, "Algorithms simulation blueprint", "MISSING_TRACK_MODE_CONFIGURATION");
+  for (const key of ["blueprintId", "blueprintVersion", "modeId", "profileId", "profileVersion", "shorteningPolicy", "timerKind", "navigationPolicy", "answerChangePolicy", "reinsertPolicy", "feedbackTiming"]) text(simulation[key], `Algorithms simulation blueprint ${key}`, "INVALID_TRACK_MODE_CONFIGURATION");
   if (simulation.modeId !== SIMULATION_MODE_ID || simulation.profileId !== "algorithms-interview-simulation-v1" || simulation.profileVersion !== "1" || simulation.requestedLength !== 40 || simulation.actualLength !== 40 || simulation.shorteningPolicy !== "prohibited" || simulation.uniqueItemsRequired !== 40 || simulation.timerKind !== "foreground_countdown" || simulation.durationMinutes !== 45 || simulation.navigationPolicy !== "free_navigation" || simulation.answerChangePolicy !== "editable_until_finalization" || simulation.reinsertPolicy !== "disabled" || simulation.feedbackTiming !== "after_verified_finalization") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Algorithms simulation blueprint conflicts with the approved fixed-40 contract.");
   const policy = record(simulation.selectionPolicy, "Algorithms simulation selection policy", "INVALID_TRACK_MODE_CONFIGURATION");
   for (const key of ["requireUniqueItemIds", "requireDeclaredSimulationEligibility", "requireMultipleMentalUnits", "requireMultiplePatternFamilies", "requireEveryActiveInteractionTypeRepresented", "prohibitConsecutiveSameMentalUnitWhenAlternativeExists", "prohibitDuplicateContentIdentity", "prohibitTaxonomyWidening", "prohibitFallbackItems"]) if (policy[key] !== true) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Algorithms simulation selection policy is incomplete.");
@@ -302,6 +303,17 @@ function validateModeStructures(structures, declaredModes, family, track, items,
       if (!pool || profile.profileId !== configuration.simulation.profileId || profile.profileVersion !== configuration.simulation.profileVersion) throw new PublishingFailure("MODE_UNREADY", "Interview Simulation declared eligibility does not match the track simulation blueprint.");
       validateProfile(profile, pool, itemsById); const selected = selectSimulationItems({ profile, pool, items, selectionSeed: "track-simulation-v1" });
       if (selected.length !== configuration.simulation.uniqueItemsRequired || new Set(selected).size !== configuration.simulation.uniqueItemsRequired) throw new PublishingFailure("MODE_UNREADY", "Interview Simulation must select exactly 40 unique eligible items.");
+      resolvedBlueprints.push({
+        blueprintId: configuration.simulation.blueprintId,
+        blueprintVersion: configuration.simulation.blueprintVersion,
+        modeId: SIMULATION_MODE_ID,
+        requestedLengths: [configuration.simulation.requestedLength],
+        defaultRequestedLength: configuration.simulation.requestedLength,
+        shortening: configuration.simulation.shorteningPolicy,
+        minimumActualLength: configuration.simulation.actualLength,
+        composition: { kind: "simulation_pool", ids: [pool.poolId] },
+        resolvedItemIds: selected,
+      });
       continue;
     }
     const requirement = requirementByMode.get(modeId); if (!requirement) throw new PublishingFailure("INVALID_MODE", `Unknown Algorithms mode ${modeId}.`);

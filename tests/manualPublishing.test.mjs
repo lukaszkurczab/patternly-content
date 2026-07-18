@@ -57,6 +57,9 @@ test("canonical discovery is deterministic and ignores legacy content", async ()
     const bank = JSON.parse(a.artifact.artifactBytes).bank;
     assert.deepEqual(Object.keys(bank).sort(), [...APPLICATION_ALGORITHMS_BANK_KEYS].sort());
     assert.deepEqual(Object.keys(bank.items[0]).sort(), [...APPLICATION_ALGORITHMS_ITEM_KEYS].sort());
+    const simulation = bank.practiceBlueprints.find((entry) => entry.modeId === "algorithms-interview-simulation");
+    assert.deepEqual({ ...simulation, resolvedItemIds: undefined }, { blueprintId: "fixture-interview-simulation", blueprintVersion: "1", modeId: "algorithms-interview-simulation", requestedLengths: [40], defaultRequestedLength: 40, shortening: "prohibited", minimumActualLength: 40, composition: { kind: "simulation_pool", ids: ["fixture-pool"] }, resolvedItemIds: undefined });
+    assert.equal(simulation.resolvedItemIds.length, 40); assert.equal(new Set(simulation.resolvedItemIds).size, 40); assert.ok(simulation.resolvedItemIds.every((id) => bank.simulationPools[0].itemIds.includes(id)));
     assert.doesNotMatch(JSON.stringify(bank), /resolvedModeDeclarations|technicalValidationEvidence|sourceOverrides|relationMetadata/);
   } finally { await rm(first, { recursive: true }); await rm(second, { recursive: true }); }
 });

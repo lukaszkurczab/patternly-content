@@ -291,6 +291,9 @@ test("artifact and release are immutable, exact-byte checked, and tracks remain 
     const out = join(path, "out"); const algorithm = await buildTrack({ root: path, trackId: "algorithms", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" });
     assert.deepEqual(Object.keys(algorithm.artifact).sort(), ["approvalCoverage", "artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"]);
     await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("IMMUTABLE_VERSION"));
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "--help", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("INVALID_RELEASE"));
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "empty-release", artifactPaths: [], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("INVALID_RELEASE"));
+    await assert.rejects(() => stat(join(out, "releases/--help")), (error) => error?.code === "ENOENT");
     const release = await publishRelease({ root: path, releaseId: "algorithms-only", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["algorithms"]); assert.match(await readFile(release.exportPath, "utf8"), /GENERATED_BUNDLED_CONTENT_RELEASE/);
     const raw = JSON.parse(await readFile(algorithm.path, "utf8")); raw.artifactBytes += " "; await writeFile(algorithm.path, JSON.stringify(raw)); await assert.rejects(() => verifyArtifact(algorithm.path), fails("CHECKSUM_MISMATCH"));
   } finally { await rm(path, { recursive: true }); }

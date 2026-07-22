@@ -12,7 +12,7 @@ const compare = (left, right) => left === right ? 0 : left < right ? -1 : 1;
 export const hash = (value) => createHash("sha256").update(value).digest("hex");
 export const CANONICAL_SERIALIZATION_VERSION = "canonical-json-v1";
 export const SIMULATION_SOLVER_LIMIT = 50_000;
-export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v3";
+export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v4";
 const canonical = (value) => {
   if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -364,12 +364,43 @@ function validateAlgorithmsSource(batches, track, family, taxonomyConfig, techni
   const { memberships, ...publishedModeStructures } = modeStructures;
   return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items, itemFingerprints, modeStructures: publishedModeStructures, batches, technicalEvidence, technicalInputFingerprint };
 }
-function validateCertificationSource(batches, track, family, technicalInputFingerprint, sourceCommitValue) {
-  const first = batches[0]; for (const batch of batches) if (batch.schemaVersion !== "certification-manual-source-v1" || batch.trackId !== track.trackId || batch.familyId !== track.familyId || batch.contentVersion !== first.contentVersion || batch.taxonomyVersion !== track.taxonomyVersion) throw new PublishingFailure("INVALID_ENVELOPE", "Certification batch envelope conflicts with track configuration.");
-  const items = batches.flatMap((batch) => list(batch.items, "Certification items")).map((item) => ({ ...item, id: text(item.id, "Certification item id") })); unique(items.map((item) => item.id), "DUPLICATE_ID", "Certification item IDs");
+function certificationTaxonomy(taxonomy) {
+  if (taxonomy.schemaVersion !== "taxonomy-config-v1" || !Array.isArray(taxonomy.axes) || !taxonomy.axes.includes("cloud-domain") || !taxonomy.axes.includes("tag")) throw new PublishingFailure("MISSING_CANONICAL_TAXONOMY", "Certification taxonomy must declare cloud-domain and tag axes.");
+  return new Set(ids(taxonomy.cloudDomains, "Certification cloud domains", "MISSING_CANONICAL_TAXONOMY"));
+}
+function validateCertificationItem(value, cloudDomains) {
+  const item = record(value, "Certification item", "INVALID_RESPONSE"); const id = text(item.id, "Certification item id", "INVALID_RESPONSE");
+  text(item.question, `${id} question`, "INVALID_RESPONSE");
+  if (!cloudDomains.has(text(item.domain, `${id} domain`, "INVALID_REFERENCE"))) throw new PublishingFailure("INVALID_REFERENCE", `${id} has an unknown cloud domain.`);
+  if (!['single', 'multiple'].includes(item.type)) throw new PublishingFailure("INVALID_RESPONSE", `${id} has an unsupported choice interaction.`);
+  if (!['easy', 'medium', 'hard'].includes(item.difficulty)) throw new PublishingFailure("INVALID_RESPONSE", `${id} has an unsupported difficulty.`);
+  const options = list(item.options, `${id} options`, "INVALID_RESPONSE"); if (options.length < 2) throw new PublishingFailure("INVALID_RESPONSE", `${id} needs at least two options.`);
+  const optionIds = options.map((option) => text(record(option, `${id} option`, "INVALID_RESPONSE").id, `${id} option id`, "INVALID_RESPONSE")); unique(optionIds, "DUPLICATE_ID", `${id} option IDs`);
+  const visible = options.map((option) => text(option.text, `${id} option text`, "INVALID_RESPONSE").trim().toLocaleLowerCase()); unique(visible, "DUPLICATE_CONTENT_IDENTITY", `${id} visible options`);
+  const correct = ids(item.correctOptionIds, `${id} correctOptionIds`, "INVALID_RESPONSE");
+  if (!correct.length || correct.some((optionId) => !optionIds.includes(optionId)) || (item.type === "single" && correct.length !== 1)) throw new PublishingFailure("INVALID_RESPONSE", `${id} correct answer set is invalid.`);
+  text(item.explanation, `${id} explanation`, "INVALID_RESPONSE"); text(item.watchOutFor, `${id} watchOutFor`, "INVALID_RESPONSE");
+  const wrong = record(item.whyOthersAreWrong, `${id} whyOthersAreWrong`, "INVALID_RESPONSE"); const wrongIds = optionIds.filter((optionId) => !correct.includes(optionId));
+  if (Object.keys(wrong).length !== wrongIds.length || wrongIds.some((optionId) => typeof wrong[optionId] !== "string" || !wrong[optionId].trim()) || Object.keys(wrong).some((optionId) => !wrongIds.includes(optionId))) throw new PublishingFailure("INVALID_RESPONSE", `${id} wrong-option explanations are incomplete.`);
+  ids(item.tags, `${id} tags`, "INVALID_REFERENCE"); ids(item.examSignals, `${id} examSignals`, "INVALID_RESPONSE");
+  return { ...item, id };
+}
+function validateCertificationSource(batches, track, family, taxonomyConfig, technicalInputFingerprint, sourceCommitValue) {
+  const cloudDomains = certificationTaxonomy(taxonomyConfig); const first = batches[0]; const batchIds = [];
+  const legalModes = ids(family.modes?.map((mode) => mode?.id), "Certification family modes", "INVALID_MODE");
+  for (const batch of batches) {
+    if (batch.schemaVersion !== "certification-manual-source-v1" || batch.trackId !== track.trackId || batch.familyId !== track.familyId || batch.contentVersion !== first.contentVersion || batch.taxonomyVersion !== track.taxonomyVersion || canonicalJson(batch.declaredModes) !== canonicalJson(first.declaredModes)) throw new PublishingFailure("INVALID_ENVELOPE", "Certification batch envelope conflicts with track configuration.");
+    batchIds.push(text(batch.batchId, "Certification batchId"));
+  }
+  unique(batchIds, "DUPLICATE_ID", "Certification batch IDs"); const declaredModes = ids(first.declaredModes, "Certification declaredModes", "INVALID_MODE");
+  if (declaredModes.some((modeId) => !legalModes.includes(modeId))) throw new PublishingFailure("INVALID_MODE", "Certification declares a mode outside its family contract.");
+  const items = batches.flatMap((batch) => list(batch.items, "Certification items").map((item) => validateCertificationItem(item, cloudDomains))); unique(items.map((item) => item.id), "DUPLICATE_ID", "Certification item IDs");
+  for (const mode of family.modes) if (declaredModes.includes(mode.id) && items.length < mode.minimumPool) throw new PublishingFailure("MODE_UNREADY", `${mode.id} does not meet its minimum pool.`);
+  const identities = items.map((item) => canonicalHash({ question: item.question.trim().toLocaleLowerCase(), options: item.options.map((option) => option.text.trim().toLocaleLowerCase()).sort(compare), correctOptionIds: [...item.correctOptionIds].sort(compare) })); unique(identities, "DUPLICATE_CONTENT_IDENTITY", "Certification content identities");
   const itemFingerprints = Object.fromEntries(items.map((item) => [item.id, canonicalHash(item)]));
-  const technicalEvidence = batches.map((batch) => evidenceFor({ track, family, batchId: text(batch.batchId, "Certification batchId"), technicalInputFingerprint, batchFingerprint: canonicalHash(batch), itemFingerprints: Object.fromEntries(batch.items.map((item) => [item.id, itemFingerprints[item.id]])), validatedAtSourceCommit: sourceCommitValue }));
-  return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes: ids(first.declaredModes, "Certification declaredModes", "INVALID_MODE"), items: items.sort((a, b) => compare(a.id, b.id)), itemFingerprints, modeStructures: {}, batches, technicalEvidence, technicalInputFingerprint };
+  const technicalEvidence = batches.map((batch) => evidenceFor({ track, family, batchId: batch.batchId, technicalInputFingerprint, batchFingerprint: canonicalHash(batch), itemFingerprints: Object.fromEntries(batch.items.map((item) => [item.id, itemFingerprints[item.id]])), validatedAtSourceCommit: sourceCommitValue }));
+  const publishedItems = items.map((item) => ({ ...item, itemFingerprint: itemFingerprints[item.id] })).sort((a, b) => compare(a.id, b.id));
+  return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items: publishedItems, itemFingerprints, modeStructures: {}, batches, technicalEvidence, technicalInputFingerprint };
 }
 function validateApprovals(records, inspected, evidenceRecords) {
   const evidenceById = new Map(evidenceRecords.filter((entry) => entry?.result === "passed").map((entry) => [entry.evidenceId, entry])); const approvedByItem = new Map();
@@ -396,7 +427,7 @@ export async function inspectTrack({ root = ROOT, trackId, sourceRepositoryCommi
   const sourceSchema = await json(join(root, "schemas", "publishing", track.familyId === "algorithms" ? "algorithms-manual-source.schema.json" : "certification-manual-source.schema.json"));
   batches.forEach((batch, index) => validateJsonSchema(batch, sourceSchema, `manual source batch ${index}`));
   const technicalInputFingerprint = canonicalHash({ fingerprintSchemaVersion: 1, trackId: track.trackId, familyId: track.familyId, sourceBatches: batches, trackConfig: track, familyConfig: family, taxonomy, sourceSchema, validatorVersion: PUBLISHING_VALIDATOR_VERSION, canonicalSerializationVersion: CANONICAL_SERIALIZATION_VERSION });
-  const source = track.familyId === "algorithms" ? validateAlgorithmsSource(batches, track, family, taxonomy, technicalInputFingerprint, commit) : validateCertificationSource(batches, track, family, technicalInputFingerprint, commit);
+  const source = track.familyId === "algorithms" ? validateAlgorithmsSource(batches, track, family, taxonomy, technicalInputFingerprint, commit) : validateCertificationSource(batches, track, family, taxonomy, technicalInputFingerprint, commit);
   return { track, family, taxonomy, source, sourceRepositoryCommit: commit };
 }
 const DURABLE_EVIDENCE_SCHEMA_VERSION = 1;
@@ -480,7 +511,7 @@ export async function buildTrack({ root = ROOT, trackId, outputRoot = join(ROOT,
 }
 export async function verifyArtifact(path) { const artifact = await json(path); const expectedKeys = ["approvalCoverage", "artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"]; if (canonicalJson(Object.keys(artifact).sort(compare)) !== canonicalJson(expectedKeys)) throw new PublishingFailure("INVALID_ARTIFACT", "Track artifact reference has an unsupported external shape."); if (hash(text(artifact.artifactBytes, "artifactBytes")) !== artifact.checksumSha256) throw new PublishingFailure("CHECKSUM_MISMATCH", "Artifact bytes do not match checksum."); const envelope = JSON.parse(artifact.artifactBytes); if (envelope.envelopeVersion !== 1 || envelope.schemaVersion !== "published-bank-v1" || envelope.contentVersion !== artifact.contentVersion || envelope.taxonomyVersion !== artifact.taxonomyVersion || envelope.bank.trackId !== artifact.trackId || envelope.bank.familyId !== artifact.familyId) throw new PublishingFailure("INVALID_ARTIFACT", "Published artifact envelope identity is invalid."); if (artifact.familyId === "algorithms") { const bankKeys = ["approvalActivationIdentity", "compatibilitySets", "contentVersion", "contrastSets", "familyId", "formatVersion", "interleavedScopes", "items", "practiceBlueprints", "recognitionSets", "simulationPools", "simulationProfiles", "trackId"]; const requiredItemKeys = ["compatibilityMemberships", "feedback", "id", "interaction", "itemFingerprint", "prompt", "provenance", "scoringContract", "taxonomy"]; const optionalItemKeys = ["constraints", "difficulty"]; const validItem = (item) => { const keys = Object.keys(item); return requiredItemKeys.every((key) => keys.includes(key)) && keys.every((key) => requiredItemKeys.includes(key) || optionalItemKeys.includes(key)); }; if (canonicalJson(Object.keys(envelope.bank).sort(compare)) !== canonicalJson(bankKeys) || envelope.bank.formatVersion !== 1 || envelope.bank.contentVersion !== artifact.contentVersion || envelope.bank.items.some((item) => !validItem(item))) throw new PublishingFailure("INVALID_ARTIFACT", "Algorithms published bank does not conform to the exact application contract."); } return artifact; }
 export async function publishRelease({ root = ROOT, releaseId, artifactPaths, outputRoot = join(ROOT, "artifacts"), sourceRepositoryCommit }) {
-  const cleanCommit = await assertCleanSource(root, sourceRepositoryCommit); text(releaseId, "releaseId"); const artifacts = await Promise.all(list(artifactPaths, "artifactPaths", "INVALID_RELEASE").map(verifyArtifact)); unique(artifacts.map((artifact) => artifact.trackId), "INVALID_RELEASE", "release track IDs"); if (artifacts.some((artifact) => artifact.sourceRepositoryCommit !== cleanCommit)) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Release and every artifact must use the same clean source commit."); const release = { manifest: { envelopeVersion: 1, releaseId, sourceRepositoryCommit: cleanCommit }, artifacts: artifacts.sort((a, b) => compare(a.trackId, b.trackId)) }; const releaseDirectory = join(outputRoot, "releases", releaseId); const out = join(releaseDirectory, "release.json"); const exported = join(releaseDirectory, "generated-bundled-content.mjs");
+  const cleanCommit = await assertCleanSource(root, sourceRepositoryCommit); text(releaseId, "releaseId"); const artifacts = await Promise.all(list(artifactPaths, "artifactPaths", "INVALID_RELEASE").map(verifyArtifact)); unique(artifacts.map((artifact) => artifact.trackId), "INVALID_RELEASE", "release track IDs"); const release = { manifest: { envelopeVersion: 1, releaseId, sourceRepositoryCommit: cleanCommit }, artifacts: artifacts.sort((a, b) => compare(a.trackId, b.trackId)) }; const releaseDirectory = join(outputRoot, "releases", releaseId); const out = join(releaseDirectory, "release.json"); const exported = join(releaseDirectory, "generated-bundled-content.mjs");
   try { await stat(releaseDirectory); throw new PublishingFailure("IMMUTABLE_VERSION", `Release already exists: ${releaseId}.`); } catch (error) { if (error?.code !== "ENOENT") throw error; } const pendingDirectory = `${releaseDirectory}.pending-${canonicalHash(release)}`;
   await mkdir(dirname(releaseDirectory), { recursive: true }); await mkdir(pendingDirectory, { recursive: false });
   try { await writeFile(join(pendingDirectory, "release.json"), canonicalJson(release)); await writeFile(join(pendingDirectory, "generated-bundled-content.mjs"), `export const GENERATED_BUNDLED_CONTENT_RELEASE = Object.freeze(${JSON.stringify(release)});\n`); await rename(pendingDirectory, releaseDirectory); } catch (error) { await rm(pendingDirectory, { recursive: true, force: true }); throw error; }

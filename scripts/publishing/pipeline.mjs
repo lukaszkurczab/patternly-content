@@ -399,7 +399,8 @@ function validateCertificationSource(batches, track, family, taxonomyConfig, tec
   const identities = items.map((item) => canonicalHash({ question: item.question.trim().toLocaleLowerCase(), options: item.options.map((option) => option.text.trim().toLocaleLowerCase()).sort(compare), correctOptionIds: [...item.correctOptionIds].sort(compare) })); unique(identities, "DUPLICATE_CONTENT_IDENTITY", "Certification content identities");
   const itemFingerprints = Object.fromEntries(items.map((item) => [item.id, canonicalHash(item)]));
   const technicalEvidence = batches.map((batch) => evidenceFor({ track, family, batchId: batch.batchId, technicalInputFingerprint, batchFingerprint: canonicalHash(batch), itemFingerprints: Object.fromEntries(batch.items.map((item) => [item.id, itemFingerprints[item.id]])), validatedAtSourceCommit: sourceCommitValue }));
-  return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items: items.sort((a, b) => compare(a.id, b.id)), itemFingerprints, modeStructures: {}, batches, technicalEvidence, technicalInputFingerprint };
+  const publishedItems = items.map((item) => ({ ...item, itemFingerprint: itemFingerprints[item.id] })).sort((a, b) => compare(a.id, b.id));
+  return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items: publishedItems, itemFingerprints, modeStructures: {}, batches, technicalEvidence, technicalInputFingerprint };
 }
 function validateApprovals(records, inspected, evidenceRecords) {
   const evidenceById = new Map(evidenceRecords.filter((entry) => entry?.result === "passed").map((entry) => [entry.evidenceId, entry])); const approvedByItem = new Map();

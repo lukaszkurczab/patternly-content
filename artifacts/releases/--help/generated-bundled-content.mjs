@@ -1,1 +1,0 @@
-export const GENERATED_BUNDLED_CONTENT_RELEASE = Object.freeze({"manifest":{"envelopeVersion":1,"releaseId":"--help","sourceRepositoryCommit":"d8f94a652e7e17178dc26aa1163925693e8206b0"},"artifacts":[]});

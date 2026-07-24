@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
-import { algorithmsBatch, certificationBatch, certificationExamExperienceProfile, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
+import { algorithmsBatch, certificationBatch, certificationDiagnosticBaseline, certificationExamExperienceProfile, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
 import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS, APPLICATION_ALGORITHM_MODE_IDS } from "./fixtures/applicationContractSnapshot.mjs";
 import { generatedTypeScript, structuralPayload, taxonomyFingerprint } from "../scripts/taxonomy/export-algorithms-taxonomy.mjs";
 
@@ -304,10 +304,23 @@ test("certification publishes a validated, explicit exam experience profile", as
   try {
     const inspected = await inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT });
     assert.deepEqual(inspected.source.examExperienceProfile, certificationExamExperienceProfile);
+    assert.deepEqual(inspected.source.diagnosticBaseline, certificationDiagnosticBaseline);
     const output = await buildTrack({ root: path, trackId: "cloud-certification", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT });
     assert.deepEqual(JSON.parse(output.artifact.artifactBytes).bank.examExperienceProfile, certificationExamExperienceProfile);
+    assert.deepEqual(JSON.parse(output.artifact.artifactBytes).bank.diagnosticBaseline, certificationDiagnosticBaseline);
     const profilePath = join(path, "config/tracks/cloud-certification.json"); const track = JSON.parse(await readFile(profilePath, "utf8")); track.profile.navigation = "free_navigation"; await writeFile(profilePath, JSON.stringify(track));
     await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("INVALID_EXAM_EXPERIENCE_PROFILE"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("Certification Diagnostic Baseline rejects a shortened, duplicated, or out-of-bank fixed selection", async () => {
+  const path = await root({ certification: certificationBatch() });
+  try {
+    const trackPath = join(path, "config/tracks/cloud-certification.json");
+    const track = JSON.parse(await readFile(trackPath, "utf8"));
+    track.modeConfiguration.diagnosticBaseline.itemIds[39] = track.modeConfiguration.diagnosticBaseline.itemIds[0];
+    await writeFile(trackPath, JSON.stringify(track));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("INVALID_TRACK_MODE_CONFIGURATION"));
   } finally { await rm(path, { recursive: true }); }
 });
 

@@ -9,6 +9,12 @@
 
 `tracks/`, test fixtures, generated artifacts, and releases are never discovery roots. Moving existing question files is `MANUAL ONLY`; no pipeline command migrates, copies, or reads them as a fallback.
 
+## Content approval decision
+
+Patternly uses recorded **human editorial approval** as its only content-approval authority. An owner may provide source material, taxonomy, or a manual activation record, but owner authority never replaces a reviewer’s recorded editorial disposition.
+
+Owner activation is rejected as an approval model. Activation is a separate coverage record: it may activate only the exact item fingerprints that already have valid human editorial approvals. It does not approve educational quality, factual accuracy, or learner-facing feedback on its own.
+
 ## Algorithms batch contract
 
 An Algorithms batch carries its batch ID, version identity, batch taxonomy (`roadmapNodeId`, `primaryMentalUnitId`, `patternFamilyId`), authoring provenance, authored items, and explicit named mode structures. A contrast batch also requires contrasted mental units, false heuristic, and transfer boundary.

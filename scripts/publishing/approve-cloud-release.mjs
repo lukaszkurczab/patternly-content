@@ -5,11 +5,13 @@ import { canonicalJson } from "./pipeline.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const trackId = "cloud-certification";
-const contentVersion = "gcp-ace-0001";
 const technicalInputCommit = process.argv[2];
 if (!technicalInputCommit) throw new Error("Usage: node approve-cloud-release.mjs <technical-input-commit>");
 const technical = JSON.parse(await readFile(join(root, "evidence", trackId, "technical", `${technicalInputCommit}.json`), "utf8"));
-const evidence = technical.technicalEvidence?.find((entry) => entry.batchId === contentVersion && entry.result === "passed");
+const passedEvidence = technical.technicalEvidence?.filter((entry) => entry.result === "passed") ?? [];
+if (passedEvidence.length !== 1) throw new Error("Cloud approval requires exactly one passed technical evidence record.");
+const evidence = passedEvidence[0];
+const contentVersion = evidence.batchId;
 if (!evidence || Object.keys(evidence.itemFingerprints ?? {}).length !== 360) throw new Error("A passed 360-item technical evidence record is required before Cloud approval.");
 const includedItems = Object.entries(evidence.itemFingerprints).map(([itemId, itemFingerprint]) => ({ itemId, itemFingerprint })).sort((left, right) => left.itemId.localeCompare(right.itemId));
 const approvalId = `approval:${trackId}:${contentVersion}:${evidence.evidenceId}`;

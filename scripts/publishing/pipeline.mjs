@@ -437,11 +437,12 @@ function certificationScenarioPractice(track, items) {
   const byId = new Map(items.map((item) => [item.id, item]));
   const competencies = list(scenario.competencies, "Certification Scenario Practice competencies", "INVALID_TRACK_MODE_CONFIGURATION").map((entry) => {
     const competency = record(entry, "Certification Scenario Practice competency", "INVALID_TRACK_MODE_CONFIGURATION");
-    if (canonicalJson(Object.keys(competency).sort(compare)) !== canonicalJson(["id", "scenarioItemIds"])) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Scenario Practice competency has unsupported fields.");
+    if (canonicalJson(Object.keys(competency).sort(compare)) !== canonicalJson(["id", "label", "scenarioItemIds"])) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Scenario Practice competency has unsupported fields.");
     const id = text(competency.id, "Certification Scenario Practice competency ID", "INVALID_TRACK_MODE_CONFIGURATION");
+    const label = text(competency.label, "Certification Scenario Practice competency label", "INVALID_TRACK_MODE_CONFIGURATION");
     const scenarioItemIds = ids(competency.scenarioItemIds, `Certification Scenario Practice ${id} scenario item IDs`, "INVALID_TRACK_MODE_CONFIGURATION");
     if (scenarioItemIds.length < 10 || scenarioItemIds.some((itemId) => !byId.get(itemId)?.tags.includes(id))) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Scenario Practice competency contains an item outside its explicit scenario-valid scope.");
-    return Object.freeze({ id, scenarioItemIds: Object.freeze(scenarioItemIds) });
+    return Object.freeze({ id, label, scenarioItemIds: Object.freeze(scenarioItemIds) });
   });
   unique(competencies.map((competency) => competency.id), "INVALID_TRACK_MODE_CONFIGURATION", "Certification Scenario Practice competency IDs");
   if (!competencies.length) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Scenario Practice requires at least one competency.");

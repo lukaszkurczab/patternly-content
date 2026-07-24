@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
-import { algorithmsBatch, certificationBatch, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
+import { algorithmsBatch, certificationBatch, certificationExamExperienceProfile, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
 import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS, APPLICATION_ALGORITHM_MODE_IDS } from "./fixtures/applicationContractSnapshot.mjs";
 import { generatedTypeScript, structuralPayload, taxonomyFingerprint } from "../scripts/taxonomy/export-algorithms-taxonomy.mjs";
 
@@ -296,6 +296,18 @@ test("artifact and release are immutable, exact-byte checked, and tracks remain 
     await assert.rejects(() => stat(join(out, "releases/--help")), (error) => error?.code === "ENOENT");
     const release = await publishRelease({ root: path, releaseId: "algorithms-only", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["algorithms"]); assert.match(await readFile(release.exportPath, "utf8"), /GENERATED_BUNDLED_CONTENT_RELEASE/);
     const raw = JSON.parse(await readFile(algorithm.path, "utf8")); raw.artifactBytes += " "; await writeFile(algorithm.path, JSON.stringify(raw)); await assert.rejects(() => verifyArtifact(algorithm.path), fails("CHECKSUM_MISMATCH"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("certification publishes a validated, explicit exam experience profile", async () => {
+  const path = await root({ certification: certificationBatch() });
+  try {
+    const inspected = await inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT });
+    assert.deepEqual(inspected.source.examExperienceProfile, certificationExamExperienceProfile);
+    const output = await buildTrack({ root: path, trackId: "cloud-certification", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT });
+    assert.deepEqual(JSON.parse(output.artifact.artifactBytes).bank.examExperienceProfile, certificationExamExperienceProfile);
+    const profilePath = join(path, "config/tracks/cloud-certification.json"); const track = JSON.parse(await readFile(profilePath, "utf8")); track.profile.navigation = "free_navigation"; await writeFile(profilePath, JSON.stringify(track));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("INVALID_EXAM_EXPERIENCE_PROFILE"));
   } finally { await rm(path, { recursive: true }); }
 });
 

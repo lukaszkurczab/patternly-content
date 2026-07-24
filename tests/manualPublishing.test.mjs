@@ -313,6 +313,17 @@ test("certification publishes a validated, explicit exam experience profile", as
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("Certification publishing declares only canonical non-simulation practice modes", async () => {
+  const [family, source] = await Promise.all([
+    readFile("config/families/certification.json", "utf8").then(JSON.parse),
+    readFile("manual/source/cloud-certification/gcp-ace-0001.json", "utf8").then(JSON.parse),
+  ]);
+  const expected = ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review"];
+  assert.deepEqual(family.modes.map((mode) => mode.id), expected);
+  assert.deepEqual(source.declaredModes, expected);
+  assert.doesNotMatch(JSON.stringify({ family, source }), /cloud-practice|cloud-review/);
+});
+
 test("Certification Diagnostic Baseline rejects a shortened, duplicated, or out-of-bank fixed selection", async () => {
   const path = await root({ certification: certificationBatch() });
   try {

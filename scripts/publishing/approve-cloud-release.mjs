@@ -11,7 +11,8 @@ const technical = JSON.parse(await readFile(join(root, "evidence", trackId, "tec
 const passedEvidence = technical.technicalEvidence?.filter((entry) => entry.result === "passed") ?? [];
 if (passedEvidence.length !== 1) throw new Error("Cloud approval requires exactly one passed technical evidence record.");
 const evidence = passedEvidence[0];
-const contentVersion = evidence.batchId;
+const contentVersion = technical.contentVersion;
+if (typeof contentVersion !== "string" || !contentVersion.trim()) throw new Error("Cloud approval requires the technical evidence content version.");
 if (!evidence || Object.keys(evidence.itemFingerprints ?? {}).length !== 360) throw new Error("A passed 360-item technical evidence record is required before Cloud approval.");
 const includedItems = Object.entries(evidence.itemFingerprints).map(([itemId, itemFingerprint]) => ({ itemId, itemFingerprint })).sort((left, right) => left.itemId.localeCompare(right.itemId));
 const approvalId = `approval:${trackId}:${contentVersion}:${evidence.evidenceId}`;

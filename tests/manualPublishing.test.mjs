@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
@@ -11,6 +12,7 @@ import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APP
 import { generatedTypeScript, structuralPayload, taxonomyFingerprint } from "../scripts/taxonomy/export-algorithms-taxonomy.mjs";
 
 const COMMIT = "fixture-source-commit";
+const REPOSITORY_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const exec = promisify(execFile);
 async function root(input = {}) { const path = await mkdtemp(join(tmpdir(), "patternly-publishing-")); await fixtureRoot(path, input); return path; }
 const fails = (code) => (error) => error instanceof PublishingFailure && error.code === code;
@@ -98,6 +100,29 @@ test("technical evidence is emitted before human approval and current evidence i
     await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
     await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_APPROVAL"));
   } finally { await rm(path, { recursive: true }); }
+});
+
+test("repository contains no automated human-review issuer or its dependent activation records", async () => {
+  await assert.rejects(() => stat(join(REPOSITORY_ROOT, "scripts/publishing/approve-cloud-release.mjs")), { code: "ENOENT" });
+  const automatedReviewer = "product-owner-authorized-codex-review";
+  const approvalIds = new Set();
+  for (const trackId of ["algorithms", "cloud-certification"]) {
+    const files = (await readdir(join(REPOSITORY_ROOT, "manual/approvals", trackId))).filter((name) => name.endsWith(".json"));
+    for (const name of files) {
+      const approval = JSON.parse(await readFile(join(REPOSITORY_ROOT, "manual/approvals", trackId, name), "utf8"));
+      assert.notEqual(approval.reviewer, automatedReviewer, `${trackId}/${name} must be a recorded human editorial review.`);
+      approvalIds.add(approval.approvalId);
+    }
+  }
+  for (const trackId of ["algorithms", "cloud-certification"]) {
+    const records = (await readdir(join(REPOSITORY_ROOT, "manual/activations", trackId))).filter((name) => name.endsWith(".json"));
+    for (const name of records) {
+      const activation = JSON.parse(await readFile(join(REPOSITORY_ROOT, "manual/activations", trackId, name), "utf8"));
+      for (const item of activation.itemCoverage) {
+        assert.ok(approvalIds.has(item.approvalId), `${trackId}/${name} references a removed automated approval.`);
+      }
+    }
+  }
 });
 
 test("technical evidence survives the clean multi-commit approval and activation cycle", async () => {

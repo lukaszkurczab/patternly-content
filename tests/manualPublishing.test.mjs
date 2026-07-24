@@ -39,7 +39,7 @@ async function commitFixtureInputs(root, message) { await fixtureGit(root, "add"
 async function writeFixtureApprovalAndActivation(root, inspected, evidence) {
   const approvalId = "fixture-cycle-approval";
   await mkdir(join(root, "manual/approvals/algorithms"), { recursive: true });
-  await writeFile(join(root, "manual/approvals/algorithms/fixture-cycle-approval.json"), JSON.stringify({ approvalSchemaVersion: 1, approvalId, reviewKind: "editorial", batchId: evidence.batchId, familyId: "algorithms", trackId: "algorithms", primaryTaxonomyReference: "arrays_and_strings", includedItems: Object.entries(evidence.itemFingerprints).map(([itemId, itemFingerprint]) => ({ itemId, itemFingerprint })), reviewer: "fixture reviewer", reviewDate: "2026-07-17", technicalValidationEvidenceId: evidence.evidenceId, factualAndEditorialDefectsFound: [], requiredCorrections: [], finalDisposition: "approved" }));
+  await writeFile(join(root, "manual/approvals/algorithms/fixture-cycle-approval.json"), JSON.stringify({ approvalSchemaVersion: 1, approvalId, reviewKind: "editorial", batchId: evidence.batchId, familyId: "algorithms", trackId: "algorithms", primaryTaxonomyReference: "arrays_and_strings", includedItems: Object.entries(evidence.itemFingerprints).map(([itemId, itemFingerprint]) => ({ itemId, itemFingerprint })), reviewer: { kind: "human_editor", id: "fixture-reviewer" }, reviewDate: "2026-07-17", technicalValidationEvidenceId: evidence.evidenceId, factualAndEditorialDefectsFound: [], requiredCorrections: [], finalDisposition: "approved" }));
   await mkdir(join(root, "manual/activations/algorithms"), { recursive: true });
   await writeFile(join(root, "manual/activations/algorithms/fixture-cycle-activation.json"), JSON.stringify({ activationSchemaVersion: 1, activationId: "fixture-cycle-activation", trackId: "algorithms", familyId: "algorithms", contentVersion: inspected.source.contentVersion, taxonomyVersion: inspected.source.taxonomyVersion, itemCoverage: inspected.source.items.map((item) => ({ itemId: item.id, itemFingerprint: item.itemFingerprint, approvalId })) }));
 }
@@ -102,6 +102,18 @@ test("technical evidence is emitted before human approval and current evidence i
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("release gate accepts a recorded human editorial approval and requires its activation", async () => {
+  const path = await root({ algorithms: algorithmsBatch() });
+  try {
+    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }));
+    const approvalPath = join(path, "manual/approvals/algorithms/fixture-algorithms-batch.json"); const approval = JSON.parse(await readFile(approvalPath, "utf8")); approval.reviewer = "automated reviewer"; await writeFile(approvalPath, JSON.stringify(approval));
+    await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_SCHEMA"));
+    approval.reviewer = { kind: "human_editor", id: "fixture-reviewer" }; await writeFile(approvalPath, JSON.stringify(approval));
+    await rm(join(path, "manual/activations/algorithms/fixture-activation.json"));
+    await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_ACTIVATION"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
 test("repository contains no automated human-review issuer or its dependent activation records", async () => {
   await assert.rejects(() => stat(join(REPOSITORY_ROOT, "scripts/publishing/approve-cloud-release.mjs")), { code: "ENOENT" });
   const automatedReviewer = "product-owner-authorized-codex-review";
@@ -110,7 +122,9 @@ test("repository contains no automated human-review issuer or its dependent acti
     const files = (await readdir(join(REPOSITORY_ROOT, "manual/approvals", trackId))).filter((name) => name.endsWith(".json"));
     for (const name of files) {
       const approval = JSON.parse(await readFile(join(REPOSITORY_ROOT, "manual/approvals", trackId, name), "utf8"));
-      assert.notEqual(approval.reviewer, automatedReviewer, `${trackId}/${name} must be a recorded human editorial review.`);
+      assert.equal(approval.reviewer?.kind, "human_editor", `${trackId}/${name} must declare a recorded human editorial reviewer.`);
+      assert.match(approval.reviewer?.id ?? "", /\S/, `${trackId}/${name} must retain its human reviewer identifier.`);
+      assert.notEqual(approval.reviewer.id, automatedReviewer, `${trackId}/${name} must not name the removed automated reviewer.`);
       approvalIds.add(approval.approvalId);
     }
   }

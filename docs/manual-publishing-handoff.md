@@ -11,7 +11,7 @@
 
 ## Content approval decision
 
-Patternly uses recorded **human editorial approval** as its only content-approval authority. An owner may provide source material, taxonomy, or a manual activation record, but owner authority never replaces a reviewer’s recorded editorial disposition.
+Patternly uses recorded **human editorial approval** as its only content-approval authority. Every approval record identifies its reviewer as `{ "kind": "human_editor", "id": "…" }`; the identifier is the manual reviewer record, not a generated owner or automation label. An owner may provide source material, taxonomy, or a manual activation record, but owner authority never replaces a reviewer’s recorded editorial disposition.
 
 Owner activation is rejected as an approval model. Activation is a separate coverage record: it may activate only the exact item fingerprints that already have valid human editorial approvals. It does not approve educational quality, factual accuracy, or learner-facing feedback on its own.
 

@@ -3,7 +3,7 @@
   "batchId": "algorithms-intervals-boundary-review-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0003",
+  "contentVersion": "algorithms-core-0004",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -62,7 +62,14 @@
       },
       "feedback": {
         "reason": "Half-open overlap requires strict cross-end comparisons; '<=' introduces a false intersection at the shared endpoint.",
-        "details": "The correct predicate is a.start < b.end and b.start < a.end. For [1, 3) and [3, 5), the second strict comparison is 3 < 3, which is false. The buggy '<=' version changes that boundary to true and reports a conflict. This is not fixed by sorting, swapping interval order, or checking duration. A minimal regression test must include exactly equal end and start values because cases with positive gaps or positive-width intersections pass under both comparators.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The correct predicate is a.start < b.end and b.start < a.end. For [1, 3) and [3, 5), the second strict comparison is 3 < 3, which is false. The buggy '<=' version changes that boundary to true and reports a conflict. This is not fixed by sorting, swapping interval order, or checking duration. A minimal regression test must include exactly equal end and start values because cases with positive gaps or positive-width intersections pass under both comparators."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "sort_order_bug": "Pairwise overlap needs no sorting. The wrong result comes from equality handling inside the predicate.",
           "length_bug": "Duration does not select the overlap comparator. The defect occurs exactly at endpoint equality, so the endpoint contract—not interval length—determines whether equality counts."
@@ -110,7 +117,14 @@
       },
       "feedback": {
         "reason": "Closed intervals include the shared coordinate, so equality must satisfy the cross-end comparisons.",
-        "details": "The strict predicate is the half-open form. Closed separation is b.end < a.start or a.end < b.start; negating it yields inclusive comparisons. Changing the coordinates to force a strict predicate is only legitimate if a proven normalization preserves the set—for example, converting inclusive integer [l, r] to [l, r + 1) with a safe successor. Here the direct fix is to use the comparator required by the declared closed contract and retain a boundary-only regression case.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The strict predicate is the half-open form. Closed separation is b.end < a.start or a.end < b.start; negating it yields inclusive comparisons. Changing the coordinates to force a strict predicate is only legitimate if a proven normalization preserves the set—for example, converting inclusive integer [l, r] to [l, r + 1) with a safe successor. Here the direct fix is to use the comparator required by the declared closed contract and retain a boundary-only regression case."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "subtract_one_from_ends": "That changes the represented sets and is invalid without a discrete normalization contract.",
           "sort_by_length": "Sorting by length changes neither the omitted equality case nor the endpoint contract. The same touching pair will still be classified with the wrong strictness."
@@ -158,7 +172,14 @@
       },
       "feedback": {
         "reason": "Start-before-end temporarily counts the ending half-open interval at a coordinate it excludes.",
-        "details": "Immediately before 3, active is one. Processing the start at 3 first raises active to two and may update the maximum; processing the end afterward returns it to one. The correct half-open transition is end first, yielding zero then one. The final active count after both events is identical, which can hide the bug if tests assert only final state. Tests must inspect the maximum or conflict output at an equal-time handoff. Closed intervals would intentionally use the opposite order.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Immediately before 3, active is one. Processing the start at 3 first raises active to two and may update the maximum; processing the end afterward returns it to one. The correct half-open transition is end first, yielding zero then one. The final active count after both events is identical, which can hide the bug if tests assert only final state. Tests must inspect the maximum or conflict output at an equal-time handoff. Closed intervals would intentionally use the opposite order."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "too_few_intervals": "Two back-to-back intervals are the minimal case that exposes the false transient peak.",
           "need_end_sort_only": "Global interval order does not define the order of simultaneous endpoint events."
@@ -206,7 +227,14 @@
       },
       "feedback": {
         "reason": "For closed ranges, both intervals are active at 3, so the start transition must be measured before the end transition.",
-        "details": "The implementation has reused a half-open tie rule in a closed domain. With active one before 3, processing the new start first exposes active two at the included point, then the end returns it to one. End-first ordering erases the simultaneous state. A net-zero grouped delta also loses the peak. The fix is semantic: select tie order from endpoint inclusion and the answer contract. If the application chooses to ignore measure-zero concurrency, that must be a separate documented policy rather than an accidental comparator side effect.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The implementation has reused a half-open tie rule in a closed domain. With active one before 3, processing the new start first exposes active two at the included point, then the end returns it to one. End-first ordering erases the simultaneous state. A net-zero grouped delta also loses the peak. The fix is semantic: select tie order from endpoint inclusion and the answer contract. If the application chooses to ignore measure-zero concurrency, that must be a separate documented policy rather than an accidental comparator side effect."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "closed_should_be_half_open": "The domain contract explicitly uses closed ranges. Reinterpreting them changes the modeled occupancy.",
           "durations_too_short": "The prompt makes a one-point overlap material, so duration is not the deciding boundary."
@@ -254,7 +282,14 @@
       },
       "feedback": {
         "reason": "The merge condition must use the same strict equality rule as the half-open conflict contract.",
-        "details": "With starts already ordered, the only boundary in question is whether next.start equals active.end. The batch policy keeps such intervals separate, so equality must take the gap branch and emit the active interval. Changing sort order cannot repair a semantic comparator. Some systems deliberately coalesce adjacent half-open coverage, in which case '<=' can be a valid output policy even though the intervals do not conflict. The implementation and tests must distinguish those two product contracts rather than calling one universally correct.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "With starts already ordered, the only boundary in question is whether next.start equals active.end. The batch policy keeps such intervals separate, so equality must take the gap branch and emit the active interval. Changing sort order cannot repair a semantic comparator. Some systems deliberately coalesce adjacent half-open coverage, in which case '<=' can be a valid output policy even though the intervals do not conflict. The implementation and tests must distinguish those two product contracts rather than calling one universally correct."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "sort_by_end": "Sort order does not change whether equality belongs to the overlap predicate.",
           "compare_lengths": "Length is unrelated to the equality boundary and would fail containment and crossing cases."
@@ -302,7 +337,14 @@
       },
       "feedback": {
         "reason": "Under [start, end), equality proves the old interval is completely before the new interval and belongs in the copy phase.",
-        "details": "The three-phase insertion conditions must partition all intervals without ambiguity. old.end <= new.start means the old range finishes no later than the new range begins, so it is disjoint and safely copied. Using only '<' leaves equality for the overlap phase, which later expands the new range and erases the handoff. The corresponding after condition is new.end <= old.start. Closed intervals would use strict separation instead. Boundary tests should exercise equality on both sides of the new interval.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The three-phase insertion conditions must partition all intervals without ambiguity. old.end <= new.start means the old range finishes no later than the new range begins, so it is disjoint and safely copied. Using only '<' leaves equality for the overlap phase, which later expands the new range and erases the handoff. The corresponding after condition is new.end <= old.start. Closed intervals would use strict separation instead. Boundary tests should exercise equality on both sides of the new interval."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "use_start_sort_descending": "Descending order destroys the three contiguous insertion phases and does not fix equality semantics.",
           "compare_duration": "Duration cannot determine whether two ranges share occupied time. A long interval may be disjoint and a short interval may overlap; relative endpoint order is decisive."
@@ -350,7 +392,14 @@
       },
       "feedback": {
         "reason": "A zero-width half-open interval is empty, so it must not create active demand.",
-        "details": "This defect combines missing input semantics with a tie artifact. Emitting separate +1 and -1 events for an empty duration and processing +1 first fabricates a transient active interval. A canonical system should define whether empty intervals are valid-but-no-op or invalid input; either way, they do not consume duration resources. Simply processing -1 first can create a negative transient, so event order alone is not the complete fix. A separate point-event type is required if instantaneous markers are material.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "This defect combines missing input semantics with a tie artifact. Emitting separate +1 and -1 events for an empty duration and processing +1 first fabricates a transient active interval. A canonical system should define whether empty intervals are valid-but-no-op or invalid input; either way, they do not consume duration resources. Simply processing -1 first can create a negative transient, so event order alone is not the complete fix. A separate point-event type is required if instantaneous markers are material."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "keep_start_first": "No value satisfies 5 <= t < 5, so the record contributes no occupancy. Start-first invents a point event.",
           "make_it_longer": "Silently extending an interval invents occupancy that is absent from the input and violates the data contract. The correct repair is to interpret the declared endpoints consistently."
@@ -398,7 +447,14 @@
       },
       "feedback": {
         "reason": "Two coordinates are insufficient to reconstruct interval meaning once sources with different inclusion contracts are mixed.",
-        "details": "The service has made a lossy representation choice. At a strict crossing, closed and half-open predicates agree, so most tests pass. Equality is where the omitted metadata becomes decisive. The fix is to preserve source semantics until normalization, convert into one canonical internal representation with validated edge cases, and then discard redundant metadata if safe. Choosing '<' or '<=' globally only selects which source is wrong. No sort key, tie rule, or length check can recover information that storage removed.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The service has made a lossy representation choice. At a strict crossing, closed and half-open predicates agree, so most tests pass. Equality is where the omitted metadata becomes decisive. The fix is to preserve source semantics until normalization, convert into one canonical internal representation with validated edge cases, and then discard redundant metadata if safe. Choosing '<' or '<=' globally only selects which source is wrong. No sort key, tie rule, or length check can recover information that storage removed."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "not_sorted_by_end": "Sorting cannot reconstruct whether an end was inclusive after that metadata has been lost.",
           "insufficient_duration": "The ambiguity is not caused by interval duration. It comes from the missing inclusion contract, because the shared coordinate may belong to both intervals or only one."
@@ -447,7 +503,14 @@
       },
       "feedback": {
         "reason": "The r + 1 conversion is conditional; at the maximum representable endpoint it corrupts the range rather than creating a valid exclusive bound.",
-        "details": "The mathematical equivalence [l, r] = [l, r + 1) on integers assumes r + 1 exists in the representation. Fixed-width overflow violates that assumption and can invert or wrap the interval. Safe alternatives include a wider proven type, an explicit inclusive-end flag, a sentinel outside the value domain, or a branch for maximal r. The chosen representation must remain orderable and serializable. This is a transfer-boundary failure, not a sorting failure or an acceptable edge-case omission.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The mathematical equivalence [l, r] = [l, r + 1) on integers assumes r + 1 exists in the representation. Fixed-width overflow violates that assumption and can invert or wrap the interval. Safe alternatives include a wider proven type, an explicit inclusive-end flag, a sentinel outside the value domain, or a branch for maximal r. The chosen representation must remain orderable and serializable. This is a transfer-boundary failure, not a sorting failure or an acceptable edge-case omission."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "sort_overflowed_range": "Sorting cannot recover the lost numeric value or represented set after overflow.",
           "ignore_max_endpoint": "Silently deleting valid input is not a semantic correction and changes the problem."
@@ -495,7 +558,14 @@
       },
       "feedback": {
         "reason": "Only the equality case makes strict and inclusive overlap predicates disagree.",
-        "details": "A good boundary test isolates the decision boundary with minimal unrelated structure. [1, 3) and [3, 5) share endpoint coordinates but no occupied instant under [start, end). The strict predicate returns false; the inclusive bug returns true. Clear overlap and clear separation exercise ordinary cases where both implementations agree. The same testing principle applies to event ties, insertion loop conditions, and merge equality: include exact handoffs, zero-width inputs, containment, and maximal numeric endpoints.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A good boundary test isolates the decision boundary with minimal unrelated structure. [1, 3) and [3, 5) share endpoint coordinates but no occupied instant under [start, end). The strict predicate returns false; the inclusive bug returns true. Clear overlap and clear separation exercise ordinary cases where both implementations agree. The same testing principle applies to event ties, insertion loop conditions, and merge equality: include exact handoffs, zero-width inputs, containment, and maximal numeric endpoints."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "clear_overlap": "Both '<' and '<=' correctly report this as overlap, so it cannot discriminate the comparator boundary.",
           "clear_gap": "Both predicates correctly report a gap, so the equality defect remains hidden."
@@ -543,7 +613,14 @@
       },
       "feedback": {
         "reason": "The late containing interval starts before output already emitted, which a tail-only merge cannot repair.",
-        "details": "End sorting permits [1, 10) to arrive last. By then [2, 3) has been committed separately. Merging the containing interval with only the last output cannot revisit that earlier component, so the result still overlaps. Sorting by start places [1, 10) first and makes both shorter intervals contained in one active component. The review should name the violated monotonic-start invariant rather than adding a special case based on length or changing endpoint equality.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "End sorting permits [1, 10) to arrive last. By then [2, 3) has been committed separately. Merging the containing interval with only the last output cannot revisit that earlier component, so the result still overlaps. Sorting by start places [1, 10) first and makes both shorter intervals contained in one active component. The review should name the violated monotonic-start invariant rather than adding a special case based on length or changing endpoint equality."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "wrong_endpoint_contract": "Containment and the missed earlier output occur regardless of half-open versus closed equality.",
           "long_interval_special_case": "A special length rule treats a symptom. Start order provides the general invariant for all containment cases."
@@ -591,7 +668,14 @@
       },
       "feedback": {
         "reason": "Overlap is a set-intersection relation defined by endpoint order; duration-only formulas are incomplete.",
-        "details": "The first pair contains a very long interval but is disjoint because the half-open endpoint 100 belongs only to the second interval. The second pair is also disjoint: there is a positive gap from 1 to 1.5, yet the very long second interval makes the sum-of-lengths test pass. These counterexamples show that duration magnitude is not sufficient to establish intersection. The cross-end predicate uses exactly the relative endpoint information required by half-open semantics. If the input is closed, change equality according to that contract rather than tuning a length threshold. Review feedback should remove the heuristic, not adjust its constant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The first pair contains a very long interval but is disjoint because the half-open endpoint 100 belongs only to the second interval. The second pair is also disjoint: there is a positive gap from 1 to 1.5, yet the very long second interval makes the sum-of-lengths test pass. These counterexamples show that duration magnitude is not sufficient to establish intersection. The cross-end predicate uses exactly the relative endpoint information required by half-open semantics. If the input is closed, change equality according to that contract rather than tuning a length threshold. Review feedback should remove the heuristic, not adjust its constant."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "adjust_length_threshold": "No global duration threshold captures position, containment, gaps, and equality across arbitrary intervals.",
           "sort_by_length_first": "Sorting by duration still omits the intervals' relative coordinates. Containment and overlap are determined by endpoint order, so length-first processing cannot repair the heuristic."

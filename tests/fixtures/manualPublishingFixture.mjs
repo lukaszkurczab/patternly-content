@@ -6,11 +6,19 @@ import { emitTechnicalEvidence } from "../../scripts/publishing/pipeline.mjs";
 const write = async (root, path, value) => { const target = join(root, path); await mkdir(join(target, ".."), { recursive: true }); await writeFile(target, `${JSON.stringify(value, null, 2)}\n`); };
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 async function copyPublishingSchemas(root) {
-  for (const name of ["algorithms-manual-source.schema.json", "certification-manual-source.schema.json", "technical-validation-evidence.schema.json"]) {
+  for (const name of ["algorithms-manual-source.schema.json", "algorithms-feedback-assets.schema.json", "certification-manual-source.schema.json", "technical-validation-evidence.schema.json"]) {
     const value = await readFile(join(PROJECT_ROOT, "schemas", "publishing", name), "utf8");
     const target = join(root, "schemas", "publishing", name);
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, value);
+  }
+}
+async function copyAlgorithmsFeedbackAssets(root) {
+  for (const name of ["feedback-assets.json", "complexity-linear-vs-nested.svg"]) {
+    const source = join(PROJECT_ROOT, "manual", "assets", "algorithms", name);
+    const target = join(root, "manual", "assets", "algorithms", name);
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, await readFile(source));
   }
 }
 const item = (index, overrides = {}) => ({
@@ -18,7 +26,7 @@ const item = (index, overrides = {}) => ({
   prompt: "Choose all valid fixture invariants.",
   interaction: { type: "choice", selectionMode: "multiple", options: [{ id: "keep", text: "Keep invariant" }, { id: "discard", text: "Discard invariant" }], acceptedOptionIds: ["keep"] },
   scoringContract: { type: "choice", resultSemantics: "exact_selected_set_with_partial_v1" },
-  feedback: { reason: "Fixture reason.", details: "Fixture details.", wrongOptionExplanationsByOptionId: { discard: "Fixture wrong-option explanation." }, omittedCorrectExplanationsByOptionId: { keep: "Fixture omitted-correct explanation." } },
+  feedback: { reason: "Fixture reason.", details: { blocks: [{ type: "paragraph", text: "Fixture details." }] }, wrongOptionExplanationsByOptionId: { discard: "Fixture wrong-option explanation." }, omittedCorrectExplanationsByOptionId: { keep: "Fixture omitted-correct explanation." } },
   taxonomy: { primarySkillAtomId: "track_index_boundary", secondarySkillAtomIds: [], learningStage: "foundations" },
   ...overrides
 });
@@ -68,6 +76,7 @@ async function writeTechnicalEvidence(root, trackId, commit) {
 }
 export async function fixtureRoot(root, { algorithms, certification, technicalEvidence = true, legacy = false } = {}) {
   await copyPublishingSchemas(root);
+  await copyAlgorithmsFeedbackAssets(root);
   await write(root, "config/families/algorithms.json", { schemaVersion: "algorithms-family-config-v2", familyId: "algorithms", supportedInteractions: ["choice", "ordering", "complexity"] });
   await write(root, "config/families/certification.json", { schemaVersion: "family-config-v1", familyId: "certification", supportedInteractions: ["choice"], modes: [{ id: "certification-diagnostic-baseline", minimumPool: 40 }, { id: "certification-focus-practice", minimumPool: 10 }, { id: "certification-scenario-practice", minimumPool: 10 }, { id: "certification-weak-area-review", minimumPool: 1 }, { id: "certification-mixed-practice", minimumPool: 10 }, { id: "certification-quick-review", minimumPool: 1 }] });
   await write(root, "config/tracks/algorithms.json", { schemaVersion: "track-config-v1", trackId: "algorithms", familyId: "algorithms", taxonomyVersion: "algorithms-taxonomy-v2", taxonomyPath: "config/taxonomy/algorithms.json", modeConfiguration: fixtureModeConfiguration });

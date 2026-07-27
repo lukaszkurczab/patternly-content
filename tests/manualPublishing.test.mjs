@@ -50,6 +50,7 @@ test("canonical discovery is deterministic and ignores legacy content", async ()
     const bank = JSON.parse(a.artifact.artifactBytes).bank;
     assert.deepEqual(Object.keys(bank).sort(), [...APPLICATION_ALGORITHMS_BANK_KEYS].sort());
     assert.deepEqual(Object.keys(bank.items[0]).sort(), [...APPLICATION_ALGORITHMS_ITEM_KEYS].sort());
+    assert.deepEqual(bank.feedbackAssets, [{ id: "algorithms/complexity-linear-vs-nested", sourcePath: "manual/assets/algorithms/complexity-linear-vs-nested.svg", sha256: "890413bf6613f20db0120a700511b5493eccad334619d006641662716f1708f5" }]);
     const simulation = bank.practiceBlueprints.find((entry) => entry.modeId === "algorithms-interview-simulation");
     assert.deepEqual({ ...simulation, resolvedItemIds: undefined }, { blueprintId: "fixture-interview-simulation", blueprintVersion: "1", modeId: "algorithms-interview-simulation", requestedLengths: [40], defaultRequestedLength: 40, shortening: "prohibited", minimumActualLength: 40, composition: { kind: "simulation_pool", ids: ["fixture-pool"] }, resolvedItemIds: undefined });
     assert.equal(simulation.resolvedItemIds.length, 40); assert.equal(new Set(simulation.resolvedItemIds).size, 40); assert.ok(simulation.resolvedItemIds.every((id) => bank.simulationPools[0].itemIds.includes(id)));
@@ -159,6 +160,27 @@ test("validation is read-only and cannot publish a subset", async () => {
     const invalid = algorithmsBatch({ invalidChoice: true }); await writeFile(source, JSON.stringify(invalid));
     await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT }), fails("INVALID_RESPONSE"));
   } finally { await rm(path, { recursive: true }); }
+});
+
+test("rich Algorithms feedback accepts only the safe block document contract", async () => {
+  const supported = algorithmsBatch();
+  supported.items[0].feedback.details = { blocks: [
+    { type: "heading", level: 2, text: "Why this works" },
+    { type: "paragraph", text: "The invariant stays true after each step." },
+    { type: "bullet_list", items: ["Establish the invariant.", "Preserve it." ] },
+    { type: "ordered_list", items: ["Read input.", "Update state." ] },
+    { type: "code", language: "pseudocode", code: "if valid then return answer" },
+    { type: "image", assetId: "algorithms/complexity-linear-vs-nested", alt: "Local complexity comparison diagram" },
+    { type: "callout", kind: "key_takeaway", title: "Remember", text: "State the invariant before optimizing." },
+  ] };
+  const validPath = await root({ algorithms: supported, technicalEvidence: false });
+  try { await assert.doesNotReject(() => inspectTrack({ root: validPath, trackId: "algorithms", sourceRepositoryCommit: COMMIT })); } finally { await rm(validPath, { recursive: true }); }
+
+  for (const [details, code] of [["Former string details", "INVALID_SCHEMA"], [{ blocks: [{ type: "html", html: "<p>Unsafe</p>" }] }, "INVALID_SCHEMA"], [{ blocks: [{ type: "code", language: "javascript", code: "return 1" }] }, "INVALID_SCHEMA"], [{ blocks: [{ type: "image", assetId: "https://example.test/image.png", alt: "Remote image" }] }, "INVALID_RESPONSE"], [{ blocks: [{ type: "image", assetId: "algorithms/unknown-local", alt: "Unknown local image" }] }, "INVALID_RESPONSE"]]) {
+    const batch = algorithmsBatch(); batch.items[0].feedback.details = details;
+    const path = await root({ algorithms: batch, technicalEvidence: false });
+    try { await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails(code)); } finally { await rm(path, { recursive: true }); }
+  }
 });
 
 test("taxonomy is batch-owned and fully resolved on each item", async () => {

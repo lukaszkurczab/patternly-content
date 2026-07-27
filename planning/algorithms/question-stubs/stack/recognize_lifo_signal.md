@@ -101,7 +101,7 @@ Keep the batch focused on this one primary mental unit. Use secondary skill atom
   },
   feedback: {
     reason: "REPLACE_ME",
-    details: "REPLACE_ME",
+    details: { blocks: [{ type: "paragraph", text: "REPLACE_ME" }] },
     wrongOptionExplanationsByOptionId: { option_b: "REPLACE_ME" }
   },
   taxonomy: {

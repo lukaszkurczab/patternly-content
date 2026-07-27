@@ -94,7 +94,7 @@ A strategy item must state the constraint signal, legal mechanism, cost model, a
   },
   feedback: {
     reason: "REPLACE_ME",
-    details: "REPLACE_ME",
+    details: { blocks: [{ type: "paragraph", text: "REPLACE_ME" }] },
     wrongOptionExplanationsByOptionId: { option_b: "REPLACE_ME" }
   },
   taxonomy: {

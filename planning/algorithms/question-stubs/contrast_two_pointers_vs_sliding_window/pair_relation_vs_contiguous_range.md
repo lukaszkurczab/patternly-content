@@ -90,7 +90,7 @@ A contrast batch must include `contrastMetadata` with these contrasted units, on
   },
   feedback: {
     reason: "REPLACE_ME",
-    details: "REPLACE_ME",
+    details: { blocks: [{ type: "paragraph", text: "REPLACE_ME" }] },
     wrongOptionExplanationsByOptionId: { option_b: "REPLACE_ME" }
   },
   taxonomy: {

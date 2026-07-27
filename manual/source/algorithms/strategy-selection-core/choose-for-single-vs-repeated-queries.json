@@ -3,7 +3,7 @@
   "batchId": "algorithms-strategy-selection-core-choose_for_single_vs_repeated_queries-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0003",
+  "contentVersion": "algorithms-core-0004",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -63,7 +63,14 @@
       },
       "feedback": {
         "reason": "With one query, a full prefix index has no repeated-query work to amortize and consumes O(n) extra space. A direct range scan satisfies the contract with minimal setup.",
-        "details": "Query volume changes the lifecycle calculation. For one range, direct scanning costs O(length of range) and O(1) extra space. Building prefix sums costs O(n) time and O(n) space before a single O(1) query, so it offers no asymptotic total-time advantage when the range can be n and can perform more work for a short range. Sorting is illegal for positional range semantics and adds unrelated cost. The transfer rule is to prefer low-setup direct work when a reusable index will not be reused, unless latency or another explicit constraint requires preprocessing.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Query volume changes the lifecycle calculation. For one range, direct scanning costs O(length of range) and O(1) extra space. Building prefix sums costs O(n) time and O(n) space before a single O(1) query, so it offers no asymptotic total-time advantage when the range can be n and can perform more work for a short range. Sorting is illegal for positional range semantics and adds unrelated cost. The transfer rule is to prefer low-setup direct work when a reusable index will not be reused, unless latency or another explicit constraint requires preprocessing."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "prefix_once": "Prefix sums are correct, but their setup and O(n) state are not amortized by one query. They become preferable when many later queries reuse the same static prefix array or when a strict per-query latency requirement justifies setup.",
           "sort_first": "Sorting changes which values occupy the requested indices and therefore violates range semantics. It would be relevant only for an order-insensitive query whose mechanism needs sorted values."
@@ -112,7 +119,14 @@
       },
       "feedback": {
         "reason": "The static prefix state is reusable across all one million queries. Its O(n) setup is amortized while per-query work drops to O(1).",
-        "details": "For repeated static range sums, the complete models are O(n + q) time and O(n) extra space for prefix sums versus up to O(nq) time and O(1) extra space for rescanning. The array does not change, so the index remains valid, and the query operation is algebraically recoverable from two prefix values. Sorting neither preserves positional ranges nor needs to be repeated. The transfer rule is to invest in reusable preprocessing when the same data supports many compatible queries and the index remains valid for their entire lifetime.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For repeated static range sums, the complete models are O(n + q) time and O(n) extra space for prefix sums versus up to O(nq) time and O(1) extra space for rescanning. The array does not change, so the index remains valid, and the query operation is algebraically recoverable from two prefix values. Sorting neither preserves positional ranges nor needs to be repeated. The transfer rule is to invest in reusable preprocessing when the same data supports many compatible queries and the index remains valid for their entire lifetime."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "rescan_each": "A scan is attractive for one query, but repeating it up to a million times multiplies the data work by q. It becomes competitive when q is very small, ranges are tiny, or memory forbids the index.",
           "sort_each": "Sorting changes positional range semantics and repeating it compounds the cost. Sorting can help repeated order-based queries only when performed once and when the output contract is compatible with reordered data."
@@ -160,7 +174,14 @@
       },
       "feedback": {
         "reason": "Many queries can reuse one membership index. The setup cost is paid once rather than repeating a full scan.",
-        "details": "A hash set changes the lifecycle from O(qn) repeated scans to expected O(n + q) operations with O(n) extra state. The exact output is membership, so no ordering or original-position witness is required. A one-time sorted index could also be a legal candidate with O(n log n + q log n), but sorting a fresh copy per query discards reuse. The transfer rule is to align the preprocessed state with the query primitive—membership, rank, range aggregate, predecessor, or nearest relation—and reuse it across the workload.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A hash set changes the lifecycle from O(qn) repeated scans to expected O(n + q) operations with O(n) extra state. The exact output is membership, so no ordering or original-position witness is required. A one-time sorted index could also be a legal candidate with O(n log n + q log n), but sorting a fresh copy per query discards reuse. The transfer rule is to align the preprocessed state with the query primitive—membership, rank, range aggregate, predecessor, or nearest relation—and reuse it across the workload."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "scan_catalog": "Scanning avoids setup and can be best for one or very few queries, but repeated full passes make total work grow with qn. It becomes preferable when q is small or memory is too constrained for an index.",
           "sort_per_query": "This repeats the most expensive setup instead of reusing it. A single sorted copy could be considered when deterministic bounds or ordered queries matter."
@@ -208,7 +229,14 @@
       },
       "feedback": {
         "reason": "Online query arrival does not forbid preprocessing when the data is already complete and stable. It only prevents preprocessing that depends on future query contents.",
-        "details": "Two timelines matter: when the data becomes available and when each answer is due. Here the dataset can be indexed during startup, and that index remains valid while unknown future queries arrive. The system cannot precompute each exact answer because query parameters are unknown, but it can precompute reusable structure such as a set, sorted copy, or prefix aggregates. Rebuilding per request would throw away the amortization benefit. The transfer rule is to separate data-offline/query-online workloads from true streaming-data workloads.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two timelines matter: when the data becomes available and when each answer is due. Here the dataset can be indexed during startup, and that index remains valid while unknown future queries arrive. The system cannot precompute each exact answer because query parameters are unknown, but it can precompute reusable structure such as a set, sorted copy, or prefix aggregates. Rebuilding per request would throw away the amortization benefit. The transfer rule is to separate data-offline/query-online workloads from true streaming-data workloads."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "no_preprocessing": "This confuses unknown future queries with unavailable data. The claim becomes valid only when the dataset itself arrives online or preprocessing cannot finish before the first required answer.",
           "rebuild_each": "A query-independent index is reusable even when query arguments are not known. Rebuilding is necessary only when intervening data updates invalidate the structure."
@@ -256,7 +284,14 @@
       },
       "feedback": {
         "reason": "Repeated queries justify preprocessing only when the preprocessed state remains reusable at acceptable maintenance cost. Alternating updates invalidate a plain prefix array.",
-        "details": "The workload lifecycle is not q queries over one immutable snapshot. Under the stated maintenance policy, each update triggers O(n) work, so u updates and q queries cost O(un + q) after setup. That can be no better than direct rescanning for this balanced workload and uses additional state. Keeping the old prefix values would be incorrect. The transfer rule is to include update frequency and index-maintenance cost in every repeated-query decision; query count alone is not a preprocessing mandate.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The workload lifecycle is not q queries over one immutable snapshot. Under the stated maintenance policy, each update triggers O(n) work, so u updates and q queries cost O(un + q) after setup. That can be no better than direct rescanning for this balanced workload and uses additional state. Keeping the old prefix values would be incorrect. The transfer rule is to include update frequency and index-maintenance cost in every repeated-query decision; query count alone is not a preprocessing mandate."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "prefix_repeated": "The heuristic ignores that each update destroys reuse. It becomes valid for static data or when an approved update-aware structure maintains the required query faster.",
           "ignore_updates": "This preserves low query latency by returning stale answers, violating correctness. It is legal only if updates are deferred to a new immutable version and queries target the old version explicitly."
@@ -314,7 +349,14 @@
       },
       "feedback": {
         "reason": "Amortization, validity lifetime, and resource feasibility jointly determine whether preprocessing is justified. The label 'repeated' is not a complete cost model.",
-        "details": "A reusable strategy should be evaluated with a break-even inequality: setup + maintenance + q·indexedQueryCost must beat the relevant alternative while satisfying memory and latency limits. Reuse disappears if updates invalidate the state, and an index that cannot be allocated is infeasible. Future query arguments may remain unknown as long as the index supports the query class rather than precomputing exact answers. The transfer rule is to check reuse count, index lifetime, and resource fit as separate gates before turning repeated work into preprocessing.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A reusable strategy should be evaluated with a break-even inequality: setup + maintenance + q·indexedQueryCost must beat the relevant alternative while satisfying memory and latency limits. Reuse disappears if updates invalidate the state, and an index that cannot be allocated is infeasible. Future query arguments may remain unknown as long as the index supports the query class rather than precomputing exact answers. The transfer rule is to check reuse count, index lifetime, and resource fit as separate gates before turning repeated work into preprocessing."
+            }
+          ]
+        },
         "wrongOptionExplanationsByOptionId": {
           "repeated_word": "Repeated use is a signal to calculate amortization, not proof of a win. The statement becomes true only after the saved work exceeds setup and maintenance under the resource limits.",
           "query_unknown": "Unknown parameters prevent precomputing exact results, but not building a query-independent index. This would block preprocessing only when the index itself depends on knowing all future queries."

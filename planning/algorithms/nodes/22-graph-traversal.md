@@ -204,4 +204,4 @@ Every unit should eventually cover recognition, mechanics or reasoning, edge cas
 
 ## Completion criteria
 
-This node is not production-ready until its item counts are approved, real questions receive manual review, technical evidence is emitted, approvals and activation exist, and a release artifact is built.
+This node is not production-ready until its item counts meet the declared session requirements, real questions have been substantively reviewed, matching technical evidence is emitted, and a release artifact is built.

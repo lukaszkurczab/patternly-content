@@ -1,12 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { emitTechnicalEvidence, inspectTrack } from "../../scripts/publishing/pipeline.mjs";
+import { emitTechnicalEvidence } from "../../scripts/publishing/pipeline.mjs";
 
 const write = async (root, path, value) => { const target = join(root, path); await mkdir(join(target, ".."), { recursive: true }); await writeFile(target, `${JSON.stringify(value, null, 2)}\n`); };
 const PROJECT_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 async function copyPublishingSchemas(root) {
-  for (const name of ["algorithms-manual-source.schema.json", "certification-manual-source.schema.json", "technical-validation-evidence.schema.json", "editorial-approval-record.schema.json", "content-activation-record.schema.json"]) {
+  for (const name of ["algorithms-manual-source.schema.json", "certification-manual-source.schema.json", "technical-validation-evidence.schema.json"]) {
     const value = await readFile(join(PROJECT_ROOT, "schemas", "publishing", name), "utf8");
     const target = join(root, "schemas", "publishing", name);
     await mkdir(dirname(target), { recursive: true });
@@ -63,18 +63,10 @@ export const certificationWeakAreaReview = { blueprintId: "gcp-ace-weak-area-rev
 export const certificationMixedPractice = { blueprintId: "gcp-ace-mixed-practice-v1", blueprintVersion: "1", modeId: "certification-mixed-practice", requestedLengths: [10, 20, 40], shortening: "allowed_within_interleaved_blueprint", selectionScope: "unique_interleaved_blueprint", itemIds: Array.from({ length: 40 }, (_, index) => `fixture-certification-${index + 1}`) };
 export const certificationQuickReview = { blueprintId: "gcp-ace-quick-review-v1", blueprintVersion: "1", modeId: "certification-quick-review", maximumLength: 10, shortening: "allowed_within_eligible_review_evidence", selectionScope: "eligible_due_review_evidence", persistentResolutionPolicy: "two_consecutive_due_review_successes" };
 export function certificationBatch({ count = 50 } = {}) { return { schemaVersion: "certification-manual-source-v1", batchId: "fixture-certification-batch", trackId: "cloud-certification", familyId: "certification", contentVersion: "certification-fixture-v1", taxonomyVersion: "cloud-certification-taxonomy-v1", declaredModes: ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review"], items: Array.from({ length: count }, (_, index) => ({ id: `fixture-certification-${index + 1}`, domain: "setup_environment", type: "single", difficulty: "easy", question: `Fixture certification question ${index + 1}?`, options: [{ id: "A", text: `Correct ${index + 1}` }, { id: "B", text: `Wrong B ${index + 1}` }, { id: "C", text: `Wrong C ${index + 1}` }, { id: "D", text: `Wrong D ${index + 1}` }], correctOptionIds: ["A"], explanation: "Fixture explanation.", whyOthersAreWrong: { B: "Wrong B.", C: "Wrong C.", D: "Wrong D." }, watchOutFor: "Fixture watch-out.", tags: ["fixture"], examSignals: ["fixture"] })) }; }
-async function writeApprovalsAndActivation(root, trackId, commit) {
+async function writeTechnicalEvidence(root, trackId, commit) {
   await emitTechnicalEvidence({ root, trackId, sourceRepositoryCommit: commit });
-  const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: commit });
-  const approvalIds = new Map();
-  for (const evidence of inspected.source.technicalEvidence) {
-    const approvalId = `fixture-approval-${evidence.batchId}`; approvalIds.set(evidence.batchId, approvalId);
-    await write(root, `manual/approvals/${trackId}/${evidence.batchId}.json`, { approvalSchemaVersion: 1, approvalId, reviewKind: "editorial", batchId: evidence.batchId, familyId: inspected.track.familyId, trackId, primaryTaxonomyReference: inspected.track.familyId === "algorithms" ? "arrays_and_strings" : "fixture", includedItems: Object.entries(evidence.itemFingerprints).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([itemId, itemFingerprint]) => ({ itemId, itemFingerprint })), targetContentVersion: inspected.source.contentVersion, reviewer: { kind: "human_editor", id: "fixture-reviewer" }, reviewDate: "2026-07-16", technicalValidationEvidenceId: evidence.evidenceId, factualAndEditorialDefectsFound: [], requiredCorrections: [], finalDisposition: "approved" });
-  }
-  const coverage = inspected.source.items.map((entry) => { const batch = inspected.source.batches.find((candidate) => candidate.items.some((item) => item.id === entry.id)); return { itemId: entry.id, itemFingerprint: entry.itemFingerprint, approvalId: approvalIds.get(batch.batchId) }; });
-  await write(root, `manual/activations/${trackId}/fixture-activation.json`, { activationSchemaVersion: 1, activationId: `fixture-activation-${trackId}`, trackId, familyId: inspected.track.familyId, contentVersion: inspected.source.contentVersion, taxonomyVersion: inspected.source.taxonomyVersion, itemCoverage: coverage });
 }
-export async function fixtureRoot(root, { algorithms, certification, approvals = true, legacy = false } = {}) {
+export async function fixtureRoot(root, { algorithms, certification, technicalEvidence = true, legacy = false } = {}) {
   await copyPublishingSchemas(root);
   await write(root, "config/families/algorithms.json", { schemaVersion: "algorithms-family-config-v2", familyId: "algorithms", supportedInteractions: ["choice", "ordering", "complexity"] });
   await write(root, "config/families/certification.json", { schemaVersion: "family-config-v1", familyId: "certification", supportedInteractions: ["choice"], modes: [{ id: "certification-diagnostic-baseline", minimumPool: 40 }, { id: "certification-focus-practice", minimumPool: 10 }, { id: "certification-scenario-practice", minimumPool: 10 }, { id: "certification-weak-area-review", minimumPool: 1 }, { id: "certification-mixed-practice", minimumPool: 10 }, { id: "certification-quick-review", minimumPool: 1 }] });
@@ -83,5 +75,5 @@ export async function fixtureRoot(root, { algorithms, certification, approvals =
   await write(root, "config/taxonomy/algorithms.json", { schemaVersion: "algorithms-taxonomy-v2", trackId: "algorithms", taxonomyVersion: "algorithms-taxonomy-v2", learningStages: ["foundations"], roadmapNodes: [{ id: "arrays_and_strings" }], mentalUnits: [{ id: "arrays_and_strings", roadmapNodeId: "arrays_and_strings", unitKind: "direct", primaryPatternFamilyId: "arrays_and_strings", legalPatternFamilyIds: ["arrays_and_strings"], primarySkillAtomId: "track_index_boundary", secondarySkillAtomIds: [], learningStage: "foundations", patternVariantIds: [], problemArchetypeIds: [] }], patternFamilies: [{ id: "arrays_and_strings", primaryMentalUnitId: "arrays_and_strings" }], patternVariants: [], problemArchetypes: [], skillAtoms: [{ id: "track_index_boundary", primaryMentalUnitId: "arrays_and_strings" }], falseHeuristics: [] });
   await write(root, "config/taxonomy/cloud-certification.json", { schemaVersion: "taxonomy-config-v1", trackId: "cloud-certification", taxonomyVersion: "cloud-certification-taxonomy-v1", axes: ["cloud-domain", "tag"], cloudDomains: ["setup_environment"] });
   if (algorithms) await write(root, "manual/source/algorithms/fixture.json", algorithms); if (certification) await write(root, "manual/source/cloud-certification/fixture.json", certification); if (legacy) await write(root, "tracks/algorithms/banks/legacy.json", algorithmsBatch());
-  if (approvals && algorithms) await writeApprovalsAndActivation(root, "algorithms", "fixture-source-commit"); if (approvals && certification) await writeApprovalsAndActivation(root, "cloud-certification", "fixture-source-commit");
+  if (technicalEvidence && algorithms) await writeTechnicalEvidence(root, "algorithms", "fixture-source-commit"); if (technicalEvidence && certification) await writeTechnicalEvidence(root, "cloud-certification", "fixture-source-commit");
 }

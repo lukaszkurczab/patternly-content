@@ -5,7 +5,7 @@
  */
 export const APPLICATION_CONTRACT_SHA = "5923032ce67016f255449005d769c0bf26e9b5d5";
 export const APPLICATION_ALGORITHMS_BANK_KEYS = Object.freeze([
-  "approvalActivationIdentity", "compatibilitySets", "contentVersion", "contrastSets",
+  "compatibilitySets", "contentVersion", "contrastSets",
   "familyId", "formatVersion", "interleavedScopes", "items", "practiceBlueprints",
   "recognitionSets", "simulationPools", "simulationProfiles", "trackId",
 ]);

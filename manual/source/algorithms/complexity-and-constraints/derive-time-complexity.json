@@ -61,8 +61,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Sequential work is added: n + n = 2n.",
-        "details": "Constant factors are dropped asymptotically, giving a linear bound.",
+        "reason": "The two scans run one after the other, so their work adds to n + n = 2n rather than multiplying.",
+        "details": "Count executions of the scan body. The first pass visits n elements and the second pass visits another n, for 2n visits. Big-O describes how that count grows as n grows: multiplying n by the constant 2 does not change the growth class, so the tight asymptotic bound is Θ(n), commonly written O(n). Multiplication would be justified only if one full scan happened inside every iteration of the other.",
         "wrongOptionExplanationsByOptionId": {
           "quadratic": "Sequential phases add rather than multiply.",
           "constant": "Both scans grow with n.",
@@ -110,8 +110,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Nested independent loops multiply their iteration counts.",
-        "details": "The executed body count is n², regardless of how short the body is.",
+        "reason": "Every one of the n outer iterations triggers a fresh inner loop of n iterations, so the body runs n × n times.",
+        "details": "Start with one outer iteration: it performs n inner-body executions. The same n executions occur for each of the n outer iterations, giving n·n = n² executions in total. The body being short affects only a constant factor; it does not remove repetitions. By contrast, two loops that run consecutively would add their costs instead of multiplying them.",
         "wrongOptionExplanationsByOptionId": {
           "sum": "The inner loop executes inside every outer iteration.",
           "names": "Names have no effect on execution count.",
@@ -159,8 +159,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The inner counts are n, n - 1, ..., 1.",
-        "details": "Their sum is n(n + 1)/2, which is quadratic.",
+        "reason": "As i increases, the inner loop gets shorter, but its total work is still the triangular sum n + (n − 1) + … + 1.",
+        "details": "For i = 0, the inner loop has n iterations; for i = 1, it has n − 1; eventually it has one. Adding those counts gives n(n + 1)/2. Dividing by 2 changes only a constant factor, while the n² term remains, so the running time is Θ(n²). A shrinking inner loop is not automatically linear; you must add all of its lengths.",
         "wrongOptionExplanationsByOptionId": {
           "always_linear": "The sum n + (n-1) + ... + 1 is quadratic.",
           "always_cubic": "There are only two loop dimensions.",
@@ -208,8 +208,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "After k iterations, the remaining value is approximately n / 2^k.",
-        "details": "The loop stops when 2^k reaches n, so k is logarithmic.",
+        "reason": "Each iteration halves the remaining value, so after k iterations it is n / 2^k; reaching 1 therefore needs only logarithmically many halvings.",
+        "details": "Write out the sequence: n, n/2, n/4, n/8, and so on. After k halvings the value is n/2^k. The loop ends once that value is below 1, which is equivalent to 2^k being at least n. Solving for k gives log₂ n. The important signal is multiplicative shrinkage: subtracting one would take linear time, but repeatedly dividing by a fixed factor takes logarithmic time.",
         "wrongOptionExplanationsByOptionId": {
           "numeric_n": "The value shrinks multiplicatively, not by one.",
           "constant": "Inputs larger than one require multiple halvings.",
@@ -257,8 +257,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The relevant count is total pointer movement, not syntactic nesting.",
-        "details": "If every iteration advances at least one monotonic pointer and each pointer crosses the array once, total iterations are linear.",
+        "reason": "The nested shape is misleading here: each pointer only moves forward and can advance at most n times during the entire run.",
+        "details": "Do not count the inner loop as n for every outer iteration unless it restarts. Instead, charge each iteration to a pointer advance. A left pointer can advance at most n positions and a right-moving pointer can also advance at most n positions, so there are at most 2n advances. If every loop iteration makes at least one such advance, there can be only O(n) iterations overall. This aggregate argument fails if an inner pointer resets and revisits the same elements for every outer iteration.",
         "wrongOptionExplanationsByOptionId": {
           "nested_never_matters": "Nested loops can be quadratic when inner work resets.",
           "pointer_names": "Names do not determine complexity.",
@@ -306,8 +306,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Worst-case time uses the execution path with the most work among valid inputs of size n.",
-        "details": "The possibility of an early exit affects best case, not the worst-case upper bound.",
+        "reason": "Worst-case analysis asks for the valid input of size n that makes the algorithm do the most work, and that input can delay the break until the final element.",
+        "details": "An early break proves that some inputs finish quickly; it does not bound every input. For a worst-case example, choose an array where the sought value is absent or appears last. The loop then executes its body n times, so the worst-case bound is Θ(n). That first-element break belongs to the best-case discussion, not to a claim that the algorithm is constant time.",
         "wrongOptionExplanationsByOptionId": {
           "constant": "Worst-case analysis uses an input that delays the break.",
           "logarithmic": "Early termination alone does not imply halving.",
@@ -355,8 +355,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The total is O(n log n + n).",
-        "details": "The larger n log n term dominates asymptotically.",
+        "reason": "Sorting costs O(n log n) and the later scan costs O(n), so sequential composition gives O(n log n + n).",
+        "details": "Both phases execute, so add their costs first. For large n, n log n grows faster than n because log n eventually exceeds every fixed constant. Therefore the sort dominates the scan and the total is Θ(n log n). A library call is not free: its complexity must be included unless the problem explicitly treats it as a constant-time primitive.",
         "wrongOptionExplanationsByOptionId": {
           "linear": "The sort is asymptotically larger.",
           "sum_as_product": "Sequential phases add.",
@@ -404,8 +404,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "A variable named i may increment by one, double, reset, or depend on another pointer.",
-        "details": "The bound must be derived from how many operations execute.",
+        "reason": "The name i carries no execution information: it could increase by one, double each time, reset inside another loop, or follow another variable.",
+        "details": "Complexity comes from a count, not from a naming convention. Inspect the initial value, update rule, stopping condition, and work per iteration. For example, `i += 1` from 0 to n performs about n iterations, while `i *= 2` from 1 to n performs about log n; both variables may be named i. A nested loop can also reset i and make the total quadratic. Derive the bound from behavior.",
         "wrongOptionExplanationsByOptionId": {
           "i_reserved": "No naming convention determines Big-O.",
           "all_loops_linear": "Loops can be constant, logarithmic, quadratic, or other.",
@@ -455,8 +455,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Time derivation follows composition of executed work.",
-        "details": "Syntactic labels do not replace counting.",
+        "reason": "The valid rules describe how real executions compose: consecutive phases add, repeated inner work multiplies when it is independent, and asymptotic notation keeps the dominant growth term.",
+        "details": "Use the rules in order. Count each phase, add phases that run one after another, and multiply only when one count repeats fully for every execution of another. Once you have an expression such as 3n² + 5n, constants and lower-order terms can be removed for the asymptotic class, yielding Θ(n²). Variable names are never an input to this calculation; they do not change how often the program runs.",
         "wrongOptionExplanationsByOptionId": {
           "variable_names": "Names do not encode operation counts."
         },
@@ -509,8 +509,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Nested syntax does not force quadratic execution.",
-        "details": "The decisive question is how often each unit of input work can occur over the full run.",
+        "reason": "Nested syntax is linear when the inner work is shared across the whole run rather than restarted for every outer iteration.",
+        "details": "Ask whether an element can be charged only a constant number of times. A monotonic inner pointer never returns to an earlier element, so all of its advances together are bounded by n. Likewise, an item pushed once and popped once contributes at most two stack operations. A full inner scan that resets to the beginning for every outer iteration has no such shared bound: it performs n work n times, or Θ(n²).",
         "wrongOptionExplanationsByOptionId": {
           "reset_full_scan": "That performs n² work."
         },
@@ -563,8 +563,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "A recurrence summarizes child structure and work per call.",
-        "details": "Without all three, the total executed operations cannot be justified.",
+        "reason": "A recursive time bound needs the number of child calls, their input sizes, and the nonrecursive work done by the current call.",
+        "details": "These facts form a recurrence such as T(n) = 2T(n/2) + n. The number of children controls branching, child size controls recursion depth, and local work must be paid at every node in the recursion tree. Knowing only that a function calls itself is insufficient: one child of size n−1 behaves very differently from two children of size n/2, even if both functions are named `dfs` or `solve`.",
         "wrongOptionExplanationsByOptionId": {
           "function_name": "Names do not determine recurrence."
         },
@@ -617,8 +617,8 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Different complexity labels answer different questions.",
-        "details": "Amortized analysis belongs to sequence accounting and should not be substituted for probabilistic average case.",
+        "reason": "Best, worst, average, and amortized case use different quantifiers, so evidence for one is not automatically evidence for another.",
+        "details": "Worst case is the maximum work over valid inputs of a fixed size; best case is the minimum. Average case is an expected value and therefore needs a stated probability distribution over inputs. Amortized analysis instead bounds the average cost across a sequence of operations, often deterministically: an occasional expensive array resize can be paid for by many cheap appends. It is not the same as assuming random inputs.",
         "wrongOptionExplanationsByOptionId": {
           "amortized_distribution": "Amortized bounds can be deterministic over every operation sequence."
         },
@@ -672,8 +672,8 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "A defensible bound begins with explicit inputs and ends with a simplified execution count.",
-        "details": "Skipping directly to a familiar loop shape invites heuristic errors."
+        "reason": "Correct analysis first defines what grows, then counts actual work, composes those counts, and only then simplifies the expression.",
+        "details": "Start by naming the input-size variables and what one primitive operation costs. Next count loop iterations, recursive calls, and per-iteration work. Add sequential phases and multiply repeated work only when the repetition is justified. Finally discard constant factors and lower-order terms while stating whether the result is worst case, average case, or another measure. This sequence prevents guessing from a familiar-looking loop header."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -719,8 +719,8 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "Aggregate movement, not loop nesting, determines the bound.",
-        "details": "A pointer that never retreats cannot cause repeated full rescans."
+        "reason": "A monotonic-pointer proof bounds the total number of advances across all nested iterations, rather than assigning a full scan to each loop level.",
+        "details": "List the moves that can happen, then bound each pointer over the whole execution. If a pointer never retreats, it crosses at most n positions. Add those bounds: two such pointers make at most 2n advances. When every iteration advances at least one pointer, the iteration count is O(n). This reasoning would be invalid if a pointer could reset or move backward enough to revisit the same range repeatedly."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -766,8 +766,8 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "The branching doubles while subproblem sizes halve, keeping each level's combined work linear.",
-        "details": "Linear work repeated across logarithmically many levels gives n log n."
+        "reason": "Two half-size calls create twice as many subproblems at each lower level, but their combined input size remains n, so each level performs O(n) merge work.",
+        "details": "At the top level there is one merge of n items. At the next level there are two merges of n/2 items, still n work total; the same is true at every level. Halving reaches constant-size subproblems after log₂ n levels. Multiplying O(n) work per level by O(log n) levels gives Θ(n log n). The recurrence is T(n) = 2T(n/2) + O(n)."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -813,8 +813,8 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "Asymptotic simplification preserves the term that dominates for large n.",
-        "details": "The discarded terms may matter in practice but do not change the growth class."
+        "reason": "Among n², n log n, n, and 1, the n² term grows fastest as n becomes large, so it determines the asymptotic class.",
+        "details": "First ignore the constant multipliers 3, 7, and 500; they scale a term but do not alter its growth category. Then compare the remaining functions. n² eventually exceeds n log n, n, and a constant, so O(n² + 3n log n + 7n + 500) simplifies to Θ(n²). The smaller terms can still matter for a concrete small input, but they do not change the long-run classification."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -860,8 +860,8 @@
         "maxPoints": 1
       },
       "feedback": {
-        "reason": "One constant-time body execution occurs for each of n indices.",
-        "details": "The total operation count grows linearly."
+        "reason": "The loop body runs once for every input element, and each run has bounded constant cost, so the total is proportional to n.",
+        "details": "Model the total work as c × n, where c is the maximum cost of one body execution. As n doubles, the number of executions doubles; it does not square or stay fixed. Big-O ignores the fixed constant c and reports O(n). This conclusion relies on the stated guarantee that the loop completes all n iterations and that no hidden operation inside the body grows with n."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -907,8 +907,8 @@
         "maxPoints": 1
       },
       "feedback": {
-        "reason": "The body count is 0 + 1 + ... + (n - 1).",
-        "details": "That triangular sum is Θ(n²)."
+        "reason": "The first outer iteration performs zero inner operations, the next performs one, and the final one performs n − 1, producing a triangular sum.",
+        "details": "Add the exact counts: 0 + 1 + 2 + … + (n − 1) = n(n − 1)/2. The division by 2 and subtraction of n are lower-order or constant-factor changes; the leading term is proportional to n². Therefore the time is Θ(n²), even though the inner loop is shorter later in the run."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -954,8 +954,8 @@
         "maxPoints": 1
       },
       "feedback": {
-        "reason": "Each iteration reduces the magnitude by a constant factor.",
-        "details": "The number of halvings before reaching 1 is logarithmic."
+        "reason": "Dividing by two removes half of the remaining magnitude each time, so the number of steps is the number of powers of two needed to reach n.",
+        "details": "After one iteration the value is n/2, after two it is n/4, and after k it is n/2^k. The stopping condition n/2^k < 1 means 2^k > n, so k is about log₂ n. This is why repeated halving is O(log n), whereas repeatedly subtracting one would need about n steps."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -1001,8 +1001,8 @@
         "maxPoints": 1
       },
       "feedback": {
-        "reason": "The logarithmic search cost repeats n times.",
-        "details": "Multiplying the independent iteration counts gives n log n."
+        "reason": "There are n separate outer iterations, and each one performs a complete binary search costing O(log n), so the costs multiply.",
+        "details": "Write the total as n × O(log n) = O(n log n). The searches do not share progress in the stated algorithm: each search begins over the sorted collection again. If one logarithmic search were followed by one linear pass, the costs would be added instead. Decide whether work is sequential or repeated before combining bounds."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -1048,8 +1048,8 @@
         "maxPoints": 1
       },
       "feedback": {
-        "reason": "The total number of pointer advances is at most 2n.",
-        "details": "Nested control flow does not increase the aggregate movement bound."
+        "reason": "Neither pointer can move backward, so each crosses at most n positions; together they make at most 2n advances.",
+        "details": "Charge every loop iteration to at least one pointer advance. Because a pointer never revisits an earlier index, its personal advance count is bounded by n. With two pointers the total charge is at most 2n, hence O(n) iterations. The apparent nesting only changes control flow; it does not create n fresh inner iterations for every outer step."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",
@@ -1095,8 +1095,8 @@
         "maxPoints": 1
       },
       "feedback": {
-        "reason": "The recursion has logarithmically many levels and O(n) combined work at each level.",
-        "details": "The total is O(n log n)."
+        "reason": "At each recursion depth, the two half-size subproblems have a combined size of n, so their O(n) local work adds to O(n) per level; there are O(log n) levels.",
+        "details": "The recurrence is T(n) = 2T(n/2) + O(n). One level has one problem of size n; the next has two problems of size n/2; then four of size n/4. In every case the sizes sum to n, so local work totals O(n). Halving continues for log₂ n levels until the base case. O(n) repeated over O(log n) levels gives Θ(n log n), not O(n) or O(n²)."
       },
       "taxonomy": {
         "primarySkillAtomId": "derive_time_complexity",

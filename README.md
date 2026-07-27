@@ -4,4 +4,4 @@ The canonical pipeline is manual source → read-only validation → immutable t
 
 Legacy `tracks/` files are not pipeline ingress and are never scanned as a fallback. Moving or pasting any existing question into `manual/source/` is **MANUAL ONLY**.
 
-Run `npm test` for architecture fixtures. Human authors use `npm run validate:track -- --track <trackId>`, then `npm run build:track -- --track <trackId>`. See `docs/manual-publishing-handoff.md` before adding any manual source or approval record.
+Run `npm test` for architecture fixtures. Human authors use `npm run validate:track -- --track <trackId>`, then `npm run build:track -- --track <trackId>`. See `docs/manual-publishing-handoff.md` before adding manual source or emitting a release artifact.

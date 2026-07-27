@@ -3,7 +3,7 @@
   "batchId": "arrays-and-strings-stable-in-place-compaction-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0005",
+  "contentVersion": "algorithms-core-0006",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -65,8 +65,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "After processing a prefix of the input, positions [0, write) contain exactly the retained values from that processed prefix in their original relative order."
+              "text": "The correct choice is “The number of retained values already written into the valid output prefix.”. After processing a prefix of the input, positions [0, write) contain exactly the retained values from that processed prefix in their original relative order."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The write index is the boundary between the valid compacted prefix and unused positions."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The position of the next unread input value. — The read index, not the write index, tracks the next input position to inspect.",
+                "Only the number of removed values. — Removed count can be derived from read and write, but it is not the direct meaning of write.",
+                "The physical length of the array. — Compaction usually changes the logical result length without changing physical storage length."
+              ]
             }
           ]
         },
@@ -122,8 +146,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "If a value is removed, no new valid output position is created. Incrementing write anyway would leave gaps or include stale values in the logical prefix."
+              "text": "The correct choice is “Only after a retained value has been written to array[write].”. If a value is removed, no new valid output position is created. Incrementing write anyway would leave gaps or include stale values in the logical prefix."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Write counts retained output positions, so it advances exactly when one output value is produced."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "On every read iteration, whether the value is retained or removed. — This makes write track processed input rather than retained output.",
+                "Only when the current value is removed. — Removed values should not consume positions in the compacted prefix.",
+                "Only once after the scan finishes. — The algorithm needs the current output boundary during the scan."
+              ]
             }
           ]
         },
@@ -179,8 +227,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "Writing to an index at or before the current read position cannot destroy future unread values. If write moved beyond read, the algorithm could overwrite input that has not yet been examined."
+              "text": "The correct choice is “At every step, write <= read.”. Writing to an index at or before the current read position cannot destroy future unread values. If write moved beyond read, the algorithm could overwrite input that has not yet been examined."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The output boundary can lag behind the read position but must never move ahead of it."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "At every step, read <= write. — This permits write to move into unread territory.",
+                "At every step, write equals n. — Write should reflect retained count, which can be much smaller than n.",
+                "At every step, read equals write + 1. — Read and write may be equal for long stretches when all values are retained."
+              ]
             }
           ]
         },
@@ -236,8 +308,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "Read still scans the entire input, but write never advances because no output value is produced."
+              "text": "The correct choice is “0”. Read still scans the entire input, but write never advances because no output value is produced."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "No retained values means the valid compacted prefix has length zero."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "1 — The algorithm does not reserve a placeholder output position.",
+                "n - 1 — This confuses an index with the number of retained values.",
+                "n — Processed input count and retained output count are different."
+              ]
             }
           ]
         },
@@ -293,8 +389,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "The write index increases monotonically, so later retained values cannot be placed before earlier retained values."
+              "text": "The correct choice is “Read moves left to right, and each retained value is written to the next output position.”. The write index increases monotonically, so later retained values cannot be placed before earlier retained values."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Values are emitted in the same order in which they are encountered."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The retained prefix is sorted after the scan. — Sorting would impose a new order rather than preserve the original one.",
+                "Each removed value is swapped with the final element. — Swapping from the end can change the relative order of retained values.",
+                "Removing duplicates automatically preserves order. — Duplicate behavior and stability are separate contract dimensions."
+              ]
             }
           ]
         },
@@ -353,8 +473,33 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
               "text": "Writing occurs only after the predicate accepts the value, and write advances only after a valid output position has been filled."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The decision must be based on the source value before the output boundary advances."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Read the current value at the read index.",
+                "Evaluate whether the value should be retained.",
+                "Write the retained value at the write index.",
+                "Advance the write index."
+              ]
             }
           ]
         }
@@ -407,8 +552,30 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "Only [0, write) is guaranteed to be valid output during the scan. The suffix may still contain unread input or stale values."
+              "text": "The correct choice is “Positions [0, write) contain exactly the retained values from the processed input prefix.”, “write never exceeds the number of input positions already processed.”, “The retained values in [0, write) remain in original relative order.”. Only [0, write) is guaranteed to be valid output during the scan. The suffix may still contain unread input or stale values."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The invariant describes the completed prefix and the safe relation between read and write."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Every position at or after write already contains its final required value. — The suffix is not part of the established output invariant and may change later."
+              ]
             }
           ]
         },
@@ -495,8 +662,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
               "text": "Read visits all n positions. A constant number of indices gives O(1) auxiliary space, and no growing result container is allocated outside the input."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Complexity rule",
+              "text": "The scan is linear and reuses the input array as the logical output buffer."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Report each required dimension"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "time: O(n)",
+                "auxiliary space: O(1)",
+                "additional output space: O(1)"
+              ]
             }
           ]
         }
@@ -547,8 +738,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "An implementation may optionally avoid the assignment as a micro-optimization, but it must still advance write because one output value was retained."
+              "text": "The correct choice is “Yes. It is a harmless self-assignment and preserves the invariant.”. An implementation may optionally avoid the assignment as a micro-optimization, but it must still advance write because one output value was retained."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Writing a retained value to its existing position is semantically correct."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "No. Equal read and write indices are always out of bounds. — Equal indices can be any valid processed position.",
+                "No. write must not advance when read equals write. — Skipping the write is harmless, but failing to advance write breaks the retained-count invariant.",
+                "No. The value must be swapped with the final element. — End swaps are unnecessary and can violate stability."
+              ]
             }
           ]
         },
@@ -604,8 +819,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "Advancing write for removed values falsely expands the valid prefix without placing a valid retained value at that position."
+              "text": "The correct choice is “The logical prefix can contain gaps or stale values where removed elements consumed write positions.”. Advancing write for removed values falsely expands the valid prefix without placing a valid retained value at that position."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Write positions must correspond one-to-one with retained outputs."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The read index automatically stops before the end. — The write bug does not change the read loop boundary by itself.",
+                "The array is accidentally sorted. — No ordering operation is introduced.",
+                "Every duplicate is automatically removed. — The bug concerns output placement, not duplicate detection."
+              ]
             }
           ]
         },
@@ -661,8 +900,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "A destination index less than read has already been consumed. A destination equal to read is a self-write of the current value."
+              "text": "The correct choice is “write is never ahead of read, so the destination lies in the processed region.”. A destination index less than read has already been consumed. A destination equal to read is a self-write of the current value."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The read/write invariant keeps writes behind the frontier of unread input."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Array values cannot actually be overwritten. — In-place compaction explicitly mutates the array.",
+                "All unread values have already been copied to another collection. — The method is designed to avoid a growing backup collection.",
+                "Sorting protects unread values from modification. — Sorting is unrelated and may violate the required order."
+              ]
             }
           ]
         },
@@ -721,8 +984,33 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
               "text": "The all-retained and none-retained cases expose unconditional or missing increments. The final prefix check confirms that the numeric boundary matches actual valid content."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Debugging should start from the semantic meaning of the boundary and then verify every state transition."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "State that write equals the number of retained values.",
+                "Trace every location where write is incremented.",
+                "Test inputs where none and all values are retained.",
+                "Verify that [0, write) contains exactly write valid outputs."
+              ]
             }
           ]
         }
@@ -775,8 +1063,30 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "The final write index defines the valid prefix. Swapping from the end can reorder retained values and therefore violates stable semantics."
+              "text": "The correct choice is “Scan source positions from left to right.”, “Write only retained values to consecutive output positions.”, “Return write as the logical result length.”. The final write index defines the valid prefix. Swapping from the end can reorder retained values and therefore violates stable semantics."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Stability requires left-to-right emission into consecutive output positions."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Swap each removed value with the last unprocessed value. — This may be useful for unstable removal but can change relative order."
+              ]
             }
           ]
         },
@@ -864,8 +1174,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
               "text": "The write boundary advances only for a new retained value. No collection grows with n outside the input array."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Complexity rule",
+              "text": "Each input position is scanned once, and the compacted result reuses existing storage."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Report each required dimension"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "time: O(n)",
+                "auxiliary space: O(1)",
+                "additional output space: O(1)"
+              ]
             }
           ]
         }
@@ -916,8 +1250,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "Swapping from the end can be correct when order is irrelevant, but it changes the positional sequence and therefore violates a stable output contract."
+              "text": "The correct choice is “A value from the end can move before retained values that originally preceded it.”. Swapping from the end can be correct when order is irrelevant, but it changes the positional sequence and therefore violates a stable output contract."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Stable compaction must preserve the original relative order of all retained values."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Any algorithm with two indices is unstable. — Index count does not determine stability; update rules do.",
+                "The method works only when duplicates exist. — The issue is removal and order, not duplicate presence.",
+                "It necessarily allocates O(n) auxiliary space. — The method can be in place and still be unstable."
+              ]
             }
           ]
         },
@@ -973,8 +1331,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "Subtracting one converts the boundary into the final index. It also produces -1 for an empty result, which is not the logical length."
+              "text": "The correct choice is “It returns the last valid index rather than the logical output length.”. Subtracting one converts the boundary into the final index. It also produces -1 for an empty result, which is not the logical length."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Write is the exclusive end of the valid prefix and therefore already equals its length."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "It always reports one extra retained value. — Subtracting one underreports rather than overreports the retained count.",
+                "It forces the compacted prefix to become sorted. — The return expression does not reorder values.",
+                "It changes auxiliary space from O(1) to O(n). — A boundary arithmetic error does not allocate additional memory."
+              ]
             }
           ]
         },
@@ -1030,8 +1412,32 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
-              "text": "Sorting, set conversion, and end swaps each destroy at least one required property: order or multiplicity."
+              "text": "The correct choice is “Scan left to right and write each retained character at the next write position.”. Sorting, set conversion, and end swaps each destroy at least one required property: order or multiplicity."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "A stable read/write filter removes only ignored characters while preserving every retained occurrence in order."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Sort all characters, then remove punctuation. — Sorting changes the relative order of retained characters.",
+                "Insert retained characters into a set and write the set back. — A set removes duplicate retained characters and does not preserve sequence order.",
+                "Swap punctuation with characters from the end until punctuation is outside the active range. — End swaps can reorder retained characters."
+              ]
             }
           ]
         },
@@ -1090,8 +1496,33 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
               "text": "Read advances because the source occurrence has been processed. Write remains unchanged because the valid prefix gains no retained value."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "A rejected value consumes input but produces no output position."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Read the current source value.",
+                "Determine that the predicate rejects it.",
+                "Leave the write boundary unchanged.",
+                "Advance to the next source position."
+              ]
             }
           ]
         }
@@ -1145,8 +1576,33 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
               "text": "Appending the current retained value to the established prefix preserves both content and order, while the boundary relation keeps unread input safe."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The proof follows the invariant before the iteration, the state update, and the invariant after the update."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Assume [0, write) already contains the retained values from the processed prefix.",
+                "Write the accepted current value at array[write].",
+                "Increment write so the valid prefix includes the new value.",
+                "Confirm that relative order is preserved and write does not move ahead of the next read boundary."
+              ]
             }
           ]
         }
@@ -1200,8 +1656,33 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
               "type": "paragraph",
               "text": "The suffix need not be cleared unless explicitly required. Returning write exposes exactly the number of retained values."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Completion freezes the established output prefix and reports its exclusive boundary."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Stop when read reaches n.",
+                "Treat [0, write) as the complete compacted result.",
+                "Leave positions at or after write outside the logical output contract.",
+                "Return write as the logical result length."
+              ]
             }
           ]
         }

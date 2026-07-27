@@ -310,7 +310,7 @@ function materializeTrackBlueprints(configuration, recognition, contrast, scopes
     const allItemIds = items.map((item) => item.id).sort(compare);
     const composition = boundary === "explicit_recognition_scope"
       ? { kind: "recognition_sets", ids: [...recognition.keys()].sort(compare) }
-      : boundary === "explicit_contrast_set"
+      : boundary === "contrast_roadmap_topic"
         ? { kind: "contrast_sets", ids: [...contrast.keys()].sort(compare) }
         : boundary === "explicit_interleaved_scope"
           ? { kind: "interleaved_scope", ids: [...scopes.keys()].sort(compare) }
@@ -330,6 +330,10 @@ function validateModeStructures(structures, declaredModes, family, track, items,
   for (const pool of pools.values()) { text(pool.poolVersion, "simulation poolVersion", "INVALID_SIMULATION_POOL"); const poolItems = validateMembership(pool.itemIds, itemsById, "simulation pool itemIds"); if (poolItems.length < 40) throw new PublishingFailure("INSUFFICIENT_POOL", "Simulation pool has fewer than 40 items."); }
   for (const profile of profiles.values()) { const pool = pools.get(profile.poolId); if (!pool) throw new PublishingFailure("INVALID_SIMULATION_PROFILE", "Simulation profile references an unknown pool."); validateProfile(profile, pool, itemsById); selectSimulationItems({ profile, pool, items, selectionSeed: "feasibility-v1" }); }
   const requirementByMode = new Map(trackBlueprints.map((entry) => [entry.modeId, entry]));
+  const requireSelectableCapacity = (modeId, requirement, label, itemIds) => {
+    const requiredLength = Math.max(...requirement.requestedLengths);
+    if (itemIds.length < requiredLength) throw new PublishingFailure("MODE_UNREADY", `${modeId} selectable ${label} has ${itemIds.length} items but must support ${requiredLength}.`);
+  };
   const resolvedBlueprints = [];
   for (const modeId of declaredModes) {
     if (modeId === SIMULATION_MODE_ID) {
@@ -361,6 +365,30 @@ function validateModeStructures(structures, declaredModes, family, track, items,
     if (blueprint.composition.kind === "recognition_sets") memberIds = [...new Set(references.flatMap((id) => { const set = recognition.get(id); if (!set) throw new PublishingFailure("INVALID_MODE", "Recognition blueprint references an unknown set."); return validateMembership(set.itemIds, itemsById, "recognition set itemIds"); }))].sort(compare);
     if (blueprint.composition.kind === "contrast_sets") memberIds = [...new Set(references.flatMap((id) => { const set = contrast.get(id); if (!set) throw new PublishingFailure("INVALID_MODE", "Contrast blueprint references an unknown set."); return validateMembership(set.itemIds, itemsById, "contrast set itemIds"); }))].sort(compare);
     if (blueprint.composition.kind === "interleaved_scope") memberIds = [...new Set(references.flatMap((id) => { const scope = scopes.get(id); if (!scope) throw new PublishingFailure("INVALID_MODE", "Interleaved blueprint references an unknown scope."); return validateMembership(scope.itemIds, itemsById, "interleaved scope itemIds"); }))].sort(compare);
+    if (blueprint.selectionBoundary === "one_roadmap_node") {
+      const byRoadmapNode = new Map();
+      for (const itemId of memberIds) {
+        const roadmapNodeId = itemsById.get(itemId).resolvedTaxonomy.roadmapNodeId;
+        const scoped = byRoadmapNode.get(roadmapNodeId) ?? [];
+        scoped.push(itemId);
+        byRoadmapNode.set(roadmapNodeId, scoped);
+      }
+      for (const [roadmapNodeId, itemIds] of byRoadmapNode) requireSelectableCapacity(modeId, requirement, `roadmap node ${roadmapNodeId}`, itemIds);
+    }
+    if (blueprint.composition.kind === "recognition_sets") for (const setId of references) requireSelectableCapacity(modeId, requirement, `recognition set ${setId}`, validateMembership(recognition.get(setId).itemIds, itemsById, "recognition set itemIds"));
+    if (blueprint.selectionBoundary === "contrast_roadmap_topic") {
+      const byRoadmapNode = new Map();
+      for (const setId of references) {
+        const setItemIds = validateMembership(contrast.get(setId).itemIds, itemsById, "contrast set itemIds");
+        const topicIds = [...new Set(setItemIds.map((itemId) => itemsById.get(itemId).resolvedTaxonomy.roadmapNodeId))];
+        if (topicIds.length !== 1) throw new PublishingFailure("INVALID_MODE", `Contrast set ${setId} must belong to exactly one roadmap topic.`);
+        const scoped = byRoadmapNode.get(topicIds[0]) ?? new Set();
+        setItemIds.forEach((itemId) => scoped.add(itemId));
+        byRoadmapNode.set(topicIds[0], scoped);
+      }
+      for (const [roadmapNodeId, itemIds] of byRoadmapNode) requireSelectableCapacity(modeId, requirement, `contrast roadmap topic ${roadmapNodeId}`, [...itemIds]);
+    }
+    if (blueprint.composition.kind === "interleaved_scope") for (const scopeId of references) requireSelectableCapacity(modeId, requirement, `interleaved scope ${scopeId}`, validateMembership(scopes.get(scopeId).itemIds, itemsById, "interleaved scope itemIds"));
     if (memberIds.length < requirement.minimumActualLength) throw new PublishingFailure("MODE_UNREADY", `${modeId} cannot satisfy minimumActualLength.`);
     if (requirement.shortening === "prohibited" && memberIds.length !== requirement.defaultRequestedLength) throw new PublishingFailure("MODE_UNREADY", `${modeId} must produce exactly ${requirement.defaultRequestedLength} items.`);
     resolvedBlueprints.push({ ...blueprint, resolvedItemIds: memberIds });

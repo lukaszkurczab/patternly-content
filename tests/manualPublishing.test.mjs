@@ -73,6 +73,18 @@ test("Algorithms track configuration owns six practice blueprints and rejects ba
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("every declared selectable Algorithms scope must satisfy its largest visible session length", async () => {
+  const batch = algorithmsBatch({
+    declaredModes: ["algorithms-recognize-patterns"],
+    modeStructures: {
+      recognitionSets: [{ setId: "short-recognition", setVersion: "v1", taxonomyScope: { roadmapNodeIds: ["arrays_and_strings"] }, legalLearningStages: ["foundations"], itemIds: Array.from({ length: 10 }, (_, index) => `fixture-algorithm-${index + 1}`) }],
+      contrastSets: [], interleavedScopes: [], compatibilitySets: [], simulationPools: [], simulationProfiles: [],
+    },
+  });
+  const path = await root({ algorithms: batch, technicalEvidence: false });
+  try { await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MODE_UNREADY")); } finally { await rm(path, { recursive: true }); }
+});
+
 test("constraints and difficulty compile as the application contract's legal optional fields", async () => {
   const batch = algorithmsBatch(); batch.items[0].constraints = ["fixture constraint"]; batch.items[0].difficulty = "foundational";
   const path = await root({ algorithms: batch });

@@ -282,6 +282,16 @@ export function selectSimulationPlan({ profile, pool, items, selectionSeed, stat
 export function selectSimulationItems(input) { return selectSimulationPlan(input).itemIds; }
 const PRACTICE_MODE_IDS = ["algorithms-learn-approach", "algorithms-guided-practice", "algorithms-recognize-patterns", "algorithms-contrast-practice", "algorithms-weak-area-review", "algorithms-independent-practice"];
 const SIMULATION_MODE_ID = "algorithms-interview-simulation";
+const USER_MODE_MAPPINGS = [
+  ["algorithms-learn-approach", "algorithms-learn-approach"],
+  ["algorithms-guided-practice", "algorithms-guided-practice"],
+  ["algorithms-custom-practice", "algorithms-guided-practice"],
+  ["algorithms-recognize-patterns", "algorithms-recognize-patterns"],
+  ["algorithms-contrast-practice", "algorithms-contrast-practice"],
+  ["algorithms-weak-area-review", "algorithms-weak-area-review"],
+  ["algorithms-independent-practice", "algorithms-independent-practice"],
+  ["algorithms-interview-simulation", "algorithms-interview-simulation"],
+];
 function trackModeConfiguration(track) {
   const configuration = record(track.modeConfiguration, "Algorithms track modeConfiguration", "MISSING_TRACK_MODE_CONFIGURATION");
   if (configuration.schemaVersion !== "algorithms-track-mode-config-v1") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Algorithms track mode configuration schema is invalid.");
@@ -302,7 +312,12 @@ function trackModeConfiguration(track) {
   if (simulation.modeId !== SIMULATION_MODE_ID || simulation.profileId !== "algorithms-interview-simulation-v1" || simulation.profileVersion !== "1" || simulation.requestedLength !== 40 || simulation.actualLength !== 40 || simulation.shorteningPolicy !== "prohibited" || simulation.uniqueItemsRequired !== 40 || simulation.timerKind !== "foreground_countdown" || simulation.durationMinutes !== 45 || simulation.navigationPolicy !== "free_navigation" || simulation.answerChangePolicy !== "editable_until_finalization" || simulation.reinsertPolicy !== "disabled" || simulation.feedbackTiming !== "after_verified_finalization") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Algorithms simulation blueprint conflicts with the approved fixed-40 contract.");
   const policy = record(simulation.selectionPolicy, "Algorithms simulation selection policy", "INVALID_TRACK_MODE_CONFIGURATION");
   for (const key of ["requireUniqueItemIds", "requireDeclaredSimulationEligibility", "requireMultipleMentalUnits", "requireMultiplePatternFamilies", "requireEveryActiveInteractionTypeRepresented", "prohibitConsecutiveSameMentalUnitWhenAlternativeExists", "prohibitDuplicateContentIdentity", "prohibitTaxonomyWidening", "prohibitFallbackItems"]) if (policy[key] !== true) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Algorithms simulation selection policy is incomplete.");
-  return { blueprints, simulation };
+  const userModeMappings = list(configuration.userModeMappings, "Algorithms userModeMappings", "INVALID_TRACK_MODE_CONFIGURATION").map((mapping) => {
+    const value = record(mapping, "Algorithms user mode mapping", "INVALID_TRACK_MODE_CONFIGURATION");
+    return [text(value.userModeId, "Algorithms user mode ID", "INVALID_TRACK_MODE_CONFIGURATION"), text(value.blueprintModeId, "Algorithms user mode blueprint ID", "INVALID_TRACK_MODE_CONFIGURATION")];
+  });
+  if (canonicalJson(userModeMappings) !== canonicalJson(USER_MODE_MAPPINGS)) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Algorithms user mode mappings must cover exactly the canonical eight modes.");
+  return { blueprints, simulation, userModeMappings };
 }
 function materializeTrackBlueprints(configuration, recognition, contrast, scopes, items) {
   return configuration.blueprints.map((blueprint) => {
@@ -394,7 +409,15 @@ function validateModeStructures(structures, declaredModes, family, track, items,
     resolvedBlueprints.push({ ...blueprint, resolvedItemIds: memberIds });
   }
   const memberships = new Map(items.map((item) => [item.id, []])); for (const set of compatibility.values()) for (const id of relationIds(set)) memberships.get(id).push(set.id); for (const values of memberships.values()) values.sort(compare);
-  return { practiceBlueprints: resolvedBlueprints.sort((a, b) => compare(a.modeId, b.modeId)), recognitionSets: [...recognition.values()], contrastSets: [...contrast.values()], interleavedScopes: [...scopes.values()], compatibilitySets: [...compatibility.values()], simulationPools: [...pools.values()], simulationProfiles: [...profiles.values()], memberships };
+  const resolvedByMode = new Map(resolvedBlueprints.map((blueprint) => [blueprint.modeId, blueprint]));
+  const userModeReadiness = configuration.userModeMappings.flatMap(([userModeId, blueprintModeId]) => {
+    const blueprint = resolvedByMode.get(blueprintModeId);
+    if (!blueprint) return [];
+    const availableUniqueItemCount = new Set(blueprint.resolvedItemIds).size;
+    if (availableUniqueItemCount < Math.max(...blueprint.requestedLengths)) throw new PublishingFailure("MODE_UNREADY", `${userModeId} cannot satisfy its largest declared session length.`);
+    return [Object.freeze({ userModeId, blueprintModeId, requestedLengths: Object.freeze([...blueprint.requestedLengths]), availableUniqueItemCount })];
+  });
+  return { practiceBlueprints: resolvedBlueprints.sort((a, b) => compare(a.modeId, b.modeId)), recognitionSets: [...recognition.values()], contrastSets: [...contrast.values()], interleavedScopes: [...scopes.values()], compatibilitySets: [...compatibility.values()], simulationPools: [...pools.values()], simulationProfiles: [...profiles.values()], userModeReadiness, memberships };
 }
 export function compileResolvedTaxonomy(item) { return Object.freeze({ ...item.resolvedTaxonomy }); }
 export function compileResolvedProvenance(item) { return Object.freeze({ ...item.resolvedProvenance, externalSources: Object.freeze(item.resolvedProvenance.externalSources.map((source) => Object.freeze({ ...source }))) }); }
@@ -639,7 +662,7 @@ export async function buildTrack({ root = ROOT, trackId, outputRoot = join(ROOT,
   const artifact = { trackId, familyId: validated.track.familyId, contentVersion: validated.source.contentVersion, taxonomyVersion: validated.source.taxonomyVersion, schemaVersion: "published-bank-v1", checksumSha256: hash(artifactBytes), sourceRepositoryCommit: cleanCommit, declaredModes: validated.source.declaredModes, artifactBytes };
   const versionDirectory = join(outputRoot, "tracks", trackId, artifact.contentVersion); const out = join(versionDirectory, "track-artifact.json"); const reportPath = join(versionDirectory, "build-report.json");
   try { await stat(versionDirectory); throw new PublishingFailure("IMMUTABLE_VERSION", `Artifact version already exists: ${trackId}/${artifact.contentVersion}.`); } catch (error) { if (error?.code !== "ENOENT") throw error; }
-  const report = { reportSchemaVersion: 3, phase: "build", trackId, familyId: artifact.familyId, contentVersion: artifact.contentVersion, taxonomyVersion: artifact.taxonomyVersion, sourceRepositoryCommit: cleanCommit, technicalInputFingerprint: validated.source.technicalInputFingerprint, checksumSha256: artifact.checksumSha256, itemCount: validated.source.items.length };
+  const report = { reportSchemaVersion: 3, phase: "build", trackId, familyId: artifact.familyId, contentVersion: artifact.contentVersion, taxonomyVersion: artifact.taxonomyVersion, sourceRepositoryCommit: cleanCommit, technicalInputFingerprint: validated.source.technicalInputFingerprint, checksumSha256: artifact.checksumSha256, itemCount: validated.source.items.length, ...(artifact.familyId === "algorithms" ? { userModeReadiness: validated.source.modeStructures.userModeReadiness } : {}) };
   const pendingDirectory = `${versionDirectory}.pending-${artifact.checksumSha256}`;
   await mkdir(dirname(versionDirectory), { recursive: true }); await mkdir(pendingDirectory, { recursive: false });
   try { await writeFile(join(pendingDirectory, "track-artifact.json"), canonicalJson(artifact)); await writeFile(join(pendingDirectory, "build-report.json"), canonicalJson(report)); await rename(pendingDirectory, versionDirectory); } catch (error) { await rm(pendingDirectory, { recursive: true, force: true }); throw error; }

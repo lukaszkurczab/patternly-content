@@ -64,6 +64,14 @@ test("publisher accepts only exact application Algorithms mode IDs", async () =>
   try { await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_MODE")); } finally { await rm(path, { recursive: true }); }
 });
 
+test("Algorithms build report proves readiness for all eight user modes without an eighth blueprint", async () => {
+  const inspected = await inspectTrack({ trackId: "algorithms", sourceRepositoryCommit: COMMIT });
+  assert.equal(inspected.source.modeStructures.userModeReadiness.length, 8);
+  assert.deepEqual(inspected.source.modeStructures.userModeReadiness.find((entry) => entry.userModeId === "algorithms-custom-practice"), { userModeId: "algorithms-custom-practice", blueprintModeId: "algorithms-guided-practice", requestedLengths: [10, 20, 40], availableUniqueItemCount: 2375 });
+  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+  try { const trackPath = join(path, "config/tracks/algorithms.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); track.modeConfiguration.userModeMappings = track.modeConfiguration.userModeMappings.filter((entry) => entry.userModeId !== "algorithms-custom-practice"); await writeFile(trackPath, JSON.stringify(track)); await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_TRACK_MODE_CONFIGURATION")); } finally { await rm(path, { recursive: true }); }
+});
+
 test("Algorithms track configuration owns six practice blueprints and rejects batch-owned blueprints", async () => {
   const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
   try {

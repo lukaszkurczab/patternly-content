@@ -474,9 +474,9 @@ function validateCertificationItem(value, cloudDomains) {
 }
 function validateCertificationExamExperienceProfile(value) {
   const profile = record(value, "Certification exam experience profile", "INVALID_EXAM_EXPERIENCE_PROFILE");
-  const profileKeys = ["answerChanges", "blueprint", "durationMinutes", "flagging", "navigation", "navigator", "profileId", "profileVersion", "questionCount", "schemaVersion", "sections", "source", "timeout"];
+  const profileKeys = ["blueprint", "durationMinutes", "interactionPolicy", "profileId", "profileVersion", "questionCount", "schemaVersion", "source"];
   if (canonicalJson(Object.keys(profile).sort(compare)) !== canonicalJson(profileKeys)) throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile has unsupported fields.");
-  if (profile.schemaVersion !== "exam-experience-profile-v1") throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile schema is invalid.");
+  if (profile.schemaVersion !== "exam-experience-profile-v2") throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile schema is invalid.");
   text(profile.profileId, "Certification exam experience profile ID", "INVALID_EXAM_EXPERIENCE_PROFILE"); text(profile.profileVersion, "Certification exam experience profile version", "INVALID_EXAM_EXPERIENCE_PROFILE");
   const source = record(profile.source, "Certification exam experience profile source", "INVALID_EXAM_EXPERIENCE_PROFILE");
   if (canonicalJson(Object.keys(source).sort(compare)) !== canonicalJson(["checkedDate", "guideVersion", "url"])) throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile source has unsupported fields.");
@@ -491,7 +491,9 @@ function validateCertificationExamExperienceProfile(value) {
   const sectionIds = sections.map((section) => { const item = record(section, "Certification exam experience profile section", "INVALID_EXAM_EXPERIENCE_PROFILE"); if (canonicalJson(Object.keys(item).sort(compare)) !== canonicalJson(["id", "weightPercent"])) throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile section has unsupported fields."); return text(item.id, "Certification exam experience profile section ID", "INVALID_EXAM_EXPERIENCE_PROFILE"); });
   unique(sectionIds, "INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile section IDs");
   if (sections.some((section) => typeof section.weightPercent !== "number" || section.weightPercent <= 0) || Math.abs(sections.reduce((total, section) => total + section.weightPercent, 0) - 100) > 0.00001) throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile section weights are invalid.");
-  for (const key of ["navigation", "answerChanges", "flagging", "navigator", "sections", "timeout"]) if (profile[key] !== "not_documented") throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", `Certification exam experience profile.${key} must stay explicitly undocumented until an approved source exists.`);
+  const policy = record(profile.interactionPolicy, "Certification simulation interaction policy", "INVALID_EXAM_EXPERIENCE_PROFILE");
+  const policyKeys = ["answerChanges", "feedbackTiming", "flagging", "navigation", "navigator", "owner", "policyId", "policyVersion", "schemaVersion", "sections", "timeout"];
+  if (canonicalJson(Object.keys(policy).sort(compare)) !== canonicalJson(policyKeys) || policy.schemaVersion !== "patternly-certification-simulation-policy-v1" || policy.policyId !== "patternly-certification-simulation-v1" || policy.policyVersion !== "1" || policy.owner !== "patternly_product" || policy.navigation !== "free" || policy.answerChanges !== "until_final_submission" || policy.flagging !== "available" || policy.navigator !== "available" || policy.sections !== "blueprint_visible" || policy.timeout !== "absolute_deadline" || policy.feedbackTiming !== "after_verified_finalization") throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification simulation interaction policy conflicts with the approved Patternly contract.");
   return profile;
 }
 function certificationDiagnosticBaseline(track, items) {

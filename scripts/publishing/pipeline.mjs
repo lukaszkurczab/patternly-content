@@ -12,7 +12,7 @@ const compare = (left, right) => left === right ? 0 : left < right ? -1 : 1;
 export const hash = (value) => createHash("sha256").update(value).digest("hex");
 export const CANONICAL_SERIALIZATION_VERSION = "canonical-json-v1";
 export const SIMULATION_SOLVER_LIMIT = 50_000;
-export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v4";
+export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v5";
 const canonical = (value) => {
   if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -583,7 +583,7 @@ function certificationModeReadiness({ items, declaredModes, profile, diagnosticB
     scoped(weakAreaReview.modeId, { kind: weakAreaReview.selectionScope, id: "catalog" }, weakAreaReview.requestedLengths, weakAreaReview.shortening, items.length, 1),
     scoped(mixedPractice.modeId, { kind: mixedPractice.selectionScope, id: mixedPractice.blueprintId }, mixedPractice.requestedLengths, mixedPractice.shortening, mixedPractice.itemIds.length, 10),
     scoped(quickReview.modeId, { kind: quickReview.selectionScope, id: "catalog" }, [quickReview.maximumLength], quickReview.shortening, items.length, 1),
-    ...(declaredModes.includes("certification-exam-simulation") ? [scoped("certification-exam-simulation", { kind: "exam_profile", id: profile.profileId }, [profile.questionCount.minimum, profile.questionCount.maximum], "prohibited", items.length, simulationMaximum)] : []),
+    scoped("certification-exam-simulation", { kind: "exam_profile", id: profile.profileId }, [profile.questionCount.minimum, profile.questionCount.maximum], "prohibited", items.length, simulationMaximum),
   ];
   const reportedModes = ids([...new Set(readiness.map((entry) => entry.modeId))], "Certification readiness modes", "MISSING_MODE_READINESS_OWNER");
   if (canonicalJson(reportedModes.sort(compare)) !== canonicalJson([...declaredModes].sort(compare))) throw new PublishingFailure("MISSING_MODE_READINESS_OWNER", "Every declared Certification mode requires a canonical readiness owner.");
@@ -598,7 +598,7 @@ function validateCertificationSource(batches, track, family, taxonomyConfig, tec
     batchIds.push(text(batch.batchId, "Certification batchId"));
   }
   unique(batchIds, "DUPLICATE_ID", "Certification batch IDs"); const declaredModes = ids(first.declaredModes, "Certification declaredModes", "INVALID_MODE");
-  if (declaredModes.some((modeId) => !legalModes.includes(modeId))) throw new PublishingFailure("INVALID_MODE", "Certification declares a mode outside its family contract.");
+  if (canonicalJson(declaredModes) !== canonicalJson(legalModes)) throw new PublishingFailure("INVALID_MODE", "Certification declared modes must exactly match its family contract.");
   const items = batches.flatMap((batch) => list(batch.items, "Certification items").map((item) => validateCertificationItem(item, cloudDomains))); unique(items.map((item) => item.id), "DUPLICATE_ID", "Certification item IDs");
   for (const mode of family.modes) if (declaredModes.includes(mode.id) && items.length < mode.minimumPool) throw new PublishingFailure("MODE_UNREADY", `${mode.id} does not meet its minimum pool.`);
   const identities = items.map((item) => canonicalHash({ question: item.question.trim().toLocaleLowerCase(), options: item.options.map((option) => option.text.trim().toLocaleLowerCase()).sort(compare), correctOptionIds: [...item.correctOptionIds].sort(compare) })); unique(identities, "DUPLICATE_CONTENT_IDENTITY", "Certification content identities");

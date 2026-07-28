@@ -396,6 +396,17 @@ test("Certification refuses a declared mode without a readiness owner", async ()
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("Certification refuses a partial publication that omits the canonical simulation", async () => {
+  const path = await root({ certification: certificationBatch() });
+  try {
+    const sourcePath = join(path, "manual/source/cloud-certification/fixture.json");
+    const source = JSON.parse(await readFile(sourcePath, "utf8"));
+    source.declaredModes = source.declaredModes.filter((modeId) => modeId !== "certification-exam-simulation");
+    await writeFile(sourcePath, JSON.stringify(source));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("INVALID_MODE"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
 test("Certification Diagnostic Baseline rejects a shortened, duplicated, or out-of-bank fixed selection", async () => {
   const path = await root({ certification: certificationBatch() });
   try {

@@ -466,9 +466,13 @@ function validateCertificationItem(value, cloudDomains) {
   const visible = options.map((option) => text(option.text, `${id} option text`, "INVALID_RESPONSE").trim().toLocaleLowerCase()); unique(visible, "DUPLICATE_CONTENT_IDENTITY", `${id} visible options`);
   const correct = ids(item.correctOptionIds, `${id} correctOptionIds`, "INVALID_RESPONSE");
   if (!correct.length || correct.some((optionId) => !optionIds.includes(optionId)) || (item.type === "single" && correct.length !== 1)) throw new PublishingFailure("INVALID_RESPONSE", `${id} correct answer set is invalid.`);
-  text(item.explanation, `${id} explanation`, "INVALID_RESPONSE"); text(item.watchOutFor, `${id} watchOutFor`, "INVALID_RESPONSE");
-  const wrong = record(item.whyOthersAreWrong, `${id} whyOthersAreWrong`, "INVALID_RESPONSE"); const wrongIds = optionIds.filter((optionId) => !correct.includes(optionId));
+  const feedback = record(item.feedback, `${id} feedback`, "INVALID_RESPONSE");
+  const feedbackKeys = item.type === "multiple" ? ["details", "omittedCorrectExplanationsByOptionId", "reason", "wrongOptionExplanationsByOptionId"] : ["details", "reason", "wrongOptionExplanationsByOptionId"];
+  exactFields(feedback, feedbackKeys, `${id} feedback`);
+  text(feedback.reason, `${id} Reason`, "INVALID_RESPONSE"); validateFeedbackDetails(feedback.details, `${id} Details`, []);
+  const wrong = record(feedback.wrongOptionExplanationsByOptionId, `${id} wrong-option explanations`, "INVALID_RESPONSE"); const wrongIds = optionIds.filter((optionId) => !correct.includes(optionId));
   if (Object.keys(wrong).length !== wrongIds.length || wrongIds.some((optionId) => typeof wrong[optionId] !== "string" || !wrong[optionId].trim()) || Object.keys(wrong).some((optionId) => !wrongIds.includes(optionId))) throw new PublishingFailure("INVALID_RESPONSE", `${id} wrong-option explanations are incomplete.`);
+  if (item.type === "multiple") { const omitted = record(feedback.omittedCorrectExplanationsByOptionId, `${id} omitted-correct explanations`, "INVALID_RESPONSE"); if (Object.keys(omitted).length !== correct.length || correct.some((optionId) => typeof omitted[optionId] !== "string" || !omitted[optionId].trim()) || Object.keys(omitted).some((optionId) => !correct.includes(optionId))) throw new PublishingFailure("INVALID_RESPONSE", `${id} omitted-correct explanations are incomplete.`); }
   ids(item.tags, `${id} tags`, "INVALID_REFERENCE"); ids(item.examSignals, `${id} examSignals`, "INVALID_RESPONSE");
   return { ...item, id };
 }
@@ -561,11 +565,17 @@ function certificationQuickReview(track) {
   if (canonicalJson(Object.keys(review).sort(compare)) !== canonicalJson(keys) || review.blueprintId !== "gcp-ace-quick-review-v1" || review.blueprintVersion !== "1" || review.modeId !== "certification-quick-review" || review.maximumLength !== 10 || review.shortening !== "allowed_within_eligible_review_evidence" || review.selectionScope !== "eligible_due_review_evidence" || review.persistentResolutionPolicy !== "two_consecutive_due_review_successes") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Quick Review blueprint conflicts with its declared contract.");
   return Object.freeze({ ...review });
 }
-function certificationModeReadiness({ items, declaredModes, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview }) {
+function certificationModeReadiness({ items, declaredModes, profile, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview }) {
   const scoped = (modeId, scope, requestedLengths, shortening, availableUniqueItemCount, requiredUniqueItemCount) => {
     if (availableUniqueItemCount < requiredUniqueItemCount) throw new PublishingFailure("MODE_UNREADY", `${modeId}/${scope.id} has ${availableUniqueItemCount} unique items; requires ${requiredUniqueItemCount}.`);
     return Object.freeze({ modeId, scope: Object.freeze(scope), requestedLengths: Object.freeze(requestedLengths), shortening, requiredUniqueItemCount, availableUniqueItemCount, profileConstraints: Object.freeze([]) });
   };
+  const simulationMaximum = profile.questionCount.maximum;
+  const allocations = profile.blueprint.sections.map((section, index) => ({ ...section, count: Math.floor(section.weightPercent * simulationMaximum / 100), remainder: section.weightPercent * simulationMaximum % 100, index }));
+  let remaining = simulationMaximum - allocations.reduce((total, section) => total + section.count, 0);
+  for (const section of [...allocations].sort((left, right) => right.remainder - left.remainder || left.index - right.index)) { if (remaining > 0) { section.count += 1; remaining -= 1; } }
+  const requiredByDomain = new Map(); for (const section of allocations) requiredByDomain.set(section.contentDomainId, (requiredByDomain.get(section.contentDomainId) ?? 0) + section.count);
+  for (const [domain, required] of requiredByDomain) if (items.filter((item) => item.domain === domain).length < required) throw new PublishingFailure("MODE_UNREADY", `certification-exam-simulation/${domain} has insufficient unique items for the maximum published exam profile.`);
   const readiness = [
     scoped(diagnosticBaseline.modeId, { kind: "explicit_item_ids", id: diagnosticBaseline.blueprintId }, [diagnosticBaseline.requestedLength], diagnosticBaseline.shortening, diagnosticBaseline.itemIds.length, diagnosticBaseline.uniqueItemsRequired),
     ...focusPractice.topicIds.map((topicId) => scoped(focusPractice.modeId, { kind: focusPractice.selectionScope, id: topicId }, focusPractice.requestedLengths, focusPractice.shortening, items.filter((item) => item.domain === topicId).length, 10)),
@@ -573,6 +583,7 @@ function certificationModeReadiness({ items, declaredModes, diagnosticBaseline, 
     scoped(weakAreaReview.modeId, { kind: weakAreaReview.selectionScope, id: "catalog" }, weakAreaReview.requestedLengths, weakAreaReview.shortening, items.length, 1),
     scoped(mixedPractice.modeId, { kind: mixedPractice.selectionScope, id: mixedPractice.blueprintId }, mixedPractice.requestedLengths, mixedPractice.shortening, mixedPractice.itemIds.length, 10),
     scoped(quickReview.modeId, { kind: quickReview.selectionScope, id: "catalog" }, [quickReview.maximumLength], quickReview.shortening, items.length, 1),
+    ...(declaredModes.includes("certification-exam-simulation") ? [scoped("certification-exam-simulation", { kind: "exam_profile", id: profile.profileId }, [profile.questionCount.minimum, profile.questionCount.maximum], "prohibited", items.length, simulationMaximum)] : []),
   ];
   const reportedModes = ids([...new Set(readiness.map((entry) => entry.modeId))], "Certification readiness modes", "MISSING_MODE_READINESS_OWNER");
   if (canonicalJson(reportedModes.sort(compare)) !== canonicalJson([...declaredModes].sort(compare))) throw new PublishingFailure("MISSING_MODE_READINESS_OWNER", "Every declared Certification mode requires a canonical readiness owner.");
@@ -597,7 +608,7 @@ function validateCertificationSource(batches, track, family, taxonomyConfig, tec
   const weakAreaReview = certificationWeakAreaReview(track);
   const mixedPractice = certificationMixedPractice(track, items);
   const quickReview = certificationQuickReview(track);
-  const modeReadiness = certificationModeReadiness({ items, declaredModes, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview });
+  const modeReadiness = certificationModeReadiness({ items, declaredModes, profile, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview });
   const itemFingerprints = Object.fromEntries(items.map((item) => [item.id, canonicalHash(item)]));
   const technicalEvidence = batches.map((batch) => evidenceFor({ track, family, batchId: batch.batchId, technicalInputFingerprint, batchFingerprint: canonicalHash(batch), itemFingerprints: Object.fromEntries(batch.items.map((item) => [item.id, itemFingerprints[item.id]])), validatedAtSourceCommit: sourceCommitValue }));
   const publishedItems = items.map((item) => ({ ...item, itemFingerprint: itemFingerprints[item.id] })).sort((a, b) => compare(a.id, b.id));

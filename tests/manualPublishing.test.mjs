@@ -363,12 +363,12 @@ test("certification publishes a validated, explicit exam experience profile", as
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("Certification publishing declares only canonical non-simulation practice modes", async () => {
+test("Certification publishing declares every canonical mode, including the profile-backed simulation", async () => {
   const [family, source] = await Promise.all([
     readFile("config/families/certification.json", "utf8").then(JSON.parse),
     readFile("manual/source/cloud-certification/gcp-ace-0001.json", "utf8").then(JSON.parse),
   ]);
-  const expected = ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review"];
+  const expected = ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review", "certification-exam-simulation"];
   assert.deepEqual(family.modes.map((mode) => mode.id), expected);
   assert.deepEqual(source.declaredModes, expected);
   assert.doesNotMatch(JSON.stringify({ family, source }), /cloud-practice|cloud-review/);
@@ -378,10 +378,12 @@ test("Certification readiness reports every declared mode and its exact eligible
   const path = await root({ certification: certificationBatch() });
   try {
     const readiness = (await inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT })).source.modeReadiness;
-    assert.deepEqual([...new Set(readiness.map((entry) => entry.modeId))], ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review"]);
+    assert.deepEqual([...new Set(readiness.map((entry) => entry.modeId))], ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review", "certification-exam-simulation"]);
     assert.deepEqual(readiness.find((entry) => entry.modeId === "certification-diagnostic-baseline"), { modeId: "certification-diagnostic-baseline", scope: { kind: "explicit_item_ids", id: "gcp-ace-diagnostic-baseline-v1" }, requestedLengths: [40], shortening: "prohibited", requiredUniqueItemCount: 40, availableUniqueItemCount: 40, profileConstraints: [] });
     const scenario = readiness.find((entry) => entry.modeId === "certification-scenario-practice");
     assert.equal(scenario?.scope.id, "fixture"); assert.equal(scenario?.requiredUniqueItemCount, 10); assert.equal(scenario?.availableUniqueItemCount, 10);
+    const simulation = readiness.find((entry) => entry.modeId === "certification-exam-simulation");
+    assert.deepEqual(simulation, { modeId: "certification-exam-simulation", scope: { kind: "exam_profile", id: "fixture-certification-standard-v1" }, requestedLengths: [50, 60], shortening: "prohibited", requiredUniqueItemCount: 60, availableUniqueItemCount: 60, profileConstraints: [] });
   } finally { await rm(path, { recursive: true }); }
 });
 

@@ -5,7 +5,7 @@ import { execFile } from "node:child_process";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
-import { buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
+import { buildReleaseCandidate, buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
 import { algorithmsBatch, certificationBatch, certificationDiagnosticBaseline, certificationExamExperienceProfile, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
 import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS, APPLICATION_ALGORITHM_MODE_IDS } from "./fixtures/applicationContractSnapshot.mjs";
 import { generatedTypeScript, structuralPayload, taxonomyFingerprint } from "../scripts/taxonomy/export-algorithms-taxonomy.mjs";
@@ -336,6 +336,16 @@ test("artifact and release are immutable, exact-byte checked, and tracks remain 
     await writeFile(algorithm.path, JSON.stringify(algorithm.artifact));
     const release = await publishRelease({ root: path, releaseId: "algorithms-only", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["algorithms"]); assert.match(await readFile(release.exportPath, "utf8"), /GENERATED_BUNDLED_CONTENT_RELEASE/);
     const raw = JSON.parse(await readFile(algorithm.path, "utf8")); raw.artifactBytes += " "; await writeFile(algorithm.path, JSON.stringify(raw)); await assert.rejects(() => verifyArtifact(algorithm.path), fails("CHECKSUM_MISMATCH"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("release candidate gate builds and verifies both canonical tracks in an isolated output root", async () => {
+  const path = await root({ algorithms: algorithmsBatch(), certification: certificationBatch() });
+  try {
+    const candidate = await buildReleaseCandidate({ root: path, outputRoot: join(path, "release-candidate"), sourceRepositoryCommit: COMMIT });
+    assert.deepEqual(candidate.map((entry) => entry.trackId), ["algorithms", "cloud-certification"]);
+    assert.ok(candidate.every((entry) => entry.contentVersion.endsWith("fixture-v2") || entry.contentVersion.endsWith("fixture-v1")));
+    assert.ok(candidate.every((entry) => /^[a-f0-9]{64}$/.test(entry.checksumSha256)));
   } finally { await rm(path, { recursive: true }); }
 });
 

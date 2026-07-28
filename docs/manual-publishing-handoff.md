@@ -29,6 +29,9 @@ npm run inspect:real:algorithms
 npm run evidence:real:algorithms
 npm run validate:real:algorithms
 npm run build:real:algorithms
+npm run evidence:real:certification
+npm run validate:real:certification
+npm run build:real:certification
 npm run validate:track -- --track algorithms
 npm run build:track -- --track algorithms
 npm run verify:artifact -- --artifact artifacts/tracks/algorithms/<version>/track-artifact.json

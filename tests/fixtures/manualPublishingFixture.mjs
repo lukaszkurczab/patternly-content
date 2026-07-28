@@ -60,7 +60,7 @@ export const certificationExamExperienceProfile = {
   schemaVersion: "exam-experience-profile-v2", profileId: "fixture-certification-standard-v1", profileVersion: "2",
   source: { url: "https://example.test/certification", checkedDate: "2026-07-24", guideVersion: "fixture" },
   durationMinutes: 120, questionCount: { kind: "range", minimum: 50, maximum: 60 },
-  blueprint: { kind: "weighted_sections", sections: [{ id: "fixture-section", weightPercent: 100 }] },
+  blueprint: { kind: "weighted_sections", sections: [{ id: "fixture-section", contentDomainId: "setup_environment", weightPercent: 100 }] },
   interactionPolicy: { schemaVersion: "patternly-certification-simulation-policy-v1", policyId: "patternly-certification-simulation-v1", policyVersion: "1", owner: "patternly_product", navigation: "free", answerChanges: "until_final_submission", flagging: "available", navigator: "available", sections: "blueprint_visible", timeout: "absolute_deadline", feedbackTiming: "after_verified_finalization" }
 };
 export const certificationDiagnosticBaseline = {

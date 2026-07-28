@@ -559,6 +559,23 @@ function certificationQuickReview(track) {
   if (canonicalJson(Object.keys(review).sort(compare)) !== canonicalJson(keys) || review.blueprintId !== "gcp-ace-quick-review-v1" || review.blueprintVersion !== "1" || review.modeId !== "certification-quick-review" || review.maximumLength !== 10 || review.shortening !== "allowed_within_eligible_review_evidence" || review.selectionScope !== "eligible_due_review_evidence" || review.persistentResolutionPolicy !== "two_consecutive_due_review_successes") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Quick Review blueprint conflicts with its declared contract.");
   return Object.freeze({ ...review });
 }
+function certificationModeReadiness({ items, declaredModes, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview }) {
+  const scoped = (modeId, scope, requestedLengths, shortening, availableUniqueItemCount, requiredUniqueItemCount) => {
+    if (availableUniqueItemCount < requiredUniqueItemCount) throw new PublishingFailure("MODE_UNREADY", `${modeId}/${scope.id} has ${availableUniqueItemCount} unique items; requires ${requiredUniqueItemCount}.`);
+    return Object.freeze({ modeId, scope: Object.freeze(scope), requestedLengths: Object.freeze(requestedLengths), shortening, requiredUniqueItemCount, availableUniqueItemCount, profileConstraints: Object.freeze([]) });
+  };
+  const readiness = [
+    scoped(diagnosticBaseline.modeId, { kind: "explicit_item_ids", id: diagnosticBaseline.blueprintId }, [diagnosticBaseline.requestedLength], diagnosticBaseline.shortening, diagnosticBaseline.itemIds.length, diagnosticBaseline.uniqueItemsRequired),
+    ...focusPractice.topicIds.map((topicId) => scoped(focusPractice.modeId, { kind: focusPractice.selectionScope, id: topicId }, focusPractice.requestedLengths, focusPractice.shortening, items.filter((item) => item.domain === topicId).length, 10)),
+    ...scenarioPractice.competencies.map((competency) => scoped(scenarioPractice.modeId, { kind: scenarioPractice.selectionScope, id: competency.id }, scenarioPractice.requestedLengths, scenarioPractice.shortening, competency.scenarioItemIds.length, 10)),
+    scoped(weakAreaReview.modeId, { kind: weakAreaReview.selectionScope, id: "catalog" }, weakAreaReview.requestedLengths, weakAreaReview.shortening, items.length, 1),
+    scoped(mixedPractice.modeId, { kind: mixedPractice.selectionScope, id: mixedPractice.blueprintId }, mixedPractice.requestedLengths, mixedPractice.shortening, mixedPractice.itemIds.length, 10),
+    scoped(quickReview.modeId, { kind: quickReview.selectionScope, id: "catalog" }, [quickReview.maximumLength], quickReview.shortening, items.length, 1),
+  ];
+  const reportedModes = ids([...new Set(readiness.map((entry) => entry.modeId))], "Certification readiness modes", "MISSING_MODE_READINESS_OWNER");
+  if (canonicalJson(reportedModes.sort(compare)) !== canonicalJson([...declaredModes].sort(compare))) throw new PublishingFailure("MISSING_MODE_READINESS_OWNER", "Every declared Certification mode requires a canonical readiness owner.");
+  return Object.freeze(readiness);
+}
 function validateCertificationSource(batches, track, family, taxonomyConfig, technicalInputFingerprint, sourceCommitValue) {
   const cloudDomains = certificationTaxonomy(taxonomyConfig); const profile = validateCertificationExamExperienceProfile(track.profile); const first = batches[0]; const batchIds = [];
   const legalModes = ids(family.modes?.map((mode) => mode?.id), "Certification family modes", "INVALID_MODE");
@@ -577,10 +594,11 @@ function validateCertificationSource(batches, track, family, taxonomyConfig, tec
   const weakAreaReview = certificationWeakAreaReview(track);
   const mixedPractice = certificationMixedPractice(track, items);
   const quickReview = certificationQuickReview(track);
+  const modeReadiness = certificationModeReadiness({ items, declaredModes, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview });
   const itemFingerprints = Object.fromEntries(items.map((item) => [item.id, canonicalHash(item)]));
   const technicalEvidence = batches.map((batch) => evidenceFor({ track, family, batchId: batch.batchId, technicalInputFingerprint, batchFingerprint: canonicalHash(batch), itemFingerprints: Object.fromEntries(batch.items.map((item) => [item.id, itemFingerprints[item.id]])), validatedAtSourceCommit: sourceCommitValue }));
   const publishedItems = items.map((item) => ({ ...item, itemFingerprint: itemFingerprints[item.id] })).sort((a, b) => compare(a.id, b.id));
-  return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items: publishedItems, itemFingerprints, modeStructures: {}, examExperienceProfile: profile, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview, batches, technicalEvidence, technicalInputFingerprint };
+  return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items: publishedItems, itemFingerprints, modeStructures: {}, examExperienceProfile: profile, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview, modeReadiness, batches, technicalEvidence, technicalInputFingerprint };
 }
 export async function inspectTrack({ root = ROOT, trackId, sourceRepositoryCommit }) {
   const { track, family, taxonomy } = await config(root, trackId); const batches = (await discoverSourceBatches(root, trackId)).map(({ value }) => value); const commit = await sourceCommit(root, sourceRepositoryCommit);
@@ -662,7 +680,7 @@ export async function buildTrack({ root = ROOT, trackId, outputRoot = join(ROOT,
   const artifact = { trackId, familyId: validated.track.familyId, contentVersion: validated.source.contentVersion, taxonomyVersion: validated.source.taxonomyVersion, schemaVersion: "published-bank-v1", checksumSha256: hash(artifactBytes), sourceRepositoryCommit: cleanCommit, declaredModes: validated.source.declaredModes, artifactBytes };
   const versionDirectory = join(outputRoot, "tracks", trackId, artifact.contentVersion); const out = join(versionDirectory, "track-artifact.json"); const reportPath = join(versionDirectory, "build-report.json");
   try { await stat(versionDirectory); throw new PublishingFailure("IMMUTABLE_VERSION", `Artifact version already exists: ${trackId}/${artifact.contentVersion}.`); } catch (error) { if (error?.code !== "ENOENT") throw error; }
-  const report = { reportSchemaVersion: 3, phase: "build", trackId, familyId: artifact.familyId, contentVersion: artifact.contentVersion, taxonomyVersion: artifact.taxonomyVersion, sourceRepositoryCommit: cleanCommit, technicalInputFingerprint: validated.source.technicalInputFingerprint, checksumSha256: artifact.checksumSha256, itemCount: validated.source.items.length, ...(artifact.familyId === "algorithms" ? { userModeReadiness: validated.source.modeStructures.userModeReadiness } : {}) };
+  const report = { reportSchemaVersion: 3, phase: "build", trackId, familyId: artifact.familyId, contentVersion: artifact.contentVersion, taxonomyVersion: artifact.taxonomyVersion, sourceRepositoryCommit: cleanCommit, technicalInputFingerprint: validated.source.technicalInputFingerprint, checksumSha256: artifact.checksumSha256, itemCount: validated.source.items.length, ...(artifact.familyId === "algorithms" ? { userModeReadiness: validated.source.modeStructures.userModeReadiness } : { modeReadiness: validated.source.modeReadiness }) };
   const pendingDirectory = `${versionDirectory}.pending-${artifact.checksumSha256}`;
   await mkdir(dirname(versionDirectory), { recursive: true }); await mkdir(pendingDirectory, { recursive: false });
   try { await writeFile(join(pendingDirectory, "track-artifact.json"), canonicalJson(artifact)); await writeFile(join(pendingDirectory, "build-report.json"), canonicalJson(report)); await rename(pendingDirectory, versionDirectory); } catch (error) { await rm(pendingDirectory, { recursive: true, force: true }); throw error; }

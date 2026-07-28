@@ -374,6 +374,26 @@ test("Certification publishing declares only canonical non-simulation practice m
   assert.doesNotMatch(JSON.stringify({ family, source }), /cloud-practice|cloud-review/);
 });
 
+test("Certification readiness reports every declared mode and its exact eligible scopes", async () => {
+  const path = await root({ certification: certificationBatch() });
+  try {
+    const readiness = (await inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT })).source.modeReadiness;
+    assert.deepEqual([...new Set(readiness.map((entry) => entry.modeId))], ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review"]);
+    assert.deepEqual(readiness.find((entry) => entry.modeId === "certification-diagnostic-baseline"), { modeId: "certification-diagnostic-baseline", scope: { kind: "explicit_item_ids", id: "gcp-ace-diagnostic-baseline-v1" }, requestedLengths: [40], shortening: "prohibited", requiredUniqueItemCount: 40, availableUniqueItemCount: 40, profileConstraints: [] });
+    const scenario = readiness.find((entry) => entry.modeId === "certification-scenario-practice");
+    assert.equal(scenario?.scope.id, "fixture"); assert.equal(scenario?.requiredUniqueItemCount, 10); assert.equal(scenario?.availableUniqueItemCount, 10);
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("Certification refuses a declared mode without a readiness owner", async () => {
+  const path = await root({ certification: certificationBatch() });
+  try {
+    const sourcePath = join(path, "manual/source/cloud-certification/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.declaredModes.push("certification-unowned"); await writeFile(sourcePath, JSON.stringify(source));
+    const familyPath = join(path, "config/families/certification.json"); const family = JSON.parse(await readFile(familyPath, "utf8")); family.modes.push({ id: "certification-unowned", minimumPool: 1 }); await writeFile(familyPath, JSON.stringify(family));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("MISSING_MODE_READINESS_OWNER"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
 test("Certification Diagnostic Baseline rejects a shortened, duplicated, or out-of-bank fixed selection", async () => {
   const path = await root({ certification: certificationBatch() });
   try {

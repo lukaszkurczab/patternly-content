@@ -5,7 +5,7 @@
 - Algorithms batches: `manual/source/algorithms/*.json`, conforming to `schemas/publishing/algorithms-manual-source.schema.json`.
 - Certification batches: `manual/source/cloud-certification/*.json`, conforming to `schemas/publishing/certification-manual-source.schema.json`.
 
-`tracks/`, test fixtures, generated artifacts, and releases are never discovery roots. Moving existing question files is `MANUAL ONLY`; no pipeline command migrates, copies, or reads them as a fallback.
+Test fixtures, generated artifacts, and releases are never discovery roots. Moving existing question files is `MANUAL ONLY`; no pipeline command migrates, copies, or reads them.
 
 ## Technical evidence contract
 

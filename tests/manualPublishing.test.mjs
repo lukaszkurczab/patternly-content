@@ -40,7 +40,7 @@ async function cleanGitReleaseFixture(path) {
   return evidence;
 }
 
-test("canonical discovery is deterministic and ignores legacy content", async () => {
+test("canonical discovery is deterministic and ignores noncanonical content", async () => {
   const first = await root({ algorithms: algorithmsBatch() }); const second = await root({ algorithms: algorithmsBatch(), legacy: true });
   try {
     const a = await buildTrack({ root: first, trackId: "algorithms", outputRoot: join(first, "out"), sourceRepositoryCommit: COMMIT });
@@ -375,7 +375,13 @@ test("Certification Diagnostic Baseline rejects a shortened, duplicated, or out-
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("fixtures and legacy paths cannot enter production publishing code", async () => {
+test("repository has no retired manifest ingress", async () => {
+  for (const path of ["manifest.json", "tracks/algorithms/manifest.json", "tracks/cloud-certification/manifest.json"]) {
+    await assert.rejects(() => stat(path), (error) => error?.code === "ENOENT");
+  }
+});
+
+test("fixtures and noncanonical paths cannot enter production publishing code", async () => {
   const source = await readFile("scripts/publishing/pipeline.mjs", "utf8"); assert.doesNotMatch(source, /tests\/fixtures|tracks\/algorithms|tracks\/cloud-certification|slice\(0, 40\)|Math\.random/);
   const workflow = await readFile(".github/workflows/real-content-release.yml", "utf8"); assert.match(workflow, /algorithms-real-content/); assert.match(workflow, /certification-real-content/); assert.doesNotMatch(workflow, /continue-on-error/);
 });

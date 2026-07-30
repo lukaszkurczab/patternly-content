@@ -3,7 +3,7 @@
   "batchId": "algorithms-graph-traversal-graph_complexity_and_mistakes-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -76,8 +76,24 @@
         "details": {
           "blocks": [
             {
-              "type": "paragraph",
-              "text": "The vertex loop or discovery events contribute O(V). Summed neighbor iteration contributes O(E) for a directed graph and O(2E) = O(E) for an undirected graph. The visited structure and queue or stack are each bounded by O(V). The fact that BFS uses FIFO and DFS uses LIFO does not change this full-traversal asymptotic cost under the same representation."
+              "type": "heading",
+              "level": 2,
+              "text": "Add vertex work and stored-edge work"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Discovering and processing each vertex once contributes O(V).",
+                "The sum of adjacency-list lengths is E for a directed graph and 2E for an undirected graph, both O(E).",
+                "Therefore total traversal time is O(V) + O(E) = O(V + E).",
+                "Visited stores at most V marks and the queue or stack at most O(V) vertices, so auxiliary space is O(V)."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Accounting rule",
+              "text": "Under adjacency lists, charge each vertex once and each stored edge entry once."
             }
           ]
         }
@@ -137,8 +153,24 @@
         "details": {
           "blocks": [
             {
-              "type": "paragraph",
-              "text": "The matrix row scan pays for absent as well as present edges, producing V × V checks. The traversal's own visited/frontier state is O(V); the O(V²) matrix is excluded by the prompt as input storage. A matrix is not categorically invalid: on a dense graph E = Θ(V²), O(V²) is also O(V + E). The representation changes the cost model, not the correctness of BFS or DFS."
+              "type": "heading",
+              "level": 2,
+              "text": "A matrix charges every possible neighbor pair"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "All V vertices are reached.",
+                "Each reached vertex scans a row of V matrix cells, including absent edges.",
+                "The product V · V gives O(V²) traversal time.",
+                "Visited plus frontier still contains only vertex state, so auxiliary space is O(V); the excluded input matrix is O(V²)."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Dense boundary",
+              "text": "For E = Θ(V²), matrix time O(V²) matches O(V + E); on sparse graphs it pays for absent pairs."
             }
           ]
         }
@@ -164,7 +196,7 @@
         "availableValuesByDimension": {
           "time": [
             "O(log V)",
-            "O(V)",
+            "O(V log V)",
             "O(V + E)",
             "O(V²)"
           ],
@@ -198,8 +230,23 @@
         "details": {
           "blocks": [
             {
-              "type": "paragraph",
-              "text": "DFS time follows the same adjacency-list accounting as other complete traversals: O(V + E). On a path, the recursive call chain cannot unwind until it reaches the final vertex, so stack depth is V. This is why a recursive implementation can overflow even though the asymptotic algorithm is linear. An explicit stack preserves O(V) worst-case auxiliary space while moving it out of the call stack."
+              "type": "heading",
+              "level": 2,
+              "text": "Linear work can still create linear call depth"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Adjacency-list accounting gives O(V + E) time; for this path E = V − 1, so that bound is linear.",
+                "DFS enters vertex 1 from 0, vertex 2 from 1, and continues until the final vertex before unwinding.",
+                "The active recursive chain reaches V frames, and visited also uses O(V), so auxiliary space is O(V)."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Implementation risk",
+              "text": "An explicit stack avoids a shallow call-stack limit but does not improve the O(V) worst-case auxiliary bound."
             }
           ]
         }
@@ -225,7 +272,7 @@
         "availableValuesByDimension": {
           "time": [
             "O(1)",
-            "O(V)",
+            "O(V log V)",
             "O(V + E)",
             "O(V²)"
           ],
@@ -259,8 +306,23 @@
         "details": {
           "blocks": [
             {
-              "type": "paragraph",
-              "text": "The star exposes the breadth-memory boundary: after expanding the center, the queue can contain V−1 leaves. That gives O(V) frontier space in addition to O(V) visited state. Time remains O(V + E). BFS is not universally faster or cheaper than DFS; it has the decisive shortest-unweighted-path property, but its frontier width can be large."
+              "type": "heading",
+              "level": 2,
+              "text": "A wide layer fills the queue"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The star has V vertices and E = V − 1 edges, scanned in O(V + E) time.",
+                "Expanding the center discovers and enqueues all V − 1 leaves before any leaf is removed.",
+                "Queue width is therefore V − 1 = O(V), and visited is also O(V)."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Breadth-space boundary",
+              "text": "BFS auxiliary space follows maximum frontier width, which can be linear even in a sparse graph."
             }
           ]
         }
@@ -320,8 +382,24 @@
         "details": {
           "blocks": [
             {
-              "type": "paragraph",
-              "text": "Every vertex is considered by the outer scan once and expanded by exactly one component traversal. Every adjacency entry is scanned in that one traversal, so the total is O(V + E), not one full traversal per component. Visited plus the largest component frontier is O(V). This amortized whole-graph accounting is the key complexity invariant of component enumeration."
+              "type": "heading",
+              "level": 2,
+              "text": "Component traversals partition the work"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The outer scan examines V vertices once, contributing O(V).",
+                "Visited ensures each vertex is expanded by exactly one component traversal.",
+                "Across all components, adjacency-list scans still total O(E), not E per component.",
+                "Thus time is O(V + E), while visited and the largest active frontier use O(V) auxiliary space."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Amortized rule",
+              "text": "Multiple traversal starts do not multiply work when their visited regions are disjoint."
             }
           ]
         }
@@ -343,16 +421,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "frontier_can_grow_to_edges",
-            "text": "The result can remain correct, but up to O(E) queue entries may be generated, weakening the usual O(V) frontier bound."
-          },
-          {
             "id": "always_identical",
             "text": "Time and space are always identical to discovery-time marking because both eventually visit the same vertices."
           },
           {
             "id": "must_be_quadratic",
             "text": "The time is necessarily O(V²) for every graph."
+          },
+          {
+            "id": "frontier_can_grow_to_edges",
+            "text": "The result can remain correct, but up to O(E) queue entries may be generated, weakening the usual O(V) frontier bound."
           },
           {
             "id": "matrix_fix",
@@ -372,8 +450,24 @@
         "details": {
           "blocks": [
             {
-              "type": "paragraph",
-              "text": "With discovery-time marking, each vertex is enqueued once and frontier storage is O(V). With late marking and a stale-copy guard, each adjacency exposure can produce an enqueue, giving O(E) queue operations and potentially O(E) queued entries while preserving O(V + E) order in a simple guarded implementation. If duplicate copies also rescan neighbors, work can grow further. Therefore dequeue marking is not universally operationally equivalent."
+              "type": "heading",
+              "level": 2,
+              "text": "Late marking changes the unit from vertices to edge exposures"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "With mark-on-enqueue, each vertex creates at most one queue entry, so frontier storage is O(V).",
+                "With mark-on-dequeue, several processed predecessors can enqueue the same still-unmarked target.",
+                "In a guarded simple graph, each examined edge can generate a copy, yielding O(E) queue operations and potentially O(E) pending entries.",
+                "Skipping stale copies before neighbor scans can retain O(V + E) time; expanding them can increase work further."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Operational warning",
+              "text": "Equal final reachability does not imply equal frontier-space or queue-operation bounds."
             }
           ]
         },
@@ -442,8 +536,24 @@
         "details": {
           "blocks": [
             {
-              "type": "paragraph",
-              "text": "The implicit grid graph has V = RC and E = O(RC) under bounded-degree movement. Processing every state and four direction checks gives O(RC) time. A separate visited grid is O(RC), and the frontier can also contain O(RC) cells in the worst case. In-place marking can reduce the separate visited allocation, but it does not change traversal time and requires a mutation-safe contract."
+              "type": "heading",
+              "level": 2,
+              "text": "Substitute grid dimensions into graph accounting"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The grid has at most V = R · C reachable cell states.",
+                "Four candidate checks per state give at most 4RC = O(RC) neighbor work.",
+                "Therefore traversal time is O(RC).",
+                "The separate visited grid stores RC flags and the frontier can hold O(RC) cells, so auxiliary space is O(RC)."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Mutation boundary",
+              "text": "In-place marking can remove the separate visited allocation only when consuming the input is contract-safe."
             }
           ]
         }
@@ -505,8 +615,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Kahn charges every vertex and edge once"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Initialize V indegree counters in O(V).",
+                "Scan E edges to populate indegrees in O(E).",
+                "Each vertex enters the ready queue at most once, adding O(V).",
+                "Each outgoing edge causes exactly one decrement, adding O(E)."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Initialize V indegrees and scan E edges to populate them. Every vertex enters the ready queue at most once, and every directed edge triggers one decrement when its source is processed. This totals O(V + E). The indegree array and queue use O(V) auxiliary space. With an adjacency matrix, neighbor scanning may instead cost O(V²), but the dependency invariant is unchanged."
+              "text": "The sum is O(V + E). Indegrees plus the ready queue use O(V) auxiliary space; the input adjacency is excluded. A matrix would change neighbor scanning toward O(V²), not the readiness invariant."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Kahn bound",
+              "text": "Time O(V + E), auxiliary space O(V)."
             }
           ]
         }
@@ -568,8 +698,30 @@
         "details": {
           "blocks": [
             {
-              "type": "paragraph",
-              "text": "Initialize the distinct sources, then run one queue. Because every source is marked at initialization and every other vertex is discovered once, graph processing is O(V + E); including source enumeration gives O(k + V + E), usually simplified to O(V + E) because k ≤ V. Visited, distances, and queue are O(V). Repeating a complete BFS from every source would produce the incorrect O(k(V + E)) strategy cost for this output."
+              "type": "heading",
+              "level": 2,
+              "text": "Sources add initialization, not repeated traversals"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Enumerating and seeding k distinct sources costs O(k).",
+                "The shared queue discovers each reachable vertex once and scans each reached adjacency entry once, bounded by O(V + E).",
+                "Total time is O(k + V + E), which simplifies to O(V + E) because distinct sources satisfy k ≤ V.",
+                "Visited, distances and the shared queue each require at most O(V) space."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Do not multiply by k",
+              "text": "O(k(V + E)) describes k separate BFS runs, not one multi-source frontier."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Multi-source bound",
+              "text": "One shared traversal adds O(k) seeding and retains O(V) auxiliary space."
             }
           ]
         }

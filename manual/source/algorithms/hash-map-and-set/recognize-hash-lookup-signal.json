@@ -3,7 +3,7 @@
   "batchId": "algorithms-hash-map-and-set-recognize-hash-lookup-signal-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -35,16 +35,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "seen_membership",
-            "text": "Maintain a hash set of IDs already observed."
+            "id": "last_only",
+            "text": "Store only the most recently observed ID."
           },
           {
             "id": "sorted_prefix",
             "text": "Sort the processed prefix again after every arrival."
           },
           {
-            "id": "last_only",
-            "text": "Store only the most recently observed ID."
+            "id": "seen_membership",
+            "text": "Maintain a hash set of IDs already observed."
           }
         ],
         "acceptedOptionIds": [
@@ -87,10 +87,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "derived_prior_key",
-            "text": "For current value x, the needed prior value is the directly computable key target - x."
-          },
-          {
             "id": "two_values_exist",
             "text": "The answer contains two values, regardless of their relationship."
           },
@@ -101,6 +97,10 @@
           {
             "id": "single_pass_requested",
             "text": "The prompt mentions one pass, even if no lookup key can be derived."
+          },
+          {
+            "id": "derived_prior_key",
+            "text": "For current value x, the needed prior value is the directly computable key target - x."
           }
         ],
         "acceptedOptionIds": [
@@ -144,12 +144,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "exact_multiplicity",
-            "text": "Report how many times each value occurs."
-          },
-          {
             "id": "duplicate_boolean",
             "text": "Report whether any duplicate exists."
+          },
+          {
+            "id": "exact_multiplicity",
+            "text": "Report how many times each value occurs."
           },
           {
             "id": "membership_query",
@@ -196,16 +196,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "signature_to_bucket",
-            "text": "A hash map from normalized signature to a bucket of original strings."
-          },
-          {
             "id": "signature_presence",
             "text": "A hash set containing only the signatures that have appeared."
           },
           {
             "id": "global_count",
             "text": "One integer containing the total number of processed strings."
+          },
+          {
+            "id": "signature_to_bucket",
+            "text": "A hash map from normalized signature to a bucket of original strings."
           }
         ],
         "acceptedOptionIds": [
@@ -248,10 +248,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "needs_order_successor",
-            "text": "The query needs an ordered successor, not just equality membership."
-          },
-          {
             "id": "values_are_unique",
             "text": "The input guarantees that values are unique."
           },
@@ -262,6 +258,10 @@
           {
             "id": "memory_available",
             "text": "The service may allocate additional memory."
+          },
+          {
+            "id": "needs_order_successor",
+            "text": "The query needs an ordered successor, not just equality membership."
           }
         ],
         "acceptedOptionIds": [
@@ -299,7 +299,7 @@
     },
     {
       "id": "alg-hms-signal-prior-state-sequence",
-      "prompt": "Order the conceptual steps for a one-pass pair-existence scan so that the lookup state represents only earlier elements.",
+      "prompt": "Arrange the checks and actions in control-flow order for a one-pass pair-existence scan whose lookup state must represent only earlier elements.",
       "interaction": {
         "type": "ordering",
         "elements": [
@@ -313,11 +313,11 @@
           },
           {
             "id": "handle_match",
-            "text": "If present, record or return the valid pair outcome."
+            "text": "If the required prior value is present, return the valid pair outcome."
           },
           {
             "id": "record_current",
-            "text": "Insert the current value into the prior-state table for later elements."
+            "text": "Otherwise, insert the current value into the prior-state table for later elements."
           }
         ],
         "canonicalOrder": [
@@ -337,8 +337,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 3,
+              "text": "Preserve the earlier-index invariant"
+            },
+            {
               "type": "paragraph",
-              "text": "The invariant is that the table contains exactly the values from indices smaller than the current index. Deriving and checking the needed key under that invariant prevents the current element from matching itself. After the decision, recording the current value makes it available to later iterations. Check-after-insert is valid only when the membership test is not intended to prove prior occurrence."
+              "text": "At the start of an iteration for index i, the table must contain only values from indices smaller than i. The match and insertion steps are alternative branches: a successful lookup returns, while a failed lookup records the current value before the next iteration."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Rearrange the pair relation to derive the prior value required by the current element.",
+                "Query the table before changing it, while every stored occurrence is guaranteed to have a smaller index.",
+                "If the key is present, return the pair outcome using that earlier occurrence.",
+                "Otherwise, insert the current value so only later elements may use it."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "counterexample",
+              "title": "Why insert first fails",
+              "text": "For input [3] and target 6, inserting the current 3 before checking would let index 0 match itself. Check-before-insert rejects that invalid pair, while [3, 3] still succeeds when the second occurrence finds the first."
             }
           ]
         }
@@ -397,7 +417,27 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Expected constant cost per lookup does not make the entire scan constant; the loop still processes n elements. The table can grow with the number of distinct values, which is O(n) in the worst input-size case. The time statement is expected or amortized under the stated hash assumptions, not a universal worst-case guarantee for every implementation and input."
+              "text": "Let d be the number of distinct values retained, with d ≤ n. Each of the n iterations performs at most two expected-constant hash operations, so n · O(1) = O(n) expected time. The table stores d keys, hence O(d) extra space and O(n) in the worst input-size case."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Reject the other bounds"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Time O(1) ignores the n loop iterations; expected O(1) describes one hash operation, not the whole scan.",
+                "Time O(log n) is too small for a scan that may inspect every value, while O(n log n) would charge a logarithmic operation per value that ordinary hashing does not perform.",
+                "Time O(n²) is not the expected bound under the stated well-distributed-hash and resizing assumptions; collision-heavy worst cases require a separate guarantee statement.",
+                "Space O(1) or O(log n) cannot hold up to n distinct keys, and O(n²) overstates a table with at most one entry per distinct input value."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Guarantee boundary",
+              "text": "O(n) time here is an expected or amortized statement under the prompt's hash assumptions, not a universal worst-case guarantee for every hash-table implementation and input."
             }
           ]
         }
@@ -423,12 +463,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "value_to_index",
-            "text": "Store each relevant prior value with an original index payload."
-          },
-          {
             "id": "value_presence",
             "text": "Store only whether each prior value exists."
+          },
+          {
+            "id": "value_to_index",
+            "text": "Store each relevant prior value with an original index payload."
           },
           {
             "id": "target_presence",

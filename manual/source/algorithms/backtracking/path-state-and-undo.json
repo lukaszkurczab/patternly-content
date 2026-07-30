@@ -3,7 +3,7 @@
   "batchId": "backtracking-path-state-and-undo-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -67,38 +67,34 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Pop restores the parent prefix"
             },
             {
               "type": "paragraph",
-              "text": "Without the pop, a choice made for one branch remains visible when another candidate is explored."
+              "text": "Appending a candidate changes the shared path from the parent prefix P to the child path P + [candidate]. The recursive call must see that child path, but after it returns the parent loop must again see exactly P."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Sibling branches must begin from the same parent state. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The final pop removes the element appended by this stack frame. Without it, the next sibling B would start from P + [A] and become P + [A, B] instead of P + [B]."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "The pop targets branch state, not stored result snapshots. The input candidate set is separate from the current path. Sorting is unrelated to restoration."
+              "text": "The pop acts on the live path, not on detached snapshots already stored in results. It does not delete the candidate from the immutable input, and it provides no sorting guarantee; its sole job is to reverse this frame's append."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Sibling branches must begin from the same parent state."
+              "title": "Ownership rule",
+              "text": "Each frame reverses the mutation it introduced before the parent advances to another sibling."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "remove_result": "The pop targets branch state, not stored result snapshots.",
-          "reduce_input": "The input candidate set is separate from the current path.",
-          "sort_path": "Sorting is unrelated to restoration."
+          "remove_result": "The pop removes the last element of the shared live path; a completed result should be a detached snapshot and remains in the output collection.",
+          "reduce_input": "The candidate source and the current path are different structures. Popping the path does not permanently delete anything from the input.",
+          "sort_path": "Removing the most recent choice restores path length and contents, but it does not compare elements or establish sorted order."
         }
       },
       "taxonomy": {
@@ -149,38 +145,34 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "The visited mark lives for exactly one active route"
             },
             {
               "type": "paragraph",
-              "text": "Unmarking on return restores the parent state's visited set."
+              "text": "After the current cell is validated, marking it prevents every descendant of this route from reusing it. Unmarking before those descendants finish would reopen the cell too early and allow a cycle within the same path."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The mark belongs to the current path and must remain active throughout all descendants of that branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Once all neighbor searches return, this route no longer owns the mark. Clearing it before returning restores the parent's visited set, so another sibling route or starting cell can use the cell independently."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "That would allow the child path to reuse the current cell. Path search may need the cell in a sibling path. That couples independent searches and blocks valid paths."
+              "text": "Unmarking before recursion defeats the no-reuse rule for descendants. Never unmarking makes a path-local restriction global. Waiting until all starting cells finish leaks one route's state into unrelated searches and can suppress valid paths."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The mark belongs to the current path and must remain active throughout all descendants of that branch."
+              "title": "Lifetime rule",
+              "text": "A path-local mark is active from entry into the cell until all recursive work below that cell has finished."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "before_recurse": "That would allow the child path to reuse the current cell.",
-          "never": "Path search may need the cell in a sibling path.",
-          "after_all_start_cells": "That couples independent searches and blocks valid paths."
+          "before_recurse": "Clearing the mark before exploring neighbors lets a descendant step back onto the current cell, violating the path-local no-reuse constraint.",
+          "never": "A sibling route may legally use the cell after the current route has unwound; a permanent mark incorrectly turns path-local state into global state.",
+          "after_all_start_cells": "Independent starting-cell searches must not inherit one another's route marks, so restoration must occur while each recursive route unwinds."
         }
       },
       "taxonomy": {
@@ -231,38 +223,34 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Undo depends on whether the parent was mutated"
             },
             {
               "type": "paragraph",
-              "text": "Copying can replace explicit restoration, usually with additional allocation and copying cost."
+              "text": "Explicit undo is necessary when a child changes an object that the parent or a later sibling will reuse. The inverse operation is what reconstructs the parent's pre-choice state."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Undo is required to restore mutated shared state, not as a ritual independent of the representation. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "If each child instead receives a fresh copy or immutable child version, the parent object is never changed. Returning from the call discards the child reference, so no pop or unmark is needed for that representation. The tradeoff is usually extra allocation, copying, or persistent-structure overhead."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "Shared mutation requires restoration. In-place marking normally requires reversal. Sibling isolation still requires undo or copying."
+              "text": "A shared path, in-place board mark, or global assignment is visible to siblings after the child returns. Each therefore needs an inverse update unless the design changes to branch-local state."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Undo is required to restore mutated shared state, not as a ritual independent of the representation."
+              "title": "Representation rule",
+              "text": "Ask whether the child mutates state the parent reuses; if not, explicit restoration is unnecessary."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "shared_mutable_path": "Shared mutation requires restoration.",
-          "in_place_board_mark": "In-place marking normally requires reversal.",
-          "global_assignment": "Sibling isolation still requires undo or copying."
+          "shared_mutable_path": "Appending to one path shared by all branches changes what later siblings see, so the appended choice must be removed.",
+          "in_place_board_mark": "An in-place mark changes the shared board and must be reversed before another route is allowed to use that cell.",
+          "global_assignment": "A reused global assignment carries a child's values into later siblings unless every changed field is restored or the state is copied."
         }
       },
       "taxonomy": {
@@ -313,38 +301,34 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Trace the leaked element"
             },
             {
               "type": "paragraph",
-              "text": "The B branch should start from the parent path, not from A's child path."
+              "text": "Let the parent path initially be P. Appending A produces P + [A]. Because the solver forgets to pop, returning from A's child leaves that exact path in memory."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Missing undo contaminates the next sibling with state from the previous branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The parent then appends sibling B to the contaminated path, producing P + [A, B]. Relative to the choices named in the prompt, B therefore inherits A followed by B, although the correct sibling path would be P + [B]."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "That would be correct parent restoration. A was never removed. The bug affects the live mutable path."
+              "text": "B alone is what correct restoration would produce. The path cannot be empty because both appends mutate it. A detached result snapshot is unrelated: the bug is in the live path reused by the recursive search."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Missing undo contaminates the next sibling with state from the previous branch."
+              "title": "Debugging trace",
+              "text": "Write the path after every append and pop; a sibling must start with the same prefix its parent had before the previous choice."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "b_only": "That would be correct parent restoration.",
-          "empty_path": "A was never removed.",
-          "result_copy": "The bug affects the live mutable path."
+          "b_only": "This is the correct state only if A was popped first. The prompt says A remains in the shared path when B is appended.",
+          "empty_path": "Neither append was reversed, so the live path contains at least A and B rather than becoming empty.",
+          "result_copy": "A detached result snapshot does not determine the next recursive branch; the unrecovered live mutable path does."
         }
       },
       "taxonomy": {
@@ -395,38 +379,34 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Undo applies the inverse update"
             },
             {
               "type": "paragraph",
-              "text": "The parent must observe the same remainingTarget value it had before selecting x."
+              "text": "Suppose the parent enters with remainingTarget = R. Choosing x mutates the shared field to R - x, and the child evaluates its constraints using that reduced value."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Undo should be the semantic inverse of the branch-state update. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "After the child returns, adding x gives (R - x) + x = R. This restores the exact parent value before another candidate is tried. The inverse must match the actual mutation; restoring some convenient constant is not sufficient."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "This moves farther from the parent state. That discards the parent's unresolved target. Result storage is not the mutated branch field."
+              "text": "Subtracting again yields R - 2x and increases the error. Setting zero discards R unless it happened to be zero. Recomputing the result list changes an unrelated output structure and cannot restore the numeric branch field."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Undo should be the semantic inverse of the branch-state update."
+              "title": "Algebraic check",
+              "text": "For an update f, verify that undo(f(parent)) equals parent; here (R - x) + x = R."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "subtract_again": "This moves farther from the parent state.",
-          "set_zero": "That discards the parent's unresolved target.",
-          "recompute_output": "Result storage is not the mutated branch field."
+          "subtract_again": "A second subtraction changes R - x into R - 2x, moving farther from the parent's original value R.",
+          "set_zero": "Zero is a completion value, not the saved parent value; assigning it loses the unresolved target R.",
+          "recompute_output": "The output collection and remainingTarget are separate state. Recomputing results does not reverse the subtraction."
         }
       },
       "taxonomy": {
@@ -477,38 +457,34 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Short-circuit only after restoring observable input"
             },
             {
               "type": "paragraph",
-              "text": "Control flow must unwind mutations before exposing the final result."
+              "text": "The successful child proves that a solution exists, so the find-one search need not explore further siblings. That controls search coverage, but it does not cancel the public requirement that the caller receive its board unchanged."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Short-circuit success does not override an externally visible restoration requirement. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Before this stack frame returns true, it must reverse every board or path mutation it owns. Each caller performs the same cleanup while success propagates upward. When the public call finally returns, all in-place marks have been removed and the success value is preserved."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "That violates the observable input-restoration contract. Restoration does not negate success. Find-one semantics permit short-circuiting after restoration."
+              "text": "Returning before cleanup exposes temporary marks to the caller. Clearing the success result confuses state restoration with result semantics. Exploring every remaining sibling ignores the stated find-one contract and adds work without improving correctness."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Short-circuit success does not override an externally visible restoration requirement."
+              "title": "Control-flow rule",
+              "text": "Cleanup happens before every return path that leaves a frame, including an early successful return."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "return_without_restore": "That violates the observable input-restoration contract.",
-          "erase_solution": "Restoration does not negate success.",
-          "restart_search": "Find-one semantics permit short-circuiting after restoration."
+          "return_without_restore": "This leaves temporary in-place marks visible after the public call, directly violating the unchanged-board contract.",
+          "erase_solution": "Reversing board mutations does not reverse the fact that the child found a solution; success can remain true after cleanup.",
+          "restart_search": "A find-one solver may stop once success is known. It needs to restore the current branch, not enumerate unrelated siblings."
         }
       },
       "taxonomy": {
@@ -559,38 +535,34 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Snapshot and pop act on different objects"
             },
             {
               "type": "paragraph",
-              "text": "A solver often needs both: snapshot on completion and pop after each branch."
+              "text": "On completion, copying the live path creates a detached snapshot whose contents should survive later search mutations. The copy preserves an output value; it does not modify its source."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Result preservation and branch restoration solve different problems. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The live path still contains the completed branch's last choice. Popping that live path restores the parent prefix for sibling exploration, while the detached result remains unchanged. Collect-all solvers commonly need both operations."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "A copy does not mutate the source path. Result storage is separate. A proper snapshot is independent."
+              "text": "Copying does not remove a source element. The result collection does not become candidate input, and a correct snapshot owns independent storage, so later popping the live path cannot delete it."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Result preservation and branch restoration solve different problems."
+              "title": "Two-object rule",
+              "text": "Copy to preserve the completed value; pop to restore the mutable search state."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "copy_is_undo": "A copy does not mutate the source path.",
-          "results_are_input": "Result storage is separate.",
-          "pop_deletes_copy": "A proper snapshot is independent."
+          "copy_is_undo": "Creating a copy reads the live path but does not remove its final element, so the shared source remains contaminated without pop.",
+          "results_are_input": "The result collection stores completed snapshots; it does not replace the candidate source or the live recursive path.",
+          "pop_deletes_copy": "A detached snapshot has independent storage. Popping the live path changes only that live object, not the saved result."
         }
       },
       "taxonomy": {
@@ -641,19 +613,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Restore the whole parent-state tuple"
             },
             {
               "type": "paragraph",
-              "text": "Partial restoration creates internally inconsistent state and subtle sibling defects."
+              "text": "The branch state is the tuple (path, used flags, remainingTarget). A choice changes all three components, so the child receives a coordinated state describing the same selection."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The parent-state invariant spans every mutable component. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Before the next sibling, every changed component must equal its pre-choice value: remove the path element, clear the corresponding used mark, and reverse the target update. Restoring only part of the tuple creates contradictions, such as an unmarked value that still appears in the path."
             },
             {
               "type": "callout",
@@ -664,8 +632,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The parent-state invariant spans every mutable component."
+              "title": "State checklist",
+              "text": "List every field mutated by choose and verify that unchoose restores each one on every return path."
             }
           ]
         },
@@ -725,41 +693,41 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Mutation determines restoration"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Appending changes the shared path, so remove the appended element.",
+                "Marking a candidate or cell changes shared membership state, so clear that mark.",
+                "Decrementing a shared counter or target changes numeric branch state, so apply the inverse increment."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Immutable reads do not require restoration."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Every shared mutable update must be reversed or replaced by branch-local copying. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Reading an immutable input value changes no state, so there is nothing to reverse. The criterion is mutation visible to the parent, not whether an operation occurred syntactically."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "A read does not change state."
+              "text": "An immutable read observes a value without changing the input, path, used set, or counters. The parent therefore already has the same state after the child returns."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Every shared mutable update must be reversed or replaced by branch-local copying."
+              "title": "Undo test",
+              "text": "If an operation changes shared state that outlives the child call, it needs an inverse update or a branch-local representation."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "read_input": "A read does not change state."
+          "read_input": "Reading immutable input observes data but leaves every shared object unchanged, so no parent state needs restoration."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "path_append": "The appended element must be removed.",
-          "mark_used": "The mark must be cleared for siblings.",
-          "decrement_remaining": "The parent value must be restored."
+          "path_append": "The appended element belongs only to this child branch and must be removed so the next sibling sees the parent prefix.",
+          "mark_used": "The used mark prevents reuse within the active branch but must be cleared so independent sibling branches can select the candidate.",
+          "decrement_remaining": "The reduced value describes the child. Applying the inverse update restores the parent's remaining capacity or target."
         }
       },
       "taxonomy": {
@@ -811,41 +779,40 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Avoid explicit undo by preserving the parent version"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "A fresh path copy gives the child its own mutable object, leaving the parent's path untouched.",
+                "An immutable persistent update returns a new child version while retaining the original parent version."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Avoiding explicit restoration generally trades mutation for allocation or persistent data structures."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Undo is representation-dependent. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "In both designs, returning from the child discards or stops referencing its version, so no pop or unmark is needed on the parent. This changes the cost model: copies may require O(depth) allocation per child, while persistent structures share storage but still allocate version nodes."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "This requires restoration. This normally requires unmarking."
+              "text": "One shared mutable path retains an appended choice until pop removes it. Marking a shared board in place retains the visit until unmark clears it. Both mutate the exact object later siblings reuse."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Undo is representation-dependent."
+              "title": "Tradeoff",
+              "text": "Parent-preserving state removes explicit cleanup but usually pays in allocation or persistent-update overhead."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "shared_path": "This requires restoration.",
-          "in_place_visited": "This normally requires unmarking."
+          "shared_path": "Reusing one mutable path means a child's append remains visible to the parent, so an explicit pop is required.",
+          "in_place_visited": "An in-place board mark changes shared storage and must be unmarked before another route may use that cell."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "copied_path": "The parent path is never mutated.",
-          "persistent_state": "Parent state remains available unchanged."
+          "copied_path": "Only the fresh child copy is mutated; the parent's path remains unchanged and needs no pop.",
+          "persistent_state": "The child receives a new immutable version while the parent version remains available unchanged for the next sibling."
         }
       },
       "taxonomy": {
@@ -898,31 +865,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Separate reversible search state from durable output"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The live path returns to the exact parent prefix.",
+                "Used or visited markers return to the parent's membership state.",
+                "Remaining target, capacity, and counts return to their pre-choice values."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "This distinction separates reversible search state from durable outputs."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Branch-local state is restored, while intended global result accumulation may persist. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Those components define what the next sibling is allowed to do and must be restored. The results collection has different ownership: completed snapshots intentionally accumulated by the child are durable outputs and should remain stored."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "Valid results discovered by the child should remain stored."
+              "text": "Requiring the result collection to be identical would erase valid completed solutions found below the child. Isolation applies to branch-control state, not to intentional output accumulation."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Branch-local state is restored, while intended global result accumulation may persist."
+              "title": "Ownership boundary",
+              "text": "Restore state that defines the parent branch; retain output that the contract says the search has produced."
             }
           ]
         },
@@ -986,31 +953,32 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Complete one sibling before starting another"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Apply the candidate so the mutable state represents the chosen child.",
+                "Recurse while that child state is active.",
+                "Reverse every update introduced for the child after recursion returns.",
+                "Only then advance to the next candidate, which now sees the restored parent state."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Undo belongs after the child returns and before sibling iteration continues."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: One branch must be fully isolated before the next sibling begins. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The order follows ownership: recursion needs the applied choice, while the next sibling needs its removal. Undo before recursion would erase the child; undo after advancing would contaminate the sibling."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why this order matters",
-              "text": "The order follows causal dependencies: Apply the candidate to branch state. Then Explore the child state. Then Reverse every branch-state update. Then Continue with the next candidate from the parent state. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
+              "text": "A common defect is to restore only the visible path but not a used set or counter. “Unchoose” means reversing the complete state transition, not merely one convenient field."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "One branch must be fully isolated before the next sibling begins."
+              "title": "Frame contract",
+              "text": "A frame may return outputs, but it must give sibling iteration the same branch-control state it received."
             }
           ]
         }
@@ -1066,19 +1034,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "The path mirrors the active combination branch"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Append the selected candidate to the shared parent prefix.",
+                "Recurse with the later candidate boundary while that selection is present.",
+                "Pop exactly the candidate appended by this frame.",
+                "Advance the parent loop after the original prefix has been restored."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Popping before the loop advances restores the shared parent prefix."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The live path represents exactly the active branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The child boundary controls which later candidates are legal; the path controls which values were selected. Both must describe the same branch during recursion, and pop must happen before a different sibling is appended."
             },
             {
               "type": "callout",
@@ -1089,8 +1058,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The live path represents exactly the active branch."
+              "title": "Path invariant",
+              "text": "At every call, the live path contains exactly the choices on that call's root-to-node route."
             }
           ]
         }
@@ -1146,19 +1115,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "A cell mark spans its descendants, not its siblings"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Validate bounds, target condition, and absence from the current path.",
+                "Mark the legal cell so descendants cannot reuse it.",
+                "Search neighboring cells while the mark remains active.",
+                "Unmark before returning so sibling paths regain the parent's availability set."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Unmarking restores availability for sibling paths."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A cell is marked only after validation and remains unavailable to all descendants of that branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Validation precedes mutation because an illegal coordinate must never enter the route. Unmarking precedes return because the mark is owned by this active path, not by all future searches."
             },
             {
               "type": "callout",
@@ -1169,8 +1139,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A cell is marked only after validation and remains unavailable to all descendants of that branch."
+              "title": "Visited-state invariant",
+              "text": "The visited set equals the cells on the current route and is restored as the recursion stack unwinds."
             }
           ]
         }
@@ -1226,19 +1196,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Keep the assignment and its indexes consistent"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Assign the candidate value to the next variable.",
+                "Update every derived constraint structure—used sets, counts, and conflicts—to reflect that assignment.",
+                "Recurse only after the child state is internally consistent.",
+                "On return, remove the assignment and reverse each derived update before another value is tried."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Undo must mirror all state changes, not only the visible assignment."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The child must see a fully consistent updated state, and the parent must be recovered completely. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The visible assignment and its indexes are two representations of one fact. Updating or restoring only one makes later legality checks disagree with the actual assignment."
             },
             {
               "type": "callout",
@@ -1249,8 +1220,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The child must see a fully consistent updated state, and the parent must be recovered completely."
+              "title": "Consistency invariant",
+              "text": "All redundant structures must agree before recursion and must all return to the parent version afterward."
             }
           ]
         }
@@ -1306,19 +1277,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "A child failure closes one edge, not the parent node"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Receive failure from the child reached by the current candidate.",
+                "Undo every mutation made for that candidate.",
+                "Continue with the next legal sibling from the restored parent state.",
+                "Return parent failure only when the candidate loop has exhausted all legal siblings."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Restoration must occur before the next sibling is tested."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: One failed branch is not a failed parent until all legal alternatives are exhausted. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Failure means no completion exists below the tested child. It says nothing about a different sibling subtree. Restoration is the bridge that makes the next sibling a genuine alternative from the same parent."
             },
             {
               "type": "callout",
@@ -1329,8 +1301,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "One failed branch is not a failed parent until all legal alternatives are exhausted."
+              "title": "Failure rule",
+              "text": "Propagate failure only after every legal outgoing branch has failed."
             }
           ]
         }
@@ -1386,19 +1358,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Restore locally while success propagates globally"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "A child returns success to the current frame.",
+                "The current frame reverses its own board and path mutations.",
+                "It returns success without exploring further siblings.",
+                "The caller repeats the same cleanup for the mutation that caller introduced."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Every stack frame owns and reverses the mutation it introduced."
-            },
-            {
-              "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Success propagation and restoration interleave during stack unwinding. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "This interleaving unwinds the successful route one frame at a time. When success reaches the public caller, every temporary in-place mark has been reversed even though no unused sibling was explored."
             },
             {
               "type": "callout",
@@ -1409,8 +1382,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Success propagation and restoration interleave during stack unwinding."
+              "title": "Early-return rule",
+              "text": "Before returning success, each frame performs the cleanup required by the public state-restoration contract."
             }
           ]
         }
@@ -1467,31 +1440,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Restoring branch state"
+              "text": "Sum every copied prefix still alive"
             },
             {
               "type": "paragraph",
-              "text": "In-place choose-recurse-unchoose can reduce active path storage to O(d), at the cost of requiring correct restoration."
+              "text": "At depth i, the active call retains a distinct copied path of O(i) elements. Along a deepest active chain, paths of lengths proportional to 1, 2, ..., d coexist because none of those calls has returned."
             },
             {
               "type": "paragraph",
-              "text": "Choose–recurse–unchoose isolates siblings. A child may change a path, a visited marker, a counter, or a constraint structure, but on return the parent must have exactly the same mutable state it had before the choice."
+              "text": "Their total is 1 + 2 + ... + d = d(d + 1)/2, which is O(d²). This is simultaneous active space, not the number of nodes visited over the entire search."
             },
             {
               "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Active copied paths can total 1 + 2 + ... + d elements along the recursion chain. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "With one shared mutable path, only O(d) path elements need remain active, plus recursion-frame and other state costs. That lower bound requires correct append-pop restoration instead of per-child path copies."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Check each dimension independently",
-              "text": "Active copied paths can total 1 + 2 + ... + d elements along the recursion chain. Count the number of explored states or produced values separately from the maximum live recursion state; one quantity does not automatically determine the other."
+              "text": "O(d) counts only one deepest path and ignores the shorter copies retained by ancestor calls. O(2^d) confuses search-tree width with storage on one active chain; inactive sibling branches are not simultaneously retained."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Active copied paths can total 1 + 2 + ... + d elements along the recursion chain."
+              "title": "Space rule",
+              "text": "For nested copied prefixes, sum the size retained at every active depth rather than counting only the deepest copy."
             }
           ]
         }

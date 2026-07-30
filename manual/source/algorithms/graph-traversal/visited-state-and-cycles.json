@@ -3,7 +3,7 @@
   "batchId": "algorithms-graph-traversal-visited_state_and_cycles-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -36,20 +36,20 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "mark_before_expand",
-            "text": "When a vertex is first accepted into the traversal frontier, mark it discovered; expand only discovered vertices that have not yet been processed."
-          },
-          {
             "id": "no_visited_tree",
             "text": "Use no visited state because every traversal creates a tree before it follows any edge."
           },
           {
-            "id": "mark_after_all_neighbors",
-            "text": "Mark a vertex only after recursively exploring every neighbor, with no active-state guard."
-          },
-          {
             "id": "matrix_prevents_cycle",
             "text": "Use an adjacency matrix; matrix storage prevents repeated visits automatically."
+          },
+          {
+            "id": "mark_before_expand",
+            "text": "When a vertex is first accepted into the traversal frontier, mark it discovered; expand only discovered vertices that have not yet been processed."
+          },
+          {
+            "id": "mark_after_all_neighbors",
+            "text": "Mark a vertex only after recursively exploring every neighbor, with no active-state guard."
           }
         ],
         "acceptedOptionIds": [
@@ -65,8 +65,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Claim a vertex before following its edges"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Accept 0 into the frontier and mark 0 discovered.",
+                "When 1 is first reached, mark it before expanding its neighbors; do the same for 2.",
+                "When edge 2—0 is inspected, 0 is already discovered, so no new frontier entry or recursive call is created.",
+                "The traversal finishes after processing each of 0, 1, and 2 once."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "A graph may have back edges, cross edges, and multiple paths to one vertex. Marking at first discovery establishes the invariant that each vertex is accepted into the frontier at most once. The resulting parent relation is a tree or forest, but that does not make the input graph a tree. Adjacency lists and matrices both require separate traversal state."
+              "text": "Marking only after all neighbors finish would allow the active chain 0 → 1 → 2 to enter 0 again before any call is complete. A matrix records the cycle edge but not whether this traversal already claimed its endpoint."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Discovery invariant",
+              "text": "Mark at frontier acceptance so every graph vertex is scheduled at most once."
             }
           ]
         },
@@ -125,8 +145,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Publish one fully initialized frontier entry"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Test whether v is unseen.",
+                "Mark v discovered so later predecessors cannot claim it.",
+                "Record parent[v] = u, distance[v], or other first-discovery metadata.",
+                "Enqueue the already-claimed and initialized v."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Once v is enqueued, another predecessor may be processed before v is dequeued. Marking v before enqueue closes that race in the logical traversal: later edges see v as discovered and do not add another copy. Parent or distance metadata belongs to the same first-discovery event. Delaying the mark until dequeue can be made correct only with extra duplicate guards, and it changes the operational invariant."
+              "text": "Once v is visible in the queue, another vertex may be processed before v is dequeued. Publishing first and marking later would let that predecessor enqueue a duplicate; recording metadata later could also separate v from the discovery event that owns its parent and distance."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Atomic logical event",
+              "text": "Test, claim, initialize, then enqueue."
             }
           ]
         }
@@ -142,18 +182,21 @@
     {
       "id": "alg-gt-visited-003",
       "prompt": "Recursive DFS explores an undirected graph. When processing edge u—v, v is already visited. What may be concluded from that fact alone?",
+      "constraints": [
+        "The graph is simple: it has no self-loops or parallel edges."
+      ],
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "need_parent_context",
-            "text": "Nothing about a cycle yet; v may be u's parent, so parent or equivalent context is needed."
-          },
-          {
             "id": "cycle_always",
             "text": "Every edge to a visited vertex proves a cycle."
+          },
+          {
+            "id": "need_parent_context",
+            "text": "Nothing about a cycle yet; v may be u's parent, so parent or equivalent context is needed."
           },
           {
             "id": "no_cycle_ever",
@@ -177,8 +220,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "A visited parent is expected in an undirected adjacency list"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "If DFS reached u through tree edge v—u, then u's adjacency list naturally contains the reverse view u—v.",
+                "Seeing that visited parent v does not add a second route; it is the same simple undirected edge.",
+                "If visited v is not u's parent, the DFS tree path between u and v plus edge u—v forms a cycle."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The visited set prevents repeated traversal, while parent context interprets a visited neighbor. If v is the parent of u, the edge is the same undirected tree edge seen from the other endpoint. If v is visited and is not the parent, the edge closes a cycle. Directed cycle detection uses a different state distinction, so this rule does not transfer unchanged."
+              "text": "Thus `visited(v)` alone is insufficient: the algorithm must compare v with parent[u]. The simple-graph constraint matters; with parallel edges, edge identity rather than only parent vertex identity is needed to distinguish the tree edge from a second edge."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Undirected rule",
+              "text": "A visited non-parent neighbor proves a cycle in a simple undirected graph."
             }
           ]
         },
@@ -205,10 +267,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "need_active_finished",
-            "text": "Because visited must be refined into at least active-on-current-path versus fully finished state."
-          },
-          {
             "id": "visited_never_needed",
             "text": "Because directed graphs are trees when traversed recursively, so no state is needed."
           },
@@ -219,6 +277,10 @@
           {
             "id": "matrix_colors",
             "text": "Because only adjacency matrices can store the required DFS colors."
+          },
+          {
+            "id": "need_active_finished",
+            "text": "Because visited must be refined into at least active-on-current-path versus fully finished state."
           }
         ],
         "acceptedOptionIds": [
@@ -234,8 +296,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Directed cycle evidence depends on the current DFS path"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "An unseen vertex has not entered DFS.",
+                "On entry, mark it active while its recursive frame remains on the current path.",
+                "After all outgoing edges finish, change it from active to finished.",
+                "An edge u → v closes a directed cycle exactly when v is active; an edge to finished v does not return to the current path."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Use a three-state model such as unseen, active, and finished. Entering a vertex changes it to active; leaving after all outgoing edges changes it to finished. An edge to active state closes a directed cycle on the current recursion stack. An edge to finished state does not. The ordinary visited set remains enough to avoid repeated reachability work, but the richer diagnostic question requires richer state."
+              "text": "One boolean merges active and finished vertices and therefore cannot distinguish a back edge from a cross or forward edge. These colors are traversal metadata and work with lists, matrices, or implicit neighbors."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Three-state rule",
+              "text": "Use unseen, active, and finished; only an edge to active state is a directed DFS cycle witness."
             }
           ]
         },
@@ -262,12 +344,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "duplicate_frontier",
-            "text": "Both a and b can enqueue c, creating duplicate frontier entries before the first copy is dequeued."
-          },
-          {
             "id": "shorter_distance",
             "text": "The second copy gives c a shorter distance than the first."
+          },
+          {
+            "id": "duplicate_frontier",
+            "text": "Both a and b can enqueue c, creating duplicate frontier entries before the first copy is dequeued."
           },
           {
             "id": "missed_vertex",
@@ -291,8 +373,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "The pending copy is invisible to a visited-on-dequeue rule"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Processing s enqueues a and b.",
+                "Processing a sees unseen c and enqueues one copy, but c remains unmarked.",
+                "Before that copy reaches the front, b is processed and also sees c as unseen.",
+                "b enqueues a second copy of c."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Discovery-time marking prevents duplicate publication. A dequeue-time design can remain correct if it checks and skips stale copies, but it no longer has the same one-enqueue-per-vertex invariant and may use more queue space. If duplicate copies are expanded without a processed guard, their outgoing edges can cause further repeated work. Therefore the two timings are not universally equivalent even when final reachability happens to match."
+              "text": "Both copies have the same candidate distance because a and b are in the same BFS layer. A dequeue-time implementation can skip stale copies with an additional processed guard, but it has already lost the one-enqueue-per-vertex space and work bound. Expanding duplicates can multiply later work further."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Timing rule",
+              "text": "Mark on enqueue to make pending discovery visible to every later predecessor."
             }
           ]
         },
@@ -319,16 +421,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "cell_and_keys",
-            "text": "The pair (cell, keymask), because future legal transitions depend on both components."
-          },
-          {
             "id": "cell_only",
             "text": "The cell only; a vertex may never be visited twice in any graph traversal."
           },
           {
             "id": "keys_only",
             "text": "The keymask only; location is merely representation detail."
+          },
+          {
+            "id": "cell_and_keys",
+            "text": "The pair (cell, keymask), because future legal transitions depend on both components."
           },
           {
             "id": "no_visited",
@@ -348,8 +450,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Visited identity must predict future behavior"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "State (x, 001) means the traversal is at x with only the key encoded by bit 001.",
+                "State (x, 101) is at the same cell but has an additional key, so a locked outgoing move may be legal only from this state.",
+                "Collapsing both into visited[x] can discard the second arrival and incorrectly report a reachable target as unreachable."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "A graph vertex is an abstract state, not necessarily a physical object. Here (x, 001) and (x, 101) have different capabilities and therefore are different vertices in the implicit state graph. The visited key must match that full state identity. The transfer rule applies to remaining obstacle removals, direction, turn count, resource budget, or any other history summarized into future-relevant state."
+              "text": "The correct vertex identity is therefore (cell, keymask). Cell alone loses capability; keymask alone loses location. The same rule applies to remaining obstacle removals, direction, fuel, turn count, or any history variable that changes future legal moves or costs."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "State-design rule",
+              "text": "Two arrivals may share one physical object yet be different graph vertices when their future transitions differ."
             }
           ]
         },
@@ -376,10 +497,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "per_query",
-            "text": "Use fresh logical visited state per query, possibly implemented with a query-generation stamp."
-          },
-          {
             "id": "permanent",
             "text": "Keep vertices permanently visited after the first query so later traversals are faster."
           },
@@ -390,6 +507,10 @@
           {
             "id": "bfs_global",
             "text": "BFS may reuse permanent visited state because it is always faster than DFS."
+          },
+          {
+            "id": "per_query",
+            "text": "Use fresh logical visited state per query, possibly implemented with a query-generation stamp."
           }
         ],
         "acceptedOptionIds": [
@@ -405,8 +526,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Visited answers “discovered by which traversal?”"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "A fresh boolean array gives the second query a logically empty discovered set.",
+                "A generation-stamp array can avoid O(V) clearing: a vertex is visited for query q only when stamp[v] = q.",
+                "Reusing the first query's marks without a query identity can suppress vertices that the second source must explore."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Each query has its own source and target contract. Clearing an O(V) boolean array is one implementation; a generation counter can avoid explicit clearing while preserving logical isolation. Reusing old marks without a query identity can suppress valid paths. Persistent preprocessing is possible only when it computes a different reusable structure, such as connected-component labels, rather than pretending one traversal's visited set answers every query."
+              "text": "Adjacency is immutable graph data; visited is execution state. Reusable preprocessing must compute a different durable answer structure—for example, component labels for repeated connectivity queries in an undirected graph—rather than treating one source's traversal marks as universal."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Scope rule",
+              "text": "Keep visited logically per query even when generation stamps reuse the same physical array."
             }
           ]
         },
@@ -433,20 +573,20 @@
         "selectionMode": "multiple",
         "options": [
           {
-            "id": "tree_parent_may_suffice",
-            "text": "In a guaranteed undirected tree, carrying the parent can prevent immediately traversing the same edge backward."
+            "id": "matrix_is_visited",
+            "text": "An adjacency matrix makes a discovered set unnecessary because repeated edges occupy the same cell."
           },
           {
-            "id": "graph_needs_discovered",
-            "text": "In a general graph, a discovered set is needed because a vertex may be reached through non-parent edges."
+            "id": "tree_parent_may_suffice",
+            "text": "In a guaranteed undirected tree, carrying the parent can prevent immediately traversing the same edge backward."
           },
           {
             "id": "tree_rule_general",
             "text": "The parent-only rule applies unchanged to every graph, including graphs with longer cycles."
           },
           {
-            "id": "matrix_is_visited",
-            "text": "An adjacency matrix makes a discovered set unnecessary because repeated edges occupy the same cell."
+            "id": "graph_needs_discovered",
+            "text": "In a general graph, a discovered set is needed because a vertex may be reached through non-parent edges."
           }
         ],
         "acceptedOptionIds": [
@@ -463,8 +603,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Structural promises determine the minimum traversal state"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "In a guaranteed undirected tree, every two vertices have one simple path. Passing parent lets a child skip the reverse view of its tree edge, and no longer cycle exists.",
+                "In a general graph, a non-parent edge can return to an ancestor or converge on a vertex discovered by another branch, so a global per-traversal discovered set is required.",
+                "An adjacency matrix changes how edges are enumerated but does not record which traversal paths have already reached a vertex."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "In an undirected tree, every non-root vertex has one path from the root, so excluding the parent is enough to avoid the immediate reverse edge. In a general graph, a vertex may be exposed from several branches or through a cycle, so global per-traversal discovery state is required. Representation does not replace this invariant. The decisive question is whether acyclicity and unique paths are guaranteed by the input contract."
+              "text": "The parent-only rule is safe because the input contract proves acyclicity and unique paths, not because recursion creates a tree. Applying it to a cyclic graph can revisit an ancestor without using the immediate parent edge."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "Use parent-only traversal state only under a proven tree contract; otherwise track discovery globally for the traversal."
             }
           ]
         },

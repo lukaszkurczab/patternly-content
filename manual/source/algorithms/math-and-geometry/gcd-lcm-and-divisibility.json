@@ -3,7 +3,7 @@
   "batchId": "algorithms-math-and-geometry-gcd-lcm-and-divisibility-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -138,7 +138,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Normalizing signs once gives the loop the standard invariant 0≤r<b. Testing b before remainder avoids division by zero and makes gcd(0,0)=0 and gcd(a,0)=|a| fall out of the same contract. The relation compute remainder→shift pair must remain adjacent because overwriting a or b early destroys the operands needed for r. This sequence transfers to extended Euclid, where coefficient updates must be staged with the same care."
+              "text": "Safe magnitude normalization gives the loop nonnegative a and b, including when an input is the minimum signed value. From then on, each iteration must preserve gcd(a,b) while strictly reducing the second operand."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Convert both signed inputs to representable nonnegative magnitudes.",
+                "Test b. If b = 0, return a; this covers gcd(a,0) and the stated gcd(0,0) = 0 convention without taking a remainder by zero.",
+                "Compute r = a mod b while the old a and b are still available; nonnegative operands give 0 <= r < b.",
+                "Shift the pair to (b,r), which preserves the gcd and makes the second operand smaller.",
+                "Return to the zero test."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Update rule",
+              "text": "Compute the remainder before overwriting either operand. Extended Euclid has the same staging requirement for its coefficient updates."
             }
           ]
         }
@@ -377,7 +393,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The mathematical Euclidean remainder is conventionally chosen in [0,b), but language % operators vary for negative dividends. Once a and b are safe nonnegative magnitudes and b>0, the ordinary remainder has the required range. Silently assuming another language’s semantics can break progress, and replacing a negative remainder with zero invents divisibility. An alternative explicit normalization r=((a%b)+b)%b is valid when its arithmetic is safe, but one consistent sign contract is simpler for gcd."
+              "text": "The mathematical Euclidean remainder is conventionally chosen in [0,b), but language % operators vary for negative dividends. Once a and b are safe nonnegative magnitudes and b>0, the ordinary remainder has the required range. Silently assuming another language's semantics can break progress, and replacing a negative remainder with zero invents divisibility. If signed inputs must remain in the loop, compute r = a % b and add b only when r < 0; because then -b < r < 0, r + b is in (0,b) and does not perform the potentially overflowing unconditional addition in ((a % b) + b) % b."
             }
           ]
         },
@@ -398,7 +414,7 @@
     },
     {
       "id": "alg-mg-gcd-euclidean-complexity",
-      "prompt": "For the iterative Euclidean algorithm on nonnegative integers a and b, classify its asymptotic time and extra-space costs in terms of the smaller positive input.",
+      "prompt": "For the iterative Euclidean algorithm on positive integers a and b, classify its asymptotic time and extra-space costs in terms of min(a,b).",
       "constraints": [
         "Each iteration replaces (a,b) by (b,a mod b).",
         "Arithmetic on a fixed-width machine word is treated as O(1)."
@@ -446,7 +462,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The worst sequence of Euclidean remainders is attained by consecutive Fibonacci numbers: each step reduces the pair to the preceding pair, so the number of iterations is proportional to the number of digits, O(log min(a,b)). The loop stores a, b, and r, giving O(1) extra space under the fixed-width cost model. A recursive implementation would additionally use O(log min(a,b)) call-stack space, which is outside the stated iterative contract."
+              "text": "Let m = min(a,b). The slowest-shrinking Euclidean remainder sequence follows consecutive Fibonacci numbers. After k such steps, the smaller starting value is at least the kth Fibonacci number; Fibonacci numbers grow exponentially as approximately phi^k, so k <= O(log m). Faster-shrinking pairs take no more steps. Each step is O(1) under the declared fixed-word model, giving O(log min(a,b)) time. The iterative loop stores only a, b, and r, so extra space is O(1). A recursive version would additionally use O(log min(a,b)) stack frames."
             }
           ]
         }

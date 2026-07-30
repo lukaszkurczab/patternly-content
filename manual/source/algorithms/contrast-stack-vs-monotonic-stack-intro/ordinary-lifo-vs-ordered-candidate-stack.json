@@ -3,7 +3,7 @@
   "batchId": "algorithms-contrast-stack-vs-monotonic-stack-ordinary-lifo-vs-ordered-candidate-stack",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -78,14 +78,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The item is decided by retained-state meaning and whether ordered unresolved candidates are required, not by a surface feature. Nesting closes the most recent unmatched opener; value order is irrelevant. The tempting claim—Any use of a stack with comparisons is monotonic.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Scan openers by pushing their delimiter type. On a closer, only the most recently unmatched opener can be its structural partner: for `([ ])`, the `]` must match `[` before `)` can match `(`. If the top has the wrong type or the stack is empty, nesting is invalid; after the scan, the stack must be empty. No opener is removed because a later opener has a numerically larger token code, and sorting would destroy nesting order. This is ordinary LIFO pending state. A monotonic candidate stack would instead need a declared value relation and proof that a new candidate permanently dominates popped entries."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Nesting closes the most recent unmatched opener; value order is irrelevant. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Nesting closes the most recent unmatched opener; value order is irrelevant."
+          "target_false_heuristic": "Comparing a closer's type with the top checks structural compatibility; it does not order all retained openers or prune dominated candidates.",
+          "surface_feature_classifier": "Delimiter codes may be numeric, but each entry's role is an unmatched opener whose recency determines the only legal partner.",
+          "unjustified_alternative_rule": "A priority structure would return an extreme token code rather than the most recent unmatched opener and would accept invalid crossing pairs."
         }
       },
       "taxonomy": {
@@ -137,14 +137,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. Reverse chronology, not ordered candidate dominance, determines the next pop. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “Recent numeric or timestamp values imply monotonic order.” confuses an implementation clue with a correctness condition. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Each committed action pushes the inverse operation or snapshot needed to undo it. An undo request pops the most recently committed action that has not already been undone because state transitions must be reversed in exact reverse order: undoing an older action first could invalidate the assumptions of newer actions. Timestamps may increase during normal execution, but no entry is removed because another timestamp dominates it; all actions remain until undone or history is deliberately cleared. That is chronological LIFO. A monotonic stack would discard candidates by a value relation while preserving future answers, which this contract neither needs nor permits."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Reverse chronology, not ordered candidate dominance, determines the next pop. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Reverse chronology, not ordered candidate dominance, determines the next pop."
+          "target_false_heuristic": "Increasing timestamps describe arrival order, but the pop rule is reverse causality; timestamp magnitude never licenses dropping an undoable action.",
+          "surface_feature_classifier": "An index or timestamp can identify an action, yet the semantic payload is still reversible history scheduled by recency.",
+          "unjustified_alternative_rule": "A priority queue would choose an extreme key, not necessarily the latest state transition whose inverse is currently legal."
         }
       },
       "taxonomy": {
@@ -155,7 +155,7 @@
     },
     {
       "id": "alg-stack-mono-olc-003",
-      "prompt": "For Temperatures or prices with distance output, choose the analysis that correctly addresses this target: Classify next-greater-to-the-right as a monotonic candidate stack.",
+      "prompt": "For each temperature or price, return the distance to the first strictly greater value on its right. Which analysis correctly classifies the left-to-right stack?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -196,14 +196,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. Entries are unresolved candidates ordered so the current value can finalize smaller tops. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—A plain history stack is sufficient because only recency matters.—would permit transitions that are not justified by the requested result. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Store unresolved indices. When current index i has value x, repeatedly pop top j while value[j] < x; because scanning is left to right, i is the first strictly greater position for every such top, so answer[j] = i - j is final. After all smaller tops are removed, push i. The remaining values are non-increasing from bottom to top; equal values stay unresolved because the contract says strictly greater. Recency chooses which candidate is exposed next, but value order and a safe finalization proof determine which entries may be popped, making this a monotonic candidate stack rather than a plain history stack."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Entries are unresolved candidates ordered so the current value can finalize smaller tops. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Entries are unresolved candidates ordered so the current value can finalize smaller tops."
+          "target_false_heuristic": "Recency alone cannot decide whether current x resolves the top; the strict value relation is what finalizes each popped candidate.",
+          "surface_feature_classifier": "Indices are retained because distance needs provenance, while their referenced values supply the monotonic comparison key; neither payload shape alone classifies the stack.",
+          "unjustified_alternative_rule": "Global sorting loses the first-to-the-right constraint, so it may return a greater value that occurs after a nearer qualifying one."
         }
       },
       "taxonomy": {
@@ -214,7 +214,7 @@
     },
     {
       "id": "alg-stack-mono-olc-004",
-      "prompt": "An implementation must handle Histogram bars with index payloads. Which statement correctly determines the stack discipline or rule required by the contract?",
+      "prompt": "For the largest rectangle in a histogram of nonnegative bar heights, an implementation scans left to right and stores indices. Which statement determines the required stack discipline?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -255,14 +255,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. Increasing retained heights encode unresolved left boundaries; a shorter bar finalizes spans. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—Any repeated pop is ordinary cleanup rather than candidate finalization.—is too broad and would classify unrelated stack algorithms the same way. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Maintain indices whose referenced heights are nondecreasing, with a consistent equal-height policy. When a shorter height h arrives at index i, each popped bar of height H can no longer extend right past i - 1; after the pop, the new top identifies the nearest smaller bar on the left, so width is i - leftSmaller - 1. That makes H × width final for that popped candidate. A zero-height sentinel after the last bar flushes remaining candidates. The repeated pops are not generic cleanup: the increasing-height invariant and the shorter current bar prove both the maximal right boundary and the surviving left boundary."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Increasing retained heights encode unresolved left boundaries; a shorter bar finalizes spans. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Increasing retained heights encode unresolved left boundaries; a shorter bar finalizes spans."
+          "target_false_heuristic": "Each pop finalizes a rectangle whose first smaller bar on the right has just arrived; treating it as unproved cleanup loses the boundary argument.",
+          "surface_feature_classifier": "Indices are needed to compute width, but the nondecreasing referenced heights and finalization rule make the structure monotonic.",
+          "unjustified_alternative_rule": "Sorting bars destroys contiguous widths and original boundaries, so an extreme height cannot determine a legal rectangle span."
         }
       },
       "taxonomy": {
@@ -314,14 +314,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The item is decided by retained-state meaning and whether ordered unresolved candidates are required, not by a surface feature. An entry is an unmatched structural opener plus any required context. The tempting claim—The stack should store values sorted by token code.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "When a parser reads an opening tag, parenthesis, or expression frame, it pushes the structural kind plus context needed when that frame closes—for example a partial operand, source offset, or parent node. A matching closer completes the most recently opened unfinished frame, so the top is consumed by nesting order. Its token code or numeric fields do not dominate older frames; dropping an older frame because of value magnitude would lose an enclosing scope. This is ordinary LIFO state. Only a different output asking for ordered nearest candidates would introduce a monotonic relation and safe dominance pruning."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. An entry is an unmatched structural opener plus any required context. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. An entry is an unmatched structural opener plus any required context."
+          "target_false_heuristic": "Sorting by token code pairs closers with a numeric extreme rather than the innermost unfinished structural frame.",
+          "surface_feature_classifier": "Whether context contains indices or numbers does not change that the entry owns an unmatched nested frame.",
+          "unjustified_alternative_rule": "A priority structure discards encounter nesting and cannot reconstruct which parent frame a closer must finish."
         }
       },
       "taxonomy": {
@@ -373,14 +373,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. An entry is a deferred state or choice scheduled by recency. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “Indices in the stack make it monotonic.” confuses an implementation clue with a correctness condition. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "An explicit DFS stack simulates recursive call frames. Each entry records a node or program position plus the remaining work to resume later. Popping the newest frame preserves the chosen depth-first traversal: finish the most recently deferred branch before returning to its parent or older sibling. The stored identifier may be an integer index, but no comparison key orders all frames and no later node permanently dominates an older unfinished branch. Reordering by value would change traversal order and possibly observable output. The structure becomes monotonic only if the contract changes to ordered candidates with a proved comparison-driven removal rule."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. An entry is a deferred state or choice scheduled by recency. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. An entry is a deferred state or choice scheduled by recency."
+          "target_false_heuristic": "An index identifies deferred work; it does not prove that referenced values are monotone or that any frame may be pruned.",
+          "surface_feature_classifier": "The semantic role is an unfinished traversal frame scheduled by depth-first recency, regardless of its field types.",
+          "unjustified_alternative_rule": "A priority queue chooses by key and changes DFS encounter order, so it does not simulate the recursive control flow."
         }
       },
       "taxonomy": {
@@ -438,18 +438,18 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. The algorithm may need both comparison key and provenance/index to produce the required output. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—Only values matter; provenance can always be reconstructed.—would permit transitions that are not justified by the requested result. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "A monotonic candidate needs a key to decide whether current input qualifies and whether the candidate is dominated. If the answer asks for position or distance, it also needs the original boundary index: when current i resolves candidate j, distance is i - j. Duplicate values may additionally require stable identity or a declared tie policy, and domain-specific output can require bounded provenance such as a source identifier. Once an entry is popped, discarded encounter positions cannot generally be reconstructed from its value because duplicates share keys. Store exactly the fields used by comparison, finalization, and output—neither value-only by default nor every source object."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "false_claim_1": "This claim is not sufficient or is false under the stated contract. The algorithm may need both comparison key and provenance/index to produce the required output.",
-          "false_claim_2": "This claim is not sufficient or is false under the stated contract. The algorithm may need both comparison key and provenance/index to produce the required output."
+          "false_claim_1": "Equal values can occur at several positions, and after popping there is no way to recover which position supplied the finalized distance or tie-break.",
+          "false_claim_2": "Global rank loses original direction, distance, and stable duplicate identity, all of which may be part of the nearest-boundary output."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "required_fact_1": "This fact is required because it contributes to the complete decision boundary: The algorithm may need both comparison key and provenance/index to produce the required output.",
-          "required_fact_2": "This fact is required because it contributes to the complete decision boundary: The algorithm may need both comparison key and provenance/index to produce the required output.",
-          "required_fact_3": "This fact is required because it contributes to the complete decision boundary: The algorithm may need both comparison key and provenance/index to produce the required output."
+          "required_fact_1": "Without the comparison key, the algorithm cannot maintain its monotone relation or decide when current input resolves a candidate.",
+          "required_fact_2": "Position and distance are functions of the original index, while stable duplicate rules may depend on encounter identity.",
+          "required_fact_3": "Any additional output mapping must survive until finalization if it cannot be recovered safely after the candidate is popped."
         }
       },
       "taxonomy": {
@@ -476,7 +476,7 @@
           },
           {
             "id": "decisive_contract_rule",
-            "text": "Numeric payloads do not imply an ordered frontier."
+            "text": "Each operator consumes the most recent operands in expression order; numeric magnitude never prunes them."
           },
           {
             "id": "target_false_heuristic",
@@ -496,19 +496,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Numeric payloads do not imply an ordered frontier. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "Postfix evaluation is governed by operand recency and order, not dominance between numeric values.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. Numeric payloads do not imply an ordered frontier. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—Numeric comparison or sorted-looking snapshots prove monotonicity.—is too broad and would classify unrelated stack algorithms the same way. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Scan postfix tokens left to right. Push each operand. On a binary operator, pop the right operand first and the left operand second, compute left operator right, and push the result. For `5 2 -`, reversing those pops would produce -3 instead of 3, so LIFO encounter order is part of correctness. A smaller or larger operand never makes another pending operand irrelevant; both may be required by later operators. The stack can contain numbers and comparisons may occur inside an operator, but there is no maintained value order or dominance pruning. That makes it an ordinary operand stack."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Numeric payloads do not imply an ordered frontier. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Numeric payloads do not imply an ordered frontier."
+          "target_false_heuristic": "One sorted-looking snapshot is incidental; the next operand or result can violate it, and evaluation never enforces a monotone relation.",
+          "surface_feature_classifier": "Numeric entries are unresolved operands whose recency and left/right roles determine evaluation, not ordered candidates.",
+          "unjustified_alternative_rule": "Sorting operands destroys expression order, and noncommutative operators such as subtraction make that change observably wrong."
         }
       },
       "taxonomy": {
@@ -566,18 +566,18 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The item is decided by retained-state meaning and whether ordered unresolved candidates are required, not by a surface feature. A declared monotone key, unresolved candidates, and safe relation-driven removal are jointly required. The tempting claim—A while-loop and O(n) time are sufficient evidence.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "All three accepted facts are jointly needed. Entries must be unresolved candidates whose answers depend on future input. Their comparison keys must satisfy a declared nondecreasing or nonincreasing relation after every push and pop, including the chosen equality policy. Finally, when current x removes top y, the proof must show y is now finalized or permanently dominated for every legal future suffix. A while-loop merely describes control flow, and O(n) merely bounds operations; neither tells what entries mean. One sorted snapshot is also insufficient because an invariant must survive every legal transition and support the requested output."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "false_claim_1": "This claim is not sufficient or is false under the stated contract. A declared monotone key, unresolved candidates, and safe relation-driven removal are jointly required.",
-          "false_claim_2": "This claim is not sufficient or is false under the stated contract. A declared monotone key, unresolved candidates, and safe relation-driven removal are jointly required."
+          "false_claim_1": "Ordinary evaluation or cleanup can also use a while-loop and run in O(n); those facts do not establish ordered candidates or safe dominance removal.",
+          "false_claim_2": "An accidental state can look sorted even when the next legal transition breaks the order and no correctness proof uses it."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "required_fact_1": "This fact is required because it contributes to the complete decision boundary: A declared monotone key, unresolved candidates, and safe relation-driven removal are jointly required.",
-          "required_fact_2": "This fact is required because it contributes to the complete decision boundary: A declared monotone key, unresolved candidates, and safe relation-driven removal are jointly required.",
-          "required_fact_3": "This fact is required because it contributes to the complete decision boundary: A declared monotone key, unresolved candidates, and safe relation-driven removal are jointly required."
+          "required_fact_1": "Monotonic stacks retain candidates awaiting a future resolver, not arbitrary completed history.",
+          "required_fact_2": "The maintained key relation is what makes the top the next candidate eligible for comparison-driven resolution.",
+          "required_fact_3": "Without a proof that popped entries can never be needed again, pruning can delete a future answer."
         }
       },
       "taxonomy": {
@@ -629,14 +629,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. The retained order is derived from which future value should resolve which candidate. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “Monotonic stack always means increasing values.” confuses an implementation clue with a correctness condition. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "For next strictly greater while scanning left to right, retain unresolved values in nonincreasing order and pop smaller tops when a greater current value arrives. For next strictly smaller, retain them in nondecreasing order and pop larger tops when a smaller current value arrives. Equality stays or pops according to whether the target relation is strict and how duplicate ties are assigned. Thus “increasing” is not a definition; the desired future resolver determines the opposite retained order and comparison. The common structure is a monotone frontier of unresolved candidates whose popped answers become final."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. The retained order is derived from which future value should resolve which candidate. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. The retained order is derived from which future value should resolve which candidate."
+          "target_false_heuristic": "Next-greater and next-smaller require opposite retained orders, and strict versus non-strict targets change equality handling.",
+          "surface_feature_classifier": "Values or indices may be stored in either direction; the referenced comparison key and resolver relation determine the invariant.",
+          "unjustified_alternative_rule": "Global sorting loses which qualifying value is first in the required scan direction and cannot preserve nearest provenance."
         }
       },
       "taxonomy": {
@@ -688,14 +688,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. Indices can represent nesting positions, traversal work, or monotonic candidates. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—Index payload is unique to monotonic stacks.—would permit transitions that are not justified by the requested result. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "An index is provenance, not a stack discipline. A parser can store the offset of an unmatched opener so an error points to its source. Iterative DFS can store a node index representing deferred traversal work. A temperature algorithm can store index j because value[j] supplies the monotonic key and i - j supplies distance when j is resolved. The first two pop by structural or traversal recency; only the third maintains an ordered unresolved frontier and removes by a value relation. Classification must state what the index means, which transition pops it, and why it is never needed afterward."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Indices can represent nesting positions, traversal work, or monotonic candidates. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Indices can represent nesting positions, traversal work, or monotonic candidates."
+          "target_false_heuristic": "Parser and traversal stacks routinely store indices without any monotone key or dominance pruning.",
+          "surface_feature_classifier": "The same integer field can identify an opener, deferred node, or ordered candidate, so payload type cannot determine semantics.",
+          "unjustified_alternative_rule": "Sorting indices or referenced values destroys nesting, DFS order, or nearest-direction provenance depending on the actual contract."
         }
       },
       "taxonomy": {
@@ -753,18 +753,18 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. Those operations appear in evaluation, cleanup, matching, and ordered-candidate algorithms. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—Multiple pops automatically imply a monotonic pop loop.—is too broad and would classify unrelated stack algorithms the same way. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Repeated pop is only a mechanical pattern. Postfix evaluation pops several operands because an operator consumes them in LIFO order. Delimiter matching compares a closer with the top's type and may unwind on error without ordering the remaining openers. A monotonic stack adds a stronger invariant: retained entries are unresolved candidates ordered by a declared key, and a comparison-driven pop either finalizes the top or proves it dominated for all future input. A numeric top comparison can appear in ordinary evaluation too. Classification therefore requires the meaning and safety proof, not a loop count or operand type."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "false_claim_1": "This claim is not sufficient or is false under the stated contract. Those operations appear in evaluation, cleanup, matching, and ordered-candidate algorithms.",
-          "false_claim_2": "This claim is not sufficient or is false under the stated contract. Those operations appear in evaluation, cleanup, matching, and ordered-candidate algorithms."
+          "false_claim_1": "Evaluation, error unwinding, and cleanup can pop several entries without maintaining any monotone candidate relation.",
+          "false_claim_2": "An operator or type check can compare numeric data at the top while the remaining stack is unordered and no candidate is dominated."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "required_fact_1": "This fact is required because it contributes to the complete decision boundary: Those operations appear in evaluation, cleanup, matching, and ordered-candidate algorithms.",
-          "required_fact_2": "This fact is required because it contributes to the complete decision boundary: Those operations appear in evaluation, cleanup, matching, and ordered-candidate algorithms.",
-          "required_fact_3": "This fact is required because it contributes to the complete decision boundary: Those operations appear in evaluation, cleanup, matching, and ordered-candidate algorithms."
+          "required_fact_1": "Operators consume a fixed number of recent operands; multiple pops implement expression semantics rather than dominance.",
+          "required_fact_2": "Top comparisons can enforce matching or cleanup while older entries remain ordered only by nesting or recency.",
+          "required_fact_3": "The ordered unresolved frontier and safe removal proof are the extra properties that distinguish monotonic use."
         }
       },
       "taxonomy": {
@@ -816,14 +816,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The item is decided by retained-state meaning and whether ordered unresolved candidates are required, not by a surface feature. An invariant must hold after every legal transition and support the output proof. The tempting claim—A single sorted state is enough to classify the algorithm.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "An invariant is a statement quantified over the whole execution: it holds after initialization and every legal transition, and the answer proof relies on it. To claim a nonincreasing candidate stack, prove that the pop loop removes every smaller disallowed top and that pushing current preserves the relation, including equality policy. Then prove each removed entry is finalized or dominated. A single snapshot such as `[9, 7, 4]` proves none of this; an ordinary history stack can look sorted by coincidence and become `[9, 7, 4, 8]` next. Classification follows from maintained semantics, not a photographed state."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. An invariant must hold after every legal transition and support the output proof. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. An invariant must hold after every legal transition and support the output proof."
+          "target_false_heuristic": "One state may be sorted accidentally; without preservation and removal proofs, the next legal push can break it.",
+          "surface_feature_classifier": "Numeric or index payloads can appear in ordinary and monotonic stacks, so field type does not establish an invariant.",
+          "unjustified_alternative_rule": "Global sorting may maintain order but can discard encounter direction and nearest provenance required by the actual output."
         }
       },
       "taxonomy": {
@@ -834,7 +834,7 @@
     },
     {
       "id": "alg-stack-mono-olc-014",
-      "prompt": "Consider Weighted delimiters or scoped events. A teammate argues: “The same surface tokens require the same stack variant.” Which response correctly resolves the design decision?",
+      "prompt": "The same scoped-event records are used in two products: one matches each closer to its latest unmatched opener, while the other asks for the nearest earlier event with strictly greater weight. A teammate argues that the shared token format requires the same stack variant. Which response is correct?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -875,14 +875,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. Changing the output from structural closure to nearest qualifying value changes entry semantics and order requirements. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “The same surface tokens require the same stack variant.” confuses an implementation clue with a correctness condition. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Structural closure pushes unmatched openers and pops the latest one of the required type; weight is irrelevant and nesting order must be preserved. For nearest previous strictly greater weight, scan left to right, pop retained weights less than or equal to current because current is closer and at least as strong for every future query, then use the remaining top as the nearest greater predecessor. That second stack maintains decreasing candidate weights and a duplicate policy, so it is monotonic. Identical record shapes do not imply identical entry semantics: changing the output changes which entries may be removed and what evidence must be retained."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Changing the output from structural closure to nearest qualifying value changes entry semantics and order requirements. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Changing the output from structural closure to nearest qualifying value changes entry semantics and order requirements."
+          "target_false_heuristic": "The token fields are shared, but structural nesting pops by recency while nearest-greater search prunes by a strict weight relation.",
+          "surface_feature_classifier": "Both variants can store the same record or index; the requested partner and safe removal rule distinguish them.",
+          "unjustified_alternative_rule": "Global sorting loses nearest-earlier order and cannot match nested closers to their innermost openers."
         }
       },
       "taxonomy": {
@@ -893,7 +893,7 @@
     },
     {
       "id": "alg-stack-mono-olc-015",
-      "prompt": "For Command stream with future threshold queries, choose the analysis that correctly addresses this target: Change an undo task into dominance pruning and reselect the representation.",
+      "prompt": "A command stream changes from undoing the latest command to reporting, for each command, the first later command with a strictly greater score. Which analysis correctly reselects the representation?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -934,14 +934,14 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. When later entries permanently dominate earlier candidates, recency-only history is insufficient. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—Undo-style history and monotonic candidates are interchangeable.—would permit transitions that are not justified by the requested result. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Undo retains every not-yet-undone command and pops the latest one because reverse chronology defines correctness. The new next-greater output stores unresolved command indices. When current score x is strictly greater than the score at the top, current is the first qualifying later command for that top, so pop and finalize its answer; keep equal scores unresolved because the relation is strict. Remaining scores are nonincreasing. Recency still exposes candidates, but comparison-driven finalization and maintained order are now essential. Keeping undo history without dominance resolution cannot answer which future command first crosses each score."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. When later entries permanently dominate earlier candidates, recency-only history is insufficient. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from retained-state meaning and whether ordered unresolved candidates are required; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. When later entries permanently dominate earlier candidates, recency-only history is insufficient."
+          "target_false_heuristic": "Undo pops the latest action on request, whereas next-greater pops only candidates that current score strictly resolves and finalizes.",
+          "surface_feature_classifier": "Both can store command indices; the transition rule and meaning of an unresolved entry have changed.",
+          "unjustified_alternative_rule": "A priority queue may find a larger score but loses which qualifying command occurs first to the right for each candidate."
         }
       },
       "taxonomy": {
@@ -999,18 +999,18 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. A stack is unwarranted when the contract needs global ordering, arbitrary updates, or unrelated aggregate queries. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—Every sequence problem with previous elements should use a stack.—is too broad and would classify unrelated stack algorithms the same way. Transfer when the retained entry changes from recent pending state to an ordered unresolved candidate, or vice versa; re-derive whether value order and safe dominance removal are required."
+              "text": "Dynamic median needs access to the middle under arbitrary insertions and deletions, typically via balanced multisets or two heaps with deletion support; top-only LIFO access is insufficient. Range maximum with point updates needs a segment tree or comparable dynamic aggregate because an update can affect many query intervals unrelated to recency. Offline global grouping may sort by the grouping key, making global order rather than nested or nearest-candidate order decisive. By contrast, latest unmatched opener is a genuine LIFO contract, and current value safely resolving smaller tops is a genuine monotonic-candidate contract. Sequence input alone proves none of these representations."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "false_claim_1": "This claim is not sufficient or is false under the stated contract. A stack is unwarranted when the contract needs global ordering, arbitrary updates, or unrelated aggregate queries.",
-          "false_claim_2": "This claim is not sufficient or is false under the stated contract. A stack is unwarranted when the contract needs global ordering, arbitrary updates, or unrelated aggregate queries."
+          "false_claim_1": "Most-recent unmatched nesting is exactly the access discipline an ordinary LIFO stack provides.",
+          "false_claim_2": "Ordered unresolved candidates plus safe current-driven finalization are exactly the conditions for a monotonic stack."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "required_fact_1": "This fact is required because it contributes to the complete decision boundary: A stack is unwarranted when the contract needs global ordering, arbitrary updates, or unrelated aggregate queries.",
-          "required_fact_2": "This fact is required because it contributes to the complete decision boundary: A stack is unwarranted when the contract needs global ordering, arbitrary updates, or unrelated aggregate queries.",
-          "required_fact_3": "This fact is required because it contributes to the complete decision boundary: A stack is unwarranted when the contract needs global ordering, arbitrary updates, or unrelated aggregate queries."
+          "required_fact_1": "Median maintenance needs ordered access around the center, not only the most recent or one extreme unresolved candidate.",
+          "required_fact_2": "Arbitrary range aggregation and point invalidation require a dynamic indexed hierarchy rather than top-only access.",
+          "required_fact_3": "When sorting establishes the useful global grouping, preserving LIFO encounter order adds no correctness value."
         }
       },
       "taxonomy": {

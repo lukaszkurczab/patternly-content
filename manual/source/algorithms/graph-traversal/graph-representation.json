@@ -3,7 +3,7 @@
   "batchId": "algorithms-graph-traversal-graph_representation-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -36,16 +36,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "adjacency_list",
-            "text": "An adjacency list with one neighbor collection per vertex."
+            "id": "edge_list",
+            "text": "One flat list of edge pairs, scanned from the beginning whenever a vertex is expanded."
           },
           {
             "id": "adjacency_matrix",
             "text": "A 200,000 × 200,000 adjacency matrix."
           },
           {
-            "id": "edge_list",
-            "text": "One flat list of edge pairs, scanned from the beginning whenever a vertex is expanded."
+            "id": "adjacency_list",
+            "text": "An adjacency list with one neighbor collection per vertex."
           },
           {
             "id": "parent_array",
@@ -65,8 +65,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Store the neighbors that actually exist"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "An adjacency list keeps one collection per vertex and stores each undirected edge in both endpoint collections.",
+                "With V = 200,000 and E = 260,000, it needs O(V + E) structural space: vertex entries plus about 2E neighbor entries.",
+                "Expanding vertex v inspects only degree(v) neighbors; over a full traversal, all adjacency-list scans total O(V + E)."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "An adjacency list stores O(V + E) structural data and lets a traversal inspect the neighbors that actually exist. A matrix would reserve O(V²) cells and scanning a row costs O(V), even when the vertex has few neighbors. A flat edge list can represent the input, but it is not an efficient neighbor-access index unless it is transformed. The transfer rule is to choose the representation from the operations the algorithm must perform—not from the graph label alone."
+              "text": "A 200,000 × 200,000 matrix reserves 40 billion cells, and finding one vertex's neighbors requires scanning its 200,000-cell row. A flat edge list is compact input storage, but expanding one vertex would rescan unrelated edges unless the list were first indexed—which would effectively build an adjacency structure."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Representation rule",
+              "text": "For a sparse graph dominated by neighbor iteration, use storage proportional to actual vertices and edges."
             }
           ]
         },
@@ -93,20 +112,20 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "adjacency_matrix",
-            "text": "An adjacency matrix indexed by [u][v]."
-          },
-          {
             "id": "adjacency_list",
             "text": "An unsorted adjacency list, because matrices are categorically wrong for graphs."
           },
           {
-            "id": "edge_list",
-            "text": "A flat edge list searched linearly for every query."
+            "id": "adjacency_matrix",
+            "text": "An adjacency matrix indexed by [u][v]."
           },
           {
             "id": "bfs_precompute",
             "text": "Run BFS from every vertex; BFS is faster than DFS, so the representation no longer matters."
+          },
+          {
+            "id": "edge_list",
+            "text": "A flat edge list searched linearly for every query."
           }
         ],
         "acceptedOptionIds": [
@@ -122,8 +141,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "The dominant query changes the representation boundary"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "A matrix stores a boolean at [u][v], so one direct edge-membership query takes O(1).",
+                "For V = 2,000, the matrix has V² = 4,000,000 cells, which the prompt explicitly permits.",
+                "A near-complete directed graph already has Θ(V²) edges, so adjacency-list edge entries also occupy Θ(V²) total space."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "An adjacency matrix answers edge membership in O(1) and its O(V²) storage is already accepted by the prompt. In a near-complete graph, an adjacency list also contains Θ(V²) edge entries, so the matrix does not introduce an asymptotically different storage order. The false heuristic is that adjacency matrices are always wrong; the correct decision depends on density, memory, and the operations being optimized. This does not imply that matrix rows are always best for sparse traversal."
+              "text": "The offered adjacency list is unsorted, so checking u → v can scan up to u's entire outgoing list, Θ(V) in this dense case. Repeating that work millions of times is exactly what direct matrix indexing avoids. Running BFS asks whether a path exists, not whether the single edge u → v exists, so traversal precomputation solves a different and more expensive problem."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Matrix boundary",
+              "text": "A matrix is justified when quadratic storage is affordable and direct membership queries dominate; it is not categorically right or wrong."
             }
           ]
         },
@@ -150,8 +188,8 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "implicit_neighbors",
-            "text": "Treat each cell as a state and generate up to four legal neighbors when the cell is expanded."
+            "id": "visited_as_representation",
+            "text": "Store only a visited set; marking on dequeue is equivalent to representing the edges."
           },
           {
             "id": "full_matrix",
@@ -162,8 +200,8 @@
             "text": "Treat every row as a tree and use parent links between cells."
           },
           {
-            "id": "visited_as_representation",
-            "text": "Store only a visited set; marking on dequeue is equivalent to representing the edges."
+            "id": "implicit_neighbors",
+            "text": "Treat each cell as a state and generate up to four legal neighbors when the cell is expanded."
           }
         ],
         "acceptedOptionIds": [
@@ -179,8 +217,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "The movement rule is already an edge generator"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Treat an in-bounds, non-blocked cell (r, c) as a vertex.",
+                "For each of the four offsets (−1, 0), (1, 0), (0, −1), and (0, 1), compute a candidate neighbor.",
+                "Keep the candidate only if it is in bounds and non-blocked, then let the traversal process it subject to visited state."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Map a cell (r, c) to a graph state and define an edge for each permitted move. Because every expansion checks only a constant number of directions, explicit adjacency storage adds little value and substantial memory. Bounds, obstacles, and the movement rule remain part of neighbor generation. The transfer boundary is any problem where neighbor computation itself is expensive or reused so often that an explicit index becomes justified; the default grid traversal does not cross it."
+              "text": "The grid has 16 million possible cells, yet each expansion tests at most four moves in O(1). An adjacency matrix over those cells would have the square of 16 million entries, while a row-parent structure would lose vertical moves and cycles. A visited set records which states were discovered; it cannot replace the rule that defines legal edges."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Implicit-graph rule",
+              "text": "Generate bounded local neighbors on demand unless transition computation is itself expensive enough to justify an index."
             }
           ]
         },
@@ -201,26 +258,30 @@
     {
       "id": "alg-gt-repr-004",
       "prompt": "Select all actions required to build an adjacency-list representation of an undirected graph with vertices 0 through n−1 from edge pairs {u, v}.",
+      "constraints": [
+        "n >= 0.",
+        "Every edge has distinct endpoints u and v in 0 through n−1, and no undirected edge is repeated."
+      ],
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
         "selectionMode": "multiple",
         "options": [
           {
-            "id": "initialize_all_vertices",
-            "text": "Create an empty neighbor collection for every vertex 0 through n−1."
+            "id": "mark_visited_while_building",
+            "text": "Mark u and v visited while reading the edge so traversal cannot revisit them."
           },
           {
-            "id": "append_both_directions",
-            "text": "For each {u, v}, add v to u’s list and u to v’s list."
+            "id": "initialize_all_vertices",
+            "text": "Create an empty neighbor collection for every vertex 0 through n−1."
           },
           {
             "id": "append_input_direction_only",
             "text": "For each {u, v}, add only v to u’s list because the input pair already names the edge."
           },
           {
-            "id": "mark_visited_while_building",
-            "text": "Mark u and v visited while reading the edge so traversal cannot revisit them."
+            "id": "append_both_directions",
+            "text": "For each {u, v}, add v to u’s list and u to v’s list."
           }
         ],
         "acceptedOptionIds": [
@@ -237,8 +298,26 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Build the vertex set first, then add both incidences"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Allocate n empty neighbor collections, one for every declared vertex 0 through n−1.",
+                "For each undirected edge {u, v}, append v to u's collection and u to v's collection."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The representation contract has two independent parts: all declared vertices are present, and every undirected edge is navigable from both endpoints. Visited state is session-specific traversal state and must not be baked into graph construction. For directed input, only the documented direction is inserted; for an undirected input, symmetric insertion is required. This separation prevents representation errors from being misdiagnosed as BFS or DFS errors."
+              "text": "Initialization preserves isolated vertices whose lists remain empty. Symmetric insertion makes the same undirected edge navigable from either endpoint; inserting only v under u instead represents a directed edge u → v. Visited state is mutable state for one traversal session and must not be set while the static graph is being built."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Separate two contracts",
+              "text": "The representation stores every vertex and edge; a later traversal independently records which stored vertices it has discovered."
             }
           ]
         },
@@ -268,20 +347,20 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "six_entries",
-            "text": "Represent all six vertices, including empty neighbor lists for 3, 4, and 5."
-          },
-          {
             "id": "endpoint_vertices_only",
             "text": "Create entries only for 0, 1, and 2 because only endpoints belong to the graph."
           },
           {
-            "id": "bfs_discovers_missing",
-            "text": "Omit empty entries; BFS will discover the missing vertices faster than DFS."
+            "id": "six_entries",
+            "text": "Represent all six vertices, including empty neighbor lists for 3, 4, and 5."
           },
           {
             "id": "parent_chain",
             "text": "Store only 0 ← 1 ← 2 as a tree and infer the remaining vertices later."
+          },
+          {
+            "id": "bfs_discovers_missing",
+            "text": "Omit empty entries; BFS will discover the missing vertices faster than DFS."
           }
         ],
         "acceptedOptionIds": [
@@ -297,8 +376,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Edge endpoints do not define the whole declared vertex set"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The edges connect 0, 1, and 2 into one component: {0, 1, 2}.",
+                "Vertices 3, 4, and 5 each have degree zero, so each empty neighbor list is a separate one-vertex component.",
+                "The correct whole-graph count is therefore four components."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "A representation used for whole-graph work must preserve vertices of degree zero. Building the vertex set only from edge endpoints silently changes the problem and undercounts components. This boundary matters whenever vertices are declared separately from edges, including dependency sets with tasks that have no dependencies. Traversal strategy cannot compensate for missing states."
+              "text": "Creating entries only for edge endpoints silently changes a six-vertex graph into a three-vertex graph. Neither BFS nor DFS can discover a state omitted from the representation, and a parent chain for the connected fragment cannot encode the three declared isolated vertices."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Whole-graph rule",
+              "text": "When vertices are declared separately from edges, initialize from the vertex declaration and use edges only to add adjacency."
             }
           ]
         },
@@ -325,16 +423,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "operation_profile",
-            "text": "Choose from graph density, memory limits, and the dominant operations such as neighbor iteration or edge membership."
+            "id": "bfs_decides",
+            "text": "Choose the representation that makes BFS possible, because BFS is always faster than DFS."
           },
           {
             "id": "lists_always",
             "text": "Always choose adjacency lists because adjacency matrices are always wrong."
           },
           {
-            "id": "bfs_decides",
-            "text": "Choose the representation that makes BFS possible, because BFS is always faster than DFS."
+            "id": "operation_profile",
+            "text": "Choose from graph density, memory limits, and the dominant operations such as neighbor iteration or edge membership."
           },
           {
             "id": "visited_decides",
@@ -354,8 +452,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Match storage to the operation profile"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Adjacency lists use O(V + E) space and expose actual neighbors efficiently, especially in sparse graphs.",
+                "Adjacency matrices use O(V²) space but answer direct edge membership in O(1), which can fit dense repeated-query workloads.",
+                "Implicit graphs compute legal transitions from a state and avoid storing edges that a simple rule can regenerate."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Adjacency lists provide proportional storage and neighbor iteration for sparse graphs. Matrices provide constant-time membership and predictable dense storage when O(V²) is acceptable. Implicit graphs generate transitions on demand. BFS versus DFS and visited timing are traversal mechanics layered on top of that representation; they are not representation-selection rules. The transfer rule is to name the operations first, then choose the data structure that supports them within constraints."
+              "text": "Choose by listing the dominant operations, estimating density and representation size, and then checking the memory limit. BFS versus DFS chooses expansion order after the graph interface exists; visited timing controls duplicate discovery. Neither decision erases storage or neighbor-access costs."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Reusable decision sequence",
+              "text": "Name the operations first, quantify density and memory second, then select the representation that supports those operations within the constraints."
             }
           ]
         },
@@ -376,19 +493,15 @@
     {
       "id": "alg-gt-repr-007",
       "prompt": "A state is a four-wheel lock code. One move increments or decrements exactly one wheel, except that forbidden codes cannot be entered. The task asks whether a target code is reachable. What representation avoids unnecessary preprocessing?",
+      "constraints": [
+        "Each wheel stores a decimal digit and changes modulo 10, so 0 decrements to 9 and 9 increments to 0.",
+        "Forbidden codes are excluded from generated neighbors."
+      ],
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "generate_transitions",
-            "text": "Represent a code as the state and generate its legal one-move neighbors when expanded."
-          },
-          {
-            "id": "all_codes_matrix",
-            "text": "Prebuild an adjacency matrix over every pair of possible codes."
-          },
           {
             "id": "single_parent",
             "text": "Assign each code one parent because search states form a tree."
@@ -396,6 +509,14 @@
           {
             "id": "queue_is_graph",
             "text": "Use a queue as the representation; a queue makes the search BFS and therefore faster than DFS."
+          },
+          {
+            "id": "all_codes_matrix",
+            "text": "Prebuild an adjacency matrix over every pair of possible codes."
+          },
+          {
+            "id": "generate_transitions",
+            "text": "Represent a code as the state and generate its legal one-move neighbors when expanded."
           }
         ],
         "acceptedOptionIds": [
@@ -411,8 +532,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Generate the eight local transitions when needed"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Use the four-digit code itself as the vertex state.",
+                "For each of four wheel positions, construct the result of adding 1 and subtracting 1 modulo 10.",
+                "Discard forbidden codes and expose the remaining candidates as this state's legal neighbors.",
+                "Let the traversal's visited set suppress states already discovered."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Graph representation does not require an explicit edge file. The lock codes are vertices and legal one-wheel changes are edges generated from the current code. A visited set prevents cycling during the chosen traversal, but it is distinct from the transition function. This transfers to word transformations, board states, and other search spaces where neighbors are algorithmically generated."
+              "text": "For example, changing the first wheel of 0000 produces 1000 and 9000 before forbidden-state filtering. The same constant-size rule produces at most eight candidates for any code, so prebuilding pairwise adjacency over all 10,000 codes adds work without improving neighbor access. A parent pointer or queue records search history or order; neither defines all legal transitions."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "State-space rule",
+              "text": "When a compact deterministic rule generates neighbors, keep the graph implicit and keep transition, visited, and frontier responsibilities separate."
             }
           ]
         },

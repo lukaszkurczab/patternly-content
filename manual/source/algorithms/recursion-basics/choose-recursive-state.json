@@ -3,7 +3,7 @@
   "batchId": "recursion-basics-choose-recursive-state",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -133,8 +133,17 @@
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Enumerate every fact whose value can change the answer for the current subproblem.",
+                "Remove facts fixed for the whole run and facts derivable from retained values.",
+                "Test identity sufficiency: two remaining states that can have different answers must not collapse to one representation.",
+                "Test transition sufficiency: every child state must be constructible from retained state plus stable context, without hidden ancestor history."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "First enumerate information that may change the result, otherwise an essential dimension can disappear before it is considered. Next remove global constants and values derivable from retained state. The remaining representation must distinguish materially different subproblems: if two states collapse but can have different answers, the representation is incomplete. Finally, every legal recursive transition must be constructible from the retained state and stable context. This last check prevents a seemingly compact state from depending on hidden ancestor history. The sequence applies to indices, intervals, tree nodes, remaining capacities, and other recursive representations without prescribing any particular data structure."
+              "text": "This order avoids deleting an essential dimension before it is considered and prevents a compact-looking state from depending on discarded history. The same test applies to indices, intervals, tree nodes, remaining capacities, and other recursive representations without prescribing a particular data structure."
             }
           ]
         }
@@ -149,66 +158,57 @@
     },
     {
       "id": "recursion-basics-choose-recursive-state-palindrome-two-boundary-state",
-      "prompt": "A shared immutable string s is available to every call. palindrome(l, r) may be invoked on any inclusive\nsubstring s[l..r]. Select all pieces of information that must be represented in the recursive state so the\ncurrent substring is uniquely identified.",
+    "prompt": "A shared immutable string s is available to every call. palindrome(l, r) uses an inclusive-endpoint state and may be invoked on any substring s[l..r]. Which parameter set is minimal and sufficient under that representation?",
       "constraints": [
         "The function supports arbitrary inclusive substrings, not only prefixes or suffixes.",
         "The string is immutable and shared across the recursion."
       ],
       "difficulty": "intermediate",
-      "interaction": {
-        "type": "choice",
-        "selectionMode": "multiple",
-        "options": [
-          {
-            "id": "left_boundary",
-            "text": "The left boundary l."
-          },
-          {
-            "id": "right_boundary",
-            "text": "The right boundary r."
-          },
-          {
-            "id": "substring_length",
-            "text": "The substring length r - l + 1."
-          },
-          {
-            "id": "matched_outer_pairs",
-            "text": "The number of outer pairs already matched."
-          },
-          {
-            "id": "string_value",
-            "text": "A separate copy of s in every frame."
-          }
-        ],
-        "acceptedOptionIds": [
-          "left_boundary",
-          "right_boundary"
-        ]
+    "interaction": {
+      "type": "choice",
+      "selectionMode": "single",
+      "options": [
+        {
+          "id": "endpoint_pair",
+          "text": "The endpoint pair (l, r)."
+        },
+        {
+          "id": "left_only",
+          "text": "Only the left endpoint l."
+        },
+        {
+          "id": "length_only",
+          "text": "Only the substring length r - l + 1."
+        },
+        {
+          "id": "endpoints_and_length",
+          "text": "l, r, and the separately stored length r - l + 1."
+        }
+      ],
+      "acceptedOptionIds": [
+        "endpoint_pair"
+      ]
       },
       "scoringContract": {
         "type": "choice",
         "resultSemantics": "exact_selected_set_with_partial_v1"
+    },
+    "feedback": {
+      "reason": "In the chosen endpoint representation, l and r jointly name any arbitrary substring, while its length is derivable.",
+      "details": {
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "An arbitrary interval state must preserve location and extent. Under the declared inclusive-endpoint convention, l locates the start and r locates the end; either endpoint alone leaves many possible substrings, while length alone collapses equal-sized regions at different positions. Once l and r are present, length and the terminal condition l >= r are derivable, and the shared string remains fixed context. A different minimal convention such as (start, length) is possible, but representations must not be mixed or padded with derived fields."
+          }
+        ]
       },
-      "feedback": {
-        "reason": "Both endpoints are necessary to identify an arbitrary remaining substring; length and prior progress are derivable or irrelevant.",
-        "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "An interval state must preserve location as well as size. Keeping only l would not reveal where the requested substring ends, and keeping only r would not reveal where it begins. Keeping only length collapses different regions that may have different characters. Once l and r are present, the length and terminal conditions l >= r are derivable, while the shared string remains fixed context. This is a general transfer rule for recursive interval problems: retain every boundary needed to name the region, but do not duplicate values computed from those boundaries."
-            }
-          ]
-        },
-        "wrongOptionExplanationsByOptionId": {
-          "substring_length": "Length is derivable from l and r and cannot replace either boundary: many different substrings have the same length.",
-          "matched_outer_pairs": "That count is ancestor history. The current interval already captures the remaining work, and the Boolean answer does not depend on how many pairs were removed.",
-          "string_value": "The string is stable shared context. Repassing or copying it does not distinguish subproblems and therefore is not part of the minimal changing state."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "left_boundary": "Without l, the state cannot distinguish substrings that end at the same position but begin at different positions.",
-          "right_boundary": "Without r, the state cannot distinguish substrings that begin at the same position but end at different positions."
-        }
-      },
+      "wrongOptionExplanationsByOptionId": {
+        "left_only": "A start endpoint does not determine where an arbitrary requested substring ends.",
+        "length_only": "Many substrings have the same length but different positions and characters, so length alone does not identify the state.",
+        "endpoints_and_length": "This is sufficient but not minimal because length is computed exactly from the retained endpoints."
+      }
+    },
       "taxonomy": {
         "primarySkillAtomId": "choose_minimal_recursive_state",
         "secondarySkillAtomIds": [],

@@ -3,7 +3,7 @@
   "batchId": "contrast-hash-map-vs-sorting-duplicates-and-grouping-boundary-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -79,7 +79,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "After reading position i, a seen set represents exactly the values from positions 0 through i - 1. Testing the value at i before inserting it therefore identifies i as the first repeated arrival precisely when that value already occurred."
             },
             {
               "type": "callout",
@@ -89,14 +89,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A seen set supports both without requiring complete input or reordering."
+              "text": "For [4, 7, 4, 7], the set is {4, 7} when index 2 arrives, so the algorithm reports 2 immediately. Sorting needs the complete stream and loses arrival position unless it carries indices; adjacent-only comparison misses the two 4s. Reusable rule: an online first-event contract needs state over the processed prefix."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_end": "Sorting destroys arrival position unless metadata is retained and cannot stop at the first repeated arrival.",
-          "adjacent_stream": "The repeated value may be separated.",
-          "frequency_after": "The contract permits earlier termination."
+          "sort_end": "Even decorated offline sorting must wait for the stream to end, so it cannot report at the moment the first repeated arrival occurs.",
+          "adjacent_stream": "A repeated value can be separated from its earlier occurrence, as the two 4s are in [4, 7, 4].",
+          "frequency_after": "Building every final group delays an answer that becomes provable as soon as the first already-seen value arrives."
         }
       },
       "taxonomy": {
@@ -107,7 +107,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-duplicates-002",
-      "prompt": "A report must emit every distinct key in ascending order with its count. Which direct strategy is strongest?",
+      "prompt": "A report must emit every distinct key in ascending order with its count. Which listed strategy directly satisfies both requirements without an additional ordering structure or pass over separately stored keys?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -149,7 +149,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "Sorting the values places keys in ascending order and makes all occurrences of a key contiguous. A left-to-right scan counts the length of each equal run and emits that key-count pair before moving to the next, so one representation supplies both required properties."
             },
             {
               "type": "callout",
@@ -159,14 +159,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Hash counting remains viable only if the later key-ordering cost is included."
+              "text": "For [3, 1, 3, 2], sorting gives [1, 2, 3, 3] and the runs emit (1,1), (2,1), (3,2). A hash map may still be preferable when k ≪ n, but it must separately order its k keys; the offered hash-only option omits that step. Reusable rule: prefer the path whose produced structure is directly consumed by the output contract."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_only": "A plain hash map does not guarantee ascending key order.",
-          "first_duplicate": "The report requires all groups.",
-          "pair_compare": "Pairwise comparison does not create ordered groups efficiently."
+          "hash_only": "Equality aggregation is not key ordering; a plain map iteration contract does not guarantee ascending keys.",
+          "first_duplicate": "Stopping after one duplicate omits every remaining distinct key and its required count.",
+          "pair_compare": "Pair comparisons can rediscover equality in Θ(n²) work but do not directly establish the required ascending sequence of groups."
         }
       },
       "taxonomy": {
@@ -219,7 +219,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "For each input value x, a frequency map performs count[x] ← count[x] + 1. The location of earlier occurrences does not matter because semantic equality selects the same entry, and the caller explicitly permits the entries to be emitted in any order."
             },
             {
               "type": "callout",
@@ -229,14 +229,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Hashing directly serves that contract in expected linear time."
+              "text": "With expected O(1) updates, n occurrences take expected O(n) time and retain O(k) entries. Sorting would add O(n log n) ordering work whose result is unused; repeated full scans can take Θ(nk) or Θ(n²). Reusable rule: do not construct order when the output consumes only an equality-keyed aggregate."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_required": "A map updates counts wherever occurrences appear.",
-          "stable_sort": "This adds an unnecessary constraint.",
-          "all_pairs": "This can be quadratic."
+          "sort_required": "Adjacency is one grouping mechanism, not a prerequisite; a map routes nonadjacent equal values to the same counter.",
+          "stable_sort": "Stability preserves relative order among equal records, but the caller requires neither sorted keys nor equal-record order.",
+          "all_pairs": "Rescanning the input for each key repeats work and can become quadratic instead of performing one expected-constant update per occurrence."
         }
       },
       "taxonomy": {
@@ -289,7 +289,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "A compatible total order has the property that if a < b, no copy of a can appear after a copy of b in sorted output. Therefore every occurrence equal to a fixed key occupies one contiguous interval: placing a different key inside that interval would violate sorted order."
             },
             {
               "type": "callout",
@@ -299,14 +299,14 @@
             },
             {
               "type": "paragraph",
-              "text": "This reusable structure is the sorting-side mechanism for duplicate grouping."
+              "text": "For [2, 1, 2, 1, 2], sorting yields [1, 1, 2, 2, 2]. The scan still must measure run lengths 2 and 3; sorting neither deletes occurrences nor calculates counts for free. Reusable rule: sorting converts a global relation into local boundaries, then a scan must consume those boundaries."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "duplicates_removed": "Sorting reorders but preserves occurrences.",
-          "hash_generated": "No hash state is created.",
-          "counts_free": "The runs still need to be traversed and counted."
+          "duplicates_removed": "A comparison sort permutes the n input occurrences; it does not remove any occurrence unless a separate deduplication pass does so.",
+          "hash_generated": "The mechanism is comparator order and adjacency, not buckets or a hash function.",
+          "counts_free": "Adjacency exposes run boundaries, but the algorithm must still advance across each run and count its members."
         }
       },
       "taxonomy": {
@@ -317,7 +317,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-duplicates-005",
-      "prompt": "Keys are comparable but intentionally not hashable. The task is to group duplicates. Which strategy remains legal?",
+      "prompt": "Keys are intentionally not hashable, but they have a total-order comparator for which compare(a, b) = 0 exactly when a and b are semantically equal. The task is to group duplicates. Which strategy remains legal?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -359,7 +359,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "The prompt guarantees a comparator whose zero-equivalence classes exactly match semantic equality. Sorting with that comparator makes every semantic-equality class contiguous, so a run scan can form duplicate groups without any hash operation."
             },
             {
               "type": "callout",
@@ -369,14 +369,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The legal key operations can decide the strategy before asymptotic comparison."
+              "text": "Hashing by object identity would split distinct objects that are semantically equal; hashing indices groups positions, not keys. Because both violate the required equivalence relation, their costs are irrelevant. Reusable rule: first require the data structure's equality or ordering contract to represent the domain's equality correctly."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_anyway": "The hash/equality contract would be incorrect.",
-          "no_solution": "Comparison equality after sorting is sufficient.",
-          "index_hash": "Distinct indices do not group equal key values."
+          "hash_anyway": "Object identity is a different equivalence relation and can place semantically equal objects in different groups.",
+          "no_solution": "Comparator result zero identifies semantic equality, and sorting makes each such class a scannable run.",
+          "index_hash": "Every position has a distinct index, so indexing cannot combine two positions merely because their values are equal."
         }
       },
       "taxonomy": {
@@ -429,7 +429,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "A compatible hash and semantic-equality test are sufficient to route every occurrence of a key to one counter. Because output order is arbitrary, the algorithm never needs a comparator or an ordering relation between different keys."
             },
             {
               "type": "callout",
@@ -439,14 +439,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Sorting should not be forced by inventing an order unrelated to the domain."
+              "text": "Memory addresses can change between runs and do not express domain order; string conversion can merge distinct keys or split equal ones unless equivalence is proved. Original adjacency also has no equality guarantee. Reusable rule: use only key operations whose semantics are part of the domain contract."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "invent_order": "An incidental order is not a domain comparator and may be unstable.",
-          "stringify_sort": "This can merge or split semantic keys incorrectly.",
-          "adjacent_original": "No such precondition is given."
+          "invent_order": "Memory-address order is incidental, can vary across runs, and has no declared relation to semantic key equality.",
+          "stringify_sort": "Without an injective equality-preserving encoding, text conversion can collide distinct keys or represent equal keys differently.",
+          "adjacent_original": "The prompt gives no grouping precondition on arrival order, so equal keys may occur arbitrarily far apart."
         }
       },
       "taxonomy": {
@@ -499,7 +499,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "The map determines which counts exist, but its iteration contract may depend on implementation, insertion history, randomized hashing, or runtime version. Deterministic output therefore needs an independent declared policy: for example, sort the k keys or record keys once in first-seen order."
             },
             {
               "type": "callout",
@@ -509,14 +509,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A hash map can still be used, but the ordering mechanism and its cost must be explicit."
+              "text": "Sorting k keys adds O(k log k) comparison work; a first-seen list adds O(k) retained references while the scan establishes that order. Dropping counts changes the output, and repeated rehashing changes placement rather than proving order. Reusable rule: never expose unspecified container traversal as a product-level ordering guarantee."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "assume_hash_order": "Iteration guarantees vary and may not be value-sorted.",
-          "drop_counts": "The required data would be lost.",
-          "rehash": "Hash placement is not a sorting contract."
+          "assume_hash_order": "Map iteration guarantees vary by container and runtime, and even insertion order would not imply ascending key order.",
+          "drop_counts": "Removing the required multiplicities makes the report incomplete rather than deterministic.",
+          "rehash": "Rehashing changes bucket placement but supplies no invariant that traversal becomes ascending or stable across environments."
         }
       },
       "taxonomy": {
@@ -527,7 +527,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-duplicates-008",
-      "prompt": "Memory is constrained, input mutation is legal, and all duplicate groups must be found. Which tradeoff can favor sorting?",
+      "prompt": "Memory is constrained, input mutation is legal, all duplicate groups must be found, and worst-case time must be no worse than O(n log n). Which tradeoff can favor sorting?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -569,7 +569,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "Because mutation is legal, a concrete in-place O(n log n) sort can reuse the input array. Equal values then form runs, and one O(n) scan emits every group without retaining one table entry per distinct key."
             },
             {
               "type": "callout",
@@ -579,14 +579,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The chosen sorting algorithm's own memory must still be included."
+              "text": "The total worst-case time is O(n log n + n) = O(n log n), satisfying the stated limit; auxiliary space is the selected sort's O(1) buffer or O(log n) stack. A general map can reach O(k)=O(n) entries. Pairwise checks save memory but violate the time limit, while returning one group violates completeness. Reusable rule: a space-saving path must still satisfy time and output contracts."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_constant": "It may store one entry per distinct key.",
-          "skip_groups": "That changes the result contract.",
-          "pairwise": "Time feasibility must also be considered."
+          "hash_constant": "A frequency map retains one entry per distinct key and reaches O(n) entries on all-distinct input.",
+          "skip_groups": "Returning only the first duplicate omits groups that the contract explicitly requires.",
+          "pairwise": "Checking n(n-1)/2 pairs is Θ(n²), exceeding the stated O(n log n) worst-case bound."
         }
       },
       "taxonomy": {
@@ -605,7 +605,7 @@
         "options": [
           {
             "id": "hash_metadata",
-            "text": "Scan once, storing first index and count per key, then emit according to first-seen metadata."
+            "text": "Scan once, storing first index and count per key plus a list of keys at first arrival, then emit by that list."
           },
           {
             "id": "sort_values_only",
@@ -639,7 +639,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "Scan indices i = 0 through n - 1. On a key's first arrival, create {firstIndex: i, count: 1} and append that key once to a first-seen list; on later arrivals, increment only count. The list is therefore already ordered by first occurrence."
             },
             {
               "type": "callout",
@@ -649,14 +649,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A map can retain both count and first position while the initial scan establishes first-seen order."
+              "text": "After the scan, traverse the first-seen list and read each key's map entry. Sorting values without indices destroys provenance, and a sorted-run start is a position in sorted storage rather than the original array. Reusable rule: when grouping and output order use different relations, retain one structure for each relation explicitly."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_values_only": "Sorting alone loses original index and first-seen order.",
-          "run_index": "Sorted positions are not original positions.",
-          "arbitrary_hash": "The required output cannot be reconstructed reliably."
+          "sort_values_only": "Once values are reordered without positions, neither a group's first original index nor first-seen group order can be reconstructed.",
+          "run_index": "A run start measures position in sorted order; it is not the minimum original index among that key's occurrences.",
+          "arbitrary_hash": "Counts alone do not encode first indices, and unspecified map traversal does not encode first-seen order."
         }
       },
       "taxonomy": {
@@ -709,7 +709,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "Value identity asks whether two positions hold semantically equal keys; occurrence identity treats the positions themselves as distinct records. Deduplicating to one value, returning every original index, or selecting the first occurrence all begin with the same equal values but require different outputs."
             },
             {
               "type": "callout",
@@ -719,14 +719,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A value-distinct group, an occurrence-distinct result, and a first-occurrence result require different retained information."
+              "text": "For [\"a\", \"a\"], a distinct-value result has one \"a\", an occurrence result has indices 0 and 1, and a representative result may require index 0. Sort direction, bucket capacity, and loop count cannot decide which is correct. Reusable rule: define the identity of an output record before choosing how to group equal inputs."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_direction": "Order does not define occurrence identity.",
-          "hash_size": "Representation tuning cannot replace the semantic identity contract.",
-          "loop_count": "Loop structure is not the result definition."
+          "sort_direction": "Ascending versus descending controls order between values, not whether equal positions remain separate output records.",
+          "hash_size": "Bucket capacity tunes a representation but cannot decide whether the product wants values, occurrences, or representatives.",
+          "loop_count": "Two implementations with different loop counts can implement the same semantics; control-flow shape does not define the result."
         }
       },
       "taxonomy": {
@@ -781,7 +781,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "A seen set answers whether the current arrival occurred in the processed prefix, so it can report the first repeat online. A frequency map updates one counter per arrival when group order is arbitrary. A map entry can also retain the first original index and count without reordering input."
             },
             {
               "type": "callout",
@@ -791,17 +791,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Ascending groups add an ordering signal."
+              "text": "Ascending groups with no later ordering step require structure that hashing alone does not create; map traversal is not automatically key-sorted. Reusable rule: hash state is favored when the consumed relation is equality or arrival metadata, not key order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "ascending_groups": "This directly consumes sorted order."
+          "ascending_groups": "A plain hash table supplies equality lookup but not ascending key traversal, and the option forbids the additional key-sorting step that would provide it."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "online_first_repeat": "Seen membership supports early detection.",
-          "arbitrary_count_order": "A frequency map directly represents the result.",
-          "first_index_metadata": "Map entries can store both."
+          "online_first_repeat": "Membership over the processed prefix makes the first already-seen arrival detectable before the stream ends.",
+          "arbitrary_count_order": "One expected-constant update per occurrence builds exactly the required key-to-count mapping without unused ordering.",
+          "first_index_metadata": "On first insertion an entry can store the current index, then retain that index while later occurrences increment its count."
         }
       },
       "taxonomy": {
@@ -856,7 +856,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "Sorting creates ascending group order and makes each equality class a contiguous run. A scan can therefore measure run lengths and compare neighboring groups. It also remains legal when a comparator defines equality classes but no compatible hash operation exists."
             },
             {
               "type": "callout",
@@ -866,17 +866,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Online arrival semantics conflict with full reordering."
+              "text": "Reporting the first repeated arrival is different: offline sorting must collect the stream and cannot answer at the decisive arrival time. Reusable rule: favor sorting when the output consumes ordered runs or when comparison is the only legal key operation."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "online_first_repeat": "Sorting requires collecting and reordering the input."
+          "online_first_repeat": "A full sort requires collecting the input, so it cannot stop and report at the moment a repeated value first arrives."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "ordered_groups": "Sorting directly establishes the order.",
-          "adjacent_run_stats": "Equal values become contiguous.",
-          "comparable_not_hashable": "Sorting remains legal."
+          "ordered_groups": "The sorted sequence already traverses distinct keys in key order, so each completed run can be emitted directly.",
+          "adjacent_run_stats": "Equal values become contiguous and group boundaries become local changes between neighboring keys.",
+          "comparable_not_hashable": "A compatible comparator is sufficient for sorting and run equality even when no legal hash table can be built."
         }
       },
       "taxonomy": {
@@ -931,7 +931,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "For a finite reorderable array, a set detects a duplicate on repeated membership while a sort detects one in adjacent equal positions. A frequency map and sorted run lengths both compute all counts. Likewise, set keys and one representative per sorted run both produce distinct values when output order is flexible."
             },
             {
               "type": "callout",
@@ -941,17 +941,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Online arrival position is a stricter boundary that favors hash state."
+              "text": "The first repeated arrival adds a time-of-observation contract: the result must be known before the stream ends. Offline sorting cannot satisfy that boundary directly. Reusable rule: distinguish tasks for which two mechanisms are correct from constraints that remove one mechanism."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "first_repeat_stream": "Offline sorting cannot preserve this online stopping contract directly."
+          "first_repeat_stream": "Sorting needs the collected sequence, so it cannot report at the first repeated arrival while unread stream elements still remain."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "exists_duplicate": "A set or sort-and-scan both work.",
-          "all_counts": "Hash counts or sorted runs both represent multiplicity.",
-          "unique_values": "Either structure can deduplicate."
+          "exists_duplicate": "Repeated set membership and adjacent equality after sorting are two correct mechanisms for the same finite-array predicate.",
+          "all_counts": "Map counters aggregate occurrences by key, while sorted run lengths encode the same multiplicities.",
+          "unique_values": "Map keys or one representative from each sorted run both retain exactly one value per equality class."
         }
       },
       "taxonomy": {
@@ -962,7 +962,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-duplicates-014",
-      "prompt": "Which input shapes expose duplicate-counting and grouping defects? Select all that apply.",
+      "prompt": "Which cases belong in a minimal boundary suite for duplicate counting and grouping? Select all that apply.",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -981,14 +981,19 @@
             "text": "Every value equal."
           },
           {
-            "id": "only_adjacent_duplicate",
-            "text": "Only one case where the duplicate is already adjacent."
+            "id": "separated_duplicate",
+            "text": "A duplicate whose occurrences are separated by other values."
+          },
+          {
+            "id": "only_adjacent_example",
+            "text": "Use only one happy-path case where the duplicate is already adjacent."
           }
         ],
         "acceptedOptionIds": [
           "empty",
           "all_distinct",
-          "all_equal"
+          "all_equal",
+          "separated_duplicate"
         ]
       },
       "scoringContract": {
@@ -1006,7 +1011,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "Empty input checks initialization and no-group output. All-distinct input creates k = n map entries and n singleton sorted runs. All-equal input creates one map entry with count n and one maximal run. A separated duplicate such as [2, 1, 2] rejects logic that compares only original neighbors."
             },
             {
               "type": "callout",
@@ -1016,17 +1021,18 @@
             },
             {
               "type": "paragraph",
-              "text": "Separated duplicates and repeated-key order should also be included in human review."
+              "text": "Testing only one already-adjacent duplicate exercises none of those boundaries and can let a broken adjacency-only solution pass. Reusable rule: choose boundary cases that force different state shapes, not several examples of the same happy path."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "only_adjacent_duplicate": "This does not test separated occurrences or ordering choices."
+          "only_adjacent_example": "One adjacent example cannot expose algorithms that incorrectly assume duplicates begin next to each other or mishandle empty and extreme multiplicities."
         },
         "omittedCorrectExplanationsByOptionId": {
           "empty": "It should produce no groups or duplicate.",
           "all_distinct": "It maximizes hash entries and creates singleton runs.",
-          "all_equal": "It creates one maximal run and minimal distinct-key count."
+          "all_equal": "It creates one maximal run and minimal distinct-key count.",
+          "separated_duplicate": "It rejects original-adjacency logic and checks whether equality state joins nonadjacent occurrences."
         }
       },
       "taxonomy": {
@@ -1056,6 +1062,14 @@
             "text": "Are keys legally hashable, comparable, or both?"
           },
           {
+            "id": "identity_metadata",
+            "text": "Does output distinguish values from occurrences, and which original indices or stable relations must survive?"
+          },
+          {
+            "id": "resources_mutation",
+            "text": "May input be reordered, and what time and auxiliary-memory limits apply?"
+          },
+          {
             "id": "hash_faster",
             "text": "Can we assume hashing is always faster?"
           }
@@ -1063,7 +1077,9 @@
         "acceptedOptionIds": [
           "all_or_first",
           "output_order",
-          "key_operations"
+          "key_operations",
+          "identity_metadata",
+          "resources_mutation"
         ]
       },
       "scoringContract": {
@@ -1081,7 +1097,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
+              "text": "First define completeness and order: one early duplicate, all groups, key order, first-seen order, and arbitrary order consume different structures. Then define legal key operations and identity: hashability, comparator compatibility, value versus occurrence output, and required indices can eliminate candidates or require metadata."
             },
             {
               "type": "callout",
@@ -1091,17 +1107,19 @@
             },
             {
               "type": "paragraph",
-              "text": "Completeness, order, identity, memory, mutation, and legal key operations define the boundary."
+              "text": "Finally check whether input may be reordered and whether O(k) table space, O(n log n) comparison time, copies, or sort workspace fit the limits. The claim that hashing is always faster skips all these premises and even confuses expected with guaranteed cost. Reusable rule: select only after contract, operations, and resources are explicit."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_faster": "That is the false heuristic being rejected."
+          "hash_faster": "Hashing has expected-operation assumptions and may spend O(k) space; sorting can be required for order or legal when hashing is not, so universal dominance is false."
         },
         "omittedCorrectExplanationsByOptionId": {
           "all_or_first": "Early stopping and complete grouping differ.",
           "output_order": "Ordering is an observable contract.",
-          "key_operations": "This determines candidate legality."
+          "key_operations": "This determines candidate legality.",
+          "identity_metadata": "Grouping equal values can still require occurrence-level provenance or stable order.",
+          "resources_mutation": "A legal in-place sort and an O(k) table make different mutation, time, and space promises."
         }
       },
       "taxonomy": {
@@ -1123,11 +1141,11 @@
           },
           {
             "id": "scan",
-            "text": "Scan values in original order."
+            "text": "Read the next value in original order."
           },
           {
             "id": "update",
-            "text": "Increment the current value's count and any required first-index metadata."
+            "text": "Increment its count, record first-arrival metadata when needed, and repeat the read-update pair until input ends."
           },
           {
             "id": "emit",
@@ -1153,21 +1171,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Grouping: lookup or adjacency?"
+              "text": "Build the aggregate before emitting it"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Initialize an empty table so every later update has one equality-keyed destination.",
+                "Read the next value in original order; this preserves arrival position for first-index or first-seen metadata.",
+                "Create or increment that key's entry, record first-arrival metadata only on creation, and repeat the read-update pair until the input is exhausted.",
+                "Emit using the declared policy: arbitrary table order, a retained first-seen list, or explicitly sorted keys."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Choose by the required structure",
-              "text": "Choose hash state for online equality lookup or arbitrary-order grouping. Choose sorting when the result needs ordered keys or when adjacent equal runs are the useful structure. Do not pay for order when the contract does not use it, and do not assume a plain hash map supplies an order it does not guarantee."
-            },
-            {
-              "type": "paragraph",
-              "text": "The final emission order must be part of the contract rather than inherited accidentally from the table."
+              "text": "Emitting before all updates would produce incomplete counts. Conversely, letting table iteration choose the final order makes an unspecified representation detail observable. Reusable rule: aggregate order and presentation order are separate contracts."
             }
           ]
         }
@@ -1221,21 +1238,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Grouping: lookup or adjacency?"
+              "text": "Turn equality classes into runs"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Sort values or decorated records by a comparator compatible with grouping equality; this makes every equality class contiguous.",
+                "Place a run start at the first unprocessed record and initialize that group's count or metadata.",
+                "Advance while the next key compares equal, accumulating each occurrence into the current group.",
+                "At the first different key or end of input, emit the completed group and repeat from that next run start."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Choose by the required structure",
-              "text": "Choose hash state for online equality lookup or arbitrary-order grouping. Choose sorting when the result needs ordered keys or when adjacent equal runs are the useful structure. Do not pay for order when the contract does not use it, and do not assume a plain hash map supplies an order it does not guarantee."
-            },
-            {
-              "type": "paragraph",
-              "text": "The run scan is linear after ordering is established."
+              "text": "Starting runs before sorting does not make equal values adjacent, and emitting before consuming the full run undercounts it. Once sorted, the run scan advances over each record once and is O(n). Reusable rule: establish the locality invariant before using local boundaries."
             }
           ]
         }
@@ -1289,21 +1305,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Grouping: lookup or adjacency?"
+              "text": "Define the result before comparing mechanisms"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Define semantic equality, whether equal occurrences remain distinct outputs, and which original indices or stability metadata must survive.",
+                "Define when the result is complete—first repeated arrival or all groups—and whether emission order is arbitrary, first-seen, or key-sorted.",
+                "Check whether the keys have a compatible hash, comparator, or both, then apply mutation and memory constraints to eliminate illegal paths.",
+                "Only then compare hash aggregation with sort-and-run on total time, peak auxiliary state, guarantees, and the required output."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Choose by the required structure",
-              "text": "Choose hash state for online equality lookup or arbitrary-order grouping. Choose sorting when the result needs ordered keys or when adjacent equal runs are the useful structure. Do not pay for order when the contract does not use it, and do not assume a plain hash map supplies an order it does not guarantee."
-            },
-            {
-              "type": "paragraph",
-              "text": "Only then can expected time, sorting cost, and space be compared fairly."
+              "text": "Beginning with speed can select a hash table for unhashable keys or an in-place sort that destroys required positions. Reusable rule: semantics establish legality; complexity chooses among the legal candidates."
             }
           ]
         }
@@ -1316,7 +1331,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-duplicates-019",
-      "prompt": "Count frequencies of n values with k distinct hashable keys using a hash map. Select expected time and auxiliary space.",
+      "prompt": "Count frequencies of n values with k distinct hashable keys in a working hash map, then emit the result separately. Select expected time and auxiliary space.",
       "constraints": [
         "Expected hash update is O(1).",
         "Output storage is excluded from auxiliary space."
@@ -1371,21 +1386,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Grouping: lookup or adjacency?"
+              "text": "Derive updates and retained entries separately"
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Choose by the required structure",
-              "text": "Choose hash state for online equality lookup or arbitrary-order grouping. Choose sorting when the result needs ordered keys or when adjacent equal runs are the useful structure. Do not pay for order when the contract does not use it, and do not assume a plain hash map supplies an order it does not guarantee."
+              "text": "The scan processes all n occurrences. Each performs one expected O(1) lookup/update, so aggregation costs n · O(1) = O(n) expected time. Emitting k results adds O(k), and k ≤ n, so O(n + k) simplifies to O(n)."
             },
             {
               "type": "paragraph",
-              "text": "The table retains one aggregate entry per distinct key."
+              "text": "Repeated occurrences update an existing counter; only the k distinct keys create entries. The working table therefore uses O(k) auxiliary space even though separate required output storage is excluded. O(1) ignores growing key state, while O(nk) incorrectly multiplies values by groups. Reusable rule: time follows processed occurrences; aggregate space follows distinct retained states."
             }
           ]
         }
@@ -1453,21 +1462,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Grouping: lookup or adjacency?"
+              "text": "Sorting dominates time; its stack dominates workspace"
             },
             {
               "type": "paragraph",
-              "text": "Start from the result contract. A hash map or set records equality state as values arrive, so it supports arbitrary-order counts and can stop as soon as the needed duplicate is known. Sorting instead rearranges equal values into adjacent runs; that is valuable when ordered output, deterministic traversal, or run-based processing is required."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Choose by the required structure",
-              "text": "Choose hash state for online equality lookup or arbitrary-order grouping. Choose sorting when the result needs ordered keys or when adjacent equal runs are the useful structure. Do not pay for order when the contract does not use it, and do not assume a plain hash map supplies an order it does not guarantee."
+              "text": "The stated in-place sort costs O(n log n). Afterward, the run scan advances across each of the n positions once, so it adds O(n). Total time is O(n log n + n) = O(n log n)."
             },
             {
               "type": "paragraph",
-              "text": "This path trades deterministic ordering and low stated auxiliary space for input mutation and comparison cost."
+              "text": "Mutation permission lets the ordered values remain in the original array, which is not auxiliary storage. The sort's O(log n) stack is live during sorting and the run scan uses only O(1) local state, giving O(log n) peak auxiliary space. O(1) forgets the stated stack; O(n) would add a copy the contract does not require. Reusable rule: simplify time sums and take the largest simultaneously live workspace."
             }
           ]
         }

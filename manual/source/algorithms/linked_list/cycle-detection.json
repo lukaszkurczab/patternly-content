@@ -3,7 +3,7 @@
   "batchId": "algorithms-linked-list-cycle_detection-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -414,12 +414,8 @@
             "text": "Confirm fast and fast.next are not null."
           },
           {
-            "id": "advance_slow",
-            "text": "Advance slow by one next link."
-          },
-          {
-            "id": "advance_fast",
-            "text": "Advance fast by two next links."
+            "id": "advance_pair",
+            "text": "Using the validated pre-update state, advance slow by one link and fast by two links."
           },
           {
             "id": "compare_references",
@@ -428,23 +424,30 @@
         ],
         "canonicalOrder": [
           "guard_two_steps",
-          "advance_slow",
-          "advance_fast",
+          "advance_pair",
           "compare_references"
         ],
         "scoringMethod": "adjacent_relations"
       },
       "scoringContract": {
         "type": "ordering",
-        "maxPoints": 3
+        "maxPoints": 2
       },
       "feedback": {
         "reason": "The meeting comparison must evaluate positions produced by a valid traversal step, not the intentionally equal initial state.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Check `fast != null && fast.next != null`; short-circuit evaluation makes the two-link fast update safe.",
+                "From that validated pre-update state, compute `slow = slow.next` and `fast = fast.next.next`.",
+                "Compare the resulting node references; equality now means the moving pointers converged."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The guard establishes that the two-link fast update is safe. Both pointers then move according to the algorithm, and only afterward does reference equality constitute convergence evidence. Comparing before movement would label every nonempty input cyclic because slow and fast start equal. Some formulations start pointers at different offsets; those require their own explicit proof and guard."
+              "text": "Comparing before movement would label every nonempty input cyclic because slow and fast intentionally start equal. The two assignments have no required order when both right-hand sides use the pre-update state, so they are one logical step rather than an artificial ordering dependency. Formulations that initialize the pointers at different offsets need their own explicit guard and proof."
             }
           ]
         }
@@ -500,7 +503,19 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Convergence establishes existence because both references occupy one cycle node. Its location depends on prefix length and cycle phase, so M need not be the first cycle node reached from head. To find E, reset one pointer to head and advance both one step until they meet; the distance equation makes that meeting the entry. Payload ordering and a sentinel are unrelated to entry identity."
+              "text": "Let μ be the number of edges from head to entry E, λ the cycle length, and m the number of cycle edges from E to the first meeting M. At that meeting slow has traveled t = μ + m edges, while fast has traveled 2t. Their distance difference is t, and meeting on the cycle means t = kλ for some integer k. Therefore μ + m = kλ, so μ edges forward from M land at E after completing the remaining whole-cycle distance."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Keep one pointer at M and reset the other pointer to head.",
+                "Advance both pointers one edge per iteration.",
+                "After μ steps, the pointer from head reaches E and the pointer from M also reaches E, so their next reference meeting is the cycle entry."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Thus M proves existence but is not generally E; its location depends on μ and λ. Payload ordering and adding a one-way sentinel do not determine entry identity."
             }
           ]
         },

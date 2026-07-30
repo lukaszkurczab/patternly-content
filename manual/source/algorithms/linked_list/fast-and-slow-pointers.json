@@ -3,7 +3,7 @@
   "batchId": "algorithms-linked-list-fast_and_slow_pointers-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -69,6 +69,12 @@
             {
               "type": "paragraph",
               "text": "Both pointers follow the same next relation, but fast covers twice as many edges. When fast exhausts the list, slow has covered approximately half the path. An array also finds a middle but uses O(n) extra space; binary search assumes random access; value changes are unrelated to structural distance. The exact even-length convention depends on initialization and loop guard."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Relative-speed signal",
+              "text": "Use fixed-speed pointers when repeated application of one successor relation encodes the desired relative position."
             }
           ]
         },
@@ -130,6 +136,12 @@
             {
               "type": "paragraph",
               "text": "Starting together sets both initial distances to zero. Every completed iteration adds one edge to slow's distance and two to fast's, so the distances are t and 2t. This relation explains middle finding and relative phase in cycles. Different start nodes or step sizes add an offset, and invalid end dereferences must still be prevented by the guard."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Distance invariant",
+              "text": "After t complete 1:2 updates from a shared start, slow has crossed t edges and fast has crossed 2t."
             }
           ]
         },
@@ -191,6 +203,12 @@
             {
               "type": "paragraph",
               "text": "With fast at B, the first loop moves slow to B and fast to D; the next guard fails because D.next is null, so B is returned. With both at A, two valid loops place slow at C, the second middle. Both conventions can be correct under different contracts. The required result must be stated before choosing initialization."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Phase rule",
+              "text": "For even lengths, derive initialization and guard from the required first- or second-middle convention."
             }
           ]
         },
@@ -252,12 +270,18 @@
             {
               "type": "paragraph",
               "text": "A sentinel does not alter the data-node chain, but it adds one edge to the traversal path from the chosen start. The slow/fast phase and termination position therefore need to be rederived. The routine might intentionally use a dummy to obtain a predecessor or first-middle convention, but that is a deliberate contract choice, not an automatic equivalence."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Offset rule",
+              "text": "An implementation-only predecessor still changes pointer phase when the algorithm traverses through it."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "answer_never_changes": "Logical membership and algorithmic phase are different; an implementation-only node can still affect traversal offsets.",
-          "values_shift": "Adding a predecessor does not mutate payloads.",
+        "values_shift": "Adding a predecessor changes traversal distance from the start but does not mutate any data-node payload.",
           "random_access_enabled": "A sentinel provides one fixed predecessor, not indexed access to arbitrary positions."
         }
       },
@@ -321,6 +345,12 @@
             {
               "type": "paragraph",
               "text": "The loop performs roughly n/2 iterations, but asymptotically that is O(n); each iteration does constant work. The method does not access position n/2 directly. slow and fast, plus fixed local state, use O(1) extra space. Building an array of node references would permit indexed lookup afterward but would cost O(n) preprocessing time and O(n) space."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Cost rule",
+              "text": "About n/2 constant-work iterations remain O(n), while a fixed number of references remains O(1) extra space."
             }
           ]
         }
@@ -377,6 +407,12 @@
             {
               "type": "paragraph",
               "text": "Fast and slow may visit many nodes with equal payloads, especially in lists with duplicates. Treating equal values as a meeting can terminate early at unrelated positions. Reference equality directly answers whether both variables designate one structural node; numeric indices are neither intrinsic nor required."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Meeting rule",
+              "text": "Pointer convergence means reference identity, never merely equal payloads or node types."
             }
           ]
         },
@@ -414,33 +450,36 @@
             "text": "Confirm fast.next is not null."
           },
           {
-            "id": "advance_slow",
-            "text": "Set slow = slow.next."
-          },
-          {
-            "id": "advance_fast",
-            "text": "Set fast = fast.next.next."
+            "id": "advance_pair",
+            "text": "Using the validated pre-update state, set slow = slow.next and fast = fast.next.next."
           }
         ],
         "canonicalOrder": [
           "check_fast",
           "check_fast_next",
-          "advance_slow",
-          "advance_fast"
+          "advance_pair"
         ],
         "scoringMethod": "adjacent_relations"
       },
       "scoringContract": {
         "type": "ordering",
-        "maxPoints": 3
+        "maxPoints": 2
       },
       "feedback": {
         "reason": "Both objects needed by the two-link expression must be validated before the fast update is evaluated.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Confirm `fast != null` before evaluating any field through fast.",
+                "Confirm `fast.next != null` before evaluating `fast.next.next`.",
+                "Using that validated pre-update state, advance slow once and fast twice."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The critical adjacent relation is check_fast -> check_fast_next because fast.next cannot be read when fast is null. check_fast_next must precede advance_fast because the expression reads fast.next.next. Advancing slow after the guards keeps the iteration atomic with respect to the stated condition. Implementations may combine the checks in a short-circuit condition, but the dependency order remains the same."
+              "text": "The two pointer assignments have no required order after both guards when each right-hand side uses the pre-update state; combining them removes the previous false ordering dependency. Short-circuit `fast != null && fast.next != null` expresses the same guard order."
             }
           ]
         }
@@ -498,6 +537,12 @@
             {
               "type": "paragraph",
               "text": "The fast/slow proof tracks relative distance under repeated application of node.next. Sorted pair search and variable windows also use two positions, but their movement is selected from data or validity conditions rather than a fixed 1:2 successor application. Those techniques need different invariants. The presence of two pointers alone is not the transfer signal."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "Reuse the standard proof only when both pointers repeatedly follow the same deterministic successor with fixed step counts."
             }
           ]
         },

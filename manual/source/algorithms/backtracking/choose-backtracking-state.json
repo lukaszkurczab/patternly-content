@@ -3,7 +3,7 @@
   "batchId": "backtracking-choose-backtracking-state-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -64,41 +64,31 @@
         "reason": "A start boundary records which candidate indices remain legal for the current combination.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
-            },
-            {
-              "type": "paragraph",
-              "text": "The current path alone may not distinguish whether earlier indices are still available, so the candidate boundary belongs in state."
-            },
-            {
-              "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A start boundary records which candidate indices remain legal for the current combination. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Global result count does not constrain the next candidate range. Sorting may be relevant elsewhere but does not replace the start boundary. Call count does not define legal candidates."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A start boundary records which candidate indices remain legal for the current combination."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "The boundary identifies legal suffix candidates"
+          },
+          {
+            "type": "paragraph",
+            "text": "If the current combination chose index i, the next call starts at i + 1. Restricting candidates to that suffix prevents index reuse and avoids producing the same unordered selection in different orders."
+          },
+          {
+            "type": "paragraph",
+            "text": "The path stores what has been selected, but equal path lengths can end at different indices and therefore have different legal suffixes. Result count, a sorted flag, and call count do not recover that boundary."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "For order-independent selections without reuse, carry the first still-eligible index."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "last_output_length": "Global result count does not constrain the next candidate range.",
-          "sorted_flag": "Sorting may be relevant elsewhere but does not replace the start boundary.",
-          "recursion_count": "Call count does not define legal candidates."
+        "last_output_length": "Completed-output count is global history and says nothing about which indices this partial combination may choose next.",
+        "sorted_flag": "Sorting can support duplicate handling, but a boolean flag does not identify the remaining candidate suffix.",
+        "recursion_count": "Call count measures execution history; two calls with the same count can have different paths and legal candidates."
         }
       },
       "taxonomy": {
@@ -146,41 +136,31 @@
         "reason": "Permutation state must distinguish every input position already selected in the current branch.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
-            },
-            {
-              "type": "paragraph",
-              "text": "A used structure supports arbitrary next-index order while preventing repetition of the same position."
-            },
-            {
-              "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Permutation state must distinguish every input position already selected in the current branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "A start index would prevent permutations that use a lower index later. Global output count does not identify branch-local availability. One value cannot represent all used positions."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Permutation state must distinguish every input position already selected in the current branch."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Permutations need arbitrary availability"
+          },
+          {
+            "type": "paragraph",
+            "text": "At each output position, any input index not already on the current path may be chosen. A boolean array, set, or n-bit mask answers that membership question and can be updated and restored with each choice."
+          },
+          {
+            "type": "paragraph",
+            "text": "A monotonically increasing start index would forbid valid orders such as choosing index 2 and then index 0, reducing permutations to combinations. One previous value or a global result count cannot encode all used positions."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "When choice order matters, track membership of every reusable candidate domain position rather than a forward-only boundary."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "start_only": "A start index would prevent permutations that use a lower index later.",
-          "result_count": "Global output count does not identify branch-local availability.",
-          "previous_value": "One value cannot represent all used positions."
+        "start_only": "A forward-only boundary prevents choosing a lower index later and therefore omits valid permutation orders.",
+        "result_count": "The number of finished permutations is shared across branches and cannot identify availability in the current path.",
+        "previous_value": "Knowing only the last value leaves all earlier selections unknown, so a previously used position can be chosen again."
         }
       },
       "taxonomy": {
@@ -228,41 +208,31 @@
         "reason": "Remaining target is a sufficient summary of the path sum for this constraint.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
-            },
-            {
-              "type": "paragraph",
-              "text": "It supports completion at zero and sound positive-only overshoot pruning without scanning the full path."
-            },
-            {
-              "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Remaining target is a sufficient summary of the path sum for this constraint. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "The maximum does not summarize current progress. Different choices at the same depth can have different sums. Output count does not describe branch feasibility."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Remaining target is a sufficient summary of the path sum for this constraint."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Summarize additive progress"
+          },
+          {
+            "type": "paragraph",
+            "text": "Initialize `remainingTarget = target`. Choosing value x creates child state `remainingTarget - x`; zero means the chosen path reaches the target exactly."
+          },
+          {
+            "type": "paragraph",
+            "text": "Because every candidate is positive, a negative remainder cannot return to zero, so it is a sound failure condition. Depth alone is insufficient because different values chosen at the same depth produce different sums."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "For an additive target, carry either the current total or the remainder as one canonical summary, not both."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "global_max": "The maximum does not summarize current progress.",
-          "call_depth_only": "Different choices at the same depth can have different sums.",
-          "result_size": "Output count does not describe branch feasibility."
+        "global_max": "The largest candidate is fixed input information and does not reveal how much this branch has accumulated.",
+        "call_depth_only": "Paths of equal depth can choose different positive values and therefore have different remaining sums.",
+        "result_size": "The number of completed solutions is global output metadata and does not determine whether this branch can reach the target."
         }
       },
       "taxonomy": {
@@ -310,41 +280,31 @@
         "reason": "The call coordinates and target position do not encode which cells were used earlier in the branch.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
-            },
-            {
-              "type": "paragraph",
-              "text": "Visited state can be represented explicitly or by reversible in-place marking, but it must be path-local."
-            },
-            {
-              "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The call coordinates and target position do not encode which cells were used earlier in the branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Earlier output count does not prevent current-path reuse. Row aggregates do not encode used cells. Dimensions support bounds checks but not path reuse constraints."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The call coordinates and target position do not encode which cells were used earlier in the branch."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Coordinates do not encode path history"
+          },
+          {
+            "type": "paragraph",
+            "text": "Two calls can be at the same `(row, col, wordIndex)` after different routes. A neighboring cell may be legal in one route and already used in the other, so those three scalars do not fully determine the next moves."
+          },
+          {
+            "type": "paragraph",
+            "text": "Store the current path's visited cells in a set or matrix, or encode them by reversible board marking. Restore the mark before a sibling so visited means “used by this candidate path,” not globally unavailable."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "If legality depends on the route, state must include a route summary in addition to the current location."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "global_result_count": "Earlier output count does not prevent current-path reuse.",
-          "row_sum": "Row aggregates do not encode used cells.",
-          "board_size_only": "Dimensions support bounds checks but not path reuse constraints."
+        "global_result_count": "Earlier outputs do not reveal which cells the current candidate path has used.",
+        "row_sum": "A row aggregate loses cell identity and cannot answer whether a specific neighbor is already on the path.",
+        "board_size_only": "Dimensions support bounds checks, but every route through the same board shares them and can have different used cells."
         }
       },
       "taxonomy": {
@@ -357,7 +317,7 @@
     },
     {
       "id": "alg-backtracking-state-005",
-      "prompt": "Which state is redundant in a combination solver when current path length can be read in O(1)?",
+    "prompt": "A k-combination solver also requires the selected values to reach a target sum. Which state is redundant when current path length can be read in O(1)?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -392,41 +352,31 @@
         "reason": "State that is exactly and cheaply derivable need not be duplicated.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
-            },
-            {
-              "type": "paragraph",
-              "text": "Redundant mutable fields can drift out of sync and enlarge the proof burden."
-            },
-            {
-              "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: State that is exactly and cheaply derivable need not be duplicated. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "This is not derivable from path length alone. The output under construction is necessary. This may summarize feasibility more efficiently than recomputing the path sum."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "State that is exactly and cheaply derivable need not be duplicated."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Do not duplicate an exact derived value"
+          },
+          {
+            "type": "paragraph",
+            "text": "`chosenCount` and `path.length` represent the same quantity. If both are mutable, every choose and undo must update both correctly; one missed update makes completion checks disagree with the actual path."
+          },
+          {
+            "type": "paragraph",
+            "text": "The path holds the candidate output, the start index identifies legal future indices, and remaining target summarizes the independent sum constraint. Those facts are not determined by path length alone."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Minimal-state rule",
+            "text": "Keep one canonical owner for each fact; derive cheap views instead of synchronizing duplicate fields."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "start_index": "This is not derivable from path length alone.",
-          "current_path": "The output under construction is necessary.",
-          "remaining_target": "This may summarize feasibility more efficiently than recomputing the path sum."
+        "start_index": "Equal-length paths can end at different indices and therefore have different legal candidate suffixes.",
+        "current_path": "The selected values are the partial output itself and cannot be reconstructed from its length.",
+        "remaining_target": "The same number of selections can produce different sums, so path length does not determine the unresolved target."
         }
       },
       "taxonomy": {
@@ -474,41 +424,31 @@
         "reason": "The current path is mutable state describing the active root-to-node branch.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
-            },
-            {
-              "type": "paragraph",
-              "text": "It may be implemented as one shared object for efficiency, but choose-recurse-unchoose semantics make it logically branch-local."
-            },
-            {
-              "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The current path is mutable state describing the active root-to-node branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "The path changes across branches and cannot be treated as immutable configuration. The path represents the current partial solution. Candidates and selected path are different state roles."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The current path is mutable state describing the active root-to-node branch."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Physical sharing does not change logical ownership"
+          },
+          {
+            "type": "paragraph",
+            "text": "The path describes exactly the choices on the active root-to-current-node route. A child appends its choice; after that child returns, undo must restore the parent's path before the next sibling runs."
+          },
+          {
+            "type": "paragraph",
+            "text": "One mutable list can be reused for efficiency, but its contents remain logically branch-local. Immutable candidate input and fixed constraints may be shared without restoration because branches never change them."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Classify state by whether its value changes with the active branch, not by whether one object instance is physically shared."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "global_configuration": "The path changes across branches and cannot be treated as immutable configuration.",
-          "result_metadata": "The path represents the current partial solution.",
-          "candidate_catalog": "Candidates and selected path are different state roles."
+        "global_configuration": "Every choice changes the path, so treating it as immutable shared configuration would leak one branch into another.",
+        "result_metadata": "The path is the candidate currently being constructed, not a statistic about already completed results.",
+        "candidate_catalog": "The catalog contains all possible input choices; the path contains only choices selected by the active branch."
         }
       },
       "taxonomy": {
@@ -556,41 +496,31 @@
         "reason": "The next unprocessed position determines the remaining suffix.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
-            },
-            {
-              "type": "paragraph",
-              "text": "The chosen segments remain in the path for output, while start directs candidate boundary enumeration."
-            },
-            {
-              "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The next unprocessed position determines the remaining suffix. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "The full boundary history may be redundant for finding the next suffix. Output count does not locate the unresolved suffix. That does not identify where the remaining input begins."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The next unprocessed position determines the remaining suffix."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "One boundary identifies the unresolved suffix"
+          },
+          {
+            "type": "paragraph",
+            "text": "Maintain the invariant that path segments cover exactly [0, start). Then the unresolved input is `string[start:]`, and every next segment must begin at `start` and choose an end after it."
+          },
+          {
+            "type": "paragraph",
+            "text": "The path already preserves chosen segments for output. Earlier boundaries are unnecessary for locating the next suffix, while result count and the previous segment's final character lose the required position."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "For left-to-right partitioning, carry the first unprocessed index and let the path own output history."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "all_previous_end_indices": "The full boundary history may be redundant for finding the next suffix.",
-          "result_count": "Output count does not locate the unresolved suffix.",
-          "last_character_only": "That does not identify where the remaining input begins."
+        "all_previous_end_indices": "The current start already locates the suffix, and the path retains prior segments, so a second boundary history duplicates information.",
+        "result_count": "The number of completed partitions is unrelated to the current branch's first uncovered character.",
+        "last_character_only": "The same character can occur at many positions, so its value does not identify where the remaining input begins."
         }
       },
       "taxonomy": {
@@ -638,41 +568,31 @@
         "reason": "A compact boundary can identify the unresolved region without duplicating immutable input data.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
-            },
-            {
-              "type": "paragraph",
-              "text": "State should preserve necessary information while avoiding redundant materialization."
-            },
-            {
-              "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A compact boundary can identify the unresolved region without duplicating immutable input data. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Indices are the standard way to identify suffix boundaries. Substrings do have length. Recursive calls can share immutable input with boundary state."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A compact boundary can identify the unresolved region without duplicating immutable input data."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Share immutable data and pass a boundary"
+          },
+          {
+            "type": "paragraph",
+            "text": "The pair `(originalString, start)` uniquely identifies the same suffix as a copied substring. Advancing the boundary is O(1) state and lets every call share the original immutable characters."
+          },
+          {
+            "type": "paragraph",
+            "text": "In runtimes where slicing copies characters, materializing a suffix at every node adds repeated time and memory. A slice view can avoid copying but may retain a large backing string; that is a representation-specific tradeoff, not a reason indices are invalid."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Prefer compact coordinates into shared immutable input when they identify the same unresolved region unambiguously."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "indices_invalid": "Indices are the standard way to identify suffix boundaries.",
-          "substrings_no_length": "Substrings do have length.",
-          "recursion_requires_copy": "Recursive calls can share immutable input with boundary state."
+        "indices_invalid": "An index precisely identifies a position when paired with the original string and is the standard suffix boundary representation.",
+        "substrings_no_length": "Substring values have lengths; the concern is repeated materialization or backing-storage retention, not missing metadata.",
+        "recursion_requires_copy": "Recursive calls can safely share immutable input and receive only their own scalar boundary."
         }
       },
       "taxonomy": {
@@ -720,41 +640,31 @@
         "reason": "Redundant mutable state increases synchronization obligations.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Two equations for one fact can drift"
             },
             {
               "type": "paragraph",
-              "text": "Prefer one canonical representation or derive one value from the other when the cost is acceptable."
+            "text": "If `remainingTarget = target - currentSum`, choosing x must subtract x from the remainder and add x to the sum; undo must reverse both. Missing any one update breaks the invariant and can cause false completion or pruning."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Redundant mutable state increases synchronization obligations. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Redundant state does not automatically improve correctness. Duplication is not an inevitable consequence. Additional fields do not reduce recursion state."
+            "text": "Keep one canonical mutable value and derive the other when needed, unless profiling proves a real cost that justifies the additional synchronization proof."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Redundant mutable state increases synchronization obligations."
+            "title": "Canonical-state rule",
+            "text": "When two fields are algebraically equivalent, choose one owner and treat the other as a derived view."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "automatic_pruning": "Redundant state does not automatically improve correctness.",
-          "duplicate_results": "Duplication is not an inevitable consequence.",
-          "constant_space": "Additional fields do not reduce recursion state."
+        "automatic_pruning": "A field enables pruning only when code applies a proved feasibility rule; redundancy alone does nothing automatically.",
+        "duplicate_results": "Inconsistent state can cause many defects, but duplicate output is not inevitable and is not the defining risk.",
+        "constant_space": "Adding mutable fields increases per-call or shared state and does not remove the recursion stack."
         }
       },
       "taxonomy": {
@@ -804,44 +714,34 @@
         "reason": "Sufficient state must identify the partial output, legal candidate range, and remaining completion requirement.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Account for each semantic question"
             },
             {
               "type": "paragraph",
-              "text": "Instrumentation such as global call count is not part of the search semantics."
+            "text": "The path answers what has been selected; the start index answers which indices remain legal; the fixed k or a canonical remaining-slots value answers when the selection is complete and whether enough candidates remain."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Sufficient state must identify the partial output, legal candidate range, and remaining completion requirement. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "It does not affect legal completion."
+            "text": "When path length is O(1), remaining slots can be derived as `k - path.length`; storing both is optional rather than necessary. Global call count is instrumentation and cannot affect legal completion."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Sufficient state must identify the partial output, legal candidate range, and remaining completion requirement."
+            "title": "Sufficiency test",
+            "text": "A call must answer completion and legal-next-choice queries from its state plus immutable configuration."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "global_call_count": "It does not affect legal completion."
+        "global_call_count": "Execution count neither identifies the partial combination nor changes which candidate indices can complete it."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "start_index": "It prevents reusing earlier indices and duplicate orderings.",
-          "current_path": "It represents the partial combination.",
-          "remaining_slots": "It can support completion and capacity pruning."
+        "start_index": "It identifies the candidate suffix and prevents reuse or reversed duplicate orderings.",
+        "current_path": "It is the partial combination that will be copied at completion.",
+        "remaining_slots": "As a canonical field or derived value, it supports exact-size completion and remaining-capacity pruning."
         }
       },
       "taxonomy": {
@@ -891,44 +791,34 @@
         "reason": "A bitmask compactly represents membership, but not the ordered path itself.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "A mask stores membership, not sequence"
             },
             {
               "type": "paragraph",
-              "text": "Permutation output still needs path order or an equivalent ordered construction."
+            "text": "Bit i equals one exactly when input position i is used. Masking its n-bit complement yields available positions, and popcount yields how many positions are selected."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A bitmask compactly represents membership, but not the ordered path itself. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "A set of bits does not encode ordering."
+            "text": "The same mask represents every ordering of the same selected positions, so it cannot reconstruct the permutation prefix. Keep an ordered path or an equivalent parent-decision history for output order."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A bitmask compactly represents membership, but not the ordered path itself."
+            "title": "Transfer rule",
+            "text": "Use masks for finite-domain membership and separate state for any order that affects the result."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "selected_order": "A set of bits does not encode ordering."
+        "selected_order": "Positions chosen as 1 then 3 and as 3 then 1 produce the same mask, so order is lost."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "used_positions": "Each bit can represent one input position.",
-          "available_positions": "Availability is derivable from the used mask.",
-          "chosen_count": "The count is derivable from the mask."
+        "used_positions": "Each of the n bits records membership of one input position.",
+        "available_positions": "Within the n-bit domain, complementing used membership gives availability.",
+        "chosen_count": "Counting set bits derives the selected-position count without another field."
         }
       },
       "taxonomy": {
@@ -978,44 +868,34 @@
         "reason": "Grid-search state combines location, target progress, and branch-local reuse constraints.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Three independent branch facts"
             },
             {
               "type": "paragraph",
-              "text": "Global output metadata does not replace those branch semantics."
+            "text": "Coordinates identify where the branch is, target progress identifies which symbol must match now, and path-visited state determines whether that cell and its neighbors are reusable in this candidate."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Grid-search state combines location, target progress, and branch-local reuse constraints. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "It does not determine current branch legality."
+            "text": "Removing any one merges states with different legal continuations. The count of completed paths is global history and cannot answer any of those branch-local questions."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Grid-search state combines location, target progress, and branch-local reuse constraints."
+            "title": "Sufficiency test",
+            "text": "State must distinguish calls whenever their next required symbol or legal neighbors differ."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "completed_result_count": "It does not determine current branch legality."
+        "completed_result_count": "Earlier successes do not identify this call's cell, next target symbol, or used-cell restrictions."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "current_cell": "They identify the search position.",
-          "target_progress": "It identifies the next required symbol.",
-          "path_visited": "It enforces no-reuse within the branch."
+        "current_cell": "Row and column identify the board value and neighbor coordinates under consideration.",
+        "target_progress": "Progress identifies the exact target symbol the current cell must satisfy.",
+        "path_visited": "Path-local membership enforces the no-reuse constraint for this candidate."
         }
       },
       "taxonomy": {
@@ -1038,9 +918,9 @@
             "id": "cheaply_derivable",
             "text": "It is deterministically and cheaply derived from other state."
           },
-          {
-            "id": "must_sync_on_undo",
-            "text": "Every choose and undo operation must update it in lockstep with another field."
+        {
+          "id": "must_sync_on_undo",
+          "text": "It always changes in lockstep with another field and is exactly derivable from that field."
           },
           {
             "id": "never_read",
@@ -1065,44 +945,34 @@
         "reason": "State should be minimal but sufficient.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Redundancy versus necessity"
             },
             {
               "type": "paragraph",
-              "text": "Essential legality information cannot be removed merely to reduce field count."
+            "text": "A cheaply derived field duplicates a fact; a field always synchronized with and derivable from another creates drift risk; a never-read field has no semantic effect. Each is a removal candidate."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: State should be minimal but sufficient. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "That makes it essential rather than redundant."
+            "text": "By contrast, the only field that answers candidate legality is necessary unless an equivalent representation replaces it. Minimality must not make state insufficient."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "State should be minimal but sufficient."
+            "title": "Deletion test",
+            "text": "Remove a field only if every completion, legality, pruning, update, and output query remains answerable."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "branch_legality": "That makes it essential rather than redundant."
+        "branch_legality": "If no other state can decide whether a candidate is legal, removing the field merges semantically different nodes."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "cheaply_derivable": "Duplicating it may be unnecessary.",
-          "must_sync_on_undo": "This creates drift risk.",
-          "never_read": "Unused state has no semantic purpose."
+        "cheaply_derivable": "A cheap deterministic derivation keeps one canonical owner and avoids synchronization.",
+        "must_sync_on_undo": "Exact derivability plus lockstep mutation adds an unnecessary opportunity for choose/undo drift.",
+        "never_read": "A field unused by every semantic decision or output has no effect on behavior."
         }
       },
       "taxonomy": {
@@ -1151,44 +1021,34 @@
         "reason": "Shared immutable configuration is distinct from mutable branch state.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Separate configuration from branch state"
             },
             {
               "type": "paragraph",
-              "text": "Keeping the distinction explicit reduces accidental cross-branch contamination."
+            "text": "The original candidates and fixed target or constraints have the same value for every node, so branches can safely share them as immutable configuration."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Shared immutable configuration is distinct from mutable branch state. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "The path changes per branch and requires isolation or restoration. Visited state is branch-local in reusable-cell path search."
+            "text": "The current path and visited set change with choices. They must be copied per child or mutated and restored before siblings; treating them as immutable shared data leaks one branch into another."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Shared immutable configuration is distinct from mutable branch state."
+            "title": "Ownership rule",
+            "text": "Share facts that never change; isolate or restore facts whose value depends on the active root-to-node path."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "current_path": "The path changes per branch and requires isolation or restoration.",
-          "path_visited": "Visited state is branch-local in reusable-cell path search."
+        "current_path": "Each branch selects different values, so the path must be isolated or restored between siblings.",
+        "path_visited": "Used-cell membership depends on the current route and cannot be one immutable set shared by all routes."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "input_candidates": "All branches may safely read the same immutable input.",
-          "target_contract": "The contract is shared configuration."
+        "input_candidates": "When branches do not mutate it, every call can read one candidate list safely.",
+        "target_contract": "The fixed target and constraint definition govern every branch without changing."
         }
       },
       "taxonomy": {
@@ -1239,34 +1099,33 @@
         "reason": "State design follows from the result and transition contracts.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Derive fields from semantic queries"
             },
             {
               "type": "paragraph",
-              "text": "Choosing fields before defining their semantic queries often produces redundant or insufficient state."
+            "text": "Completion defines what the state must prove at a leaf. Legality defines which facts distinguish the possible children. Only then can fields be selected to answer those queries without duplication."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
+            "text": "Finally specify choose and undo for every mutable field; otherwise the declared state invariant may hold for the child but not be restored for its siblings."
             },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: State design follows from the result and transition contracts. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why this order matters",
-              "text": "The order follows causal dependencies: Define what a complete valid result means. Then Define which next choices are legal from a partial state. Then Choose the minimal fields needed to answer completion and legality questions. Then Specify how every field changes and is restored for one branch. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "State design follows from the result and transition contracts."
+          {
+            "type": "ordered_list",
+            "items": [
+              "Define completion.",
+              "Define legal next choices.",
+              "Select the minimal sufficient fields.",
+              "Define each field's child update and exact restoration."
+            ]
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Do not invent fields first; derive them from the questions each recursive call must answer."
             }
           ]
         }
@@ -1279,9 +1138,12 @@
         "problemArchetypeId": "construct_valid_assignment"
       }
     },
-    {
-      "id": "alg-backtracking-state-016",
-      "prompt": "Arrange the state update for a target-sum branch using remainingTarget.",
+  {
+    "id": "alg-backtracking-state-016",
+    "prompt": "Arrange the state update for a target-sum branch using remainingTarget.",
+    "constraints": [
+      "remainingTarget is mutable branch state updated in place."
+    ],
       "difficulty": "foundational",
       "interaction": {
         "type": "ordering",
@@ -1319,34 +1181,33 @@
         "reason": "The child state must reflect the choice, and the parent state must be restored afterward.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Preserve the remainder invariant"
             },
             {
               "type": "paragraph",
-              "text": "This transition keeps remainingTarget synchronized with the current path."
+            "text": "Maintain `remainingTarget = target - sum(path)`. After confirming candidate x is legal, subtracting x makes the invariant true for the child path that includes x."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
+            "text": "After recursion, add x back so the next sibling sees the parent's original remainder. Restoring before recursion would erase the choice; omitting restoration would accumulate values from unrelated siblings."
             },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The child state must reflect the choice, and the parent state must be restored afterward. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why this order matters",
-              "text": "The order follows causal dependencies: Verify that the candidate is legal for the current state. Then Subtract the chosen value from remainingTarget. Then Explore the child state. Then Add the value back when returning to the parent state. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The child state must reflect the choice, and the parent state must be restored afterward."
+          {
+            "type": "ordered_list",
+            "items": [
+              "Check x against the parent state.",
+              "Subtract x to create the child remainder.",
+              "Recurse into the child.",
+              "Add x back to restore the parent."
+            ]
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Every in-place choose update needs an inverse undo after the child returns."
             }
           ]
         }
@@ -1400,34 +1261,24 @@
         "reason": "The used array and active recursion path each scale linearly with n.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Add simultaneous auxiliary structures"
             },
             {
               "type": "paragraph",
-              "text": "Their sum remains O(n). The potentially factorial output is excluded by the stated auxiliary-space accounting."
+            "text": "The boolean used array stores n entries. The mutable permutation path holds at most n values, and the active call stack has at most n frames."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
+            "text": "These structures coexist, so their space is O(n) + O(n) + O(n) = O(n). Factorially many materialized permutations are excluded by the prompt; total search work does not become simultaneous memory."
             },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The used array and active recursion path each scale linearly with n. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Check each dimension independently",
-              "text": "The used array and active recursion path each scale linearly with n. Count the number of explored states or produced values separately from the maximum live recursion state; one quantity does not automatically determine the other."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The used array and active recursion path each scale linearly with n."
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Space rule",
+            "text": "Sum structures live at the same time; do not multiply them by the number of sequentially explored branches."
             }
           ]
         }
@@ -1440,12 +1291,13 @@
         "problemArchetypeId": "enumerate_permutations"
       }
     },
-    {
-      "id": "alg-backtracking-state-018",
-      "prompt": "A grid path solver uses an R by C visited matrix and recursion depth at most L. Select its auxiliary-space bound, excluding the immutable grid.",
-      "constraints": [
-        "The visited matrix is stored explicitly.",
-        "At most L recursive calls are active."
+  {
+    "id": "alg-backtracking-state-018",
+    "prompt": "A grid search solver uses an R by C auxiliary visited matrix and an independent recursion-depth cap L. Select its auxiliary-space bound, excluding the immutable grid.",
+    "constraints": [
+      "The visited matrix is stored explicitly.",
+      "At most L recursive calls are active.",
+      "No asymptotic relation between L and RC is assumed."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -1481,34 +1333,24 @@
         "reason": "Explicit visited state and the active recursion stack contribute separate terms.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "State must be sufficient"
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Keep independent parameter terms"
             },
             {
               "type": "paragraph",
-              "text": "If visited is instead encoded by reversible in-place board mutation, the explicit RC term may disappear, but that is a different state representation."
+            "text": "The explicit matrix contains R · C entries, giving O(RC). At most L call frames coexist, giving O(L) stack space."
             },
             {
               "type": "paragraph",
-              "text": "State is the information a recursive call needs to decide what is legal next. Keep immutable input shared, keep branch-local facts separate, and carry a field only when it cannot be derived cheaply and unambiguously from the other state."
+            "text": "Because the prompt declares no relation between the parameters, neither term absorbs the other, so auxiliary space is O(RC + L). Reversible in-place board marking could remove the matrix term, but that is a different representation."
             },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Explicit visited state and the active recursion stack contribute separate terms. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Check each dimension independently",
-              "text": "Explicit visited state and the active recursion stack contribute separate terms. Count the number of explored states or produced values separately from the maximum live recursion state; one quantity does not automatically determine the other."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Explicit visited state and the active recursion stack contribute separate terms."
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Space rule",
+            "text": "For independent dimensions, retain additive terms unless the contract proves one asymptotically dominates."
             }
           ]
         }

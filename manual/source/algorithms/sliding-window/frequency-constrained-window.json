@@ -3,7 +3,7 @@
   "batchId": "algorithms-sliding-window-frequency-constrained-window",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -32,6 +32,7 @@
       "prompt": "A window must contain at most K distinct values. The incoming value x currently has frequency 0 in the window. Which state update is correct?",
       "constraints": [
         "A frequency map and an integer distinctCount are maintained.",
+        "K is a nonnegative integer.",
         "The window is repaired only when distinctCount > K."
       ],
       "difficulty": "introductory",
@@ -101,12 +102,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "shrink_until_one",
-            "text": "Remove characters from the left, updating their frequencies, until the incoming character's frequency returns to 1."
-          },
-          {
             "id": "remove_incoming",
             "text": "Discard the newly added character and keep the previous window unchanged."
+          },
+          {
+            "id": "shrink_until_one",
+            "text": "Remove characters from the left, updating their frequencies, until the incoming character's frequency returns to 1."
           },
           {
             "id": "shrink_once",
@@ -190,7 +191,21 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The map and boundaries must describe the same range after each completed removal. Decrementing first reveals whether another copy of y remains. Only a zero count means y is no longer distinct in the window. Advancing left before identifying and updating the outgoing value risks mutating the wrong key unless y was explicitly cached; decrementing distinctCount unconditionally breaks windows with duplicates. The same zero-crossing rule applies to fixed-size frequency windows. If the post-decrement count remains positive, both the key and distinctCount must remain unchanged because the value is still represented inside the boundaries."
+              "text": "The map and boundaries must describe the same range after each completed removal. The outgoing value is read while `left` still identifies it; the frequency transition then determines whether the distinct summary changes."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Decrement `freq[y]` to remove this one occurrence from the maintained multiset.",
+                "If the new count is zero, delete key `y` and decrement `distinctCount`; if it remains positive, change neither.",
+                "Advance `left` only after the state no longer includes the outgoing position."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Presence changes only at 1→0",
+              "text": "Decrementing `distinctCount` for every removal undercounts windows containing another copy. Advancing before reading or caching `y` risks updating the new leftmost key instead. The same zero-crossing rule applies to fixed-size frequency windows."
             }
           ]
         }
@@ -216,16 +231,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "difference_of_at_most",
-            "text": "One at-most window counts ranges with 0..K distinct values; compute atMost(K) − atMost(K−1) to isolate exactly K."
-          },
-          {
             "id": "one_window_equals_exact",
             "text": "After repairing to at most K, add the current window length and treat every counted suffix as exactly K."
           },
           {
             "id": "fixed_k_length",
             "text": "Use a fixed window of length K because exactly K distinct values are required."
+          },
+          {
+            "id": "difference_of_at_most",
+            "text": "One at-most window counts ranges with 0..K distinct values; compute atMost(K) − atMost(K−1) to isolate exactly K."
           },
           {
             "id": "set_without_counts",
@@ -276,10 +291,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "premature_absence",
-            "text": "The state claims 'a' is absent even though one copy remains, so later distinctness and duplicate checks are wrong."
-          },
-          {
             "id": "no_bug",
             "text": "There is no bug because a set needs only one copy of each character."
           },
@@ -290,6 +301,10 @@
           {
             "id": "sort_order_bug",
             "text": "The bug is that set iteration order differs from string order."
+          },
+          {
+            "id": "premature_absence",
+            "text": "The state claims 'a' is absent even though one copy remains, so later distinctness and duplicate checks are wrong."
           }
         ],
         "acceptedOptionIds": [

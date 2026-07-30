@@ -3,7 +3,7 @@
   "batchId": "algorithms-prefix-sums-answer-range-queries-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -101,12 +101,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "shared_prefix_cancels",
-            "text": "Both states contain the contribution before l, so subtracting cancels that shared prefix and leaves the requested range."
-          },
-          {
             "id": "array_is_sorted",
             "text": "Values before l are smaller, so subtraction discards them after sorting."
+          },
+          {
+            "id": "shared_prefix_cancels",
+            "text": "Both states contain the contribution before l, so subtracting cancels that shared prefix and leaves the requested range."
           },
           {
             "id": "window_is_current",
@@ -200,7 +200,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The prefix contract is half-open, so an inclusive right endpoint must first become r + 1. The right state contains the range and the shared leading segment; the left state identifies the segment to remove. The final subtraction is justified by those meanings, not by memorizing a formula detached from its convention."
+              "text": "The prefix contract is half-open: P[x] contains indices 0 through x - 1. The query contract is inclusive, so its right endpoint must be translated before either state is interpreted."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Translate inclusive r to the boundary immediately after it, r + 1.",
+                "Read P[r + 1]; it contains A[0..l-1] followed by every requested element A[l..r].",
+                "Read P[l]; it contains exactly the shared leading contribution A[0..l-1].",
+                "Compute P[r + 1] - P[l] so the identical leading contribution cancels.",
+                "Interpret what remains as the inclusive range sum A[l] + ... + A[r]."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Derive from the convention",
+              "text": "The formula is legal because of what each boundary contains. If a different prefix convention is used, derive its matching endpoints instead of reusing `r + 1` mechanically."
             }
           ]
         }
@@ -226,16 +242,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "full_minus_empty",
-            "text": "P[n] - P[0]"
-          },
-          {
             "id": "last_prefix_only",
             "text": "P[n - 1] - P[0]"
           },
           {
             "id": "exclude_first",
             "text": "P[n] - P[1]"
+          },
+          {
+            "id": "full_minus_empty",
+            "text": "P[n] - P[0]"
           },
           {
             "id": "reverse_full",
@@ -287,10 +303,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "constant_boundary_reads",
-            "text": "Each query reads two stored boundary states, while moving one window between unrelated intervals may cross thousands of elements."
-          },
-          {
             "id": "prefix_is_sorted",
             "text": "The prefix array is automatically sorted even when values are negative."
           },
@@ -301,6 +313,10 @@
           {
             "id": "prefix_uses_no_space",
             "text": "The prefix is preferable because it stores no auxiliary state."
+          },
+          {
+            "id": "constant_boundary_reads",
+            "text": "Each query reads two stored boundary states, while moving one window between unrelated intervals may cross thousands of elements."
           }
         ],
         "acceptedOptionIds": [
@@ -445,7 +461,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The query does not scan the requested range, so its time is independent of range length. It uses O(1) temporary space once the O(n) prefix state has already been materialized. This distinction avoids the false claim that the overall prefix technique requires no auxiliary space: the banked state is linear even though each query’s incremental workspace is constant."
+              "text": "One query reads P[r + 1] and P[l], performs one subtraction, and stores only a constant number of temporary numeric values. The operation count and temporary storage therefore do not depend on n or on r - l + 1: query time and additional working space are both O(1). The pre-existing prefix still occupies O(n), but the prompt explicitly excludes it from per-query working space."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(log n) would imply a search or tree traversal that is not performed. O(r - l + 1) would scan each element in the requested range, and O(n) would scan the array; both ignore the stored boundary states. The same alternatives are wrong for working space because the query allocates neither a traversal stack nor storage proportional to the range or array."
             }
           ]
         }
@@ -471,12 +493,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "range_xor",
-            "text": "Range XOR, using X[r + 1] XOR X[l]."
-          },
-          {
             "id": "range_minimum_subtraction",
             "text": "Range minimum, using minPrefix[r + 1] - minPrefix[l]."
+          },
+          {
+            "id": "range_xor",
+            "text": "Range XOR, using X[r + 1] XOR X[l]."
           },
           {
             "id": "range_median_subtraction",

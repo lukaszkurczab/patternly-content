@@ -3,7 +3,7 @@
   "batchId": "contrast-hash-map-vs-sorting-memory-vs-mutation-tradeoff-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -75,28 +75,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Immutability is a correctness constraint"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "Scan the array from left to right. For each value, first test whether it is already in a set; if so, a duplicate exists, otherwise insert it. The scan reads the original sequence but never writes or reorders it, so the byte-for-byte input contract is preserved."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "Why the cost is O(k)",
+              "text": "After any prefix, the set contains at most one entry for each of the k distinct values seen so far. Its peak auxiliary state is therefore O(k), which becomes O(n) when all n values are distinct."
             },
             {
               "type": "paragraph",
-              "text": "Hashing provides equality state without reordering the input, but its memory cost must be accepted explicitly."
+              "text": "An in-place sort could make duplicates adjacent, but even a temporary reorder violates the stated contract. Comparing only original neighbors is legal but incomplete because equal values can begin far apart. Reusable rule: reject a resource-saving strategy before comparing speed if it violates an observable input contract."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_in_place": "Mutating the input would be incorrect.",
-          "ignore_contract": "Mutation is an observable correctness constraint.",
-          "adjacent_only": "Duplicates may be nonadjacent."
+          "sort_in_place": "Lower auxiliary memory cannot compensate for changing bytes that the caller requires to remain unchanged.",
+          "ignore_contract": "Headline time omits the decisive legality condition: mutation is observable output behavior under this contract.",
+          "adjacent_only": "Original adjacency does not imply equality grouping; for example, [1, 2, 1] has a nonadjacent duplicate."
         }
       },
       "taxonomy": {
@@ -107,7 +107,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-memory-002",
-      "prompt": "The input may be reordered, memory is tightly constrained, and the result only asks whether any duplicate exists. Which option can reduce auxiliary memory?",
+      "prompt": "The input may be reordered, memory is tightly constrained, the result only asks whether any duplicate exists, and worst-case time must be no worse than O(n log n). Which option can reduce auxiliary memory?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -145,28 +145,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Reuse input storage when mutation is legal"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "Sorting the original array groups equal values into adjacent positions. A single linear scan can then detect whether any neighboring pair is equal. Because the prompt permits reordering, the array itself can hold the sorted state instead of allocating one hash entry per distinct value."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "State the concrete sort",
+              "text": "An in-place heapsort can use O(1) auxiliary space; an in-place introsort commonly uses O(log n) stack. Either is asymptotically below an O(n) set while keeping the required O(n log n) worst-case bound, but the implementation-specific memory claim must be named."
             },
             {
               "type": "paragraph",
-              "text": "The exact sort algorithm's stack or buffer contract still needs to be stated."
+              "text": "A copied sort spends O(n) memory and loses the stated advantage. A set also reaches O(n) entries when all values are distinct. All-pairs comparison uses O(1) space but O(n²) time, so the new time bound excludes it. Reusable rule: a time-space tradeoff is meaningful only after both limits are in the prompt."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_set": "The set may contain O(n) entries.",
-          "copy_sort": "The copy adds O(n) auxiliary storage.",
-          "pair_check": "O(n²) time may be infeasible and is not the intended hash-versus-sort tradeoff."
+          "hash_set": "With all values distinct, the set retains n entries, so its auxiliary space is O(n), not constant.",
+          "copy_sort": "Preserving the original through a full copy allocates n additional values and therefore O(n) auxiliary space.",
+          "pair_check": "Although it avoids a table, checking all n(n-1)/2 pairs is Θ(n²) and violates the stated O(n log n) worst-case limit."
         }
       },
       "taxonomy": {
@@ -215,28 +215,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Sorting has no universal space bound"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "\"Sorting\" names a family of algorithms, not one implementation. Auxiliary space counts memory created during execution: a recursion stack, temporary merge buffer, decorated records, and any copy required because the original input may not change."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "Three different profiles",
+              "text": "In-place heapsort can use O(1) auxiliary space, typical introsort uses O(log n) stack, and array merge sort commonly uses O(n) temporary storage. If the input is immutable, even the first two need an O(n) copy unless they sort a separate existing representation."
             },
             {
               "type": "paragraph",
-              "text": "An in-place introsort may use O(log n) stack, merge sort commonly uses O(n) buffer, and preserving the original input may require an O(n) copy."
+              "text": "Stability can further restrict the eligible implementations, but it does not by itself establish one universal bound. Reusable rule: never quote the space of an operation family; name the concrete algorithm, mutation policy, stability requirement, and live representations."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sorting_never_memory": "Many sorts use stacks or buffers.",
-          "hash_same": "Their representations and algorithms differ.",
-          "output_only": "Auxiliary working memory is part of the strategy cost."
+          "sorting_never_memory": "Even an in-place comparison sort may use a recursion stack, and other sorts allocate buffers or copies.",
+          "hash_same": "A table retains buckets and entries, while a sort's stack, buffer, and copy depend on the chosen implementation and contract.",
+          "output_only": "Auxiliary working memory is a separate strategy cost even when the required output is excluded from that measure."
         }
       },
       "taxonomy": {
@@ -285,28 +285,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Count the state that remains live"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "A frequency table maps each distinct value to one counter. Repeated occurrences update an existing counter rather than allocate another logical entry, so after scanning n values the table contains k key-counter pairs."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "Derive O(k), then bound k",
+              "text": "Each of the k entries uses constant-size logical metadata under the question's model, giving O(k) auxiliary space. Since 1 ≤ k ≤ n for a nonempty input, heavy duplication can make k much smaller than n, while an all-distinct input makes k = n and yields O(n)."
             },
             {
               "type": "paragraph",
-              "text": "In the worst case k can equal n, producing O(n) auxiliary space."
+              "text": "Later query count affects how long the table is useful, not how many distinct keys it stores. Original adjacent runs are irrelevant because hashing groups by equality across all positions. Reusable rule: parameterize storage by retained states, then translate that parameter to n only for a stated worst case."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "query_count_only": "The table must retain entries independently of q.",
-          "sorted_runs": "Hash entries are keyed by equality, not original adjacency.",
-          "constant_word": "A general table stores multiple entries."
+          "query_count_only": "The table must retain its k key-counter entries whether it serves one later query or many.",
+          "sorted_runs": "Hash equality joins the same key across nonadjacent positions, so the number of original runs does not determine entry count.",
+          "constant_word": "A general frequency table needs one logical entry per distinct key, which cannot fit in one fixed word as k grows."
         }
       },
       "taxonomy": {
@@ -355,28 +355,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Immutability turns an in-place sort into a copied sort"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "If the selected sorting implementation normally writes into its array, preserving the caller's array requires allocating a second array and copying all n values into it. Copying performs n reads and n writes, so it adds Θ(n) time and keeps Θ(n) extra values live while the copy is sorted."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "Compare complete strategies",
+              "text": "The sorting path's peak auxiliary space is the O(n) copy plus the chosen sort's stack or buffer. The comparison is therefore hash state versus copy-plus-sort state, not hash state versus a hypothetical free in-place sort."
             },
             {
               "type": "paragraph",
-              "text": "The full comparison is hash state versus copied-and-sorted state, not hash table versus a hypothetical free in-place sort."
+              "text": "Sorting is still legal: it operates on independent storage. Mutate-then-restore is not equivalent because aliases, concurrent readers, callbacks, or an exception can observe or preserve the temporary order. Reusable rule: include every representation needed to make a strategy legal."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "free_copy": "A copied or indexed representation has a cost.",
-          "mutation_hidden": "Restoration can fail under errors and may violate aliasing or concurrency contracts.",
-          "hash_required": "Sorting a copy is legal if its cost is accepted."
+          "free_copy": "An immutable sorted view must store either copied values or an index structure; neither appears without time and memory cost.",
+          "mutation_hidden": "Restoration occurs too late for aliases, concurrent readers, callbacks, or exceptions that can observe the temporary mutation.",
+          "hash_required": "Mutation of the original is forbidden, not sorting itself; sorting an independent copy remains legal if Θ(n) extra storage is acceptable."
         }
       },
       "taxonomy": {
@@ -425,28 +425,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Temporary mutation can still be observable"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "An alias is another reference to the same array object. In-place sorting writes that shared object repeatedly; without a synchronization contract, a concurrent reader can observe a partially reordered sequence or race with those writes before the function has any chance to restore the final order."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "Final equality is not enough",
+              "text": "Even if a routine tries to undo the sort, a callback or reader can observe intermediate state, and an exception can skip restoration. Copying before sorting isolates the writes at O(n) auxiliary cost; a hash scan can also leave the input untouched."
             },
             {
               "type": "paragraph",
-              "text": "Aliasing, concurrency, exceptions, and callbacks can make temporary reordering observable."
+              "text": "Aliasing does not change whether values are comparable, and sorting does not create hash collisions. The violated boundary is write visibility. Reusable rule: mutation is legal only when every observer and failure path permits it, not merely when the local function returns the original order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_collision": "Sorting does not use hashing.",
-          "comparison_invalid": "The issue is mutation visibility.",
-          "order_free": "Aliases expose the same object."
+          "hash_collision": "A comparison sort does not use hash buckets, so collision behavior is unrelated to the aliasing risk.",
+          "comparison_invalid": "Aliases do not change the values' comparison relation; they make writes to the shared object observable.",
+          "order_free": "An alias refers to the same array, so its reader observes the very positions that in-place sorting rewrites."
         }
       },
       "taxonomy": {
@@ -495,28 +495,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Stability constrains the implementation"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "A stable sort preserves the relative order of records whose sort keys compare equal. That output rule removes any unstable implementation from consideration, but it does not by itself select one stable algorithm or one auxiliary-space bound."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "Name the buffer model",
+              "text": "A conventional stable array merge sort uses an O(n) merge buffer. Stable in-place algorithms exist, but may be substantially more complex or have different time constants and guarantees. The safe conclusion is therefore to state the actual algorithm and its proved stack or buffer usage."
             },
             {
               "type": "paragraph",
-              "text": "A stable merge-based path often uses O(n) auxiliary storage, while alternatives have different time or complexity tradeoffs."
+              "text": "A plain hash map does not automatically produce sorted output or preserve equal-key encounter order unless its representation and emission pass explicitly provide those contracts. Reusable rule: translate an output property such as stability into an implementation constraint before quoting memory."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "stable_free": "Common stable comparison sorts use additional buffers.",
-          "hash_no_order": "Hash iteration does not provide that contract.",
-          "ignore_input": "Both affect legality and memory."
+          "stable_free": "Stability can exclude a low-memory unstable sort and common stable array merge sorts allocate an O(n) buffer.",
+          "hash_no_order": "A map groups by key but neither sorted-key emission nor stable equal-key order follows automatically from hashing.",
+          "ignore_input": "Mutation legality decides whether storage can be reused, while stability decides which sorting implementations satisfy the output contract."
         }
       },
       "taxonomy": {
@@ -565,28 +565,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Use distinct state, not occurrence count"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "A frequency map stores one entry for each distinct key and increments its counter for every later occurrence. If millions of input positions contain only k distinct values, the logical retained state is O(k), not one entry per occurrence."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "Example",
+              "text": "For n = 1,000,000 values drawn from 20 keys, the map needs 20 logical key-counter entries. A concrete table also has bucket capacity, load-factor slack, and object overhead, but those normally scale with k rather than with one million occurrences."
             },
             {
               "type": "paragraph",
-              "text": "This can make hashing memory-competitive, though bucket capacity and implementation overhead still matter."
+              "text": "Sorting still has an algorithm-specific memory profile and may mutate or copy the million-value input. High duplication therefore can make hashing memory-competitive; it does not make hashing illegal. Reusable rule: keep k explicit whenever aggregation merges repeated inputs into one state."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_n_exact": "Frequency aggregation normally stores one entry per distinct key.",
-          "sort_no_memory": "Sort memory remains algorithm-specific.",
-          "duplicates_forbid_hash": "High duplication can reduce distinct-key storage."
+          "always_n_exact": "Frequency aggregation updates an existing entry for a repeated key, so it stores k logical entries rather than n occurrence records.",
+          "sort_no_memory": "Sorting may require a stack, buffer, decoration, or copy; its memory is determined by the concrete implementation and mutation contract.",
+          "duplicates_forbid_hash": "Repeated keys are valid hash inputs and actually reduce the number of distinct entries retained by a frequency map."
         }
       },
       "taxonomy": {
@@ -597,7 +597,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-memory-009",
-      "prompt": "A sorting-based strategy decorates each value with its original index before sorting. What tradeoff does this introduce?",
+      "prompt": "A sorting-based strategy allocates one decorated record (value, originalIndex) for each of n input values before sorting those records. What tradeoff does this introduce?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -635,28 +635,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Identity must survive reordering"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "After sorting, an element's array position no longer identifies its original position. A decorated record carries the pair (value, originalIndex), so comparisons can use value while the result can still return the original index."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "The metadata is linear",
+              "text": "The prompt allocates n records and stores one index with each. Even though each index is constant size, n such fields use Θ(n) total storage; the decorated array may also serve as the copy that protects the original input."
             },
             {
               "type": "paragraph",
-              "text": "A lower-memory in-place sort claim may disappear once original indices must accompany every element."
+              "text": "Decoration does not turn sorting into hashing and does not prevent ordering by value. It removes the claimed asymptotic memory advantage over O(n) hash state. Reusable rule: when output needs provenance, count the representation that carries provenance through a reorder."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "index_free": "Sorting changes positions, so identity must be carried or reconstructed from another source.",
-          "hash_required": "It remains a sorting-based strategy.",
-          "order_lost": "Records can be sorted by value while retaining index fields."
+          "index_free": "Once positions change, an original index can be recovered only from metadata or another retained mapping; the relation is not free.",
+          "hash_required": "The algorithm still orders records by comparison; attaching an index field does not create hash lookup.",
+          "order_lost": "The comparator can order by the value field while the originalIndex field travels with its record."
         }
       },
       "taxonomy": {
@@ -705,28 +705,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "The boundary is conditional, not universal"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "A hash scan usually leaves the input sequence untouched by storing equality or frequency state in a separate table. Its logical auxiliary space is O(k) entries. A sorting path can instead reuse the input array, but only if reordering that array is legal."
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "title": "Complete the sorting claim",
+              "text": "Name the sort's recursion stack or temporary buffer, and add any copy, decoration, stability support, or original-index metadata required by the contract. Those structures can raise the sorting path back to O(n) auxiliary space."
             },
             {
               "type": "paragraph",
-              "text": "A fair comparison states whether input may change, whether a copy is needed, and which concrete table and sorting algorithms are used."
+              "text": "Neither strategy always dominates: small k can make the table compact, while legal in-place sorting can avoid table storage at the cost of O(n log n) comparison work. Reusable rule: compare complete legal implementations on time, peak space, mutation, and output identity."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_no_memory": "Tables retain keys and metadata.",
-          "sort_never_mutates": "In-place sorting explicitly does.",
-          "one_winner": "The preferred strategy changes with the contract."
+          "hash_no_memory": "A table retains buckets, keys, and associated state; its logical entry count normally grows with k.",
+          "sort_never_mutates": "An in-place sort obtains its memory advantage precisely by rewriting the order stored in the original array.",
+          "one_winner": "The winner changes with k, time limits, mutation permission, stability, provenance, and the selected algorithms' memory models."
         }
       },
       "taxonomy": {
@@ -777,31 +777,29 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Count all newly allocated live state"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Hash path: buckets, entries, retained keys, counters or index lists are auxiliary because the algorithm creates them.",
+                "Sorting path: a recursion stack or temporary merge/work buffer belongs to the chosen sort and must be counted.",
+                "Immutability path: a full copy is auxiliary because it exists only to keep writes away from the caller's input."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
-            },
-            {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
-            },
-            {
-              "type": "paragraph",
-              "text": "Input and required output should be reported separately from auxiliary space."
+              "text": "Peak auxiliary space is the sum of structures live at the same moment, simplified asymptotically. The original input was supplied by the caller, so it is reported separately rather than relabeled as newly allocated auxiliary space; required output is also normally stated separately. Reusable rule: draw the lifetime of every created structure before taking the peak."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "original_input": "Input space is not created by the algorithm."
+          "original_input": "The caller supplied the original input before the algorithm began, so its storage is input space rather than newly allocated auxiliary space."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "hash_entries": "They are live auxiliary state.",
-          "sort_stack_buffer": "The sort implementation owns this memory.",
-          "copy": "It is auxiliary working storage."
+          "hash_entries": "Buckets, entries, keys, and metadata are created and remain live to support lookup, so they count as auxiliary state.",
+          "sort_stack_buffer": "The selected sorting implementation creates its stack or buffer, so that memory is part of the strategy rather than free infrastructure.",
+          "copy": "The extra n-value representation is created solely to permit sorting without mutating the input, so it contributes O(n) auxiliary space."
         }
       },
       "taxonomy": {
@@ -852,31 +850,29 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Preserve the original by directing writes elsewhere"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Hash scan: read each original position and write only to the separate table, so the array order and contents do not change.",
+                "Sort a copy: duplicate the values and reorder the duplicate; the caller's array remains untouched at an O(n) copy cost.",
+                "Decorated records: allocate independent (value, originalIndex) records and sort them; both original values and their positions remain available."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
-            },
-            {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
-            },
-            {
-              "type": "paragraph",
-              "text": "Those alternatives have different auxiliary-space profiles."
+              "text": "Sorting the original array in place writes a different order into the object the caller owns. Claiming that object is unchanged contradicts the operation, even if a later restoration is attempted and even when the logical result does not need order. Reusable rule: preservation describes writes to the original object, not whether an algorithm can reconstruct its former order later."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "in_place_original": "The final order differs unless explicitly restored, and temporary mutation may still be observable."
+          "in_place_original": "In-place sorting rewrites the caller's array; restoration is a separate pass and cannot erase mutation already observed by aliases, callbacks, or concurrent readers."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "hash_scan": "The input remains untouched.",
-          "sort_copy": "The original sequence is preserved.",
-          "decorate_copy": "Original data and indices remain available."
+          "hash_scan": "All updates target the auxiliary table, so neither values nor positions in the original sequence are written.",
+          "sort_copy": "Only the independent n-value copy is reordered, leaving the original sequence byte-for-byte in its prior order.",
+          "decorate_copy": "The independently allocated records carry original indices through sorting while the source array remains unchanged."
         }
       },
       "taxonomy": {
@@ -887,7 +883,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-memory-013",
-      "prompt": "When can sorting credibly claim the lower-auxiliary-memory path? Select all that apply.",
+      "prompt": "Which conditions must hold together for this sorting path to claim asymptotically less auxiliary space than a general O(n)-entry hash solution? Select all that apply.",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -927,31 +923,33 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "The low-memory claim needs all three gates"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "Sorting saves auxiliary space only by reusing the original array and avoiding another linear representation. The three accepted conditions jointly establish that model:"
             },
             {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "type": "bullet_list",
+              "items": [
+                "Mutation is legal, so no O(n) protection copy is required.",
+                "A concrete in-place algorithm has a proved O(1) or O(log n) stack/buffer bound.",
+                "The result does not require an O(n) decoration or mapping back to original positions."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Stability, immutability, and index retention can remove that advantage."
+              "text": "The offered stable-output condition explicitly requires an O(n) temporary buffer, which restores a linear auxiliary term and defeats this asymptotic claim. Reusable rule: a low-memory sorting argument is valid only after eliminating every contract-induced O(n) representation."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "stable_required_buffer": "This weakens the low-memory advantage."
+          "stable_required_buffer": "Under the option's explicit O(n)-buffer requirement, the sorting path has linear auxiliary space and is not asymptotically below an O(n)-entry hash solution."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "mutation_legal": "No O(n) copy is needed.",
-          "in_place_sort": "The memory claim becomes algorithm-specific and defensible.",
-          "no_index_metadata": "No decoration array is required."
+          "mutation_legal": "Legal reordering permits the strategy to reuse the original array rather than allocate an O(n) copy.",
+          "in_place_sort": "Naming an implementation with a bounded stack or buffer turns a vague sorting claim into an O(1) or O(log n) auxiliary bound.",
+          "no_index_metadata": "If original positions are unnecessary, the strategy avoids an O(n) decorated-record array or provenance map."
         }
       },
       "taxonomy": {
@@ -1002,31 +1000,33 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Refine O(n) to the actual peak state"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
+              "text": "O(n) is a safe worst-case upper bound for a general hash structure, but a particular execution or a stronger domain contract can have a smaller peak:"
             },
             {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "type": "bullet_list",
+              "items": [
+                "With k distinct retained keys, a frequency table has O(k) logical entries; k ≪ n makes this smaller than O(n).",
+                "If duplicate detection stops at position p, at most p distinct values were retained, so that execution peaks at O(p), although the worst case remains O(n).",
+                "For a known domain of U values, a bitset or compact table can use O(U) bits or cells; it improves on n only when U and the representation contract make that smaller."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Worst-case all-distinct input still gives O(n) general hash storage."
+              "text": "When all n inputs are distinct, k = n and a full scan stores n entries, so that option maximizes rather than reduces the general table. Reusable rule: label whether a space claim is worst-case, parameterized, or execution-specific instead of replacing one with another."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "all_distinct": "Then k = n, maximizing retained entries."
+          "all_distinct": "With every value distinct and a full scan, k = n, so the table reaches its O(n) entry bound instead of becoming smaller."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "few_distinct": "Frequency state scales with k.",
-          "early_exit": "Peak state may be smaller on that execution.",
-          "bounded_domain_compact": "The representation can be smaller than a generic map."
+          "few_distinct": "One entry per distinct key gives O(k) logical state, so k ≪ n is a genuine parameterized reduction.",
+          "early_exit": "Stopping at position p caps that execution's retained entries by p, although it does not improve the all-distinct worst case.",
+          "bounded_domain_compact": "A known domain permits direct indexing or one bit per value, replacing object-heavy general entries with O(U) compact state when U is favorable."
         }
       },
       "taxonomy": {
@@ -1078,21 +1078,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Decide legality before optimizing memory"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "First identify whether writes or reordering of the caller's input can be observed and whether the contract permits them; this removes illegal in-place paths.",
+                "Next identify which identity must survive: original order, original indices, or stable equal-key order can require a copy, decoration, or restricted sorting algorithm.",
+                "For each remaining strategy, list every live hash entry, copy, decoration, recursion stack, and temporary buffer under a concrete implementation.",
+                "Finally compare peak auxiliary memory only among strategies that satisfy all prior constraints."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
-            },
-            {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
-            },
-            {
-              "type": "paragraph",
-              "text": "Peak auxiliary memory can be compared fairly only after every required representation has been included."
+              "text": "Reversing this order can make an apparently O(1)-space sort win before discovering that immutability forces an O(n) copy. Reusable rule: resource optimization is downstream of behavioral legality and representation requirements."
             }
           ]
         }
@@ -1146,21 +1145,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Follow the lifetime of the copy"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Allocate space for n records and copy each input value; from this point the O(n) copy is live.",
+                "Sort the copy, adding the selected algorithm's stack or temporary buffer while leaving the original untouched.",
+                "Consume adjacent groups or ordered queries from the sorted copy to produce the required result.",
+                "Only after the last use may the copy and sort workspace be released."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
-            },
-            {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
-            },
-            {
-              "type": "paragraph",
-              "text": "Its O(n) footprint must be included in peak auxiliary space."
+              "text": "Releasing the copy before ordered consumption would destroy the representation the next step needs. Because it overlaps the sort workspace, peak auxiliary space includes O(n) plus that workspace and simplifies to O(n) for an O(1) or O(log n) in-place sort. Reusable rule: peak space depends on overlapping lifetimes, not allocations considered one at a time."
             }
           ]
         }
@@ -1214,21 +1212,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Move derived state, not input values"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Initialize an empty set or frequency table that is independent of the input array.",
+                "Read the next input value in its original position; no array element is rewritten.",
+                "Test or update that key's entry, then repeat the read-update pair for the remaining values.",
+                "Emit the duplicate or frequency result and release the table after its last use."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
-            },
-            {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
-            },
-            {
-              "type": "paragraph",
-              "text": "The table's peak size follows the number of retained keys and metadata."
+              "text": "The scan and update steps form one loop: after a prefix, the table summarizes exactly that prefix while the input remains unchanged. At peak it retains O(k) keys plus metadata. Reusable rule: a non-mutating algorithm can still use substantial memory because it relocates derived state into an auxiliary representation."
             }
           ]
         }
@@ -1296,21 +1293,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Derive both dimensions from the full scan"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
-            },
-            {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "text": "The worst-case execution for early stopping is an all-distinct array: every one of the n values must be checked before the algorithm can answer false. Under the stated expected O(1) membership and insertion contract, n checks and at most n insertions cost n · O(1) = O(n) expected time."
             },
             {
               "type": "paragraph",
-              "text": "Expected linear time is paired with linear worst-case auxiliary storage."
+              "text": "On that same all-distinct execution, the set retains one entry for each processed value, so its peak auxiliary state is O(n). O(1) time confuses one operation with n operations; O(log n) or O(n log n) are not implied by the given hash-operation model. Reusable rule: derive time from operation count and space from maximum simultaneously retained state."
             }
           ]
         }
@@ -1377,21 +1368,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "Sort dominates the scan"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
-            },
-            {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "text": "The stated sort costs O(n log n) worst-case time. Once equal values are adjacent, checking the n - 1 neighboring pairs takes O(n), so total time is O(n log n + n) = O(n log n)."
             },
             {
               "type": "paragraph",
-              "text": "The lower auxiliary-space profile is valid only because in-place mutation is allowed."
+              "text": "The original array holds the reordered values and is not auxiliary storage. The selected sort uses an O(log n) stack, while the adjacent scan needs only constant local state, so peak auxiliary space is O(log n). O(1) would ignore the stated stack, and O(n) would incorrectly add a copy that mutation permission makes unnecessary. Reusable rule: include the exact sort workspace and simplify sums by their dominant term."
             }
           ]
         }
@@ -1404,7 +1389,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-memory-020",
-      "prompt": "Preserve the original array by copying n values, then run an in-place O(n log n) sort on the copy using O(log n) stack. Select total time and peak auxiliary space excluding output.",
+      "prompt": "Preserve the original array by copying n values, run an in-place O(n log n) sort on the copy using O(log n) stack, then scan the sorted copy once. Select total time and peak auxiliary space excluding output.",
       "constraints": [
         "The copy remains live during sorting and scanning."
       ],
@@ -1458,21 +1443,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Count resources as part of correctness"
+              "text": "The copy changes the space winner"
             },
             {
               "type": "paragraph",
-              "text": "Two strategies can produce the same logical answer while making different resource promises. Hash state normally stores one entry per distinct key and often preserves the input. Sorting can avoid that map, but it may mutate the input or require an auxiliary copy, depending on the algorithm and contract."
-            },
-            {
-              "type": "callout",
-              "kind": "complexity_note",
-              "title": "Space and mutation are requirements",
-              "text": "Report auxiliary space in terms of the state actually retained, usually the number of distinct keys for hashing. Then separately check whether reordering the input is allowed; a lower-map-memory route is not valid if it violates an immutability requirement."
+              "text": "Copying n values costs O(n), sorting costs O(n log n), and the final scan costs O(n). Their sum is O(n + n log n + n) = O(n log n), because the comparison sort dominates."
             },
             {
               "type": "paragraph",
-              "text": "This is the correct sorting-path comparison when mutation is forbidden."
+              "text": "During sorting and scanning, the n-value copy remains live and the sort may also hold an O(log n) stack. Peak auxiliary space is therefore O(n + log n) = O(n). O(log n) counts only the stack and forgets the copy required by immutability; O(1) forgets both. Reusable rule: preserving input can erase an in-place algorithm's space advantage even when it does not change the dominant time."
             }
           ]
         }

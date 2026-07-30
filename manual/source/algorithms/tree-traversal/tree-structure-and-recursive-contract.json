@@ -3,7 +3,7 @@
   "batchId": "algorithms-tree-traversal-tree_structure_and_recursive_contract-candidate-001",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -98,38 +98,41 @@
             "id": "check_empty",
             "text": "If `node` is null, return the contract's empty-subtree value `0`."
           },
-          {
-            "id": "obtain_left",
-            "text": "Obtain the height promised by the call on `node.left`."
-          },
-          {
-            "id": "obtain_right",
-            "text": "Obtain the height promised by the call on `node.right`."
-          },
+        {
+          "id": "obtain_child_heights",
+          "text": "Obtain the heights promised by both child calls; either independent child may be evaluated first."
+        },
           {
             "id": "fulfill_parent",
             "text": "Return `1 + max(leftHeight, rightHeight)` for this subtree."
           }
         ],
-        "canonicalOrder": [
-          "check_empty",
-          "obtain_left",
-          "obtain_right",
-          "fulfill_parent"
+      "canonicalOrder": [
+        "check_empty",
+        "obtain_child_heights",
+        "fulfill_parent"
         ],
         "scoringMethod": "adjacent_relations"
       },
-      "scoringContract": {
-        "type": "ordering",
-        "maxPoints": 3
+    "scoringContract": {
+      "type": "ordering",
+      "maxPoints": 2
       },
       "feedback": {
         "reason": "The current call can fulfill its promise only after the base case is settled and both child contracts have produced their values.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Handle `node == null` before reading child references and return the declared empty height 0.",
+                "For a non-null node, obtain both child heights; the independent left and right calls may run in either order.",
+                "Return `1 + max(leftHeight, rightHeight)`, counting the current node and the longer child path."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "This order follows the dependency graph of the contract. The null case must terminate before dereferencing the node. For a non-null node, the parent result depends on both child heights, so those subproblem results must exist before the combine step. Left and right may be evaluated in either order for this symmetric property, but each child-to-parent adjacency must precede the final return. Replacing `max` with another combine rule can preserve the same dependency order, while a parent-first side effect would be a different contract rather than an equivalent rearrangement."
+              "text": "This sequence follows actual data dependencies without imposing a false order between siblings. Replacing `max` with another combine rule can preserve the same dependency shape, while a parent-first side effect would be a different contract rather than an equivalent rearrangement."
             }
           ]
         }
@@ -142,9 +145,9 @@
         "problemArchetypeId": "compute_subtree_property"
       },
       "difficulty": "foundational",
-      "constraints": [
-        "The order between the two child calls is chosen as left then right for the canonical sequence.",
-        "Scoring uses preserved adjacent relations."
+    "constraints": [
+      "The two child calls are independent and either evaluation order is valid.",
+      "Scoring covers only the base-before-children and children-before-combine dependencies."
       ]
     },
     {
@@ -332,7 +335,7 @@
     },
     {
       "id": "alg-tree-contract-one-call-per-node-cost",
-      "prompt": "A recursive helper is called exactly once for each non-null node, performs constant local work, and makes calls only to the node's children. Let `n` be the number of nodes and `h` the tree height measured in nodes. Determine its asymptotic time and auxiliary call-stack space.",
+    "prompt": "A recursive helper is called exactly once for each non-null node, performs constant local work, and makes calls only to the node's children. Let `n` be the number of nodes and `h` the tree height measured in nodes. Select the tightest listed asymptotic time and auxiliary call-stack bounds in these parameters.",
       "interaction": {
         "type": "complexity",
         "checkedDimensions": [

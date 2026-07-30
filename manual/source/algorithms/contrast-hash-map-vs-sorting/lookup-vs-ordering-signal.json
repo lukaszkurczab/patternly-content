@@ -3,7 +3,7 @@
   "batchId": "contrast-hash-map-vs-sorting-lookup-vs-ordering-signal-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -73,30 +73,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "A hash set directly represents seen identifiers and can preserve arrival-order processing without first imposing an ordering."
+              "text": "Maintain a set containing exactly the identifiers from earlier arrivals. For each new identifier x, first test whether x is in the set, emit that Boolean for the current stream position, and then insert x. Checking before insertion distinguishes a prior occurrence from the current item, and processing in arrival order preserves the required output order. With a conventional hash set this uses expected O(1) time per arrival and O(k) memory for k distinct identifiers. Sorting can detect duplicates only after accumulating and reordering data, so it misses the immediate per-arrival contract. A hard memory cap or deterministic worst-case requirement would reopen the comparison."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_all": "Sorting can expose adjacent duplicates, but online seen-before lookup does not require order.",
-          "compare_neighbors": "Equal identifiers may be separated by many other values.",
-          "binary_search_unsorted": "Binary search lacks a sorted search domain."
+          "sort_all": "Sorting can expose adjacent duplicates after the full input is available, but it cannot emit the required seen-before result at each arrival.",
+          "compare_neighbors": "A repeated identifier may be separated from its earlier occurrence by many other values, so comparing only consecutive arrivals loses valid matches.",
+          "binary_search_unsorted": "Binary search needs a sorted search domain or another monotonic predicate; the accumulated arrivals provide neither."
         }
       },
       "taxonomy": {
@@ -107,7 +92,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-lookup-002",
-      "prompt": "A report must list all distinct values in ascending order and combine equal values into adjacent groups. Which signal favors sorting?",
+      "prompt": "A report must emit one group per distinct value in ascending value order, with all equal input values contributing to the same group. Which signal favors sorting?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -143,30 +128,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "A hash map could count values, but a later key sort would reintroduce ordering cost and should be included in the strategy comparison."
+              "text": "Sorting turns equal values into contiguous runs and orders those runs by value. After O(n log n) comparison sorting, one linear scan starts a group when the value changes and accumulates every equal item into that group; emitting runs from left to right already satisfies ascending output. A hash map can also accumulate by equality, but ordinary hash iteration does not guarantee ascending keys, so its complete strategy needs a later sort of the k distinct keys and must include that O(k log k) phase. The reusable rule is to favor ordering when both adjacency and deterministic order are consumed directly by the result."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_expected": "A hash table does not by itself produce ascending groups.",
-          "one_pass_name": "Loop count does not establish the required output order.",
-          "first_seen_only": "The contract explicitly requires ascending grouped output."
+          "hash_expected": "Expected O(1) key updates can build counts, but a plain hash table still needs an ordering phase before it can emit ascending groups.",
+          "one_pass_name": "The number of loops says nothing about whether equal values become adjacent or group keys become ascending.",
+          "first_seen_only": "First-seen membership preserves arrival order, whereas this contract explicitly requires value order and complete equal-value groups."
         }
       },
       "taxonomy": {
@@ -177,7 +147,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-lookup-003",
-      "prompt": "Keys support equality and hashing but have no meaningful total order. The task asks only whether a queried key exists. Which strategy signal is valid?",
+      "prompt": "Keys support equality and a compatible hash function but have no meaningful total order. The task asks only whether a queried key exists. Which strategy signal is valid?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -213,30 +183,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "When only membership is needed and no legal total order exists, the lookup signal clearly favors hashing."
+              "text": "Membership asks whether some stored key is equal to the query; it does not ask which key is smaller. A hash set stores keys in buckets chosen by their hash and confirms a match with equality, so a compatible hash function—equal keys always hash compatibly—is enough. Comparison sorting is not merely unnecessary here: without a domain-defined total order, it has no legal comparator on which to base sorted search. Memory or worst-case guarantees may affect the final implementation, but the semantic signal is equality-keyed state. Memory-address order is incidental runtime state and cannot replace the missing domain contract."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sorting_required": "Sorting requires a comparator or total order that the contract does not provide.",
-          "group_runs": "The task asks only membership.",
-          "index_order": "An incidental address order does not satisfy a domain contract."
+          "sorting_required": "Sorting requires a comparator that defines a consistent total order, and the prompt deliberately provides no such relation.",
+          "group_runs": "Grouping equal runs is useful after ordering, but the output asks only one equality-membership decision and consumes no groups.",
+          "index_order": "Memory addresses are incidental, may change between executions, and do not define semantic order between the keys."
         }
       },
       "taxonomy": {
@@ -283,30 +238,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "Sorting establishes the boundary and traversal order needed to emit the interval."
+              "text": "The query consumes two order operations: locate the first timestamp inside the lower boundary, then traverse records in increasing timestamp until the upper boundary is passed. Sorting once by timestamp makes both operations legal; a lower-bound search finds the start in O(log n), and emitting k matching records takes O(k). A hash table can retrieve an exact timestamp key but does not expose all keys between two timestamps or their chronological order. If data changes frequently, an ordered dynamic structure may replace a static sorted array, but the primary signal remains relative order rather than equality."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_equality": "Equality lookup does not directly locate all values inside an interval.",
-          "frequency_only": "The result requires a range and chronological order.",
-          "first_duplicate": "No duplicate contract is stated."
+          "hash_equality": "Exact equality lookup cannot locate the first key above a lower bound or traverse every key inside an ordered interval.",
+          "frequency_only": "Counting records discards their timestamps and does not emit the requested interval in chronological order.",
+          "first_duplicate": "The contract asks for all records in a time range; it states no duplicate-detection objective."
         }
       },
       "taxonomy": {
@@ -317,7 +257,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-lookup-005",
-      "prompt": "A one-pass job must count occurrences of each token, and the caller accepts groups in arbitrary order. Which primary signal favors hashing?",
+      "prompt": "A one-pass job must count occurrences of each hashable token, the caller accepts groups in arbitrary order, expected hash bounds are acceptable, and O(k) memory fits for k distinct tokens. Which primary signal favors hashing?",
       "difficulty": "intro",
       "interaction": {
         "type": "choice",
@@ -353,30 +293,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "Without an ordered-output requirement, hashing avoids imposing an order that the contract does not consume."
+              "text": "The required state is one counter per equality class. Scan the tokens once; for token x, look up x in the map, create count 1 if absent, or increment the existing count. Under the stated hash model, n updates take expected O(n) time and the map stores O(k) entries for k distinct tokens. Because output order is arbitrary, iterating those entries needs no later key sort. Sorting could also make equal tokens adjacent, but it adds ordering work and may require copying or mutation that this result never consumes. Deterministic guarantees or insufficient memory would reopen the choice."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_for_order": "The result order is explicitly arbitrary.",
-          "adjacent_only": "Equal tokens can appear anywhere.",
-          "mutate_input": "Mutation is unnecessary for the stated result."
+          "sort_for_order": "The caller explicitly accepts arbitrary group order, so imposing value order is not required by correctness.",
+          "adjacent_only": "Occurrences of one token may be separated across the entire stream; comparing only adjacent inputs undercounts them.",
+          "mutate_input": "Reordering the original sequence neither creates the required counters nor follows from the output contract."
         }
       },
       "taxonomy": {
@@ -387,7 +312,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-lookup-006",
-      "prompt": "A task asks for the closest pair of numeric values, not their original positions. Which signal favors sorting over a hash table?",
+      "prompt": "Given at least two orderable numeric values, a task asks for the pair with minimum absolute difference, not their original positions. Which signal favors sorting over a hash table?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -423,30 +348,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "A hash table represents equality well but not nearest ordered neighbors."
+              "text": "Sort the values as b[0] ≤ … ≤ b[n−1], then compare each adjacent difference b[i+1] − b[i]. For any nonadjacent pair b[i], b[j] with i < j, the interval between them is a sum of adjacent nonnegative gaps, so at least one adjacent gap is no larger than b[j] − b[i]. Therefore some closest pair is adjacent after sorting. Sorting costs O(n log n) and the scan O(n); duplicates correctly produce difference zero. A hash table exposes equality, including the zero-distance case, but cannot locate predecessor or successor values needed when the minimum difference is nonzero."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "membership_only": "Closest-pair reasoning depends on order and distance.",
-          "hash_constant": "A hash table does not expose neighboring values by magnitude.",
-          "duplicate_only": "Duplicates are one zero-distance case, but the full task includes nonzero distances."
+          "membership_only": "Exact membership answers whether a specified value exists; it does not identify the nearest values by magnitude.",
+          "hash_constant": "Expected constant-time bucket operations do not expose predecessor or successor relationships, so they do not prove a closest-pair algorithm.",
+          "duplicate_only": "Duplicates settle only the zero-distance case; when all values are distinct, the algorithm must still compare ordered gaps."
         }
       },
       "taxonomy": {
@@ -493,30 +403,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "A linear run scan consumes that structure directly; expected hash lookup offers no asymptotic advantage and uses extra memory."
+              "text": "The input already contains the structure the output consumes: equal values are adjacent and different runs appear in value order. Start a count at the first value, increment it while the next value is equal, emit the value and count when the value changes, then start the next run. Every element is visited once, so the scan takes O(n) time and O(1) auxiliary state beyond the output. Re-sorting repeats completed work, while hashing spends O(k) entries for k groups and then still needs ordered emission. The transfer rule is to consume a proven existing order directly before paying to rebuild another index."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "rehash_all": "The ordering work is already done and a run scan is linear with constant auxiliary state.",
-          "resort": "No additional sorting is needed.",
-          "random_lookup": "That adds unnecessary work and state."
+          "resort": "Sorting an already sorted input preserves the same order while adding redundant comparison work.",
+          "random_lookup": "Membership queries do not accumulate complete run counts or emit them in the existing sorted order."
         }
       },
       "taxonomy": {
@@ -563,30 +458,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "A hash map can retain the first index while the scan preserves first-seen order."
+              "text": "Scan the original sequence from left to right. For value x at index i, test whether x is already in a hash map; if not, store firstIndex[x] = i and append (x, i) to the output, otherwise leave the earlier record unchanged. The first insertion proves i is the earliest index, and appending at that moment makes output order equal to first-seen order without relying on hash iteration. This takes expected O(n) time and O(k) state for k distinct values. Sorting values alone destroys both provenance and arrival order; sorting indexed records could preserve identity but would still need a later original-order restoration."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_values_only": "Sorting values without index metadata loses the required identity.",
-          "adjacent_groups": "The contract prioritizes first-seen order and original indices.",
-          "binary_search": "No sorted search domain exists."
+          "sort_values_only": "Sorting values without attached indices loses which original occurrence supplied each value, especially when duplicates exist.",
+          "adjacent_groups": "Sorted adjacency groups by value order, whereas the contract requires earliest indices emitted in first-seen order.",
+          "binary_search": "The original sequence is not declared sorted, so binary search has no legal half-discard rule."
         }
       },
       "taxonomy": {
@@ -597,7 +477,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-lookup-009",
-      "prompt": "Objects are comparable by a canonical key but are expensive to hash. The result needs one deterministic ordered traversal and no later equality queries. Which signal favors sorting?",
+      "prompt": "Objects have a canonical total-order key with deterministic tie-breaking but are expensive to hash. The result needs one deterministic ordered traversal and no later equality queries. Which signal favors sorting?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -633,30 +513,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "When order is the output and hashing is expensive, sorting can be the more natural and possibly faster end-to-end choice."
+              "text": "The result consumes the canonical comparator directly: comparison sorting establishes the exact deterministic order, then one linear traversal emits it. Hashing would compute an expensive representation, allocate lookup state, and still fail to provide the required order without sorting its keys or entries afterward. Because no later equality query reuses that state, the hash build has no compensating benefit. The complete sort lifecycle is O(n log n) comparisons plus O(n) output traversal; the real constant cost depends on the comparator, but the contract already requires its order. If repeated equality queries were added, a hash or hybrid representation would become a candidate."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_word": "Keys can support ordering without requiring hashing.",
-          "expected_linear": "Hash cost and unused state must be included.",
-          "one_pass": "The output itself requires deterministic ordering."
+          "hash_word": "Having keys does not imply equality lookup; here their canonical total order is the relation consumed by the output.",
+          "expected_linear": "The hash function is expensive, the state is never reused for queries, and hash iteration still does not satisfy deterministic order.",
+          "one_pass": "A one-pass traversal cannot emit arbitrary unsorted input in canonical order unless some prior mechanism has established that order."
         }
       },
       "taxonomy": {
@@ -703,30 +568,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "Strategy classification must follow the relation required by the answer."
+              "text": "The requested result is the lower bound of x: the first key k in sorted order for which k ≥ x. A static sorted array can find that boundary by binary search, and a dynamic ordered tree can maintain the same successor relation across updates. A plain hash table can test whether x itself exists, but its buckets expose no information about the smallest larger key when x is absent. The word lookup describes an action in ordinary language; it does not define equality semantics. The transfer rule is to translate the output into its exact relation—equality, predecessor, successor, rank, or range—before choosing a representation."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "keyword_lookup": "Keywords do not define the required relation.",
-          "hash_any": "A plain hash table does not locate the next ordered key.",
-          "scan_names": "Names are not a strategy invariant."
+          "keyword_lookup": "The word lookup does not distinguish exact equality from successor, predecessor, rank, or range search.",
+          "hash_any": "Expected constant-time equality lookup cannot identify the smallest stored key greater than an absent query value.",
+          "scan_names": "Variable names describe implementation vocabulary and provide no correctness or ordering invariant."
         }
       },
       "taxonomy": {
@@ -773,30 +623,15 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
-            },
-            {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "The choice depends on query volume, memory, updates, and whether the ordered result can reuse preprocessing."
+              "text": "Neither signal can be ignored. One sorted representation costs O(n log n) to build, answers exact membership in O(log n), and already supports a final O(n) ascending traversal. A hash set costs expected O(n) to build and expected O(1) per membership query, but ordinary hash iteration is unordered, so final ascending output adds a sort of the k distinct keys in O(k log k). Maintaining both may improve a large query workload at the price of two representations and synchronized updates. The choice therefore depends on q, k, mutation, memory, required guarantee type, and whether one representation can serve both phases."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_always": "Hash iteration order is not a general ascending-order contract.",
-          "sort_always": "Binary search on sorted data is logarithmic, not expected constant time.",
-          "ignore_output": "The final ordering requirement is part of correctness."
+          "hash_always": "Ordinary hash iteration has no ascending-order guarantee, so hashing alone leaves the final output contract unsatisfied.",
+          "sort_always": "Sorting is a legal candidate, but its O(log n) membership queries may lose to a reusable hash set when q is large and memory fits.",
+          "ignore_output": "Final ascending output is observable behaviour and must be included in both correctness and lifecycle cost."
         }
       },
       "taxonomy": {
@@ -845,33 +680,30 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
+              "type": "paragraph",
+              "text": "Equality-keyed state associates information with the exact key rather than with its relative position:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Membership stores whether an equal key has appeared.",
+                "Frequency stores and increments a counter for each equal key.",
+                "First index stores metadata on the first insertion; a separate append at that moment preserves first-seen output order."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "Ordered successor and range semantics point toward sorting or an ordered structure."
+              "text": "The successor/range option instead asks which keys are next or lie between ordered boundaries. Equality alone cannot answer that relation, so it points toward a sorted or ordered representation. The transfer rule is to ask what information is keyed by equality and whether output consumes any order beyond first-seen scan order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "range_successor": "These require ordering rather than equality alone."
+          "range_successor": "Finding a successor and traversing a range require relative order between different keys, not equality-keyed state alone."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "membership": "A set directly represents membership.",
-          "frequency": "A map directly updates key-associated state.",
-          "first_index": "A map can associate each key with its first position."
+          "membership": "A set directly records whether an equal key exists and supports repeated membership tests.",
+          "frequency": "A map updates the counter associated with the token's equality class on every occurrence.",
+          "first_index": "A map records metadata only on first insertion, while the original scan determines first-seen order."
         }
       },
       "taxonomy": {
@@ -920,33 +752,30 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
+              "type": "paragraph",
+              "text": "Relative order is useful when the result consumes a sequence relation:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Ascending output directly reads the sorted sequence from smallest to largest.",
+                "Equal-value grouping uses the fact that sorting makes every equality class one contiguous run.",
+                "An ordered interval uses lower and upper boundaries plus traversal between them."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "Pure equality membership does not consume that structure."
+              "text": "Exact membership on unorderable keys asks only whether an equal key exists and consumes none of those relations, so equality-keyed state is the primary signal there. The reusable distinction is whether different keys must be compared with each other or only matched for equality."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "arbitrary_membership": "This is an equality-lookup signal."
+          "arbitrary_membership": "Arbitrary-order exact membership consumes equality for one key and does not require relative order between different keys."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "ordered_output": "Sorting directly establishes output order.",
-          "adjacent_groups": "Sorting makes equal keys adjacent.",
-          "range_query": "Ordered boundaries and traversal are central."
+          "ordered_output": "Sorting directly establishes the ascending sequence that the output must expose.",
+          "adjacent_groups": "Sorting makes every equality class contiguous, allowing one run scan to form groups.",
+          "range_query": "Range reporting needs ordered boundary location and traversal between those boundaries."
         }
       },
       "taxonomy": {
@@ -976,6 +805,10 @@
             "text": "Must original order, deterministic group order, or indices be preserved?"
           },
           {
+            "id": "workload_resources",
+            "text": "What are the query and update volumes, memory and mutation limits, and required expected or worst-case guarantees?"
+          },
+          {
             "id": "variable_name",
             "text": "Is a variable named map or sorted?"
           }
@@ -983,7 +816,8 @@
         "acceptedOptionIds": [
           "relation",
           "key_contract",
-          "observable_order"
+          "observable_order",
+          "workload_resources"
         ]
       },
       "scoringContract": {
@@ -995,33 +829,32 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
+              "type": "paragraph",
+              "text": "A final choice needs four independent checks:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Relation: equality membership or per-key state favors hashing; successor, range, adjacency, or deterministic value order favors ordering.",
+                "Legal key operations: hashing needs compatible equality and hash; sorting needs a consistent comparator.",
+                "Observable preservation: original indices, arrival order, mutation permission, grouping order, and duplicate semantics constrain legal transformations.",
+                "Lifecycle and resources: build, queries, updates, output, memory, mutation, and guarantee type determine which legal candidate is feasible and cheaper."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "Implementation vocabulary is not evidence."
+              "text": "A variable name is not evidence for any of these obligations. The transfer rule is to establish semantic legality first, then compare the complete workload rather than a single advertised operation."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "variable_name": "Names do not establish a legal strategy."
+          "variable_name": "Names such as map or sorted are implementation vocabulary and establish neither a required relation nor a legal cost model."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "relation": "The required relation is the primary boundary.",
-          "key_contract": "The legal operations differ.",
-          "observable_order": "These are correctness constraints."
+          "relation": "Without the exact relation, a strategy may optimize equality while the result consumes order, or the reverse.",
+          "key_contract": "A strategy is illegal when keys lack its required compatible hash/equality contract or total comparator.",
+          "observable_order": "Order, indices, duplicate identity, and mutation are correctness constraints rather than optional implementation details.",
+          "workload_resources": "Query count, updates, memory, mutation, and guarantee type determine feasibility and total lifecycle cost."
         }
       },
       "taxonomy": {
@@ -1070,33 +903,30 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
+              "type": "paragraph",
+              "text": "Each selected situation admits two complete, correct paths:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Duplicate existence: insert into a set and stop on a repeated key, or sort a reorderable array and scan adjacent values.",
+                "Ordered frequencies: sort and count equal runs, or count in a hash map and then sort the k distinct keys for output.",
+                "Many memberships plus final order: sort once and binary-search queries, or use expected-fast hashing for queries and sort keys at the final phase; a hybrid may retain both."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "The final choice then depends on workload, memory, mutation, guarantees, and constants."
+              "text": "Keys that support neither a compatible hash/equality contract nor a comparator make neither standard candidate legal. When both are legal, the final choice follows from query volume, memory, mutation, guarantees, key-operation cost, and which preprocessing later phases can reuse."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "unhashable_unorderable": "Neither standard strategy is directly legal."
+          "unhashable_unorderable": "Without compatible hashing/equality or a comparison contract, neither a standard hash table nor comparison sorting is directly legal."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "duplicate_exists": "A set or sort-and-scan can both be correct.",
-          "frequency_ordered": "Sort-and-run or hash-then-sort-keys can both work.",
-          "many_membership_final_order": "A hybrid or either preprocessing path may be reasonable."
+          "duplicate_exists": "A set detects a repeated key by equality, while sorting exposes repeated keys as adjacent values.",
+          "frequency_ordered": "Sort-and-run and hash-then-sort-distinct-keys both satisfy counts plus ascending output.",
+          "many_membership_final_order": "A sorted index, a hash-then-sort lifecycle, or a synchronized hybrid can all satisfy both phases."
         }
       },
       "taxonomy": {
@@ -1107,7 +937,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-lookup-016",
-      "prompt": "Which observations are insufficient by themselves to choose a hash map? Select all that apply.",
+      "prompt": "Which observations fail by themselves to establish even a substantive equality-keyed signal for hashing? Select all that apply.",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -1145,33 +975,30 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
+              "type": "paragraph",
+              "text": "A semantic signal must connect the output to equality-keyed state:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The word lookup may describe a successor, range, or rank query rather than equality.",
+                "Expected O(1) describes one hash operation, not whether that operation computes the required relation.",
+                "Duplicates can be handled by equality-keyed counts or by sorting them into adjacent runs."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "A legal equality-only contract is a real mechanism signal."
+              "text": "By contrast, a contract requiring only exact membership on hashable keys does establish a real hash mechanism signal, though memory and guarantee constraints still decide whether that legal candidate is selected. The transfer rule is to separate semantic relevance from final cost ranking."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "equality_only": "This is a substantive hash signal."
+          "equality_only": "Exact membership on hashable keys directly consumes equality-keyed state, so it is a substantive hash signal even though later resource checks still apply."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "word_lookup": "The lookup may be ordered rather than equality-based.",
-          "expected_o1": "Full workload and correctness constraints remain.",
-          "duplicates": "Sorting may exploit duplicate adjacency."
+          "word_lookup": "The word lookup does not reveal whether the query is equality, successor, predecessor, rank, or range.",
+          "expected_o1": "An isolated operation bound does not show that equality lookup is the relation required by the result.",
+          "duplicates": "Duplicate presence alone supports both hashing by equality and sorting into adjacent equal runs."
         }
       },
       "taxonomy": {
@@ -1221,23 +1048,21 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
+              "type": "paragraph",
+              "text": "Use the decision dependencies in this order:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "State the observable result and translate the query into equality, per-key state, successor, range, adjacency, or ordered traversal.",
+                "Check whether keys legally support compatible hashing/equality, a total comparator, or both.",
+                "Identify which created structure will be reused: membership state, key-associated metadata, sorted adjacency, or ordered boundaries.",
+                "Compare complete build, query, update, output, memory, mutation, and guarantee costs for the remaining legal candidates."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "Cost comparison is meaningful only after legal candidates have been identified."
+              "text": "Each step constrains the next: costs are meaningful only for legal mechanisms, and legal mechanisms are relevant only when they support the exact result relation. The transfer boundary is a changed query, preservation contract, workload, or resource limit."
             }
           ]
         }
@@ -1253,7 +1078,9 @@
       "prompt": "An array of n hashable keys receives q exact membership queries. Compare building a hash set once with sorting once and using binary search, assuming expected O(1) hash operations and in-place comparison sorting.",
       "constraints": [
         "Hash-set build uses O(n) auxiliary entries.",
-        "In-place comparison sort uses O(log n) stack space."
+        "In-place comparison sort uses O(log n) stack space.",
+        "Input mutation is allowed for the sorting candidate.",
+        "Membership answers are emitted one at a time; output storage is excluded from auxiliary space."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -1329,23 +1156,19 @@
         "details": {
           "blocks": [
             {
-              "type": "heading",
-              "level": 2,
-              "text": "Read the signal in the contract"
+              "type": "paragraph",
+              "text": "Derive each lifecycle from its stated operation model:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Hashing performs n expected O(1) insertions and q expected O(1) membership tests, so expected time is O(n + q). The table retains up to n keys, giving O(n) auxiliary space.",
+                "Sorting performs O(n log n) comparisons once. Each of q binary searches takes O(log n), so total time is O(n log n + q log n). The stated in-place algorithm reuses the input and needs O(log n) stack space."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The important question is not which name sounds faster. Ask what relationship the task needs to expose. A hash map is built around equality-based lookup and per-key state. Sorting is built around order: after sorting, neighbours can be compared and ranges or deterministic traversal become natural."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Lookup signal versus ordering signal",
-              "text": "Choose hashing when the decisive operation is finding or accumulating by an equal key. Choose sorting when the answer, proof, or later pass needs keys in order or equal values next to each other. Both may solve some tasks, but the required structure decides."
-            },
-            {
-              "type": "paragraph",
-              "text": "This calculation does not make hashing universally preferable; output order, mutation, guarantees, and key-operation costs can change the decision."
+              "text": "These bounds do not make hashing universally preferable: the hash bound is expected, the sort mutates input, and ordered output or expensive hashing can change the end-to-end decision. The transfer rule is to compare setup plus q times query cost and to keep auxiliary space separate from input and streamed output."
             }
           ]
         }

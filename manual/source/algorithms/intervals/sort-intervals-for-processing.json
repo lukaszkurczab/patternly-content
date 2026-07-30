@@ -3,7 +3,7 @@
   "batchId": "algorithms-intervals-sort-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -198,7 +198,8 @@
       "id": "algorithms-intervals-sort-004",
       "prompt": "A sweep creates start and end events, sorts them by timestamp, and reads the active count after each event. For half-open intervals, what secondary sort rule is required at equal timestamps?",
       "constraints": [
-        "A booking ending at t may release its resource to one starting at t."
+        "A booking ending at t may release its resource to one starting at t.",
+        "The equal-time events belong to two different nonempty bookings."
       ],
       "difficulty": "intermediate",
       "interaction": {
@@ -251,9 +252,9 @@
     },
     {
       "id": "algorithms-intervals-sort-005",
-      "prompt": "Intervals are sorted by start. In a chronological conflict scan over half-open bookings, which comparison treats back-to-back bookings as reusable?",
+      "prompt": "Half-open bookings are sorted by start. A chronological conflict scan maintains `latestEnd`, the maximum end among all earlier bookings. Which comparison both detects a conflict with the earlier set and treats back-to-back reuse as legal?",
       "constraints": [
-        "The current interval starts no earlier than the previous interval.",
+        "The current booking starts no earlier than every booking already scanned.",
         "Only the equality boundary is in question."
       ],
       "difficulty": "foundational",
@@ -263,15 +264,15 @@
         "options": [
           {
             "id": "strict_less",
-            "text": "Report conflict when current.start < previous.end."
+            "text": "Report conflict when `current.start < latestEnd`."
           },
           {
             "id": "less_or_equal",
-            "text": "Report conflict when current.start <= previous.end."
+            "text": "Report conflict when `current.start <= latestEnd`."
           },
           {
             "id": "compare_lengths",
-            "text": "Report conflict when current.length <= previous.length."
+            "text": "Report conflict when `current.length <= previous.length`."
           }
         ],
         "acceptedOptionIds": [
@@ -283,18 +284,18 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "After start sorting, half-open overlap occurs only when the later start is strictly before the earlier end.",
+        "reason": "After start sorting, the current booking conflicts with an earlier one exactly when its start is strictly before the greatest earlier end.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Sorting supplies the processing order, while the endpoint contract supplies the comparator. Because current.start is the later start, the pair overlaps exactly when current.start < previous.end. Equality means the previous interval excludes the shared point and the current interval includes it, so the resource can be reused. If the domain used closed intervals, the same start order would pair with '<='. Keeping these concerns separate is essential: changing a sort key should not silently change the equality semantics, and changing endpoint semantics should be reflected in tests that touch exactly at the boundary."
+            "text": "Start sorting guarantees that every earlier booking begins no later than the current one. If any earlier booking can still be active, the one with the greatest end captures that possibility, so compare `current.start < latestEnd`. Tracking only the immediately previous end is unsafe: after `[1,10), [2,3)`, booking `[4,5)` does not overlap `[2,3)` but still overlaps `[1,10)`. Equality `current.start == latestEnd` is legal under `[start, end)` because the earlier booking excludes its end. Under closed intervals, the same state would pair with `<=`. Sorting determines which bookings are earlier; endpoint semantics determine equality; `latestEnd` preserves containment."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "less_or_equal": "The equality case represents legal adjacency under [start, end); '<=' would create a false conflict.",
-          "compare_lengths": "Length order is unrelated to whether the current start lies before the previous exclusive end."
+          "less_or_equal": "The equality case represents legal adjacency under `[start, end)`; `<=` would create a false conflict.",
+          "compare_lengths": "Length is unrelated to whether the current start lies before the greatest exclusive end among earlier bookings."
         }
       },
       "taxonomy": {
@@ -365,7 +366,8 @@
       "id": "algorithms-intervals-sort-007",
       "prompt": "Order the high-level steps that make a start-sorted interval scan safe.",
       "constraints": [
-        "The goal is to expose why sorting precedes any irreversible emission."
+        "The goal is to expose why sorting precedes any irreversible emission.",
+        "The input contains at least one interval."
       ],
       "difficulty": "intermediate",
       "interaction": {
@@ -379,40 +381,44 @@
             "id": "initialize_active",
             "text": "Initialize the active interval from the first sorted interval."
           },
-          {
-            "id": "scan_with_monotonic_starts",
-            "text": "Scan later intervals, relying on the fact that their starts never move backward."
-          },
-          {
-            "id": "emit_when_gap_proved",
-            "text": "Emit the active interval only when the next start proves a gap."
+        {
+          "id": "scan_and_resolve",
+          "text": "For each later interval, extend the active interval on overlap; otherwise emit it and make the later interval active."
           },
           {
             "id": "flush_active",
             "text": "Emit the final active interval after the scan."
           }
         ],
-        "canonicalOrder": [
-          "sort_starts",
-          "initialize_active",
-          "scan_with_monotonic_starts",
-          "emit_when_gap_proved",
-          "flush_active"
+      "canonicalOrder": [
+        "sort_starts",
+        "initialize_active",
+        "scan_and_resolve",
+        "flush_active"
         ],
         "scoringMethod": "adjacent_relations"
       },
       "scoringContract": {
         "type": "ordering",
-        "maxPoints": 4
+        "maxPoints": 3
       },
       "feedback": {
         "reason": "Start sorting must occur before state initialization and emission because it supplies the monotonic-start proof used by every later step.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "The critical adjacent relations are sort before initialize, initialize before scan, and scan before an emission decision. Once starts are monotonic, a next start beyond the active end proves that no unseen interval can overlap the active interval, making emission irreversible and safe. Flushing belongs after the scan because the active interval has no later gap event to emit it. This item does not require the learner to reproduce every merge update; it diagnoses whether the chosen order establishes the preprocessing invariant before output is committed."
-            }
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Sort by nondecreasing start before creating mutable scan state; this establishes that unseen starts never move backward.",
+              "Initialize the active union component from the first sorted interval.",
+              "For each later interval, extend the active end to the maximum end when the endpoint predicate says they overlap. When a gap exists, emit the active component and replace it with the later interval; monotonic starts make that emission irreversible.",
+              "After the loop, emit the remaining active component because no later gap event exists to flush it."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "The per-interval comparison and its possible emission are one loop step, not two globally ordered phases. Sorting must precede any emission because it supplies the proof that a future interval cannot reach backward into committed output."
+          }
           ]
         }
       },

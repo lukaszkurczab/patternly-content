@@ -3,7 +3,7 @@
   "batchId": "algorithms-contrast-stack-vs-monotonic-stack-correctness-invariant-comparison",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -37,7 +37,7 @@
   "items": [
     {
       "id": "alg-stack-mono-cic-001",
-      "prompt": "A design review covers Mixed nested delimiters. Select the invariant for delimiter validation. Which statement gives the decisive justification?",
+      "prompt": "While validating mixed delimiters left to right, which invariant must hold after every processed token?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -73,19 +73,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The stack contains exactly the unmatched openers in encounter order; top is the innermost unmatched opener. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "The stack must contain exactly the unmatched openers in encounter order, with the innermost unmatched opener on top.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The item is decided by the invariant and proof obligations that make each stack discipline correct, not by a surface feature. The stack contains exactly the unmatched openers in encounter order; top is the innermost unmatched opener. The tempting claim—The stack values must be numerically monotone.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "Initially the empty prefix has no unmatched openers, so the empty stack satisfies the invariant. An opener is pushed and becomes the innermost pending structure. A closer is legal only if it matches the top; popping that top removes exactly the structure it closes. At end, an empty stack proves all openers matched, while a nonempty stack proves an unclosed structure. Numeric ordering is irrelevant, and one successful trace cannot replace the preservation and terminal arguments."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. The stack contains exactly the unmatched openers in encounter order; top is the innermost unmatched opener. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. The stack contains exactly the unmatched openers in encounter order; top is the innermost unmatched opener."
+          "target_false_heuristic": "Delimiter type and nesting order govern validity; numeric monotonicity neither initializes nor preserves the required structural meaning.",
+          "surface_feature_classifier": "A sample can miss an empty-prefix, mismatch, or unclosed-opener failure; correctness requires the invariant for every prefix.",
+          "unjustified_alternative_rule": "Retained-entry meaning is part of correctness: without it, a pop cannot be proved to remove exactly the matched opener."
         }
       },
       "taxonomy": {
@@ -96,7 +96,7 @@
     },
     {
       "id": "alg-stack-mono-cic-002",
-      "prompt": "Consider Multiple edits and undo. A teammate argues: “Older actions are dominated by newer actions.” Which response correctly resolves the design decision?",
+      "prompt": "An editor commits actions A, B, then C and must support three successive Undo commands. A teammate proposes deleting A and B when C arrives because they are older. Which response is correct?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -132,19 +132,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Entries are committed reversible actions ordered by recency. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "Every committed action remains independently reversible; recency chooses the next Undo target but does not make older actions irrelevant.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. Entries are committed reversible actions ordered by recency. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “Older actions are dominated by newer actions.” confuses an implementation clue with a correctness condition. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "After A, B, C, the stack must contain all three committed reversible actions in that order, with C on top. The first Undo pops C, the second B, and the third A. Deleting older actions when C arrives makes the second and third requested results impossible. Unlike monotonic dominance, newness here determines only LIFO access, not permanent irrelevance. Reusable invariant: the undo stack is exactly the committed, not-yet-undone history in commit order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Entries are committed reversible actions ordered by recency. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Entries are committed reversible actions ordered by recency."
+          "target_false_heuristic": "B and A are still required by later Undo commands, so C's recency does not dominate them.",
+          "surface_feature_classifier": "One Undo trace cannot prove that deeper history remains available for subsequent requests.",
+          "unjustified_alternative_rule": "Explaining retained actions and their pop trigger is necessary to prove the full undo contract, not merely performance."
         }
       },
       "taxonomy": {
@@ -197,23 +197,23 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The accepted set jointly establishes the decisive boundary: The stack contains completed subresults for the processed prefix in operand order.",
+        "reason": "Correct postfix evaluation retains exactly the processed prefix’s completed subresults and preserves operand order for each operator.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. The stack contains completed subresults for the processed prefix in operand order. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—Any numeric ordering of partial values is required.—would permit transitions that are not justified by the requested result. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "For prefix `8 3`, the stack `[8,3]` represents two completed subexpressions. At `-`, pop `3` as right operand, then `8` as left, compute `8 - 3 = 5`, and push the completed result. Sorting would change operand order, while dominance is irrelevant because both values are required. The three accepted facts jointly cover retained meaning, top semantics, and non-commutative pop order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "false_claim_1": "This claim is not sufficient or is false under the stated contract. The stack contains completed subresults for the processed prefix in operand order.",
-          "false_claim_2": "This claim is not sufficient or is false under the stated contract. The stack contains completed subresults for the processed prefix in operand order."
+          "false_claim_1": "Sorting `[8,3]` can reverse the operands of `-`; postfix correctness preserves syntax order, not numeric order.",
+          "false_claim_2": "The operator consumes both operands because of arity; neither value becomes irrelevant by being smaller."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "required_fact_1": "This fact is required because it contributes to the complete decision boundary: The stack contains completed subresults for the processed prefix in operand order.",
-          "required_fact_2": "This fact is required because it contributes to the complete decision boundary: The stack contains completed subresults for the processed prefix in operand order.",
-          "required_fact_3": "This fact is required because it contributes to the complete decision boundary: The stack contains completed subresults for the processed prefix in operand order."
+          "required_fact_1": "It states the inductive meaning of the complete stack after every processed prefix.",
+          "required_fact_2": "It identifies why the top is consumed first by the next operator.",
+          "required_fact_3": "It preserves left/right provenance for non-commutative binary operators."
         }
       },
       "taxonomy": {
@@ -224,7 +224,7 @@
     },
     {
       "id": "alg-stack-mono-cic-004",
-      "prompt": "Order a correctness argument for an explicit DFS work stack.",
+      "prompt": "A finite graph DFS marks a node visited when discovered and uses an explicit work stack. Order the correctness argument from the start node.",
       "constraints": [
         "Order the steps by semantic dependency, not by the order in which they are listed.",
         "The canonical scoring contract awards preserved adjacent relations."
@@ -268,12 +268,22 @@
         "maxPoints": 4
       },
       "feedback": {
-        "reason": "The sequence follows the dependency expressed by the decisive boundary: Each push schedules reachable work and each pop selects one pending state; traversal semantics do not require value monotonicity.",
+        "reason": "The proof initializes reachable pending work, preserves it while processing and discovering successors, then concludes when none remains.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Push and mark the start node, initializing one reachable pending item.",
+                "State the invariant: every stack entry is discovered, reachable, and not yet processed.",
+                "Pop and process one pending node.",
+                "Mark and push every newly discovered unvisited successor, preserving the invariant without duplicates.",
+                "When the finite work stack empties, conclude that no reachable pending node remains."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. Each push schedules reachable work and each pop selects one pending state; traversal semantics do not require value monotonicity. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—Traversal order must be sorted by node value.—is too broad and would classify unrelated stack algorithms the same way. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract. Reversing or separating a required adjacent relation either uses state before it is valid, loses provenance before writing an answer, or mutates the frontier before the invariant has been restored."
+              "text": "Any reachable unvisited node would contradict that its predecessor was processed. Node-value sorting plays no role."
             }
           ]
         }
@@ -286,7 +296,7 @@
     },
     {
       "id": "alg-stack-mono-cic-005",
-      "prompt": "A design review covers Next strictly greater to right. Select a decreasing unresolved-candidate invariant for next greater. Which statement gives the decisive justification?",
+      "prompt": "Scan left to right for each index’s nearest later strictly greater value; equal values do not qualify. Which invariant is correct after each processed index?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -298,7 +308,7 @@
         "options": [
           {
             "id": "decisive_contract_rule",
-            "text": "Candidate indices increase by scan order while candidate values decrease according to strictness."
+            "text": "Entries are unresolved indices in increasing scan order, and their values are non-increasing from bottom to top."
           },
           {
             "id": "target_false_heuristic",
@@ -322,19 +332,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Candidate indices increase by scan order while candidate values decrease according to strictness. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "Strict next-greater keeps unresolved indices in scan order and non-increasing values, because equal values do not resolve one another.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The item is decided by the invariant and proof obligations that make each stack discipline correct, not by a surface feature. Candidate indices increase by scan order while candidate values decrease according to strictness. The tempting claim—Only decreasing values matter; unresolved status and provenance are irrelevant.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "Initially the frontier is empty. When current is strictly greater than a top value, current is that index’s first qualifying right value, so pop and answer it; equality stays because it is not greater. After all smaller tops are removed, pushing current preserves non-increasing values and increasing indices. Remaining entries at end receive no answer. Values alone cannot compute index or distance, and calling the order strictly decreasing would mishandle duplicates such as `[5,5]`."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Candidate indices increase by scan order while candidate values decrease according to strictness. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Candidate indices increase by scan order while candidate values decrease according to strictness."
+          "target_false_heuristic": "Without unresolved meaning and indices, decreasing values cannot identify which output current finalizes.",
+          "surface_feature_classifier": "A sample without duplicates or no-answer cases cannot prove strictness, provenance, or terminal handling.",
+          "unjustified_alternative_rule": "The order is not just an optimization; together with scan order it proves nearest answer timing and safe suffix removal."
         }
       },
       "taxonomy": {
@@ -345,7 +355,7 @@
     },
     {
       "id": "alg-stack-mono-cic-006",
-      "prompt": "Consider Next smaller boundary. A teammate argues: “The same decreasing invariant works for every relation.” Which response correctly resolves the design decision?",
+      "prompt": "Scan left to right for each index’s nearest later strictly smaller value; equal values do not qualify. Which invariant replaces the next-greater frontier?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -381,19 +391,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Retained candidates remain unresolved and ordered so a smaller current value can finalize violating tops. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "Next strictly smaller requires unresolved values to be non-decreasing, so a smaller current value resolves the larger top suffix.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. Retained candidates remain unresolved and ordered so a smaller current value can finalize violating tops. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “The same decreasing invariant works for every relation.” confuses an implementation clue with a correctness condition. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "For next strictly smaller, pop while `current < top`; each popped index receives current as its first smaller value to the right. Equality does not qualify, so equal values may coexist. After larger tops are removed, pushing current leaves values non-decreasing from bottom to top. Reusing a decreasing next-greater invariant reverses the candidate relation, while a passing sample cannot prove duplicates or terminal absence."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Retained candidates remain unresolved and ordered so a smaller current value can finalize violating tops. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Retained candidates remain unresolved and ordered so a smaller current value can finalize violating tops."
+          "target_false_heuristic": "A decreasing frontier is aligned with next-greater resolution, not the `current < top` next-smaller predicate.",
+          "surface_feature_classifier": "One trace cannot establish preservation for equal, increasing, decreasing, and no-answer inputs.",
+          "unjustified_alternative_rule": "The maintained non-decreasing order is part of the proof that exactly the resolvable suffix is exposed."
         }
       },
       "taxonomy": {
@@ -446,23 +456,23 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The accepted set jointly establishes the decisive boundary: Order, candidate meaning, unresolved status, provenance, and equality policy must align.",
+        "reason": "A complete invariant must bind frontier order to unresolved meaning, provenance, equality policy, and safe finalization.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. Order, candidate meaning, unresolved status, provenance, and equality policy must align. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—A sorted list of values alone is a sufficient invariant.—would permit transitions that are not justified by the requested result. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "Value order says which suffix is exposed but not why entries exist. Candidate meaning says each entry still lacks its answer; provenance supplies the index or identity the output needs; equality policy determines whether duplicates resolve or coexist. A one-loop observation is not a linear-time proof because the inner loop can repeat, and one sorted screenshot is not inductive. The three accepted components are therefore jointly necessary."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "false_claim_1": "This claim is not sufficient or is false under the stated contract. Order, candidate meaning, unresolved status, provenance, and equality policy must align.",
-          "false_claim_2": "This claim is not sufficient or is false under the stated contract. Order, candidate meaning, unresolved status, provenance, and equality policy must align."
+          "false_claim_1": "One outer loop neither states correctness nor proves total pop cost; amortization requires each candidate's lifecycle.",
+          "false_claim_2": "A snapshot does not prove initialization, preservation, retained meaning, or future safe removal."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "required_fact_1": "This fact is required because it contributes to the complete decision boundary: Order, candidate meaning, unresolved status, provenance, and equality policy must align.",
-          "required_fact_2": "This fact is required because it contributes to the complete decision boundary: Order, candidate meaning, unresolved status, provenance, and equality policy must align.",
-          "required_fact_3": "This fact is required because it contributes to the complete decision boundary: Order, candidate meaning, unresolved status, provenance, and equality policy must align."
+          "required_fact_1": "It declares the comparison structure that exposes exactly the removable top suffix.",
+          "required_fact_2": "It connects every live entry to a pending output and preserves the identity needed to write it.",
+          "required_fact_3": "It proves duplicate behavior and why a removed entry is final or permanently irrelevant."
         }
       },
       "taxonomy": {
@@ -517,12 +527,22 @@
         "maxPoints": 4
       },
       "feedback": {
-        "reason": "The sequence follows the dependency expressed by the decisive boundary: Entries are pushed once in encounter order; pops remove a suffix only.",
+        "reason": "Suffix deletion preserves survivor index order, and pushing the newest index restores both encounter and declared value order.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Assume processed-prefix entries have increasing indices and the declared value order.",
+                "Remove only the consecutive top suffix invalidated by current.",
+                "Observe that deleting a suffix preserves the index order of all survivors.",
+                "After restoring value order, push current, whose index is newer than every survivor.",
+                "Conclude that both encounter order and the declared value order hold."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. Entries are pushed once in encounter order; pops remove a suffix only. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—Value order implies index order without scan assumptions.—is too broad and would classify unrelated stack algorithms the same way. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract. Reversing or separating a required adjacent relation either uses state before it is valid, loses provenance before writing an answer, or mutates the frontier before the invariant has been restored."
+              "text": "Value order alone cannot imply index order; the left-to-right single-push lifecycle does."
             }
           ]
         }
@@ -562,7 +582,7 @@
           },
           {
             "id": "verify_surviving_order",
-            "text": "Verify that the surviving frontier satisfies the new non-strict invariant."
+            "text": "Verify that removing resolved equals leaves the frontier strictly decreasing before current is pushed."
           }
         ],
         "canonicalOrder": [
@@ -579,12 +599,22 @@
         "maxPoints": 4
       },
       "feedback": {
-        "reason": "The sequence follows the dependency expressed by the decisive boundary: The equality policy determines whether equal candidates coexist or one replaces another.",
+        "reason": "When equality becomes qualifying, the pop predicate must include equals; resolving them changes the frontier from non-increasing to strictly decreasing.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "State the new greater-or-equal contract: equality now qualifies.",
+                "Change the pop predicate from `current > top` to `current >= top`.",
+                "Finalize every smaller or equal top, including the first `5` in `[5,5]` when the second arrives.",
+                "Verify that only values strictly greater than current survive.",
+                "Push current, preserving a strictly decreasing frontier."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The item is decided by the invariant and proof obligations that make each stack discipline correct, not by a surface feature. The equality policy determines whether equal candidates coexist or one replaces another. The tempting claim—Equality handling is an implementation detail outside correctness.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract. Reversing or separating a required adjacent relation either uses state before it is valid, loses provenance before writing an answer, or mutates the frontier before the invariant has been restored."
+              "text": "Keeping the old non-strict invariant would miss valid duplicate answers."
             }
           ]
         }
@@ -597,7 +627,7 @@
     },
     {
       "id": "alg-stack-mono-cic-010",
-      "prompt": "Consider Nested parser prefix. A teammate argues: “Push must compare values to preserve order.” Which response correctly resolves the design decision?",
+      "prompt": "A parser reads a new nested opener and pushes a frame containing its type and suspended outer context. Must it compare numeric values before the push?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -633,19 +663,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The new opener becomes the most recent unmatched structure. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "The push is justified by structural nesting: the new frame becomes the most recent unmatched scope, independent of numeric order.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. The new opener becomes the most recent unmatched structure. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “Push must compare values to preserve order.” confuses an implementation clue with a correctness condition. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "Before the opener, the stack represents active unmatched frames from outermost to innermost. Pushing the new frame preserves that meaning because it is now the innermost scope; its closer will later verify the top type and restore the suspended context. A numeric comparison could discard a still-open frame, and a sample parse cannot prove mismatched or unclosed cases. Reusable rule: ordinary structural pushes preserve dependency order, not comparison order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. The new opener becomes the most recent unmatched structure. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. The new opener becomes the most recent unmatched structure."
+          "target_false_heuristic": "Numeric order has no structural meaning and could delete a frame that still awaits its closer.",
+          "surface_feature_classifier": "A successful prefix does not cover mismatched closers or nonempty terminal state.",
+          "unjustified_alternative_rule": "Retained frame meaning and closure timing are required to prove the parser, not optional performance commentary."
         }
       },
       "taxonomy": {
@@ -656,7 +686,7 @@
     },
     {
       "id": "alg-stack-mono-cic-011",
-      "prompt": "For Multiple candidate pops, choose the analysis that correctly addresses this target: Verify that a monotonic pop loop restores the frontier order.",
+      "prompt": "A decreasing next-greater frontier is `[9,7,4,3]` from bottom to top and current value is `8`. Which rule restores the invariant?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -692,19 +722,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Every violating top is removed until the declared relation holds with the current value. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "Current `8` must pop and finalize `3`, `4`, and `7`, then stop at `9`; one pop leaves the frontier invalid.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. Every violating top is removed until the declared relation holds with the current value. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—One pop is always enough.—would permit transitions that are not justified by the requested result. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "For strict next greater, `8` qualifies for each smaller top. Pop `3`, `4`, then `7`, writing current as each index's nearest answer; stop at `9` because `8` is not greater. Pushing `8` then yields `[9,8]`, again decreasing. One pop would leave top `4 < 8`, and removing `9` would discard an unresolved candidate without a qualifying answer."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Every violating top is removed until the declared relation holds with the current value. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Every violating top is removed until the declared relation holds with the current value."
+          "target_false_heuristic": "After popping only `3`, top `4` still violates decreasing order with incoming `8` and remains incorrectly unanswered.",
+          "surface_feature_classifier": "A single trace result does not prove why the loop stops at `9` or why each popped index is final.",
+          "unjustified_alternative_rule": "Frontier order is essential: it exposes exactly the smaller suffix and proves that `9` may safely remain."
         }
       },
       "taxonomy": {
@@ -757,23 +787,23 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The accepted set jointly establishes the decisive boundary: All candidates invalidated by current must be finalized or proved irrelevant, then current becomes unresolved.",
+        "reason": "Before current is pushed, every affected top must be finalized or proved irrelevant and the surviving frontier must already satisfy the new invariant.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. All candidates invalidated by current must be finalized or proved irrelevant, then current becomes unresolved. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—Push can precede answer writes because order can be repaired later.—is too broad and would classify unrelated stack algorithms the same way. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "Current first resolves or dominates the qualifying top suffix; each removal must preserve enough provenance to write or justify its output. The first surviving top establishes the stop boundary and restored order. Only then can current become a new unresolved entry. Pushing it first hides the candidates it should resolve, while deleting all older entries removes survivors that current does not qualify for."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "false_claim_1": "This claim is not sufficient or is false under the stated contract. All candidates invalidated by current must be finalized or proved irrelevant, then current becomes unresolved.",
-          "false_claim_2": "This claim is not sufficient or is false under the stated contract. All candidates invalidated by current must be finalized or proved irrelevant, then current becomes unresolved."
+          "false_claim_1": "Current on top blocks access to the older suffix it must resolve and can make it compare with itself.",
+          "false_claim_2": "Older candidates below the stop boundary remain unresolved; removing them has no correctness proof."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "required_fact_1": "This fact is required because it contributes to the complete decision boundary: All candidates invalidated by current must be finalized or proved irrelevant, then current becomes unresolved.",
-          "required_fact_2": "This fact is required because it contributes to the complete decision boundary: All candidates invalidated by current must be finalized or proved irrelevant, then current becomes unresolved.",
-          "required_fact_3": "This fact is required because it contributes to the complete decision boundary: All candidates invalidated by current must be finalized or proved irrelevant, then current becomes unresolved."
+          "required_fact_1": "It proves no removed owner loses an answer or required provenance.",
+          "required_fact_2": "It establishes the legal attachment point for current.",
+          "required_fact_3": "It gives current the exact pending meaning required for future iterations."
         }
       },
       "taxonomy": {
@@ -795,7 +825,7 @@
         "elements": [
           {
             "id": "pop_candidate",
-            "text": "Remove that finalized candidate from the unresolved frontier."
+            "text": "Pop the qualifying top while retaining its `(value,index)` entry for this update."
           },
           {
             "id": "push_current",
@@ -803,11 +833,11 @@
           },
           {
             "id": "identify_resolved_top",
-            "text": "Identify a top candidate for which the current value is the first strictly greater value."
+            "text": "Verify that current is strictly greater than the unresolved top."
           },
           {
             "id": "compute_distance",
-            "text": "Compute currentIndex - candidateIndex while the candidate provenance is available."
+            "text": "Compute `currentIndex - poppedIndex` from the retained popped entry."
           },
           {
             "id": "write_final_answer",
@@ -816,9 +846,9 @@
         ],
         "canonicalOrder": [
           "identify_resolved_top",
+          "pop_candidate",
           "compute_distance",
           "write_final_answer",
-          "pop_candidate",
           "push_current"
         ],
         "scoringMethod": "adjacent_relations"
@@ -828,12 +858,22 @@
         "maxPoints": 4
       },
       "feedback": {
-        "reason": "The sequence follows the dependency expressed by the decisive boundary: Answer semantics must be committed for each popped candidate before the current item joins the unresolved frontier.",
+        "reason": "After the strict comparison succeeds, pop one owner, use its retained index to write the distance, repeat as needed, and push current only after resolution.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Verify `currentValue > topValue` for one unresolved owner.",
+                "Pop that top into a local `(value,index)` entry.",
+                "Compute `currentIndex - index` while provenance is available.",
+                "Commit the distance as that popped index's final answer.",
+                "Repeat for qualifying tops, then push current after the suffix is resolved."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The item is decided by the invariant and proof obligations that make each stack discipline correct, not by a surface feature. Answer semantics must be committed for each popped candidate before the current item joins the unresolved frontier. The tempting claim—Popped candidates can be answered after losing their provenance.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract. Reversing or separating a required adjacent relation either uses state before it is valid, loses provenance before writing an answer, or mutates the frontier before the invariant has been restored."
+              "text": "Computing before identifying an owner is undefined, dropping the entry before retaining its index loses provenance, and pushing current first blocks the candidates it resolves."
             }
           ]
         }
@@ -890,12 +930,22 @@
         "maxPoints": 4
       },
       "feedback": {
-        "reason": "The sequence follows the dependency expressed by the decisive boundary: Remaining candidates are legitimate no-answer cases, not invariant violations.",
+        "reason": "Once input is exhausted, each retained candidate is a proved no-answer case that must receive the declared marker before state is released.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Establish that input is exhausted and no future resolver can arrive.",
+                "Interpret each retained index as a proved no-answer case.",
+                "Write the declared marker such as `-1`, or preserve its preinitialized marker.",
+                "Verify every position is resolved or explicitly unanswered.",
+                "Release the frontier only after the result is complete."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. Remaining candidates are legitimate no-answer cases, not invariant violations. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “Drain all entries as if a qualifying value existed.” confuses an implementation clue with a correctness condition. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract. Reversing or separating a required adjacent relation either uses state before it is valid, loses provenance before writing an answer, or mutates the frontier before the invariant has been restored."
+              "text": "Treating a drain as a comparison event fabricates answers, while clearing before writing loses output owners."
             }
           ]
         }
@@ -908,7 +958,7 @@
     },
     {
       "id": "alg-stack-mono-cic-015",
-      "prompt": "For Counterexample `([)]`, choose the analysis that correctly addresses this target: Prove top-only matching is sufficient for nested delimiters.",
+      "prompt": "In delimiter string `([)]`, the current token `)` matches an older `(` but not the top `[`. Why must validation reject immediately instead of searching deeper?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -944,19 +994,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Any closer matching a non-top opener would cross an unresolved inner structure. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "Matching a non-top `(` would close across the unresolved inner `[`, which violates proper nesting.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. Any closer matching a non-top opener would cross an unresolved inner structure. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—Search the full stack for any matching opener.—would permit transitions that are not justified by the requested result. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "After `([`, the stack bottom-to-top is `(`, `[`. Proper nesting requires the next closer to close `[`, the innermost pending opener. Current `)` mismatches that top. Searching below finds `(`, but pairing them would cross the still-open `[`, accepting an invalid structure. Thus top-only matching is sufficient precisely because the stack already records the unmatched ancestry order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Any closer matching a non-top opener would cross an unresolved inner structure. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Any closer matching a non-top opener would cross an unresolved inner structure."
+          "target_false_heuristic": "The deeper `(` exists, but using it crosses the unresolved `[`, so existence of any matching opener is insufficient.",
+          "surface_feature_classifier": "A different sample can hide crossing; the unmatched-ancestry invariant proves rejection for every prefix.",
+          "unjustified_alternative_rule": "Top position is semantically the innermost opener, so retained meaning—not performance—justifies the decision."
         }
       },
       "taxonomy": {
@@ -1003,19 +1053,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "No earlier scanned value qualified, and current is the first qualifying value encountered. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "Because scanning is left to right and the candidate stayed unresolved through every earlier position, current is its nearest qualifying right index.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. No earlier scanned value qualified, and current is the first qualifying value encountered. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—A later larger value gives a more correct answer.—is too broad and would classify unrelated stack algorithms the same way. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "The candidate was pushed at index `i` and remained live while indices `i+1` through `j-1` were processed, so none satisfied the declared greater relation. At current index `j`, the relation first succeeds. Therefore `j` is not merely a larger answer but the minimum qualifying index to the right. Waiting for a later, larger value violates nearestness, and one trace cannot replace this scan-order argument."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. No earlier scanned value qualified, and current is the first qualifying value encountered. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. No earlier scanned value qualified, and current is the first qualifying value encountered."
+          "target_false_heuristic": "The output asks for nearest, not maximum; any later index is farther once current qualifies.",
+          "surface_feature_classifier": "A sample shows an answer but not why no skipped earlier index qualified.",
+          "unjustified_alternative_rule": "Answer timing is part of correctness because it proves the minimum right index."
         }
       },
       "taxonomy": {
@@ -1068,23 +1118,23 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The accepted set jointly establishes the decisive boundary: Encounter order, output objective, exact relation, and retained provenance jointly establish irrelevance.",
+        "reason": "Permanent dominance requires direction, exact future preference, and preservation of every requested provenance or tie property.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The item is decided by the invariant and proof obligations that make each stack discipline correct, not by a surface feature. Encounter order, output objective, exact relation, and retained provenance jointly establish irrelevance. The tempting claim—Value inequality alone proves dominance for all outputs.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "A later candidate is useful only in the answer direction. Its value must be at least as good whenever the earlier one could qualify, and its later position must be preferred by the requested nearestness or tie rule. If output asks for earliest index, all qualifying pairs, or stable duplicate identity, the older entry may still be required. Newness alone proves position but not value; equality alone does not preserve index provenance."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "false_claim_1": "This claim is not sufficient or is false under the stated contract. Encounter order, output objective, exact relation, and retained provenance jointly establish irrelevance.",
-          "false_claim_2": "This claim is not sufficient or is false under the stated contract. Encounter order, output objective, exact relation, and retained provenance jointly establish irrelevance."
+          "false_claim_1": "A newer but worse value need not qualify whenever the older value would, so recency alone cannot prove dominance.",
+          "false_claim_2": "Earliest/latest index outputs distinguish equal values; deleting one can lose the required identity."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "required_fact_1": "This fact is required because it contributes to the complete decision boundary: Encounter order, output objective, exact relation, and retained provenance jointly establish irrelevance.",
-          "required_fact_2": "This fact is required because it contributes to the complete decision boundary: Encounter order, output objective, exact relation, and retained provenance jointly establish irrelevance.",
-          "required_fact_3": "This fact is required because it contributes to the complete decision boundary: Encounter order, output objective, exact relation, and retained provenance jointly establish irrelevance."
+          "required_fact_1": "It establishes that the replacement lies on the side from which future answers are selected.",
+          "required_fact_2": "It proves the replacement is never worse under the actual qualification and objective.",
+          "required_fact_3": "It closes the proof for nearestness, duplicate identity, and index-valued outputs."
         }
       },
       "taxonomy": {
@@ -1095,7 +1145,7 @@
     },
     {
       "id": "alg-stack-mono-cic-018",
-      "prompt": "Order the construction of a counterexample to an unsafe pop rule for an all-pairs or maximum-future output.",
+      "prompt": "A next-greater pop rule deletes `2` when `3` arrives, but the changed output must list every greater pair. Order a counterexample proof using prefix `[2,3]` and a later `4`.",
       "constraints": [
         "Order the steps by semantic dependency, not by the order in which they are listed.",
         "The canonical scoring contract awards preserved adjacent relations."
@@ -1106,7 +1156,7 @@
         "elements": [
           {
             "id": "show_indistinguishability",
-            "text": "Show that the reduced state cannot distinguish the required future outcomes."
+            "text": "Show that after deleting `2`, the retained state cannot later emit required pair `(2,4)`."
           },
           {
             "id": "conclude_not_safe",
@@ -1114,15 +1164,15 @@
           },
           {
             "id": "state_unsafe_rule",
-            "text": "State the candidate-removal rule being challenged."
+            "text": "State the challenged rule: delete an earlier value when its first greater value arrives."
           },
           {
             "id": "choose_shared_prefix",
-            "text": "Choose two executions with the same processed prefix and the same retained state after the unsafe deletion."
+            "text": "Process shared prefix `[2,3]`, where the rule emits `(2,3)` and deletes `2`."
           },
           {
             "id": "choose_different_suffixes",
-            "text": "Append two legal suffixes that require different answers involving the discarded candidate."
+            "text": "Compare stopping after `[2,3]` with appending `4`, which additionally requires `(2,4)`."
           }
         ],
         "canonicalOrder": [
@@ -1139,12 +1189,22 @@
         "maxPoints": 4
       },
       "feedback": {
-        "reason": "The sequence follows the dependency expressed by the decisive boundary: Show two prefixes with the same retained state but different required future answers after the candidate is discarded.",
+        "reason": "Appending `4` after deletion requires pair `(2,4)`, but the reduced state no longer contains `2`; nearest-only finalization is unsafe for all-pairs output.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "State the challenged nearest-greater rule: delete `2` when `3` first qualifies.",
+                "Process shared prefix `[2,3]`, emit `(2,3)`, and observe that `2` is lost.",
+                "Compare stopping there with appending legal suffix `4`.",
+                "Show that `[2,3,4]` additionally requires `(2,4)`, which the reduced state cannot emit.",
+                "Conclude that nearest-only deletion is unsafe for all-greater-pairs output."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. Show two prefixes with the same retained state but different required future answers after the candidate is discarded. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “A trace with no visible error proves the rule correct.” confuses an implementation clue with a correctness condition. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract. Reversing or separating a required adjacent relation either uses state before it is valid, loses provenance before writing an answer, or mutates the frontier before the invariant has been restored."
+              "text": "The shorter execution exposes no error; the distinguishing suffix is what disproves transfer of the old removal rule."
             }
           ]
         }
@@ -1157,7 +1217,7 @@
     },
     {
       "id": "alg-stack-mono-cic-019",
-      "prompt": "For Ordinary numeric stack with one sorted state, choose the analysis that correctly addresses this target: Reject an accidentally sorted stack snapshot as an invariant.",
+      "prompt": "An operand stack happens to contain `[2,5,9]` after one expression prefix. Which statement explains why this sorted snapshot is not a correctness invariant?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -1193,19 +1253,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "An invariant must be inductive and semantically connected to required answers. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "A correctness invariant must hold initially, be preserved by every legal transition, and explain the requested output; one sorted snapshot does none of these.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The stack category follows from the proof obligation. An invariant must be inductive and semantically connected to required answers. Names, indices, comparisons, loop shape, or one trace snapshot cannot replace that proof. In this case, the stated misconception—Observed order at one time is enough.—would permit transitions that are not justified by the requested result. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "The next legal postfix token can push `1`, immediately making `[2,5,9,1]`; evaluation remains correct because operand order, not sorting, is preserved. Thus sortedness is neither inductive nor tied to expression semantics. A sample result cannot prove future transitions, and saying order affects only speed still fails to state what entries mean. Reusable test: try initialization, every transition, and output derivation before calling a property an invariant."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. An invariant must be inductive and semantically connected to required answers. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. An invariant must be inductive and semantically connected to required answers."
+          "target_false_heuristic": "The legal next push of `1` breaks sortedness without breaking evaluation, so the snapshot property is not invariant.",
+          "surface_feature_classifier": "One observed prefix cannot prove preservation across all operands and operators.",
+          "unjustified_alternative_rule": "A correctness argument still needs retained subexpression meaning and operator finalization, regardless of performance."
         }
       },
       "taxonomy": {
@@ -1260,12 +1320,22 @@
         "maxPoints": 4
       },
       "feedback": {
-        "reason": "The sequence follows the dependency expressed by the decisive boundary: “Entries came from the prefix” does not explain candidate validity, order, or answer finalization.",
+        "reason": "Prefix origin is true but too weak: it omits candidate meaning, frontier order, equality, safe removal, and answer finalization.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Acknowledge that all entries do come from the processed prefix.",
+                "Identify the missing meaning: the statement says nothing about which outputs remain unresolved.",
+                "Identify the missing value order, comparison direction, and equality policy.",
+                "Identify the missing proof of answer finalization and safe removal.",
+                "Replace it with an invariant tied to the exact query and complete lifecycle."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Apply the contract before choosing the representation. “Entries came from the prefix” does not explain candidate validity, order, or answer finalization. This preserves the relevant state and prevents premature deletion or unnecessary ordering. The alternative heuristic—Any true statement about state can prove correctness.—is too broad and would classify unrelated stack algorithms the same way. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract. Reversing or separating a required adjacent relation either uses state before it is valid, loses provenance before writing an answer, or mutates the frontier before the invariant has been restored."
+              "text": "Prefix origin alone is shared by ordinary stacks, queues, and lists, so it cannot distinguish or prove this algorithm."
             }
           ]
         }
@@ -1278,7 +1348,7 @@
     },
     {
       "id": "alg-stack-mono-cic-021",
-      "prompt": "A design review covers Previous/next boundary under reverse scan. Adapt the invariant when scanning from right to left. Which statement gives the decisive justification?",
+      "prompt": "To compute each index’s nearest strictly greater value to the right, change from a left-to-right resolving scan to a right-to-left survivor-reading scan. What must change in the invariant?",
       "constraints": [
         "Use the exact output, strictness, scan direction, and tie semantics stated in the prompt.",
         "Do not classify the algorithm from a variable name or one intermediate snapshot."
@@ -1314,19 +1384,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Encounter direction changes index order and may invert which frontier relation exposes the desired boundary. This is the decisive boundary for the stated output and retained-state semantics.",
+        "reason": "Right-to-left processing retains already-seen right-side candidates and answers current from a survivor, so index order and answer timing must be restated.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The item is decided by the invariant and proof obligations that make each stack discipline correct, not by a surface feature. Encounter direction changes index order and may invert which frontier relation exposes the desired boundary. The tempting claim—Only loop direction changes; invariant wording is identical.—fails because it does not establish the semantic invariant that makes removal or retention safe. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract."
+              "text": "In the left-to-right version, an incoming greater value finalizes popped earlier indices. In the right-to-left version, the stack already contains right-side indices: remove values `<= current`, then the surviving top is current’s nearest strictly greater right value, and finally push current. Entries are ordered by reverse encounter, and current—not the popped entries—owns the answer. Reversing only the loop while retaining old wording confuses side, provenance, and finalization."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "target_false_heuristic": "This is the targeted misconception. Encounter direction changes index order and may invert which frontier relation exposes the desired boundary. The quoted clue does not establish that invariant or justify the removal rule.",
-          "surface_feature_classifier": "This relies on a surface feature instead of the contract. The correct decision follows from the invariant and proof obligations that make each stack discipline correct; payload type or implementation shape alone is not diagnostic.",
-          "unjustified_alternative_rule": "This changes the representation or transition without proving that it preserves the requested result. Encounter direction changes index order and may invert which frontier relation exposes the desired boundary."
+          "target_false_heuristic": "The old invariant describes unresolved left indices answered on pop; the reverse scan stores right candidates and answers current from a survivor.",
+          "surface_feature_classifier": "A sample can coincide even when answer ownership or duplicate handling is wrong.",
+          "unjustified_alternative_rule": "Order and retained meaning are correctness conditions because they prove the survivor is on the right and nearest."
         }
       },
       "taxonomy": {
@@ -1337,7 +1407,7 @@
     },
     {
       "id": "alg-stack-mono-cic-022",
-      "prompt": "Order the proof adaptation for circular next greater using a bounded second pass.",
+      "prompt": "For circular nearest strictly greater on an array of length `n`, order the proof adaptation that scans at most `2n` positions and pushes each original index only during the first pass.",
       "constraints": [
         "Order the steps by semantic dependency, not by the order in which they are listed.",
         "The canonical scoring contract awards preserved adjacent relations."
@@ -1381,12 +1451,22 @@
         "maxPoints": 4
       },
       "feedback": {
-        "reason": "The sequence follows the dependency expressed by the decisive boundary: The second pass supplies wraparound candidates without allowing an entry to be answered twice or pushed without bound.",
+        "reason": "Each original index owns one answer and is pushed once; the bounded second pass supplies wraparound resolvers without creating duplicate owners.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Declare original indices `0..n-1` as the only answer owners.",
+                "During the first `n` visits, process normally and push each owner at most once.",
+                "During visits `n..2n-1`, reuse values only as wraparound resolvers; push no duplicate owners.",
+                "Never rewrite an answer already finalized in either pass.",
+                "After `2n` visits, assign no-answer to remaining owners and terminate."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Start from the output contract and the meaning of each retained entry. The second pass supplies wraparound candidates without allowing an entry to be answered twice or pushed without bound. That mechanism explains both the legal transition and the point at which an answer or pending state becomes final. The misconception “Circularity permits indefinite cycling until every entry resolves.” confuses an implementation clue with a correctness condition. Transfer only after stating the invariant and proving initialization, preservation, answer timing, safe removal, and terminal handling for the changed contract. Reversing or separating a required adjacent relation either uses state before it is valid, loses provenance before writing an answer, or mutates the frontier before the invariant has been restored."
+              "text": "On `[1,2,1]`, the second pass lets the last `1` see `2`, while `2` correctly remains unanswered. Indefinite cycling cannot create a new legal candidate and would destroy termination."
             }
           ]
         }

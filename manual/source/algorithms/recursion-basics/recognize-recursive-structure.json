@@ -3,7 +3,7 @@
   "batchId": "recursion-basics-recognize-recursive-structure",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -103,43 +103,47 @@
             "id": "check_empty",
             "text": "Check whether i equals len(a)."
           },
-          {
-            "id": "return_identity",
-            "text": "If the suffix is empty, return 0."
-          },
-          {
-            "id": "take_current",
-            "text": "Otherwise, identify a[i] as the current contribution."
-          },
-          {
-            "id": "delegate_suffix",
-            "text": "Ask sumFrom(i + 1) for the remaining suffix."
-          },
-          {
-            "id": "combine_return",
-            "text": "Return a[i] plus the returned suffix sum."
-          }
-        ],
-        "canonicalOrder": [
-          "check_empty",
-          "return_identity",
-          "take_current",
-          "delegate_suffix",
-          "combine_return"
-        ],
+        {
+          "id": "return_identity",
+          "text": "If the suffix is empty, return 0."
+        },
+        {
+          "id": "delegate_suffix",
+          "text": "If the base condition is false, compute rest = sumFrom(i + 1) for the shorter suffix."
+        },
+        {
+          "id": "combine_return",
+          "text": "Return a[i] + rest."
+        }
+      ],
+      "canonicalOrder": [
+        "check_empty",
+        "return_identity",
+        "delegate_suffix",
+        "combine_return"
+      ],
         "scoringMethod": "adjacent_relations"
       },
       "scoringContract": {
         "type": "ordering",
-        "maxPoints": 4
+        "maxPoints": 3
       },
       "feedback": {
         "reason": "The non-empty suffix separates into one current element and the same sum problem on a strictly shorter suffix.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Check `i == len(a)` before reading a[i].",
+                "If true, return 0, the additive identity for the empty suffix.",
+                "Otherwise compute `rest = sumFrom(i + 1)`; increasing i by one makes the suffix strictly shorter.",
+                "Return `a[i] + rest`, combining the local element with the result promised by the same contract on the smaller suffix."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The order makes the recursive shape explicit. First protect the terminal state so that no element is read\nfrom an empty suffix. For a non-empty suffix, the current element is the part handled locally, while i + 1\nidentifies the complete remaining instance of the same sum contract. Only after that smaller result is\navailable can the current call return their sum. The essential recursive decision is not the syntax of the\nfunction call; it is the decomposition of a[i:] into a[i] and a[i + 1:]. The same shape transfers to\nproducts, counts, and predicates over suffixes, but the terminal value and combining operation must change\nwith the return contract."
+              "text": "The base return and the non-base steps are alternative control-flow branches, not operations on one path. The essential recursive decision is the decomposition of a[i:] into a[i] and a[i + 1:], not merely the self-call syntax. The same shape transfers to products, counts, and predicates over suffixes, but the terminal value and combining operation must match the return contract."
             }
           ]
         }
@@ -443,8 +447,16 @@
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "For a non-null node, the base condition is false.",
+                "The function calls `size(node)` with the exact same node reference, not node.next.",
+                "The next frame therefore has the same state, again misses the base, and repeats indefinitely until the runtime stack fails."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The None base case is present, but the transition never follows node.next. Every non-empty frame asks for\nsize of the exact same node, producing an infinite chain until the runtime stack fails. This is why\nrecursion does not terminate automatically and why recognizing recursive structure requires more than\nspotting a self-call. Replacing the recursive argument with node.next exposes the intended smaller suffix of\nthe linked structure. This diagnosis transfers to unchanged indices, intervals, counters, and graph nodes:\na syntactic self-call must correspond to a strictly smaller semantic state."
+              "text": "The None base case is present; it is merely unreachable from a non-empty start under this transition. Replacing the argument with node.next exposes the intended smaller suffix. The reusable rule is that a syntactic self-call must move to a strictly smaller semantic state; the same defect appears with unchanged indices, intervals, counters, or graph nodes."
             }
           ]
         },
@@ -504,8 +516,15 @@
         "details": {
           "blocks": [
             {
+              "type": "bullet_list",
+              "items": [
+                "Shape A has at most one recursive child per frame. Across n linked nodes, it creates one chain with O(n) calls and O(n) maximum depth.",
+                "Shape B has two recursive children for most positive n. Without memoization, states such as fib(n - 2) are reached through multiple branches, so the call tree has exponential total work even though its depth is O(n)."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Shape A creates at most one child per frame, so n nodes produce linear total work and linear maximum depth.\nShape B creates two children for most states, and many numeric states are recomputed, which is the source of\nnaive Fibonacci's exponential work. Both functions are recursive and both progress toward a base, but their\ncall graphs are materially different. The transfer rule is to classify branching factor, subproblem sizes,\nand overlap before assigning a complexity class. This item recognizes structure; exact stack accounting is\nowned by the stack-and-complexity unit."
+              "text": "Both functions are recursive and both progress toward a base, so those facts alone do not determine cost. The transfer rule is to classify branching factor, subproblem sizes, and overlap before assigning a complexity class. Exact stack accounting is owned by the stack-and-complexity unit."
             }
           ]
         },

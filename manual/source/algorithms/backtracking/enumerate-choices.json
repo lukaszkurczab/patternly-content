@@ -3,7 +3,7 @@
   "batchId": "backtracking-enumerate-choices-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -27,9 +27,12 @@
     "authoringMethod": "independently_authored"
   },
   "items": [
-    {
-      "id": "alg-backtracking-choices-001",
-      "prompt": "A combination solver has candidates indexed 0 through n - 1 and current start index s. Which indices should be considered as next choices?",
+  {
+    "id": "alg-backtracking-choices-001",
+    "prompt": "A combination solver has candidates indexed 0 through n - 1 and current start index s. Which indices should be considered as next choices?",
+    "constraints": [
+      "0 <= s <= n."
+    ],
       "difficulty": "intro",
       "interaction": {
         "type": "choice",
@@ -64,41 +67,31 @@
         "reason": "Combination search enumerates each remaining candidate index at or after the current start boundary.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Passing i + 1 to the child prevents reusing the chosen index and prevents generating the same set in different orders."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Combination search enumerates each remaining candidate index at or after the current start boundary. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Restarting at zero permits reordered duplicates and index reuse. The branch must consider every legal remaining candidate, not one forced index. Those indices are already outside the remaining candidate suffix."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Combination search enumerates each remaining candidate index at or after the current start boundary."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "The start boundary defines the child range"
+          },
+          {
+            "type": "paragraph",
+            "text": "At state `start = s`, each index i in [s, n) creates one child. That child appends candidates[i] and receives `start = i + 1`, so the chosen index and every earlier index are unavailable below it."
+          },
+          {
+            "type": "paragraph",
+            "text": "Considering the whole suffix is necessary for completeness: choosing only s + 1 would omit all other first choices. Restarting at zero or revisiting indices through s would allow reuse and reordered representations of the same combination."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "For indexed combinations, loop over the current suffix and pass one position beyond the chosen index."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "zero_to_n_minus_one": "Restarting at zero permits reordered duplicates and index reuse.",
-          "s_plus_one_only": "The branch must consider every legal remaining candidate, not one forced index.",
-          "zero_to_s": "Those indices are already outside the remaining candidate suffix."
+        "zero_to_n_minus_one": "Restarting at zero makes previously chosen or earlier indices legal again, producing reuse and reversed duplicate orderings.",
+        "s_plus_one_only": "One forced index creates only one child even when several suffix indices are legal, so valid combinations are omitted.",
+        "zero_to_s": "Those indices are outside the unresolved suffix; choosing them violates the increasing-index invariant."
         }
       },
       "taxonomy": {
@@ -146,41 +139,31 @@
         "reason": "Permutation generation must branch over every currently unused input position.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Unlike combinations, the legal candidate range is not restricted to a monotonic suffix."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Permutation generation must branch over every currently unused input position. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "That would generate combinations rather than all permutations. Permutation legality is based on unused positions, not matching values. That would follow one path and omit other permutations."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Permutation generation must branch over every currently unused input position."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Every unused position is a sibling"
+          },
+          {
+            "type": "paragraph",
+            "text": "A permutation path records order. At each depth, scan all n input positions and create a child for every index with `used[index] = false`; mark it for the child and unmark it after return."
+          },
+          {
+            "type": "paragraph",
+            "text": "Restricting choices to indices after the previous one would enforce increasing index order and generate combinations. Choosing only the first unused index would produce one permutation rather than all n! orderings."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Combination contrast",
+            "text": "Combinations carry a forward boundary; permutations rescan the full domain and filter by branch-local membership."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "only_after_last_index": "That would generate combinations rather than all permutations.",
-          "only_same_value": "Permutation legality is based on unused positions, not matching values.",
-          "only_first_unused": "That would follow one path and omit other permutations."
+        "only_after_last_index": "A monotonic index rule suppresses valid orders that place a lower index later, so it generates combinations rather than permutations.",
+        "only_same_value": "For distinct indexed values, legality depends on whether the position is unused, not on equality with the previous value.",
+        "only_first_unused": "Choosing the first unused index deterministically follows one root-to-leaf path and omits all sibling orderings."
         }
       },
       "taxonomy": {
@@ -228,41 +211,31 @@
         "reason": "Grid candidate generation starts from the movement relation and then applies branch legality constraints.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "The choice set is local to the current cell and current path state."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Grid candidate generation starts from the movement relation and then applies branch legality constraints. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "A path move is constrained by adjacency. The no-reuse path contract forbids this. The movement contract specifies orthogonal neighbors."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Grid candidate generation starts from the movement relation and then applies branch legality constraints."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Movement generates candidates; state filters them"
+          },
+          {
+            "type": "paragraph",
+            "text": "From `(row, col)`, first generate the four orthogonal offsets `(-1,0)`, `(1,0)`, `(0,-1)`, and `(0,1)`. For each neighbor, check bounds, the next target condition, and absence from the current path before mutation."
+          },
+          {
+            "type": "paragraph",
+            "text": "Scanning the whole grid permits nonadjacent jumps; staying reuses the current cell; diagonal moves violate the stated movement graph. A legal child must satisfy all three layers: geometry, target progress, and path history."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Derive raw neighbors from the graph's edges, then apply branch-specific legality predicates."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "scan_all_cells": "A path move is constrained by adjacency.",
-          "stay_only": "The no-reuse path contract forbids this.",
-          "diagonal_only": "The movement contract specifies orthogonal neighbors."
+        "scan_all_cells": "An unvisited cell elsewhere in the grid is not necessarily adjacent, so this invents edges absent from the path model.",
+        "stay_only": "The current cell is already on the path, so staying violates no-reuse and makes no spatial progress.",
+        "diagonal_only": "Diagonal offsets are not among the four orthogonal moves declared by the prompt, and orthogonal legal children would be omitted."
         }
       },
       "taxonomy": {
@@ -273,9 +246,12 @@
         "problemArchetypeId": "search_grid_paths"
       }
     },
-    {
-      "id": "alg-backtracking-choices-004",
-      "prompt": "A partition solver is at start index s in a string of length n. Which exclusive end boundaries represent non-empty next segments?",
+  {
+    "id": "alg-backtracking-choices-004",
+    "prompt": "A partition solver is at start index s in a string of length n. Which exclusive end boundaries represent non-empty next segments?",
+    "constraints": [
+      "0 <= s < n."
+    ],
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -310,41 +286,31 @@
         "reason": "A non-empty segment beginning at s has an exclusive end strictly greater than s and at most n.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Every such boundary is a potential choice before applying the segment-validity predicate."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A non-empty segment beginning at s has an exclusive end strictly greater than s and at most n. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "End = s would create an empty segment, and end = n must remain available. Boundaries before s overlap already processed input. That tries only the entire remaining suffix and omits shorter legal segments."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A non-empty segment beginning at s has an exclusive end strictly greater than s and at most n."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Exclusive ends enumerate all nonempty prefixes"
+          },
+          {
+            "type": "paragraph",
+            "text": "A segment beginning at s is `[s, end)`. Nonemptiness requires `end > s`, and staying inside the string requires `end <= n`, so the raw candidate ends are s + 1, s + 2, ..., n."
+          },
+          {
+            "type": "paragraph",
+            "text": "Each boundary is then tested by the segment predicate. Omitting end = n loses the full remaining suffix; including end = s creates an empty segment that does not advance; boundaries before s revisit processed input."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Boundary rule",
+            "text": "For a nonempty half-open segment from s, enumerate every exclusive end in `(s, n]`."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "s_to_n_minus_one": "End = s would create an empty segment, and end = n must remain available.",
-          "zero_to_n": "Boundaries before s overlap already processed input.",
-          "only_n": "That tries only the entire remaining suffix and omits shorter legal segments."
+        "s_to_n_minus_one": "It includes end = s, producing an empty segment, and excludes end = n, losing any segment that reaches the input boundary.",
+        "zero_to_n": "Ends at or before s are empty or backward and overlap the already partitioned prefix.",
+        "only_n": "It tests only the whole unresolved suffix and omits every valid shorter first segment."
         }
       },
       "taxonomy": {
@@ -355,9 +321,12 @@
         "problemArchetypeId": "partition_sequence"
       }
     },
-    {
-      "id": "alg-backtracking-choices-005",
-      "prompt": "When should a candidate that already violates a mandatory partial constraint be recursed into?",
+  {
+    "id": "alg-backtracking-choices-005",
+    "prompt": "When should a candidate that already violates a mandatory partial constraint be recursed into?",
+    "constraints": [
+      "No later choice can repair the violation."
+    ],
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -392,41 +361,31 @@
         "reason": "Candidate enumeration should expose only transitions that preserve the partial-state invariant.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Rejecting an illegal choice before mutation and recursion prevents invalid child states from entering the search tree."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Candidate enumeration should expose only transitions that preserve the partial-state invariant. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Known partial violations should not be expanded. Loop position does not repair invalidity. Magnitude is irrelevant unless the contract says so."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Candidate enumeration should expose only transitions that preserve the partial-state invariant."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Reject a permanently invalid transition"
+          },
+          {
+            "type": "paragraph",
+            "text": "The constraint is mandatory and the prompt guarantees that later decisions cannot repair it. Therefore every descendant of this candidate would remain invalid, so no child should be created."
+          },
+          {
+            "type": "paragraph",
+            "text": "Check this predicate before mutating path or auxiliary state. Loop position and candidate magnitude have no bearing unless they appear in the actual constraint; delaying the check only explores a proven-empty subtree."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Pruning boundary",
+            "text": "A partial violation is prunable only when no allowed future choice can repair it; that condition is explicit here."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_then_fail_later": "Known partial violations should not be expanded.",
-          "only_if_last": "Loop position does not repair invalidity.",
-          "only_if_large": "Magnitude is irrelevant unless the contract says so."
+        "always_then_fail_later": "Recursing postpones a conclusion already proved and admits a child that violates the partial-state invariant.",
+        "only_if_last": "Being last in iteration order cannot repair the mandatory violation or create a valid descendant.",
+        "only_if_large": "Magnitude is not part of the declared constraint, so it provides no exception to invalidity."
         }
       },
       "taxonomy": {
@@ -474,41 +433,31 @@
         "reason": "An exhaustive legal search should be complete regardless of candidate ordering.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Ordering can affect short-circuit find-one results, performance, and the order of collected outputs, but not the mathematical solution set."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: An exhaustive legal search should be complete regardless of candidate ordering. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Validity is defined by the contract, not loop order. Undo requirements depend on mutation, not candidate order. Duplicates depend on state and duplicate-control rules."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "An exhaustive legal search should be complete regardless of candidate ordering."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Order is not membership"
+          },
+          {
+            "type": "paragraph",
+            "text": "A collect-all search that visits every legal child from the same restored parent reaches the same valid leaves under any permutation of those children. Their emission order changes, but leaf validity does not."
+          },
+          {
+            "type": "paragraph",
+            "text": "Ordering can affect time to a first solution, cache behavior, or pruning opportunities whose proofs remain sound. It neither removes the need to undo mutation nor creates duplicates by itself; those depend on state restoration and identity rules."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Heuristics may reorder a complete child set; they may not silently remove legal children."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_changes_set": "Validity is defined by the contract, not loop order.",
-          "removes_need_for_undo": "Undo requirements depend on mutation, not candidate order.",
-          "forces_duplicates": "Duplicates depend on state and duplicate-control rules."
+        "always_changes_set": "Validity is defined by constraints at leaves; reordering exhaustive siblings changes traversal order, not which leaves exist.",
+        "removes_need_for_undo": "Any in-place branch mutation still must be restored before the next sibling, regardless of which sibling comes first.",
+        "forces_duplicates": "Duplicates arise from candidate identity and duplicate-control rules, not from permuting an otherwise correct loop."
         }
       },
       "taxonomy": {
@@ -556,41 +505,37 @@
         "reason": "Candidate exhaustion and successful completion are separate conditions.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "A dead-end branch contributes no result but does not invalidate sibling choices."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Candidate exhaustion and successful completion are separate conditions. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "No-choice termination is not success unless completion is satisfied. Only this branch has failed. The result must satisfy the stated contract."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Candidate exhaustion and successful completion are separate conditions."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Exhaustion is not completion"
+        },
+        {
+          "type": "paragraph",
+          "text": "Two independent tests can stop a recursive call. The completion test asks whether the current path already satisfies the result contract. Candidate exhaustion asks whether this incomplete path has any legal child. Here completion is false and no child exists, so the branch is a dead end and contributes no result."
+        },
+        {
+          "type": "paragraph",
+          "text": "Returning from the call transfers control to its parent. The parent restores any state changed for this branch and continues with the next sibling candidate. Nothing about this local failure invalidates choices elsewhere in the search tree."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why the other answers fail",
+          "text": "A valid result must pass the completion contract, which the prompt explicitly says this state does not. Restarting from the root would repeat work and discard the parent’s remaining siblings. Appending an empty result would record an object unrelated to the current incomplete path and violate the result contract."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Transfer rule",
+          "text": "An incomplete state with no legal child returns no result to its parent; an independent completion test decides success."
+        }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "valid_result": "No-choice termination is not success unless completion is satisfied.",
-          "restart_search": "Only this branch has failed.",
-          "record_empty": "The result must satisfy the stated contract."
+      "valid_result": "Having no legal child does not make a state complete; the prompt explicitly says the completion contract is not satisfied.",
+      "restart_search": "Only this branch is exhausted. Its parent can restore state and continue with another sibling without repeating the search from the root.",
+      "record_empty": "An empty result is valid only when the result contract defines it as a completed solution; it cannot be appended merely because an incomplete branch is stuck."
         }
       },
       "taxonomy": {
@@ -601,9 +546,12 @@
         "problemArchetypeId": "construct_valid_assignment"
       }
     },
-    {
-      "id": "alg-backtracking-choices-008",
-      "prompt": "A solver for k-combinations has chosen c values and has only r candidate positions left. When can candidate enumeration stop immediately?",
+  {
+    "id": "alg-backtracking-choices-008",
+    "prompt": "A solver for k-combinations has chosen c values and has only r candidate positions left. When can candidate enumeration stop immediately?",
+    "constraints": [
+      "0 <= c <= k and r >= 0."
+    ],
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -638,41 +586,41 @@
         "reason": "If fewer candidates remain than required slots, no child sequence can complete the combination.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "This is a sound capacity bound that can shorten or eliminate the candidate loop."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: If fewer candidates remain than required slots, no child sequence can complete the combination. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "That often describes the root, not impossibility. Partial combinations still need expansion. Remaining candidates are the reason to continue."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "If fewer candidates remain than required slots, no child sequence can complete the combination."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Count the slots that still must be filled"
+        },
+        {
+          "type": "paragraph",
+          "text": "A complete k-combination needs k values. After choosing c values, the branch still needs k - c values. The r remaining candidate positions can contribute at most r values, so completion requires r >= k - c."
+        },
+        {
+          "type": "paragraph",
+          "text": "If r < k - c, even selecting every remaining candidate leaves at least one slot empty. For example, if k = 5, c = 3, and r = 1, the branch needs two more values but can choose only one. No descendant can complete the combination, so enumeration can stop."
+        },
+        {
+          "type": "paragraph",
+          "text": "Equality is not a reason to stop: when r = k - c, the branch has exactly enough positions and may still succeed by choosing all of them. This capacity test proves impossibility; it is not a guess about which choices look promising."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why the other answers fail",
+          "text": "r equaling the original input length usually describes the root and says nothing about insufficient capacity. c > 0 merely says the path is partial. r > 0 means a choice is available, not that enumeration should stop."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Capacity bound",
+          "text": "Prune when maximum remaining capacity is smaller than remaining demand: r < k - c."
+        }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "r_equals_n": "That often describes the root, not impossibility.",
-          "c_positive": "Partial combinations still need expansion.",
-          "r_greater_zero": "Remaining candidates are the reason to continue."
+      "r_equals_n": "This often holds at the root, where all candidates remain; it does not prove that the unfilled slots outnumber the available positions.",
+      "c_positive": "Choosing at least one value only makes the combination partial. The branch must continue unless c = k or another condition proves impossibility.",
+      "r_greater_zero": "A positive number of remaining candidates normally enables further choices. Stopping is justified only when their count is still too small to fill the remaining slots."
         }
       },
       "taxonomy": {
@@ -720,41 +668,41 @@
         "reason": "Candidate identity follows the problem contract.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Duplicate-control rules may later collapse value-equivalent branches, but the base candidate model must know which occurrences exist."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Candidate identity follows the problem contract. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Equality is not the issue. Indices preserve positions but do not sort values. Used-index state still needs restoration."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Candidate identity follows the problem contract."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "An occurrence can be part of the state"
+        },
+        {
+          "type": "paragraph",
+          "text": "An index identifies an occurrence, while a value identifies only its payload. If equal values occupy positions 1 and 4, choosing index 1 and choosing index 4 are different state transitions whenever the problem contract distinguishes which input occurrence was used."
+        },
+        {
+          "type": "paragraph",
+          "text": "Index-based enumeration can therefore mark exactly one occurrence as used and later restore that mark. Enumerating by value alone would merge the two candidates before the solver has established that they are interchangeable."
+        },
+        {
+          "type": "paragraph",
+          "text": "If the output contract treats value-equal results as duplicates, a separate duplicate-control rule may skip equivalent sibling branches. That rule is applied deliberately after the candidate occurrences and the desired output identity are understood."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why the other answers fail",
+          "text": "Equal values can be compared normally. Indices preserve positions but do not reorder the input. Choosing by index also does not remove mutable path state: a used-index mark still has to be undone before the next sibling."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Identity rule",
+          "text": "Model candidates with the smallest identity the contract distinguishes; collapse equal-valued branches only under an explicit duplicate rule."
+        }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "values_uncomparable": "Equality is not the issue.",
-          "indices_sort_input": "Indices preserve positions but do not sort values.",
-          "indices_remove_undo": "Used-index state still needs restoration."
+      "values_uncomparable": "Equal values are comparable; the problem is that value equality may hide two distinct input occurrences.",
+      "indices_sort_input": "Indices identify the input positions in their existing order. They do not change or sort the values stored at those positions.",
+      "indices_remove_undo": "A solver that marks an index as used must still clear that mark after returning from the child so another sibling sees the parent state."
         }
       },
       "taxonomy": {
@@ -804,44 +752,44 @@
         "reason": "Combination choices must respect ordering, feasibility, and problem-specific constraints.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "The monotonic start boundary is what distinguishes combination enumeration from permutation enumeration."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Combination choices must respect ordering, feasibility, and problem-specific constraints. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Indices before start would create reordered duplicate combinations."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Combination choices must respect ordering, feasibility, and problem-specific constraints."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "A combination branch obeys three filters"
+        },
+        {
+          "type": "bullet_list",
+          "items": [
+            "Order: the candidate index is at or after start. Passing i + 1 to the child makes later indices the only possible continuation, so the same indexed combination is not regenerated in another order.",
+            "Capacity: when the solver uses the bound, enough positions must remain to fill every unfilled slot. A candidate that makes completion numerically impossible need not become a child.",
+            "Constraint legality: the candidate must preserve every problem-specific invariant that is required of a partial combination."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "These checks serve different purposes: the start boundary prevents reordered duplicates, the capacity bound proves that a full result can still fit, and active constraints prevent entry into an invalid partial state. A candidate is legal only when all applicable checks pass."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why the other answers fail",
+          "text": "An unused index before start is not automatically legal. Returning to it would violate increasing index order and can produce a reordered copy of a combination already represented by another branch."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Combination invariant",
+          "text": "Enumerate forward, preserve the partial constraints, and prune only when remaining capacity cannot complete the required size."
+        }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "unused_anywhere": "Indices before start would create reordered duplicate combinations."
+      "unused_anywhere": "A combination uses a monotonic start boundary, not merely an unused set. Revisiting an earlier index permits reordered duplicates and violates the branch invariant."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "index_at_or_after_start": "This preserves increasing index order.",
-          "enough_remaining": "This can exclude choices that cannot complete.",
-          "candidate_constraint": "Illegal partial states should not be entered."
+      "index_at_or_after_start": "Restricting choices to the current suffix preserves increasing index order and gives each indexed combination one construction path.",
+      "enough_remaining": "If fewer positions remain than unfilled slots, no descendant can reach the required combination size, so the candidate is infeasible under capacity pruning.",
+      "candidate_constraint": "A candidate that breaks an active partial constraint cannot be part of a legal child state and should be rejected before recursion."
         }
       },
       "taxonomy": {
@@ -891,44 +839,44 @@
         "reason": "Permutation candidate enumeration ranges over all unused positions that remain legal.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "A start boundary would incorrectly suppress valid orderings."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Permutation candidate enumeration ranges over all unused positions that remain legal. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "That would impose an unstated monotonic-value constraint."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Permutation candidate enumeration ranges over all unused positions that remain legal."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Permutation siblings come from the full unused set"
+        },
+        {
+          "type": "bullet_list",
+          "items": [
+            "The index is unused in the current path, because a permutation of distinct indexed values uses each position once.",
+            "The choice preserves every active assignment constraint, so the child remains a legal partial permutation.",
+            "Every unused position is considered at the current depth. A lower index may legally follow a higher one because order is exactly what permutation generation varies."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Unlike combination generation, this search has no monotonic start boundary. For input positions 0, 1, and 2, a path beginning with 2 must still be able to choose 0 next; otherwise permutations such as [2, 0, 1] disappear."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why the other answers fail",
+          "text": "Requiring each value to exceed the previous one would retain only increasing sequences. It is not implied by being a permutation and would remove valid orderings unless the problem explicitly adds that constraint."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Permutation invariant",
+          "text": "At each depth, consider every unused position that satisfies the explicit constraints; do not invent a forward-only boundary."
+        }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "value_greater_previous": "That would impose an unstated monotonic-value constraint."
+      "value_greater_previous": "A permutation may place a smaller value after a larger one. This condition invents a monotonic-order requirement and removes valid permutations."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "index_unused": "A position may appear only once.",
-          "passes_constraints": "Constraint legality applies before recursion.",
-          "all_positions_considered": "Permutations require arbitrary next-index order."
+      "index_unused": "Each distinct indexed value appears once in a complete permutation, so a position already used by the current path cannot be chosen again.",
+      "passes_constraints": "Any explicit assignment constraint must hold before recursion; otherwise the child is not a legal partial permutation.",
+      "all_positions_considered": "Permutation generation varies order, so every unused index—not only indices after the previous choice—must remain eligible."
         }
       },
       "taxonomy": {
@@ -978,44 +926,44 @@
         "reason": "Grid choices are constrained by geometry, target progress, and path-local visited state.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Global exclusion would incorrectly couple independent branches and starting positions."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Grid choices are constrained by geometry, target progress, and path-local visited state. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "A cell may need to be reused by a different candidate path."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Grid choices are constrained by geometry, target progress, and path-local visited state."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "A grid move passes geometry, progress, and path checks"
+        },
+        {
+          "type": "bullet_list",
+          "items": [
+            "Geometry: the neighbor’s row and column must be inside the grid before the solver reads that cell.",
+            "Path state: if the task forbids reuse within one path, the neighbor must not already belong to the current path.",
+            "Target progress: the cell must match the next required symbol or satisfy the next condition, so taking it advances the search contract."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "The visited condition is path-local. When recursion returns, the cell is unmarked so another sibling path—or a search from another starting cell—can use it independently."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why the other answers fail",
+          "text": "A global never-seen rule confuses independent branches. Rejecting a cell because an earlier path used it can erase a valid later route even though the two paths are never active at the same time."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Grid-choice invariant",
+          "text": "Validate bounds before access, validate the next target condition, and scope visited state to the current path unless the problem explicitly defines global visitation."
+        }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "globally_unseen": "A cell may need to be reused by a different candidate path."
+      "globally_unseen": "Earlier branches and starting cells are independent searches. A cell used by one completed branch may still be necessary in another branch after path state is restored."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "inside_bounds": "Out-of-bounds positions cannot be read.",
-          "not_used_in_path": "This enforces the no-reuse rule.",
-          "matches_next_target": "The move must advance the target contract."
+      "inside_bounds": "The neighbor must be inside the grid before its contents can be accessed; an out-of-bounds coordinate is not a cell candidate.",
+      "not_used_in_path": "When the task forbids revisiting within one route, choosing a cell already in the current path violates that route’s state invariant.",
+      "matches_next_target": "A geometric neighbor becomes a useful child only if its contents satisfy the next required symbol or condition and therefore advance the target."
         }
       },
       "taxonomy": {
@@ -1065,44 +1013,44 @@
         "reason": "A partition choice is a valid forward segment covering the next portion of the unresolved suffix.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Backtracking restores the path after exploring the child; it does not create backward or empty segments."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A partition choice is a valid forward segment covering the next portion of the unresolved suffix. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Undo occurs after recursion; it is not represented by a reversed segment."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A partition choice is a valid forward segment covering the next portion of the unresolved suffix."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "A partition choice consumes a nonempty valid prefix"
+        },
+        {
+          "type": "bullet_list",
+          "items": [
+            "end > start makes [start, end) nonempty. If end equaled start, the child would consume no input and could repeat the same state.",
+            "end <= input length keeps the exclusive boundary inside the valid slicing range.",
+            "The segment predicate must accept input[start:end], because only valid segments belong in a partial partition."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "For a fixed start, enumerating end from start + 1 through the input length considers every nonempty prefix of the unresolved suffix. A valid choice appends that segment and recurses from end, so the child starts exactly where the chosen segment stops."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why the other answers fail",
+          "text": "end < start is neither a segment choice nor an undo operation. Undo removes the previously appended segment from mutable path state after recursion; it does not move the input boundary backward."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Boundary invariant",
+          "text": "Choose start < end <= n, validate [start, end), and recurse from end so segments are nonempty, in bounds, and contiguous."
+        }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "end_before_start": "Undo occurs after recursion; it is not represented by a reversed segment."
+      "end_before_start": "A boundary before start does not describe a forward substring of the unresolved suffix. Backtracking is performed by restoring the path after recursion, not by choosing a reversed segment."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "end_greater_start": "This prevents empty segments.",
-          "end_at_most_length": "The segment must stay inside the input.",
-          "segment_valid": "Only valid segments should become child choices."
+      "end_greater_start": "The half-open segment [start, end) contains end - start elements, so end > start is exactly the condition that prevents an empty segment.",
+      "end_at_most_length": "An exclusive end may equal the input length but cannot exceed it; otherwise the candidate extends beyond the source sequence.",
+      "segment_valid": "A partition is composed of segments accepted by the problem’s predicate, so a rejected substring cannot become a legal child."
         }
       },
       "taxonomy": {
@@ -1152,44 +1100,44 @@
         "reason": "Completeness depends on exhaustive legal coverage and branch isolation.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Heuristic ordering is allowed, but heuristic omission is not sound pruning."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Completeness depends on exhaustive legal coverage and branch isolation. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "An intuition-based filter can omit valid solutions."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Completeness depends on exhaustive legal coverage and branch isolation."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Completeness needs coverage and branch isolation"
+        },
+        {
+          "type": "bullet_list",
+          "items": [
+            "Coverage: eventually consider every legal next choice. The only stated early exit is a find-one contract that has already found its required result.",
+            "Legality: exclude a choice before recursion only when the rules prove that it cannot belong to a valid child state.",
+            "Isolation: restore mutable state after each child so the next sibling starts from the same parent state."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Together these properties make the candidate loop represent the complete set of legal children of the current node. Missing a legal child loses every solution below it; retaining an illegal child breaks the state invariant; failing to restore state changes what later siblings mean."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why the other answers fail",
+          "text": "A heuristic may reorder candidates to find useful branches earlier, but “looks promising” is not a correctness proof. Omitting an unpromising-looking legal choice can remove a valid solution."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Pruning boundary",
+          "text": "Reorder by heuristic if useful; omit a branch only when a proven condition makes it illegal or unable to complete."
+        }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "choose_only_promising": "An intuition-based filter can omit valid solutions."
+      "choose_only_promising": "Promise is a search-order heuristic, not a proof of impossibility. Skipping a legal branch on intuition can make an exhaustive solver incomplete."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "consider_every_legal_choice": "Completeness requires covering all legal branches.",
-          "exclude_illegal_before_recurse": "This preserves the state invariant.",
-          "restore_between_siblings": "Sibling choices must share the same parent state."
+      "consider_every_legal_choice": "Every solution begins with one legal next choice, so omitting such a child also omits every solution in its subtree unless the result contract has already been fulfilled.",
+      "exclude_illegal_before_recurse": "Rejecting a proven-illegal candidate before mutation prevents recursive calls from observing a child state that violates the partial-state invariant.",
+      "restore_between_siblings": "All siblings are alternatives from one parent. Restoration ensures each candidate is evaluated against that same parent state rather than changes left by its predecessor."
         }
       },
       "taxonomy": {
@@ -1240,35 +1188,36 @@
         "reason": "Legality is established before mutation, and restoration completes one sibling branch.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "This sequence prevents invalid child states and cross-branch contamination."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Legality is established before mutation, and restoration completes one sibling branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why this order matters",
-              "text": "The order follows causal dependencies: Generate the next candidate. Then Check that the candidate preserves the partial-state invariant. Then Apply the candidate to branch state. Then Recurse, then restore state before the next candidate. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Legality is established before mutation, and restoration completes one sibling branch."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "One candidate branch from start to restoration"
+        },
+        {
+          "type": "ordered_list",
+          "items": [
+            "Generate the next candidate from the current state’s candidate domain.",
+            "Check that it preserves the partial-state invariant. Reject it here if it is illegal.",
+            "Apply the legal choice so the branch state represents that child.",
+            "Recurse on the child, then restore every mutation before generating the next sibling."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "The dependencies determine the order: legality cannot be checked before a candidate exists, recursion must see the applied choice, and the parent loop must not advance while the previous child’s mutations are still active."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why this order matters",
+          "text": "Applying before validation can temporarily violate the invariant and complicate safe cleanup. Advancing before restoration makes the next sibling inherit state that belongs only to the previous branch."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Sibling invariant",
+          "text": "Validate, apply, recurse, restore: every sibling must begin from the unchanged parent state."
+        }
           ]
         }
       },
@@ -1320,35 +1269,36 @@
         "reason": "The child receives a strictly later start boundary, and the parent path is restored before the next sibling.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "This produces each indexed combination once."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The child receives a strictly later start boundary, and the parent path is restored before the next sibling. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why this order matters",
-              "text": "The order follows causal dependencies: Append candidates[i] to the path. Then Recurse with start = i + 1. Then Remove the appended candidate from the path. Then Advance the parent loop to the next candidate index. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The child receives a strictly later start boundary, and the parent path is restored before the next sibling."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Choose once, recurse forward, then undo"
+        },
+        {
+          "type": "ordered_list",
+          "items": [
+            "Append candidates[i], making index i part of the current combination.",
+            "Recurse with start = i + 1, which permits only later indices in this branch.",
+            "Remove candidates[i] after the child returns, restoring the parent combination.",
+            "Advance the parent loop to test its next sibling index."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "The i + 1 boundary prevents reusing index i and prevents rebuilding the same indexed combination in a different order. Removing the appended value before the loop advances ensures the next candidate is combined with the original parent prefix."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why this order matters",
+          "text": "Recursing before append omits the selected value from the child. Using start = i permits reuse. Advancing before removal leaves candidates[i] in the path and contaminates the next sibling."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Combination branch invariant",
+          "text": "The child receives a strictly later boundary, and the next sibling receives the restored parent path."
+        }
           ]
         }
       },
@@ -1400,35 +1350,36 @@
         "reason": "A segment becomes a branch choice only after validation.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "The path is restored so the next boundary is evaluated from the same partition prefix."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A segment becomes a branch choice only after validation. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why this order matters",
-              "text": "The order follows causal dependencies: Form or reference the segment [start, end). Then Check the segment predicate. Then Append the valid segment and recurse from end. Then Remove the segment before trying another end. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A segment becomes a branch choice only after validation."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Turn one boundary into one partition branch"
+        },
+        {
+          "type": "ordered_list",
+          "items": [
+            "Form or reference [start, end), the exact candidate segment defined by this end boundary.",
+            "Validate that segment with the problem’s predicate before it becomes part of the path.",
+            "Append the valid segment and recurse from end, where the unresolved suffix begins.",
+            "Pop the segment after recursion so another end boundary is tested from the same partition prefix."
+          ]
+        },
+        {
+          "type": "paragraph",
+          "text": "Each end value denotes a different prefix of the unresolved suffix. Validation must precede recursion so invalid segments never enter the partial partition, and restoration must precede the next boundary so sibling segments do not accumulate."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Why this order matters",
+          "text": "The predicate needs a defined segment to inspect. Recursing before validation admits an illegal partition prefix, while trying another end before pop makes that sibling inherit the previous segment."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Partition branch invariant",
+          "text": "Validate one candidate segment, recurse from its exclusive end, and restore the prefix before testing another end."
+        }
           ]
         }
       },
@@ -1443,8 +1394,9 @@
     {
       "id": "alg-backtracking-choices-018",
       "prompt": "A permutation generator for n distinct values considers every unused value at each depth and emits all permutations. Select the number of leaves and maximum recursion depth.",
-      "constraints": [
-        "Each complete path uses all n values exactly once.",
+    "constraints": [
+      "n >= 1.",
+      "Each complete path uses all n values exactly once.",
         "No pruning removes a valid permutation."
       ],
       "difficulty": "foundational",
@@ -1494,35 +1446,35 @@
         "reason": "The branching choices shrink from n to n - 1 and so on, producing n! complete paths.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Enumerating every legal choice"
-            },
-            {
-              "type": "paragraph",
-              "text": "Depth follows the number of positions filled, while output materialization adds further output-sensitive work."
-            },
-            {
-              "type": "paragraph",
-              "text": "Every recursive node needs a complete but legal set of children. First derive candidates from the task’s movement or boundary rule, then reject illegal candidates before mutation. Omitting a legal child loses results; admitting an illegal child breaks the invariant."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The branching choices shrink from n to n - 1 and so on, producing n! complete paths. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Check each dimension independently",
-              "text": "The branching choices shrink from n to n - 1 and so on, producing n! complete paths. Count the number of explored states or produced values separately from the maximum live recursion state; one quantity does not automatically determine the other."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The branching choices shrink from n to n - 1 and so on, producing n! complete paths."
-            }
+        {
+          "type": "heading",
+          "level": 2,
+          "text": "Separate tree width from path depth"
+        },
+        {
+          "type": "paragraph",
+          "text": "At the root, any of n values may fill the first position. After one choice, n - 1 values remain; then n - 2, down to one final choice. The number of complete leaves is therefore n × (n - 1) × ... × 1 = n!, so the leaves dimension is O(n!)."
+        },
+        {
+          "type": "paragraph",
+          "text": "Along any one root-to-leaf path, exactly one position is filled per recursive level. A complete permutation contains n choices, so at most a linear number of calls are simultaneously active. Whether one counts n choice levels or n + 1 call frames including the root, the maximum recursion depth is O(n)."
+        },
+        {
+          "type": "paragraph",
+          "text": "These answers do not claim the entire algorithm runs in only O(n!) time. If each emitted permutation is copied into an output collection, copying n values per leaf contributes O(n · n!) output work. The prompt asks only for leaf count and live recursion depth."
+        },
+        {
+          "type": "callout",
+          "kind": "common_mistake",
+          "title": "Check each dimension independently",
+          "text": "O(2^n) describes binary include/exclude leaves, not a branch factor that shrinks from n to 1. O(n^n) would allow every value at every position instead of removing used values. The factorial number of leaves does not make one path factorially deep."
+        },
+        {
+          "type": "callout",
+          "kind": "key_takeaway",
+          "title": "Complexity rule",
+          "text": "Multiply sibling counts to count leaves; count choices along one path to obtain recursion depth."
+        }
           ]
         }
       },

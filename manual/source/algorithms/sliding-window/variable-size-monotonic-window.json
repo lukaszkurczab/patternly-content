@@ -3,7 +3,7 @@
   "batchId": "algorithms-sliding-window-variable-size-monotonic-window",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -29,9 +29,11 @@
   "items": [
     {
       "id": "alg-sw-variable-shortest-positive-threshold",
-      "prompt": "All values are positive. While seeking the shortest range with sum at least T, the current window first reaches sum ≥ T. What should the shrink rule do?",
+      "prompt": "All values and target T are positive. While seeking the shortest nonempty range with sum at least T, the current window first reaches sum ≥ T. What should the shrink rule do?",
       "constraints": [
         "Every value is positive.",
+        "T is positive.",
+        "Only nonempty ranges are answer candidates.",
         "The objective is minimum length."
       ],
       "difficulty": "introductory",
@@ -90,9 +92,10 @@
     },
     {
       "id": "alg-sw-variable-longest-valid-restoration",
-      "prompt": "A window tracks nonnegative costs and must keep total cost at most B while maximizing length. After adding a value makes the window invalid, which rule is correct?",
+      "prompt": "A window tracks nonnegative costs under a nonnegative budget B and must keep total cost at most B while maximizing length. After adding a value makes the window invalid, which rule is correct?",
       "constraints": [
         "All costs are nonnegative.",
+        "B is nonnegative.",
         "Validity is totalCost ≤ B.",
         "The objective is maximum length."
       ],
@@ -102,12 +105,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "shrink_until_valid",
-            "text": "Advance left and remove costs while totalCost > B; once valid, consider the resulting length."
-          },
-          {
             "id": "record_invalid_then_shrink",
             "text": "Record the over-budget length first, then shrink once."
+          },
+          {
+            "id": "shrink_until_valid",
+            "text": "Advance left and remove costs while totalCost > B; once valid, consider the resulting length."
           },
           {
             "id": "shrink_while_valid",
@@ -152,9 +155,10 @@
     },
     {
       "id": "alg-sw-variable-monotonic-precondition",
-      "prompt": "Which condition is sufficient for the standard one-pass window that finds the longest contiguous range with sum at most B?",
+      "prompt": "For a nonnegative budget B, which condition is sufficient for the standard one-pass window that finds the longest contiguous range with sum at most B?",
       "constraints": [
         "The algorithm only moves left and right forward.",
+        "B is nonnegative.",
         "It repairs an over-budget sum by removing values from the left."
       ],
       "difficulty": "intermediate",
@@ -163,16 +167,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "nonnegative_values",
-            "text": "Every value is nonnegative, so expansion cannot reduce the sum and left removal cannot increase it."
-          },
-          {
             "id": "distinct_values",
             "text": "Every value is distinct."
           },
           {
             "id": "sorted_values",
             "text": "Values are sorted in ascending order."
+          },
+          {
+            "id": "nonnegative_values",
+            "text": "Every value is nonnegative, so expansion cannot reduce the sum and left removal cannot increase it."
           },
           {
             "id": "integer_values",
@@ -224,10 +228,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "removing_negative_increases_sum",
-            "text": "Removing the next left value −1 would increase the sum from 4 to 5, so ‘currently invalid’ does not imply that further shrinking stays invalid."
-          },
-          {
             "id": "right_must_move_backward",
             "text": "The right boundary must move backward after every failed shrink."
           },
@@ -238,6 +238,10 @@
           {
             "id": "target_too_small",
             "text": "The window method works only when T exceeds every individual value."
+          },
+          {
+            "id": "removing_negative_increases_sum",
+            "text": "Removing the next left value −1 would increase the sum from 4 to 5, so ‘currently invalid’ does not imply that further shrinking stays invalid."
           }
         ],
         "acceptedOptionIds": [
@@ -254,7 +258,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The positive-value algorithm stops when one removal makes sum < T because, with nonnegative values, every later removal can only decrease or preserve the sum. Here the next outgoing value is −1. Removing it raises the sum from 4 to 5 and exposes the length-1 valid range [5]. The algorithm therefore discarded the possibility by treating invalidity as monotone under further shrinkage. This concrete trace isolates why signed shortest-sum problems need a different mechanism, such as prefix sums with a monotonic deque for the general shortest-at-least problem."
+              "text": "The positive-value algorithm stops when one removal makes sum < T because, with nonnegative values, every later removal can only decrease or preserve the sum. Here the next outgoing value is −1. Removing it raises the sum from 4 to 5 and exposes the length-1 valid range [5]. The algorithm therefore discarded the possibility by treating invalidity as monotone under further shrinkage."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "General signed boundary",
+              "text": "For the general shortest-at-least problem with signed values, a standard alternative combines prefix sums with a monotonic deque: the deque stores candidate start boundaries in increasing prefix-sum order, removes older tail candidates when the current later prefix is no larger and therefore dominates them, and removes front candidates when the current-prefix difference reaches T. That mechanism does not assume one left pointer remains safe."
             }
           ]
         },
@@ -346,12 +356,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "yes_nonnegative",
-            "text": "Yes. Expansion cannot decrease the sum and removal cannot increase it; zeros may preserve the sum but do not reverse the direction."
-          },
-          {
             "id": "no_zero_breaks",
             "text": "No. A zero means the sum does not change, so the algorithm can never make progress."
+          },
+          {
+            "id": "yes_nonnegative",
+            "text": "Yes. Expansion cannot decrease the sum and removal cannot increase it; zeros may preserve the sum but do not reverse the direction."
           },
           {
             "id": "only_if_sorted",

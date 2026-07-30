@@ -3,7 +3,7 @@
   "batchId": "alg-stack-nested-structure-validation-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -36,12 +36,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "stack_openers",
-            "text": "Keep unmatched openers on a stack and compare each closer with the top."
-          },
-          {
             "id": "queue_openers",
             "text": "Enqueue openers; for each closer, compare with and remove the oldest opener."
+          },
+          {
+            "id": "stack_openers",
+            "text": "Keep unmatched openers on a stack and compare each closer with the top."
           },
           {
             "id": "count_only",
@@ -86,32 +86,32 @@
     },
     {
       "id": "alg-stack-nested-02-validation-sequence",
-      "prompt": "Order the conceptual checks for processing a delimiter stream with a stack.",
+      "prompt": "Order the lifecycle of an iterative delimiter validator that uses a stack.",
       "difficulty": "intermediate",
       "interaction": {
         "type": "ordering",
         "elements": [
           {
-            "id": "handle_opener",
-            "text": "When the token is an opener, push it."
+            "id": "initialize_stack",
+            "text": "Initialize an empty stack before scanning the stream."
           },
           {
-            "id": "guard_closer",
-            "text": "When the token is a closer, first require a non-empty stack."
+            "id": "classify_token",
+            "text": "Read the next token and classify it as an opener or a closer."
           },
           {
-            "id": "match_and_pop",
-            "text": "Require the top opener to match the closer, then pop it."
+            "id": "apply_token_branch",
+            "text": "Push an opener; for a closer, require a non-empty matching top and then pop it."
           },
           {
             "id": "final_empty",
-            "text": "After the scan, require the stack to be empty."
+            "text": "After every token is processed, accept only if the stack is empty."
           }
         ],
         "canonicalOrder": [
-          "handle_opener",
-          "guard_closer",
-          "match_and_pop",
+          "initialize_stack",
+          "classify_token",
+          "apply_token_branch",
           "final_empty"
         ],
         "scoringMethod": "adjacent_relations"
@@ -121,12 +121,27 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "Openers create unresolved state, closers must guard and match that state before removing it, and final emptiness proves no opener remains unresolved.",
+        "reason": "The validator must establish state before scanning, apply the correct branch to each token, and test final emptiness only after the stream is exhausted.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The first three relations describe per-token behavior: openers are recorded, while a closer must not access an empty stack and may pop only a matching top. The final check is separate because a stream can contain no invalid closer yet still end with unmatched openers. Adjacent-relation scoring focuses on these dependencies rather than arbitrary wording order."
+              "text": "The lifecycle separates initialization, per-token processing, and final acceptance. Opener and closer handling are branches inside one scan iteration, not two steps that every token executes."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Create the empty unresolved-opener stack before reading input.",
+                "Read one token at a time and determine which branch applies.",
+                "On the opener branch, push the token. On the closer branch, reject if the stack is empty or the top type differs; otherwise pop the matched opener.",
+                "After the scan, require the stack to be empty, because any remaining entry is an unmatched opener."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "edge_case",
+              "title": "Two different failure times",
+              "text": "A premature or mismatched closer fails immediately during the scan. An unmatched opener is detectable only when end-of-input leaves residual stack state."
             }
           ]
         }
@@ -151,16 +166,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "reject_now",
-            "text": "Reject immediately because `)` does not match the top opener `[`."
-          },
-          {
             "id": "search_deeper",
             "text": "Search deeper in the stack for `(` and leave `[` pending."
           },
           {
             "id": "rotate_queue",
             "text": "Move `[` to the back so `(` can be matched first."
+          },
+          {
+            "id": "reject_now",
+            "text": "Reject immediately because `)` does not match the top opener `[`."
           }
         ],
         "acceptedOptionIds": [
@@ -203,12 +218,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "invalid_premature_close",
-            "text": "The stream is invalid because no unresolved opener exists."
-          },
-          {
             "id": "push_closer",
             "text": "Push `]` and wait for a matching opener later."
+          },
+          {
+            "id": "invalid_premature_close",
+            "text": "The stream is invalid because no unresolved opener exists."
           },
           {
             "id": "assume_default_open",
@@ -255,16 +270,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "invalid_leftover",
-            "text": "Invalid; one opener remains unresolved at end of input."
-          },
-          {
             "id": "valid_no_bad_closer",
             "text": "Valid; only mismatched closing tokens can make the stream invalid."
           },
           {
             "id": "valid_stack_retains_history",
             "text": "Valid; a stack is expected to keep every opener after processing."
+          },
+          {
+            "id": "invalid_leftover",
+            "text": "Invalid; one opener remains unresolved at end of input."
           }
         ],
         "acceptedOptionIds": [
@@ -359,12 +374,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "iteration_with_stack",
-            "text": "An iterative scan with an explicit stack can fully validate the nesting contract."
-          },
-          {
             "id": "recursion_mandatory",
             "text": "Recursion is mandatory because nested syntax cannot be represented iteratively."
+          },
+          {
+            "id": "iteration_with_stack",
+            "text": "An iterative scan with an explicit stack can fully validate the nesting contract."
           },
           {
             "id": "no_state_needed",
@@ -411,16 +426,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "proper_tags",
-            "text": "`<a><b></b></a>`"
-          },
-          {
             "id": "crossed_tags",
             "text": "`<a><b></a></b>`"
           },
           {
             "id": "premature_close",
             "text": "`</a><a>`"
+          },
+          {
+            "id": "proper_tags",
+            "text": "`<a><b></b></a>`"
           }
         ],
         "acceptedOptionIds": [

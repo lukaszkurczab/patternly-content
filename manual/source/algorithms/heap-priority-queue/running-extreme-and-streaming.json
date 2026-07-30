@@ -3,7 +3,7 @@
   "batchId": "algorithms-heap-priority-queue-running-extreme-and-streaming-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -63,12 +63,12 @@
       "feedback": {
         "reason": "Insertion-only running maximum needs only max(previousMaximum, newValue); no candidate ever needs to be restored after removal.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "A heap is useful when several candidates must remain available because the current extreme may be removed or a deeper rank is queried. Here the maximum never leaves and only one statistic is requested, so one scalar is complete state. A heap or sorted history stores information the contract never uses. The boundary changes with deletions, kth-rank queries, or a requirement to return the next maximum after removing the current one."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "Initialize the scalar from the first arrival. For every later value `x`, assign `runningMaximum = max(runningMaximum, x)` and report it. Because values are never deleted, once a value stops being the maximum it can never become the answer later, so no history is needed. A heap is useful when several candidates must remain available because the current extreme may be removed or a deeper rank is queried. Here a heap or sorted history stores information the contract never uses; deletions, kth-rank queries, or removing the current maximum would change that boundary."
+          }
+        ]
         },
         "wrongOptionExplanationsByOptionId": {
           "max_heap_all": "A max-heap is correct but retains the full history unnecessarily when the current maximum is never removed.",
@@ -139,7 +139,11 @@
         "learningStage": "pattern_mechanics",
         "patternVariantId": "running_extreme",
         "problemArchetypeId": "maintain_top_k"
-      }
+      },
+      "constraints": [
+        "`k` is a fixed integer greater than `1`.",
+        "Equal-valued arrivals count as separate rank positions."
+      ]
     },
     {
       "id": "hpq-streaming-expiration-validity-boundary",
@@ -253,11 +257,14 @@
         "learningStage": "pattern_mechanics",
         "patternVariantId": "bounded_heap",
         "problemArchetypeId": "maintain_top_k"
-      }
+      },
+      "constraints": [
+        "Every query uses `1 <= k <=` the number of values seen so far."
+      ]
     },
     {
       "id": "hpq-streaming-both-extremes-boundary",
-      "prompt": "A dynamic set supports insertions and must report both the current minimum and current maximum after each update. Which diagnosis is correct?",
+    "prompt": "A dynamic collection supports insertions and deletions by stable entry ID, and must report both the current minimum and current maximum after every successful update while nonempty. Which diagnosis is correct?",
       "difficulty": "advanced",
       "interaction": {
         "type": "choice",
@@ -291,11 +298,19 @@
       "feedback": {
         "reason": "A standard heap guarantees one root extreme; the opposite extreme has no fixed backing-array position.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "Maintaining both ends may use two synchronized heaps with entry IDs and lazy deletion, a double-ended priority queue, or a balanced ordered multiset. Reading the final array entry is invalid because leaves are only constrained relative to ancestors. If only one extreme is queried, one heap orientation is sufficient and simpler. The product contract must also define duplicate and deletion synchronization."
-            }
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Insert each entry into both a min-oriented and max-oriented view, using the same stable ID.",
+              "On deletion, remove by handle when the structure supports it, or mark that ID inactive for lazy deletion.",
+              "Before reporting, discard inactive roots from each view; the remaining roots are the current minimum and maximum."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "A double-ended priority queue or a balanced ordered multiset can own the same contract directly. Reading the final backing-array entry is invalid because leaves are constrained only relative to ancestors, not to one another. If updates were insertion-only and no values were removed, two scalar extrema would suffice; deletions are the decisive reason the remaining candidates must stay recoverable."
+          }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
@@ -310,7 +325,11 @@
         "learningStage": "pattern_mechanics",
         "patternVariantId": "running_extreme",
         "problemArchetypeId": "choose_repeated_extreme"
-      }
+      },
+      "constraints": [
+        "Equal values may occur on different stable entry IDs.",
+        "The empty collection has an explicit unavailable result outside this question."
+      ]
     }
   ],
   "modeStructures": {

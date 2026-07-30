@@ -3,7 +3,7 @@
   "batchId": "algorithms-intervals-boundary-review-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -30,9 +30,9 @@
     {
       "id": "algorithms-intervals-boundary-review-001",
       "prompt": "A half-open overlap function uses `a.start <= b.end && b.start <= a.end`. It reports [1, 3) and [3, 5) as overlapping. What is the exact defect?",
-      "constraints": [
-        "Inputs are normalized half-open intervals.",
-        "Equality at a handoff is non-overlap."
+    "constraints": [
+      "Inputs are normalized, nonempty half-open intervals.",
+      "Equality at a handoff is non-overlap."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -48,8 +48,8 @@
             "text": "The intervals were not sorted by end."
           },
           {
-            "id": "length_bug",
-            "text": "The intervals are too short for the formula."
+            "id": "one_sided_strict_fix",
+            "text": "Only `b.start <= a.end` must become strict; the other comparison may remain inclusive."
           }
         ],
         "acceptedOptionIds": [
@@ -70,9 +70,9 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "sort_order_bug": "Pairwise overlap needs no sorting. The wrong result comes from equality handling inside the predicate.",
-          "length_bug": "Duration does not select the overlap comparator. The defect occurs exactly at endpoint equality, so the endpoint contract—not interval length—determines whether equality counts."
+      "wrongOptionExplanationsByOptionId": {
+        "sort_order_bug": "Pairwise overlap needs no sorting. The wrong result comes from equality handling inside the predicate.",
+        "one_sided_strict_fix": "That patch happens to fix the displayed operand order but fails after swapping the intervals, when equality occurs in the other comparison. A symmetric overlap relation requires both cross-end comparisons to use the same strict half-open rule."
         }
       },
       "taxonomy": {
@@ -103,8 +103,8 @@
             "text": "Subtract one from both ends before comparing."
           },
           {
-            "id": "sort_by_length",
-            "text": "Sort the ranges by length before applying the strict predicate."
+            "id": "one_sided_inclusive_fix",
+            "text": "Make only `b.start < a.end` inclusive and leave the other comparison strict."
           }
         ],
         "acceptedOptionIds": [
@@ -125,9 +125,9 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "subtract_one_from_ends": "That changes the represented sets and is invalid without a discrete normalization contract.",
-          "sort_by_length": "Sorting by length changes neither the omitted equality case nor the endpoint contract. The same touching pair will still be classified with the wrong strictness."
+      "wrongOptionExplanationsByOptionId": {
+        "subtract_one_from_ends": "That changes the represented sets and is invalid without a discrete normalization contract.",
+        "one_sided_inclusive_fix": "It passes the displayed operand order but fails when the intervals are swapped and equality lands in the other cross-end comparison. Overlap is symmetric, so both comparisons must implement the closed rule."
         }
       },
       "taxonomy": {
@@ -154,8 +154,8 @@
             "text": "The equal-time tie is reversed; ends must be processed before starts."
           },
           {
-            "id": "too_few_intervals",
-            "text": "The input needs a third interval to make the count meaningful."
+            "id": "shared_timestamp_is_overlap",
+            "text": "The peak is correct because sharing a timestamp always means simultaneous occupancy."
           },
           {
             "id": "need_end_sort_only",
@@ -180,9 +180,9 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "too_few_intervals": "Two back-to-back intervals are the minimal case that exposes the false transient peak.",
-          "need_end_sort_only": "Global interval order does not define the order of simultaneous endpoint events."
+      "wrongOptionExplanationsByOptionId": {
+        "shared_timestamp_is_overlap": "A shared coordinate does not imply a shared occupied point. The ending interval excludes 3 under [start, end), while the new interval includes it.",
+        "need_end_sort_only": "Global interval order does not define the order of simultaneous endpoint events."
         }
       },
       "taxonomy": {
@@ -429,12 +429,12 @@
             "text": "Endpoint semantics were discarded, so the service cannot interpret equality or normalize safely."
           },
           {
-            "id": "not_sorted_by_end",
-            "text": "The stored pairs were not sorted by end."
+            "id": "force_strict_globally",
+            "text": "The service should use strict comparisons globally because they are safer at equality."
           },
           {
-            "id": "insufficient_duration",
-            "text": "Equal endpoints produce intervals too short to compare."
+            "id": "force_inclusive_globally",
+            "text": "The service should use inclusive comparisons globally so no shared endpoint is lost."
           }
         ],
         "acceptedOptionIds": [
@@ -455,9 +455,9 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "not_sorted_by_end": "Sorting cannot reconstruct whether an end was inclusive after that metadata has been lost.",
-          "insufficient_duration": "The ambiguity is not caused by interval duration. It comes from the missing inclusion contract, because the shared coordinate may belong to both intervals or only one."
+      "wrongOptionExplanationsByOptionId": {
+        "force_strict_globally": "Strict comparison preserves half-open handoffs but misclassifies closed ranges that overlap at one included endpoint. It chooses one source's meaning rather than recovering the lost contract.",
+        "force_inclusive_globally": "Inclusive comparison preserves closed endpoint overlap but invents conflicts between touching half-open ranges. It chooses the other source's meaning rather than repairing the lossy representation."
         }
       },
       "taxonomy": {
@@ -489,8 +489,8 @@
             "text": "Sorting the wrapped range will restore the intended order."
           },
           {
-            "id": "ignore_max_endpoint",
-            "text": "Drop ranges ending at MAX_INT."
+            "id": "clamp_successor",
+            "text": "Clamp r + 1 to MAX_INT and keep the half-open representation."
           }
         ],
         "acceptedOptionIds": [
@@ -511,9 +511,9 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "sort_overflowed_range": "Sorting cannot recover the lost numeric value or represented set after overflow.",
-          "ignore_max_endpoint": "Silently deleting valid input is not a semantic correction and changes the problem."
+      "wrongOptionExplanationsByOptionId": {
+        "sort_overflowed_range": "Sorting cannot recover the lost numeric value or represented set after overflow.",
+        "clamp_successor": "Clamping converts [l, MAX_INT] to [l, MAX_INT), which excludes the valid endpoint MAX_INT. Avoiding wraparound is not enough; the representation must preserve the full set."
         }
       },
       "taxonomy": {
@@ -637,8 +637,8 @@
     {
       "id": "algorithms-intervals-boundary-review-012",
       "prompt": "A function predicts overlap when the sum of interval lengths exceeds the distance between their starts. It falsely reports overlap for [0, 100) with [100, 101), and for [0, 1) with [1.5, 100). What should replace the heuristic?",
-      "constraints": [
-        "All intervals are half-open linear ranges."
+    "constraints": [
+      "All intervals are nonempty half-open linear ranges."
       ],
       "difficulty": "intermediate",
       "interaction": {

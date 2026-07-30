@@ -3,7 +3,7 @@
   "batchId": "contrast-hash-map-vs-sorting-preservation-of-order-and-indices-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -37,7 +37,7 @@
   "items": [
     {
       "id": "alg-contrast-hash-sort-order-001",
-      "prompt": "A two-sum result must return original array indices. Which hash-based design preserves that contract directly?",
+      "prompt": "A two-sum result must return two distinct original array indices. Which hash-based design preserves that contract directly?",
       "difficulty": "intro",
       "interaction": {
         "type": "choice",
@@ -45,7 +45,7 @@
         "options": [
           {
             "id": "hash_index",
-            "text": "Scan in original order and map each seen value to the required original index metadata."
+            "text": "For each index i, look up the complement among earlier values, then map the current value to original index i."
           },
           {
             "id": "hash_values_only",
@@ -79,7 +79,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "At original index i with value x, first look up target - x among values stored from indices strictly less than i. A hit returns an earlier index j, so j and i are automatically distinct; only after that lookup is x associated with i for later positions."
             },
             {
               "type": "callout",
@@ -89,14 +89,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The stored index policy must also handle duplicates according to the required pair contract."
+              "text": "For [3, 3] and target 6, the table is empty at i = 0, then stores 3 → 0. At i = 1 the complement 3 returns index 0, producing (0, 1). A boolean set proves existence but cannot emit j, and sorted positions are new positions. Reusable rule: store the exact provenance the output must return, and order lookup/update to enforce distinct occurrences."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_values_only": "Existence alone cannot reconstruct the requested index.",
-          "sort_values_only": "Sorted positions are not original positions.",
-          "ignore_indices": "That changes the result contract."
+          "hash_values_only": "A boolean proves that a complement occurred but does not retain which original position must be returned.",
+          "sort_values_only": "After reordering, array positions refer to the sorted representation and duplicates make a value-to-original-position guess ambiguous.",
+          "ignore_indices": "Pair values do not satisfy a contract that distinguishes occurrences by two original indices."
         }
       },
       "taxonomy": {
@@ -149,7 +149,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "Sorting a values-only array retains the multiset of values but replaces each value's original position with its rank in sorted order. The output contains no inverse mapping from a sorted occurrence back to the position it occupied before the permutation."
             },
             {
               "type": "callout",
@@ -159,14 +159,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A sorting path must carry original indices or have another explicit reconstruction source."
+              "text": "For [20, 10, 20], sorting gives [10, 20, 20]. The two 20s are equal, so the sorted values alone cannot reveal which came from index 0 and which from index 2. Decorated records (value, originalIndex) preserve that relation. Reusable rule: if a transformation is many-to-one with respect to identity, retain provenance before transforming."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "values_change": "Sorting reorders values but does not alter their values.",
-          "indices_deleted": "They still have indices, but those are sorted positions.",
-          "hash_required": "Sorting decorated records can also preserve them."
+          "values_change": "A sort permutes the existing values; the loss concerns their association with original positions, not numeric mutation.",
+          "indices_deleted": "The sorted array still has indices, but those indices name ranks in the new order rather than positions in the input.",
+          "hash_required": "Hash entries are one preservation mechanism, but sorting decorated (value, originalIndex) records preserves the same provenance."
         }
       },
       "taxonomy": {
@@ -219,7 +219,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "If records A and B have equal sort keys and A appears before B in the input, stability guarantees that A still appears before B in the sorted output. The guarantee applies only within one equal-key class."
             },
             {
               "type": "callout",
@@ -229,14 +229,14 @@
             },
             {
               "type": "paragraph",
-              "text": "It does not by itself retain absolute original indices or prevent mutation."
+              "text": "For [(2,A), (1,X), (2,B)], stable sorting by the number yields [(1,X), (2,A), (2,B)]: A stays before B, but both move to new absolute indices. Stability neither prevents input mutation nor fixes the algorithm's workspace. Reusable rule: stability preserves a tie relation, not every position or resource property."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "original_positions": "Stable sorting still moves records across unequal keys.",
-          "ascending_indices": "Stability only preserves relative order among equal keys.",
-          "no_memory": "Stability does not define the memory algorithm."
+          "original_positions": "Records can move across all records with different keys, so their absolute indices normally change.",
+          "ascending_indices": "Stability retains the input order of equal-key records; it does not sort their stored original-index fields unless that is an explicit tie rule.",
+          "no_memory": "Stable algorithms have different buffer and stack profiles; the stability contract alone says nothing about auxiliary space."
         }
       },
       "taxonomy": {
@@ -289,7 +289,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "Scan the input left to right. When a key is absent, create its counter and append the key once to a first-seen sequence; on every occurrence increment the counter. Traversing that sequence later emits groups in the order their first positions were encountered."
             },
             {
               "type": "callout",
@@ -299,14 +299,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The map handles equality state, while a documented ordering mechanism preserves emission order."
+              "text": "For [b, a, b, c], counters are {b:2, a:1, c:1} and the sequence is [b, a, c]. Sorting keys would produce [a, b, c], a different contract, while unspecified table iteration proves neither. Reusable rule: equality aggregation and presentation order may require two explicit structures."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_keys": "Value order and first-seen order are different.",
-          "hash_arbitrary": "Unspecified iteration is not a first-seen guarantee.",
-          "sort_unstable": "The output order still follows key value, not first occurrence."
+          "sort_keys": "Ascending key order can differ from first arrival, as [b, a] must remain b then a under this contract.",
+          "hash_arbitrary": "Bucket traversal is a representation detail and does not encode the first position at which each key appeared.",
+          "sort_unstable": "Stability concerns ties after sorting; group order still follows key value rather than the order of first occurrences."
         }
       },
       "taxonomy": {
@@ -359,7 +359,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "Before sorting, transform each input occurrence at index i into a record (value, i). Sort records by value; the original index travels as payload with the occurrence even though the record moves to a new sorted position."
             },
             {
               "type": "callout",
@@ -369,14 +369,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The sort key can remain the value while original index is retained as payload or a tie-breaker when required."
+              "text": "For [20, 10, 20], decoration gives [(20,0), (10,1), (20,2)] and sorting by value gives [(10,1), (20,0), (20,2)] under an index tie rule. Every occurrence and index remains recoverable. Values-only sorting loses that pairing, a set drops duplicate records, and an unordered hash set lacks sorted traversal. Reusable rule: attach identity before any reorder that the output must later undo."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_values_only": "Duplicates and reorderings make the mapping ambiguous.",
-          "hash_no_order": "The report requires sorted records and every occurrence.",
-          "discard_duplicates": "The contract asks for every record."
+          "sort_values_only": "Equal values are indistinguishable after reordering, so their original indices cannot be assigned reliably.",
+          "hash_no_order": "A set neither guarantees value-sorted traversal nor retains every duplicate occurrence as a separate record.",
+          "discard_duplicates": "Keeping one representative per value violates the requirement to include every original record and its index."
         }
       },
       "taxonomy": {
@@ -429,7 +429,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "A conventional hash table places entries according to hash values, capacity, collision resolution, and resize history. None of those facts is the position at which a key arrived in the input, so ordinary bucket traversal cannot reconstruct original order."
             },
             {
               "type": "callout",
@@ -439,14 +439,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Correctness cannot depend on incidental bucket layout."
+              "text": "Preserve first-seen order with a separate key sequence or a container whose insertion-order guarantee is part of its documented contract. Building the table need not mutate the source, and entries can store arbitrary indices. Reusable rule: rely only on ordering guarantees stated by the data structure, never on one observed bucket layout."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_sort": "A conventional hash table does not impose value order.",
-          "input_mutated": "The input can remain unchanged.",
-          "indices_absent": "They can store arbitrary associated values."
+          "hash_sort": "Hash placement groups by bucket rather than imposing an ascending or arrival-order traversal.",
+          "input_mutated": "A scan can read the original array and write only to independent table storage, leaving every input position unchanged.",
+          "indices_absent": "A map value can contain one index, many indices, a counter, or other metadata; the issue is iteration order, not storage capability."
         }
       },
       "taxonomy": {
@@ -499,7 +499,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "Allocate an independent array of values or decorated (value, originalIndex) records, copy n occurrences into it, and sort that representation. Later logic can traverse the sorted copy while every value in the caller's original object remains in its initial position."
             },
             {
               "type": "callout",
@@ -509,14 +509,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The O(n) copy or decoration cost must be included in memory and preprocessing analysis."
+              "text": "The separation costs Θ(n) copy time and Θ(n) auxiliary storage plus the selected sort's workspace. In-place sorting violates preservation; a plain table supplies lookup but not ordered traversal; discarding the original removes required state. Reusable rule: simultaneous incompatible views require separate representations or a proven reversible view, and their costs are part of the strategy."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_original": "That violates the preservation contract.",
-          "hash_only": "A plain hash table does not provide value order.",
-          "discard_original": "The initial order is required later."
+          "sort_original": "Reordering the shared original destroys the exact initial sequence that the later consumer requires.",
+          "hash_only": "Hash lookup does not create the comparator-ordered traversal requested by the later logic.",
+          "discard_original": "Replacing the source with its sorted form removes the initial-order representation instead of preserving both views."
         }
       },
       "taxonomy": {
@@ -569,7 +569,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "An in-place sort writes a sequence of intermediate permutations into the same object. Returning it to its initial order can satisfy the final postcondition only if temporary mutation is permitted and cannot be observed through aliases, callbacks, concurrent readers, cancellation, or exceptions."
             },
             {
               "type": "callout",
@@ -579,14 +579,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Even temporary mutation can be unsafe with aliases, callbacks, concurrency, or exceptions."
+              "text": "If any observer can see the object during execution, or restoration is not guaranteed on every failure path, the strategy is illegal and a copy or non-mutating hash scan is needed. Stability is insufficient because it preserves only equal-key relative order while still moving records across other keys. Reusable rule: distinguish final-state equality from a no-observable-mutation contract."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_legal": "The caller's observable state is part of correctness.",
-          "hash_forbidden": "Hashing can leave the input untouched.",
-          "stable_enough": "Stability preserves only equal-key relative order."
+          "always_legal": "The shared object's state is observable behavior, so internal reordering is not automatically irrelevant merely because the returned answer is right.",
+          "hash_forbidden": "A hash-based scan can read each position and store derived state elsewhere without writing to the input object.",
+          "stable_enough": "Stable sorting still moves records across unequal keys and therefore does not restore the complete initial order."
         }
       },
       "taxonomy": {
@@ -639,7 +639,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "A hash scan stores a value with an earlier original index and returns that index with the current one when the complement is found. A sorting path decorates each value with its original index, then two pointers move over sorted records while returning the attached indices."
             },
             {
               "type": "callout",
@@ -649,14 +649,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The strategy comparison then includes expected time, sorting cost, auxiliary metadata, mutation, and duplicate handling."
+              "text": "Both must enforce two distinct occurrences: for [3,3] and target 6 the valid result is (0,1), never one position reused twice. Values-only sorting loses which 3 came from which index, while returning (3,3) changes the output type. Reusable rule: provenance is independent of the algorithm family; compare complete implementations that carry it."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_only": "Sorting decorated records preserves them too.",
-          "sort_values_only": "Original identity would be lost.",
-          "indices_irrelevant": "The output contract distinguishes them."
+          "hash_only": "Decorated records carry each original index through sorting, so hashing is not the only legal family.",
+          "sort_values_only": "Without attached indices, reordered values—especially duplicates—cannot be mapped reliably back to two original occurrences.",
+          "indices_irrelevant": "Equal values may occur at several positions, and the caller explicitly asks which two occurrences form the pair."
         }
       },
       "taxonomy": {
@@ -709,7 +709,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "Sorting by the group key establishes group order. Within one equal-key group, a stable algorithm retains the records' input sequence; equivalently, decorate records with original indices and use that index as the tie rule after comparing keys."
             },
             {
               "type": "callout",
@@ -719,14 +719,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A hash design could also retain per-key sequences and later sort keys, but the ordering mechanisms must be explicit."
+              "text": "For [(b,1), (a,X), (b,2)], the required output is group a followed by group b containing 1 then 2. An unstable sort may swap 1 and 2; an unordered map supplies neither key order nor per-group sequence unless both are added. Deduplication deletes required records. Reusable rule: separate the order between groups from the order within a group."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "unstable_any": "The contract says equal-key record order is observable.",
-          "hash_arbitrary": "It does not guarantee group or within-group order.",
-          "deduplicate": "Every record remains required."
+          "unstable_any": "An unstable implementation may permute records whose keys compare equal, violating the observable within-group sequence.",
+          "hash_arbitrary": "Unspecified map iteration does not sort group keys, and counters or unordered values do not retain each group's record sequence.",
+          "deduplicate": "Removing repeated-key records destroys occurrences that the grouped report explicitly requires."
         }
       },
       "taxonomy": {
@@ -737,7 +737,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-order-011",
-      "prompt": "Which requirements force a strategy to retain original-position metadata? Select all that apply.",
+      "prompt": "Which requirements force a strategy to preserve original-position information, either through explicit metadata or a guaranteed stable-order mechanism? Select all that apply.",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -781,7 +781,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "Returning an original index requires a stored or attached index. Returning the first occurrence requires the minimum or first encountered index per value. Preserving equal-record input order after key sorting requires either a stable sort contract or original-position metadata used as a tie rule."
             },
             {
               "type": "callout",
@@ -791,17 +791,17 @@
             },
             {
               "type": "paragraph",
-              "text": "A scalar distinct count does not."
+              "text": "A scalar distinct count depends only on how many equality classes exist; it can be computed without knowing where any occurrence appeared. Reusable rule: preserve position information exactly when two inputs with the same values but different occurrence order could require different outputs."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "distinct_count_only": "No original position is required."
+          "distinct_count_only": "Permuting input positions does not change the number of distinct values, so no positional fact affects this scalar output."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "return_indices": "Reordering alone cannot reconstruct them reliably.",
-          "first_occurrence": "The first position must be stored or derived from the original scan.",
-          "stable_equal_records": "Original sequence determines the tie order."
+          "return_indices": "After any reorder, an attached or mapped original index is the evidence needed to name the requested positions.",
+          "first_occurrence": "The earliest position must be recorded during the original scan or retained on decorated occurrences so it can be selected later.",
+          "stable_equal_records": "The input sequence defines the equal-key tie order; a stable algorithm preserves it implicitly, while an unstable one needs explicit index ties."
         }
       },
       "taxonomy": {
@@ -856,7 +856,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "A hash scan reads the original and writes only to auxiliary lookup state. Sorting an independent copy writes only to the copy. Building decorated secondary records similarly keeps values and original indices in a new representation that can be reordered without touching the source."
             },
             {
               "type": "callout",
@@ -866,17 +866,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Each alternative has a different memory cost."
+              "text": "All three preserve the caller's object, but their costs differ: hash state grows with retained keys or positions, while copied or decorated arrays contain n records plus sort workspace. In-place sorting of the exposed source directly contradicts the claim that its order is unchanged. Reusable rule: identify the object receiving writes, not just the high-level algorithm name."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "in_place_exposed": "Its observable order differs."
+          "in_place_exposed": "The shared original object is the storage being permuted, so observers see a different order unless a separately permitted and safe restoration occurs."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "hash_scan": "The original sequence remains intact.",
-          "sort_copy": "The original remains unchanged.",
-          "decorated_secondary": "Identity and original sequence remain available."
+          "hash_scan": "All mutations target the table, so original values and positions remain intact.",
+          "sort_copy": "The copy receives every sorting write, leaving the source sequence unchanged at an O(n) auxiliary cost.",
+          "decorated_secondary": "Each new record carries provenance while the independent record array—not the original—is sorted."
         }
       },
       "taxonomy": {
@@ -931,7 +931,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "For two records with equal keys, stability preserves whichever appeared first in the input. That makes input order the implicit tie rule and can support first-seen order inside each equality group."
             },
             {
               "type": "callout",
@@ -941,17 +941,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Mutation and auxiliary-space behavior depend on the implementation."
+              "text": "Records still move across records with unequal keys, so stability does not preserve absolute positions. It also does not select a memory model: common stable array merge sort uses O(n) buffer, while other stable algorithms make different tradeoffs. Reusable rule: treat stability, mutation, and auxiliary space as separate properties."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_in_place": "Stability does not imply one memory profile."
+          "always_in_place": "Stable sorting algorithms can use linear buffers or other workspace; stability alone neither guarantees in-place execution nor O(1) space."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "equal_relative": "This is the definition of stability.",
-          "not_absolute": "Records still move across unequal keys.",
-          "can_support_first_seen_ties": "Input order becomes the tie order."
+          "equal_relative": "The defining invariant is that equal-key pairs keep the same before/after relation they had in the input.",
+          "not_absolute": "Key ordering can move a record past every record with a smaller or larger key even while equal-key ties stay stable.",
+          "can_support_first_seen_ties": "Because equal keys are not permuted relative to each other, their input arrival sequence becomes their output sequence within the group."
         }
       },
       "taxonomy": {
@@ -1006,7 +1006,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "On first insertion, a map can retain the current index as firstIndex. Appending every later index to a per-key list preserves all occurrence positions. Appending each newly created key once to a separate sequence preserves first-seen group order."
             },
             {
               "type": "callout",
@@ -1016,17 +1016,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Internal table placement is not semantic data."
+              "text": "These fields encode facts from the input scan and remain valid across table resizing. A bucket position instead depends on hash capacity and collision resolution, so it can change without any change to the input. Reusable rule: semantic provenance must come from source positions, never internal container coordinates."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "bucket_position": "Bucket layout is unrelated to input position."
+          "bucket_position": "Resizing or a different collision pattern can move the same key to another bucket, proving bucket location is not an original index."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "first_index": "This supports first-occurrence results.",
-          "all_indices": "This preserves every occurrence position.",
-          "first_seen_sequence": "This supports first-seen group order."
+          "first_index": "Recording the index only when a key is first inserted preserves its earliest original occurrence.",
+          "all_indices": "Appending the current index on every occurrence creates an exact position list for that key.",
+          "first_seen_sequence": "Appending a key once at first insertion orders distinct keys by the positions of their first arrivals."
         }
       },
       "taxonomy": {
@@ -1049,7 +1049,7 @@
           },
           {
             "id": "already_sorted",
-            "text": "Input already sorted but original indices still required."
+            "text": "Already value-sorted records with equal keys but distinct occurrence identities."
           },
           {
             "id": "reverse_order",
@@ -1081,7 +1081,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
+              "text": "Equal values at several indices make values-only reconstruction ambiguous. Already value-sorted equal-key records check whether their distinct occurrence identities survive even when numeric positions appear unchanged. Reverse value order forces maximal movement and exposes code that mistakes sorted ranks for original indices."
             },
             {
               "type": "callout",
@@ -1091,17 +1091,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Easy unique cases can make a broken values-only sort appear correct."
+              "text": "A single easy case with unique values already near their final positions can accidentally make sorted and original indices coincide, hiding the defect. Reusable rule: provenance tests need duplicate identities and cases where value order differs sharply from occurrence order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "only_unique_mid": "This hides duplicate and movement defects."
+          "only_unique_mid": "Unique values near their final ranks remove both ambiguity and substantial movement, so broken values-only reconstruction may appear correct."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "duplicates": "They expose ambiguous reconstruction.",
-          "already_sorted": "Value order alone does not remove identity requirements.",
-          "reverse_order": "It maximizes reordering and tests restoration."
+          "duplicates": "Several occurrences share one value, so a value alone cannot identify which original position should be returned.",
+          "already_sorted": "Equal-key records can carry different identities even when the key sequence is already sorted, testing whether ties retain provenance.",
+          "reverse_order": "Every record moves far from its original rank, making any confusion between sorted and original positions visible."
         }
       },
       "taxonomy": {
@@ -1119,7 +1119,7 @@
         "elements": [
           {
             "id": "scan",
-            "text": "Scan keys in original order."
+            "text": "Read the next key in original order."
           },
           {
             "id": "first_seen",
@@ -1127,7 +1127,7 @@
           },
           {
             "id": "update_count",
-            "text": "Increment the key's count for every occurrence."
+            "text": "Increment its count, then repeat the read/first-seen/update steps until input ends."
           },
           {
             "id": "emit",
@@ -1153,21 +1153,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Preserve the information the caller needs"
+              "text": "Store equality and order in separate structures"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Read the next key in original order so the current position defines whether this is its first arrival.",
+                "If the key has no entry, initialize its counter and append it once to the first-seen sequence.",
+                "Increment the key's counter for this occurrence, then repeat the read/first-seen/update steps until input ends.",
+                "Traverse the first-seen sequence and read each corresponding counter from the map."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Value equality is not enough",
-              "text": "Before choosing a structure, list every piece of information the output must retain: original index, arrival order, stable tie order, or sorted key order. Choose the plan that preserves those facts directly, or account for the metadata required to reconstruct them."
-            },
-            {
-              "type": "paragraph",
-              "text": "Emission does not depend on incidental hash iteration."
+              "text": "Appending on every occurrence would duplicate groups in the order list; relying on map traversal would discard the declared order. Reusable rule: one structure can own equality lookup while another owns presentation order."
             }
           ]
         }
@@ -1221,21 +1220,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Preserve the information the caller needs"
+              "text": "Attach provenance before reordering"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Create one record (value, originalIndex, requiredTieMetadata) for every input occurrence while original positions are known.",
+                "Sort those records by the declared value key and tie rule; metadata travels with its occurrence.",
+                "Run the ordered algorithm on the decorated records rather than discarding their identity fields.",
+                "Use the attached indices or tie metadata to return the required original-position result."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Value equality is not enough",
-              "text": "Before choosing a structure, list every piece of information the output must retain: original index, arrival order, stable tie order, or sorted key order. Choose the plan that preserves those facts directly, or account for the metadata required to reconstruct them."
-            },
-            {
-              "type": "paragraph",
-              "text": "The metadata's time and space are part of the sorting strategy."
+              "text": "Decorating after sorting is too late because equal values no longer reveal which occurrence supplied which index. The n records add Θ(n) construction time and space, which belong to the sorting strategy. Reusable rule: preserve provenance before the first destructive transformation."
             }
           ]
         }
@@ -1258,12 +1256,12 @@
             "text": "State whether original input order, first-seen order, stable ties, or original indices are observable."
           },
           {
-            "id": "identify_metadata",
-            "text": "Determine the minimum metadata needed under hashing and sorting."
+            "id": "check_mutation",
+            "text": "Eliminate representations that violate the input-mutation and output-order contract."
           },
           {
-            "id": "check_mutation",
-            "text": "Check whether the original representation may be reordered."
+            "id": "identify_metadata",
+            "text": "For each legal representation, determine the minimum index, sequence, or tie metadata needed."
           },
           {
             "id": "compare_complete",
@@ -1272,8 +1270,8 @@
         ],
         "canonicalOrder": [
           "state_observables",
-          "identify_metadata",
           "check_mutation",
+          "identify_metadata",
           "compare_complete"
         ],
         "scoringMethod": "adjacent_relations"
@@ -1289,21 +1287,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Preserve the information the caller needs"
+              "text": "Legality precedes metadata and cost"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "List every observable: source order after return, first-seen group order, equal-key tie order, and original indices.",
+                "Eliminate representations that cannot satisfy those observables, such as exposed in-place sorting when source order must remain unchanged.",
+                "For each legal path, add the minimum map indices, occurrence lists, first-seen sequence, decorated records, or stable tie mechanism it needs.",
+                "Compare time and peak space only after both hash and sort candidates include all required preservation machinery."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Value equality is not enough",
-              "text": "Before choosing a structure, list every piece of information the output must retain: original index, arrival order, stable tie order, or sorted key order. Choose the plan that preserves those facts directly, or account for the metadata required to reconstruct them."
-            },
-            {
-              "type": "paragraph",
-              "text": "Asymptotic comparison comes after both candidates include the metadata they need."
+              "text": "Choosing metadata before eliminating illegal representations wastes analysis, while comparing costs before adding metadata understates them. Reusable rule: define observables, establish legal representations, complete them, then optimize."
             }
           ]
         }
@@ -1371,21 +1368,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Preserve the information the caller needs"
+              "text": "Count entries and indices at different granularities"
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Value equality is not enough",
-              "text": "Before choosing a structure, list every piece of information the output must retain: original index, arrival order, stable tie order, or sorted key order. Choose the plan that preserves those facts directly, or account for the metadata required to reconstruct them."
+              "text": "The scan visits n positions. Each performs one expected O(1) table lookup/update and one append, so total expected time is n · O(1) = O(n)."
             },
             {
               "type": "paragraph",
-              "text": "Preserving every occurrence index removes any O(k)-only space claim."
+              "text": "There are k map keys, but the per-key lists partition all original positions: if list lengths are c1 through ck, then c1 + ... + ck = n because every index is stored exactly once. Total stored index space is therefore O(n), not O(k). Reusable rule: sum payload cardinality across groups instead of counting only group headers."
             }
           ]
         }
@@ -1453,21 +1444,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Preserve the information the caller needs"
+              "text": "Decoration is linear; sorting dominates time"
             },
             {
               "type": "paragraph",
-              "text": "An algorithm may find the right values but still fail the contract by losing provenance. Sorting moves elements, so original positions or stable tie behaviour must be retained explicitly when the output depends on them. Hash-based state can preserve first-seen indices or process values online, but it does not automatically provide sorted output."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Value equality is not enough",
-              "text": "Before choosing a structure, list every piece of information the output must retain: original index, arrival order, stable tie order, or sorted key order. Choose the plan that preserves those facts directly, or account for the metadata required to reconstruct them."
+              "text": "Creating n (value, index) records takes O(n) time. Sorting them takes O(n log n), so total time is O(n + n log n) = O(n log n). Retaining the untouched original does not add auxiliary space because it is input storage."
             },
             {
               "type": "paragraph",
-              "text": "The n identity-carrying records dominate peak auxiliary space."
+              "text": "The decorated array itself contains n records and remains live while sorting. Even if the sort uses an additional buffer up to O(n), peak auxiliary space is O(n + n) = O(n). O(1) or O(log n) ignores the identity-carrying array; O(n log n) confuses time with simultaneous storage. Reusable rule: an O(n) representation dominates any no-larger sort workspace."
             }
           ]
         }

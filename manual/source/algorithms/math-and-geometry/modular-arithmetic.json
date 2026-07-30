@@ -3,7 +3,7 @@
   "batchId": "algorithms-math-and-geometry-modular-arithmetic-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -70,7 +70,21 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Because m divides a-b, it also divides (a+c)-(b+c). If m divides both a-b and c-d, expanding ac-bd=a(c-d)+d(a-b) shows multiplication preserves congruence. Cancellation is different: from k(a-b) divisible by m, a-b need not be divisible by m when k shares a factor with m. Floating decimal equality is neither the definition nor a reliable exact test."
+              "text": "Congruence a ≡ b (mod m) means a and b differ by an integer multiple of m. The accepted operations keep the new difference divisible by m."
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Addition: (a + c) - (b + c) = a - b, so adding the same c leaves the divisible difference unchanged.",
+                "Multiplication: ac - bd = a(c - d) + d(a - b). Both parenthesized differences are multiples of m, so their integer linear combination is also a multiple of m.",
+                "Cancellation needs an inverse. With m = 12 and k = 6, 6·1 ≡ 6·3 (both are 6 modulo 12), but 1 is not congruent to 3 modulo 12."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Proof rule",
+              "text": "To justify a modular rewrite, express the new difference as a multiple or integer combination of known multiples of m. Do not infer exact divisibility from floating representations."
             }
           ]
         },
@@ -195,7 +209,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The input bounds prove that a-b+m is between 1 and 2m-1, except the equal case gives m; reducing by m therefore yields exactly the canonical residue. This one-addition form depends on the stated normalization and width preconditions. For arbitrary unnormalized values, use the general double-mod normalization instead. Absolute difference discards direction around the residue cycle."
+              "text": "Since 0 <= a,b < m, the difference a - b lies from -(m - 1) through m - 1. Adding m moves that range to 1 through 2m - 1; when a = b it produces m. A final `% m` therefore maps the nonnegative value to exactly one representative in [0,m). For example, with m = 7, a = 2 and b = 5, 2 - 5 + 7 = 4 and 4 % 7 = 4. This form depends on the stated bound that a - b + m fits. For arbitrary inputs, first compute r = x % m and add m only when r < 0; do not use an unconditional r + m in a bounded signed type. Absolute difference is wrong because it reverses direction around the cycle."
             }
           ]
         },
@@ -377,7 +391,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The raw sum is -3, and -3 differs from 4 by one full cycle of 7, so they represent the same position. Clamping or taking absolute value changes the cyclic operation. This example transfers directly to ring buffers, weekday arithmetic, and repeated rotations. The normalization formula is part of the state invariant, not a display-only correction."
+              "text": "The raw index is 2 + (-5) = -3. Canonical indices must lie in [0,7), so add one full cycle: -3 + 7 = 4. Equivalently, -3 and 4 are congruent because their difference is -7, a multiple of 7. The shown double-mod expression is safe here because the fixed modulus is only 7; for a near-limit variable modulus, use conditional negative-remainder normalization. Clamping to 0 or taking absolute value changes the cyclic displacement. The same invariant applies to ring buffers, weekdays, and rotations."
             }
           ]
         },
@@ -438,14 +452,28 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The congruence rule permits replacing a and b by canonical residues before multiplication. If even the reduced product can exceed the machine type, widening or add-and-double is required. Overflow followed by % computes the residue of a different wrapped integer. Dividing by m loses the remainders that determine the product residue, and floating fmod is not exact for arbitrary 64-bit values."
+              "text": "Because replacing an operand by a congruent residue preserves products, first normalize a and b into [0,m): compute r = x % m and add m only when r < 0. This bounds each operand but does not prove their product fits: two residues below m can still have a product near m^2."
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "If a wider exact type covers values below m^2, multiply the residues there and reduce the exact product.",
+                "Otherwise, add-and-double reads the bits of one residue. It conditionally accumulates the current term, doubles that term for the next bit, and reduces after every update, so it never forms the full product.",
+                "The modular-add operation must itself avoid overflow: for x,y in [0,m), return x - (m - y) when x >= m - y; otherwise return x + y."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Safety boundary",
+              "text": "Reduction after an overflow is too late. Every multiplication, addition, or doubling before `% m` must be exact or covered by a proved overflow-avoiding branch."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "overflow_then_reduce": "Modulo cannot undo an overflow that changed the product before reduction.",
-          "divide_first": "Quotients alone discard the residue information needed to compute the product class.",
-          "double_fmod": "Double cannot represent every 64-bit integer or their exact product."
+          "overflow_then_reduce": "The signed 64-bit product is evaluated before `% m`; overflow changes that product, so the later reduction computes the residue of the wrong integer.",
+          "divide_first": "Writing a = qm + r shows that the quotient q does not determine the residue r. Discarding the remainders loses exactly the information needed for the product class.",
+          "double_fmod": "Double cannot represent every signed 64-bit integer, much less every exact product of two such values, so rounding can change the remainder."
         }
       },
       "difficulty": "foundational-transfer",
@@ -508,7 +536,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "At each step, the algorithm conditionally multiplies the result by the current base, squares the base, and halves the exponent. Halving reaches zero after O(log e) iterations. The iterative state consists of the result residue, base residue, exponent, and modulus, so extra space is O(1). This cost statement assumes fixed-width safe modular multiplication; arbitrary-precision multiplication would add its own bit complexity."
+              "text": "Repeated squaring uses the binary expansion of e. In each iteration it processes the current low bit, conditionally multiplies the result residue, squares the base residue, and replaces e by floor(e/2)."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "For e = 13, the exponent states are 13, 6, 3, 1, 0.",
+                "That is four iterations, matching the four binary digits of 13 = 1101₂.",
+                "In general, repeated halving takes floor(log2 e) + 1 iterations, so time is O(log e) when each safe modular multiplication is O(1).",
+                "The iterative routine stores only the result residue, base residue, exponent, and modulus, so extra space is O(1)."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Cost model",
+              "text": "The bound treats fixed-width safe modular multiplication as O(1). With arbitrary-precision operands, its bit complexity must be multiplied into the iteration count."
             }
           ]
         }

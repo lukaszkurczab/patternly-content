@@ -3,7 +3,7 @@
   "batchId": "algorithms-sliding-window-recognize-sliding-window-signal",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -101,16 +101,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "dynamic_state_not_window",
-            "text": "This is not a sliding-window objective because a candidate is not one contiguous interval; state must compare take/skip choices."
-          },
-          {
             "id": "fixed_window_two",
             "text": "Use a fixed window of length 2 because adjacency is mentioned."
           },
           {
             "id": "variable_window",
             "text": "Use a variable window and shrink whenever two chosen positions become adjacent."
+          },
+          {
+            "id": "dynamic_state_not_window",
+            "text": "This is not a sliding-window objective because a candidate is not one contiguous interval; state must compare take/skip choices."
           },
           {
             "id": "frequency_window",
@@ -160,12 +160,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "a_fixed_b_variable",
-            "text": "Task A uses a fixed-size window; Task B uses a variable-size frequency-constrained window."
-          },
-          {
             "id": "both_fixed",
             "text": "Both use fixed-size windows because each statement contains k."
+          },
+          {
+            "id": "a_fixed_b_variable",
+            "text": "Task A uses a fixed-size window; Task B uses a variable-size frequency-constrained window."
           },
           {
             "id": "both_variable",
@@ -221,10 +221,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "frequency_window",
-            "text": "Maintain event frequencies, expand right, and move left only while the distinct-count limit is violated."
-          },
-          {
             "id": "sort_events",
             "text": "Sort all events so equal types become adjacent."
           },
@@ -235,6 +231,10 @@
           {
             "id": "prefix_total",
             "text": "Use one numeric prefix sum over event identifiers."
+          },
+          {
+            "id": "frequency_window",
+            "text": "Maintain event frequencies, expand right, and move left only while the distinct-count limit is violated."
           }
         ],
         "acceptedOptionIds": [
@@ -271,9 +271,11 @@
     },
     {
       "id": "alg-sw-recognize-positive-threshold",
-      "prompt": "All values are strictly positive. The goal is the shortest contiguous range whose sum is at least T. Why is a variable sliding window a legal candidate?",
+      "prompt": "All values and target T are strictly positive. The goal is the shortest nonempty contiguous range whose sum is at least T. Why is a variable sliding window a legal candidate?",
       "constraints": [
         "Every value is greater than zero.",
+        "T is greater than zero.",
+        "Only nonempty ranges are candidates.",
         "The objective is minimum length with sum at least T."
       ],
       "difficulty": "intermediate",
@@ -332,9 +334,10 @@
     },
     {
       "id": "alg-sw-recognize-exact-sum-mixed-signs",
-      "prompt": "An array may contain positive and negative integers. Count all contiguous ranges whose sum is exactly T. Which strategy signal is decisive?",
+      "prompt": "An array may contain positive and negative integers. Count all nonempty contiguous ranges whose sum is exactly T. Which strategy signal is decisive?",
       "constraints": [
         "Values may have either sign.",
+        "Only nonempty ranges are counted.",
         "Every qualifying range must be counted, not only a longest or shortest one."
       ],
       "difficulty": "advanced",
@@ -343,16 +346,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "prefix_frequency",
-            "text": "Use prefix sums with a frequency map: a range ending at r has sum T when an earlier prefix equals currentPrefix − T."
-          },
-          {
             "id": "simple_variable_window",
             "text": "Expand while the sum is below T and shrink while it is above T."
           },
           {
             "id": "fixed_window_t",
             "text": "Use a fixed window of length T."
+          },
+          {
+            "id": "prefix_frequency",
+            "text": "Use prefix sums with a frequency map: a range ending at r has sum T when an earlier prefix equals currentPrefix − T."
           },
           {
             "id": "sort_then_window",
@@ -373,7 +376,28 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Contiguity alone does not make a problem a sliding window. With signed values, moving right may raise or lower the sum, and removing the leftmost value may also raise or lower it. A single left boundary cannot safely discard all earlier starts. Prefix sums convert each range sum into prefix[r+1] − prefix[l], and a frequency map counts every prior prefix equal to currentPrefix − T. A simple window becomes appropriate only when extra constraints create a monotone validity boundary, such as nonnegative values for an at-most or at-least threshold objective."
+              "text": "Contiguity alone does not make a problem a sliding window. With signed values, adding or removing a value may raise or lower the sum, so a comparison with T cannot safely discard one left boundary. Define `prefix[j]` as the sum before position `j`; then the nonempty range `[l, r]` has sum `prefix[r+1] - prefix[l]`. It equals T exactly when the earlier prefix is `prefix[r+1] - T`."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Initialize the frequency map with prefix sum 0 occurring once, representing the boundary before the array.",
+                "Scan left to right and add the current value to `currentPrefix`.",
+                "Add `frequency[currentPrefix - T]` to the answer; every such earlier boundary starts a distinct qualifying nonempty range ending here.",
+                "Only after counting, increment `frequency[currentPrefix]`, so the current boundary cannot pair with itself as an empty range."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "worked_example",
+              "title": "Signed trace",
+              "text": "For `[1,-1,1]` and T=1, current prefixes are 1, 0, 1. The needed earlier prefixes are 0, -1, 0, contributing 1 + 0 + 2 = 3 ranges: `[0,0]`, `[0,2]`, and `[2,2]`."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "When a simple window returns",
+              "text": "A simple expand/shrink rule needs an additional monotone boundary, such as nonnegative values for an at-least threshold objective. Exact-sum counting with mixed signs has no such rule."
             }
           ]
         },

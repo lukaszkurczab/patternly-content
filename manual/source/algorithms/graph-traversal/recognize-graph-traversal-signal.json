@@ -3,7 +3,7 @@
   "batchId": "algorithms-graph-traversal-recognize_graph_traversal_signal-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -36,12 +36,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "connected_state_search",
-            "text": "States connected by legal transitions, requiring graph traversal from S."
-          },
-          {
             "id": "sort_services",
             "text": "A sorting problem because service names can be ordered alphabetically."
+          },
+          {
+            "id": "connected_state_search",
+            "text": "States connected by legal transitions, requiring graph traversal from S."
           },
           {
             "id": "binary_search",
@@ -65,8 +65,25 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Reachability follows links transitively"
+            },
+            {
               "type": "paragraph",
-              "text": "Services are vertices and communication links are edges. Reachability requires exploring the connected state space while preventing repeated processing. The decisive signal is not a graph keyword or the choice of BFS; it is the transitive relation created by legal links. If the output instead asked for alphabetical lookup, sorting or indexing would own the decision."
+              "text": "Model each service as a vertex and each followable communication link as an edge. T is reachable from S if T = S or there is a sequence S → … → T of zero or more legal links. A traversal starts at S, expands linked services, and uses visited state so a cycle does not cause repeated processing."
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Surface labels do not choose the algorithm",
+              "text": "Alphabetically sorting service names or binary-searching a known name can find a record, but neither operation proves that a communication path connects S to T. BFS and DFS are implementation choices after the graph structure is recognized."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Recognition rule",
+              "text": "When the answer depends on repeatedly following a relation from one state to another, model states and transitions and ask a graph reachability question."
             }
           ]
         },
@@ -87,22 +104,25 @@
     {
       "id": "alg-gt-signal-002",
       "prompt": "A puzzle state is a word. One move changes one character, and only dictionary words are legal. The task asks whether the start word can reach the target word. Which signal identifies the approach family?",
+      "constraints": [
+        "The start and target are dictionary words of the same length."
+      ],
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "implicit_state_graph",
-            "text": "Each legal word is a state and each one-character move is an edge in an implicit graph."
+            "id": "matrix_required",
+            "text": "It becomes graph traversal only after an adjacency matrix is built."
           },
           {
             "id": "string_scan",
             "text": "It is only a string-scanning task because every state is text."
           },
           {
-            "id": "matrix_required",
-            "text": "It becomes graph traversal only after an adjacency matrix is built."
+            "id": "implicit_state_graph",
+            "text": "Each legal word is a state and each one-character move is an edge in an implicit graph."
           },
           {
             "id": "dequeue_marks_graph",
@@ -122,8 +142,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "A transition rule can define a graph without an edge file"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Treat every legal same-length dictionary word as a state.",
+                "Generate a neighbor by changing one position to another character and retaining the result only when it is in the dictionary.",
+                "Traverse those legal transitions from the start while recording visited words.",
+                "Succeed when the target is discovered; fail when the reachable frontier is empty."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The surface type—words—does not determine the algorithm family. The transition rule defines edges, and the reachability output requires search through those transitions. Neighbor generation can remain implicit, while a visited set prevents cycles. Marking policy affects correctness and work after the graph decision has already been made."
+              "text": "The fact that vertices are strings does not make this a one-string scan: the answer depends on a sequence of transformations through many words. An adjacency matrix is optional because neighbors can be generated from the rule. Visited timing affects duplicate work after the graph has already been identified."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Implicit-state signal",
+              "text": "Legal objects are vertices and repeatable legal transformations are edges, even when the input never materializes those edges."
             }
           ]
         },
@@ -133,13 +173,13 @@
           "dequeue_marks_graph": "Visited timing is an implementation invariant, not the signal that states and transitions form a graph."
         }
       },
-      "taxonomy": {
-        "primarySkillAtomId": "identify_connected_state_search",
-        "secondarySkillAtomIds": [],
-        "learningStage": "pattern_mechanics",
-        "patternVariantId": "graph_bfs",
-        "problemArchetypeId": "shortest_unweighted_path"
-      }
+        "taxonomy": {
+          "primarySkillAtomId": "identify_connected_state_search",
+          "secondarySkillAtomIds": [],
+          "learningStage": "pattern_mechanics",
+          "patternVariantId": "graph_bfs",
+          "problemArchetypeId": "traverse_connected_state"
+        }
     },
     {
       "id": "alg-gt-signal-003",
@@ -149,10 +189,6 @@
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "unweighted_shortest_path",
-            "text": "Every ride has equal cost, so distance is the number of graph edges and BFS layers are relevant."
-          },
           {
             "id": "dfs_faster",
             "text": "Use DFS because it dives to B sooner on average."
@@ -164,6 +200,10 @@
           {
             "id": "tree_path",
             "text": "Treat the map as a tree and follow parent pointers because routes cannot cycle."
+          },
+          {
+            "id": "unweighted_shortest_path",
+            "text": "Every ride has equal cost, so distance is the number of graph edges and BFS layers are relevant."
           }
         ],
         "acceptedOptionIds": [
@@ -179,8 +219,25 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Equal-cost edges turn ride count into BFS depth"
+            },
+            {
               "type": "paragraph",
-              "text": "BFS explores vertices in nondecreasing edge distance from the source, so first discovery gives the minimum number of rides when every edge costs one. The graph may be represented with lists or a matrix according to density; that is a separate decision. If rides have different costs, the transfer boundary changes to a weighted shortest-path algorithm rather than ordinary BFS."
+              "text": "BFS starts with A at distance 0, then processes all stations one ride away, then two rides away, and so on. Because every direct ride adds exactly one to the distance, the first time B is discovered its layer number is the minimum possible ride count."
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Do not confuse three separate choices",
+              "text": "DFS can discover a longer route before a shorter one. A matrix versus a list is a representation decision, and the map is not promised to be a tree. None of those claims establishes minimum edge count."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer boundary",
+              "text": "Use BFS layers for minimum edge count when every edge has equal cost; unequal ride costs require a weighted shortest-path method."
             }
           ]
         },
@@ -201,18 +258,21 @@
     {
       "id": "alg-gt-signal-004",
       "prompt": "Tasks have prerequisite pairs, and the output must list every task after all of its prerequisites. Which graph-traversal signal matters most?",
+      "constraints": [
+        "If no legal ordering exists, report that the prerequisite graph contains a directed cycle."
+      ],
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "dependency_order",
-            "text": "Directed dependencies impose a partial order, so topological processing is required."
-          },
-          {
             "id": "ordinary_reachability",
             "text": "Any BFS or DFS visitation order is valid because all tasks only need to be reached."
+          },
+          {
+            "id": "dependency_order",
+            "text": "Directed dependencies impose a partial order, so topological processing is required."
           },
           {
             "id": "fastest_traversal",
@@ -236,8 +296,25 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "The output must satisfy every directed precedence edge"
+            },
+            {
               "type": "paragraph",
-              "text": "Model each prerequisite p for task t as a directed edge p → t. A legal result is a topological order, commonly produced by indegree processing or DFS postorder with cycle handling. Ordinary BFS or DFS can visit every task yet place a dependent before a prerequisite. This item stays at the recognition boundary; the mechanics of indegree updates belong to the topological-order unit."
+              "text": "Model prerequisite p for task t as p → t. A legal output is a topological order: for every such edge, p appears before t. Indegree processing repeatedly removes tasks with no remaining prerequisites; DFS postorder is another implementation when it also detects cycles."
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Reachability is too weak",
+              "text": "An ordinary BFS or DFS order may visit every task yet still place t before prerequisite p. Dropping direction erases the meaning of the constraint, and no ordering can satisfy a directed cycle."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Recognition rule",
+              "text": "When every directed dependency must precede its dependent, the required object is a topological order plus explicit cycle handling."
             }
           ]
         },
@@ -264,16 +341,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "not_graph_signal",
-            "text": "This is not a graph-traversal signal; the key structure is a contiguous sequence and a running-state decision."
-          },
-          {
             "id": "index_graph",
             "text": "Treat every index as a vertex and adjacent indices as edges, then run BFS."
           },
           {
             "id": "matrix_graph",
             "text": "Build an adjacency matrix of index pairs to avoid missing subarrays."
+          },
+          {
+            "id": "not_graph_signal",
+            "text": "This is not a graph-traversal signal; the key structure is a contiguous sequence and a running-state decision."
           },
           {
             "id": "tree_rules",
@@ -293,8 +370,23 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "A possible graph model is not necessarily a useful one"
+            },
+            {
               "type": "paragraph",
-              "text": "Pattern recognition must reject over-modeling. The task has a linear sequence and an optimization state that can be updated while scanning. Converting adjacent indices into a graph is mathematically possible but diagnostically unhelpful because traversal does not determine the answer. Graph traversal becomes relevant when arbitrary state transitions or connectivity drive the output."
+              "text": "For each value x in scan order, the maximum sum of a contiguous subarray ending at x is either x alone or the previous ending sum plus x. The update `ending = max(x, ending + x)` retains exactly that decision, while a separate maximum records the best ending seen."
+            },
+            {
+              "type": "paragraph",
+              "text": "Turning adjacent indices into path edges is mathematically possible, but BFS over that path does not compute the accumulation invariant. An adjacency matrix adds irrelevant pair storage, and calling the sequence a tree does not expose the maximum-sum decision."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Reject over-modeling",
+              "text": "Choose graph traversal only when connectivity or repeatable state transitions drive the requested output, not merely because objects can be drawn as vertices."
             }
           ]
         },
@@ -315,14 +407,17 @@
     {
       "id": "alg-gt-signal-006",
       "prompt": "The input declares all users and friendship pairs. The task asks how many separate friendship groups exist, including users with no friendships. What signal determines the overall traversal shape?",
+      "constraints": [
+        "Each friendship pair {u, v} is an undirected edge."
+      ],
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "all_components",
-            "text": "The whole vertex set must be scanned, starting a traversal from each still-unvisited user."
+            "id": "tree_parent",
+            "text": "Use one parent per user and omit a visited set because friendship groups behave like trees."
           },
           {
             "id": "one_source",
@@ -333,8 +428,8 @@
             "text": "Start from every user but count a group only when the start is dequeued, because dequeue marking is equivalent."
           },
           {
-            "id": "tree_parent",
-            "text": "Use one parent per user and omit a visited set because friendship groups behave like trees."
+            "id": "all_components",
+            "text": "The whole vertex set must be scanned, starting a traversal from each still-unvisited user."
           }
         ],
         "acceptedOptionIds": [
@@ -350,8 +445,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Each unseen outer-loop start identifies one component"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Initialize every declared user as unvisited, including users with no friendship edges.",
+                "Scan the complete user set.",
+                "When the scan finds an unvisited user, increment the group count once and run BFS or DFS from that user.",
+                "Mark the entire reachable friendship group before the outer scan continues."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Every declared user is a vertex, including isolated users. The outer scan detects a new component when it finds an unvisited vertex, increments the count once, and traverses that entire component. BFS and DFS are both valid inner traversals. This item recognizes the component-count shape; the exact count invariant belongs to the connected-components unit."
+              "text": "One traversal from the first user cannot cross into a disconnected group. An isolated user is still found by the outer scan and contributes one component. General friendship graphs may contain cycles, so a static tree-parent model is insufficient; dequeue timing also does not define when a new component begins."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Whole-graph shape",
+              "text": "Count one component per unvisited outer-loop start, then exhaust that start's reachable set before continuing."
             }
           ]
         },

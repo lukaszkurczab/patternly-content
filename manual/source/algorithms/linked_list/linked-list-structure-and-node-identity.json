@@ -3,7 +3,7 @@
   "batchId": "algorithms-linked-list-linked_list_structure_and_node_identity-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -68,7 +68,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A linked list is a graph of node objects connected by references. Equal payloads, equal traversal depth, or equal successor values can occur in distinct nodes. Reference equality is therefore the decisive test for a shared node or shared tail. The same rule transfers to detecting a pointer meeting inside a cycle: compare node identity, not stored value."
+              "text": "A linked list is a graph of node objects connected by references. Test the structural claim against each observation:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "`p.value == q.value` compares payloads; duplicate 7 values can live in distinct nodes.",
+                "Equal distance from two heads compares traversal counts, not the referenced objects.",
+                "Equal successor values still allow two different successor nodes.",
+                "`p === q` (reference identity) means both variables designate the same node object."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "Intersection, shared-tail, and pointer-meeting questions require node identity unless the contract explicitly asks only about values."
             }
           ]
         },
@@ -130,7 +145,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Variables hold references; they do not create private copies of the referenced node. Setting N.next through p changes N itself, so q observes the same new link. The assignment changes neither the identity of N nor its payload. This distinction is central when a shared tail is edited: every list path that reaches that node sees the edit."
+              "text": "Both variables contain a reference to one mutable object N. Track the assignment by object field rather than by variable name:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Before the assignment: `p === q`, `p.next === M`, and `q.next === M`.",
+                "`p.next = null` mutates the single `next` field owned by N.",
+                "After the assignment: `p === q` still holds and both `p.next` and `q.next` are null.",
+                "N's payload is unchanged because only its link field was assigned."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Aliasing rule",
+              "text": "Different reference variables do not give an aliased object private copies of its mutable fields."
             }
           ]
         },
@@ -194,14 +224,29 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Identity-based collections distinguish node objects by reference. The payload value 4 does not merge A and B or make one key substitute for the other. This boundary matters whenever duplicate values are legal: using payload equality for structural bookkeeping can falsely report intersections, visits, or cycles."
+              "text": "The map stores the identity of A as its key, not the number in A's payload:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "A and B are separately named nodes, so `A !== B` even though both values are 4.",
+                "Looking up B compares B's identity with stored key A and misses unless B has its own entry.",
+                "Adjacency affects list topology but not identity-based key equality.",
+                "A lookup reads the map; it cannot merge A and B or alter the list."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Bookkeeping rule",
+              "text": "Use node objects as keys for visits, intersections, or cycles when duplicate payloads are legal."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "lookup_hits_equal_value": "That would be value-based key semantics, contrary to the stated identity-based contract.",
           "nodes_merge": "A lookup cannot merge node objects or alter list topology.",
-          "result_depends_on_position": "Adjacency is irrelevant to identity-based key equality."
+          "result_depends_on_position": "Adjacency changes which node follows A, but it has no effect on identity-based map-key equality."
         }
       },
       "taxonomy": {
@@ -255,7 +300,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The dummy node provides a stable predecessor before the original head. Its presence changes the implementation topology temporarily, not the output membership contract. Because the routine returns dummy.next, the sentinel is outside the result. A sentinel would count as logical data only if the public representation or problem contract explicitly said so."
+              "text": "Separate the temporary implementation graph from the returned logical list:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "`dummy.next = head` gives the original head a stable predecessor for uniform rewiring.",
+                "Link updates may change `dummy.next` to the new logical head.",
+                "Returning `dummy.next` makes that data node the first reachable result node; dummy itself is not reachable from the returned pointer.",
+                "The payload -1 has no output meaning unless the public contract explicitly includes the sentinel."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Membership rule",
+              "text": "A scaffolding node belongs to the logical result only when the returned representation and contract expose it."
             }
           ]
         },
@@ -279,7 +339,8 @@
       "prompt": "Starting from head in a singly linked list, a routine follows next exactly k times to obtain the node object at zero-based position k. No auxiliary index is available. What are the time and extra-space costs in terms of k?",
       "constraints": [
         "The list is singly linked.",
-        "No cached node array, skip links, or index is available."
+        "No cached node array, skip links, or index is available.",
+        "The zero-based position k exists in the list."
       ],
       "interaction": {
         "type": "complexity",
@@ -323,7 +384,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "There is no address calculation that jumps directly from head to the kth node. The routine must observe each intervening node reference, producing O(k) time. Only the current pointer and a counter are needed, so extra space is O(1). An external index could change the access cost, but that would be an additional data structure, not an intrinsic linked-list property."
+              "text": "A singly linked node exposes its payload and one `next` reference, not an address calculation for an arbitrary position:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Position 0 is head.",
+                "After one `next` traversal the pointer is at position 1; after j traversals it is at position j.",
+                "Reaching position k therefore executes exactly k link traversals, which is O(k) time.",
+                "The current pointer and a counter occupy O(1) extra space."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Access rule",
+              "text": "An external array, skip link, or index can change lookup cost, but it is additional structure rather than an intrinsic linked-list operation."
             }
           ]
         }
@@ -379,14 +455,29 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Content equality and structural sharing are different properties. The two lists produce the same values during traversal, but no pointer from one list reaches a node object owned by the other. An intersection test must compare references. Conversely, a content-comparison task may intentionally compare values and ignore identity; the problem contract decides which relation matters."
+              "text": "The two traversals agree on content but not on structure:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Value sequence of X is `[2,5]`; value sequence of Y is also `[2,5]`.",
+                "Separate allocation gives `X1 !== Y1` and `X2 !== Y2`.",
+                "No cross-list `next` reference exists, so neither head can reach a node owned by the other list.",
+                "Therefore a reference-based intersection test reports no shared node."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Contract boundary",
+              "text": "Content-comparison tasks may intentionally ignore identity; structural-sharing tasks must not."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "share_both_nodes": "Matching values do not undo separate allocation or create shared references.",
           "share_tail": "Tail sharing requires X2 and Y2 to be the same object, not merely equal-valued objects.",
-          "identity_undefined": "Identity remains well-defined independently of payload equality."
+          "identity_undefined": "Object identity remains well-defined by allocation and references even when payload values are equal."
         }
       },
       "taxonomy": {
@@ -442,8 +533,17 @@
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Capture `victim = prev.next` while prev still reaches the exact node to remove.",
+                "Capture `successor = victim.next` while victim still exposes the only reference to its successor.",
+                "Assign `prev.next = successor` to bypass victim without losing the remaining suffix.",
+                "Log the preserved victim reference after the requested structural removal."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The adjacent relations encode the dependency chain: victim must be known before victim.next can be read; successor must be known before prev.next is overwritten; and the preserved victim reference is logged after the structural mutation. Changing this order can lose the exact node or its successor when no other reference exists. If both references were already held elsewhere, the dependency could be weaker, but that is outside the stated state."
+              "text": "Overwriting `prev.next` before capturing victim loses the only route to the victim; losing victim also loses the only route to its successor. If other references already existed, some dependencies would be weaker, but the prompt explicitly excludes them."
             }
           ]
         }
@@ -499,13 +599,28 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Structural sharing is about reusing references to existing nodes. The copied suffix has the same observable value sequence, yet mutating C1.next would not change S1.next because C1 and S1 are distinct objects. This transfer boundary is decisive for intersection and aliasing questions. It can be ignored only when the output contract intentionally treats lists as pure value sequences."
+              "text": "Compare value equivalence with reference sharing:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "C and S both traverse as `[8,9]`, so they are value-equivalent.",
+                "New allocation gives `C1 !== S1` and `C2 !== S2`, so C shares none of S's node identities.",
+                "The other list reuses the existing S1 reference and therefore shares both S1 and the reachable S2 tail.",
+                "Mutating `C1.next` cannot change `S1.next`; mutating `S1.next` is visible through every reference to S1."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer boundary",
+              "text": "Copying preserves values and shape; reusing a reference preserves node identity and aliasing."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "copy_is_shared": "Equal shape and values do not create reference sharing after new allocation.",
-          "first_value_decides": "Payload equality cannot establish object identity.",
+          "first_value_decides": "Equal first payloads establish value equality only; C1 and S1 remain separately allocated objects.",
           "allocation_irrelevant": "Allocation and reference reuse are exactly what determine structural identity and aliasing."
         }
       },

@@ -3,7 +3,7 @@
   "batchId": "contrast-hash-map-vs-sorting-single-pass-vs-repeated-queries-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -79,7 +79,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "A direct scan compares the target with at most n values, so worst-case time is O(n) and it retains only constant iterator and comparison state. With no future query, there is no later operation that can reuse a derived representation."
             },
             {
               "type": "callout",
@@ -89,14 +89,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A scan is often simplest and asymptotically no worse than building a hash set once."
+              "text": "Building a set also reads all n values and then performs one lookup, for expected O(n + 1)=O(n) time but O(n) extra space. Sorting costs O(n log n) before a logarithmic query, while binary search on unsorted input lacks its partition invariant. Reusable rule: for q=1, compare build+query, not query cost alone."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_first": "Preprocessing may cost more than the single scan.",
-          "hash_always": "The build still scans all n values and uses extra memory.",
-          "binary_unsorted": "No sorted search invariant exists."
+          "sort_first": "O(n log n) sorting plus one O(log n) query is asymptotically more work than one O(n) scan.",
+          "hash_always": "The O(n) build does not improve the asymptotic one-query time and additionally retains O(n) table state.",
+          "binary_unsorted": "Without sorted order, comparing the middle element cannot prove which half may contain the target."
         }
       },
       "taxonomy": {
@@ -149,7 +149,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "Build the set once by inserting n values in expected O(n) time. Each of the q exact-membership queries then performs one expected O(1) lookup, so the complete static workload costs expected O(n + q)."
             },
             {
               "type": "callout",
@@ -159,14 +159,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Memory, collision guarantees, and updates still belong in the final comparison."
+              "text": "Rescanning costs O(qn), which is much larger when q is in the millions. Sorting could serve membership in O(n log n + q log n), but its order is unused by arbitrary equality queries. The choice still depends on O(n) table memory, collision guarantees, and whether updates keep the set valid. Reusable rule: repeated use amortizes a build only when the representation directly supports the query relation."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_groups": "The workload is equality membership.",
-          "scan_each": "They can total O(qn).",
-          "mutation_only": "Query volume is decisive here."
+          "sort_groups": "Ordered grouping constructs adjacency and order that exact-membership answers do not consume.",
+          "scan_each": "A missing target can force n comparisons for each of q queries, totaling O(qn).",
+          "mutation_only": "Mutation matters, but the decisive stated signal is millions of reusable equality lookups over static data."
         }
       },
       "taxonomy": {
@@ -219,7 +219,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "Sort the static values once. For each range [L,R], lower-bound and upper-bound searches locate the first eligible and first ineligible positions in O(log n), then contiguous traversal emits exactly the values in that interval in key order."
             },
             {
               "type": "callout",
@@ -229,14 +229,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Hashing may assist equality, but it does not replace the order structure required by range queries."
+              "text": "Across q queries with T total emitted values, the lifecycle is O(n log n + q log n + T). A plain set has no predecessor, boundary, or ordered traversal relation; repeated scans pay O(qn), and counts alone cannot emit occurrences. Reusable rule: ordered queries need a representation whose invariant turns ranges into contiguous intervals."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "hash_only": "A set does not provide ordered range boundaries.",
-          "scan_each": "Repeated full scans can be much more expensive.",
-          "frequency_only": "Range output needs the values or ordered keys."
+          "hash_only": "Equality membership cannot locate the first key at least L or traverse all keys through R in order.",
+          "scan_each": "Filtering all n values for each query costs O(qn) before accounting for ordered emission.",
+          "frequency_only": "Counts without an ordered key/value representation cannot traverse and emit every requested value in range order."
         }
       },
       "taxonomy": {
@@ -289,7 +289,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "A derived set or sorted array summarizes a particular dataset version. After an insertion, deletion, or replacement, queries against the old representation can return false answers unless the change is applied to that representation or it is rebuilt."
             },
             {
               "type": "callout",
@@ -299,14 +299,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Dynamic workloads require build, update, query, and memory costs in one model."
+              "text": "Model total cost as initial build + all maintenance or rebuilds + all queries, while checking whether mutation and guarantees remain legal. A hash table may support expected incremental updates; a flat sorted array may require shifting or rebuilding, though other ordered structures have different costs. Reusable rule: amortization ends whenever state becomes stale."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "queries_only": "Frequent invalidation can dominate.",
-          "sort_once_forever": "Updates can invalidate order and contents.",
-          "hash_static": "It can, but update costs and guarantees matter."
+          "queries_only": "A cheap query against stale state is incorrect, and frequent maintenance can dominate the entire workload.",
+          "sort_once_forever": "An insertion or deletion changes both contents and possibly boundary positions, so the old snapshot no longer represents the dataset.",
+          "hash_static": "Hash tables can be updated, but their expected update cost, resizing, memory, and consistency obligations must be included."
         }
       },
       "taxonomy": {
@@ -317,7 +317,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-queries-005",
-      "prompt": "The future number of queries is unknown and may be zero. Which design can be reasonable?",
+      "prompt": "The dataset is static, the future number of queries is unknown and may be zero, and the API permits changing from direct scans to a retained index. Which design can be reasonable?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -359,7 +359,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "If q=0, eager preprocessing is pure cost. With a static dataset and a permitted strategy change, direct scans can answer initial demand without allocation; cumulative observed scan work can then trigger construction of the representation that later queries will reuse."
             },
             {
               "type": "callout",
@@ -369,14 +369,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The transition point should be based on measured or modeled cumulative cost."
+              "text": "For exact membership, r full scans cost about rn, while building a set costs expected n and later queries expected O(1). Constants, partial early exits, memory, and guarantees determine the operational threshold, so it should be measured or derived rather than guessed from the word “query.” Reusable rule: lazy preprocessing is valid only when state is stable and switching behavior is allowed and observable-safe."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "eager_always": "The work may never be reused.",
-          "no_strategy": "Threshold or adaptive strategies can be modeled.",
-          "hash_word": "The actual volume and relation remain unknown."
+          "eager_always": "When q=0 the entire build is unused, and for tiny q it may not recover setup and allocation costs.",
+          "no_strategy": "Uncertainty can be handled with an explicit cumulative-cost threshold and a defined transition to retained state.",
+          "hash_word": "The name of an operation does not establish its count, relation, memory budget, or required guarantee."
         }
       },
       "taxonomy": {
@@ -387,7 +387,7 @@
     },
     {
       "id": "alg-contrast-hash-sort-queries-006",
-      "prompt": "A single pass must detect any duplicate, and memory is plentiful. Does this alone prove hashing is the only valid strategy?",
+      "prompt": "A one-off task must detect whether any duplicate exists, and memory is plentiful. Does this alone prove hashing is the only valid strategy?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -429,7 +429,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "A seen set detects the first repeated value during one scan in expected O(n) time and O(n) worst-case space. Alternatively, if reordering is legal, sorting makes equal values adjacent and a linear scan detects a duplicate in O(n log n) total time with algorithm-specific workspace."
             },
             {
               "type": "callout",
@@ -439,14 +439,14 @@
             },
             {
               "type": "paragraph",
-              "text": "The decision depends on time budget, memory, mutation, online stopping, and guarantee requirements."
+              "text": "The prompt now says one-off task, not a mandated one-pass implementation, so both mechanisms are correct candidates. Adjacent comparison before sorting misses [1,2,1]. The final choice depends on time, memory, mutation, online early stopping, and expected versus worst-case guarantees. Reusable rule: a result contract can admit several algorithms even when one is usually faster."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "yes_only_hash": "Sorting makes duplicates adjacent.",
-          "yes_one_pass_word": "The implementation constraint must be explicit; the problem result alone does not prove one family.",
-          "scan_adjacent": "Separated duplicates would be missed."
+          "yes_only_hash": "Sorting followed by an adjacent scan is also correct when its mutation, time, and workspace are allowed.",
+          "yes_one_pass_word": "The prompt describes one one-off task, not a hard one-pass algorithm constraint; those are different statements.",
+          "scan_adjacent": "Unsorted duplicates need not be neighbors, as [1,2,1] demonstrates."
         }
       },
       "taxonomy": {
@@ -499,7 +499,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "One pass builds count[key] for every distinct key in expected O(n) time and O(k) entries. Because the data is immutable, each later key-count query reads the same valid counter in expected O(1) time."
             },
             {
               "type": "callout",
@@ -509,14 +509,14 @@
             },
             {
               "type": "paragraph",
-              "text": "One frequency map build amortizes across all later count lookups."
+              "text": "The total for q queries is expected O(n + q), versus O(qn) rescanning. Resorting per query repeats O(n log n) work, while discarding the table intentionally removes the reuse that paid for its build. Reusable rule: retain a derived aggregate for exactly the lifetime in which its source version remains unchanged."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_each_query": "The same preprocessing should be reused.",
-          "scan_each_query": "This totals O(qn).",
-          "discard_counts": "That prevents reuse."
+          "sort_each_query": "The immutable source has not changed, so rebuilding the same ordered state for every query repeats unnecessary work.",
+          "scan_each_query": "Each missing or late key can force n inspections, producing O(qn) total time.",
+          "discard_counts": "Deleting valid counters after one answer forces the next query to rebuild or rescan and defeats amortization."
         }
       },
       "taxonomy": {
@@ -569,7 +569,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "The sorted invariant is part of the input contract, so each membership query can use binary search immediately in O(log n) time. Across q queries the existing representation costs O(q log n) with no sorting build and no new index memory."
             },
             {
               "type": "callout",
@@ -579,14 +579,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Existing sorted order can make binary search attractive without any preprocessing or mutation."
+              "text": "Charging O(n log n) again invents work the algorithm does not perform. A set could reduce expected per-query cost after an O(n) build and O(n) memory, but it is not automatically better; the crossover depends on q, memory, and guarantees. Reusable rule: start cost analysis from current state, not from a generic raw-input baseline."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_cost_again": "Known input state is reusable preprocessing.",
-          "hash_required": "The memory and build may not be justified.",
-          "scan_only": "Sorted order directly supports logarithmic queries."
+          "sort_cost_again": "The supplied array already satisfies the sorted invariant, so no new sorting operation belongs in this workload.",
+          "hash_required": "An extra O(n)-space build must earn back its cost against already-available O(log n) searches and required guarantees.",
+          "scan_only": "Sorted order provides the half-discard invariant that makes binary search a legal reusable method."
         }
       },
       "taxonomy": {
@@ -616,6 +616,10 @@
             "text": "Whether data is already sorted or indexed."
           },
           {
+            "id": "resources_guarantees",
+            "text": "Memory limits and whether expected or worst-case query guarantees are required."
+          },
+          {
             "id": "variable_name",
             "text": "Whether the query function is named lookup."
           }
@@ -623,7 +627,8 @@
         "acceptedOptionIds": [
           "q",
           "updates",
-          "existing_state"
+          "existing_state",
+          "resources_guarantees"
         ]
       },
       "scoringContract": {
@@ -641,7 +646,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "Query count and relation determine reuse: exact equality, ordered ranges, and reported output consume different structures. Updates determine how long a representation stays valid and what maintenance it needs. Existing sorting or indexing means some build cost has already been paid."
             },
             {
               "type": "callout",
@@ -651,17 +656,18 @@
             },
             {
               "type": "paragraph",
-              "text": "Query vocabulary alone is insufficient."
+              "text": "Memory and guarantee requirements distinguish O(n)-space expected hash lookup from low-extra-space deterministic binary search. A function name such as lookup supplies none of these facts. Reusable rule: model operation mix, state lifetime, starting representation, resources, and guarantees before choosing preprocessing."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "variable_name": "Naming does not determine workload cost."
+          "variable_name": "An identifier does not reveal query count, relation, update frequency, state, memory, or guarantee requirements."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "q": "Reuse depends on volume and relation.",
-          "updates": "Derived state may need maintenance.",
-          "existing_state": "Preprocessing may already be paid."
+          "q": "Build amortization depends on how many operations reuse it and whether they ask equality, ranges, or ordered output.",
+          "updates": "Each change may require incremental maintenance or a rebuild before later queries are correct.",
+          "existing_state": "Already sorted or indexed input removes the corresponding build cost from the candidate.",
+          "resources_guarantees": "Hash and sorted paths make different auxiliary-space and expected-versus-worst-case promises."
         }
       },
       "taxonomy": {
@@ -716,7 +722,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "With exactly one query, a direct scan often matches the O(n) build lower bound while avoiding retained state. On tiny inputs, allocation and setup constants can outweigh a theoretically cheaper later lookup. An online scan can also stop as soon as the answer is known instead of collecting the whole stream for offline sorting."
             },
             {
               "type": "callout",
@@ -726,17 +732,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Large static repeated workloads are the opposite case."
+              "text": "Millions of equality queries over static data repeatedly reuse the same set or count table and are the opposite case. Reusable rule: direct work is strongest when build reuse is absent, the input is tiny, or early termination avoids processing the remaining input."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "millions_static": "This strongly favors reusable preprocessing."
+          "millions_static": "A one-time set build can replace millions of O(n) scans with expected O(1) lookups, so reuse is substantial."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "one_query": "Build cost may not be recovered.",
-          "tiny_input": "Constants and simplicity can matter.",
-          "stream_early_exit": "Offline sorting cannot exploit the same early stop."
+          "one_query": "No later operation exists to amortize a build, and one scan is already O(n).",
+          "tiny_input": "For small n, allocation, hashing, and more complex control flow can cost more than a short scan.",
+          "stream_early_exit": "An online method can finish on a prefix, whereas full sorting must first collect and order the complete stream."
         }
       },
       "taxonomy": {
@@ -791,7 +797,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "A set directly answers whether an equal key exists; a frequency map directly returns its stored count. When keys are hashable and expected update guarantees are acceptable, insertions and deletions can maintain the same equality-keyed state incrementally."
             },
             {
               "type": "callout",
@@ -801,17 +807,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Ordered range workloads consume sorted order instead."
+              "text": "Ordered range reports require locating boundaries and traversing keys in order, relations a plain table does not maintain. Reusable rule: reuse a hash table when every operation is expressible as equality-keyed lookup or update, not merely because there are many operations."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "ordered_ranges": "A plain hash table lacks range structure."
+          "ordered_ranges": "Buckets do not provide predecessor, successor, lower-bound, or ascending traversal structure for a range."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "membership": "Expected O(1) lookup directly serves them.",
-          "counts": "Stored counts avoid rescans.",
-          "updates_hashable": "A hash table can maintain equality state incrementally."
+          "membership": "Each query maps directly to one expected O(1) equality lookup in the retained set.",
+          "counts": "A retained key-to-count entry answers a query without scanning occurrences again.",
+          "updates_hashable": "Insert/delete operations can update the same equality state without rebuilding the complete dataset under the stated expected model."
         }
       },
       "taxonomy": {
@@ -866,7 +872,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
+              "text": "Binary search reuses sorted order for exact membership. Lower/upper bounds turn a value range into a contiguous index interval, and repeated ordered traversals can consume the representation in its existing order without a new sort."
             },
             {
               "type": "callout",
@@ -876,17 +882,17 @@
             },
             {
               "type": "paragraph",
-              "text": "Online arrival-order queries favor incremental hash state."
+              "text": "A first-repeat event before stream end depends on arrival-prefix state and cannot wait for full sorted preprocessing. Reusable rule: sorting is reusable when later operations consume rank, boundaries, or deterministic order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "online_first_seen": "Full sorted preprocessing conflicts with the online contract."
+          "online_first_seen": "Sorting requires the complete collection and therefore cannot report at the decisive repeated arrival before the stream ends."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "binary_membership": "Binary search reuses order.",
-          "ranges": "Order directly supports boundaries.",
-          "ordered_output": "The sorted representation is already in result order."
+          "binary_membership": "Each comparison discards a sorted half, giving O(log n) queries without rebuilding order.",
+          "ranges": "Two boundary searches isolate a contiguous interval whose values can be reported directly.",
+          "ordered_output": "The retained representation already satisfies deterministic key order, so traversal performs no additional ordering."
         }
       },
       "taxonomy": {
@@ -938,21 +944,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Derive the lifecycle before choosing"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "List every build, query type, update, required guarantee, mutation constraint, and reported output.",
+                "Name n, query count q, update or rebuild count u, distinct keys k, and total output T wherever they affect work or space.",
+                "Derive complete direct-scan, hash, and sorted costs under the same assumptions, including invalidation and output.",
+                "Solve the resulting inequalities for a strategy or adaptive threshold, then choose only among candidates that satisfy correctness."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
-            },
-            {
-              "type": "paragraph",
-              "text": "The break-even point follows from complete cost expressions."
+              "text": "Selecting a threshold before deriving costs merely guesses, and comparing per-query costs before build/update terms hides the amortization boundary. Reusable rule: operation inventory → parameters → complete formulas → decision."
             }
           ]
         }
@@ -1006,21 +1011,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Reuse requires validity and lifetime"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Scan n source values and build the set, paying expected O(n) time and retaining up to O(n) entries.",
+                "Keep that set synchronized with the source version: unchanged data needs no maintenance, while permitted updates must also update the set.",
+                "Answer each exact-membership query by one expected O(1) lookup while the validity invariant holds.",
+                "Release the table only after the last query or when a source change makes this representation permanently obsolete."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
-            },
-            {
-              "type": "paragraph",
-              "text": "Memory lifetime is part of the preprocessing tradeoff."
+              "text": "Releasing before the workload ends removes reuse; querying after an unmaintained update returns stale answers. Reusable rule: amortized build cost is justified only across the interval in which retained state is both live and correct."
             }
           ]
         }
@@ -1074,21 +1078,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Prepare order, then consume it per query"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Begin from existing valid sorted order or sort a legal source/copy once, including that build cost only when actually needed.",
+                "Retain the representation and maintain or rebuild it whenever source updates would invalidate contents or order.",
+                "For each exact or range query, use binary search to locate the required value or lower/upper boundaries.",
+                "Traverse and emit the located interval; add its length to total output cost rather than treating boundary location as the whole query."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
-            },
-            {
-              "type": "paragraph",
-              "text": "Range output cost remains in addition to logarithmic boundary location."
+              "text": "Reporting before locating has no interval, and charging only O(log n) for a range that emits r values omits the unavoidable O(r) traversal. Reusable rule: ordered-query time is boundary search plus output."
             }
           ]
         }
@@ -1155,21 +1158,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "A missing target forces the full scan"
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
+              "text": "With no sorted or indexed invariant, a target absent from the array cannot be ruled out until all n positions have been inspected. One constant-time comparison per position gives n · O(1) = O(n) worst-case time."
             },
             {
               "type": "paragraph",
-              "text": "The scan needs only an index or iterator and comparison state."
+              "text": "The scan retains only the target, current value, and index or iterator, all constant-size state, so auxiliary space is O(1). O(log n) time would require a half-discard invariant; O(n) space would describe a retained index that the prompt explicitly excludes. Reusable rule: use an absent target to derive worst-case membership scans."
             }
           ]
         }
@@ -1236,21 +1233,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Repeat the worst-case scan q times"
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
+              "text": "Each independent missing-target query can inspect all n values, so q queries perform q · n constant-time comparisons and total O(qn) worst-case time."
             },
             {
               "type": "paragraph",
-              "text": "The approach minimizes memory but may be too slow for large q."
+              "text": "Because no state is retained between queries, the same constant-size target, iterator, and comparison variables are reused, giving O(1) auxiliary space rather than O(q). O(n+q) would require a one-time reusable build, while O(q log n) would require sorted order. Reusable rule: repeated work multiplies time, not peak space, when executions reuse the same workspace."
             }
           ]
         }
@@ -1317,21 +1308,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Pay one build, then q expected lookups"
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
+              "text": "Inserting n values at expected O(1) per value costs expected O(n). Each of q membership queries performs one expected O(1) lookup, adding expected O(q), so total expected time is O(n + q)."
             },
             {
               "type": "paragraph",
-              "text": "The table remains live for the query workload."
+              "text": "In the all-distinct case the set retains n entries throughout the query workload, so auxiliary space is O(n). O(1) space confuses one lookup's local variables with the live table; O(q) incorrectly stores one object per query. Reusable rule: cumulative time adds operations, while peak space counts retained representation state."
             }
           ]
         }
@@ -1398,21 +1383,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Add one sorting build to q binary searches"
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
+              "text": "The stated in-place sort costs O(n log n) once. Binary search halves the remaining interval and costs O(log n) per query, so q queries add O(q log n). Total time is O(n log n + q log n)."
             },
             {
               "type": "paragraph",
-              "text": "The path also provides reusable ordered traversal not offered by a plain hash set."
+              "text": "Mutation permission lets the array itself hold sorted order. The sort's O(log n) stack is the peak auxiliary state and each binary search uses O(1) iterative locals, so space remains O(log n). O(n) would add a copy not required here. Reusable rule: add build and repeated-query terms, then take the maximum overlapping workspace."
             }
           ]
         }
@@ -1467,21 +1446,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Solve the two complete cost expressions"
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
+              "text": "Break-even satisfies qn ≈ n log n + q log n. Move the query term to the left: q(n - log n) ≈ n log n, so q ≈ n log n / (n - log n)."
             },
             {
               "type": "paragraph",
-              "text": "Exact crossover depends on constants, existing order, mutation, and query semantics."
+              "text": "For large n, n - log n = Θ(n), so q = Θ(log n). Θ(1) cannot generally repay sorting, while Θ(n) and Θ(n log n) are sufficient but not the threshold order. Exact crossover still depends on constants and existing order. Reusable rule: isolate the workload parameter algebraically, then simplify numerator and denominator asymptotically."
             }
           ]
         }
@@ -1549,21 +1522,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Complete invalidation repeats the build u times"
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
+              "text": "Each of u hash rebuilds scans n values at expected O(1) insertion cost, totaling expected O(un). The q queries add expected O(q), so hash workload time is O(un + q)."
             },
             {
               "type": "paragraph",
-              "text": "A realistic dynamic comparison must include that lifecycle cost."
+              "text": "Each sorted rebuild costs O(n log n), totaling O(un log n), and q binary searches add O(q log n). Thus sorted workload time is O(un log n + q log n). Omitting u falsely assumes preprocessing survives replacement. Reusable rule: multiply every invalidated build by the number of source versions it must represent."
             }
           ]
         }
@@ -1631,21 +1598,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Model the whole query lifecycle"
+              "text": "Boundary search cannot remove output work"
             },
             {
               "type": "paragraph",
-              "text": "The correct preprocessing choice depends on how often the derived structure will be used. A one-off query may not justify sorting or building a map beyond what its output needs. For many queries, a reusable ordered array or keyed state can amortize its construction cost, but only if it supports the later operations."
-            },
-            {
-              "type": "callout",
-              "kind": "decision_rule",
-              "title": "Pay preprocessing when it is reused",
-              "text": "Separate build cost from query cost. For one query, prefer the smallest structure that satisfies the result. For repeated queries, compare build plus all queries and choose the representation whose preserved structure makes those queries legal and efficient."
+              "text": "Sorting once costs O(n log n). Two O(log n) boundary searches per query remain O(log n), so q queries add O(q log n). Traversing and materializing all reported intervals touches T values, adding O(T). Total time is O(n log n + q log n + T)."
             },
             {
               "type": "paragraph",
-              "text": "This is a workload where sorting provides a relation that a plain hash table does not."
+              "text": "The materialized results contain T values by definition, so output space is O(T). Leaving out T would claim a query can emit arbitrarily many values without touching or storing them; O(q) counts queries rather than result cardinality. Reusable rule: efficient indexing reduces location cost, not the lower bound imposed by required output."
             }
           ]
         }

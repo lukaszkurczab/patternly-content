@@ -3,7 +3,7 @@
   "batchId": "algorithms-math-and-geometry-interval-and-angle-normalization-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -214,7 +214,7 @@
       "prompt": "Two floating angle calculations should represent the same direction: one produces 0.1+0.2 turns and the other 0.3 turns. After normalization to [0,1), how should equivalence be tested?",
       "constraints": [
         "The values come from floating arithmetic.",
-        "A positive tolerance eps is defined by the application error budget."
+        "The application error budget defines 0 < eps < 0.5 turns."
       ],
       "interaction": {
         "type": "choice",
@@ -251,7 +251,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Binary floating arithmetic need not represent 0.1, 0.2, or 0.3 exactly. Even after normalization, values near 0 and 1 may represent nearly the same direction while their raw difference is close to one. A circular distance such as min(|a-b|,1-|a-b|) captures the topology of the cycle, and eps supplies the application’s acceptable error. Exact equality remains appropriate only for exact representations."
+              "text": "Binary floating arithmetic need not represent 0.1, 0.2, or 0.3 exactly. For normalized a,b in [0,1), let direct = |a-b|; then the shortest circular distance is min(direct, 1-direct). This also handles the wrap: 0.999999 and 0.000001 are only 0.000002 turns apart although their direct difference is 0.999998. Comparing the circular distance with an application-defined 0 < eps < 0.5 gives one nontrivial equivalence band; at eps >= 0.5 every pair on the cycle could pass. Exact equality remains appropriate only for exact representations."
             }
           ]
         },
@@ -443,7 +443,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A zero period makes the update undefined. Widening before addition prevents a full-cycle displacement from overflowing even though the final wrapped position is small. The language remainder then removes whole cycles, and explicit negative correction selects the canonical representative. Storing an unnormalized intermediate would leak an invalid state to later operations. The sequence transfers to ring buffers and toroidal grid coordinates."
+              "text": "The state invariant is 0 <= position < m after every completed update. Validate the period and make every arithmetic intermediate representable before trying to restore that invariant."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Validate m > 0 and declare [0,m) as the only stored range.",
+                "For position = 2, delta = -12, and m = 7, form the widened sum -10. Widening must happen before addition because a small wrapped result does not make an overflowing sum safe.",
+                "Apply the language remainder: under a truncating-remainder contract, -10 % 7 = -3.",
+                "Because the remainder is negative, add 7 to obtain 4. A remainder is in [-(m-1),m-1], so one conditional correction is sufficient.",
+                "Store 4; never expose -10 or -3 as the canonical position."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Wrap update rule",
+              "text": "Validate the domain, evaluate safely, remove whole cycles, correct the representative, then store. This sequence transfers to ring buffers and toroidal coordinates."
             }
           ]
         }

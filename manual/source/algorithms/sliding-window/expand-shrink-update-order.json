@@ -3,7 +3,7 @@
   "batchId": "algorithms-sliding-window-expand-shrink-update-order",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -68,7 +68,21 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The phases correspond to three different truths. Before expansion, the state describes the old range. After adding the right element, the new candidate is known but may violate its constraint. The repair loop advances left until state and validity agree. Only then does right−left+1 describe a legal candidate. Updating before repair scores an invalid range; repairing before adding checks the wrong candidate. This sequence transfers across sum, frequency, and budget predicates when their left-removal rule is legal."
+              "text": "The phases correspond to three different states: the old valid range, the post-expansion range that may be invalid, and the repaired legal range. A repair phase may perform zero removals when expansion preserves validity."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Add the element at `right` so maintained state describes the newly expanded range.",
+                "While that state violates the constraint, remove the contribution at `left` and advance `left`.",
+                "Once legal, compare `right-left+1` with the longest answer."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Only legal ranges update a longest-valid answer",
+              "text": "Updating before repair scores an invalid range; repairing before adding tests the old range. The same dependency applies to sum, frequency, and budget predicates when their removal rule is legal."
             }
           ]
         }
@@ -83,9 +97,11 @@
     },
     {
       "id": "alg-sw-order-shortest-threshold-sequence",
-      "prompt": "Order the operations performed after a right-boundary addition when minimizing the length of a positive-value window with sum at least T.",
+      "prompt": "Order the operations for processing a new right-boundary value when minimizing the length of a positive-value window with sum at least a positive target T.",
       "constraints": [
         "The current sum after expansion is at least T.",
+        "T is positive.",
+        "Only nonempty ranges are answer candidates.",
         "The inner steps repeat while the window remains valid."
       ],
       "difficulty": "intermediate",
@@ -127,7 +143,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Expansion is what may establish sum≥T. Once valid, the current boundaries define a candidate and its length must be considered. Then remove the current outgoing value, move left, and test whether an even shorter valid suffix remains. Reversing record and removal can lose the last valid candidate; advancing left before subtraction can remove the wrong value. The repeated record–remove–advance relation is the operational core of shortest threshold windows. In adjacent-relation terms, record→subtract is decisive because reversing that pair can erase the last valid candidate represented by the current boundaries."
+              "text": "Expansion may establish `sum >= T`. The remaining three operations form the body of a while-valid loop: record before mutating the witnessed candidate, then keep state and boundary movement synchronized."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Add the incoming value so the sum describes the range ending at the new `right`.",
+                "While `sum >= T`, record the current nonempty length as a minimum candidate.",
+                "Subtract `a[left]` while `left` still identifies the outgoing value.",
+                "Advance `left`, then test `sum >= T` again to discover a shorter valid suffix."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Record before removal",
+              "text": "Removing first can erase the last valid candidate. Advancing `left` before subtraction targets the wrong value unless the outgoing value was cached."
             }
           ]
         }
@@ -144,7 +175,8 @@
       "id": "alg-sw-order-fixed-initialization-to-slide",
       "prompt": "Order the transition from building the first fixed-size window to evaluating the second one.",
       "constraints": [
-        "The required size is k.",
+        "k is a positive integer.",
+        "The input contains at least k+1 values, so both the first and second windows exist.",
         "The first k−1 values are already in state before these operations begin."
       ],
       "difficulty": "intermediate",
@@ -191,7 +223,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The first window has no outgoing predecessor. After k−1 values, adding the kth completes a legal candidate and it should be scored immediately. Only on the next right step does the range become k+1, requiring removal of the original left value before scoring the second candidate. Applying the steady-state removal during initialization would keep the range below k; omitting removal during later steps would score an oversized range. The distinction prevents a common collapsed-loop boundary error."
+              "text": "Initialization and steady-state sliding have different preconditions. The first window has no outgoing predecessor; the second does."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Add the kth value to the existing k-1 values, completing the first legal length-k window.",
+                "Evaluate that first window immediately.",
+                "Add the next value, temporarily producing k+1 represented elements.",
+                "Remove the original leftmost contribution and advance `left`, restoring length k.",
+                "Evaluate the second legal window."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "edge_case",
+              "title": "Initialization has no outgoing value",
+              "text": "Applying steady-state removal while building the first window keeps it below k. Omitting removal after the next expansion evaluates k+1 elements."
             }
           ]
         }
@@ -217,20 +265,20 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "subtracts_new_left",
-            "text": "Advancing first changes which element a[left] names, so the code subtracts the new leftmost value instead of the outgoing one."
-          },
-          {
             "id": "subtracts_twice",
             "text": "The same outgoing element is subtracted twice."
           },
           {
-            "id": "right_boundary_changes",
-            "text": "Incrementing left also increments right implicitly."
-          },
-          {
             "id": "only_style",
             "text": "The two orders are equivalent because addition and subtraction commute."
+          },
+          {
+            "id": "subtracts_new_left",
+            "text": "Advancing first changes which element a[left] names, so the code subtracts the new leftmost value instead of the outgoing one."
+          },
+          {
+            "id": "right_boundary_changes",
+            "text": "Incrementing left also increments right implicitly."
           }
         ],
         "acceptedOptionIds": [
@@ -311,7 +359,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Checking validity before incrementing the incoming key only certifies the old range. The new occurrence may exceed a per-key cap or introduce a (K+1)th distinct value. Once state includes it, the predicate is meaningful. Repair then removes left contributions until legal, and the answer consumes that repaired state. The order generalizes the expand–repair–update template while making the state dependency explicit for frequencies. When the new value causes no violation, the repair phase performs zero removals, but the same phase order still leads to a valid answer update."
+              "text": "The frequency predicate is meaningful only after state includes the incoming occurrence. The repair phase is conditional and may perform zero removals, but it always precedes answer evaluation."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Increment the incoming key's frequency so state represents the expanded range.",
+                "Evaluate the cap or distinct-count predicate on that post-expansion state.",
+                "While invalid, decrement outgoing frequencies, delete zero-count keys when required, and advance `left`.",
+                "Update the longest answer from the resulting legal range."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Do not validate the old range",
+              "text": "Checking before incrementing certifies only the previous window and cannot see a new over-cap occurrence or a (K+1)th distinct key."
             }
           ]
         }

@@ -3,7 +3,7 @@
   "batchId": "algorithms-linked-list-pointer_rewiring-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -68,7 +68,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The output contract is about which node objects are reachable, not which values they store. Redirecting A.next to C bypasses B while preserving the suffix. Payload edits do not change reachability, and moving only a local variable leaves the original topology intact. The same signal appears in splicing and reversal: topology changes are expressed through references."
+              "text": "Evaluate the operation by reachability from A:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Before: following `next` from A reaches B, then C.",
+                "After `A.next = C`: following `next` from A reaches C directly, while B is no longer in that chain.",
+                "Clearing or copying a payload leaves the edges `A -> B -> C` unchanged.",
+                "Moving only a local head variable changes that variable, not A's stored `next` edge."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Structural rule",
+              "text": "In-place removal changes which existing node references are reachable; payload edits do not substitute for rewiring."
             }
           ]
         },
@@ -130,7 +145,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Reachability is preserved by retaining references to every component needed after a boundary overwrite. The segment must remain addressable through first, and the untouched remainder must remain addressable through suffixHead. Values and length cannot reconstruct object identity or links. If another durable alias already preserves one component, that particular capture may be redundant, but the stated constraints provide none."
+              "text": "Each boundary overwrite can remove the only incoming path to a component:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Overwriting `prefixTail.next` can detach the segment, so preserve its entry reference `first`.",
+                "Overwriting `last.next` can detach the untouched remainder, so preserve `suffixHead`.",
+                "Payload values cannot recover the same node objects or their internal links.",
+                "Segment length describes a count but supplies no reference path to either detached component."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Reachability invariant",
+              "text": "Before a destructive link write, retain one durable reference to every component needed afterward."
             }
           ]
         },
@@ -194,7 +224,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Boundary-safe rewiring first establishes that the current node exists. For a single node, its successor is legitimately null; detaching it does not require a replacement node. Returning the same node as both detached and remaining would violate disjointness and can lead to accidental self-linking later. Circular inputs would need a different explicit contract because null is not their stopping signal."
+              "text": "Apply the result contract separately to both allowed boundaries:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Empty input: no node exists to detach, so both detached node and remainder are null.",
+                "Single node S: preserve S as the detached result, set `S.next = null`, and return null as the remainder.",
+                "Reading `head.next` before checking head dereferences null on empty input.",
+                "Returning `(S,S)` makes the detached result and remainder alias instead of being disjoint."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Boundary rule",
+              "text": "An empty remainder is represented by null; it does not require a synthetic data node."
             }
           ]
         },
@@ -255,7 +300,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "dummy makes the original head look like any other successor, which removes one branch. It does not ensure that prev.next is non-null, preserve a successor after an overwrite, or prevent cycles. Correctness still depends on guards and reachability invariants. The sentinel itself remains implementation scaffolding when the routine returns dummy.next."
+              "text": "A dummy node solves one specific boundary and no more:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "It provides a predecessor before the logical head, so head deletion can use the ordinary predecessor update.",
+                "It does not imply `prev.next` exists when prev is the last node.",
+                "It cannot reconstruct a node after its only reachable reference is overwritten.",
+                "Returning `dummy.next` keeps dummy outside the logical result."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Sentinel boundary",
+              "text": "A stable predecessor simplifies a case split; guards and reachability proofs still govern every write."
             }
           ]
         },
@@ -324,7 +384,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A singly linked node does not expose an address for position k-1. Starting at head, the routine follows k-1 next references, giving O(k) time; the final bypass is O(1). A fixed number of pointers and counters uses O(1) extra space. If the predecessor reference were supplied directly, the mutation itself would be O(1), which is the transfer boundary."
+              "text": "Separate locating the predecessor from performing the bypass:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Starting at position 0, reaching the predecessor at position `k-1` follows `k-1` next links.",
+                "Saving the victim/successor and assigning the predecessor's next link take O(1) additional time.",
+                "`O(k-1) + O(1)` simplifies to O(k) total time.",
+                "A fixed set of pointers and counters uses O(1) extra space."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer boundary",
+              "text": "If the predecessor reference is supplied directly, the mutation is O(1); searching for it is the linear part."
             }
           ]
         }
@@ -380,7 +455,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Topology-preserving in-place operations are defined over existing node objects. Allocating B2 may reproduce B's payload, but aliases to B, identity-based metadata, and the explicit no-allocation postcondition all distinguish the substitution. New nodes can be valid in a value-only output contract, but not in this one. Allocation alone does not imply a cycle; incorrect links do."
+              "text": "The implementation matches B's value but violates three stated or observable properties:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "`B2 !== B`, so the existing node identity was not moved.",
+                "External aliases still designate B rather than the node now placed after D.",
+                "Allocating B2 violates the explicit no-data-node-allocation condition.",
+                "Allocation does not itself form a cycle; only the chosen links can create a path back."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Contract boundary",
+              "text": "A value-equivalent copy can satisfy a value-sequence contract but cannot satisfy an existing-object identity contract."
             }
           ]
         },
@@ -443,8 +533,17 @@
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Save `nextNode = current.next` while current still owns the only path into the unprocessed suffix.",
+                "Reverse the edge with `current.next = prev`; the saved nextNode now preserves that suffix.",
+                "Advance `prev = current` so prev becomes the head of the newly enlarged reversed prefix.",
+                "Advance `current = nextNode` so current again denotes the first unprocessed node."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The critical adjacent relation is save_next -> reverse_link: reversing first would erase the only path to the suffix. reverse_link -> advance_prev records the newly processed head, and advance_prev -> advance_current preserves the invariant for the next iteration. Different syntax can express the same dependencies, but any legal implementation must preserve the successor before the destructive write."
+              "text": "Reversing before saving `current.next` destroys the only suffix path. The final two assignments re-establish the stated prefix/current invariant for the next iteration."
             }
           ]
         }
@@ -484,11 +583,16 @@
           {
             "id": "connect_segment_exit",
             "text": "last.next references the node that originally followed newPrev."
+          },
+          {
+            "id": "connect_new_entry",
+            "text": "newPrev.next references first, the entry of the moved segment."
           }
         ],
         "acceptedOptionIds": [
           "close_old_gap",
-          "connect_segment_exit"
+          "connect_segment_exit",
+          "connect_new_entry"
         ]
       },
       "scoringContract": {
@@ -501,7 +605,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Moving a segment creates two external obligations. The source gap must be closed so nodes after last remain reachable, and the segment's exit must point to the old destination successor. The remaining write, newPrev.next = first, inserts the segment entry. Leaving oldPrev.next at first would not move the segment and can create duplicate paths or a cycle depending on positions. Non-overlap is material; overlapping regions need a separate proof."
+              "text": "Preserve the two old remainder references before writes, then verify all three final boundary edges:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "`oldPrev.next = sourceSuccessor` closes the gap left after last.",
+                "`last.next = destinationSuccessor` preserves the old destination remainder after the segment.",
+                "`newPrev.next = first` inserts the segment entry at the destination.",
+                "Leaving `oldPrev.next = first` fails to detach the segment and can create duplicate paths or a cycle."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Splice rule",
+              "text": "A non-overlapping move has three external edges to establish: close the source, connect the segment exit, and connect the destination entry."
             }
           ]
         },
@@ -511,7 +630,8 @@
         },
         "omittedCorrectExplanationsByOptionId": {
           "close_old_gap": "Without this edge, the source suffix becomes unreachable from the original prefix.",
-          "connect_segment_exit": "Without this edge, the destination suffix is lost after the moved segment."
+          "connect_segment_exit": "Without this edge, the destination suffix is lost after the moved segment.",
+          "connect_new_entry": "Without this edge, the moved segment is not reachable from the destination predecessor."
         }
       },
       "taxonomy": {

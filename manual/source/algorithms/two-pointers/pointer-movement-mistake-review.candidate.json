@@ -3,7 +3,7 @@
   "batchId": "two-pointers-pointer_movement_mistake_review-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -151,7 +151,7 @@
     },
     {
       "id": "alg-tp-mistake-self-pair-loop-bound",
-      "prompt": "A distinct-position pair search loops while left <= right. On input [1, 5, 9] with target 10, it may accept 5+5 when both pointers meet at index 1. What is the precise repair?",
+      "prompt": "A distinct-position pair search loops while left <= right. On input [1, 5, 8] with target 10, it advances left after 1+8=9, retreats right after 5+8=13, then may accept 5+5 when both pointers meet at index 1. What is the precise repair?",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -187,7 +187,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The algorithm's candidate object is an unordered pair of positions. Such a pair exists only while the interval contains at least two positions, expressed by left < right. Using <= silently changes the contract to permit reusing one occurrence. The repair is a boundary correction, not a movement-speed or sorting change."
+              "text": "The trace reaches `left=right=1` after correctly eliminating value 1 from the low sum and value 8 from the high sum. At that state both pointers name the single occurrence of 5, so evaluating `5+5` fabricates a second position. The candidate object is an unordered pair of distinct positions, which exists only while the interval contains at least two positions: `left < right`. The repair is a boundary correction, not a movement-speed or sorting change."
             }
           ]
         },
@@ -325,7 +325,7 @@
     },
     {
       "id": "alg-tp-mistake-skip-before-record",
-      "prompt": "A unique-pair enumerator finds a matching boundary pair but first skips both duplicate runs and only then tries to append the pair. What can happen?",
+      "prompt": "A unique-pair enumerator finds a matching boundary pair but, without saving its values, first skips both duplicate runs and only then appends the values currently under the pointers. What can happen?",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -534,7 +534,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Sequential phases add: O(n log n) for sorting plus O(n) for the pointer scan. The dominant term is O(n log n). This defect often survives code review when the pattern name is mistaken for an end-to-end complexity guarantee. If sortedness is given by the input, O(n) is accurate; otherwise preprocessing must be explicit."
+              "text": "Sequential phases add: O(n log n) for sorting plus O(n) for the pointer scan, so O(n log n + n)=O(n log n). O(n) reports only the scan and omits executed preprocessing; O(n^2) is not the tight bound because the stated sort and scan do not enumerate all pairs. This defect often survives review when the pattern name is mistaken for an end-to-end complexity guarantee. If sortedness is given by the input, O(n) is accurate; otherwise preprocessing must be explicit."
             }
           ]
         }
@@ -554,7 +554,7 @@
     },
     {
       "id": "alg-tp-mistake-nested-loop-mislabel",
-      "prompt": "A review comment calls a double loop over i and j ‘two pointers’ and therefore claims linear time. What is the most important correction?",
+      "prompt": "A review comment calls a double loop that compares every unordered pair of n positions ‘two pointers’ and therefore claims linear time. What is the most important correction?",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -703,7 +703,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A run may extend to the end or meet the opposite pointer, so skipping cannot assume another element exists. Advancing once prevents comparing the representative with itself forever. The active-interval check protects memory and distinct-position semantics before the equality test. The same order applies symmetrically to right-run skipping."
+              "text": "A run may extend to the end or meet the opposite pointer, so skipping cannot assume another element exists. The boundary guard must occur before every array read, including each repetition."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Advance `left` once from the representative that has already been processed.",
+                "Check that `left` still lies inside the active interval before reading `a[left]`.",
+                "Compare `a[left]` with the remembered representative value.",
+                "If they are equal, advance again and repeat from the boundary check; otherwise the next value class is ready for processing."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "edge_case",
+              "title": "The run can consume the interval",
+              "text": "An equal run can reach the array end or the opposite pointer. Testing equality before the boundary guard can therefore read outside the array or reuse a position. The same sequence applies symmetrically when retreating `right`."
             }
           ]
         }

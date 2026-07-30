@@ -3,7 +3,7 @@
   "batchId": "algorithms-intervals-resources-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -48,8 +48,8 @@
             "text": "4"
           },
           {
-            "id": "three_plus_one",
-            "text": "4 because the long meeting overlaps three other meetings"
+            "id": "three_rooms",
+            "text": "3"
           }
         ],
         "acceptedOptionIds": [
@@ -70,10 +70,10 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "four_rooms": "There are four meetings, but the three short meetings do not overlap each other. Counting records rather than simultaneous activity overallocates.",
-          "three_plus_one": "The long meeting creates three overlapping pairs at different times, but those pair conflicts do not occur simultaneously. Pair count is not resource count."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "four_rooms": "There are four meetings, but the three short meetings do not overlap each other. Counting records rather than simultaneous activity overallocates.",
+        "three_rooms": "This assumes the long meeting is active with two short meetings at once. The short intervals occupy disjoint time ranges, so only one of them can accompany the long meeting."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "count_concurrent_intervals",
@@ -86,9 +86,10 @@
     {
       "id": "algorithms-intervals-resources-002",
       "prompt": "Which min-heap procedure correctly computes the minimum number of rooms for half-open meetings?",
-      "constraints": [
-        "The input may be unsorted.",
-        "The heap stores end times of currently allocated rooms."
+    "constraints": [
+      "The input may be unsorted.",
+      "Every meeting is nonempty: start < end.",
+      "The heap stores end times of currently allocated rooms."
       ],
       "difficulty": "intermediate",
       "interaction": {
@@ -118,14 +119,23 @@
       },
       "feedback": {
         "reason": "Start order introduces meetings chronologically, while the min-heap exposes every room that has become reusable before the next start.",
-        "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "Sorting by start ensures no unprocessed meeting begins earlier than the current one. The minimum end at the heap root is the earliest room release. While that end is <= current.start, the room is free under [start, end) and should be removed; multiple rooms can become free, so use a loop. Push the current end to represent its occupied room and track the maximum heap size over the scan. The final heap size alone is not sufficient because concurrency may have peaked earlier. The heap is ordered by end internally, but this does not mean the meetings themselves should be processed by end."
-            }
-          ]
-        },
+      "details": {
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Sort the nonempty meetings by start so no unprocessed meeting begins before the current one.",
+              "Before allocating the current meeting, repeatedly pop the minimum heap end while end <= current.start. Each popped room is reusable under [start, end), and several rooms may be released at once.",
+              "Push current.end to represent the room occupied by the current meeting.",
+              "Update the recorded maximum from the heap size after the push. The final heap size alone is insufficient because concurrency may have peaked earlier."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "The heap is ordered by end because it answers which active room becomes free first; the meetings themselves are ordered by start because that supplies chronological arrivals. Those two sort keys serve different invariants."
+          }
+        ]
+      },
         "wrongOptionExplanationsByOptionId": {
           "sort_by_end_push": "That counts processed meetings rather than currently active meetings and cannot model room reuse.",
           "release_one_strict": "Several rooms may become free before one meeting, and equality also releases a room under half-open semantics."
@@ -253,9 +263,10 @@
     {
       "id": "algorithms-intervals-resources-005",
       "prompt": "Select all methods that can correctly compute maximum concurrency for static half-open intervals when implemented with the proper equality rule.",
-      "constraints": [
-        "Select all correct methods.",
-        "The input may be unsorted."
+    "constraints": [
+      "Select all correct methods.",
+      "The input may be unsorted.",
+      "Every interval is nonempty: start < end."
       ],
       "difficulty": "intermediate",
       "interaction": {
@@ -319,9 +330,10 @@
     {
       "id": "algorithms-intervals-resources-006",
       "prompt": "Order the event-sweep steps for computing maximum resource demand from half-open intervals.",
-      "constraints": [
-        "Each ordinary interval contributes +1 at start and -1 at end.",
-        "Equal coordinates follow the endpoint contract."
+    "constraints": [
+      "Every interval is nonempty: start < end.",
+      "Each interval contributes +1 at start and -1 at end.",
+      "Equal coordinates follow the endpoint contract."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -335,37 +347,40 @@
             "id": "sort_with_ties",
             "text": "Sort events by coordinate and apply end-before-start at equal coordinates."
           },
-          {
-            "id": "update_active",
-            "text": "Apply each event delta to the active count."
-          },
-          {
-            "id": "record_peak",
-            "text": "Record the greatest active count reached."
-          }
-        ],
-        "canonicalOrder": [
-          "create_events",
-          "sort_with_ties",
-          "update_active",
-          "record_peak"
-        ],
-        "scoringMethod": "adjacent_relations"
-      },
-      "scoringContract": {
-        "type": "ordering",
-        "maxPoints": 3
+        {
+          "id": "scan_and_record",
+          "text": "Scan the sorted events; after each delta updates active, update the recorded maximum."
+        }
+      ],
+      "canonicalOrder": [
+        "create_events",
+        "sort_with_ties",
+        "scan_and_record"
+      ],
+      "scoringMethod": "adjacent_relations"
+    },
+    "scoringContract": {
+      "type": "ordering",
+      "maxPoints": 2
       },
       "feedback": {
         "reason": "Events must exist and be chronologically ordered before their deltas can define a meaningful active-count prefix and maximum.",
-        "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "Creating events translates interval occupancy into changes. Sorting, including the half-open tie rule, establishes the temporal sequence. Applying deltas before sorting would combine unrelated times, while recording a peak before an update would miss the new state. The maximum across the prefix sums is the required capacity. If equal events are grouped, the implementation must use a grouping rule proved equivalent to the stated semantics; it cannot simply omit the tie contract. The order is independent of how the event list is physically stored."
-            }
-          ]
-        }
+      "details": {
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Translate every nonempty [start, end) interval into a +1 start event and a -1 end event.",
+              "Sort by coordinate, placing -1 ends before +1 starts at equal coordinates so a released room can be reused immediately.",
+              "Scan in that order. For each event, first add its delta to active and then set peak = max(peak, active). The maximum over these prefix states is the required capacity."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Updating all deltas and only then reading active would return the final count, usually zero, rather than the peak. If equal-time events are grouped, the grouping rule still needs a proof that it preserves the half-open intermediate state; equal timestamps cannot simply be treated as unordered."
+          }
+        ]
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "count_concurrent_intervals",
@@ -438,8 +453,8 @@
     {
       "id": "algorithms-intervals-resources-008",
       "prompt": "Intervals [1, 5), [2, 6), and [3, 7) are sorted by end. Why does counting only adjacent overlapping pairs not produce the room requirement?",
-      "constraints": [
-        "All three intervals are active from time 3 to 5."
+    "constraints": [
+      "All three intervals are active throughout [3, 5)."
       ],
       "difficulty": "intermediate",
       "interaction": {

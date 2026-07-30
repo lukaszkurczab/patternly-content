@@ -3,7 +3,7 @@
   "batchId": "algorithms-math-and-geometry-coordinate-and-vector-basics-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -152,6 +152,7 @@
       "id": "alg-mg-vector-common-origin-construction",
       "prompt": "To determine whether C lies to the left, right, or exactly on the directed line from A to B, which pair of vectors must be compared?",
       "constraints": [
+        "A and B are distinct, so the directed line has a nonzero direction.",
         "The relation must be invariant under translating all three points."
       ],
       "interaction": {
@@ -273,7 +274,8 @@
       "prompt": "Measured nonzero vectors u and v use floating-point components. You want to classify them as approximately perpendicular. Which test has an explicit scale-aware boundary?",
       "constraints": [
         "Measurement and arithmetic error are expected.",
-        "The tolerance parameter eps is positive and dimensionless."
+        "The Euclidean norms |u| and |v| are nonzero.",
+        "The dimensionless parameter eps is a chosen small angular tolerance with 0 < eps < 1."
       ],
       "interaction": {
         "type": "choice",
@@ -310,7 +312,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The dot product has units and grows with vector magnitude, so a fixed absolute threshold can classify the same angle differently after scaling. Dividing by |u||v| conceptually yields cos(theta); the inequality avoids an explicit division while applying an angular tolerance. Exact zero is appropriate only for exact arithmetic under proven bounds. Slope products fail for vertical components and magnify rounding."
+              "text": "Here |u| and |v| are Euclidean vector lengths. The dot product has units and scales by the product of the vector magnitudes, so a fixed raw threshold can classify the same angle differently after either vector is rescaled. For nonzero vectors, dot(u,v)/(|u||v|) = cos(theta); therefore |dot(u,v)| <= eps·|u|·|v| is exactly the scale-aware condition |cos(theta)| <= eps. Choosing a small 0 < eps < 1 defines the accepted angular band around 90 degrees. Exact zero is appropriate only for exact arithmetic under proved bounds, while slope products fail for vertical components and magnify rounding."
             }
           ]
         },
@@ -392,7 +394,7 @@
     },
     {
       "id": "alg-mg-vector-orientation-predicate-order",
-      "prompt": "Order the conceptual steps for classifying C relative to the directed relation A→B using vectors.",
+      "prompt": "Order the conceptual steps for classifying C relative to A→B when the routine must return immediately on a degenerate baseline before doing candidate-point work.",
       "constraints": [
         "Coordinates are exact integers in a type wide enough for the determinant.",
         "Repeated A and B must remain an explicit degenerate result."
@@ -440,7 +442,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "B-A establishes the directed relation. If it is zero, no left/right line direction exists, so continuing would turn a degenerate algebraic zero into a false collinearity claim. C-A then supplies the comparison vector from the same origin, and the exact cross-product sign gives the classification. This order transfers to half-plane clipping and polygon winding tests, with their own endpoint and numeric boundaries."
+              "text": "The prompt requires an early return on a repeated baseline endpoint. That makes the baseline construction and zero test prerequisites for all work involving C."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Form u = B - A to represent the directed baseline.",
+                "If u = (0,0), return the explicit no-direction result. A zero cross product here would otherwise be mistaken for meaningful collinearity.",
+                "Form v = C - A so both vectors share origin A.",
+                "Compute the exact determinant cross(u,v).",
+                "Interpret positive as left, negative as right, and zero as collinear under the stated x-right, y-up convention."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Predicate boundary",
+              "text": "Validate that a geometric object exists before interpreting an algebraic predicate about it. The same rule applies to half-planes, segment directions, and polygon edges."
             }
           ]
         }

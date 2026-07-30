@@ -3,7 +3,7 @@
   "batchId": "bit-manipulation-bitmask-state-representation-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -71,7 +71,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. One bit stores one independent true-or-false feature. The same w positions jointly represent 2^w different combinations of those features."
+              "text": "Assigning one independent feature to each position creates w boolean coordinates. Each coordinate has two values, so the word can encode `2 × 2 × … × 2 = 2^w` different combined states, but it still names only w independent features. State count and feature capacity are different quantities."
             },
             {
               "type": "bullet_list",
@@ -91,8 +91,8 @@
         },
         "wrongOptionExplanationsByOptionId": {
           "two_w_features": "2^w is the number of possible states, not the number of independent bit positions.",
-          "w_squared": "The mask contains only w positions.",
-          "one_feature": "Each bit can encode a separate boolean."
+          "w_squared": "A w-bit word exposes exactly w positions; no multiplication of positions creates additional independent feature slots.",
+          "one_feature": "Each of the w positions can own a different boolean meaning, so capacity is not limited to one feature."
         }
       },
       "taxonomy": {
@@ -147,7 +147,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. A one-hot mask extracts the selected membership bit. The result is nonzero exactly when the feature is present."
+              "text": "The one-hot mask `1 << i` contains a one only at position i. AND evaluates each position independently: every unrelated position meets zero and disappears, while position i remains nonzero only if state also contains a one there. The result therefore tests membership without altering state."
             },
             {
               "type": "bullet_list",
@@ -167,8 +167,8 @@
         },
         "wrongOptionExplanationsByOptionId": {
           "or_nonzero": "OR would make the bit one even when it was previously absent.",
-          "state_equal_i": "The numeric state can contain many resources.",
-          "shift_state": "Shifting does not isolate the selected resource."
+          "state_equal_i": "The integer i is a position number, not the one-hot bit value, and state may contain several resources simultaneously.",
+          "shift_state": "Moving every state bit left changes positions but does not isolate whether the original position i was set."
         }
       },
       "taxonomy": {
@@ -223,7 +223,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. OR represents set union over boolean feature positions. Every bit present in either operand becomes present in the result."
+              "text": "At one feature position, OR has the union truth table: `0|0=0`, while `0|1`, `1|0`, and `1|1` all equal one. Applying that rule independently at every position keeps exactly the features present in the left mask, the right mask, or both."
             },
             {
               "type": "bullet_list",
@@ -242,9 +242,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "bitwise_and": "AND keeps only features present in both.",
-          "bitwise_xor": "XOR removes features present in both.",
-          "addition": "Carries can corrupt neighboring feature positions."
+          "bitwise_and": "AND implements intersection by retaining only positions whose membership is one in both operands.",
+          "bitwise_xor": "XOR implements symmetric difference and clears positions present in both masks, so it is not union.",
+          "addition": "If both masks contain the same bit, arithmetic addition carries into a neighboring position and corrupts feature membership."
         }
       },
       "taxonomy": {
@@ -299,7 +299,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. AND is set intersection over one-bit feature memberships. A feature remains one only when both input states contain it."
+              "text": "At each feature position, AND yields one only for `1&1`; every case containing a zero yields zero. The output therefore includes exactly the memberships shared by both masks and excludes features present on only one side."
             },
             {
               "type": "bullet_list",
@@ -318,9 +318,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "bitwise_or": "OR keeps features present in either state.",
+          "bitwise_or": "OR also retains features present in only one operand, so it produces union rather than intersection.",
           "bitwise_xor": "XOR keeps features present in exactly one operand.",
-          "complement": "Complement inverts membership rather than intersecting."
+          "complement": "Complement flips every position in one state and never compares whether the other state shares a feature."
         }
       },
       "taxonomy": {
@@ -375,7 +375,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. Release requires selected membership bits to become zero while all others remain unchanged. Width-limited complement supplies zeros at the released positions and ones elsewhere."
+              "text": "Within the declared width, `~released` has zero at every selected release position and one elsewhere. AND with state therefore forces released positions to zero (`x&0=0`) while copying every unselected state bit (`x&1=x`). This is set difference `state \\ released`."
             },
             {
               "type": "bullet_list",
@@ -394,9 +394,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "set_mask": "This acquires the selected resources.",
+          "set_mask": "OR forces selected positions to one, which acquires rather than releases those resources.",
           "toggle_mask": "This would acquire a resource that was not currently held.",
-          "extract_mask": "This discards every unreleased resource."
+          "extract_mask": "AND with `released` keeps only the selected intersection and clears every unrelated resource instead of preserving it."
         }
       },
       "taxonomy": {
@@ -454,7 +454,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. The bit-position mapping is a canonical state representation. Every membership position must agree for states to be equal."
+              "text": "With one stable feature-to-position mapping, a feature set determines one unique bit pattern. Two sets are equal exactly when every position agrees, which is ordinary mask equality. Equal popcount or one shared high bit constrains only part of the pattern and permits different memberships."
             },
             {
               "type": "bullet_list",
@@ -473,9 +473,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "same_popcount": "Different feature sets can have equal size.",
-          "and_nonzero": "That proves only some shared feature.",
-          "same_highest": "Lower memberships may differ."
+          "same_popcount": "Masks `0011` and `1100` both contain two bits but represent disjoint feature sets.",
+          "and_nonzero": "A nonzero intersection proves at least one shared feature, not equality of every membership position.",
+          "same_highest": "Matching the highest set position leaves every lower feature free to differ between the states."
         }
       },
       "taxonomy": {
@@ -530,7 +530,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. Any shared feature would survive the AND. A zero intersection means no bit position is set in both states."
+              "text": "AND computes the intersection one position at a time. If any feature is present in both masks, that position contributes a one and the result is nonzero; conversely, a zero result proves that no position has membership one on both sides."
             },
             {
               "type": "bullet_list",
@@ -549,8 +549,8 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "or_zero": "That requires both states to be empty.",
-          "xor_zero": "That means the states are equal.",
+          "or_zero": "A union equals zero only when both masks are empty, which is much stronger than being disjoint.",
+          "xor_zero": "XOR equals zero when every position agrees, so it tests equality rather than absence of shared features.",
           "and_equals_a": "That means a is a subset of b."
         }
       },
@@ -606,7 +606,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. Intersecting a with b should preserve all of a when a is a subset of b. Any missing required bit would be cleared in the AND result."
+              "text": "AND extracts from a only positions also present in b. If every feature of a is contained in b, no one from a is removed and `a & b == a`; if even one is missing, that position becomes zero and the equality fails."
             },
             {
               "type": "bullet_list",
@@ -625,9 +625,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "and_zero": "That tests disjointness.",
+          "and_zero": "A zero intersection proves that a and b share nothing, which is the opposite of preserving all features of a.",
           "or_equals_a": "That means b is a subset of a.",
-          "xor_equals_a": "XOR does not directly express subset inclusion."
+          "xor_equals_a": "XOR reports positions that differ and can equal a under unrelated patterns; it does not preserve a as an intersection would."
         }
       },
       "taxonomy": {
@@ -682,7 +682,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. The test extracts required positions and verifies that every one is present. Unrelated state bits do not affect the comparison."
+              "text": "`state & required` clears every position not requested and retains only required positions that state actually contains. Equality with `required` proves none are missing. Extra state flags are masked out before comparison and therefore remain allowed."
             },
             {
               "type": "bullet_list",
@@ -702,8 +702,8 @@
         },
         "wrongOptionExplanationsByOptionId": {
           "any_required": "This proves only at least one required flag.",
-          "exact_state": "This incorrectly rejects additional allowed flags.",
-          "or_zero": "A nonempty required mask makes this impossible."
+          "exact_state": "Direct equality also requires every additional state bit to be zero, contradicting the allowance for extra flags.",
+          "or_zero": "OR contains every required one, so it cannot equal zero when the required mask is nonempty."
         }
       },
       "taxonomy": {
@@ -758,7 +758,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. One-bit-per-feature encoding requires at least as many usable positions as features. Changing representation is safer than introducing collisions or relying on undefined shift assumptions."
+              "text": "An injective one-bit mapping for 70 features needs at least 70 usable positions. A 64-bit word cannot supply positions 64–69; reusing positions makes distinct states collide, and oversized shifts cannot create storage outside the word. The canonical fix is a wider integer, multiple words, or another explicit structure."
             },
             {
               "type": "bullet_list",
@@ -777,7 +777,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "reuse_bits": "This creates state collisions.",
+          "reuse_bits": "Two unrelated features sharing one position become indistinguishable, so different logical states encode to the same mask.",
           "ignore_six": "The representation would no longer encode the contract.",
           "shift_beyond": "Oversized shift behavior is model-dependent and cannot create extra storage positions."
         }
@@ -836,7 +836,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. Bitmask state is suitable for bounded collections of independent booleans. Counts or large values need more than one membership bit per field."
+              "text": "One-bit-per-feature encoding fits questions of membership over a small declared universe: visited or not, enabled or not, used or not. Each feature must have only two independent states. An unbounded count has more than two values and cannot be recovered from a single membership bit."
             },
             {
               "type": "bullet_list",
@@ -855,12 +855,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "arbitrary_large_counts": "One bit cannot store an unbounded count."
+          "arbitrary_large_counts": "One position distinguishes only zero from one; it cannot encode every value of an arbitrary unbounded counter."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "visited_small_set": "Each universe member maps to one membership bit.",
-          "enabled_permissions": "Permissions are boolean features.",
-          "used_resources": "Each resource can own a bit."
+          "visited_small_set": "Each member of the fixed universe maps to one stable position whose bit records visited membership.",
+          "enabled_permissions": "Each declared permission is an independent enabled/disabled feature and can own one position.",
+          "used_resources": "For a small indexed resource universe, one bit per resource records whether it is currently used."
         }
       },
       "taxonomy": {
@@ -917,7 +917,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. Boolean membership algebra maps directly to OR, AND, and XOR. Set difference instead uses AND with a width-limited complement."
+              "text": "Evaluate one membership position. OR is one when either set contains the feature, matching union; AND is one only when both contain it, matching intersection; XOR is one only when exactly one contains it, matching symmetric difference. Difference requires `a & ~b`, not arithmetic addition."
             },
             {
               "type": "bullet_list",
@@ -936,12 +936,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "difference_add": "Carries do not represent membership difference."
+          "difference_add": "Arithmetic carries can create neighboring memberships and never implement the per-position rule “in a and not in b.”"
         },
         "omittedCorrectExplanationsByOptionId": {
-          "union_or": "Any present bit remains present.",
-          "intersection_and": "Only shared bits remain.",
-          "symmetric_xor": "Bits present in exactly one state remain."
+          "union_or": "OR retains a one from either operand and therefore contains every membership from both sets.",
+          "intersection_and": "AND retains a one only where both operands contain the feature, exactly matching intersection.",
+          "symmetric_xor": "XOR retains positions present on exactly one side and clears positions absent from or shared by both."
         }
       },
       "taxonomy": {
@@ -998,7 +998,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. The mask is only canonical when every position has one stable meaning inside a declared width. Sorting labels is optional and does not define correctness."
+              "text": "Uniqueness prevents two features from colliding in one position. Stability ensures a stored or transmitted mask has the same meaning everywhere it is compared. Documented width defines valid positions, complement behavior, and capacity. Numerical label order is merely an authoring convenience."
             },
             {
               "type": "bullet_list",
@@ -1020,9 +1020,9 @@
           "value_sorted": "The mapping can use any documented one-to-one assignment."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "unique_position": "Shared positions would create collisions.",
-          "stable_mapping": "Changing meanings corrupts state interpretation.",
-          "width_documented": "Capacity and complement behavior depend on width."
+          "unique_position": "Sharing a position makes two distinct feature combinations encode to the same pattern and destroys reversibility.",
+          "stable_mapping": "Changing a position's meaning causes persisted and cross-component masks to decode as different logical states.",
+          "width_documented": "Width fixes capacity, legal shift positions, high unused bits, and the scope of complement operations."
         }
       },
       "taxonomy": {
@@ -1079,7 +1079,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. A state transition should alter only positions explicitly selected by the transition mask. Direct extraction is useful for testing but not for preserving unrelated state."
+              "text": "For any unselected position the transition mask contains zero. OR gives `stateBit|0 = stateBit`, AND with complemented mask gives `stateBit&1 = stateBit`, and XOR gives `stateBit^0 = stateBit`; all preserve it. Direct `state & mask` instead meets unselected positions with zero and clears them."
             },
             {
               "type": "bullet_list",
@@ -1098,12 +1098,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "extract_and": "This clears every unselected feature."
+          "extract_and": "AND with the original selection mask forces every unselected state position to zero, so it extracts rather than updates."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "set_or": "Zero-mask positions preserve state.",
-          "clear_and_not": "Unselected positions meet ones in the complemented mask.",
-          "toggle_xor": "Zero-mask positions are unchanged."
+          "set_or": "At every unselected position the mask is zero, and OR with zero copies the existing state bit.",
+          "clear_and_not": "Complement turns each unselected mask zero into one, and AND with one copies the existing state bit.",
+          "toggle_xor": "XOR with zero leaves every unselected state bit unchanged while selected positions flip."
         }
       },
       "taxonomy": {
@@ -1163,7 +1163,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. State tests should cover empty, full, and independence properties. A single ordinary feature cannot prove that the mapping is collision-free."
+              "text": "The zero mask tests the identity and absence boundary. The full usable mask exercises the highest position, capacity, and width-limited complement. Enabling two features separately and together proves that their positions are independent and do not collide. One middle bit covers none of those boundaries."
             },
             {
               "type": "bullet_list",
@@ -1185,9 +1185,9 @@
           "only_one_middle": "This does not test collisions or width endpoints."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "empty_state": "It tests the identity boundary.",
-          "full_state": "It tests capacity and complement boundaries.",
-          "independent_features": "It detects mapping collisions."
+          "empty_state": "Zero verifies that no feature is accidentally enabled and that union, intersection, and membership identities behave correctly.",
+          "full_state": "The full mask exercises every usable position, including width endpoints and complement masking.",
+          "independent_features": "Separate and combined encodings reveal whether two features mistakenly share a position or one update alters the other."
         }
       },
       "taxonomy": {
@@ -1245,14 +1245,15 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. Representation design begins with semantic fields and ends with an explicit positional contract. Choosing a word before counting features can create silent width overflow."
+              "text": "The semantic universe must be known before storage is selected. Only after every independent boolean is listed can positions be assigned injectively and the highest position determine required width. Documentation then makes encoded masks comparable and persistent across components."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Give each feature one unique, stable bit position within a declared width.",
-                "Translate the requirement into set language: union, intersection, difference, subset, or disjointness.",
-                "Choose the bitwise operation and verify that unselected positions keep their required values."
+                "List the exact independent boolean features and exclude fields that require counts or larger values.",
+                "Assign each listed feature one unique, stable zero-based position.",
+                "Choose a fixed, multiword, or arbitrary-width representation that includes the highest assigned position.",
+                "Document position meanings, width, valid states, persistence rules, and supported transitions."
               ]
             },
             {
@@ -1319,14 +1320,15 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. Encoding accumulates independent feature memberships with OR. Verification catches mapping and width mistakes before the state is consumed."
+              "text": "Zero is the empty-set identity. For each selected feature, the stable mapping supplies i and `1 << i` supplies its singleton set; OR accumulates those memberships without clearing earlier ones. Verification ensures no collision, overflow, or unintended position entered the mask."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Give each feature one unique, stable bit position within a declared width.",
-                "Translate the requirement into set language: union, intersection, difference, subset, or disjointness.",
-                "Choose the bitwise operation and verify that unselected positions keep their required values."
+                "Initialize the state to the all-zero empty mask.",
+                "Resolve each selected feature through the canonical feature-to-position mapping.",
+                "Create its one-hot mask and OR it into the accumulated state.",
+                "Verify every selected membership is present, no unselected bit is set, and all positions fit the declared width."
               ]
             },
             {
@@ -1393,14 +1395,15 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. Set and clear transitions update distinct selected positions, after which the required-state postcondition is tested. If add and remove overlap, the stated ordering makes removal win; a different policy must be explicit."
+              "text": "OR first forces every `add` position to one. Width-limited AND NOT then forces every `remove` position to zero while preserving others, so removal wins on overlap under this stated policy. Only the completed state can be intersected with `required` and compared with `required` to prove the postcondition."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Give each feature one unique, stable bit position within a declared width.",
-                "Translate the requirement into set language: union, intersection, difference, subset, or disjointness.",
-                "Choose the bitwise operation and verify that unselected positions keep their required values."
+                "Apply `state = state | add` to acquire every selected feature.",
+                "Apply `state = state & ~remove` within the declared width to release selected features.",
+                "Compute `presentRequired = state & required` on the final state.",
+                "Verify `presentRequired == required`; document a different add/remove precedence if removal should not win on overlap."
               ]
             },
             {
@@ -1483,14 +1486,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. A constant number of primitive fixed-word operations is constant time. The representation remains compact only while all features fit the chosen word."
+              "text": "Under the fixed-word machine model, OR, AND, XOR, and comparison each process one word in O(1). A constant number of those primitives therefore totals O(1) time, and retaining a constant number of masks uses O(1) auxiliary words. If features span a growing number of words, this model no longer applies."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Give each feature one unique, stable bit position within a declared width.",
-                "Translate the requirement into set language: union, intersection, difference, subset, or disjointness.",
-                "Choose the bitwise operation and verify that unselected positions keep their required values."
+                "Count primitive operations: the transition performs a fixed number independent of input size.",
+                "Count retained words: state and constant-many masks coexist.",
+                "State the boundary: both O(1) claims require every feature to fit the declared fixed-width word."
               ]
             },
             {
@@ -1570,14 +1573,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A state mask is a compact set of named boolean memberships: bit i means one documented feature, 1 means present, and 0 means absent. The same operators then have set meanings. A compact encoding of one state does not make the full state space small. Enumerating or storing every combination remains exponential in the number of boolean features."
+              "text": "Each of n independent features has two values, so there are 2^n distinct masks. Initializing one constant-size table cell for each mask performs 2^n writes and stores 2^n values, giving O(2^n) initialization time and O(2^n) table space even if an individual mask fits one word."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Give each feature one unique, stable bit position within a declared width.",
-                "Translate the requirement into set language: union, intersection, difference, subset, or disjointness.",
-                "Choose the bitwise operation and verify that unselected positions keep their required values."
+                "Count states by multiplying two choices for each independent feature: `2 × … × 2 = 2^n`.",
+                "Charge one initialization operation per table entry to obtain Θ(2^n) time.",
+                "Charge one constant-size stored value per mask to obtain Θ(2^n) table space."
               ]
             },
             {

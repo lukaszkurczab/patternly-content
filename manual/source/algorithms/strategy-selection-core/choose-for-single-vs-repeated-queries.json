@@ -3,7 +3,7 @@
   "batchId": "algorithms-strategy-selection-core-choose_for_single_vs_repeated_queries-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -84,11 +84,12 @@
     },
     {
       "id": "ssc-queries-many-static-range-sums",
-      "prompt": "A static array of n values will answer q = 1,000,000 arbitrary range-sum queries. Which strategy best uses the repeated-query workload?",
+      "prompt": "A static array of n values must answer q = 1,000,000 arbitrary inclusive range-sum queries [l, r], each of which may cover Θ(n) positions. Which strategy gives the best worst-case total time under the stated resources?",
       "constraints": [
         "q is one million.",
         "The array is unchanged between queries.",
         "Queries ask additive ranges.",
+        "Each query may span a linear-size range.",
         "O(n) extra memory is available."
       ],
       "difficulty": "introductory",
@@ -123,7 +124,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "For repeated static range sums, the complete models are O(n + q) time and O(n) extra space for prefix sums versus up to O(nq) time and O(1) extra space for rescanning. The array does not change, so the index remains valid, and the query operation is algebraically recoverable from two prefix values. Sorting neither preserves positional ranges nor needs to be repeated. The transfer rule is to invest in reusable preprocessing when the same data supports many compatible queries and the index remains valid for their entire lifetime."
+              "text": "Define P[0] = 0 and build P[i + 1] = P[i] + a[i] once. Every inclusive query [l, r] then returns P[r + 1] − P[l] in O(1) time, giving O(n + q) total time and O(n) extra space. Rescanning costs O(r − l + 1) per query and reaches O(nq) when the ranges are linear-sized. The array never changes, so the prefix index remains valid. Sorting changes positional range semantics and does not provide the required cancellation. The transfer rule is to invest in reusable preprocessing when the same data supports many compatible queries and the index remains valid for their entire lifetime."
             }
           ]
         },
@@ -140,11 +141,12 @@
     },
     {
       "id": "ssc-queries-repeated-membership",
-      "prompt": "A catalog of n immutable identifiers must answer many exact membership queries. Which workload-aware strategy is strongest when O(n) extra memory is acceptable?",
+      "prompt": "A catalog of n immutable identifiers must answer many exact membership queries. Which workload-aware strategy is strongest when O(n) extra memory is acceptable and expected-time hash guarantees satisfy the contract?",
       "constraints": [
         "Identifiers do not change.",
         "There are many exact membership queries.",
-        "O(n) extra memory is available."
+        "O(n) extra memory is available.",
+        "Expected-time hash guarantees are acceptable."
       ],
       "difficulty": "introductory",
       "interaction": {
@@ -335,12 +337,17 @@
           {
             "id": "resource_fit",
             "text": "The index fits the permitted memory and preprocessing latency."
+          },
+          {
+            "id": "query_class_supported",
+            "text": "The index can answer every allowed query in the query class without knowing each future parameter in advance."
           }
         ],
         "acceptedOptionIds": [
           "enough_reuse",
           "state_stays_valid",
-          "resource_fit"
+          "resource_fit",
+          "query_class_supported"
         ]
       },
       "scoringContract": {
@@ -353,7 +360,20 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A reusable strategy should be evaluated with a break-even inequality: setup + maintenance + q·indexedQueryCost must beat the relevant alternative while satisfying memory and latency limits. Reuse disappears if updates invalidate the state, and an index that cannot be allocated is infeasible. Future query arguments may remain unknown as long as the index supports the query class rather than precomputing exact answers. The transfer rule is to check reuse count, index lifetime, and resource fit as separate gates before turning repeated work into preprocessing."
+              "text": "A reusable strategy is justified only when all four gates hold:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Compatibility: the index answers the full allowed query class; it need not know future parameter values when its lookup rule is parameter-independent.",
+                "Amortization: setup + maintenance + q·indexedQueryCost is no worse than the relevant alternative for the actual workload.",
+                "Validity: updates either do not occur or can maintain the index within the operation budget, so answers never use stale state.",
+                "Resource fit: construction latency and retained memory stay within their hard limits."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The word repeated supplies only q for the inequality; it proves none of the other gates. The transfer rule is to verify query compatibility, reuse count, index lifetime, and resource fit separately before turning repeated work into preprocessing."
             }
           ]
         },
@@ -364,7 +384,8 @@
         "omittedCorrectExplanationsByOptionId": {
           "enough_reuse": "Without a break-even check, setup may cost more than the work it saves over the actual number of queries.",
           "state_stays_valid": "Without an index-lifetime check, updates can force rebuilds or make answers stale.",
-          "resource_fit": "Without resource feasibility, an otherwise attractive index may exceed memory or startup latency."
+          "resource_fit": "Without resource feasibility, an otherwise attractive index may exceed memory or startup latency.",
+          "query_class_supported": "Without a compatibility check, preprocessing may optimize a related operation while failing some legal query shapes or semantics."
         }
       },
       "taxonomy": {

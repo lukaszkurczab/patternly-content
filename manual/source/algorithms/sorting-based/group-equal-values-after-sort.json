@@ -3,7 +3,7 @@
   "batchId": "algorithms-sorting-based-group_equal_values_after_sort-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -134,7 +134,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The scan maintains one invariant: currentKey and count describe exactly the maximal equal prefix ending at the previously consumed item. On equality, extending count preserves it. On a key change, the old run is complete and must be emitted before state is overwritten. Starting the new run first would lose the old key or count. The end-of-input case needs one additional flush because no later key change triggers it."
+              "text": "The scan maintains one invariant: currentKey and count describe exactly the current equal-key run through the previously consumed item. The update then branches on the next key."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "For a nonempty input, initialize currentKey from the first item and count = 1.",
+                "Read the next item and compare its grouping key with currentKey.",
+                "If the keys are equal, increment count and continue; otherwise emit (currentKey, count) before overwriting either value.",
+                "Only on the key-change branch, set currentKey to the new key and reset count = 1."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "edge_case",
+              "title": "The loop cannot flush the last run",
+              "text": "After all items are consumed, emit the retained (currentKey, count) once more because no later unequal key triggers the change branch."
             }
           ]
         }
@@ -397,8 +412,9 @@
     },
     {
       "id": "alg-sort-groups-07-sort-and-run-cost",
-      "prompt": "A comparison sort arranges n records by group key, then one pass emits each maximal equal-key run. What is the worst-case total time?",
+      "prompt": "A comparison sort arranges n records by group key, then one pass emits each maximal equal-key run. What is the tightest offered worst-case total time bound?",
       "constraints": [
+        "The comparison sort has worst-case Θ(n log n) time.",
         "Key comparison is O(1).",
         "Emitting aggregate metadata is O(1) per input record in total."
       ],
@@ -435,7 +451,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The scan advances through each record once and performs constant aggregate work, giving O(n). The preceding comparison sort costs O(n log n), so the complete pipeline is O(n log n + n) = O(n log n). The number of distinct groups does not remove sorting cost. A bounded-key counting arrangement could have a different bound, but that is a separate declared algorithm."
+              "text": "The scan advances through each record once and performs constant aggregate work, giving Θ(n). Adding it to the stated Θ(n log n) comparison sort gives Θ(n log n + n) = Θ(n log n), matching the offered O(n log n) bound. The number of distinct groups does not remove sorting cost."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(n) ignores comparison sorting. O(n²) is a loose upper bound, not the tightest offered bound; neither sorting nor the one-pass run scan performs quadratic pairwise work. A bounded-key counting arrangement could be linear, but it is a different declared algorithm."
             }
           ]
         }
@@ -453,7 +475,8 @@
       "prompt": "Select all designs where sorting by the stated key guarantees that every intended equivalence class forms one contiguous run.",
       "constraints": [
         "The intended group relation is exactly the one described in each option.",
-        "Normalization functions are deterministic."
+        "Normalization functions are deterministic.",
+        "extractedDay uses one specified timezone for every timestamp."
       ],
       "difficulty": "advanced",
       "interaction": {

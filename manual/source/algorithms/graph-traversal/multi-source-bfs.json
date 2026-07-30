@@ -3,7 +3,7 @@
   "batchId": "algorithms-graph-traversal-multi_source_bfs-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -68,8 +68,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Build one complete distance-zero layer"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Initialize every vertex distance to infinity or unseen.",
+                "For each distinct source s, set distance[s] = 0 and mark s discovered.",
+                "Enqueue every distinct source before removing any queue entry.",
+                "Run ordinary BFS, assigning each unseen neighbor distance[u] + 1."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The queue initially represents layer zero as the entire source set. A non-source vertex is then first discovered from the closest expanding wave, giving its minimum distance to any source. Processing one source to completion before adding another would bias the result toward source order. Deduplicate repeated source IDs so each logical source is seeded once."
+              "text": "The initial queue is one shared layer zero. Every later vertex is first claimed by the closest source wave. Running one source to completion before inserting the others would let source order, rather than minimum distance to the set, own early discoveries."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Initialization invariant",
+              "text": "All distinct sources are discovered at distance zero and queued before expansion begins."
             }
           ]
         }
@@ -91,16 +111,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "one_multi_source",
-            "text": "Run one BFS seeded with all 40 stations at distance zero."
-          },
-          {
             "id": "forty_bfs",
             "text": "Run a complete BFS from each station and take the minimum afterward."
           },
           {
             "id": "one_arbitrary",
             "text": "Run BFS from one arbitrary station because BFS is always fastest."
+          },
+          {
+            "id": "one_multi_source",
+            "text": "Run one BFS seeded with all 40 stations at distance zero."
           },
           {
             "id": "dfs_nearest",
@@ -120,8 +140,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Forty origins compete in one breadth expansion"
+            },
+            {
               "type": "paragraph",
-              "text": "Multi-source BFS is equivalent to allowing every station to begin at time zero. Each intersection is first reached by a shortest unit-edge path from whichever station's wave arrives first. The graph is processed once in O(V + E) with adjacency lists, rather than once per station. The pattern applies only because all traversed edges have equal cost."
+              "text": "Seed all 40 stations at distance 0. Layer 1 contains intersections one road from at least one station, layer 2 contains the next unseen intersections, and so on. First discovery assigns each intersection the minimum edge count over all 40 possible origins."
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "One multi-source traversal with adjacency lists costs O(V + E).",
+                "Forty complete BFS runs cost O(40(V + E)) before taking per-vertex minima.",
+                "One arbitrary source omits the other 39 origins, while DFS does not finalize minimum unit-edge distance by first discovery."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Lower-envelope rule",
+              "text": "Simultaneous equal-cost waves compute min over all source distances in one traversal."
             }
           ]
         },
@@ -148,12 +187,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "deduplicate",
-            "text": "Seed vertices 2 and 5 once each at distance zero and enqueue each once."
-          },
-          {
             "id": "enqueue_duplicate",
             "text": "Enqueue vertex 2 twice so its wave has twice the priority of vertex 5."
+          },
+          {
+            "id": "deduplicate",
+            "text": "Seed vertices 2 and 5 once each at distance zero and enqueue each once."
           },
           {
             "id": "distance_two",
@@ -177,8 +216,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "The source input denotes a set, not weighted priority"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The distinct source identities in [2, 2, 5] are {2,5}.",
+                "Set distance[2] = 0 and distance[5] = 0.",
+                "Enqueue 2 once and 5 once; the repeated 2 contributes no new origin."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Initialize based on distinct source identities. Every source has distance zero and should be published to the frontier once. Duplicate queue entries do not produce a better distance and may inflate memory or repeated checks. A source with a different state identity, such as the same location under a different resource mask, would not be a duplicate; identity follows the search-state contract."
+              "text": "BFS priority comes from distance layers, not source multiplicity. Enqueuing 2 twice adds redundant work without improving any distance, and the number of appearances never changes a source's zero distance to itself. If two entries share a location but have different future-relevant state, such as different resource masks, they are distinct states rather than duplicates."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Deduplication rule",
+              "text": "Deduplicate by the full search-state identity before seeding the distance-zero frontier."
             }
           ]
         },
@@ -198,16 +256,12 @@
     },
     {
       "id": "alg-gt-msbfs-004",
-      "prompt": "A contamination process starts simultaneously at several cells and spreads one orthogonal step per minute through open cells. What value gives the time until every reachable open cell is contaminated?",
+      "prompt": "A contamination process starts simultaneously at several cells and spreads one orthogonal step per minute through open cells. What value gives the time until every open cell is contaminated, or reports that complete contamination is impossible?",
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "max_finite_distance",
-            "text": "The maximum finite distance assigned by multi-source BFS, provided no required open cell remains unreachable."
-          },
           {
             "id": "source_count",
             "text": "The number of initial sources, because each source contributes one minute."
@@ -219,6 +273,10 @@
           {
             "id": "dfs_depth",
             "text": "The maximum recursive DFS depth from any one source."
+          },
+          {
+            "id": "max_finite_distance",
+            "text": "The maximum finite distance assigned by multi-source BFS, provided no required open cell remains unreachable."
           }
         ],
         "acceptedOptionIds": [
@@ -234,8 +292,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Arrival distance is contamination time"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Seed every initially contaminated cell at distance 0.",
+                "Generate legal orthogonal moves through open cells; each BFS edge advances time by one minute.",
+                "Assign each newly reached cell its earliest arrival minute.",
+                "After BFS, fail if any open cell is unseen; otherwise return the largest assigned distance."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Seed all contaminated cells at minute zero. Each BFS layer advances one minute, so a cell's distance is its earliest contamination time. The overall completion time is the maximum of those distances. Before returning it, check whether any required cell stayed unseen; if so, complete contamination is impossible rather than merely slower."
+              "text": "The maximum finite distance is when the last required cell becomes contaminated. Source count measures origins and maximum queue size measures frontier width; neither is elapsed time. DFS depth depends on exploration order rather than simultaneous earliest arrival."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Completion contract",
+              "text": "Return max distance only after proving every required open cell has a finite distance."
             }
           ]
         },
@@ -262,16 +340,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "use_dijkstra",
-            "text": "No; initialize all sources with distance zero in a multi-source Dijkstra priority queue."
-          },
-          {
             "id": "ordinary_bfs",
             "text": "Yes; multiple sources make BFS correct for arbitrary nonnegative weights."
           },
           {
             "id": "dfs",
             "text": "Use multi-source DFS because depth-first traversal compares weighted routes more directly."
+          },
+          {
+            "id": "use_dijkstra",
+            "text": "No; initialize all sources with distance zero in a multi-source Dijkstra priority queue."
           },
           {
             "id": "matrix",
@@ -291,8 +369,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Multiple origins do not repair unequal edge costs"
+            },
+            {
               "type": "paragraph",
-              "text": "Seed every source in the priority queue with distance zero, then use the usual nonnegative-weight relaxation. The multi-source idea is independent of the frontier discipline: FIFO for equal weights, a deque for a 0/1 model, and a priority queue for general nonnegative weights. An adjacency matrix may change neighbor enumeration cost but not shortest-path correctness."
+              "text": "A one-edge route of cost 7 can enter a FIFO frontier before a two-edge route of total cost 1 + 1 = 2. Edge-count layers therefore do not order vertices by the requested accumulated cost, regardless of how many sources were seeded."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Set every source's tentative distance to 0 and insert all sources into a min-priority queue.",
+                "Remove the vertex with smallest tentative total cost.",
+                "Relax each outgoing edge and update the neighbor when the new accumulated cost is smaller.",
+                "Ignore stale priority entries or use an equivalent decrease-key discipline."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Frontier boundary",
+              "text": "Use FIFO for equal edge costs, a 0–1 deque for weights 0 and 1, and Dijkstra's priority frontier for general nonnegative weights."
             }
           ]
         },
@@ -312,19 +410,19 @@
     },
     {
       "id": "alg-gt-msbfs-006",
-      "prompt": "Some graph component contains no source. After a correct multi-source BFS from all sources, how should vertices in that component be represented?",
+      "prompt": "Some connected component of an undirected graph contains no source. After a correct multi-source BFS from all sources, how should vertices in that component be represented?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "unreachable",
-            "text": "They remain unseen or at infinite distance; the algorithm must not invent a nearest source across missing edges."
-          },
-          {
             "id": "new_sources",
             "text": "The first unseen vertex should automatically become an additional source at distance zero."
+          },
+          {
+            "id": "unreachable",
+            "text": "They remain unseen or at infinite distance; the algorithm must not invent a nearest source across missing edges."
           },
           {
             "id": "last_distance",
@@ -348,8 +446,25 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "No source means no finite path in that component"
+            },
+            {
               "type": "paragraph",
-              "text": "Multi-source BFS covers the union of components containing at least one source. Vertices outside that union have no finite path to any source and must retain an explicit unreachable state. Automatically promoting them to sources is appropriate only for a different algorithm, such as component enumeration, and would invalidate the requested distance semantics."
+              "text": "In an undirected graph, every path remains inside one connected component. A component containing no seeded source can never receive a queue entry from a source wave, so all of its vertices retain infinity or unseen."
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Do not fabricate coverage",
+              "text": "Promoting an unseen vertex to a new source changes the supplied source set. Copying another component's last distance invents a path, and a zero matrix cell represents an absent edge rather than a connection."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Unreachable-state rule",
+              "text": "Multi-source BFS covers exactly the union of source-containing components."
             }
           ]
         },
@@ -376,10 +491,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "virtual_super_source",
-            "text": "Add a virtual super-source with one edge to every real source, run BFS, and subtract that one virtual edge from reported distances."
-          },
-          {
             "id": "merge_vertices",
             "text": "Merge all source vertices into one physical vertex, even when they have different incident edges."
           },
@@ -390,6 +501,10 @@
           {
             "id": "dfs_forest",
             "text": "Build a DFS forest; every tree depth is automatically the nearest-source distance."
+          },
+          {
+            "id": "virtual_super_source",
+            "text": "Add a virtual super-source with one edge to every real source, run BFS, and subtract that one virtual edge from reported distances."
           }
         ],
         "acceptedOptionIds": [
@@ -405,8 +520,23 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "A virtual origin proves the minimum-over-sources formula"
+            },
+            {
               "type": "paragraph",
-              "text": "The transformation is a proof device: one BFS from a super-source reaches every real source at distance one, then reaches any vertex at one plus its minimum distance to the source set. Direct multi-source initialization removes the artificial offset and avoids materializing the extra vertex. Do not physically merge sources, because their identities and incident edges remain distinct."
+              "text": "Add a virtual vertex q with an outgoing unit edge q → s for every real source s. Any q-to-v path must first choose one such source, so `dist(q,v) = 1 + min_s dist(s,v)` for every reachable v."
+            },
+            {
+              "type": "paragraph",
+              "text": "Direct multi-source BFS removes q and the common +1 offset by placing every real source directly at distance 0. It does not physically merge their identities or neighborhoods, duplicate graph edges, or use DFS depth as distance."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Equivalence",
+              "text": "A shared distance-zero queue is the offset-free implementation of BFS from a virtual super-source."
             }
           ]
         },

@@ -3,7 +3,7 @@
   "batchId": "alg-stack-complexity-and-mistake-review-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -29,7 +29,11 @@
   "items": [
     {
       "id": "alg-stack-cost-01-nested-validation-time",
-      "prompt": "A validator scans n tokens once. Each opener is pushed once, and each matching closer pops one opener. What is the worst-case time complexity?",
+      "prompt": "A validator scans n tokens once. Each opener is pushed once, and each matching closer pops one opener. What is the tightest offered worst-case time bound?",
+      "constraints": [
+        "Reading and classifying one token takes Θ(1).",
+        "Each push, top check, match check, and pop takes Θ(1)."
+      ],
       "difficulty": "introductory",
       "interaction": {
         "type": "complexity",
@@ -65,7 +69,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "There are n loop iterations. Across the whole input, no opener can be popped more than once because it leaves the stack permanently when matched. The total number of stack operations is therefore at most linear in n, so the complete validator is O(n), not O(n²)."
+              "text": "Reading all n tokens already costs Θ(n). Each token performs constant branch work, every opener is pushed once, and no opener can be popped more than once because it leaves permanently when matched. The total is therefore Θ(n + pushes + pops) = Θ(n), matching the offered O(n) bound."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(1) and O(log n) are too small because all n tokens must be inspected. O(n log n) and O(n²) are looser upper bounds, not the tightest offered bound; no sorting or repeated all-input scan occurs."
             }
           ]
         }
@@ -81,6 +91,10 @@
     {
       "id": "alg-stack-cost-02-amortized-proof-components",
       "prompt": "Select all statements that are sufficient components of the standard amortized argument for a one-pass candidate-stack scan.",
+      "constraints": [
+        "The outer scan processes n input occurrences once.",
+        "Each push and pop takes Θ(1)."
+      ],
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
@@ -91,16 +105,16 @@
             "text": "Each input occurrence is pushed at most once."
           },
           {
-            "id": "pop_once",
-            "text": "After an occurrence is popped, that same occurrence never returns to the stack."
-          },
-          {
             "id": "inner_loop_n_each",
             "text": "The inner pop loop performs n pops for every input occurrence."
           },
           {
             "id": "retain_all",
             "text": "Every occurrence must remain stored until the scan ends."
+          },
+          {
+            "id": "pop_once",
+            "text": "After an occurrence is popped, that same occurrence never returns to the stack."
           }
         ],
         "acceptedOptionIds": [
@@ -140,19 +154,19 @@
     },
     {
       "id": "alg-stack-cost-03-expensive-iteration-linear-total",
-      "prompt": "One iteration of a candidate-stack scan pops 12 pending entries. Which complexity conclusion is justified when every entry is pushed once and popped at most once over the entire scan?",
+      "prompt": "One observed iteration of a candidate-stack scan pops k = 12 pending entries, and on other size-n inputs k can grow with n. Which complexity conclusion is justified when every entry is pushed once and popped at most once over the entire scan?",
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "total_linear",
-            "text": "The iteration is not O(1), but the whole scan remains O(n) in aggregate."
-          },
-          {
             "id": "total_quadratic",
             "text": "Any iteration with more than one pop makes the complete scan O(n²)."
+          },
+          {
+            "id": "total_linear",
+            "text": "The iteration costs Θ(k), which can be Θ(n), but the whole scan remains Θ(n) in aggregate."
           },
           {
             "id": "each_pop_constant_total",
@@ -177,13 +191,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The 12 pops cost O(12) in that iteration, not O(1). However, each of those 12 entries has now used its only pop. Across all n iterations, the total pop count remains at most n, so outer processing plus pushes plus pops is O(n). The distinction between per-iteration worst case and whole-run aggregate cost is the decisive concept."
+              "text": "The observed 12 pops are 12 distinct constant-time operations. Asymptotically, the iteration costs Θ(k); because k can grow to n on another input, one iteration can be Θ(n). Each popped entry has nevertheless used its only pop. Across the whole scan, total pops are at most n, total pushes are at most n, and the outer scan costs Θ(n), so the aggregate is Θ(n)."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "total_quadratic": "Multiple pops in one iteration do not imply n pops in every iteration; permanent removal prevents that repetition.",
-          "each_pop_constant_total": "A sequence of 12 constant-time operations is O(12), not O(1) with respect to an unbounded number of pops. The linear conclusion comes from aggregation.",
+          "each_pop_constant_total": "One pop is Θ(1), but k consecutive pops cost Θ(k). Treating k as an unbounded input-dependent count is what exposes a possible Θ(n) iteration.",
           "same_entry_twelve_times": "A popped entry leaves the stack; the iteration consumed 12 distinct pending entries."
         }
       },
@@ -196,7 +210,11 @@
     },
     {
       "id": "alg-stack-cost-04-candidate-stack-time-space",
-      "prompt": "A one-pass stack algorithm processes n input positions. Each position is pushed at most once and popped at most once. In the worst case, no position is popped until the end. What are the worst-case time and auxiliary-space complexities?",
+      "prompt": "A one-pass stack algorithm processes n input positions. Each position is pushed at most once and popped at most once. In the worst case, no position is popped until the end. What are the tightest offered worst-case time and auxiliary-space bounds?",
+      "constraints": [
+        "The per-position outer work and each stack operation take Θ(1).",
+        "Each retained position occupies Θ(1) auxiliary space."
+      ],
       "difficulty": "intermediate",
       "interaction": {
         "type": "complexity",
@@ -244,7 +262,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The outer scan and at most n pushes plus n pops produce O(n) time. Space is a peak-state question rather than an operation-count question: an input order that resolves nothing early can leave all n positions pending simultaneously. Therefore the worst-case auxiliary space is O(n), even though many other inputs use less."
+              "text": "The outer scan costs Θ(n), with at most n constant-time pushes and n constant-time pops, so total time is Θ(n). Space is a peak-state question: the stated legal input leaves all n constant-size position records pending simultaneously, establishing Θ(n) auxiliary space. The matching offered answers are O(n) time and O(n) space."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "For time, O(1) and O(log n) cannot cover the mandatory n-position scan, while O(n log n) and O(n²) are loose. For space, O(1) and O(log n) cannot hold the stated n-entry frontier, while O(n log n) and O(n²) overstate the tight peak."
             }
           ]
         }
@@ -258,7 +282,11 @@
     },
     {
       "id": "alg-stack-cost-05-undo-history-cost",
-      "prompt": "An editor commits n commands, storing one constant-size inverse record per command, and then performs n Undo operations. Each commit pushes once and each Undo pops once. What are the total time and maximum auxiliary-space complexities for this history?",
+      "prompt": "An editor commits n commands, storing one constant-size inverse record per command, and then performs n Undo operations. Each commit pushes once and each Undo pops once. What are the tightest offered total-time and maximum auxiliary-space bounds for history bookkeeping?",
+      "constraints": [
+        "Each push, pop, and constant-size history-record operation takes Θ(1).",
+        "The cost of the document command itself is outside this bookkeeping question."
+      ],
       "difficulty": "introductory",
       "interaction": {
         "type": "complexity",
@@ -306,7 +334,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The sequence performs n pushes followed by n pops, so total operation count is proportional to n. Before any Undo, all n constant-size records are retained, giving O(n) peak auxiliary space. This is ordinary aggregate counting; unlike a candidate-pop loop, no hidden nested work is present."
+              "text": "The history performs n constant-time pushes followed by n constant-time pops, so its total bookkeeping time is Θ(n + n) = Θ(n). Immediately before the first Undo, all n constant-size inverse records are retained, establishing Θ(n) peak auxiliary space. The matching offered answers are O(n) time and O(n) space."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(1) and O(log n) are too small for 2n history operations or n simultaneous records. O(n log n) and O(n²) are loose rather than tight because no sorting, nested replay, or superlinear record size is included."
             }
           ]
         }
@@ -328,10 +362,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "peak_can_reach_n",
-            "text": "Some inputs remove entries early; another legal input can leave all n entries pending."
-          },
-          {
             "id": "always_store_all",
             "text": "O(n) space means every input must retain every item until the end."
           },
@@ -342,6 +372,10 @@
           {
             "id": "recursion_changes_bound",
             "text": "The bound becomes O(1) whenever equivalent state is stored in recursive frames."
+          },
+          {
+            "id": "peak_can_reach_n",
+            "text": "Some inputs remove entries early; another legal input can leave all n entries pending."
           }
         ],
         "acceptedOptionIds": [
@@ -384,12 +418,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "same_cost_not_same_correctness",
-            "text": "The cost can remain O(n), but FIFO exposes the wrong unresolved opener."
-          },
-          {
             "id": "equivalent_because_linear",
             "text": "Equal O(n) time proves the queue and stack versions are behaviorally equivalent."
+          },
+          {
+            "id": "same_cost_not_same_correctness",
+            "text": "The cost can remain O(n), but FIFO exposes the wrong unresolved opener."
           },
           {
             "id": "recursion_required",

@@ -3,7 +3,7 @@
   "batchId": "alg-stack-undo-and-previous-state-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -29,7 +29,7 @@
   "items": [
     {
       "id": "alg-stack-undo-01-recognize-reversible-history",
-      "prompt": "An editor must support repeated Undo so that each command restores the state immediately before the most recent command that has not already been undone. Which retained state best matches this contract?",
+      "prompt": "An editor must support repeated Undo so that each request restores the state immediately before the most recent command that has not already been undone. Which retained state directly encodes that access order without replaying earlier commands?",
       "constraints": [
         "Undo operations are processed one at a time.",
         "The most recently applied non-undone command must be reversed first."
@@ -40,16 +40,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "stack_of_inverse_records",
-            "text": "Push one inverse record per command and pop the newest record on Undo."
-          },
-          {
             "id": "queue_of_snapshots",
             "text": "Enqueue prior states and restore the oldest state on Undo."
           },
           {
+            "id": "stack_of_inverse_records",
+            "text": "Push one inverse record per command and pop the newest record on Undo."
+          },
+          {
             "id": "recompute_from_start",
-            "text": "Discard history and replay the entire document from its initial state after every Undo."
+            "text": "Retain the full command log and replay the document from its initial state after every Undo."
           },
           {
             "id": "recursive_requirement",
@@ -76,7 +76,7 @@
         },
         "wrongOptionExplanationsByOptionId": {
           "queue_of_snapshots": "A queue preserves history, but it restores the oldest retained state first. It becomes appropriate only for oldest-first processing, not Undo.",
-          "recompute_from_start": "Replaying from the beginning may reconstruct a prior state, but it ignores the direct newest-first restoration contract and can add unnecessary repeated work.",
+          "recompute_from_start": "A retained command log can reconstruct a prior state, but replay does not directly expose and apply the newest undo record as this question requires.",
           "recursive_requirement": "Recursive control flow can use a call stack, but Undo history is directly representable with an explicit stack."
         }
       },
@@ -135,7 +135,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A reversible operation first derives the information needed to reverse the change. That record is committed to history before the forward state is changed. Later, Undo pops the newest inverse and applies it. Reversing the first two steps can lose the pre-change value, while applying an inverse without popping would leave the history boundary inconsistent and allow the same record to be reused incorrectly."
+              "text": "The history entry and the forward mutation form one reversible lifecycle. Information that exists only in the old state must cross the mutation boundary before that state changes."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Derive the inverse record from the current pre-change state and the requested forward command.",
+                "Push that complete inverse record before changing the current state.",
+                "Apply the forward command only after its restoration data is safely retained.",
+                "On Undo, pop the newest inverse so the same history entry cannot be consumed twice.",
+                "Apply that popped inverse to reconstruct the immediately preceding state."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Post-mutation derivation can be too late",
+              "text": "If a replacement overwrites value X with Y, deriving the inverse afterward may reveal Y but no longer X. Likewise, applying an inverse without popping leaves a stale top that a second Undo could reuse incorrectly."
             }
           ]
         }
@@ -157,16 +173,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "explicit_noop_or_unavailable",
-            "text": "Return the defined empty-history result and do not pop."
-          },
-          {
             "id": "pop_sentinel_anyway",
             "text": "Pop a fabricated sentinel and interpret it as a real prior state."
           },
           {
             "id": "restore_oldest_known",
             "text": "Restore the oldest state ever observed, even though it is not on the stack."
+          },
+          {
+            "id": "explicit_noop_or_unavailable",
+            "text": "Return the defined empty-history result and do not pop."
           },
           {
             "id": "repeat_last_inverse",
@@ -214,12 +230,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "reverse_c",
-            "text": "Reverse C."
-          },
-          {
             "id": "reverse_a",
             "text": "Reverse A."
+          },
+          {
+            "id": "reverse_c",
+            "text": "Reverse C."
           },
           {
             "id": "reverse_b",
@@ -271,10 +287,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "drop_oldest_keep_newest",
-            "text": "Push the new record and discard the oldest retained record."
-          },
-          {
             "id": "drop_newest",
             "text": "Discard the new record so the oldest 100 remain forever."
           },
@@ -285,6 +297,10 @@
           {
             "id": "duplicate_top",
             "text": "Push two copies of the new record and remove two older records."
+          },
+          {
+            "id": "drop_oldest_keep_newest",
+            "text": "Push the new record and discard the oldest retained record."
           }
         ],
         "acceptedOptionIds": [

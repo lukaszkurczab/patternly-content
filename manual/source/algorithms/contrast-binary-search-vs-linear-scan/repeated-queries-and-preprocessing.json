@@ -3,7 +3,7 @@
   "batchId": "contrast-binary-search-vs-linear-scan-repeated-queries-and-preprocessing-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -80,7 +80,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The full workload is O(n log n + q log n) instead of O(qn), provided sorting preserves the required semantics."
+              "text": "Let q be one million. Repeated scans cost q · O(n) = O(qn). Sorting the static data once costs O(n log n), then q exact binary searches cost O(q log n), for O(n log n + q log n) total. The same ordered representation is reused, so the sort is not paid per query."
             },
             {
               "type": "heading",
@@ -89,20 +89,20 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "This comparison is legal only because every query uses the sort key and reordering preserves the output contract. Binary-searching unsorted data has no discard proof, while sorting before every query destroys reuse and costs O(qn log n)."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Repeated queries can amortize a one-time ordering cost."
+              "text": "For static repeated queries, compare `one build + q lookups` with `q direct scans`."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "scan_each": "This repeats O(n) work one million times.",
-          "binary_unsorted": "The midpoint comparison has no legal direction.",
-          "sort_each_query": "The static data needs preprocessing only once."
+          "binary_unsorted": "In unsorted data, a midpoint comparison cannot prove that either half lacks the target.",
+          "sort_each_query": "Re-sorting unchanged data before every query repeats O(n log n) setup that one retained order avoids."
         }
       },
       "taxonomy": {
@@ -155,7 +155,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A one-time scan avoids an O(n log n) setup cost when the original data lacks a legal binary-search representation."
+              "text": "One scan inspects at most n elements, so it costs O(n). Building an ordered representation for this single query costs O(n log n) to sort before the O(log n) lookup, and its setup cannot be reused afterward."
             },
             {
               "type": "heading",
@@ -164,20 +164,20 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "Binary search on the original array is incorrect because no midpoint comparison can discard a half. A sorted copy would preserve the original but add O(n) space and the same unnecessary sorting cost, so scanning is the stronger default under this workload."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "The query count changes whether preprocessing can pay for itself."
+              "text": "Preprocessing is an investment; with no later reuse, include its full cost in the one query."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "sort_then_binary": "For one query, preprocessing dominates the logarithmic lookup.",
           "binary_unsorted": "The method is incorrect on arbitrary unsorted data.",
-          "build_and_discard": "That still pays unnecessary preprocessing and space."
+          "build_and_discard": "Building a disposable copy adds sorting time and linear space without any later query to reuse them."
         }
       },
       "taxonomy": {
@@ -230,7 +230,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Without provenance, repeated binary lookups may be fast but return the wrong record identity; scanning the original remains correct."
+              "text": "Sorting by key groups equal records but does not, by itself, encode which equal record appeared earliest in the original input. Store each record's original position and order or aggregate duplicates so the lookup can return the minimum position required by the contract."
             },
             {
               "type": "heading",
@@ -239,20 +239,20 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "A key-only binary search can prove that the key exists but cannot recover the required identity. If the index omits provenance, scanning the original remains correct; midpoint history and array length contain no mapping from a key to its earliest source position."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Preprocessing is legal only when the indexed representation can answer the complete output contract."
+              "text": "Preserve every field needed to reconstruct the promised result, not only the field used to locate it."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "key_only": "Equal keys may have different original positions.",
-          "array_length": "Length cannot identify the earliest matching record.",
-          "mid_history": "Search traces do not replace source identity."
+          "key_only": "Equal keys can map to different source positions, so the key alone cannot identify the earliest one.",
+          "array_length": "The record count contains no mapping from an equal key to its earliest source position.",
+          "mid_history": "Visited midpoint positions describe the search process, not the matched record's original insertion position."
         }
       },
       "taxonomy": {
@@ -305,7 +305,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Static-query analysis cannot be transferred unchanged to a highly dynamic workload."
+              "text": "The static model pays O(n log n) once. If almost every query follows an update that forces a full rebuild, the workload instead pays that setup repeatedly—potentially O(qn log n)—which can exceed O(qn) direct scanning."
             },
             {
               "type": "heading",
@@ -314,19 +314,19 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "The boolean result and O(1) midpoint arithmetic do not remove rebuild work. The decision can still favor a different incrementally maintained index, but its update cost and freshness contract must be included rather than assuming sort-once reuse."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "A preprocessing strategy must include update frequency and index maintenance."
+              "text": "Evaluate one update-and-query epoch, then multiply it; a large lifetime query count can hide repeated setup."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "sorted_keyword": "A stale or repeatedly rebuilt representation changes the total workload.",
-          "query_boolean": "Return type does not determine strategy.",
+          "query_boolean": "A boolean output removes result materialization but does not make a stale index correct or cheap to rebuild.",
           "mid_constant": "The dominant cost may be rebuilding the representation."
         }
       },
@@ -380,7 +380,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The conclusion still assumes random access and a query aligned with the sort key."
+              "text": "The existing sorted random-access representation already supplies the binary-search invariant and O(1) midpoint access. Each aligned exact query therefore costs O(log n), while a scan can inspect O(n) values; over q queries the totals are O(q log n) and O(qn)."
             },
             {
               "type": "heading",
@@ -389,20 +389,20 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "No setup term needs amortizing here, and sorting again adds work without changing the invariant. The implementation must still maintain correct boundaries and compare the same key that defines the order; the function name alone proves neither."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "When the legal ordered representation already exists, repeated queries expose the direct O(log n) versus O(n) contrast."
+              "text": "Existing order removes preprocessing cost, but not the need to verify key alignment, random access, and boundary correctness."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "scan_because_no_setup": "The existing order already supplies the binary-search invariant.",
-          "sort_again": "The data is already stable and sorted.",
-          "binary_by_name_only": "The implementation still must be correct."
+          "sort_again": "Re-sorting an unchanged ordered array adds O(n log n) work without improving query legality.",
+          "binary_by_name_only": "A function name does not guarantee correct interval boundaries, termination, or comparison with the actual sort key."
         }
       },
       "taxonomy": {
@@ -455,7 +455,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The one-time O(n) materialization and O(n) memory may be worthwhile for enough repeated queries."
+              "text": "The linked list is sorted but lacks O(1) midpoint access, so locating successive midpoints by traversal does not deliver an O(log n) time lookup. Copying its n values once into a stable array costs O(n) time and O(n) space, after which each of q queries costs O(log n)."
             },
             {
               "type": "heading",
@@ -464,20 +464,20 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "The resulting O(n + q log n) total can beat q O(n) list scans when q is large enough and the list stays unchanged. Renaming nodes does not change access cost, and rebuilding or sorting per query throws away the reuse that justifies materialization."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Preprocessing can change the data-access model as well as its order."
+              "text": "Order permits discard; random access determines whether reaching each midpoint is actually cheap."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "reuse_linked_mid": "Midpoint access is not constant-time.",
-          "rename_nodes": "Names do not provide random access.",
-          "scan_and_sort_each": "This repeats the expensive setup."
+          "reuse_linked_mid": "Walking a linked list to each midpoint adds traversal work that the O(log n) comparison count omits.",
+          "rename_nodes": "Renaming node references cannot provide constant-time access to an arbitrary midpoint position.",
+          "scan_and_sort_each": "Sorting or rematerializing before every lookup eliminates the reuse that makes preprocessing worthwhile."
         }
       },
       "taxonomy": {
@@ -530,7 +530,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A scan can remain the viable strategy even when its time is higher asymptotically."
+              "text": "A separate sorted copy costs O(n) extra space in addition to its build time. Sorting the original in place avoids that copy only if mutation and loss of original order are permitted; the prompt explicitly leaves those constraints open."
             },
             {
               "type": "heading",
@@ -539,20 +539,20 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "With a tight memory budget or an original-order output contract, repeated O(n) scans can be the only legal representation even when they are slower. The choice must compare time, space, mutation rights, provenance, and the actual moderate q rather than applying an asymptotic slogan."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Repeated-query optimization is constrained by legal mutation and memory budget."
+              "text": "An asymptotically faster lookup is unusable when its representation violates space or output constraints."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "ignore_memory": "The sorted copy may violate the memory constraint.",
-          "binary_in_place_always": "Mutation may be illegal.",
-          "scan_constant_time": "Space and time are distinct dimensions."
+          "binary_in_place_always": "In-place sorting can destroy original-order semantics or violate an immutability contract.",
+          "scan_constant_time": "Using O(1) extra space does not change a scan's O(n) element inspections into constant time."
         }
       },
       "taxonomy": {
@@ -605,7 +605,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An index transfers only to predicates aligned with its order and preserved output semantics."
+              "text": "An index sorted by field A makes comparisons on A monotonic across its positions. A predicate on unrelated field B can be true, false, then true again in that same order, so testing B at a midpoint cannot exclude either half."
             },
             {
               "type": "heading",
@@ -614,20 +614,20 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "Scan the records for B, or build a B-aligned index if enough B queries repay its build and maintenance. Reusing the A index or returning an A match would either be unjustified or change the requested query."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Preprocessing is query-specific."
+              "text": "An ordered index accelerates only the predicates and outputs that its key and metadata encode."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "reuse_any_index": "The query predicate is not monotonic in the unrelated key order.",
-          "binary_mid_field": "No regional implication follows.",
-          "return_key_match": "That changes the query."
+          "binary_mid_field": "A midpoint value of the unrelated field implies nothing about that field on either side.",
+          "return_key_match": "Returning a match on the indexed field answers a different question from the caller's predicate."
         }
       },
       "taxonomy": {
@@ -682,7 +682,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The per-query asymptotic class is only one term in the comparison."
+              "text": "Query count q determines how often a per-query saving is reused. Mutation rate determines whether order remains valid or incurs maintenance. Semantic legality determines whether the reordered or indexed representation can still return the required identity and output."
             },
             {
               "type": "heading",
@@ -691,23 +691,23 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "These three factors jointly decide the strategy: first reject representations that cannot answer correctly, then compare build plus maintenance plus queries over one lifetime. A helper's name contributes neither a cost term nor a correctness guarantee."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Preprocessing decisions are workload and contract decisions."
+              "text": "A preprocessing decision needs a legal representation and a workload that repays it."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "function_name": "Naming has no cost or correctness effect."
+          "function_name": "A function name does not prove query alignment, index freshness, or any operation cost."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "query_count": "More queries increase repeated-scan cost and amortize setup.",
-          "mutation_rate": "Maintenance can dominate.",
-          "semantic_legality": "Fast incorrect lookups are unusable."
+          "query_count": "Each additional query repeats scan work but reuses one valid ordered representation, shifting the total-cost comparison.",
+          "mutation_rate": "Updates can invalidate order or add repair and rebuild costs that erase lookup savings.",
+          "semantic_legality": "An index that loses required provenance or changes output semantics cannot replace a correct scan regardless of speed."
         }
       },
       "taxonomy": {
@@ -762,7 +762,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Leaving out setup or rebuild work systematically biases the comparison toward binary search."
+              "text": "When the original cannot be mutated, creating the separate representation incurs copy time and O(n) storage. Ordering or indexing that representation incurs construction cost. Every one of q lookups contributes its query cost, and later updates contribute repair or rebuild work."
             },
             {
               "type": "heading",
@@ -771,23 +771,23 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "The complete model is `copy + build + maintenance + q × query + output`. Omitting any paid term makes the indexed strategy appear cheaper than the system actually experiences; treating updates as free is especially wrong when they invalidate the representation."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "The total cost is preprocessing plus queries plus any maintenance."
+              "text": "Compare strategies over the same lifecycle and include every term they move between setup, update, query, and output."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "ignore_updates": "Maintenance must be included when updates occur."
+          "ignore_updates": "An update that repairs or rebuilds the index consumes real work and is required for correct fresh queries."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "copy_cost": "The representation must be created somewhere.",
-          "sort_cost": "This enables legal binary search.",
-          "query_costs": "Every query contributes."
+          "copy_cost": "When mutation is forbidden, constructing a separate index requires copying or materializing the source records.",
+          "sort_cost": "The sort or index build creates the ordered structure that makes half-discard legal.",
+          "query_costs": "The total includes all q lookups, not the cost of one representative binary search."
         }
       },
       "taxonomy": {
@@ -842,7 +842,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Repeated binary search wins when order and access already exist or can be amortized safely."
+              "text": "Few queries may not repay index construction. Rebuilding before most queries repeats setup so often that direct scans can cost less. If original-order identity is required and no provenance-preserving index exists, scanning is the correct representation regardless of speed."
             },
             {
               "type": "heading",
@@ -851,23 +851,23 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "Many aligned queries on a stable sorted random-access array are the opposite case: the legal representation already exists and is reusable, so O(log n) lookups avoid repeated O(n) scans. Scanning is not inherently primitive; it wins when setup, maintenance, memory, or semantics cross the boundary."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Scanning can win through lower setup cost, lower memory, or stronger semantic fit."
+              "text": "Prefer the lowest complete legal workload cost, even when that means repeating a simple scan."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "stable_many_sorted": "This favors binary search."
+          "stable_many_sorted": "Stable aligned order and many reusable queries favor O(log n) binary lookup rather than repeated scans."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "few_queries": "Setup may not amortize.",
-          "frequent_rebuild": "Maintenance can erase lookup savings.",
-          "illegal_reorder": "Scanning remains the correct method."
+          "few_queries": "With little reuse, one O(n log n) build can cost more than the few O(n) scans it replaces.",
+          "frequent_rebuild": "Paying full setup before most queries can erase the per-query saving from binary lookup.",
+          "illegal_reorder": "Without provenance-preserving structure, a reordered index cannot return the original-order identity that the contract requires."
         }
       },
       "taxonomy": {
@@ -922,7 +922,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Changing to a nonmonotonic predicate moves in the opposite direction."
+              "text": "Increasing aligned query count spreads one setup cost over more lookups. Receiving query-aligned sorted random-access data removes that setup term. An incrementally maintained index can preserve legal order without a full rebuild when its update cost fits the workload."
             },
             {
               "type": "heading",
@@ -931,23 +931,23 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "Each accepted change improves reuse or representation while preserving correctness. An arbitrary nonmonotonic predicate removes the half-discard rule instead, so more queries cannot make binary search legal on that predicate."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "The decision boundary responds to query volume, representation, and maintenance."
+              "text": "A scan-to-binary transfer needs either reusable legal order or a workload that can afford to create and maintain it."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "arbitrary_predicate": "That removes the binary-search invariant."
+          "arbitrary_predicate": "A nonmonotonic truth pattern removes the implication needed to discard one side after a midpoint check."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "increase_q": "The one-time setup is spread across more queries.",
-          "existing_sorted": "The preprocessing term disappears.",
-          "maintained_index": "Queries gain legal fast access."
+          "increase_q": "More aligned queries reuse the same index and increase the repeated-scan work that preprocessing can replace.",
+          "existing_sorted": "Existing query-aligned random-access order removes build cost and immediately supports legal O(log n) lookup.",
+          "maintained_index": "Affordable incremental maintenance keeps the ordered structure fresh so later queries retain legal fast access."
         }
       },
       "taxonomy": {
@@ -1002,8 +1002,13 @@
               "text": "Why this choice is correct"
             },
             {
-              "type": "paragraph",
-              "text": "A per-query comparison omits the terms that usually determine the break-even point."
+              "type": "ordered_list",
+              "items": [
+                "State n, q, update frequency, output identity, mutation rights, and memory limits for one representation lifetime.",
+                "List repeated scanning and only the preprocessed representations that can answer the full contract.",
+                "For each, derive build, maintenance, all-query, output, and space costs.",
+                "Choose from the complete totals and state the workload or constraint change that would reverse the choice."
+              ]
             },
             {
               "type": "heading",
@@ -1012,13 +1017,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "Workload and contract come first because they decide which representations are legal and how often costs repeat. Totals come after candidate representations because construction and update terms depend on the design. The flip condition confirms that the break-even boundary, not a preferred algorithm name, drove the choice."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Repeated-query decisions require a complete workload model."
+              "text": "Model one full lifecycle—setup, updates, all queries, outputs, and space—before comparing strategies."
             }
           ]
         }
@@ -1075,8 +1080,13 @@
               "text": "Why this choice is correct"
             },
             {
-              "type": "paragraph",
-              "text": "Rebuilding per query destroys the intended cost model."
+              "type": "ordered_list",
+              "items": [
+                "Copy the records once when original order or immutability prevents in-place mutation.",
+                "Sort the query representation once by the key used by every supported lookup.",
+                "Keep that representation alive and fresh so its construction can be reused.",
+                "Run each aligned query with binary search against the retained representation."
+              ]
             },
             {
               "type": "heading",
@@ -1085,13 +1095,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "Retention belongs before the repeated-query phase as a lifecycle commitment: if the representation is discarded or rebuilt for each query, the intended O(n log n + q log n) model becomes repeated setup. If updates occur, freshness maintenance must be inserted before affected queries."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "The representation must exist and persist before repeated queries can amortize it."
+              "text": "Amortization requires one valid representation to survive across the queries that repay its construction."
             }
           ]
         }
@@ -1148,8 +1158,13 @@
               "text": "Why this choice is correct"
             },
             {
-              "type": "paragraph",
-              "text": "The maintenance cost belongs to the repeated-query comparison."
+              "type": "ordered_list",
+              "items": [
+                "Classify what the update changed: key order, indexed membership, provenance metadata, or none of them.",
+                "Apply the smallest correct repair, or rebuild when incremental repair cannot restore the invariant.",
+                "Verify the representation reflects the committed source state and preserves required output metadata.",
+                "Resume binary lookup only after midpoint discard and returned identities are valid again."
+              ]
             },
             {
               "type": "heading",
@@ -1158,13 +1173,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "Classification precedes repair so the system does not rebuild unnecessarily or miss affected metadata. Freshness verification precedes lookup because a stale but sorted index can return a plausible wrong answer. Every repair or rebuild contributes to the indexed strategy's total cost."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "A stale index invalidates correctness, not just performance."
+              "text": "Never trade freshness for speed: binary search is legal only on the current ordered representation."
             }
           ]
         }
@@ -1237,7 +1252,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The preprocessed strategy gains as q grows, but it is not automatically superior for small q."
+              "text": "Each scan can inspect n values, so q scans cost q · O(n) = O(qn). Sorting the static array once costs O(n log n), and q binary searches cost q · O(log n), giving O(n log n + q log n). Static data is the condition that lets the sort term appear once."
             },
             {
               "type": "heading",
@@ -1246,13 +1261,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "For small q, the setup term can exceed the avoided scans; as q grows, the query savings can repay it. This formula compares time only after confirming that sorting or copying is legal and that every query aligns with the order."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "The workload comparison includes both setup and every query."
+              "text": "Write the full totals: direct work is `q × n`; indexed work is `n log n + q log n`."
             }
           ]
         }
@@ -1311,7 +1326,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The exact practical crossover depends on constants, but the symbolic comparison shows why query count matters."
+              "text": "Set the dominant totals equal: qn ≈ n log n + q log n. Rearranging gives q(n − log n) ≈ n log n, so q ≈ n log n / (n − log n). For large n, n − log n = Θ(n), which reduces the crossover to q = Θ(log n)."
             },
             {
               "type": "heading",
@@ -1320,13 +1335,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "This is a symbolic boundary, not a deployment threshold: comparison constants, cache behavior, copying, memory, and query distribution can move the measured crossover. The derivation explains why Θ(1) queries generally do not amortize comparison sorting, while logarithmically many can."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "The setup cost becomes amortized after roughly logarithmically many full-array scans."
+              "text": "Derive break-even by equating complete workloads; do not guess it from the per-query classes."
             }
           ]
         }
@@ -1399,7 +1414,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The time-space tradeoff must be checked against the workload constraints."
+              "text": "Copying n records and their original indices consumes Θ(n) additional representation space. Sorting that copy costs O(n log n), and q binary searches add O(q log n), so total time is O(n log n + q log n); the initial O(n) copy is dominated by sorting."
             },
             {
               "type": "heading",
@@ -1408,13 +1423,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "The stored original index makes the output contract recoverable but does not come for free. If the O(n) memory budget is unavailable, a slower scan of the source can remain the legal strategy even when the time formula favors preprocessing."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Preserving original identity can make preprocessing correct but consumes linear extra memory."
+              "text": "Provenance repairs result semantics by adding one stored source position per indexed record, hence Θ(n) extra space."
             }
           ]
         }
@@ -1486,7 +1501,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A large total q is not enough if every small batch of queries pays another full rebuild."
+              "text": "There are u update epochs. Each rebuild costs O(n log n), contributing O(u n log n); each epoch then performs r binary searches, contributing O(u r log n). The rebuild strategy totals O(u n log n + u r log n). Scanning r times in every epoch costs u · r · O(n) = O(ur n)."
             },
             {
               "type": "heading",
@@ -1495,13 +1510,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "The relevant reuse count is r between rebuilds, not only total q = ur. A large lifetime query count can still lose if each epoch is too short to repay O(n log n); compare the two formulas under the actual u:r ratio or evaluate an incrementally maintained structure."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Update frequency creates a new break-even comparison per epoch."
+              "text": "Partition dynamic workloads into freshness epochs and charge setup to each epoch that invalidates the index."
             }
           ]
         }
@@ -1586,7 +1601,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The benefit must justify the linear representation space."
+              "text": "Traversing the sorted list once and writing n values to an array costs O(n) time and O(n) additional space. The array then supports q binary searches at O(log n) each, so its total is O(n + q log n). Repeating a linked-list scan q times costs O(qn)."
             },
             {
               "type": "heading",
@@ -1595,13 +1610,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "No O(n log n) sort appears because the source list is already ordered; preprocessing changes access, not order. The array wins only when it remains fresh for enough queries and the O(n) extra memory fits."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Preprocessing can create random access as well as preserve order."
+              "text": "Materialization cost is `one traversal + stored copy`; its payoff is constant-time midpoint access for every later search."
             }
           ]
         }
@@ -1673,7 +1688,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The legality assumptions still precede this cost advantage."
+              "text": "One binary search performs O(log n) key comparisons, each costing C, so q searches cost O(qC log n). One scan performs O(n) comparisons, so q scans cost O(qnC). C multiplies both counts; binary search wins by reducing the number of comparisons when its invariant is legal."
             },
             {
               "type": "heading",
@@ -1682,13 +1697,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "Expensive comparisons can magnify the practical difference, but they do not establish sorted alignment, random access, or correct boundaries. Those correctness assumptions must be proved before applying either count."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Expensive comparisons multiply both strategies, while binary search reduces how many comparisons are needed."
+              "text": "Compute `number of comparisons × cost per comparison`; do not drop C from only one strategy."
             }
           ]
         }
@@ -1760,7 +1775,7 @@
             },
             {
               "type": "paragraph",
-              "text": "An index with cheap queries can lose when updates are frequent and expensive."
+              "text": "The indexed model performs q queries at O(log n) and u updates at O(n), totaling O(q log n + un). The plain array performs q scans at O(n) and u appends at O(1), totaling O(qn + u). Each formula includes both operation types."
             },
             {
               "type": "heading",
@@ -1769,13 +1784,13 @@
             },
             {
               "type": "paragraph",
-              "text": "For repeated queries, count both the one-time preparation and every query. Sorting or building an index can be worthwhile when the same query-aligned representation is reused often enough; for a single query, that preparation can dominate."
+              "text": "High q favors the indexed query term, while high u can make its linear update term dominate. Compare the totals for the actual mix; an ordered structure with a different update bound would be a different candidate and needs its own formula."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "The best representation depends jointly on query and update volume."
+              "text": "A representation moves cost between operations, so optimize for the complete q:u workload rather than lookup alone."
             }
           ]
         }

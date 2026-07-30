@@ -3,7 +3,7 @@
   "batchId": "algorithms-hash-map-and-set-preserve-indices-and-provenance-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -35,16 +35,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "value_to_first_index",
-            "text": "A map from value to its first original index."
-          },
-          {
             "id": "seen_values",
             "text": "A set of values that have appeared."
           },
           {
             "id": "index_to_value",
             "text": "A map from every index to its value."
+          },
+          {
+            "id": "value_to_first_index",
+            "text": "A map from value to its first original index."
           }
         ],
         "acceptedOptionIds": [
@@ -87,10 +87,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "keep_existing",
-            "text": "Leave the existing index unchanged."
-          },
-          {
             "id": "overwrite_latest",
             "text": "Replace it with the new index."
           },
@@ -101,6 +97,10 @@
           {
             "id": "increment_index",
             "text": "Add one to the stored index."
+          },
+          {
+            "id": "keep_existing",
+            "text": "Leave the existing index unchanged."
           }
         ],
         "acceptedOptionIds": [
@@ -138,7 +138,7 @@
     },
     {
       "id": "alg-hms-provenance-complement-index-order",
-      "prompt": "Order the steps for returning two distinct original indices in a one-pass complement lookup.",
+      "prompt": "Arrange the checks and actions in control-flow order for returning two distinct original indices in a one-pass complement lookup.",
       "interaction": {
         "type": "ordering",
         "elements": [
@@ -152,11 +152,11 @@
           },
           {
             "id": "emit_indices",
-            "text": "If found, emit the earlier index and current index."
+            "text": "If found, return the earlier index and current index."
           },
           {
             "id": "store_current_index",
-            "text": "Store the current value with an index according to the provenance policy."
+            "text": "Otherwise, store the current value and index according to the provenance policy."
           }
         ],
         "canonicalOrder": [
@@ -176,8 +176,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 3,
+              "text": "Query earlier provenance before recording current provenance"
+            },
+            {
               "type": "paragraph",
-              "text": "The map invariant is that every stored index belongs to an earlier occurrence. Querying under that invariant guarantees distinct indices and provides the metadata needed for the result. Recording the current index afterward prepares future lookups; its overwrite policy still depends on whether earliest, latest, or any valid origin is required."
+              "text": "At index i, every stored index must be smaller than i. Returning and storing are alternative branches: a successful lookup ends the search with an earlier/current pair, while a failed lookup records the current provenance for later indices."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Derive the partner value required by the current value.",
+                "Query the unchanged map for an index associated with that partner.",
+                "If found, return the stored earlier index together with the current index.",
+                "Otherwise, store the current value and index using the required earliest-, latest-, or any-index policy."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "counterexample",
+              "title": "Why store first fails",
+              "text": "For input [3] and target 6, storing index 0 before lookup would let the current 3 return the invalid pair (0, 0). Query-before-store rejects it, while [3, 3] returns (0, 1)."
             }
           ]
         }
@@ -199,16 +219,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "value_to_index_list",
-            "text": "A map from value to a list of all original indices."
-          },
-          {
             "id": "value_to_last_index",
             "text": "A map from value to only the most recent index."
           },
           {
             "id": "value_to_count",
             "text": "A map from value to occurrence count."
+          },
+          {
+            "id": "value_to_index_list",
+            "text": "A map from value to a list of all original indices."
           },
           {
             "id": "seen_set",
@@ -256,12 +276,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "provenance_erased",
-            "text": "The implementation can still detect a match but cannot reconstruct the earlier source index."
-          },
-          {
             "id": "lookup_slower",
             "text": "Set lookup is asymptotically slower than map lookup."
+          },
+          {
+            "id": "provenance_erased",
+            "text": "The implementation can still detect a match but cannot reconstruct the earlier source index."
           },
           {
             "id": "duplicates_impossible",
@@ -308,16 +328,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "first_and_last_indices",
-            "text": "Store first and last original indices for each value."
-          },
-          {
             "id": "larger_count",
             "text": "Use a wider integer for the frequency."
           },
           {
             "id": "presence_set",
             "text": "Add a set containing values with positive counts."
+          },
+          {
+            "id": "first_and_last_indices",
+            "text": "Store first and last original indices for each value."
           }
         ],
         "acceptedOptionIds": [
@@ -397,7 +417,26 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Attaching an index payload does not change the asymptotic number of hash operations relative to a seen set. Total expected time remains O(n), and the map can grow to O(n) keys. The statement remains expectation-based under ordinary hash assumptions; preserving all indices rather than one per value can still use O(n) total entries because there are n input positions."
+              "text": "Let d be the number of distinct values, with d ≤ n. The scan performs n expected-O(1) hash lookups and at most n updates, so total expected time is O(n). One fixed-width index payload per key uses O(d) extra space and O(n) when all values are distinct."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Reject the other bounds"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Time O(1) ignores the n-element scan, and O(log n) is too small for an execution that may inspect every value.",
+                "Time O(n log n) would model a logarithmic ordered lookup per value, while O(n²) is not the expected bound under the stated well-distributed-hash assumption.",
+                "Space O(1) or O(log n) cannot retain n distinct value/index entries, while O(n²) invents more entries than there are input values."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Payload boundary",
+              "text": "A list of every index per value would still contain exactly n index occurrences overall, so total provenance storage remains O(n), although its per-key shape changes."
             }
           ]
         }
@@ -426,12 +465,12 @@
             "text": "Original index"
           },
           {
-            "id": "partition_id",
-            "text": "Source partition ID"
-          },
-          {
             "id": "occurrence_count_only",
             "text": "Only the number of times the value appeared"
+          },
+          {
+            "id": "partition_id",
+            "text": "Source partition ID"
           },
           {
             "id": "presence_flag_only",

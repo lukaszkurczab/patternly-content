@@ -3,7 +3,7 @@
   "batchId": "two-pointers-same_direction_read_write-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -243,7 +243,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Evaluating the predicate first establishes whether the iteration contributes output. A kept value is copied to the current write position, then write advances to describe the enlarged valid prefix. Finally read advances for every input value. Conceptually separating these steps prevents unconditional write movement and makes the invariant visible even if code combines increments syntactically."
+              "text": "This sequence has one conditional branch: a rejection skips both output steps but still advances read. A kept value must be copied before write grows, because `[0, write)` is claimed to be valid after each completed step."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Read the original value at `read` and evaluate the keep predicate before overwriting any position.",
+                "If it is kept, copy that value into the next output slot at `write`.",
+                "Still on the kept branch, increment `write` so `[0, write)` includes the value just copied.",
+                "Advance `read` on both branches because the current input position has now been consumed."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Only input progress is unconditional",
+              "text": "Incrementing `write` after a rejected value creates a claimed output slot that was never filled with an accepted value."
             }
           ]
         }
@@ -433,7 +448,7 @@
     },
     {
       "id": "alg-tp-rw-duplicate-collapse-transfer",
-      "prompt": "A sorted array must be compacted in place so that each distinct value appears once. Which condition should control whether the current read value is written?",
+      "prompt": "A sorted array must be compacted in place so that each distinct value appears once. Before reading a[read], [0, write) already contains one representative of every distinct value in the processed prefix. Which write condition preserves that invariant after this iteration?",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -443,12 +458,12 @@
             "text": "Sort the remaining suffix before deciding."
           },
           {
-            "id": "different_from_last_written",
-            "text": "Write it when write is zero or the current value differs from the last value in the compacted prefix."
-          },
-          {
             "id": "different_from_next_unread",
             "text": "Write it only when it differs from the next unread value."
+          },
+          {
+            "id": "different_from_last_written",
+            "text": "Write it when write is zero or the current value differs from the last value in the compacted prefix."
           },
           {
             "id": "write_every_value",
@@ -469,12 +484,12 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Because the input is sorted, equal values form runs. The first value of a run is written, and later equal values are rejected while read continues. Comparing against the last written value ties the duplicate policy directly to the valid-prefix invariant. Looking only at the next unread value can mishandle the final element or choose the last rather than the first representative without a stated reason."
+              "text": "Because the input is sorted, equal values form contiguous runs. When `write` is zero, the first processed value has no earlier representative and must be written. Afterwards, equality with `a[write-1]` means the current run is already represented; inequality marks the first value of a new run, so it is written. Comparing with the next unread value can eventually emit the last member of each run, but after earlier iterations its output prefix does not yet represent every distinct value already processed, so it violates the stated per-iteration invariant and also needs a special final-element case."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "different_from_next_unread": "This looks ahead rather than using the established output boundary and creates awkward end-of-array handling. It does not directly express ‘not already represented in the prefix.’",
+          "different_from_next_unread": "This may select the last member of each run, but it leaves a processed run temporarily unrepresented and reads past the boundary unless the final element gets a separate case. It does not preserve the stated invariant after every iteration.",
           "write_every_value": "Two indices do not make duplicates disappear. The write condition must implement the uniqueness contract.",
           "sort_each_step": "The input is already sorted, and repeated sorting would add unnecessary cost without changing run structure."
         }
@@ -494,7 +509,7 @@
     },
     {
       "id": "alg-tp-rw-sorting-not-filtering",
-      "prompt": "A stable filter keeps all values satisfying P in their encounter order. A proposal sorts by P before compacting. What is the strongest objection?",
+      "prompt": "A stable filter keeps all values satisfying P in their encounter order. A proposal first uses an unstable O(n log n) comparison sort keyed by P and then compacts. What is the strongest objection?",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -565,16 +580,16 @@
             "text": "The array runtime automatically saves overwritten values."
           },
           {
-            "id": "write_never_ahead",
-            "text": "write never exceeds read, so the assignment cannot overwrite an unread future value."
-          },
-          {
             "id": "values_are_sorted",
             "text": "Sorted values can be overwritten without consequence."
           },
           {
             "id": "both_move_together",
             "text": "Safety follows because read and write always move together."
+          },
+          {
+            "id": "write_never_ahead",
+            "text": "write never exceeds read, so the assignment cannot overwrite an unread future value."
           }
         ],
         "acceptedOptionIds": [
@@ -654,7 +669,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The two pointers do not create nested work: read contributes n iterations and write contributes at most n total increments inside those iterations. This yields O(n) time. Because accepted values are written back into the existing array and only indices or counters are stored, auxiliary space is O(1). The input array and returned logical prefix are not additional allocated storage."
+              "text": "The two pointers do not create nested work: `read` contributes exactly n visits and `write` contributes at most n increments inside those visits, so n + at-most-n primitive updates is O(n). O(1) and O(log n) time cannot cover reading all n input positions; O(n log n) and O(n^2) are not tight because there is no sorting or nested pair scan. Accepted values are written back into the existing array and only a fixed number of indices or counters are stored, so auxiliary space is O(1), not O(log n) or O(n). The input array and its returned logical prefix are reused storage, not an additional allocation."
             }
           ]
         }

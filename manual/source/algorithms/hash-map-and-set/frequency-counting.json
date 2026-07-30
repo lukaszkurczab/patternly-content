@@ -3,7 +3,7 @@
   "batchId": "algorithms-hash-map-and-set-frequency-counting-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -67,8 +67,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 3,
+              "text": "Maintain processed-prefix counts"
+            },
+            {
               "type": "paragraph",
-              "text": "The invariant is processed-count equality: after updating value v, map[v] equals the number of v occurrences in the processed prefix. Missing keys represent zero before their first increment. Reading after an unconditional overwrite or storing only presence would lose multiplicity and break the invariant."
+              "text": "Before an iteration, map[x] equals the number of x occurrences in the already processed prefix, and an absent key represents zero. The current occurrence must be added before the prefix is considered processed."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Read the current value v.",
+                "Read old = map[v], substituting 0 when v is absent.",
+                "Write map[v] = old + 1; the invariant now holds for the prefix including this occurrence.",
+                "Advance only after the updated map represents the enlarged processed prefix."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "worked_example",
+              "title": "Trace [4, 2, 4]",
+              "text": "The count for 4 changes 0 → 1 on the first value and 1 → 2 on the last value. Overwriting with 1 or recording only presence would lose the second occurrence."
             }
           ]
         }
@@ -84,15 +104,11 @@
     },
     {
       "id": "alg-hms-frequency-multiset-equality",
-      "prompt": "Two arrays contain the same distinct values, but one array contains an extra copy of a value. Which state can distinguish the arrays as multisets?",
+      "prompt": "The arrays [1, 1, 2, 3] and [1, 2, 2, 3] have the same length and the same distinct values but different multiplicities. Which state can decide whether they are equal as multisets?",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "frequency_map",
-            "text": "A value-to-count map."
-          },
           {
             "id": "presence_set",
             "text": "A set of distinct values."
@@ -100,6 +116,10 @@
           {
             "id": "array_length_only",
             "text": "Only the total length of each array."
+          },
+          {
+            "id": "frequency_map",
+            "text": "A value-to-count map."
           }
         ],
         "acceptedOptionIds": [
@@ -116,7 +136,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A frequency map represents the complete multiset signature: every key’s count must match. A set answers only whether each key occurs at least once. The same boundary appears in permutation checks, inventory reconciliation, and resource-consumption validation."
+              "text": "A frequency map represents the complete multiset signature: every key’s count must match. Here the first map has counts {1: 2, 2: 1, 3: 1}, while the second has {1: 1, 2: 2, 3: 1}, so they differ. Both a presence set and total length are identical for these arrays and lose the decisive per-value multiplicity. The same boundary appears in permutation checks, inventory reconciliation, and resource-consumption validation."
             }
           ]
         },
@@ -174,8 +194,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 3,
+              "text": "Keep absence equivalent to zero"
+            },
+            {
               "type": "paragraph",
-              "text": "A canonical frequency map often uses absence to mean zero and key presence to mean a positive count. Verifying before decrement prevents an invalid negative state; deleting at zero preserves the equivalence between contains(k) and count(k) > 0. Keeping zero keys can be valid only if every membership check explicitly tests the numeric payload instead of key existence."
+              "text": "The canonical representation uses an absent key for count zero and a present key only for a positive count. Therefore contains(k) and count(k) > 0 remain equivalent."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Verify count[k] > 0 so the removal event cannot create a negative count.",
+                "Write the decremented value count[k] - 1.",
+                "If that new value is zero, delete k instead of retaining a zero-valued entry.",
+                "Continue only after presence again means positive multiplicity."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "edge_case",
+              "title": "Alternative representation",
+              "text": "Keeping zero-valued keys can be correct only under a different invariant where every consumer tests the numeric payload; a plain key-existence check would then give the wrong positive-count answer."
             }
           ]
         }
@@ -197,12 +237,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "increment_then_test",
-            "text": "Increment the value’s count, then test whether the new count equals 3."
-          },
-          {
             "id": "test_then_increment",
             "text": "Test whether the old count equals 3, then increment."
+          },
+          {
+            "id": "increment_then_test",
+            "text": "Increment the value’s count, then test whether the new count equals 3."
           },
           {
             "id": "insert_presence_then_test",
@@ -249,16 +289,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "value_to_count",
-            "text": "A map from value to count, plus a rule for comparing counts."
-          },
-          {
             "id": "seen_values",
             "text": "A set of values that appeared."
           },
           {
             "id": "value_to_boolean",
             "text": "A map from value to true."
+          },
+          {
+            "id": "value_to_count",
+            "text": "A map from value to count, plus a rule for comparing counts."
           }
         ],
         "acceptedOptionIds": [
@@ -301,12 +341,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "member_bucket",
-            "text": "A bucket of the original records for each category key."
-          },
-          {
             "id": "presence_bit",
             "text": "A boolean showing the category exists."
+          },
+          {
+            "id": "member_bucket",
+            "text": "A bucket of the original records for each category key."
           },
           {
             "id": "larger_integer",
@@ -390,7 +430,26 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The loop performs n read-modify-write operations, so expected O(1) per update yields expected O(n) total time. The number of keys is bounded by the number of processed elements, giving O(n) extra space in the worst distinct-value case. This does not assert worst-case constant lookup under arbitrary collisions."
+              "text": "Let d be the number of distinct values, with d ≤ n. The loop performs n read-modify-write operations, so expected O(1) per update gives n · O(1) = O(n) expected time. The map stores d count entries, giving O(d) extra space and O(n) in the all-distinct input case."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Reject the other bounds"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Time O(1) ignores n updates, and O(log n) is too small for a pass that may read every input value.",
+                "Time O(n log n) would charge logarithmic ordered-map work that ordinary hashing does not perform, while O(n²) is not the expected bound under the stated hashing assumptions.",
+                "Space O(1) or O(log n) cannot hold n distinct count entries, and O(n²) overstates a map with at most one entry per input value."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Guarantee boundary",
+              "text": "The linear time bound is expected or amortized for well-distributed hashes and resizing; it does not claim worst-case constant lookup under arbitrary collisions."
             }
           ]
         }
@@ -415,10 +474,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "add_weight",
-            "text": "state[key] = previous total + w"
-          },
-          {
             "id": "add_one",
             "text": "state[key] = previous total + 1"
           },
@@ -429,6 +484,10 @@
           {
             "id": "store_presence",
             "text": "Insert key into a set and discard w"
+          },
+          {
+            "id": "add_weight",
+            "text": "state[key] = previous total + w"
           }
         ],
         "acceptedOptionIds": [

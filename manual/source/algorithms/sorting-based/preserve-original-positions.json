@@ -3,7 +3,7 @@
   "batchId": "algorithms-sorting-based-preserve_original_positions-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -134,7 +134,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Decoration creates a stable link between each record and its source location. Sorting then changes processing order without changing identity. The core algorithm works in sorted coordinates but carries those identities through every selected result or annotation. The final projection converts internal ordered state back to the API's source coordinate system. Decorating after sorting cannot reconstruct which duplicate occurrence moved where."
+              "text": "The internal algorithm and external API use different coordinate systems. Source identity must cross the transformation boundary in the correct order."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Before reordering, attach originalIndex or an equivalent stable source identity to every occurrence.",
+                "Sort the decorated records by the algorithm's primary value key and only legal tie-breaks.",
+                "Run the scan, grouping, or pointer algorithm in sorted coordinates while carrying identities with selected records or annotations.",
+                "Project the result through the saved identities into original indices or source-aligned output slots."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Decoration cannot be reconstructed afterward",
+              "text": "Once raw duplicate values have been sorted, their source occurrences are indistinguishable. Attaching positions after sorting records transformed coordinates, not provenance."
             }
           ]
         }
@@ -393,10 +408,10 @@
     },
     {
       "id": "alg-sort-positions-07-decoration-cost",
-      "prompt": "A solution creates n decorated (value, originalIndex) records, comparison-sorts them, scans once, and produces a constant-size result. What are the worst-case time and extra-space complexities?",
+      "prompt": "A solution creates n decorated (value, originalIndex) records, comparison-sorts them, scans once, and produces a constant-size result. Select the tightest offered worst-case time and extra-space bounds.",
       "constraints": [
         "The decorated record array is separate from the input and counts as extra space.",
-        "Comparison sorting has O(n log n) worst-case time."
+        "Comparison sorting has Θ(n log n) worst-case time."
       ],
       "difficulty": "intermediate",
       "interaction": {
@@ -441,7 +456,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Decoration and the scan each cost O(n). The comparison sort costs O(n log n), producing the total O(n log n) bound. The separate decorated sequence stores n pairs, so extra space is O(n), independent of the constant-size returned answer. An index permutation is also O(n) state. In-place sorting could reduce storage but would need another way to satisfy the provenance contract."
+              "text": "Decoration and the scan each take Θ(n). Adding them to the stated Θ(n log n) comparison sort gives Θ(n + n log n + n) = Θ(n log n), matching the offered O(n log n) time bound. The separate decorated sequence stores n pairs, so it alone establishes Θ(n) extra space, matching O(n), independent of the constant-size answer."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "Time O(n) omits sorting, while O(n²) is loose rather than the tightest offered bound. Space cannot be O(1) or O(log n) because the prompt explicitly allocates n separate decorated records; an index permutation would likewise be linear."
             }
           ]
         }
@@ -499,7 +520,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Sorting decorated records makes equal values contiguous while retaining the output slot for each occurrence. The rank changes only at a new distinct value, so duplicates share a rank. Writing through originalIndex restores source alignment even though processing occurred in value order. Using sorted position as rank implements neither dense ties nor source-aligned output and would assign different ranks to equal values."
+              "text": "Sort (value, originalIndex) records so equal values are contiguous while every occurrence retains its output slot. For a nonempty input, initialize rank = 1 for the first sorted value and write it to output[originalIndex]. For each later record, increment rank only when its value differs from the previous sorted value, then write the current rank to output[originalIndex]. Thus duplicates share one rank, consecutive distinct values receive consecutive ranks, and the final array is source-aligned. An empty input produces an empty output without initializing a rank. Using sorted position as rank breaks both dense ties and source alignment."
             }
           ]
         },

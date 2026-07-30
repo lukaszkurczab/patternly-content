@@ -3,7 +3,7 @@
   "batchId": "bit-manipulation-test-set-clear-toggle-bits-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -71,14 +71,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. AND preserves the selected bit only when it is set in both x and the one-hot mask. A nonzero result therefore means bit k was one."
+              "text": "The selector 1 shifted left by k contains a one only at position k. AND clears every other position and leaves that selected one only if x also has a one there. Therefore x AND selector is either zero (bit k clear) or exactly the selector (bit k set). This observes the previous state without mutating x."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Validate 0 ≤ k < usable word width before shifting.",
+                "Build oneHot = 1 shifted left by k.",
+                "Evaluate (x AND oneHot) != 0 to obtain the membership predicate."
               ]
             },
             {
@@ -90,9 +90,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "or_nonzero": "OR makes the selected bit one even if it was previously zero.",
-          "xor_zero": "XOR changes the bit rather than directly testing its prior state.",
-          "add_mask": "Addition can affect multiple bits through carries."
+          "or_nonzero": "OR forces bit k to one, so a nonzero result cannot distinguish whether that bit was previously clear.",
+          "xor_zero": "XOR produces a modified value and equals zero only under a much stronger whole-word equality condition.",
+          "add_mask": "Addition is arithmetic rather than a membership test and a carry can change positions above bit k."
         }
       },
       "taxonomy": {
@@ -147,14 +147,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. OR forces selected positions to one and leaves every zero-mask position unchanged. This works for one-hot and multi-bit masks."
+              "text": "Check OR one position at a time. Where mask has one, x OR 1 is always one, so the selected position becomes set. Where mask has zero, x OR 0 equals x, so every unselected position is preserved. The same truth table applies whether mask selects one feature or several."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Selected position: 0 OR 1 = 1 and 1 OR 1 = 1.",
+                "Unselected position: 0 OR 0 = 0 and 1 OR 0 = 1.",
+                "Thus updated = x OR mask establishes all selected bits without disturbing the rest."
               ]
             },
             {
@@ -166,9 +166,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "and_mask": "AND clears unselected bits rather than preserving them.",
-          "xor_mask": "XOR toggles selected bits and may clear ones.",
-          "and_not_mask": "This clears selected bits."
+          "and_mask": "At every unselected position mask has zero, and x AND zero clears that position instead of preserving x.",
+          "xor_mask": "XOR with one flips a selected bit, so a bit that was already enabled would be disabled.",
+          "and_not_mask": "The complemented mask supplies zero at selected positions, making this the operation for clearing rather than setting."
         }
       },
       "taxonomy": {
@@ -223,14 +223,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. Complement(mask) has zeros at selected positions and ones elsewhere within the declared width. AND therefore clears only those selected positions."
+              "text": "Within the declared width, complement(mask) swaps selected ones to zeros and unselected zeros to ones. AND with zero forces every selected position to zero; AND with one preserves each unselected bit from x. Limiting the complement to the word width keeps the reasoning independent of a language's sign extension or arbitrary-precision representation."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Normalize mask to the declared word width.",
+                "Complement those width-limited bits so selected positions become zero.",
+                "Compute x AND complementedMask; verify updated AND originalMask equals zero."
               ]
             },
             {
@@ -242,9 +242,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "or_mask": "OR sets the selected positions.",
-          "xor_mask": "XOR toggles rather than guarantees zero.",
-          "and_mask": "This keeps selected bits and clears unselected bits."
+          "or_mask": "OR forces selected positions to one, which is the opposite of the required clear postcondition.",
+          "xor_mask": "XOR flips selected positions, so an initially clear bit would become one instead of remaining zero.",
+          "and_mask": "Direct AND retains only selected positions and clears unselected ones, reversing which part should be preserved."
         }
       },
       "taxonomy": {
@@ -302,14 +302,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. XOR with one flips a bit, while XOR with zero preserves it. A mask therefore selects exactly the positions to toggle."
+              "text": "XOR's one-bit truth table matches toggle exactly: 0 XOR 1 = 1 and 1 XOR 1 = 0. At positions not selected by mask, XOR with zero leaves both possible input bits unchanged. Applying x XOR mask therefore inverts every selected position and preserves all others without branching per bit."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Mask one selects a position for inversion.",
+                "Mask zero acts as identity at an unselected position.",
+                "A second XOR with the same mask reverses the transition."
               ]
             },
             {
@@ -321,9 +321,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "or_mask": "OR cannot turn a selected one into zero.",
-          "and_mask": "AND does not invert selected positions.",
-          "and_not_mask": "This always clears selected positions."
+          "or_mask": "OR can change zero to one but leaves one as one, so it cannot implement both directions of a toggle.",
+          "and_mask": "AND with one preserves a selected input bit rather than replacing it with its opposite value.",
+          "and_not_mask": "AND with the complemented mask deterministically clears selected positions instead of inverting their prior values."
         }
       },
       "taxonomy": {
@@ -378,14 +378,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. Setting selected bits is idempotent. Once the mask's one positions are already set, OR with the same mask leaves the word unchanged."
+              "text": "After the first update y = x OR mask, every one in mask is already present in y. Reapplying the operation gives y OR mask = (x OR mask) OR mask = x OR (mask OR mask) = x OR mask because a OR a = a. Unselected positions also remain unchanged because they are ORed with zero both times."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "First OR establishes the postcondition that all mask positions are one.",
+                "Second OR applies one to positions already one and zero elsewhere.",
+                "The word after the second update is identical to the word after the first."
               ]
             },
             {
@@ -397,9 +397,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "toggles_off": "OR is not toggle.",
-          "adds_mask": "Bitwise OR is idempotent.",
-          "clears_others": "Zero mask positions preserve x."
+          "toggles_off": "OR with one always returns one, so repeating it cannot clear a selected bit as XOR would.",
+          "adds_mask": "OR combines bit presence rather than adding numeric values, so an already-set mask contributes no second increase.",
+          "clears_others": "At unselected positions the mask is zero, and x OR zero preserves the original bit on every application."
         }
       },
       "taxonomy": {
@@ -454,14 +454,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. Clearing selected bits is idempotent. After the first application, every selected position is already zero."
+              "text": "Let c be the width-limited complement of mask. After one update y = x AND c, selected positions are zero and unselected positions equal x. A second update yields (x AND c) AND c = x AND (c AND c) = x AND c because a AND a = a. Nothing can restore the selected bits because both applications AND them with zero."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "First clear makes every selected position zero.",
+                "Second clear again applies zero to selected positions and one elsewhere.",
+                "The postcondition and all unselected bits remain unchanged."
               ]
             },
             {
@@ -473,9 +473,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sets_again": "Clearing is not toggle.",
-          "clears_all": "Unselected positions remain protected by ones in the complemented mask.",
-          "increments": "AND does not perform addition."
+          "sets_again": "The complemented mask still contains zero at every selected position, so no second application can set those bits.",
+          "clears_all": "Unselected positions meet one in the complemented mask and therefore preserve their previous values on both passes.",
+          "increments": "Bitwise AND can only preserve or clear a one bit; it does not perform arithmetic addition."
         }
       },
       "taxonomy": {
@@ -533,14 +533,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. XOR is self-inverse for a fixed mask. (x XOR mask) XOR mask equals x because mask XOR mask is zero."
+              "text": "Associativity lets us regroup (x XOR mask) XOR mask as x XOR (mask XOR mask). Every bit XOR itself is zero, so mask XOR mask = 0; zero is XOR's identity, giving x XOR 0 = x. Per bit, a selected value flips twice while an unselected value is preserved twice."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "First XOR inverts exactly the selected positions.",
+                "Second XOR inverts those same positions again.",
+                "Algebraically the two identical masks cancel, restoring the complete original word."
               ]
             },
             {
@@ -552,9 +552,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sets_mask": "That is the behavior of OR, not two XOR operations.",
-          "clears_mask": "Two toggles cancel regardless of initial state.",
-          "reverses_bits": "XOR does not reorder positions."
+          "sets_mask": "OR would force selected bits on; two XOR updates instead return each selected bit to its initial state.",
+          "clears_mask": "The result cannot be always clear because two inversions restore both initially clear and initially set bits.",
+          "reverses_bits": "XOR changes values only at corresponding positions and never moves a bit to a different position."
         }
       },
       "taxonomy": {
@@ -609,14 +609,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. AND extracts the selected positions from x. Equality with mask means every one required by the mask was present."
+              "text": "The expression x AND mask removes all unselected positions and retains only selected positions that are actually set in x. If even one required bit is absent, the extracted result has zero where mask has one and cannot equal mask. Equality therefore proves every selected position is present. A nonzero comparison proves only that at least one survived."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Extract present required bits with x AND mask.",
+                "Use equality with mask for the universal condition 'all selected bits'.",
+                "Use nonzero only for the existential condition 'at least one selected bit'."
               ]
             },
             {
@@ -628,9 +628,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "and_nonzero": "This proves at least one selected bit is set, not all.",
-          "or_equals_zero": "OR with a nonzero mask cannot produce zero.",
-          "xor_equals_mask": "This does not directly express all-selected membership."
+          "and_nonzero": "One shared bit is enough to make AND nonzero, so other required positions may still be missing.",
+          "or_equals_zero": "For any nonzero required mask, OR preserves its one bits and therefore cannot produce an all-zero result.",
+          "xor_equals_mask": "XOR compares differences across positions; equality with mask does not isolate the universal selected-bit membership condition."
         }
       },
       "taxonomy": {
@@ -685,14 +685,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. Any shared one position survives AND and makes the result nonzero. This is an overlap test rather than an all-required test."
+              "text": "AND produces one exactly at positions where both x and mask contain one. Therefore a nonzero result is a witness that at least one selected position overlaps x. The result need not equal mask: for mask 0110 and x 0010, the AND is 0010, which correctly proves overlap while also showing that not all selected bits are set."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Compute overlap = x AND mask.",
+                "Compare overlap with zero for the existential condition.",
+                "Compare overlap with mask only when the requirement changes to all selected positions."
               ]
             },
             {
@@ -704,9 +704,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "and_equals_mask": "That requires all selected bits.",
-          "or_equals_x": "That also means all selected bits are already set.",
-          "xor_zero": "That means x equals mask over every position, not merely overlap."
+          "and_equals_mask": "Equality requires every one in mask to survive, which is stronger than finding at least one shared position.",
+          "or_equals_x": "This also holds only when every selected mask bit is already present in x, not for partial overlap.",
+          "xor_zero": "A zero XOR result requires x and mask to match at every represented position, far beyond sharing one bit."
         }
       },
       "taxonomy": {
@@ -761,14 +761,14 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. The mask selects bit positions 2 and 3, both of which become zero. All other positions remain unchanged."
+              "text": "Within eight bits, complement(00001100) is 11110011. Clearing computes 10101100 AND 11110011. At positions 3 and 2, the complemented mask supplies zeros, so the existing ones are removed; at every other position it supplies one and preserves the source. The row-by-row result is 10100000."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Original:   10101100",
+                "Clear mask: 00001100; eight-bit complement: 11110011",
+                "AND result: 10100000"
               ]
             },
             {
@@ -780,9 +780,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "bits_10101100": "The selected low-middle bits would remain set.",
-          "bits_00001100": "That extracts selected bits rather than clearing them.",
-          "bits_10101111": "This sets low bits rather than clearing the mask positions."
+          "bits_10101100": "This leaves positions 2 and 3 set, so it fails the required postcondition that both selected bits become zero.",
+          "bits_00001100": "This is x AND mask, which extracts the selected bits instead of preserving all unselected positions.",
+          "bits_10101111": "This resembles setting low positions with OR and leaves the selected positions one rather than clearing them."
         }
       },
       "taxonomy": {
@@ -842,14 +842,15 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. Set and clear are idempotent, while toggle is self-inverse. These algebraic properties help diagnose incorrect operation selection."
+              "text": "OR and AND are idempotent: repeating the same operand changes nothing after the first application, which proves both set and clear identities. XOR is different: identical masks cancel, so two toggles return x rather than preserve the once-toggled state. These laws apply position by position within the declared fixed width."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Accept `set_idempotent` because m OR m = m.",
+                "Accept `clear_idempotent` because complement(m) AND itself is unchanged.",
+                "Accept `toggle_twice` because m XOR m = 0.",
+                "Reject `toggle_idempotent` because the second toggle cancels the first."
               ]
             },
             {
@@ -861,7 +862,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "toggle_idempotent": "Two toggles restore x rather than preserve the once-toggled state."
+          "toggle_idempotent": "Two identical XOR masks cancel to zero, so the result is x rather than the once-toggled value x XOR m."
         },
         "omittedCorrectExplanationsByOptionId": {
           "set_idempotent": "OR with the same mask is idempotent.",
@@ -926,14 +927,15 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. A zero mask position should act as an identity at every unselected bit. Direct AND with mask instead extracts only selected positions."
+              "text": "At an unselected position mask = 0. OR uses x OR 0 = x, XOR uses x XOR 0 = x, and clearing uses x AND complement(0) = x AND 1 = x. Direct AND is the exception: x AND 0 = 0, so it erases an unselected one. Evaluating the mask-zero row is enough to decide this preservation question."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Accept `or_mask`: zero is OR's identity.",
+                "Accept `xor_mask`: zero is XOR's identity.",
+                "Accept `and_not_mask`: complementing zero supplies AND's identity one.",
+                "Reject `and_mask`: AND with the mask's zero destroys an unselected one."
               ]
             },
             {
@@ -945,7 +947,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "and_mask": "AND with zero clears unselected positions."
+          "and_mask": "At every unselected position mask is zero, and x AND zero forces the output to zero instead of preserving x."
         },
         "omittedCorrectExplanationsByOptionId": {
           "or_mask": "OR with zero preserves x.",
@@ -1010,14 +1012,15 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. Clear has a deterministic zero result at selected positions and identity elsewhere. XOR is not a substitute because its result depends on the prior bit."
+              "text": "Clearing computes x AND a complemented mask. The complement must be interpreted in the same width as x so its selected positions are zero and all other represented positions are one. AND then forces selected bits to zero and preserves unselected bits. XOR cannot replace this operation: it turns an initially clear selected bit on, while clear must produce zero for both possible inputs."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Accept `width_matters`: complement has meaning only relative to represented positions.",
+                "Accept `selected_zero`: selected mask ones become complement zeros.",
+                "Accept `others_preserved`: unselected mask zeros become complement ones.",
+                "Reject `same_as_xor`: toggle depends on prior state instead of guaranteeing zero."
               ]
             },
             {
@@ -1029,7 +1032,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "same_as_xor": "XOR would set a selected bit that was initially zero."
+          "same_as_xor": "For a selected bit initially zero, XOR with one returns one while clear with complemented-mask AND returns zero."
         },
         "omittedCorrectExplanationsByOptionId": {
           "width_matters": "High-bit behavior depends on the word boundary.",
@@ -1091,14 +1094,15 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. The operation must match whether the contract requires one, zero, inversion, or observation. All-required testing needs equality with the mask."
+              "text": "Each requirement names a different selected-position postcondition. OR guarantees one, complemented-mask AND guarantees zero, and XOR guarantees inversion, while all preserve unselected positions. Observation needs a separate predicate: (state AND mask) = mask proves every required flag is set; merely comparing with zero proves only that one or more flags overlap."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Accept `enable_flags`: OR establishes one at every selected position.",
+                "Accept `disable_flags`: AND with the width-limited complement establishes zero.",
+                "Accept `flip_flags`: XOR inverts selected state.",
+                "Reject `check_all_with_nonzero`: it implements an at-least-one test."
               ]
             },
             {
@@ -1110,7 +1114,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "check_all_with_nonzero": "A nonzero result proves only that at least one required bit overlaps."
+          "check_all_with_nonzero": "With mask 0110 and state 0010 the AND is nonzero although one required bit is missing, so it cannot prove all."
         },
         "omittedCorrectExplanationsByOptionId": {
           "enable_flags": "OR forces selected bits to one.",
@@ -1173,21 +1177,22 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. A bit test depends on a legal position and a one-hot selector. The AND result preserves only the selected position."
+              "text": "Validity comes before the shift because an out-of-range k can overflow, wrap, or invoke language-specific behavior. Once k is valid, the one-hot mask identifies exactly one position. AND extracts that position from x, and only then can zero versus nonzero be interpreted as clear versus set."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Confirm that k is within the declared usable word width.",
+                "Construct oneHot = 1 shifted left by k.",
+                "Compute selected = x AND oneHot.",
+                "Interpret selected != 0 as set and selected = 0 as clear."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "The safe order is: validate the position and width, build the mask, apply the intended operation, then test the postcondition. This separates selection from mutation."
+              "text": "Do not build the selector before validating k. The later AND cannot repair a shift that already addressed an invalid position."
             }
           ]
         }
@@ -1247,21 +1252,22 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. OR applies the state transition, and equality verifies all selected bits. A simple nonzero check would be insufficient for a multi-bit required mask."
+              "text": "The feature mapping first determines the one-hot or multi-bit mask. OR must update the state before the result is inspected. AND then extracts the selected positions from that updated state, and equality with the complete mask proves every required bit is one. Checking only for nonzero would accept a partial multi-bit update."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Build the feature mask from its declared bit positions.",
+                "Compute updatedState = state OR mask.",
+                "Extract present selected bits with updatedState AND mask.",
+                "Compare the extraction with mask to verify that all selected bits are enabled."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "The safe order is: validate the position and width, build the mask, apply the intended operation, then test the postcondition. This separates selection from mutation."
+              "text": "Verification belongs after the transition and must use equality for a multi-bit requirement; a pre-update or nonzero check proves a different claim."
             }
           ]
         }
@@ -1321,21 +1327,22 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. The width-limited complement creates zeros only at selected positions. Postcondition testing confirms every selected bit was cleared."
+              "text": "The original mask must first be represented in exactly eight bits, because that defines which positions its complement may affect. Flipping those eight bits creates zeroes at selected positions and ones elsewhere. AND applies the clear transition. Testing the updated word against the original mask then proves no selected one remains."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Normalize the original mask to exactly eight represented bits.",
+                "Complement those eight bits.",
+                "Update word = word AND complementedMask.",
+                "Verify word AND originalMask = 0."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Clear uses AND with a width-limited complement: selected positions become 0 and all other positions see AND with 1. A raw complement without a width model can hide portability errors."
+              "text": "Keep the original mask for verification. Testing against the complemented mask would inspect preserved positions rather than prove that every selected position was cleared."
             }
           ]
         }
@@ -1398,21 +1405,22 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. XOR associativity and self-cancellation prove that toggle is reversible. The proof applies to one-hot and multi-bit masks."
+              "text": "The first update defines y as the once-toggled state. The second applies the identical mask to y. Substitution and associativity regroup the expression so the two masks are adjacent; self-cancellation reduces them to zero, and XOR's identity law then reduces the complete expression to x."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Compute y = x XOR mask.",
+                "Compute z = y XOR mask.",
+                "Substitute y and associate: z = x XOR (mask XOR mask).",
+                "Use mask XOR mask = 0 and x XOR 0 = x."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "XOR with 1 flips and XOR with 0 preserves. Applying the same mask twice restores the original word because m XOR m is zero."
+              "text": "The cancellation requires the same mask on both updates. Different masks would leave their XOR difference applied to x."
             }
           ]
         }
@@ -1486,21 +1494,21 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. Under the fixed-word model, each primitive bitwise operation is constant time. The algorithm uses only the word and a constant number of masks."
+              "text": "The stated machine model treats shift, AND, OR, XOR and complement on one fixed-width word as primitive O(1) operations. Building one selector and applying a constant number c of those operations costs c · O(1) = O(1). The function retains only x, the selector and a constant number of scalar temporaries, so peak auxiliary space is also O(1)."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Count a constant number of fixed-word primitives, independent of the numeric bit position.",
+                "Count a constant number of word-sized temporaries.",
+                "Do not transfer this bound to an arbitrary-precision integer whose width grows with input."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Clear uses AND with a width-limited complement: selected positions become 0 and all other positions see AND with 1. A raw complement without a width model can hide portability errors."
+              "text": "The fixed-width assumption is the boundary of the result. If the represented word grows to w bits, primitive cost may depend on w and must be analyzed under that representation."
             }
           ]
         }
@@ -1574,21 +1582,21 @@
             },
             {
               "type": "paragraph",
-              "text": "Build a mask for the positions named by the operation, then reason about one bit at a time. A mask bit of 1 selects a position; a mask bit of 0 must leave an unselected position unchanged. Constant-time primitive updates still accumulate linearly across q requested operations. Only the current word and a constant number of masks are retained."
+              "text": "Each requested update performs O(1) fixed-word work, and all q independently specified updates must be processed. Summing the per-update costs gives q · O(1) = O(q) total time. The updates modify one running word and reuse a constant number of masks or temporaries, so peak auxiliary space remains O(1) rather than accumulating with q."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Confirm the word width and that every selected bit position is valid.",
-                "Use AND to test or extract, OR to set, AND NOT to clear, and XOR to toggle.",
-                "Verify the stated postcondition: at least one, all required, or every selected position changed as intended."
+                "Per-update cost: O(1) under the fixed-word model.",
+                "Number of required updates: q, yielding total time O(q).",
+                "Peak retained working state: one word plus constant temporaries, yielding O(1) auxiliary space."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
               "title": "Cost model",
-              "text": "Fixed-word updates are O(1) each, but q requested updates still require Θ(q) total work. Do not confuse a primitive cost with the cost of a sequence."
+              "text": "O(1) describes one update, not the whole request. Space stays constant only because the function does not retain the q update history or q intermediate words."
             }
           ]
         }

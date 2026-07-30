@@ -3,7 +3,7 @@
   "batchId": "binary-search-boundaries-and-loop-invariants-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -36,20 +36,20 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "left_le_right",
-            "text": "left <= right."
-          },
-          {
             "id": "left_lt_right",
             "text": "left < right."
           },
           {
-            "id": "left_eq_right",
-            "text": "left == right only."
+            "id": "left_le_right",
+            "text": "left <= right."
           },
           {
             "id": "right_lt_left",
             "text": "right < left."
+          },
+          {
+            "id": "left_eq_right",
+            "text": "left == right only."
           }
         ],
         "acceptedOptionIds": [
@@ -67,37 +67,32 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Count the included candidates"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "A closed interval [left, right] includes both boundary indices. When left <= right, it contains right - left + 1 candidates; when left > right, it contains none. Therefore left == right is not an exit state: it represents one remaining index."
             },
             {
-              "type": "paragraph",
-              "text": "When left equals right, exactly one candidate remains and must still be examined."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "ordered_list",
+              "items": [
+                "Suppose left = right = 3. The active interval is [3, 3], so index 3 is still a possible answer.",
+                "The test left <= right succeeds, allowing the algorithm to compute mid = 3 and examine that final candidate.",
+                "After a mismatch, an exact search removes mid with left = mid + 1 or right = mid - 1. Only then does left > right prove that no candidate remains."
+              ]
             },
             {
               "type": "callout",
               "kind": "edge_case",
-              "title": "Edge case to verify",
-              "text": "Treat this boundary case as part of the proof, not as a special patch: trace the active interval or predicate and confirm that every candidate required by the contract remains representable."
+              "title": "Reusable closed-interval rule",
+              "text": "For [left, right], use left <= right to admit a singleton and interpret left > right as empty. A different guard needs a different interval contract or an explicit post-loop check."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "left_lt_right": "This stops before processing the final candidate when left equals right.",
-          "left_eq_right": "This skips all larger intervals.",
-          "right_lt_left": "That describes an empty closed interval."
+          "left_eq_right": "This admits only singleton intervals and incorrectly skips every active interval containing two or more candidates.",
+          "right_lt_left": "For a closed interval, right < left is precisely the empty state, so this condition runs after the search domain is exhausted."
         }
       },
       "taxonomy": {
@@ -117,16 +112,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "left_lt_right",
-            "text": "left < right."
-          },
-          {
             "id": "left_le_right",
             "text": "left <= right."
           },
           {
             "id": "right_lt_left",
             "text": "right < left."
+          },
+          {
+            "id": "left_lt_right",
+            "text": "left < right."
           },
           {
             "id": "left_eq_right",
@@ -148,36 +143,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "The exclusive endpoint determines the guard"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "A half-open interval [left, right) contains indices left through right - 1, so its candidate count is right - left. It is non-empty exactly when that count is positive: left < right."
             },
             {
-              "type": "paragraph",
-              "text": "Its candidate count is right - left, so positive length corresponds to left < right."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "ordered_list",
+              "items": [
+                "For [4, 5), index 4 is the one remaining candidate and 4 < 5 keeps the loop active.",
+                "For [5, 5), the exclusive range contains no index and 5 < 5 is false.",
+                "A correct branch update must preserve the sought boundary while decreasing right - left, eventually reaching equal boundaries."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Reusable half-open rule",
+              "text": "For [left, right), use left < right while candidates remain and treat left == right as convergence. The exclusive right boundary may be n because it is a boundary, not an array access."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "left_le_right": "When left equals right, the half-open interval is empty.",
-          "right_lt_left": "That is not the normal non-empty condition.",
+          "right_lt_left": "This is an invalid reversed-boundary state, not the condition for a positive half-open length.",
           "left_eq_right": "This identifies the exit state, not the active state."
         }
       },
@@ -191,16 +181,12 @@
     },
     {
       "id": "alg-binary-search-boundaries-003",
-      "prompt": "In a half-open first-true search, predicate(mid) is true and mid may be the first true index. Which update preserves mid as a candidate?",
+      "prompt": "In a half-open first-true search, predicate(mid) is true and mid may be the returned first-true boundary. Which update preserves that possibility while removing positions after mid from further search?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "right_mid",
-            "text": "right = mid."
-          },
           {
             "id": "right_mid_minus_one",
             "text": "right = mid - 1."
@@ -212,6 +198,10 @@
           {
             "id": "return_mid",
             "text": "Return mid immediately."
+          },
+          {
+            "id": "right_mid",
+            "text": "right = mid."
           }
         ],
         "acceptedOptionIds": [
@@ -229,37 +219,32 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "A true midpoint is an upper bound on the answer"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "In a first-true search, the predicate is false before one boundary and true from that boundary onward. Let b be the first true index, or the exclusive sentinel n when no index is true. The invariant keeps b between left and right."
             },
             {
-              "type": "paragraph",
-              "text": "Using a half-open interval [left, right), setting right = mid keeps mid and discards only positions strictly to its right."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "ordered_list",
+              "items": [
+                "predicate(mid) is true, so monotonicity proves b <= mid.",
+                "Mid itself may equal b; nothing in this observation proves an earlier index is true.",
+                "Setting right = mid preserves b = mid as the possible returned boundary, even though mid is no longer in the half-open set of indices still needing evaluation. With lower-biased mid and left < right, right also moves leftward."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Boundary-search contrast",
+              "text": "A false midpoint can be discarded with left = mid + 1 because b must be later. A true midpoint must be retained with right = mid because it can be the first true."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "right_mid_minus_one": "This can discard the first true index itself.",
-          "left_mid_plus_one": "This discards mid and every earlier candidate.",
-          "return_mid": "A true midpoint may not be the first true position."
+          "right_mid_minus_one": "If mid is the first true index, subtracting one discards the required answer and violates the candidate invariant.",
+          "left_mid_plus_one": "A true result proves the boundary is at or before mid, so moving left past mid discards every location where the first true value can lie.",
+          "return_mid": "Truth at mid proves only that the boundary is no later than mid; an earlier true index may still exist."
         }
       },
       "taxonomy": {
@@ -279,12 +264,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "infinite_loop",
-            "text": "mid equals left, so the interval may not shrink."
-          },
-          {
             "id": "overflow_only",
             "text": "The only risk is integer overflow."
+          },
+          {
+            "id": "infinite_loop",
+            "text": "mid equals left, so the interval may not shrink."
           },
           {
             "id": "skip_all",
@@ -310,37 +295,32 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Trace the two-candidate state"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "When right = left + 1, a lower-biased midpoint is floor((left + right) / 2) = left. If the chosen branch executes left = mid, both boundaries remain exactly as they were."
             },
             {
-              "type": "paragraph",
-              "text": "With two adjacent candidates, lower-biased mid equals left. Retaining left unchanged repeats the same state."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "ordered_list",
+              "items": [
+                "Start with left = 6 and right = 7.",
+                "Lower bias gives mid = 6.",
+                "The update left = mid restores [6, 7], so the next iteration computes the same midpoint and takes the same branch forever."
+              ]
             },
             {
               "type": "callout",
               "kind": "common_mistake",
-              "title": "Common mistake",
-              "text": "Do not borrow a familiar binary-search line without its invariant. An update is correct only when the input structure proves the discarded region cannot contain the required answer and the remaining interval still shrinks."
+              "title": "The repair depends on the invariant",
+              "text": "Use an upper-biased midpoint when a valid mid must be retained with left = mid. Use left = mid + 1 only when midpoint evidence proves mid cannot be the answer. Both correctness and strict progress must hold."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "overflow_only": "Even overflow-safe arithmetic can still fail to progress.",
-          "skip_all": "The immediate defect is lack of strict progress.",
-          "right_invalid": "No such update occurs."
+          "overflow_only": "Overflow-safe arithmetic does not help here: even the exact mathematical midpoint equals left, so the state still fails to progress.",
+          "skip_all": "The branch retains both candidates rather than skipping all of them; the immediate defect is that it repeats the same interval.",
+          "right_invalid": "The stated branch updates left and does not change right, so nothing in this state makes right negative."
         }
       },
       "taxonomy": {
@@ -353,16 +333,12 @@
     },
     {
       "id": "alg-binary-search-boundaries-005",
-      "prompt": "Which midpoint bias supports a closed last-true search that updates left = mid?",
+      "prompt": "A monotonic predicate is true and then false, and the invariant guarantees its last true index is in the closed interval [left, right]. The loop uses left < right and keeps a valid midpoint with left = mid. Which midpoint bias guarantees progress?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "upper_mid",
-            "text": "Use an upper-biased midpoint such as left + (right - left + 1) / 2."
-          },
           {
             "id": "lower_mid",
             "text": "Always use floor((left + right) / 2)."
@@ -370,6 +346,10 @@
           {
             "id": "outside_mid",
             "text": "Choose mid = right + 1."
+          },
+          {
+            "id": "upper_mid",
+            "text": "Use an upper-biased midpoint such as left + (right - left + 1) / 2."
           },
           {
             "id": "random_mid",
@@ -391,37 +371,32 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Bias the midpoint toward the retained side"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "The invariant says the last true index remains in [left, right]. If predicate(mid) is true, mid can be that last true index and must remain; if it is false, monotonicity proves the answer is earlier, so right = mid - 1 is safe."
             },
             {
-              "type": "paragraph",
-              "text": "Then left = mid strictly moves the lower boundary and preserves a potentially valid midpoint."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "ordered_list",
+              "items": [
+                "With adjacent boundaries left = 6 and right = 7, upper bias computes mid = 7.",
+                "If index 7 is true, left = mid advances left from 6 to 7.",
+                "If index 7 is false, right = mid - 1 moves right from 7 to 6. Either branch reaches convergence."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Mirror rule",
+              "text": "When a branch retains mid by moving left to mid, bias mid upward. When a first-true branch retains mid by moving right to mid, lower bias already guarantees that right decreases."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "lower_mid": "With two candidates, mid equals left and left = mid does not progress.",
-          "outside_mid": "The midpoint must remain inside the active interval.",
-          "random_mid": "Correctness and progress need a deterministic in-range rule."
+          "lower_mid": "With two adjacent candidates, lower bias chooses left; left = mid then leaves both boundaries unchanged and can loop forever.",
+          "outside_mid": "right + 1 lies outside the closed candidate interval, so evaluating it can access an invalid index and cannot preserve the stated invariant.",
+          "random_mid": "An arbitrary boundary choice can repeatedly choose left, recreating the same non-progress state; the bias must guarantee movement in the retained-mid branch."
         }
       },
       "taxonomy": {
@@ -441,10 +416,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "boundary_position",
-            "text": "It is the unique insertion or first-valid boundary determined by the invariant."
-          },
-          {
             "id": "always_match",
             "text": "nums[left] must equal target."
           },
@@ -455,6 +426,10 @@
           {
             "id": "last_mid",
             "text": "left is merely the last midpoint visited."
+          },
+          {
+            "id": "boundary_position",
+            "text": "It is the unique insertion or first-valid boundary determined by the invariant."
           }
         ],
         "acceptedOptionIds": [
@@ -472,37 +447,32 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Exit boundaries encode the partition"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "A lower-bound search defines a monotonic predicate such as nums[i] >= target. Its invariant proves every index before left is false and every index at or after right is true; n acts as the boundary when no array index is true."
             },
             {
-              "type": "paragraph",
-              "text": "A correct invariant gives the empty interval a precise post-loop meaning even when no exact match exists."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "ordered_list",
+              "items": [
+                "While left < right, the unknown boundary still lies between them.",
+                "At left == right, there is no unresolved gap: the false region ends and the true region begins at that one boundary.",
+                "For [1, 3, 3, 7] and target 5, the result is 3 even though nums[3] is not equal to 5. For target 9, the result is the sentinel 4."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Do not require equality",
+              "text": "Lower bound returns the first position where the predicate becomes true, which is also an insertion position. Exact equality is a separate postcondition to check only when the caller needs an existing match."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_match": "The target may be absent and left may equal n.",
-          "invalid_state": "The empty interval is the intended convergence state.",
-          "last_mid": "Its meaning comes from the maintained partition invariant."
+          "always_match": "The target may be absent; lower bound then returns its insertion position, which can be n when the target exceeds every element.",
+          "invalid_state": "Equal boundaries are the intended convergence state because the maintained false/true partition uniquely identifies the result there.",
+          "last_mid": "The returned boundary can differ from the last midpoint; its meaning follows from all preserved partition facts, not from visit history."
         }
       },
       "taxonomy": {
@@ -522,12 +492,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "half_open",
-            "text": "The half-open interval [0, n)."
-          },
-          {
             "id": "closed",
             "text": "The closed interval [0, n]."
+          },
+          {
+            "id": "half_open",
+            "text": "The half-open interval [0, n)."
           },
           {
             "id": "singleton",
@@ -553,37 +523,32 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "A boundary is not necessarily an index"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "For an n-element array, valid indices are 0 through n - 1. The half-open interval [0, n) includes exactly those indices because its right endpoint is excluded."
             },
             {
-              "type": "paragraph",
-              "text": "This convention represents the full index set while keeping every actual access below n."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "ordered_list",
+              "items": [
+                "right = n marks the position immediately after the final element; it is legal as an exclusive boundary.",
+                "A midpoint computed while left < right remains below right, so the algorithm never reads nums[n].",
+                "When n = 0, [0, 0) naturally represents the empty array without constructing an invalid included index."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Contrast with a closed interval",
+              "text": "The closed full-array interval is [0, n - 1]. Writing [0, n] would include the invalid index n, whereas [0, n) deliberately excludes it."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "closed": "Index n would be included even though it is outside the array.",
-          "singleton": "Interval length is unrelated to this representation choice.",
-          "rotated": "Half-open boundaries are a general convention."
+          "closed": "A closed interval [0, n] includes both endpoints, so it incorrectly treats the out-of-range index n as an array candidate.",
+          "singleton": "A one-element interval cannot represent the full index set for arbitrary n; endpoint inclusion, not length one, makes right = n legal.",
+          "rotated": "Half-open intervals are a general boundary convention and do not depend on whether array values are rotated."
         }
       },
       "taxonomy": {
@@ -596,16 +561,12 @@
     },
     {
       "id": "alg-binary-search-boundaries-008",
-      "prompt": "A developer mixes loop condition left < right with closed-interval updates right = mid - 1 and left = mid + 1. What is the primary concern?",
+      "prompt": "A search treats [left, right] as a closed active interval, uses left < right as its loop condition, applies right = mid - 1 or left = mid + 1 after mismatches, and reports failure immediately when the loop ends without checking the remaining index. What is the primary concern?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "mixed_contract",
-            "text": "The condition and updates may skip the final candidate because they come from incompatible interval contracts."
-          },
           {
             "id": "always_faster",
             "text": "The mixed form is always faster."
@@ -613,6 +574,10 @@
           {
             "id": "duplicates_only",
             "text": "The issue occurs only with duplicate values."
+          },
+          {
+            "id": "mixed_contract",
+            "text": "The condition and updates may skip the final candidate because they come from incompatible interval contracts."
           },
           {
             "id": "mid_name",
@@ -634,37 +599,32 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "The guard skips the remaining closed candidate"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "Because [left, right] includes both endpoints, left == right still represents one possible index. The guard left < right exits in that state, and the prompt says the algorithm reports failure without examining it."
             },
             {
-              "type": "paragraph",
-              "text": "Borrowing pieces from different templates can silently exclude a valid endpoint."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "ordered_list",
+              "items": [
+                "Take two sorted values and a target at index 1: left = 0, right = 1.",
+                "Lower-biased mid = 0 is too small, so left = mid + 1 makes left = right = 1.",
+                "The mixed guard now exits and the stated failure path skips index 1, even though it is the target."
+              ]
             },
             {
               "type": "callout",
               "kind": "common_mistake",
-              "title": "Common mistake",
-              "text": "Do not borrow a familiar binary-search line without its invariant. An update is correct only when the input structure proves the discarded region cannot contain the required answer and the remaining interval still shrinks."
+              "title": "Two coherent alternatives",
+              "text": "A closed exact search can use left <= right and finish only at left > right. A different algorithm may use left < right if it defines convergence at a singleton and explicitly interprets or checks that final boundary."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_faster": "Speed does not repair an off-by-one defect.",
-          "duplicates_only": "It can fail on distinct singleton intervals.",
-          "mid_name": "Naming is irrelevant."
+          "always_faster": "The number of iterations is irrelevant when the exit rule can return the wrong result; a skipped endpoint is a correctness defect.",
+          "duplicates_only": "The two-element counterexample can use distinct sorted values, so duplicates are not required for the failure.",
+          "mid_name": "Renaming the midpoint leaves the incompatible guard, updates, and unchecked singleton unchanged."
         }
       },
       "taxonomy": {
@@ -688,22 +648,22 @@
             "text": "Initialize left = 0 and right = n - 1."
           },
           {
-            "id": "loop_closed",
-            "text": "Continue while left <= right."
+            "id": "right_n",
+            "text": "Treat right = n as an included valid array index."
           },
           {
             "id": "discard_mid",
             "text": "After a strict mismatch, update to mid + 1 or mid - 1."
           },
           {
-            "id": "right_n",
-            "text": "Treat right = n as an included valid array index."
+            "id": "loop_closed",
+            "text": "Continue while left <= right."
           }
         ],
         "acceptedOptionIds": [
           "initial_closed",
-          "loop_closed",
-          "discard_mid"
+          "discard_mid",
+          "loop_closed"
         ]
       },
       "scoringContract": {
@@ -717,40 +677,36 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Build the closed contract as one proof"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "For an n-element sorted array, [0, n - 1] includes every valid index and no invalid one; when n = 0 it becomes [0, -1], already empty. The invariant says that if target exists, one of the included indices still holds it."
             },
             {
-              "type": "paragraph",
-              "text": "The initial right boundary must be the final valid index."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "bullet_list",
+              "items": [
+                "left <= right processes every non-empty closed interval, including a singleton.",
+                "If nums[mid] < target, sorted order proves indices through mid are impossible, so left = mid + 1 removes them.",
+                "If nums[mid] > target, right = mid - 1 symmetrically removes mid and the larger side.",
+                "right = n cannot be an included endpoint because nums[n] is outside the array."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Exit meaning",
+              "text": "When the updates finally make left > right, the closed candidate set is empty. Since each discarded region was proved unable to contain target, absence is then justified."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "right_n": "Index n is outside the array."
+          "right_n": "A closed interval includes right, but n is one past the final valid index n - 1; treating it as included permits an out-of-bounds access."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "initial_closed": "This includes all valid indices.",
-          "loop_closed": "A singleton closed interval remains active.",
-          "discard_mid": "The known-nonmatching midpoint is removed."
+          "initial_closed": "The initialization [0, n - 1] includes exactly all valid array indices and represents an empty array as an already-empty interval.",
+          "loop_closed": "The condition left <= right matches closed-interval non-emptiness and therefore still processes the last singleton candidate.",
+          "discard_mid": "After strict comparison rules out equality, sorted order proves which side is impossible; moving to mid + 1 or mid - 1 removes mid and that side."
         }
       },
       "taxonomy": {
@@ -776,6 +732,10 @@
           {
             "id": "loop_half_open",
             "text": "Continue while left < right."
+          },
+          {
+            "id": "discard_true_mid",
+            "text": "On a true midpoint, set right = mid - 1."
           },
           {
             "id": "keep_true_mid",
@@ -804,39 +764,37 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Preserve the first-true boundary"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "Assume a predicate that is false before a boundary b and true from b onward; b may equal n when no array index is true. Initialization [0, n) makes n available as an exclusive sentinel, while the invariant keeps b between left and right."
             },
             {
-              "type": "paragraph",
-              "text": "Both updates strictly shrink [left, right) while preserving the possible boundary."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "bullet_list",
+              "items": [
+                "left < right means an unresolved gap still exists; equality means the boundary has been isolated.",
+                "If predicate(mid) is true, b <= mid and mid may equal b, so right = mid preserves it.",
+                "If predicate(mid) is false, b > mid, so left = mid + 1 safely discards mid.",
+                "With lower-biased mid, both branches strictly decrease right - left."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Why mid - 1 is wrong on true",
+              "text": "A true midpoint is evidence that the boundary is no later than mid, not that it is earlier. Excluding mid would lose the answer when mid itself is the first true index."
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {},
+        "wrongOptionExplanationsByOptionId": {
+          "discard_true_mid": "If mid is the first true index, right = mid - 1 removes the required boundary; the true branch must retain mid."
+        },
         "omittedCorrectExplanationsByOptionId": {
-          "initial_half_open": "right = n is an exclusive sentinel.",
-          "loop_half_open": "Equal boundaries mean an empty interval.",
-          "keep_true_mid": "Mid may be the first valid position.",
-          "discard_false_mid": "Mid cannot be the first true value."
+          "initial_half_open": "The half-open initialization represents all n indices and also permits n as the no-true-value boundary without reading nums[n].",
+          "loop_half_open": "A positive gap left < right means the boundary is unresolved; equal boundaries uniquely identify it.",
+          "keep_true_mid": "Truth at mid proves the first true boundary is at or before mid, and retaining mid covers the case b = mid.",
+          "discard_false_mid": "Falsehood at mid plus monotonicity proves the first true boundary is later, so mid can be removed."
         }
       },
       "taxonomy": {
@@ -860,22 +818,22 @@
             "text": "Retain every candidate that can still satisfy the result contract."
           },
           {
-            "id": "discard_proven",
-            "text": "Remove only candidates proven impossible by midpoint evidence."
+            "id": "keep_mid_always",
+            "text": "Keep mid in both branches."
           },
           {
             "id": "strict_shrink",
             "text": "Strictly reduce the active-domain size."
           },
           {
-            "id": "keep_mid_always",
-            "text": "Keep mid in both branches."
+            "id": "discard_proven",
+            "text": "Remove only candidates proven impossible by midpoint evidence."
           }
         ],
         "acceptedOptionIds": [
           "preserve_answer",
-          "discard_proven",
-          "strict_shrink"
+          "strict_shrink",
+          "discard_proven"
         ]
       },
       "scoringContract": {
@@ -889,40 +847,36 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Correctness and termination are separate obligations"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "The candidate invariant supports correctness: every result still possible under the prompt remains represented, and every removed candidate is impossible by comparison or predicate evidence. A decreasing nonnegative domain size is the termination variant."
             },
             {
-              "type": "paragraph",
-              "text": "Retaining mid is legal only in branches where mid may still be the boundary and the midpoint bias guarantees shrinkage."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "bullet_list",
+              "items": [
+                "Preserve every possible answer: otherwise the algorithm can terminate with the wrong result.",
+                "Discard only a proved-impossible region: midpoint location alone is not proof without sortedness or monotonicity.",
+                "Strictly shrink the active domain: preserving the answer is insufficient if a branch repeats the same boundaries.",
+                "Retain mid only when it can still be the result, and pair that update with a midpoint bias that moves the changed boundary."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "A quick branch proof",
+              "text": "For each branch, write two sentences: why the removed region cannot contain the required result, and why the chosen boundary changes. Those sentences establish preservation and progress."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "keep_mid_always": "A known-invalid midpoint should be removed and may cause stalling if always retained."
+          "keep_mid_always": "A false midpoint in first-true search or a strict mismatch in exact search is already proved impossible; retaining it can violate progress and is not required for correctness."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "preserve_answer": "Correctness requires the answer remain inside the active domain.",
-          "discard_proven": "Elimination needs justification.",
-          "strict_shrink": "Termination requires progress."
+          "preserve_answer": "The invariant can justify the returned result only if every candidate still capable of satisfying the contract remains represented.",
+          "discard_proven": "Elimination is valid only when sorted order, monotonicity, or another stated premise proves the removed region cannot contain the answer.",
+          "strict_shrink": "A nonnegative domain-size measure that decreases on every branch guarantees that the search reaches its exit state."
         }
       },
       "taxonomy": {
@@ -950,12 +904,12 @@
             "text": "A one-candidate domain."
           },
           {
-            "id": "two_candidates",
-            "text": "Exactly two candidates."
-          },
-          {
             "id": "only_large_middle",
             "text": "Only one large case whose answer begins at the midpoint."
+          },
+          {
+            "id": "two_candidates",
+            "text": "Exactly two candidates."
           }
         ],
         "acceptedOptionIds": [
@@ -975,40 +929,36 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Each small domain isolates a contract obligation"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
+              "text": "Boundary defects often remain invisible on a large input that happens to hit its answer at the first midpoint. Empty, singleton, and adjacent-pair cases force initialization, loop admission, and midpoint progress to reveal themselves."
             },
             {
-              "type": "paragraph",
-              "text": "Large midpoint hits are poor evidence that the interval contract is coherent."
-            },
-            {
-              "type": "heading",
-              "level": 3,
-              "text": "Check the reasoning"
-            },
-            {
-              "type": "paragraph",
-              "text": "Count the candidates in the interval for each option. That immediately shows whether the loop includes a singleton and whether an update actually makes progress."
+              "type": "bullet_list",
+              "items": [
+                "Empty domain: checks whether initial boundaries already encode exit without an invalid access.",
+                "One candidate: checks whether the guard processes or intentionally interprets the singleton.",
+                "Two candidates: checks whether midpoint bias and each retained-mid update strictly move a boundary.",
+                "For boundary-returning searches, repeat these cases with all-false, all-true, and transition-at-each-end predicates."
+              ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "What a midpoint hit fails to test",
+              "text": "An immediate match exercises neither endpoint convergence nor a branch update. It therefore cannot validate the interval contract by itself."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "only_large_middle": "This may never exercise endpoint or convergence defects."
+          "only_large_middle": "An answer at the initial midpoint may terminate before any boundary update, so it can miss both endpoint-skipping and infinite-loop defects."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "empty": "It tests the initial and exit representation.",
-          "singleton": "It exposes loop-condition mismatches.",
-          "two_candidates": "It exposes midpoint-bias and progress errors."
+          "empty": "It verifies that initialization and the loop guard represent no candidates without computing or reading an invalid midpoint.",
+          "singleton": "It reveals whether the guard's equality case matches the chosen closed or half-open semantics.",
+          "two_candidates": "It exposes a retained-mid branch whose midpoint bias leaves the updated boundary unchanged."
         }
       },
       "taxonomy": {
@@ -1032,15 +982,15 @@
           },
           {
             "id": "choose_interval",
-            "text": "Choose closed or half-open active-domain semantics."
+            "text": "State the candidate invariant, choose closed or half-open semantics, and initialize every possible result."
           },
           {
             "id": "derive_updates",
-            "text": "Derive midpoint bias and updates that preserve the result candidate."
+            "text": "Derive the loop guard, midpoint bias, and branch updates that preserve the invariant and shrink the domain."
           },
           {
             "id": "define_exit",
-            "text": "State the precise meaning of the loop exit boundaries."
+            "text": "Prove the exit meaning, then test empty, one-candidate, and two-candidate domains."
           }
         ],
         "canonicalOrder": [
@@ -1062,35 +1012,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Derive the mechanics from the requested result"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "The exit state becomes trustworthy only when every earlier design choice is coherent."
+              "text": "Binary search is not one interchangeable code template. An any-match result can discard a mismatching midpoint, while a first-valid or last-valid result may need to retain a valid midpoint. The requested result therefore determines the invariant, and the invariant determines every boundary operation."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "The order follows from the contract"
+              "text": "Dependency order"
             },
             {
               "type": "ordered_list",
               "items": [
-                "Choose the result meaning and interval representation.",
-                "Initialize boundaries that include every candidate.",
-                "Choose the loop condition and midpoint bias that match the updates.",
-                "Test the empty, one-candidate, and two-candidate domains."
+                "Define whether the result is any match, the first valid position, the last valid position, or an insertion point.",
+                "State which results remain possible, choose closed or half-open boundaries, and initialize the interval so every possible result—including a legal sentinel—is represented.",
+                "Derive the guard, midpoint bias, and branch updates. Each branch must preserve every possible result, discard only a proved-impossible region, and strictly shrink the domain.",
+                "Translate loop exit into the promised result, then verify that meaning on empty, one-candidate, and two-candidate domains."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Why this order matters",
+              "text": "Choosing left < right or right = mid before defining the result reverses the dependency. Those lines are correct only under an invariant that explains what their excluded and retained positions mean."
             }
           ]
         }
@@ -1146,35 +1092,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "One iteration preserves the exact-match invariant"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "Strict mismatches remove mid because exact equality has already failed."
+              "text": "The invariant says that if target exists, it is at an index in the closed interval [left, right]. The iteration must first prove this interval is non-empty before using an index derived from it."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "The order follows from the contract"
+              "text": "Iteration order"
             },
             {
               "type": "ordered_list",
               "items": [
-                "Choose the result meaning and interval representation.",
-                "Initialize boundaries that include every candidate.",
-                "Choose the loop condition and midpoint bias that match the updates.",
-                "Test the empty, one-candidate, and two-candidate domains."
+                "Check left <= right. If it is false, the closed candidate set is empty and exact search can report absence.",
+                "Choose an in-range midpoint, for example left + floor((right - left) / 2).",
+                "Compare nums[mid] with target. Equality completes the contract immediately.",
+                "On nums[mid] < target, sortedness removes indices through mid with left = mid + 1; on nums[mid] > target, it removes indices from mid onward with right = mid - 1."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Concrete trace",
+              "text": "For [2, 5, 9] and target 9, [0, 2] gives mid = 1 and 5 < 9, so the next interval is [2, 2]. The guard admits that singleton, mid = 2 is read, and equality is found."
             }
           ]
         }
@@ -1230,35 +1172,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "One iteration narrows a false-to-true transition"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "Both branches strictly reduce the half-open interval."
+              "text": "Let b be the first true boundary of a monotonic false-then-true predicate, with n allowed as the all-false sentinel. The invariant keeps b between left and right, and lower-biased mid lies in [left, right) whenever left < right."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "The order follows from the contract"
+              "text": "Iteration order"
             },
             {
               "type": "ordered_list",
               "items": [
-                "Choose the result meaning and interval representation.",
-                "Initialize boundaries that include every candidate.",
-                "Choose the loop condition and midpoint bias that match the updates.",
-                "Test the empty, one-candidate, and two-candidate domains."
+                "Confirm left < right, meaning that more than one boundary position is still possible.",
+                "Compute lower-biased mid so left <= mid < right.",
+                "Evaluate the predicate at mid; monotonicity turns that result into a statement about an entire side.",
+                "If true, set right = mid because b may equal mid; if false, set left = mid + 1 because b must be later."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Concrete trace",
+              "text": "For predicate values [false, false, true, true], start with boundaries 0 and 4. mid = 2 is true, so right becomes 2; mid = 1 is false, so left becomes 2. Equality isolates boundary 2."
             }
           ]
         }
@@ -1314,35 +1252,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "One iteration narrows a true-to-false transition"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "The invariant retains the greatest valid candidate until left and right converge."
+              "text": "Assume the predicate is true and then false and the invariant guarantees its last true index b lies in the closed interval [left, right]. The loop runs while left < right, so exit at equality identifies b."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "The order follows from the contract"
+              "text": "Iteration order"
             },
             {
               "type": "ordered_list",
               "items": [
-                "Choose the result meaning and interval representation.",
-                "Initialize boundaries that include every candidate.",
-                "Choose the loop condition and midpoint bias that match the updates.",
-                "Test the empty, one-candidate, and two-candidate domains."
+                "Confirm left < right, so at least two included candidates remain.",
+                "Compute an upper-biased midpoint, left + floor((right - left + 1) / 2), so left < mid <= right.",
+                "Evaluate the predicate. A true result proves b >= mid; a false result proves b < mid.",
+                "On true set left = mid and retain mid; on false set right = mid - 1 and remove mid. Both branches shrink the closed interval."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Concrete trace",
+              "text": "For [true, true, true, false, false], start at [0, 4]. Upper mid = 2 is true, so left = 2; upper mid = 3 is false, so right = 2. The boundaries converge on the last true index 2."
             }
           ]
         }
@@ -1398,35 +1332,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Use domain size as a termination variant"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "The two-candidate state is where midpoint-bias defects most often appear."
+              "text": "A termination variant is a nonnegative integer that becomes strictly smaller on every nonterminal iteration. Candidate count is right - left + 1 for a non-empty closed interval and right - left for a half-open interval."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "The order follows from the contract"
+              "text": "Proof order"
             },
             {
               "type": "ordered_list",
               "items": [
-                "Choose the result meaning and interval representation.",
-                "Initialize boundaries that include every candidate.",
-                "Choose the loop condition and midpoint bias that match the updates.",
-                "Test the empty, one-candidate, and two-candidate domains."
+                "Choose the size formula that matches the interval convention and note that it cannot decrease below zero.",
+                "Bound the midpoint relative to both endpoints. In particular, test right = left + 1 because lower and upper bias differ there.",
+                "Substitute every branch update into the size formula and prove the new value is smaller.",
+                "Conclude that infinitely many iterations are impossible: a nonnegative integer cannot decrease strictly forever."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Counterexample that catches bad bias",
+              "text": "For [6, 7], lower mid = 6 followed by left = mid leaves the size unchanged. Upper mid = 7 makes left = mid reduce a two-candidate closed interval to one candidate."
             }
           ]
         }
@@ -1482,35 +1412,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Debug the repeated state before changing code"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "The repair must be validated against the smallest domains rather than only the original large input."
+              "text": "An infinite loop means at least one reachable branch does not reduce the termination variant. Logging the boundary triple identifies the exact state and branch instead of guessing which familiar line to replace."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "The order follows from the contract"
+              "text": "Diagnostic order"
             },
             {
               "type": "ordered_list",
               "items": [
-                "Choose the result meaning and interval representation.",
-                "Initialize boundaries that include every candidate.",
-                "Choose the loop condition and midpoint bias that match the updates.",
-                "Test the empty, one-candidate, and two-candidate domains."
+                "Record left, mid, right, the predicate or comparison result, and the chosen branch until the same state reappears.",
+                "Identify which branch leaves both boundaries unchanged; for example, [6, 7] with lower mid = 6 and left = mid recreates [6, 7].",
+                "Check whether that branch must retain mid under the result invariant. If so, change the midpoint bias; if not, exclude mid with a plus-or-minus-one update.",
+                "Retest empty, singleton, and adjacent-pair domains on every branch, not only the original input."
               ]
             },
             {
               "type": "callout",
               "kind": "common_mistake",
-              "title": "Common mistake",
-              "text": "Do not borrow a familiar binary-search line without its invariant. An update is correct only when the input structure proves the discarded region cannot contain the required answer and the remaining interval still shrinks."
+              "title": "Do not repair progress by breaking correctness",
+              "text": "Changing left = mid to left = mid + 1 forces movement but is wrong when mid can still be the required boundary. The invariant decides whether to change the update or the midpoint bias."
             }
           ]
         }
@@ -1540,7 +1466,7 @@
           },
           {
             "id": "partition_right",
-            "text": "Every position at or after left is valid or outside the array sentinel."
+            "text": "If left < n, every index from left through n - 1 satisfies the predicate; left = n means no array index does."
           },
           {
             "id": "return_left",
@@ -1566,35 +1492,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Read the converged boundary as a partition"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "It may legally equal n when no array position satisfies the predicate."
+              "text": "For a false-then-true predicate, lower-bound updates preserve two facts: every index before left is false, and every index at or after right is true. The value n is a legal sentinel boundary when the second region contains no array index."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "The order follows from the contract"
+              "text": "Post-loop interpretation"
             },
             {
               "type": "ordered_list",
               "items": [
-                "Choose the result meaning and interval representation.",
-                "Initialize boundaries that include every candidate.",
-                "Choose the loop condition and midpoint bias that match the updates.",
-                "Test the empty, one-candidate, and two-candidate domains."
+                "The loop exits when left == right, so no unresolved gap remains between the known-false and known-true regions.",
+                "The invariant proves every index below left fails the predicate; therefore no earlier valid position exists.",
+                "If left < n, the invariant also proves index left and every later array index satisfy the predicate. If left = n, all array indices are in the false region.",
+                "Return left: it is the first true index when one exists and otherwise the insertion or no-true sentinel n."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Concrete outcomes",
+              "text": "For [false, false, true, true], convergence at 2 identifies the first true. For [false, false, false], convergence at 3 means no array index satisfies the predicate."
             }
           ]
         }
@@ -1650,35 +1572,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Conversion changes the result contract"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "A safe conversion updates initialization, loop condition, branch inclusion, and post-loop interpretation together."
+              "text": "Closed exact search asks whether one included index equals target. Half-open boundary search asks where a monotonic predicate changes value, possibly returning n. That new result meaning changes which endpoints are candidates and whether a matching midpoint may be discarded."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "The order follows from the contract"
+              "text": "Conversion order"
             },
             {
               "type": "ordered_list",
               "items": [
-                "Choose the result meaning and interval representation.",
-                "Initialize boundaries that include every candidate.",
-                "Choose the loop condition and midpoint bias that match the updates.",
-                "Test the empty, one-candidate, and two-candidate domains."
+                "Redefine right as an exclusive boundary and state the partition invariant for the desired first-valid result.",
+                "Initialize [0, n), which covers every array index and permits n as the no-valid-index sentinel.",
+                "Use left < right, a lower-biased in-range midpoint, right = mid on true, and left = mid + 1 on false. These updates retain the possible boundary and shrink the gap.",
+                "Define left == right as convergence to the insertion or first-valid boundary, then verify empty, all-false, all-true, singleton, and two-candidate cases."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Decision rule",
-              "text": "State the invariant in one sentence: what can still be the answer, and what does loop exit mean? Every branch must preserve that sentence and strictly shrink the active interval."
+              "title": "Why a one-line edit fails",
+              "text": "Keeping right = n - 1 loses the sentinel, while keeping right = mid - 1 on a true midpoint can discard the first valid index. Initialization and both branches must match the new semantics."
             }
           ]
         }
@@ -1693,9 +1611,10 @@
     },
     {
       "id": "alg-binary-search-boundaries-021",
-      "prompt": "A coherent iterative binary search halves an active domain of n candidates and performs O(1) work per iteration. Select its iteration bound and auxiliary-space complexity.",
+      "prompt": "A coherent iterative binary search starts with n candidates, reduces every nonterminal active domain to at most half up to rounding, and stores only a constant number of scalar variables. Select its worst-case iteration upper bound and auxiliary-space complexity.",
       "constraints": [
-        "Every nonterminal branch strictly reduces the domain to at most about half."
+        "n >= 1.",
+        "Each iteration performs O(1) work and uses no recursion or input-sized auxiliary structure."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -1747,34 +1666,30 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Solve the halving bound"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "Constant boundary variables suffice for an iterative implementation."
+              "text": "After k worst-case iterations, repeated halving leaves at most ceiling(n / 2^k) candidates. Reaching at most one candidate requires 2^k >= n, so k is at most a constant plus ceiling(log2 n): O(log n)."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "Count the cost"
+              "text": "Account for stored state"
             },
             {
               "type": "bullet_list",
               "items": [
-                "If every iteration reduces the active domain by a constant fraction, there are O(log n) iterations.",
-                "An iterative implementation stores only boundaries and mid, so it uses O(1) extra space.",
-                "Recursion adds one stack frame per narrowing level."
+                "The prompt guarantees O(1) work per iteration, so the iteration bound also yields an O(log n) worst-case running-time upper bound.",
+                "left, right, mid, and a constant number of comparison values occupy the same amount of storage for every n.",
+                "The implementation is iterative and allocates no recursion stack or input-sized structure, so auxiliary space is O(1)."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Complexity rule",
-              "text": "Count the candidates eliminated by the outer search, then multiply by the real cost of one evaluation. Include preprocessing and recursion only when the prompt includes them."
+              "title": "Boundary semantics do not change the logarithm",
+              "text": "Closed and half-open intervals differ by at most one represented boundary. Under the stated constant-factor shrink, that changes only constants, not the O(log n) iteration bound."
             }
           ]
         }
@@ -1789,8 +1704,9 @@
     },
     {
       "id": "alg-binary-search-boundaries-022",
-      "prompt": "A recursive binary search halves the domain until one candidate remains. Select the recursion depth and stack-space complexity.",
+      "prompt": "A recursive binary search starts with n candidates and reduces the active-domain size to at most half up to rounding until at most one candidate remains. Select its worst-case recursion-depth and stack-space upper bounds.",
       "constraints": [
+        "n >= 1.",
         "Each call retains one stack frame.",
         "The active-domain size is reduced by about half."
       ],
@@ -1844,34 +1760,30 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "How to reason it out"
+              "text": "Depth follows the same halving equation"
             },
             {
               "type": "paragraph",
-              "text": "The boundaries, loop condition, midpoint rule, and updates form one contract. [left, right] includes both endpoints, while [left, right) excludes the right endpoint; rules from those conventions cannot be mixed safely."
-            },
-            {
-              "type": "paragraph",
-              "text": "An iterative version can retain the same boundary invariant with constant auxiliary space."
+              "text": "At recursive depth d, the active domain contains at most ceiling(n / 2^d) candidates. The base case is reached once that value is at most one, which requires d = O(log n)."
             },
             {
               "type": "heading",
               "level": 3,
-              "text": "Count the cost"
+              "text": "Live frames determine stack space"
             },
             {
               "type": "bullet_list",
               "items": [
-                "If every iteration reduces the active domain by a constant fraction, there are O(log n) iterations.",
-                "An iterative implementation stores only boundaries and mid, so it uses O(1) extra space.",
-                "Recursion adds one stack frame per narrowing level."
+                "Only one recursive branch continues, but its callers remain live until that branch returns.",
+                "The prompt says each call retains one stack frame, so the maximum number of simultaneous frames equals the recursion depth up to a constant.",
+                "O(log n) frames times O(1) data per frame gives O(log n) stack space."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
-              "title": "Complexity rule",
-              "text": "Count the candidates eliminated by the outer search, then multiply by the real cost of one evaluation. Include preprocessing and recursion only when the prompt includes them."
+              "title": "Iteration has a different space bound",
+              "text": "The boundary invariant itself needs only constant scalar state. The logarithmic space here comes specifically from retaining recursive call frames; an iterative implementation avoids them."
             }
           ]
         }

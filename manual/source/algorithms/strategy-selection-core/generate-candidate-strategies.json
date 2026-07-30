@@ -3,7 +3,7 @@
   "batchId": "algorithms-strategy-selection-core-generate_candidate_strategies-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -29,7 +29,7 @@
   "items": [
     {
       "id": "ssc-generate-range-query-candidate-set",
-      "prompt": "A static array must answer range-sum queries [l, r]. At this stage you are generating candidates, not selecting one. Which list contains materially distinct legal approaches worth carrying forward?",
+      "prompt": "A static array must answer inclusive range-sum queries [l, r]. At this stage you are generating candidates, not selecting one. Which list contains materially distinct legal approaches worth carrying forward?",
       "constraints": [
         "The array is static.",
         "Queries are range sums.",
@@ -50,7 +50,7 @@
           },
           {
             "id": "distinct_mechanisms",
-            "text": "Scan each requested range; precompute prefix sums; or precompute only a bounded known query set if all queries are known offline."
+            "text": "Scan each requested range; build a full prefix-sum array; or, if all queries are known offline, sweep once and retain prefix totals only at their required boundaries."
           }
         ],
         "acceptedOptionIds": [
@@ -67,7 +67,19 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Candidate generation should expose alternatives whose preprocessing, per-query work, memory, or information requirements differ. Direct scanning pays for each range; prefix sums pay one global preprocessing cost and constant work per query; offline memoization of a small known query set occupies a narrower middle ground. A for loop and while loop implement the same scan mechanism, while immediately keeping only the familiar prefix strategy hides the decision boundary. The transfer rule is to generate one representative per materially different mechanism, together with its preconditions, rather than one representative per coding style."
+              "text": "Candidate generation should expose alternatives whose preprocessing, per-query work, memory, or information requirements differ:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Direct scan: add a[l] through a[r] for every query. One answer costs O(r − l + 1) time and needs no index.",
+                "Full prefix array: define P[0] = 0 and P[i + 1] = P[i] + a[i], then answer [l, r] as P[r + 1] − P[l]. This uses O(n) preprocessing and storage, then O(1) time per query.",
+                "Offline boundary sweep: when all q queries are known first, sort their l and r + 1 boundary events, sweep the array once, and retain the running prefix total only at those boundaries. This uses O(n + q log q) time and O(q) boundary storage instead of an O(n) prefix array."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "A for loop and while loop still implement the same direct-scan mechanism, while choosing only prefix sums hides the workload and storage boundary. The transfer rule is to generate one representative per materially different information and cost mechanism, with its preconditions, rather than one per coding style."
             }
           ]
         },
@@ -122,7 +134,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Candidate generation and final selection serve different purposes. A complete enumeration often clarifies the answer contract, supplies small-instance oracle tests, and shows duplicated computations or searches that a faster approach can index, order, or amortize. The later feasibility gate can reject it for the target constraints while retaining its explanatory and testing value. The transfer rule is to distinguish a reference candidate used to establish correctness from a deployable candidate required to meet the operation budget."
+              "text": "Candidate generation and final selection serve different purposes. A complete enumeration explicitly checks every legal pair, so it clarifies the answer contract and can act as a trusted reference: on small inputs, compare an optimized candidate's output with the enumeration's output to expose correctness bugs. Its repeated computations or searches also reveal work that a faster approach might replace with an index, ordering, or amortized state. The later feasibility gate rejects O(n²) work at the target maximum while retaining this explanatory and testing role. The transfer rule is to distinguish a reference candidate used to establish correctness from a deployable candidate required to meet the operation budget."
             }
           ]
         },
@@ -139,9 +151,9 @@
     },
     {
       "id": "ssc-generate-pair-sum-mechanisms",
-      "prompt": "For a pair-sum existence task, which candidate list varies the underlying mechanism rather than only the traversal syntax?",
+      "prompt": "Given an array and target T, a pair-sum existence task asks whether values at two distinct positions sum to T. Which candidate list varies the underlying mechanism rather than only the traversal syntax?",
       "constraints": [
-        "The task asks only whether a pair exists.",
+        "The task asks only whether two distinct positions form a pair.",
         "All three candidate families may be considered before constraints are applied.",
         "The distinction must be algorithmic, not syntactic."
       ],
@@ -177,7 +189,19 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A meaningful candidate set should reveal the major strategy axes. Nested enumeration retains no auxiliary index and checks pairs directly. A complement set spends memory to answer membership queries during one pass. Sorting creates order, after which two pointers can discard impossible pairs by comparison. Loop syntax and equivalent contiguous containers do not change the invariant or dominant work. The transfer rule is to name candidates by the information they create or maintain—lookup index, ordering, window state, monotonic frontier—not by syntax."
+              "text": "A meaningful candidate set should reveal the major strategy axes:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Enumeration checks every index pair i < j directly, taking O(n²) time and O(1) auxiliary space.",
+                "A one-pass hash set checks whether T − a[i] was seen at an earlier position before inserting a[i]. This prevents one position from pairing with itself and takes expected O(n) time with O(n) space.",
+                "Sorting creates value order. Two pointers at the smallest and largest remaining values move inward because a sum below T can only be raised by increasing the smaller value, while a sum above T can only be lowered by decreasing the larger value. Sorting dominates at O(n log n)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Loop syntax and equivalent contiguous containers do not change these invariants or dominant costs. The transfer rule is to name candidates by the information they create or maintain—lookup index, ordering, window state, monotonic frontier—not by syntax."
             }
           ]
         },
@@ -194,7 +218,7 @@
     },
     {
       "id": "ssc-generate-read-only-candidate-adaptation",
-      "prompt": "The input array is read-only, but a sorting-based mechanism remains worth considering. Which candidate set correctly adapts to that constraint without silently discarding alternatives?",
+      "prompt": "A pair-sum existence task receives a read-only input array, but a sorting-based mechanism remains worth considering. Which candidate set correctly adapts to that constraint without silently discarding alternatives?",
       "constraints": [
         "The caller's input is read-only.",
         "Auxiliary storage is not yet ruled out.",
@@ -232,7 +256,19 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Read-only input rules out in-place mutation, not every use of ordering. A copied array can be sorted, and indexed records can preserve original witnesses, but those adaptations add O(n) space and copying work that must remain visible. Hash lookup is another candidate, and a direct scan can remain the reference. Discarding all sorting candidates too early hides a potentially useful time-space trade-off; ignoring the constraint creates an illegal candidate. The transfer rule is to adapt a mechanism only by making every added resource and preservation obligation explicit."
+              "text": "Read-only input rules out in-place mutation, not every use of ordering. The legal candidate set remains broader than one mechanism:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Copy the values, sort the copy, and use two pointers. If a later output contract requires original indices, sort records containing both value and source index. Copying and preservation add O(n) auxiliary storage.",
+                "Scan the original array with a complement hash set, retaining expected O(n) time and O(n) auxiliary storage without modifying the input.",
+                "Check every pair in the original array as a correct O(n²)-time, O(1)-auxiliary-space reference."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Discarding all sorting candidates hides a potentially useful trade-off; sorting the caller's array creates an illegal candidate. The transfer rule is to adapt a mechanism only by making every added resource and preservation obligation explicit."
             }
           ]
         },
@@ -287,7 +323,20 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Offline processing can delay the answer until all data is present and may reorder a copy. An online monitor must answer each prefix and therefore needs incrementally maintainable state. These are not merely two implementations of one strategy; they have different answer-timing contracts. A useful candidate record names the mechanism, required information, state, and answer timing so later rejection and cost comparison can operate on explicit facts. The transfer rule is to generate alternatives per material execution model—offline, online, repeated-query, mutable, or memory-constrained—rather than claiming one unlabeled universal approach."
+              "text": "Offline processing can delay the answer until all data is present and may reorder a copy before checking adjacent equal values. An online monitor must update retained state for each arriving value x:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Test whether x is already in the seen-values set.",
+                "If so, permanently set the accumulated duplicate flag to true.",
+                "Insert x into the set.",
+                "Emit the accumulated flag for the current prefix."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The two candidates have different answer-timing contracts, not merely different syntax. A useful candidate record names the mechanism, required information, state, and answer timing so later rejection and cost comparison can operate on explicit facts. The transfer rule is to generate alternatives per material execution model—offline, online, repeated-query, mutable, or memory-constrained—rather than claiming one unlabeled universal approach."
             }
           ]
         },
@@ -320,7 +369,7 @@
           },
           {
             "id": "alternatives",
-            "text": "Add mechanisms with materially different state, preprocessing, or discard rules."
+            "text": "Use the baseline's repeated work or missing structure to add mechanisms with materially different state, preprocessing, or discard rules."
           },
           {
             "id": "annotations",
@@ -349,7 +398,20 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Candidate generation is neither unstructured brainstorming nor final selection. The simple baseline clarifies the relation being computed. Alternatives should then differ in the information they build or the invariant they exploit, not merely in syntax. Each candidate is incomplete until its preconditions and coarse costs are attached; otherwise later analysis must guess why it works. The final handoff deliberately leaves legality and ranking unresolved. Adjacent-relation scoring captures that alternatives depend on a known contract and evaluation depends on normalized annotations. The transfer rule is to keep this boundary in any domain: generation ends with normalized candidates, while rejection and ranking remain separate decisions."
+              "text": "Candidate generation is neither unstructured brainstorming nor final selection. Produce a compact set in this dependency order:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "State a simple correct reference mechanism so the computed relation and a small-input oracle are explicit.",
+                "Inspect that baseline for repeated work or missing structure, then add representatives that use genuinely different information or invariants rather than different syntax.",
+                "Attach each candidate's preconditions plus coarse preprocessing, per-operation, memory, and output costs so later evaluation does not have to guess why it works.",
+                "Hand the normalized set to legality rejection and comparative selection without declaring a winner during generation."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The order is causal: the baseline exposes work to replace, annotations require the candidate set to exist, and the handoff is evaluable only after those annotations are present. The transfer rule is to keep this boundary in any domain: generation ends with normalized candidates, while rejection and ranking remain separate decisions."
             }
           ]
         }

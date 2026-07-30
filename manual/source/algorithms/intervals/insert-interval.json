@@ -3,7 +3,7 @@
   "batchId": "algorithms-intervals-insert-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -29,10 +29,10 @@
   "items": [
     {
       "id": "algorithms-intervals-insert-001",
-      "prompt": "An existing list is sorted by start and pairwise non-overlapping. Which one-pass structure correctly inserts a new interval while preserving that invariant?",
-      "constraints": [
-        "Use the declared endpoint contract for all before/overlap comparisons.",
-        "The output must remain sorted and non-overlapping."
+    "prompt": "An existing list is sorted by start and pairwise non-overlapping. Which one-pass structure correctly inserts a new interval while preserving that invariant?",
+    "constraints": [
+      "Intervals are half-open, and touching intervals must remain separate.",
+      "The output must remain sorted and non-overlapping."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -62,14 +62,22 @@
       },
       "feedback": {
         "reason": "Start-sorted disjoint input makes the intervals before, overlapping, and after the new range appear as three contiguous phases.",
-        "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "First copy every interval whose end is at or before the new start under the half-open non-overlap rule. Then, while the next interval begins before the growing new end, replace the new bounds with min(starts) and max(ends). Once an interval begins at or after the merged new end, the disjoint start order proves that all remaining intervals are also after it, so append them unchanged. The scan visits each existing interval at most once and never mutates the prepared order. The precise equality operators come from the endpoint and adjacency policy, not from the three-phase structure itself."
-            }
-          ]
-        },
+      "details": {
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Copy each old interval with old.end <= new.start. Under the stated half-open policy, it is before the new interval even when the two endpoints are equal.",
+              "While the next old interval has old.start < new.end, merge it by setting new.start to the smaller start and new.end to the larger end. Each update may make the growing interval overlap another old interval.",
+              "Append the fully merged new interval once, then copy the remaining old intervals unchanged. Start order and pairwise disjointness prove that every remaining interval is after it."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "These phases visit each old interval at most once and preserve both the covered set and the normalized order. A different endpoint or adjacency policy would change the equality operators, but not the before/overlap/after structure."
+          }
+        ]
+      },
         "wrongOptionExplanationsByOptionId": {
           "append_then_local": "The new interval may belong near the beginning or overlap several earlier intervals. A tail-only comparison does not preserve order or union.",
           "sort_by_length": "Length order does not create the before/overlap/after regions required by insertion."
@@ -118,14 +126,23 @@
       },
       "feedback": {
         "reason": "The new range first expands to [5, 10) and then to [5, 12), so both intersecting old intervals join one component.",
-        "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "[1, 2) ends before the new start and is copied unchanged. [5, 7) overlaps [6, 10), so the growing interval becomes [5, 10). The next interval [9, 12) must be compared with that updated state, not the original new interval; because 9 < 10, it extends the end to 12. No intervals remain, so append [5, 12). This trace tests transitive growth during insertion and prevents an implementation from stopping after the first overlap or from comparing every old interval only against the original bounds."
-            }
-          ]
-        },
+      "details": {
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "[1, 2) has end 2 <= new start 6, so copy it unchanged.",
+              "[5, 7) overlaps [6, 10) because 5 < 10 and 6 < 7. Merge their bounds to obtain the growing interval [5, 10).",
+              "Compare [9, 12) with the updated [5, 10), not the original new interval. Because 9 < 10, merge again to obtain [5, 12).",
+              "No old intervals remain, so append the grown interval. The result is [1, 2), [5, 12)."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "The transferable rule is to compare each old interval with the current merged bounds. Stopping after the first overlap or retaining the original [6, 10) bounds misses transitive growth."
+          }
+        ]
+      },
         "wrongOptionExplanationsByOptionId": {
           "merge_first_only": "After merging with [5, 7), the new active range is [5, 10), which still overlaps [9, 12). The overlap phase must continue.",
           "keep_new_separate": "The output contains overlapping intervals and therefore violates the normalized-list contract."
@@ -182,10 +199,10 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "sort_by_end_first": "The existing start order already proves the new interval is before every old interval. Re-sorting adds work and abandons the insertion invariant.",
-          "merge_with_first": "Chronological order does not imply overlap. The first interval ends at 1 and the new interval starts at 3, so a positive gap requires them to remain separate."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "sort_by_end_first": "The existing start order already proves the new interval is before every old interval. Re-sorting adds work and abandons the insertion invariant.",
+        "merge_with_first": "Chronological order does not imply overlap. The new interval ends at 1 and the first existing interval starts at 3, so a positive gap requires them to remain separate."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "insert_interval_into_merged_sequence",
@@ -348,14 +365,23 @@
       },
       "feedback": {
         "reason": "Sorted disjoint input creates contiguous before, overlap, and after regions; the new interval is appended only after its overlap region is complete.",
-        "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "Copying before intervals first preserves order. The merge phase must precede appending the new interval because its bounds may expand with every overlapping old interval. Once the first strictly after interval is reached, the sorted-disjoint invariant proves that no later old interval can overlap the final new range. Appending the new interval before completing the merge would require editing output; appending it after copying the remainder would break order. Each adjacent relation therefore corresponds to a correctness dependency rather than a cosmetic implementation preference."
-            }
-          ]
-        }
+      "details": {
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Copy the before region first; these old intervals end no later than the new start, so moving them directly to output preserves order.",
+              "Merge the contiguous overlap region into the new interval. Its start can move left and its end can move right, so every next comparison must use the updated bounds.",
+              "Append the final merged new interval exactly once, after no remaining old interval can change it.",
+              "Copy the after region unchanged. The start-sorted, pairwise disjoint invariant proves that all later old intervals are also after the merged new range."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Appending the new interval before its overlap region is complete would require revising committed output; appending it after the remainder would break order. The four steps therefore encode correctness dependencies, not cosmetic sequencing."
+          }
+        ]
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "insert_interval_into_merged_sequence",

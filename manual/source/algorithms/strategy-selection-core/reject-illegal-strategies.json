@@ -3,7 +3,7 @@
   "batchId": "algorithms-strategy-selection-core-reject_illegal_strategies-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -67,7 +67,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Shrinking an interval is not sufficient; the discarded interval must be proven irrelevant. In sorted exact search, comparison with the midpoint establishes which side can still contain the target. In answer-space search, a monotonic feasibility predicate establishes a boundary. Here equal and unequal values can appear anywhere, so a midpoint observation says nothing about either half. The transfer rule is to state the legal half-discard implication explicitly before accepting any logarithmic search."
+              "text": "Shrinking an interval is not sufficient; the discarded interval must be proven irrelevant. In sorted exact search, comparison with the midpoint establishes which side can still contain the target. In answer-space search, a monotonic feasibility predicate establishes a boundary. In the unsorted array [1, 100, 2], searching for 2 and comparing with midpoint value 100 cannot justify discarding the right half: doing so would discard the answer itself. Equal and unequal values can appear anywhere, so a midpoint observation says nothing about either side. The transfer rule is to state the legal half-discard implication explicitly before accepting any logarithmic search."
             }
           ]
         },
@@ -122,7 +122,20 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The standard variable-window argument needs more than two boundaries: it needs a predictable relationship between boundary motion and validity. With nonnegative values, expanding cannot reduce the sum and shrinking cannot increase it, so local movement is safe. With negative values, removing a negative can increase the sum and adding a negative can decrease it; a window deemed unhelpful may contain the start of the optimum. Linear pointer movement proves only the running time of the implemented process, not its correctness. The transfer rule is to reject a window whenever validity is not repairable by one-direction boundary moves under the stated value domain."
+              "text": "The standard variable-window argument needs more than two boundaries: boundary motion must change validity predictably. With nonnegative values, expanding cannot reduce the sum and shrinking cannot increase it. Negative values remove both guarantees. For a concrete failure, use a = [1, -1, 5] and T = 5:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "After reading 1 and then -1, the running sums are 1 and 0, both below T, so the rule never advances the left boundary.",
+                "After reading 5, the window [1, -1, 5] has sum 5, so the algorithm records length 3.",
+                "It removes the leftmost 1, obtains sum 4, and stops shrinking because the sum is below T.",
+                "The optimal window [5] has length 1, but reaching it requires removing -1 even though that increases the sum; the proposed repair rule never does so."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Linear pointer movement proves only the running time of the implemented process, not its correctness. The transfer rule is to reject a window whenever validity is not repairable by one-direction boundary moves under the stated value domain."
             }
           ]
         },
@@ -177,7 +190,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "In a sorted array, a sum below T proves that the current smallest value cannot pair with any remaining value to reach T, so advancing the left pointer is safe. A sum above T similarly justifies decreasing the right pointer. In an unsorted array, either endpoint may have a better partner inside, and moving it can discard the only solution. Distinctness removes duplicate values but does not create order. The transfer rule is to identify the comparison-to-discard implication behind every pointer move; pointer count and geometry alone do not establish legality."
+              "text": "In a sorted array, a sum below T proves that the current smallest value cannot pair with any remaining value to reach T, so advancing the left pointer is safe. A sum above T similarly justifies decreasing the right pointer. The original order provides no such implication. For a = [4, 1, 6, 2] and T = 10, the endpoint sum 4 + 2 = 6 is too small, so the proposed rule advances the left pointer and permanently discards 4; it thereby loses the only solution, 4 + 6. Distinctness removes duplicate values but does not create order. The transfer rule is to identify the comparison-to-discard implication behind every pointer move; pointer count and geometry alone do not establish legality."
             }
           ]
         },
@@ -194,7 +207,7 @@
     },
     {
       "id": "ssc-reject-prefix-minimum-subtraction",
-      "prompt": "A candidate builds prefix minima P[i] = min(a[0..i]) and claims that the minimum of any range [l, r] can be recovered by 'subtracting' P[l-1] from P[r], analogous to prefix sums. Is the mechanism legal?",
+      "prompt": "A candidate builds prefix minima P[i] = min(a[0..i]) and claims that, for l > 0, the minimum of any inclusive range [l, r] can be recovered by 'subtracting' P[l-1] from P[r], analogous to prefix sums. Is the mechanism legal?",
       "constraints": [
         "The array is static.",
         "The query asks for arbitrary range minima.",
@@ -232,7 +245,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Prefix sums work because sum([l, r]) = prefix[r] - prefix[l-1]; the earlier values can be algebraically cancelled. For prefix minima, P[r] may be determined by a value before l, and P[l-1] does not reveal the second-smallest value that remains in [l, r]. Static input makes preprocessing stable but does not create missing information. The transfer rule is to reject a prefix-derived range query unless the stored aggregate and recovery operation preserve enough information to isolate the requested range."
+              "text": "Prefix sums work because sum([l, r]) = prefix[r] − prefix[l − 1]; subtraction cancels the earlier values. Minimum has no corresponding inverse. For a = [1, 5, 4], the prefix minima are P = [1, 1, 1]. Query [1, 2] has minimum 4, but P[2] = 1 is controlled by the excluded a[0], and P[0] = 1 does not reveal whether 4, 5, or any other value remains. Subtraction even produces 0, which is not the answer. Static input makes preprocessing stable but cannot restore discarded information. The transfer rule is to reject a prefix-derived range query unless the stored aggregate and recovery operation preserve enough information to isolate the requested range."
             }
           ]
         },
@@ -249,7 +262,7 @@
     },
     {
       "id": "ssc-reject-hash-iteration-order",
-      "prompt": "A candidate inserts all distinct values into a hash set and returns the set's iteration order as the required ascending list. What is the correct legality decision?",
+      "prompt": "A candidate inserts all distinct values into an ordinary hash set whose contract does not guarantee iteration order, then returns that iteration order as the required ascending list. What is the correct legality decision?",
       "constraints": [
         "Output values must be distinct.",
         "Output values must be ascending.",
@@ -402,7 +415,20 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A legality audit asks whether each candidate's proof obligations hold before any efficiency ranking. Unsorted exact search supplies no half-discard implication, and negative values make the proposed window repair rule nonmonotone. Sorting establishes the order needed to eliminate pair-sum endpoints, while a static array and additive aggregate make prefix range recovery valid. This item intentionally combines families: the transferable test is to name the invariant that licenses every discard, movement, or recovery operation. The transfer rule is to apply the same invariant gate to unfamiliar mechanisms before comparing their advertised performance."
+              "text": "A legality audit checks each candidate's proof obligation before ranking efficiency:"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Reject unsorted binary search: a midpoint observation supplies no implication that makes either contiguous half impossible.",
+                "Keep sorted two pointers: value order makes a too-small sum safely eliminate the current minimum endpoint and a too-large sum eliminate the maximum endpoint.",
+                "Reject the negative-value window: adding or removing an element can reverse the sum direction, so its local shrink/expand rule can skip the optimum.",
+                "Keep static prefix sums: with P[0] = 0 and P[i + 1] = P[i] + a[i], subtraction P[r + 1] − P[l] cancels everything outside inclusive range [l, r], and static input keeps preprocessing current."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The transferable test is to name the invariant that licenses every discard, movement, or recovery operation. Apply that same gate to unfamiliar mechanisms before comparing their advertised performance."
             }
           ]
         },

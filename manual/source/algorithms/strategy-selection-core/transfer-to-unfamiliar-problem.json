@@ -3,7 +3,7 @@
   "batchId": "algorithms-strategy-selection-core-transfer_to_unfamiliar_problem-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -67,7 +67,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The surface form uses days and cash flow, but the decision contract is the same as an immutable array with many additive range queries. A prefix total preserves the sum of every leading interval, and subtraction cancels the shared earlier days. Sorting would destroy calendar contiguity, while a set answers presence rather than an aggregate. The transfer boundary is that updates, non-additive queries, or output requiring individual transactions would change the mechanism. The general rule is to map the new story to structure, operation, and lifecycle before reusing a strategy."
+              "text": "The surface form uses days and cash flow, but the decision contract is an immutable sequence with many additive range queries. Define P[0] = 0 and P[i + 1] = P[i] + flow[i] once; the inclusive total from day l through r is P[r + 1] − P[l] because subtraction cancels every earlier day shared by both prefixes. Sorting would destroy calendar contiguity, while a set answers presence rather than an aggregate. Updates, non-additive queries, or output requiring individual transactions would change the mechanism. The general rule is to map the new story to structure, operation, and lifecycle before reusing a strategy."
             }
           ]
         },
@@ -122,7 +122,19 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Badge IDs are merely keys. The decisive signals are that input arrives incrementally, an answer is required before future data is known, and prior membership is the complete query primitive. A set stores exactly the state needed to detect repetition. End-of-event sorting could answer an offline audit but misses immediate alerts, and pointer placement has no ordered discard rule. The transfer boundary is memory or expiration: a bounded recent-history rule would require state eviction, while approximate membership would require an explicitly relaxed correctness contract."
+              "text": "Badge IDs are merely keys. The decisive signals are incremental arrival, an answer due before future data is known, and exact membership in the current event history. For each arriving ID x:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Check whether x is in the seen-ID set.",
+                "If it is present, emit the duplicate alert immediately.",
+                "Insert x so later arrivals can detect it."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Checking before insertion distinguishes a prior occurrence from the current badge itself. End-of-event sorting could answer an offline audit but misses immediate alerts, and pointer placement has no ordered discard rule. A bounded recent-history contract would require state eviction, while approximate membership would require an explicitly relaxed correctness contract."
             }
           ]
         },
@@ -139,11 +151,12 @@
     },
     {
       "id": "ssc-transfer-minimum-machine-speed",
-      "prompt": "A production line must choose the minimum integer machine speed that completes all jobs before a deadline. A deterministic check can decide whether a proposed speed is sufficient. Which strategy-selection rule transfers?",
+      "prompt": "A production line must choose the minimum integer machine speed that completes all jobs before a deadline. A deterministic check can decide whether a proposed speed is sufficient, and the known bounded speed range contains at least one feasible value. Which strategy-selection rule transfers?",
       "constraints": [
         "Speed is an integer in a known bounded range.",
         "Feasibility can be checked for a proposed speed.",
-        "Greater speed never reduces completed work."
+        "Greater speed never reduces completed work.",
+        "At least one speed in the range is feasible."
       ],
       "difficulty": "intermediate",
       "interaction": {
@@ -194,9 +207,10 @@
     },
     {
       "id": "ssc-transfer-advertising-budget-window",
-      "prompt": "Daily advertising costs are nonnegative. A campaign planner wants the longest consecutive run whose total cost is at most B. Which strategy-selection rule transfers, and what boundary must be remembered?",
+      "prompt": "Daily advertising costs are nonnegative and B ≥ 0. A campaign planner wants the longest consecutive run whose total cost is at most B. Which strategy-selection rule transfers, and what boundary must be remembered?",
       "constraints": [
         "Costs are nonnegative.",
+        "The budget B is nonnegative.",
         "The selected days must be consecutive.",
         "The goal is maximum length under total cost B."
       ],
@@ -232,7 +246,19 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The output is one contiguous interval, and every added day can only increase or preserve total cost. When the budget is exceeded, advancing the left boundary is the only way to reduce the sum, so no longer valid interval starting earlier is skipped. Each boundary moves forward at most n times. Prefix sums can evaluate a chosen interval but do not alone identify the longest one in linear time, and sorting destroys chronology. The transfer boundary is explicit: negative rebates or another nonmonotone contribution can make shrinking increase the total and invalidate the standard window proof."
+              "text": "The output is one contiguous interval, and every added day can only increase or preserve total cost. Use the window in this order:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Advance the right boundary and add that day's cost.",
+                "While the sum exceeds B, subtract the leftmost cost and advance the left boundary; a zero cost may leave the sum unchanged, so continue until the window is valid.",
+                "Record the maximum valid length ending at the current right boundary."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Because costs are nonnegative, no longer valid interval with the same right endpoint can start earlier than the repaired left boundary, and each boundary moves at most n times. Prefix sums can evaluate a chosen interval but do not alone select the optimum in this linear pass; sorting destroys chronology. Negative rebates can make shrinking increase the sum and invalidate the movement proof."
             }
           ]
         },
@@ -266,7 +292,7 @@
           },
           {
             "id": "monotonic_frontier",
-            "text": "Maintain a decreasing stack of unresolved building indices; a taller building resolves and pops shorter indices."
+            "text": "Maintain a non-increasing stack of unresolved building indices; a taller building resolves and pops strictly shorter indices."
           },
           {
             "id": "ordinary_history",
@@ -287,7 +313,19 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Street position supplies the left-to-right processing order, while height supplies the comparison. Indices on the stack have not yet seen a taller building; when a new height exceeds the top, that new index is the first valid witness because all intermediate buildings have already been processed. Popped indices are resolved permanently, giving amortized O(n) work. An ordinary unpruned stack does not encode the dominance relation, and sorting loses 'first to the right.' The transfer boundary is nearest/first witness semantics; asking for every taller building would require more output and invalidate permanent discard."
+              "text": "Street position supplies left-to-right processing order, while height supplies the strict comparison:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "For the current building j, pop every top index i whose height is strictly smaller and record j as i's first taller witness.",
+                "Do not pop an equal height: equal is not taller, so that index remains unresolved.",
+                "Push j. The stack heights are non-increasing, and every retained index has seen no taller building so far."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "When an index is popped, the current building is its first valid witness because every intermediate building has already been processed. Each index is pushed and popped at most once, giving amortized O(n) work. Sorting loses 'first to the right,' while an ordinary unpruned stack lacks the resolution rule. Asking for every taller building would increase output and invalidate permanent discard."
             }
           ]
         },
@@ -342,7 +380,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The logistics vocabulary changes none of the structural facts: there is an ordered sequence, a two-element sum target, and an existence output. The lightest remaining item cannot reach the target with any smaller partner when the current maximum partner is still too small; the symmetric argument removes the heaviest when the sum is too large. Hashing and repeated binary search can be legal alternatives, but the existing order makes a single O(n) pointer pass with O(1) extra state especially direct. The transfer boundary is lost ordering, original-index output constraints, or a different relation than monotone sum comparison."
+              "text": "The logistics vocabulary changes none of the structural facts: there is an ordered sequence, a two-element sum target, and an existence output. The lightest remaining item cannot reach the target with any smaller partner when the current maximum partner is still too small; the symmetric argument removes the heaviest when the sum is too large. Hashing and repeated binary search can be legal alternatives, but the existing order makes a single O(n) pointer pass with O(1) extra state especially direct. If one witness pair were required, the same pointers could return their current indices because the input is already sorted. The transfer boundary is lost ordering, enumeration of all matching pairs, or a relation whose comparison does not eliminate an endpoint."
             }
           ]
         },
@@ -397,7 +435,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The original prefix-sum rule relied on two facts: the data snapshot stayed stable, and the aggregate could be isolated by subtracting cumulative totals. Here almost every update makes a static prefix array stale, and median has no subtraction operation that removes an earlier prefix while retaining order statistics. Many queries increase the value of some reusable structure, but not this insufficient representation. The transfer rule is to re-check output, update model, state sufficiency, and invariant even when the new prompt uses familiar nouns."
+              "text": "The original scalar prefix-sum rule relied on two facts: the data snapshot stayed stable, and an additive total could be isolated by subtracting cumulative totals. Here almost every update makes that static array stale, and subtracting two scalar sums cannot recover the value ordering needed for a median. A richer update-aware order-statistics representation may exist, but many queries cannot make this insufficient state correct. The transfer rule is to re-check output, update model, state sufficiency, and invariant even when the new prompt uses familiar nouns."
             }
           ]
         },

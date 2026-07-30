@@ -3,7 +3,7 @@
   "batchId": "contrast-sliding-window-vs-prefix-sums-time-space-tradeoff-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -79,7 +79,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A prefix array retains one cumulative value per boundary to support later random access."
+              "text": "On an indexable array, sum the first k values once. Each later interval replaces one outgoing a[left] with one incoming a[right], so the live helper state is a current sum and a fixed number of indices: O(1), independent of n and k. A full prefix representation instead keeps P[0..n], where P[i] is the sum before boundary i, so any later [l, r] can use P[r + 1] - P[l]. Those n + 1 retained values are O(n) auxiliary space. The saving comes from supporting only one ordered traversal; it does not mean the window stores literally nothing or can answer arbitrary old ranges."
             },
             {
               "type": "callout",
@@ -90,9 +90,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "zero_vs_constant": "The window still stores aggregate and boundary state.",
-          "linear_vs_constant": "The comparison is reversed.",
-          "same_always": "Their retained state differs."
+          "zero_vs_constant": "The current aggregate and boundary indices are algorithm-created live state, so the window uses constant rather than zero auxiliary storage.",
+          "linear_vs_constant": "The full prefix array is the representation with one value per boundary; the specified rolling payload has only a fixed number of scalars.",
+          "same_always": "The prefix retains all boundary history for reuse, while this rolling scan retains only the current candidate."
         }
       },
       "taxonomy": {
@@ -145,7 +145,7 @@
             },
             {
               "type": "paragraph",
-              "text": "That reuse is purchased with linear storage."
+              "text": "For n elements, define P[0] = 0 and P[i + 1] = P[i] + a[i]. The representation therefore has n + 1 cumulative entries, which is O(n) space because n + 1 grows linearly with n. Keeping every boundary lets a later inclusive range [l, r] read P[r + 1] and P[l] and subtract in O(1), regardless of query width. Its size is tied to the source length and version, not the number of future queries or one chosen k. The array performs cumulative arithmetic and requires no sorting buffer."
             },
             {
               "type": "callout",
@@ -156,9 +156,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "query_count": "Its size is tied to input boundaries, not q.",
-          "window_width": "A prefix array covers the whole input.",
-          "sort_buffer": "No sorting is required."
+          "query_count": "The same n + 1 entries can serve zero, one, or many queries; q affects reuse value, not representation length.",
+          "window_width": "Prefix state covers every boundary of the full source rather than storing the members of one width-k interval.",
+          "sort_buffer": "Construction preserves input order and accumulates values; no comparison or reordering operation is involved."
         }
       },
       "taxonomy": {
@@ -211,7 +211,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The worst case has a distinct prefix at every step."
+              "text": "There are n + 1 prefix boundaries, including the seeded boundary before the first value. In a worst case such as strictly positive input, every cumulative value is distinct, so the hash table receives Θ(n) keys. Each key carries constant-sized payload such as presence, frequency, or one index, yielding O(n) auxiliary space. Repeated prefixes can reduce the actual key count but cannot improve the worst-case bound. O(n²) would require storing information per interval or pair, which this method does not, while neither hashing nor balancing limits the number of distinct cumulative values to O(1) or O(log n)."
             },
             {
               "type": "callout",
@@ -222,9 +222,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "constant": "Every prefix may be distinct.",
-          "quadratic": "Only n + 1 prefix boundaries are produced.",
-          "logarithmic": "No balancing invariant limits the number of keys."
+          "constant": "A new distinct prefix may be inserted at every one of n + 1 boundaries.",
+          "quadratic": "The map stores keys for boundaries, not all Θ(n²) possible intervals.",
+          "logarithmic": "Expected constant-time operations describe access cost; they do not cap the table at logarithmically many keys."
         }
       },
       "taxonomy": {
@@ -277,7 +277,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A sum window may be constant-space, while a distinct-element or monotonic-window variant can retain O(n) state."
+              "text": "“Sliding window” describes how left and right move; it does not specify the payload needed to test validity. A fixed-size sum may keep one scalar, but an at-most-d-distinct window keeps a frequency entry for every distinct active value, up to O(n). A monotonic maximum window may retain a deque of candidate indices, also O(n) in the worst case. Two boundary indices themselves remain O(1), and linear running time does not imply linear memory because time counts operations while space counts simultaneously live state. The bound must be derived from the concrete map, deque, queue, or aggregate."
             },
             {
               "type": "callout",
@@ -288,9 +288,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "boundaries_linear": "A fixed number of indices is O(1).",
-          "sum_array": "Simple windows do not.",
-          "time_space_same": "Time and space are separate dimensions."
+          "boundaries_linear": "Two integer indices occupy a constant number of words even though their numeric values may grow to n.",
+          "sum_array": "A rolling sum can update from outgoing and incoming values without storing cumulative history at every boundary.",
+          "time_space_same": "An algorithm may perform n sequential operations while reusing one scalar, or retain n entries while still taking linear time; the dimensions are independent."
         }
       },
       "taxonomy": {
@@ -333,7 +333,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The prefix sequence and deque can each contain O(n) entries.",
+        "reason": "The deque alone may retain O(n) candidate boundaries; materialized prefix values, when used, are also linear state.",
         "details": {
           "blocks": [
             {
@@ -343,7 +343,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The result may be scalar while the algorithm's working state is linear."
+              "text": "At prefix boundary j, candidate starts are prior indices i and validity is P[j] - P[i] >= k. The monotonic deque may retain Θ(n) undominated indices before later prefixes allow them to be removed; that fact alone establishes O(n) peak auxiliary space. An implementation may also materialize n + 1 prefix values, another O(n) structure, or compute the running prefix online while storing values with deque entries; either way the combined bound remains O(n), not O(n²). The scalar shortest length is required output, but it does not erase the live candidate history needed to compute it."
             },
             {
               "type": "callout",
@@ -354,9 +354,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "constant": "The deque may retain many candidate boundaries.",
-          "quadratic": "There are only O(n) prefix boundaries.",
-          "output_only": "Working state is distinct from output."
+          "constant": "Before candidates become dominated or valid, the deque can hold a linear number of prefix indices simultaneously.",
+          "quadratic": "Only n + 1 boundary indices and at most one prefix value per boundary are retained, not every subarray.",
+          "output_only": "A one-scalar answer is separate from the deque and optional prefix storage used while finding it."
         }
       },
       "taxonomy": {
@@ -409,7 +409,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A streaming API could reduce retained output, but that is a different output contract."
+              "text": "The caller requires all m interval sums to exist as a materialized result, so m scalar slots are unavoidable O(m) output space. Auxiliary space counts temporary or reusable state used to compute those results, such as a prefix array, indices, or a running sum; it should be reported separately so an algorithm is not penalized for bytes mandated by the API. If answers were emitted one at a time to a consumer, retained output could be O(1), but that changes the contract from materialization to streaming. The values are newly produced and do not become part of the pre-existing input."
             },
             {
               "type": "callout",
@@ -420,9 +420,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "auxiliary_only": "The caller explicitly requires the results.",
-          "input_space": "The results are newly produced.",
-          "constant": "Materializing m scalars uses linear output space in m."
+          "auxiliary_only": "The result list is required by the caller rather than optional working memory, so hiding it as auxiliary state obscures the output lower bound.",
+          "input_space": "The original array exists before the algorithm; the m answer slots are allocated as new output.",
+          "constant": "Each scalar is constant-sized, but storing m distinct scalars uses m times that constant, which is O(m)."
         }
       },
       "taxonomy": {
@@ -475,7 +475,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Numeric-width safety can materially affect constants and correctness without changing O(n) under a fixed-word model."
+              "text": "A prefix array still contains n + 1 entries. Under the stated fixed-width machine model, changing each entry from one fixed-size type to another multiplies memory by a constant byte factor c, so total storage is c(n + 1) = O(n). That constant can matter operationally and the wider range can be necessary for correctness, but neither changes how the number of live entries grows with n. If arbitrary-precision integers whose bit length grows with the accumulated sum were allowed, bit complexity would require a different model; the prompt explicitly excludes that boundary."
             },
             {
               "type": "callout",
@@ -486,9 +486,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "becomes_quadratic": "A constant-size wider word changes only the constant factor.",
-          "becomes_constant": "All boundaries are still retained.",
-          "window_required": "Both approaches need an adequate numeric type."
+          "becomes_quadratic": "Multiplying n entries by a fixed larger byte count is still linear rather than n times n.",
+          "becomes_constant": "Changing numeric width does not remove any of the n + 1 stored cumulative boundaries.",
+          "window_required": "Rolling and prefix arithmetic can both overflow if their aggregate type is too narrow; representation choice does not replace numeric-range analysis."
         }
       },
       "taxonomy": {
@@ -541,7 +541,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct response is to expose the tradeoff rather than claim a free representation."
+              "text": "A full prefix array answers each arbitrary range in O(1) only by keeping n + 1 cumulative values live, so a hard prohibition on O(n) auxiliary memory makes that implementation illegal. Directly scanning query [l, r] uses O(1) extra state but pays O(r - l + 1) time. A representation smaller than n may be possible only when the data domain has exploitable compression, queries have restricted structure, storage can replace memory, or the product contract changes. One rolling sum cannot answer arbitrary unrelated historical ranges because it represents only its current boundaries. The resource cap must be surfaced as a real time, representation, or requirements tradeoff."
             },
             {
               "type": "callout",
@@ -552,9 +552,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "prefix_free": "Preprocessing state remains live auxiliary memory.",
-          "window_random_o1": "A moving state represents only one current interval.",
-          "ignore_memory": "Resource constraints define legality."
+          "prefix_free": "Calling state preprocessing does not remove its n + 1 live entries from peak memory.",
+          "window_random_o1": "Moving between unrelated [l, r] requests can cross many values, and one aggregate does not retain sums for every boundary pair.",
+          "ignore_memory": "An algorithm that exceeds a hard cap is not deployable regardless of its superior time bound."
         }
       },
       "taxonomy": {
@@ -609,7 +609,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Input and output should be reported separately."
+              "text": "Peak auxiliary space includes every algorithm-created structure that is simultaneously live. A retained prefix array contributes O(n); a prefix hash map can contribute O(n) distinct cumulative keys; and a current-window frequency map contributes O(d), up to O(n), even though it tracks only active values. If two such structures overlap in lifetime, both count, although O(n) + O(n) remains O(n). The original input is classified separately because it existed before the computation and was not newly allocated by the algorithm. Required materialized answers are also reported as output rather than silently folded into workspace."
             },
             {
               "type": "callout",
@@ -620,12 +620,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "original_input": "Input space is not created by the algorithm."
+          "original_input": "The pre-existing source occupies input space; only an algorithm-created copy or transformed duplicate would add auxiliary storage."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "prefix_array": "It is working state.",
-          "prefix_map": "Historical lookup requires it.",
-          "window_map": "Its size can grow with the active state."
+          "prefix_array": "Its cumulative boundaries remain live to answer later queries and therefore count as auxiliary working state.",
+          "prefix_map": "Historical key lookup retains prior cumulative values and their payloads, potentially one distinct key per boundary.",
+          "window_map": "The map is created to maintain the current validity invariant and may grow with the active distinct-value count."
         }
       },
       "taxonomy": {
@@ -680,7 +680,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Distinctness constraints often require growing state."
+              "text": "A fixed-size sum on an indexable array stores one sum and boundaries; a fixed-size boolean count replaces one outgoing contribution with one incoming contribution using the same constant payload. A nonnegative threshold-sum window likewise needs only left, right, and the current aggregate because sign constraints make validity repair directional. In each case the number of live helper words is independent of n and k. A distinctness constraint is different: deciding whether removal erases a value and whether the active set exceeds its limit requires per-value frequencies, which can contain d keys and reach O(n) in the worst case."
             },
             {
               "type": "callout",
@@ -691,12 +691,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "distinct_constraint": "The frequency table can be O(n)."
+          "distinct_constraint": "Up to n distinct active values may each require a frequency entry, so boundary movement alone does not make the payload constant."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "fixed_sum": "Only sum and boundaries are needed.",
-          "positive_threshold_sum": "Two boundaries and one aggregate suffice.",
-          "fixed_count": "One count can be updated incrementally."
+          "fixed_sum": "One outgoing subtraction and incoming addition update a single scalar plus fixed boundary indices.",
+          "positive_threshold_sum": "Nonnegative boundary effects let two indices and one aggregate encode all state needed for repair.",
+          "fixed_count": "The boolean contribution of the outgoing and incoming positions updates one scalar count without a frequency table."
         }
       },
       "taxonomy": {
@@ -751,7 +751,7 @@
             },
             {
               "type": "paragraph",
-              "text": "They are auxiliary unless the API explicitly returns them."
+              "text": "A one-dimensional prefix array retains n + 1 cumulative boundaries, so it uses O(n) entries. A prefix hash map may also hold O(n) keys when every cumulative value is distinct, with one constant-sized payload per key. That retained history is often intentional: the array supports later fixed-boundary subtraction, while the map supports later-in-scan value lookup. Both are auxiliary preprocessing or working state unless the API explicitly asks to return the representation itself. Reuse explains why the memory remains live, but does not reclassify it as required output or make it free."
             },
             {
               "type": "callout",
@@ -762,12 +762,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_output": "It is usually auxiliary preprocessing state."
+          "always_output": "The caller usually requests range answers or an aggregate, not the internal cumulative representation; only an explicit API return would make it output."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "array_linear": "One cumulative value is stored per boundary.",
-          "hash_linear": "Every prefix may be distinct.",
-          "reusable": "Reuse is the reason for storing it."
+          "array_linear": "n source values define n + 1 boundaries, and retaining one cumulative value at each is linear.",
+          "hash_linear": "A worst-case input produces a different cumulative key at every boundary.",
+          "reusable": "Keeping history live is precisely what permits later compatible arithmetic or lookup without rescanning."
         }
       },
       "taxonomy": {
@@ -822,7 +822,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A specific constant-state rolling sum remains valid."
+              "text": "The universal window claim is false because a window may retain a map or deque that grows with active candidates. The prefix claim is false because constant-time query service is purchased with a full O(n) cumulative representation unless storage is legally reused in place. Output and auxiliary space answer different questions: one is mandated result size, the other is optional computational state. The unselected claim is deliberately specific and valid: on indexable input, a fixed-size rolling sum needs only one aggregate and fixed indices. Space statements must name that actual representation and contract rather than inherit a bound from an algorithm label."
             },
             {
               "type": "callout",
@@ -833,12 +833,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "rolling_constant_case": "This is a valid specific claim."
+          "rolling_constant_case": "This names the bounded payload and access assumption that justify O(1), so it is a valid specific statement rather than a mistaken universal rule."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "window_constant_always": "Maps and deques can grow.",
-          "prefix_time_only": "A full prefix representation uses linear state.",
-          "output_aux_same": "They answer different questions."
+          "window_constant_always": "Frequency maps and monotonic deques may retain a number of entries that grows with n.",
+          "prefix_time_only": "The faster later query is enabled by n + 1 cumulative values that remain live.",
+          "output_aux_same": "Required answer storage is imposed by the API, while auxiliary state is created to compute it and must be reported separately."
         }
       },
       "taxonomy": {
@@ -856,7 +856,7 @@
         "elements": [
           {
             "id": "list_live",
-            "text": "List every input-derived structure live at the same time."
+            "text": "List every structure and copy that becomes live, together with its lifetime."
           },
           {
             "id": "classify",
@@ -893,8 +893,17 @@
               "text": "State is part of the algorithm"
             },
             {
+              "type": "ordered_list",
+              "items": [
+                "Inventory every structure and copy whose lifetime overlaps any point of the computation, including maps, deques, arrays, buffers, recursion frames, and materialized answers.",
+                "Classify each allocation as pre-existing input, contract-required output, or auxiliary state created only to perform the algorithm.",
+                "Bound each live structure in the parameter that controls it, such as n source boundaries, width k, active distinct count d, or output count m.",
+                "For each moment, add simultaneous auxiliary structures and report the largest live total rather than summing allocations that existed at different times."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Classification prevents required output from being mislabeled as algorithmic workspace."
+              "text": "Skipping classification can charge unavoidable output to the algorithm or hide a copied input as free. Summing every allocation event over a long run measures allocation traffic, not peak space; conversely, taking only the largest individual structure can undercount two linear structures whose lifetimes overlap."
             },
             {
               "type": "callout",
@@ -957,8 +966,17 @@
               "text": "State is part of the algorithm"
             },
             {
+              "type": "ordered_list",
+              "items": [
+                "Allocate n + 1 entries so every position between source values has one cumulative boundary.",
+                "Populate P[0] = 0 and P[i + 1] = P[i] + a[i] from the exact immutable source version.",
+                "Retain all entries while compatible queries use P[r + 1] - P[l]; this is the interval in which O(n) auxiliary state contributes to peak memory.",
+                "Release the representation only when no later compatible query can use it or when a source-version change makes its cumulative values stale."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Releasing after each query would destroy the preprocessing benefit."
+              "text": "Answering before construction reads unavailable boundaries. Releasing after each query forces the O(n) build to repeat and eliminates reuse, while retaining the array after its version changes wastes memory and risks incorrect stale answers."
             },
             {
               "type": "callout",
@@ -988,11 +1006,11 @@
           },
           {
             "id": "update",
-            "text": "Replace outgoing contribution with incoming contribution."
+            "text": "For every later interval, replace the outgoing contribution with the incoming one and consume the updated aggregate."
           },
           {
             "id": "consume",
-            "text": "Use the current aggregate before moving to the next interval."
+            "text": "Use the initialized first aggregate before any boundary movement."
           },
           {
             "id": "finish",
@@ -1001,8 +1019,8 @@
         ],
         "canonicalOrder": [
           "initialize",
-          "update",
           "consume",
+          "update",
           "finish"
         ],
         "scoringMethod": "adjacent_relations"
@@ -1021,8 +1039,17 @@
               "text": "State is part of the algorithm"
             },
             {
+              "type": "ordered_list",
+              "items": [
+                "Compute the aggregate for the first legal interval, establishing which boundaries the live scalar represents.",
+                "Consume that first value immediately to initialize or update the requested output before either boundary moves.",
+                "For every later adjacent interval, subtract its outgoing contribution, add its incoming contribution, and then consume the newly aligned aggregate.",
+                "After the final interval is consumed, discard the scalar and indices because no later random query is supported by this one-pass state."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The method saves space by giving up arbitrary later interval access."
+              "text": "The former update-before-consume order skipped the first initialized candidate. Consuming before each later subtract/add would instead reuse the previous interval twice. Constant space is achieved by keeping only one aligned aggregate and giving up arbitrary access after its traversal."
             },
             {
               "type": "callout",
@@ -1043,6 +1070,8 @@
       "id": "alg-contrast-window-prefix-space-016",
       "prompt": "Compute all fixed-size window sums over n values with a rolling aggregate. Select time and auxiliary space excluding streamed output.",
       "constraints": [
+        "The input is an indexable array, so the outgoing value can be reread by index.",
+        "1 <= k <= n.",
         "Each element enters and leaves the aggregate at most once."
       ],
       "difficulty": "foundational",
@@ -1099,7 +1128,7 @@
             },
             {
               "type": "paragraph",
-              "text": "If the outgoing value is unavailable from the input stream, a k-sized buffer may be needed; the prompt assumes indexed input."
+              "text": "Summing the first k positions costs O(k). The remaining n - k windows each use one indexed outgoing read, one indexed incoming read, one subtraction, and one addition, so total time is O(k + n - k) = O(n). The running sum and fixed boundary indices occupy O(1) auxiliary space, and streamed answers are excluded by the prompt. The indexable-input constraint is decisive: a non-rewindable stream would need to retain up to k old values to know which value leaves, changing auxiliary space to O(k) even though the update formula is unchanged."
             },
             {
               "type": "callout",
@@ -1178,7 +1207,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The tradeoff is destructive mutation: original element values are no longer available in their initial form."
+              "text": "Convert the array to inclusive cumulative values by setting a[i] = a[i] + a[i - 1] for i = 1..n - 1, which takes O(n) time. Query [l, r] returns a[r] when l = 0 and otherwise a[r] - a[l - 1], so q queries contribute O(q) and total time is O(n + q). The loop uses only fixed scalar state, while the O(n) cumulative representation occupies storage that already belonged to the input; under the explicitly requested additional-auxiliary metric, the answer is O(1). This does not make the representation free: it destructively replaces the original values, which remains legal only because the contract permits it."
             },
             {
               "type": "callout",
@@ -1256,7 +1285,7 @@
             },
             {
               "type": "paragraph",
-              "text": "This directly refutes the universal O(1)-space window heuristic."
+              "text": "Right visits each of n positions once. Left also advances at most n times, because neither boundary retreats; every move performs an expected O(1) frequency lookup or update. Even if the shrink loop is nested syntactically, at most 2n boundary moves give expected O(n) total time. The frequency map contains one entry for each distinct value currently represented, at most d by the prompt, so auxiliary space is O(d). If d grows with n, this becomes O(n), directly refuting the claim that moving boundaries alone imply constant space."
             },
             {
               "type": "callout",
@@ -1333,7 +1362,7 @@
             },
             {
               "type": "paragraph",
-              "text": "It does so with linear retained state."
+              "text": "Building P[0..n] takes O(n) time. During the scan, every boundary index is appended to the deque once and can be removed at most once from the front after satisfying the threshold and at most once from the back after becoming prefix-dominated. Those amortized deque operations sum to O(n), so total time remains O(n). The prefix array has n + 1 entries, and before removals the deque can also retain O(n) indices; both lifetimes overlap, so peak auxiliary space is O(n) + O(n) = O(n). The stronger history restores correctness and linear time for signed values at the cost of linear state."
             },
             {
               "type": "callout",
@@ -1424,7 +1453,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Required output is not hidden as auxiliary space."
+              "text": "For each of m queries, two prefix reads and one subtraction take O(1), and appending the answer is amortized O(1), so m iterations cost O(m) query-processing time rather than O(1). Excluding both the already existing prefix array and the result list leaves only a loop index and temporary scalar, hence O(1) additional auxiliary space. The API requires all m answers to remain in the list, so output space is O(m). A streaming contract could reduce retained output, but it would not satisfy this materialization requirement."
             },
             {
               "type": "callout",

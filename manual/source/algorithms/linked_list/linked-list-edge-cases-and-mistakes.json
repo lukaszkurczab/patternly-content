@@ -3,7 +3,7 @@
   "batchId": "algorithms-linked-list-linked_list_edge_cases_and_mistakes-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -196,8 +196,17 @@
         "details": {
           "blocks": [
             {
+              "type": "bullet_list",
+              "items": [
+                "`head = null` exposes an unconditional head dereference.",
+                "`S -> null` isolates one-node termination and tail handling.",
+                "`A -> B -> null` is the smallest case with a transition between two distinct node objects.",
+                "`S -> S` is the smallest reachable cycle and tests the promised handling or explicit rejection path."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The empty case detects unconditional dereferences. A one-node list tests whether null successors are handled without inventing links. Two nodes are the smallest input that exercises a real link transition between distinct objects. A self-loop is the smallest cycle and is material whenever the routine promises cycle handling or rejection. This baseline does not replace scenario-specific fixtures such as duplicate values, shared tails, or even-length conventions."
+              "text": "These fixtures cover distinct structural boundaries rather than four sizes of the same case. They do not replace scenario-specific fixtures such as duplicate values, shared tails, or even-length conventions."
             }
           ]
         },
@@ -284,7 +293,8 @@
       "prompt": "A routine intends to delete zero-based position k. It sets current = head, sets an integer index = k, performs no next traversal, and deletes current. Tests show it always deletes the head. What assumption is wrong?",
       "constraints": [
         "The only structural reference initially available is head.",
-        "No auxiliary position-to-node index exists."
+        "No auxiliary position-to-node index exists.",
+        "At least one failing test uses a valid position k > 0."
       ],
       "interaction": {
         "type": "choice",
@@ -345,7 +355,8 @@
       "prompt": "An in-place routine receives A(value=5) -> B(value=5). A faulty result is A -> A, but a test checks only the traversed values [5, 5] and passes. Which added assertion exposes the defect?",
       "constraints": [
         "A and B are distinct node objects with equal payloads.",
-        "The contract requires each original node exactly once."
+        "The contract requires each original node exactly once.",
+        "The faulty test reads exactly two node positions and checks their payloads, but does not assert null termination, repeated identity, or original-node membership."
       ],
       "interaction": {
         "type": "choice",
@@ -442,8 +453,17 @@
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Initially `current` is B and `B.next` is C, the only saved route to the suffix C -> D.",
+                "Executing `current.next = prev` changes `B.next` from C to A.",
+                "The later read `saved = current.next` now stores A, not C.",
+                "Because no other reference stores C, the algorithm can no longer reach C or D."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Immediately after current.next = prev, B.next is A. Therefore saved = current.next records A, not the original successor C. With no other alias to C, the suffix is unreachable from all algorithm state. The root fix is capture-before-overwrite. Payloads, a sentinel, and imagined indexed access cannot reconstruct the lost node reference."
+              "text": "The reusable rule is capture-before-overwrite: save the old successor before redirecting its only incoming link. Payloads, a sentinel, and imagined indexed access cannot reconstruct the lost node reference."
             }
           ]
         },

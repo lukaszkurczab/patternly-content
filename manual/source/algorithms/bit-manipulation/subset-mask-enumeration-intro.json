@@ -3,7 +3,7 @@
   "batchId": "bit-manipulation-subset-mask-enumeration-intro-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -71,28 +71,28 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Every one of n positions contributes a binary membership choice. The resulting masks range over all n-bit patterns."
+              "text": "For each indexed element, a subset makes one of two independent decisions: exclude it or include it. Multiplying two choices across n positions gives 2 · 2 · ... · 2 = 2^n. This counts index subsets, including the empty and full subsets; it does not arrange selected elements, so neither n! nor an order-based count applies."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "With n = 3, the eight decisions are 000, 001, 010, 011, 100, 101, 110 and 111.",
+                "Bit i records the decision for indexed element i; the element's value does not affect the count.",
+                "The count changes only when the result contract identifies equal-valued occurrences as the same output."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Read the mask from bit 0 upward and translate each 1 through the index mapping. This prevents treating the printed binary string as a list of values."
+              "text": "Use 2^n only for independent include/exclude decisions over n indexed positions. Permutations answer a different question because they distinguish order."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "n": "Each element has an independent include/exclude choice.",
-          "n_factorial": "That counts orderings, not subsets.",
-          "n_squared": "Subset count grows exponentially."
+          "n": "This allows only one result per element, but each element participates in every combination of the other choices.",
+          "n_factorial": "A factorial counts complete orderings; subsets preserve no choice order and may contain fewer than n elements.",
+          "n_squared": "A quadratic count describes pairs of positions, not all independent include/exclude combinations."
         }
       },
       "taxonomy": {
@@ -147,14 +147,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Every n-bit pattern is one subset encoding. Zero represents the empty subset and the all-ones n-bit mask represents the full subset."
+              "text": "There are exactly 2^n n-bit patterns, and the integers in the half-open interval [0, 2^n) are exactly those patterns. The lower boundary 0 is 00...0 and encodes the empty subset. The last included value, 2^n - 1, is 11...1 and encodes the full subset. The value 2^n itself needs bit n, so it lies outside the n-position mapping."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Start at 0 so the empty subset is not lost.",
+                "Stop before 2^n because it is the first value that needs n + 1 bits.",
+                "Incrementing by one visits each integer, and therefore each n-bit pattern, once."
               ]
             },
             {
@@ -166,9 +166,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "one_to_two_n": "This omits the empty mask and includes a mask needing bit n.",
-          "zero_to_n_minus_one": "There are 2^n masks, not n.",
-          "zero_to_n_factorial": "Permutation count is unrelated."
+          "one_to_two_n": "Starting at one omits the empty subset, while 2^n sets bit n outside the declared positions.",
+          "zero_to_n_minus_one": "This visits only n masks even though n binary positions encode 2^n distinct membership patterns.",
+          "zero_to_n_factorial": "The factorial boundary counts orderings and also includes many values that are not n-bit subset masks."
         }
       },
       "taxonomy": {
@@ -223,14 +223,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. No set bit selects any indexed element. The zero mask is the identity boundary of subset enumeration."
+              "text": "Membership of element i is read from bit i. In mask 0, every bit is zero, so every membership test returns false and no element is appended. The result is therefore the empty subset. This is not an invalid special case: the empty subset belongs to every power set, including the power set of an empty input."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "For each i, evaluate mask AND (1 shifted left by i).",
+                "Every result is zero because mask itself contains no one bits.",
+                "Append nothing and return the initialized empty subset."
               ]
             },
             {
@@ -242,9 +242,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "first_only": "That would require bit 0 set.",
-          "full": "The full subset uses all n low bits set.",
-          "invalid": "The empty subset is a valid member of the power set."
+          "first_only": "Selecting the first element requires bit 0 to be one, which would make the mask value at least one.",
+          "full": "The full subset requires all n mapped bits to be one; zero has none of those bits set.",
+          "invalid": "The empty subset is required by the power-set definition and is represented canonically by the all-zero mask."
         }
       },
       "taxonomy": {
@@ -299,14 +299,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. The full subset needs every one of the n low positions set. The value 2^n - 1 has exactly that pattern."
+              "text": "The full subset requires bits 0 through n - 1 to be one. The value 1 shifted left by n is the pattern 1 followed by n zeros. Subtracting one borrows through those zeros and produces n low ones: for n = 4, 10000 - 1 = 01111. Thus (1 shifted left by n) - 1 selects exactly every mapped position."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "First create the exclusive boundary 2^n with a one at position n.",
+                "Subtract one to turn positions 0 through n - 1 into ones.",
+                "Confirm that no position outside the n-element mapping remains set."
               ]
             },
             {
@@ -318,9 +318,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "one_shift_n": "That sets bit n, outside the n element positions.",
-          "zero": "Zero represents the empty subset.",
-          "n": "The full mask depends exponentially on n."
+          "one_shift_n": "This selects only bit n, which is just outside the mapped positions 0 through n - 1.",
+          "zero": "Zero clears every mapped membership bit and therefore represents the empty subset, not the full one.",
+          "n": "The numeric value n does not generally contain n low one bits; for example, four is binary 0100."
         }
       },
       "taxonomy": {
@@ -375,14 +375,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Subset decoding is a membership test at each mapped position. A one bit means included and a zero bit means excluded."
+              "text": "The probe 1 shifted left by i has exactly one set bit, at position i. AND keeps that bit only when mask also has bit i set. A nonzero result therefore proves membership of elements[i]; zero proves exclusion. Comparing the whole mask with i confuses a set encoding with an index, and the parity of i has no role in the mapping."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Build the one-bit probe 1 shifted left by i.",
+                "Intersect the probe with mask using bitwise AND.",
+                "Append elements[i] exactly when the intersection is nonzero."
               ]
             },
             {
@@ -394,9 +394,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "bit_clear": "Zero means the position is not selected.",
-          "mask_equal_i": "A mask can select many positions.",
-          "i_even": "Parity of the index is irrelevant."
+          "bit_clear": "A zero AND result means mask has no one at position i, so the mapped element is excluded.",
+          "mask_equal_i": "The mask encodes all selected positions at once and need not numerically equal any selected index.",
+          "i_even": "Even and odd indices use the same membership rule; only the bit at position i matters."
         }
       },
       "taxonomy": {
@@ -451,14 +451,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. The set bits are positions 1 and 3; with bit 0 mapped to A, they select B and D. The mapping is positional, so reading 1010 left-to-right as element order would be a mistake."
+              "text": "Binary digits are conventionally written with the most significant bit on the left. In 1010, the one bits are therefore at positions 3 and 1, counted from the right starting at zero. The declared mapping is 0→A, 1→B, 2→C and 3→D, so those positions select B and D. Reading the printed characters left-to-right as A through D reverses the mapping."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Annotate 1010 as positions 3, 2, 1, 0 from left to right.",
+                "Keep positions whose digit is one: positions 3 and 1.",
+                "Translate through the index mapping to obtain D and B, or {B, D} in input order."
               ]
             },
             {
@@ -470,9 +470,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "a_c": "That would be mask 0101.",
-          "a_b_c": "Bit positions 0 and 2 are zero.",
-          "c_d": "Bit 2 is zero and bit 1 is set."
+          "a_c": "Selecting A and C sets positions 0 and 2, which produces 0101 rather than the given 1010.",
+          "a_b_c": "This answer requires positions 0, 1 and 2, but the given mask sets only positions 1 and 3.",
+          "c_d": "Selecting C and D requires positions 2 and 3; here position 2 is zero while position 1 is one."
         }
       },
       "taxonomy": {
@@ -527,14 +527,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Bitmask enumeration naturally enumerates subsets of indexed occurrences. If the result contract wants value-distinct subsets, separate duplicate control is required."
+              "text": "The two X values occupy different indices, so the mask assigns them different bits. The four masks are 00→[], 01→[X at index 0], 10→[X at index 1], and 11→[both occurrences]. The two singleton masks materialize the same value list [X], but they remain distinct index subsets. A value-distinct result contract would need an explicit deduplication rule."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Count occurrences by position before considering whether their values are equal.",
+                "Enumerate 2^2 masks because there are two independent positional choices.",
+                "Only merge equal materialized outputs if the problem explicitly asks for value-distinct subsets."
               ]
             },
             {
@@ -546,9 +546,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "three": "Masks encode positions, not deduplicated values.",
-          "two": "Each of two positions has an independent choice.",
-          "one": "Value equality does not erase index identity."
+          "three": "Three is the number of value-distinct lists here, but plain masks preserve the two singleton index choices separately.",
+          "two": "Two counts individual positions, not all combinations of excluding or including each of those positions.",
+          "one": "Equal values do not erase the identity of their input positions under an index-subset contract."
         }
       },
       "taxonomy": {
@@ -603,14 +603,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Numeric mask order changes membership according to binary counting. Subset size can increase or decrease between consecutive masks."
+              "text": "Numeric order performs ordinary binary counting, including carries. A carry can clear several one bits before setting a higher bit, so popcount can decrease: 0011 has two selected positions, while its successor 0100 has one. To enumerate by subset size, group or generate masks by popcount instead of assuming numeric order provides that property."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Numeric order guarantees complete, unique coverage of masks.",
+                "Popcount determines subset size independently of numeric value.",
+                "A required cardinality order needs an additional ordering strategy."
               ]
             },
             {
@@ -622,9 +622,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "yes_always": "For example, 0011 has two bits and 0100 has one.",
-          "only_even_n": "Parity of n does not fix the ordering.",
-          "only_sorted_values": "Mask order is independent of element values."
+          "yes_always": "The transition 0011→0100 decreases popcount from two to one, so later masks need not contain larger subsets.",
+          "only_even_n": "The carry behavior that changes popcount occurs for any sufficient width and is unrelated to whether n is even.",
+          "only_sorted_values": "Numeric mask order depends solely on bit patterns; sorting element values cannot make it a popcount order."
         }
       },
       "taxonomy": {
@@ -679,14 +679,14 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. A one-word subset mask allocates one boolean slot per element index. If n exceeds usable width, a larger or multiword representation is needed."
+              "text": "The encoding must distinguish membership of every index independently, so index i needs its own bit i. A word with w usable bits can therefore encode this mapping only when n ≤ w. If n exceeds w, a shift may overflow, wrap, or discard a required position depending on the language; use a wider integer, arbitrary-precision value, bitset, or multiple words instead."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Width follows the number of indexed membership decisions, not the magnitude of element values.",
+                "The highest required position is n - 1, so positions 0 through n - 1 must all be usable.",
+                "Check the language's signedness and shift rules before constructing 1 shifted left by n."
               ]
             },
             {
@@ -698,9 +698,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "numeric_value": "Width depends on element count, not values.",
-          "sort_order": "One boolean membership bit is sufficient.",
-          "empty_subset": "Every subset uses the same n-position mapping."
+          "numeric_value": "Element magnitudes are stored elsewhere; the mask width depends on how many independent index memberships it must record.",
+          "sort_order": "Sorting can change which index maps to a position, but each position still needs only one boolean membership bit.",
+          "empty_subset": "The same n-position representation must also encode every nonempty subset, including the full all-ones mask."
         }
       },
       "taxonomy": {
@@ -757,14 +757,15 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Subset masks are positional membership encodings. Enumeration order and subset-cardinality order are different concerns."
+              "text": "Under the declared positional contract, bit i directly records membership of indexed element i. The two boundary patterns then follow: all zeros selects none, while the n low ones in 2^n - 1 select all n positions. Numeric order is a different property: binary carries can reduce popcount, as in 0011→0100, so it does not sort subsets by cardinality."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Accept `zero_empty`: no set position means no selected element.",
+                "Accept `full_all_ones`: 2^n - 1 contains ones at every mapped position.",
+                "Accept `bit_membership`: this is the defining index-to-bit invariant.",
+                "Reject `numeric_order_size`: numeric value and number of set bits are not monotonically coupled."
               ]
             },
             {
@@ -776,7 +777,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "numeric_order_size": "Binary counting does not preserve popcount order."
+          "numeric_order_size": "Binary counting can clear several low ones during a carry, so consecutive numeric masks can decrease in subset size."
         },
         "omittedCorrectExplanationsByOptionId": {
           "zero_empty": "No positions are selected.",
@@ -838,14 +839,15 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. The empty-domain identity and both mask extremes expose off-by-one errors. A middle mask alone cannot prove complete enumeration."
+              "text": "For n = 0, the range [0, 1) must run once and decode mask 0 as the empty subset; code that returns nothing has mishandled the power-set identity. For n = 1, masks 0 and 1 test both exclusion and inclusion. The final all-ones mask proves the upper bound is inclusive in effect. One middle mask exercises neither boundary and cannot expose an omitted empty or full subset."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Accept `n_zero` to test the one-empty-subset identity.",
+                "Accept `n_one` to test both values of a single membership bit.",
+                "Accept `full_mask` to catch a loop that stops one mask too early.",
+                "Reject `only_middle` because it cannot establish correct boundary coverage."
               ]
             },
             {
@@ -857,7 +859,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "only_middle": "This does not test empty or full boundaries."
+          "only_middle": "A middle mask may decode correctly even when the loop omits mask 0 or stops before the final all-ones mask."
         },
         "omittedCorrectExplanationsByOptionId": {
           "n_zero": "The power set of the empty set contains the empty set.",
@@ -919,14 +921,15 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Decoding maps positional membership into a concrete subset. No sorting is needed when the bit-to-index mapping is fixed."
+              "text": "Materialization starts with an empty result and examines the n mapped positions. At each i, the decoder tests mask AND (1 shifted left by i) and appends elements[i] only for a nonzero result. Iterating i in input order already yields an index-ordered subset. Sorting bit positions would add work without changing their fixed numeric order or the membership decision."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Accept `inspect_positions`: every mapped membership may affect the result.",
+                "Accept `test_membership`: the current bit decides whether the element belongs.",
+                "Accept `append_selected`: materialization must copy selected values into the result.",
+                "Reject `sort_mask_bits`: positions already have the stable order 0 through n - 1."
               ]
             },
             {
@@ -938,7 +941,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_mask_bits": "Positions already have a fixed order."
+          "sort_mask_bits": "Bit positions are already numbered in a fixed order, so sorting before each test is redundant and adds unnecessary cost."
         },
         "omittedCorrectExplanationsByOptionId": {
           "inspect_positions": "Each position may select one element.",
@@ -1000,14 +1003,15 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Bitmask enumeration is exact for indexed power sets. Value-level uniqueness is a separate semantic layer."
+              "text": "Plain masks encode occurrence identity: equal values at indices i and j still receive separate bits and may be selected independently. Consequently, two different masks can materialize the same sequence of values. If the required output identifies such sequences as one result, the algorithm needs a separate value-level duplicate policy; changing the positional meaning of the mask would alter which occurrence choices are representable."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Accept `indices_independent`: mask bits belong to positions, not value classes.",
+                "Accept `duplicate_outputs`: different positional choices may render equal values.",
+                "Accept `needs_dedup_contract`: uniqueness must be defined and enforced separately.",
+                "Reject `masks_merge_equal`: a plain mask has no knowledge of value equality."
               ]
             },
             {
@@ -1019,7 +1023,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "masks_merge_equal": "Each indexed position has its own bit."
+          "masks_merge_equal": "Plain bitmasks map one bit to each indexed occurrence and do not automatically merge positions that store equal values."
         },
         "omittedCorrectExplanationsByOptionId": {
           "indices_independent": "Masks encode occurrence identity.",
@@ -1082,21 +1086,22 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. The half-open mask range [0, 2^n) includes every n-bit pattern exactly once. Starting at zero and stopping before the limit preserves both boundaries."
+              "text": "The loop needs an exclusive upper bound before it can establish its valid mask domain. It then starts at zero so the empty subset is included. Decoding must happen before incrementing, otherwise mask 0 is skipped. Repeating while mask is below 2^n processes the final valid pattern 2^n - 1 and stops before the first value that needs bit n."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Compute limit = 2^n after confirming the representation can express that boundary.",
+                "Initialize mask = 0.",
+                "Decode the current mask under the fixed index-to-bit mapping.",
+                "Increment mask and repeat while mask < limit."
               ]
             },
             {
               "type": "callout",
               "kind": "edge_case",
               "title": "Boundary case",
-              "text": "The boundary masks are a useful proof: 0 selects none, while 2^n - 1 has all n low bits set. Use the half-open range [0, 2^n) so neither is missed or repeated."
+              "text": "Trace n = 2: decode 00, 01, 10 and 11, then stop when mask becomes 100. Any different boundary loses or adds a state."
             }
           ]
         }
@@ -1156,21 +1161,22 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. The decoding order follows element indices, while membership follows mask bits. This produces a stable index-ordered materialization."
+              "text": "The output container must exist before any selected element can be appended. Iterating indices establishes the stable output order. For the current i, a one-bit probe determines membership; only after that test can the decoder conditionally append elements[i]. These last two operations repeat inside the index loop rather than occurring once after it."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Initialize an empty output subset.",
+                "Iterate i from 0 through n - 1.",
+                "Test whether mask AND (1 shifted left by i) is nonzero.",
+                "If it is nonzero, append elements[i]; then continue with the next i."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Put the representation capacity and mapping before the loop. A correctly written range is still wrong if a bit cannot represent one of the input indices."
+              "text": "Testing before appending is the decision boundary. Appending first and trying to undo a zero bit obscures the invariant and invites stale elements."
             }
           ]
         }
@@ -1230,21 +1236,22 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. The identity 2^n - 1 produces exactly n low one bits. The width or numeric type must be large enough to represent the shift safely."
+              "text": "Start from the representation requirement: the full subset needs ones at positions 0 through n - 1. Shifting one left by n creates the next power of two, whose binary form has one at position n and zeros below it. Subtracting one borrows through those n zeros, leaving exactly the required low ones. Decoding then selects every mapped element."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Require one bits at all mapped positions 0 through n - 1.",
+                "Form 1 shifted left by n, placing the only one just above those positions.",
+                "Subtract one, producing n low one bits.",
+                "Decode the resulting mask and confirm that all n indexed elements are selected."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Put the representation capacity and mapping before the loop. A correctly written range is still wrong if a bit cannot represent one of the input indices."
+              "text": "The derivation assumes that 1 shifted left by n is representable. Check the language and numeric width instead of relying on overflowing fixed-width arithmetic."
             }
           ]
         }
@@ -1304,21 +1311,22 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Duplicate behavior follows the result identity contract. Changing the mask encoding without stating that contract can silently remove legal occurrence choices."
+              "text": "The result's identity rule comes first because it decides whether equal-valued occurrences are distinct. Plain masks then enumerate index subsets without consulting values. Comparing the materialized results reveals whether different masks collide at the value level. Only then can the implementation preserve both outputs or apply a stated value-level duplicate rule without silently changing the contract."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "State whether output identity is based on input indices or materialized values.",
+                "Recognize that one bit per position enumerates index subsets.",
+                "Check whether repeated values make different masks render equal outputs.",
+                "Keep those outputs or apply explicit value-level duplicate control according to the stated identity rule."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "A mask distinguishes occurrences by index, even when their values are equal. If the output requires value-distinct subsets, deduplication is an additional rule, not a property of the mask."
+              "text": "Do not deduplicate before defining identity. Under an index-subset contract, removing one of two equal singleton occurrences would delete a valid result."
             }
           ]
         }
@@ -1392,21 +1400,21 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. The exponential factor comes from the number of masks. Without materialized subsets or retained history, the loop itself uses constant extra state."
+              "text": "The loop visits every integer in [0, 2^n), so it has exactly 2^n iterations. At O(1) work per iteration, total time is 2^n · O(1) = O(2^n). The current mask and constant-size accumulator do not grow with n, and no subsets or history are retained, so auxiliary space is O(1). This conclusion would change if decoding scanned n positions per mask."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Count iterations: 2^n masks.",
+                "Multiply by the declared O(1) work per mask: O(2^n) time.",
+                "Count peak retained state, not cumulative iterations: O(1) auxiliary space."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
               "title": "Cost model",
-              "text": "The 2^n masks are unavoidable when every subset is considered. Scanning n positions or materializing output adds the corresponding n · 2^n or output-size cost."
+              "text": "Do not add an n factor merely because masks have n logical bits. The prompt explicitly makes processing one mask O(1); complexity follows performed operations, not the diagram used to describe a state."
             }
           ]
         }
@@ -1480,21 +1488,21 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Every mask scans n positions, and the total number of emitted element occurrences across the power set is Θ(n·2^n). This cost is output-sensitive when every subset is materialized."
+              "text": "There are 2^n masks and the decoder checks n positions for each, giving n · 2^n membership tests and O(n·2^n) time. Output space has the same asymptotic bound for a tighter reason: each of the n elements appears in exactly half of all subsets, so the stored element occurrences total n · 2^(n-1) = Θ(n·2^n), in addition to 2^n subset containers."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Time: 2^n masks × n tested positions = O(n·2^n).",
+                "Stored elements: n positions × 2^(n-1) subsets containing each position = Θ(n·2^n).",
+                "The Θ(2^n) subset containers are dominated by the stored-element term when n grows."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
               "title": "Cost model",
-              "text": "The 2^n masks are unavoidable when every subset is considered. Scanning n positions or materializing output adds the corresponding n · 2^n or output-size cost."
+              "text": "Separate auxiliary space from output space. A streaming visitor may keep only one O(n) subset, but returning the complete power set requires space proportional to all emitted elements."
             }
           ]
         }
@@ -1568,21 +1576,21 @@
             },
             {
               "type": "paragraph",
-              "text": "A subset mask assigns bit i to indexed element i. Each bit independently says included (1) or excluded (0), so n indexed elements have 2^n possible membership patterns. Filtering after full mask enumeration does not remove the cost of inspecting all masks. The returned fixed-size subsets occupy k elements each."
+              "text": "The algorithm still visits all 2^n masks. Because the stated popcount costs O(n) for each one, filtering costs 2^n · O(n) = O(n·2^n), even though only C(n,k) masks survive. Exactly C(n,k) subsets are returned and each stores k elements, so output space is O(k·C(n,k)). A direct k-combination generator could avoid the full-mask scan, but that is not the algorithm described."
             },
             {
               "type": "bullet_list",
               "items": [
-                "Declare the index-to-bit mapping and ensure the representation has at least n usable bits.",
-                "Enumerate the half-open range from 0 through 2^n - 1 when every index subset is required.",
-                "Decode a mask by testing each mapped position and appending only selected elements."
+                "Visited candidates: 2^n, regardless of how many pass the filter.",
+                "Work per candidate: O(n) for the declared popcount, yielding O(n·2^n) time.",
+                "Retained results: C(n,k) subsets × k stored elements = O(k·C(n,k)) output space."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
               "title": "Cost model",
-              "text": "The 2^n masks are unavoidable when every subset is considered. Scanning n positions or materializing output adds the corresponding n · 2^n or output-size cost."
+              "text": "Do not substitute the output count C(n,k) for the number of inspected candidates. That would describe a direct combination generator, not filter-after-enumeration."
             }
           ]
         }

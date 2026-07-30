@@ -3,7 +3,7 @@
   "batchId": "algorithms-tree-traversal-carry_path_and_aggregate_state-candidate-001",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -62,12 +62,24 @@
       "feedback": {
         "reason": "The required sum is ancestor-derived branch state, so each child should receive the current branch's next value without inheriting mutations from its sibling.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "A root-to-current prefix is different on different branches. Passing `nextRemaining` by value makes that branch state explicit and naturally restores the parent's value when a call returns. One global mutable value leaks the left branch's subtraction into the right branch unless carefully undone. Recomputing from the root preserves correctness but repeats work, and overwriting node values corrupts the input and mixes traversal state with data. The same pattern applies to path minima, parity, constraints, and accumulated labels when the next state can be derived from the parent state and current node."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "Let `remaining` mean the amount still needed before processing the current node. The root call starts with `remaining = target`; a node with value `v` computes `nextRemaining = remaining - v`, and a leaf succeeds exactly when its `nextRemaining` is zero."
+          },
+          {
+            "type": "ordered_list",
+            "items": [
+              "For target `12` at a root valued `5`, compute `nextRemaining = 12 - 5 = 7`.",
+              "Pass the value `7` independently to both child calls. If the left child is `7`, it computes zero; if the right child is `4`, it computes `3`.",
+              "When either call returns, the root's local `remaining` is still `12`; neither child can alter the state observed by its sibling."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "One global mutable value instead leaks a branch's subtraction into its sibling unless every change is explicitly undone. Recomputing each prefix from the root preserves correctness but repeats work, while overwriting node values corrupts the input and mixes traversal state with tree data. The reusable rule is: when the next path state is a pure function of the parent state and current node, pass the derived value to each child. The same rule carries path minima, parity, constraints, and accumulated labels."
+          }
+        ]
         },
         "wrongOptionExplanationsByOptionId": {
           "mutate_global_remaining": "A single variable looks economical, but sibling calls share it and the second branch observes the first branch's updates. It is valid only with an explicit save-and-restore discipline and no concurrent traversal.",
@@ -126,12 +138,21 @@
       "feedback": {
         "reason": "The current value must be present for leaf recording and descendant calls, then removed so the sibling branch receives only the parent prefix.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "Append establishes the root-to-current invariant. At a leaf, snapshot the current list because the reusable buffer will later change. At an internal node, children extend the same prefix one at a time. The final removal is the backtracking step that restores exactly the state the caller supplied. Recording before append omits the leaf; removing before recursion omits the ancestor from descendants; failing to remove leaks one branch into its sibling. A `try/finally`-style restoration is useful when recursion may exit early or throw."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Append the current value, so `path` now represents exactly the root-to-current sequence.",
+              "If the node is a leaf, record a snapshot of that sequence; storing the reusable list reference would let later mutations change the recorded result.",
+              "Otherwise visit each non-null child with the same buffer. Each child temporarily extends the current prefix and restores it before its sibling starts.",
+              "Remove the current value before returning, restoring exactly the root-to-parent sequence that the caller supplied."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Recording before append omits the leaf, removing before recursion omits the current ancestor from every descendant path, and failing to remove contaminates the next sibling with the completed branch. The invariant is therefore both an entry contract and an exit contract: a call receives the parent prefix, temporarily extends it, and returns the buffer unchanged. A `try/finally`-style restoration preserves that exit contract when recursion may return early or throw."
+          }
+        ]
         }
       },
       "taxonomy": {
@@ -182,12 +203,12 @@
       "feedback": {
         "reason": "Siblings share only their parent prefix, so a child must leave the caller-owned state exactly as it found it.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "The branch invariant is “state on entry represents the root-to-parent prefix; state after adding the current node represents root-to-current.” When the call returns, it must restore the entry state. Keeping the left update contaminates the right path, while resetting to zero discards ancestors. Nodes at the same depth can have different values and therefore different prefixes, so depth is not a sufficient key. Passing an immutable numeric value instead of mutating shared state satisfies the same isolation rule without an explicit undo."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "Let the parent's sum be `P`. The left call may temporarily change the shared value from `P` to `P + 7`, but its exit condition is restoration to exactly `P`; only then does the right call start from the correct parent prefix. Keeping `P + 7` falsely joins two sibling branches into one path, while resetting to zero discards every ancestor contribution already included in `P`. One sum per depth is also insufficient because different paths at the same depth can contain different node values. In general, mutable branch state must satisfy an entry/exit invariant: a call receives the root-to-parent state, extends it for its own subtree, and returns it unchanged. Passing an immutable numeric value satisfies the same sibling-isolation rule without an explicit undo."
+          }
+        ]
         },
         "wrongOptionExplanationsByOptionId": {
           "keep_left_update": "This treats siblings as one continuous path even though no edge connects them. It would be valid only for a traversal-wide cumulative total, not a root-to-current value.",

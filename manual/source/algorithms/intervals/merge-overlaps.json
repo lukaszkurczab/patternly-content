@@ -3,7 +3,7 @@
   "batchId": "algorithms-intervals-merge-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -319,15 +319,15 @@
         "options": [
           {
             "id": "backward_start",
-            "text": "A later end-sorted interval may start before already emitted output and overlap more than the last interval."
+            "text": "A later interval can start before committed output and overlap components beyond the last one."
           },
           {
-            "id": "end_sort_not_deterministic",
-            "text": "End sorting cannot be deterministic."
+            "id": "ends_imply_starts",
+            "text": "Nondecreasing ends imply nondecreasing starts, so only the last output can overlap."
           },
           {
-            "id": "end_sort_changes_lengths",
-            "text": "End sorting changes interval durations."
+            "id": "max_end_repairs_all",
+            "text": "Taking the maximum active end repairs every earlier overlap without revisiting output."
           }
         ],
         "acceptedOptionIds": [
@@ -348,10 +348,10 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "end_sort_not_deterministic": "A tie-breaker can make end sorting deterministic. The problem is the missing monotonic-start guarantee.",
-          "end_sort_changes_lengths": "Sorting changes order only; durations remain the same. The invariant failure comes from backward-reaching starts."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "ends_imply_starts": "End order does not constrain start order: in the counterexample, ends increase as 3, 5, 10 while starts move 2, 4, 1. The final interval can therefore reach behind committed output.",
+        "max_end_repairs_all": "Updating only the active end cannot retract or merge an earlier emitted interval. Once [2, 3) is committed, changing the last output to [1, 10) leaves two overlapping outputs."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "merge_overlapping_intervals",
@@ -364,9 +364,10 @@
     {
       "id": "algorithms-intervals-merge-007",
       "prompt": "Order the operations of a standard start-sorted merge scan.",
-      "constraints": [
-        "Use the already-declared endpoint predicate when deciding overlap.",
-        "The output is built left to right."
+    "constraints": [
+      "The input contains at least one interval.",
+      "Use the already-declared endpoint predicate when deciding overlap.",
+      "The output is built left to right."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -408,14 +409,24 @@
       },
       "feedback": {
         "reason": "Sorting establishes monotonic starts, the active interval summarizes the current union component, and the final flush handles the component with no later gap.",
-        "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "Each adjacent relation preserves an invariant. Sorting must precede seeding so the active interval is the leftmost unseen component. Comparison must occur before mutation or emission. Extending with max keeps the full union of the current overlap chain; emitting on a proven gap is safe because future starts cannot move backward. The final active interval needs an explicit flush because no next interval triggers its emission. Adjacent-relation scoring focuses on these dependencies rather than arbitrary exact positions disconnected from meaning."
-            }
-          ]
-        }
+      "details": {
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Sort by nondecreasing start. This guarantees that no unseen interval can begin to the left of the current one.",
+              "Because the input is nonempty, seed the active interval from the first sorted interval; it now represents the current union component.",
+              "For each remaining interval, compare its start with the active end using the declared endpoint rule.",
+              "On overlap, set active.end to max(active.end, next.end). On a gap, emit active and replace it with next; start order makes the emitted component final.",
+              "After the loop, emit active explicitly because no later gap exists to flush the last component."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "The reusable invariant is that emitted intervals are final, while active is the complete not-yet-emitted overlap chain. Extending with the maximum preserves contained ranges, and the final flush prevents the last component from being lost."
+          }
+        ]
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "merge_overlapping_intervals",

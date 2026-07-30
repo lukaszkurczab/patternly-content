@@ -3,7 +3,7 @@
   "batchId": "algorithms-tree-traversal-bfs_level_order-candidate-001",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -98,38 +98,41 @@
             "id": "snapshot_level_size",
             "text": "Record the queue's current size as `levelSize` and create a new empty `levelValues` list."
           },
-          {
-            "id": "dequeue_fixed_batch",
-            "text": "Dequeue and process exactly `levelSize` nodes, appending each value to `levelValues`."
-          },
-          {
-            "id": "enqueue_next_level",
-            "text": "As each batch node is processed, enqueue its non-null children for the next level."
-          },
+        {
+          "id": "process_fixed_batch",
+          "text": "Repeat exactly `levelSize` times: dequeue one node, append its value, and enqueue its non-null children."
+        },
           {
             "id": "commit_level",
             "text": "After all `levelSize` nodes are processed, append `levelValues` to the result."
           }
         ],
-        "canonicalOrder": [
-          "snapshot_level_size",
-          "dequeue_fixed_batch",
-          "enqueue_next_level",
-          "commit_level"
+      "canonicalOrder": [
+        "snapshot_level_size",
+        "process_fixed_batch",
+        "commit_level"
         ],
         "scoringMethod": "adjacent_relations"
       },
-      "scoringContract": {
-        "type": "ordering",
-        "maxPoints": 3
+    "scoringContract": {
+      "type": "ordering",
+      "maxPoints": 2
       },
       "feedback": {
         "reason": "A fixed size captured before child insertion separates the current frontier from the next frontier, and a fresh level accumulator makes that boundary explicit.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Snapshot the pre-expansion queue size and create a fresh accumulator for this level.",
+                "Process exactly that many nodes; for each one, record its value and enqueue its non-null children. New children do not change the fixed iteration count.",
+                "After the fixed batch is complete, append the completed level accumulator to the result."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The queue may contain nodes from exactly one current level at the start of an iteration. Capturing its size freezes that membership before children expand the queue. The processing and enqueue operations happen together for each node, but conceptually the fixed batch is consumed while next-level nodes are accumulated. Only after all current nodes are handled is the level result complete. Reusing one global `levelValues` list without resetting it would merge levels; making it local to the iteration gives the level aggregate a clear owner."
+              "text": "The pre-expansion snapshot separates the current frontier from children accumulated for the next frontier. Reusing one global `levelValues` list without resetting it would merge levels; making it local to the iteration gives the level aggregate a clear owner."
             }
           ]
         }
@@ -288,9 +291,9 @@
             "id": "both_mark_values",
             "text": "Both should mark node values visited because values identify nodes."
           },
-          {
-            "id": "graph_mark_on_dequeue_only",
-            "text": "A graph should allow repeated enqueues and mark a vertex only after it is dequeued."
+        {
+          "id": "graph_mark_on_dequeue_only",
+          "text": "A graph should mark only after dequeue and expand every queued copy even if that vertex identity was already processed."
           }
         ],
         "acceptedOptionIds": [
@@ -314,8 +317,8 @@
         "wrongOptionExplanationsByOptionId": {
           "both_no_visited": "FIFO controls processing order but does not prevent a cycle from enqueueing the same vertex indefinitely. It is sufficient only for a structure with unique parent paths.",
           "both_mark_values": "Distinct nodes may share a value, so value-based marking loses nodes. Identity-based marking is required when the graph can revisit references.",
-          "graph_mark_on_dequeue_only": "This may eventually suppress duplicate expansion, but multiple parents can enqueue the same vertex before its first dequeue. Mark-on-enqueue is the clean discovery invariant; dequeue marking is valid only with a carefully accepted duplicate-queue cost."
-        }
+        "graph_mark_on_dequeue_only": "Expanding every queued copy ignores the visited identity after dequeue, so cycles can keep generating work indefinitely. Mark-on-dequeue can be correct only if already processed copies are skipped, while mark-on-enqueue prevents those duplicates from entering the queue."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "process_tree_by_levels",

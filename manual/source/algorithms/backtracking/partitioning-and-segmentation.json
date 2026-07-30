@@ -3,7 +3,7 @@
   "batchId": "backtracking-partitioning-and-segmentation-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -30,6 +30,9 @@
     {
       "id": "alg-backtracking-partition-001",
       "prompt": "A partition call begins at index start in a string of length n. Which exclusive end boundaries produce non-empty next segments?",
+      "constraints": [
+        "0 <= start < n."
+      ],
       "difficulty": "intro",
       "interaction": {
         "type": "choice",
@@ -67,19 +70,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Enumerate every nonempty prefix of the unresolved suffix"
             },
             {
               "type": "paragraph",
-              "text": "Each legal boundary is a branch choice before segment validation."
+              "text": "A half-open segment [start, end) contains end - start elements. Nonemptiness therefore requires end > start, making start + 1 the smallest candidate end."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A non-empty segment [start, end) needs end > start and may extend to the input end. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The exclusive end may equal n, which selects the whole remaining suffix. Enumerating every integer end from start + 1 through n covers every nonempty prefix exactly once before the segment predicate filters candidates."
             },
             {
               "type": "callout",
@@ -90,15 +89,15 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A non-empty segment [start, end) needs end > start and may extend to the input end."
+              "title": "Boundary interval",
+              "text": "For 0 <= start < n, legal nonempty candidate ends are exactly start + 1, ..., n."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "start_to_n_minus_one": "end = start creates an empty segment and end = n must be available.",
           "zero_to_start": "These boundaries overlap or precede the unresolved suffix.",
-          "only_n": "This omits shorter first segments."
+          "only_n": "Choosing only n considers the entire suffix but omits every shorter valid prefix and every multi-segment continuation."
         }
       },
       "taxonomy": {
@@ -149,19 +148,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "The next unresolved index measures coverage"
             },
             {
               "type": "paragraph",
-              "text": "The exclusive boundary convention makes start == n the natural terminal state."
+              "text": "Each accepted segment starts at the current unresolved index and passes its exclusive end to the child. This invariant makes the path cover exactly [0, start) without gaps or overlaps."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Completion means the chosen segments cover the input exactly with no gap or remainder. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "When start == n, the covered prefix is [0, n), which is the whole input, and no suffix remains. A nonempty path, a length-one last segment, or an end below n does not by itself establish total coverage."
             },
             {
               "type": "callout",
@@ -172,15 +167,15 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Completion means the chosen segments cover the input exactly with no gap or remainder."
+              "title": "Completion invariant",
+              "text": "Record a partition only when the unresolved boundary reaches n."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "path_nonempty": "A non-empty path may leave input uncovered.",
-          "end_less_n": "That means a suffix remains.",
-          "segment_length_one": "Segment length does not define total coverage."
+          "path_nonempty": "One or more valid segments may cover only a prefix, leaving an unresolved suffix.",
+          "end_less_n": "An exclusive end below n means positions [end, n) remain unprocessed.",
+          "segment_length_one": "The latest segment's length says nothing about whether earlier segments collectively reached the input end."
         }
       },
       "taxonomy": {
@@ -231,19 +226,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "A recursive segment choice must make progress"
             },
             {
               "type": "paragraph",
-              "text": "Without progress, the state can repeat indefinitely."
+              "text": "Choosing end = start forms the valid half-open empty range [start, start), but the child receives the same start value as its parent. No input is consumed."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Every recursive choice should advance the unresolved boundary unless the contract explicitly models empty components. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "If the same empty choice remains available, recursion can repeat the identical state indefinitely. Even with an artificial stop, inserting empty segments in many positions creates duplicate decompositions. Ordinary partition contracts therefore require end > start; specialized contracts must define separate progress controls."
             },
             {
               "type": "callout",
@@ -254,15 +245,15 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Every recursive choice should advance the unresolved boundary unless the contract explicitly models empty components."
+              "title": "Progress rule",
+              "text": "A child boundary must be strictly later unless the contract explicitly models emptiness with another decreasing measure."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "empty_never_valid": "Some specialized contracts may allow it; the issue is the ordinary non-empty partition model.",
           "indices_forbidden": "A half-open range [start, start) represents an empty segment.",
-          "sorting_needed": "Sorting is unrelated."
+          "sorting_needed": "Sorting changes element order and is unrelated to whether a boundary advances or repeats the same recursive state."
         }
       },
       "taxonomy": {
@@ -313,19 +304,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Validate the fixed segment before entering its suffix"
             },
             {
               "type": "paragraph",
-              "text": "Once the boundary fixes the segment, later choices affect only the suffix and cannot repair that segment."
+              "text": "The candidate end fixes substring [start, end) permanently in this branch. If it is not a palindrome, every descendant partition would retain that invalid segment."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Segment validity is part of candidate legality. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Only after the predicate accepts the segment should it be appended and recursion continue from end. Length one is sufficient but not necessary for palindromicity, and end need not equal n because valid intermediate segments lead to multi-part results."
             },
             {
               "type": "callout",
@@ -336,15 +323,15 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Segment validity is part of candidate legality."
+              "title": "Fixed-prefix rule",
+              "text": "Recurse from end only when the segment permanently added to the prefix satisfies the required predicate."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "always": "An invalid fixed segment cannot become valid later.",
-          "only_if_length_one": "Longer palindromes are also legal.",
-          "only_at_n": "Intermediate segments are necessary for multi-part partitions."
+          "only_if_length_one": "Longer strings such as \"aba\" are palindromes and must remain legal segment choices.",
+          "only_at_n": "A valid intermediate segment ending before n is necessary to construct any partition with multiple segments."
         }
       },
       "taxonomy": {
@@ -395,19 +382,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Restore the parent partition prefix"
             },
             {
               "type": "paragraph",
-              "text": "The next boundary represents a sibling choice from the same start."
+              "text": "Appending [start, end) changes the shared live path only for that child branch. After recursion returns, the parent loop will try another end from the same start."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The current path is branch-local state and must return to the parent partition prefix. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Popping the chosen segment restores the exact parent prefix before the next sibling. The immutable input and previously stored result snapshots must remain intact, and the parent's start is not reset because its loop is still enumerating prefixes of the same unresolved suffix."
             },
             {
               "type": "callout",
@@ -418,14 +401,14 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The current path is branch-local state and must return to the parent partition prefix."
+              "title": "Sibling invariant",
+              "text": "Every candidate end at one depth is evaluated from the same restored partition prefix."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "delete_input": "The input remains shared and immutable.",
-          "clear_results": "Sibling results remain valid.",
+          "delete_input": "The source string remains shared and immutable; deleting characters would change every later boundary and branch.",
+          "clear_results": "Completed partitions found by the child are durable output snapshots and must not be erased during branch restoration.",
           "reset_start_zero": "The parent start remains unchanged while its loop tries another end."
         }
       },
@@ -477,19 +460,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Half-open segments meet at one shared boundary"
             },
             {
               "type": "paragraph",
-              "text": "Half-open intervals [start, end) compose cleanly when the child start equals end."
+              "text": "If one segment is [a, b), it contains indices a through b - 1. The next segment must start at b: [b, c) then begins with the first still-uncovered index."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Exact boundary handoff makes the segments contiguous and collectively covering. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Starting again at zero overlaps the covered prefix. Starting at b + 1 skips index b because b was excluded from the previous segment. An arbitrary start provides no coverage guarantee."
             },
             {
               "type": "callout",
@@ -500,15 +479,15 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Exact boundary handoff makes the segments contiguous and collectively covering."
+              "title": "Composition identity",
+              "text": "[a, b) followed by [b, c) covers [a, c) exactly once."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "next_start_zero": "That overlaps earlier segments.",
-          "next_start_end_plus_one": "That leaves a one-position gap.",
-          "arbitrary_start": "Arbitrary starts can create gaps and overlaps."
+          "next_start_zero": "Restarting at zero reprocesses the already covered prefix and overlaps earlier segments.",
+          "next_start_end_plus_one": "Because the exclusive end itself was not covered, starting at end + 1 leaves index end in a one-position gap.",
+          "arbitrary_start": "A start below end overlaps covered input, while a start above end leaves a gap; only equality guarantees contiguity."
         }
       },
       "taxonomy": {
@@ -559,19 +538,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Local validity does not imply complete coverage"
             },
             {
               "type": "paragraph",
-              "text": "A partition becomes recordable only when the recursive start reaches the input length."
+              "text": "A valid segment proves only that one component satisfies its predicate. If its exclusive end is below n, positions [end, n) remain uncovered."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Local segment validity is not the full result contract. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Recording at this point emits a partial prefix as if it were a full partition. The snapshot should instead be recorded by the base case start == n, after every input position belongs to exactly one valid segment."
             },
             {
               "type": "callout",
@@ -582,15 +557,15 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Local segment validity is not the full result contract."
+              "title": "Result boundary",
+              "text": "Segment validity authorizes recursion; full coverage authorizes output."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "duplicate_control": "The defect is incomplete coverage.",
-          "constant_space": "Recording timing does not remove path state.",
-          "sorted_segments": "No sorting occurs."
+          "duplicate_control": "Premature recording adds incomplete outputs; it does not compare or remove duplicate partitions.",
+          "constant_space": "The recursive path and snapshots still consume space, so recording timing cannot make auxiliary space constant.",
+          "sorted_segments": "No comparison or reordering occurs; the defect concerns incomplete input coverage."
         }
       },
       "taxonomy": {
@@ -641,19 +616,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Cuts live in gaps, not on characters"
             },
             {
               "type": "paragraph",
-              "text": "These binary boundary decisions explain the 2^(n - 1) unconstrained partition count."
+              "text": "The three characters occupy positions a, b, and c. Optional cuts can occur only in the two internal gaps: a|b and b|c."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A length-n sequence has n - 1 internal boundaries where a cut may be present or absent. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The outer boundaries before a and after c delimit the whole string; they are not optional internal cut decisions. Thus a length-three string has 3 - 1 = 2 cut locations. Choosing cut or no cut independently at each gap later yields 2^2 partitions."
             },
             {
               "type": "callout",
@@ -664,8 +635,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A length-n sequence has n - 1 internal boundaries where a cut may be present or absent."
+              "title": "Counting rule",
+              "text": "n elements create n - 1 internal adjacency gaps."
             }
           ]
         },
@@ -686,6 +657,9 @@
     {
       "id": "alg-backtracking-partition-009",
       "prompt": "When is choosing the entire remaining suffix as one segment legal?",
+      "constraints": [
+        "0 <= start < n."
+      ],
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -723,19 +697,15 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "The whole suffix is the candidate end = n"
             },
             {
               "type": "paragraph",
-              "text": "If valid, its child call reaches start = n and records the complete partition."
+              "text": "For start < n, choosing end = n forms the nonempty segment [start, n). It is evaluated by exactly the same predicate as every shorter candidate."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The boundary end = n is a normal candidate representing one final segment. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "If valid, appending it and recursing from n reaches the completion base case, so it may finish either a one-segment partition or a longer prefix. If invalid, the boundary is rejected; the empty suffix at start == n is completion, not another ordinary segment."
             },
             {
               "type": "callout",
@@ -746,14 +716,14 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The boundary end = n is a normal candidate representing one final segment."
+              "title": "Final-segment rule",
+              "text": "Allow end = n, but require [start, n) to satisfy the same segment predicate."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
           "always": "The segment must satisfy the same validity contract as shorter choices.",
-          "never": "A one-segment partition can be valid.",
+          "never": "When the entire suffix satisfies the predicate, it is a legal final segment and may form a one-segment partition.",
           "only_empty": "The empty suffix is completion, not an ordinary non-empty segment."
         }
       },
@@ -807,41 +777,41 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "A legal segment advances, stays in bounds, and passes its predicate"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "end > start makes [start, end) nonempty and guarantees recursive progress.",
+                "end <= n keeps the exclusive endpoint inside the input slicing range.",
+                "The segment predicate must accept [start, end), because that fixed component remains in every descendant."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The child starts at end rather than restarting."
-            },
-            {
-              "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A legal segment advances the boundary, stays inside the input, and satisfies the segment contract. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "After all checks pass, the child receives start = end, continuing at the first unresolved index. Resetting start to zero would overlap every segment with the already covered prefix."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "That would overlap already covered input."
+              "text": "The parent prefix already covers [0, start). Resetting to zero makes the next segment reprocess that region instead of extending coverage."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A legal segment advances the boundary, stays inside the input, and satisfies the segment contract."
+              "title": "Candidate contract",
+              "text": "Require start < end <= n, predicate validity, and child start = end."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "start_reset_zero": "That would overlap already covered input."
+          "start_reset_zero": "The current prefix already covers input before start, so resetting to zero overlaps processed positions and breaks contiguous forward coverage."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "end_greater_start": "The segment is non-empty.",
-          "end_at_most_n": "The range remains inside the input.",
-          "predicate_valid": "Only valid segments become choices."
+          "end_greater_start": "The segment length is end - start, so strict inequality makes it positive and advances recursion.",
+          "end_at_most_n": "An exclusive end may equal n but cannot exceed it without slicing beyond the input.",
+          "predicate_valid": "The chosen segment is permanently included in this branch, so it must already satisfy the result's segment rule."
         }
       },
       "taxonomy": {
@@ -894,36 +864,36 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Test the identity, minimum size, and competing boundaries"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Empty input tests the explicitly declared identity: whether one empty partition is a completed result.",
+                "One element tests the smallest nonempty segment and end = n without any internal cut.",
+                "An input with both whole and split solutions tests that end = n and shorter sibling boundaries are all retained."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "A long case alone does not reveal the exact transition between legal and illegal boundaries."
-            },
-            {
-              "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Boundary review needs identity, minimum non-empty, and competing-cut cases. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "These cases isolate start == n, start + 1, and competing ends. One long random input may cover them accidentally but cannot identify which off-by-one or restoration rule failed."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "It may not isolate off-by-one boundary defects."
+              "text": "A single long random case has weak diagnostic power and may miss the empty identity, one-element boundary, or coexistence of whole and split results."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Boundary review needs identity, minimum non-empty, and competing-cut cases."
+              "title": "Boundary matrix",
+              "text": "Test start == n, end == start + 1, end == n, and multiple valid sibling ends."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "only_long_random": "It may not isolate off-by-one boundary defects."
+          "only_long_random": "One random case may not exercise or isolate the exact empty, one-element, and end-equality boundaries where off-by-one defects occur."
         },
         "omittedCorrectExplanationsByOptionId": {
           "empty_input": "It tests terminal identity semantics.",
@@ -981,41 +951,41 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Prune only on a permanent violation or impossible capacity"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "An invalid fixed segment remains in every descendant, so later suffix choices cannot repair it.",
+                "Once a hard maximum segment count is exceeded, adding more segments cannot reduce the count.",
+                "If remaining input is shorter than the minimum total length required by remaining slots, supply cannot meet demand."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Subjective preference may affect ordering but cannot remove a legal branch."
-            },
-            {
-              "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Partition pruning follows from fixed-segment validity and explicit capacity constraints. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Each accepted rule proves failure for every completion. A segment that merely looks unusual but satisfies all constraints may still lead to a valid partition and can at most be ordered later."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Why the other answers fail",
-              "text": "Appearance is not impossibility."
+              "text": "Subjective appearance supplies no invariant or bound. Removing a legal-looking-unusual segment can make enumeration incomplete."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Partition pruning follows from fixed-segment validity and explicit capacity constraints."
+              "title": "Pruning rule",
+              "text": "Omit a partition branch only when its fixed prefix is invalid or its remaining capacity is provably insufficient."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "segment_looks_unusual": "Appearance is not impossibility."
+          "segment_looks_unusual": "An unusual but contract-valid segment may still begin a valid completion; preference can change order but cannot justify omission."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "invalid_fixed_segment": "Later suffix choices cannot change it.",
-          "too_many_segments": "Adding more segments cannot repair the excess.",
-          "insufficient_remaining_length": "Capacity is impossible."
+          "invalid_fixed_segment": "The segment is already fixed in the prefix, and later boundaries affect only the suffix, so no descendant can repair it.",
+          "too_many_segments": "Every continuation can only retain or increase the current segment count, never bring it back below the hard maximum.",
+          "insufficient_remaining_length": "The branch has less remaining material than the mandatory minimum demand of its remaining segment slots."
         }
       },
       "taxonomy": {
@@ -1035,7 +1005,7 @@
         "elements": [
           {
             "id": "check_complete",
-            "text": "If start equals n, record a snapshot of the current partition."
+            "text": "If start equals n, record a snapshot of the current partition and return."
           },
           {
             "id": "loop_end",
@@ -1069,19 +1039,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Resolve completion before enumerating the next segment"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "If start == n, record a detached snapshot of the current partition and return; no unresolved suffix remains.",
+                "Otherwise enumerate end from start + 1 through n.",
+                "For each end, validate the fixed candidate [start, end).",
+                "Append a valid segment, recurse from end, then pop it before the next sibling end."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The path is restored for each sibling end boundary."
-            },
-            {
-              "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Completion is resolved before generating segments, and only valid segments become child branches. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Returning at the base case prevents generation of an empty extra segment. Validation before append keeps invalid components out of the path, while pop restores the same parent prefix for every candidate end."
             },
             {
               "type": "callout",
@@ -1092,8 +1063,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Completion is resolved before generating segments, and only valid segments become child branches."
+              "title": "Call contract",
+              "text": "At start, either record-and-return at n or enumerate nonempty valid prefixes of [start, n)."
             }
           ]
         }
@@ -1149,19 +1120,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "One boundary becomes one reversible branch"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Form or reference [start, end), the exact segment defined by this boundary.",
+                "Evaluate the mandatory segment predicate.",
+                "Append only a valid segment to the live partition path.",
+                "Recurse from end, then pop so another end is tested from the same prefix."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Undo returns to the same partition prefix for the next boundary."
-            },
-            {
-              "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The boundary defines a candidate segment whose legality is checked before mutation. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The predicate needs a defined range, recursion needs the appended segment, and the next sibling needs its removal. Reordering any of these dependencies admits invalid state or contaminates sibling paths."
             },
             {
               "type": "callout",
@@ -1172,8 +1144,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The boundary defines a candidate segment whose legality is checked before mutation."
+              "title": "Branch invariant",
+              "text": "A segment enters the path only after validation and leaves it before the next boundary."
             }
           ]
         }
@@ -1229,19 +1201,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "The base case must see the final segment"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Append the valid segment [start, n) to the live path.",
+                "Recurse with start = n.",
+                "The base case records a detached snapshot containing that final segment.",
+                "After return, pop the live final segment to restore the parent prefix."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "Popping afterward preserves the stored snapshot while restoring the parent."
-            },
-            {
-              "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The final segment becomes part of the completed path before the base case records it. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Recording before append omits the final segment. Popping before snapshot has the same defect. Popping afterward changes only the live path; the detached completed partition remains stored."
             },
             {
               "type": "callout",
@@ -1252,8 +1225,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The final segment becomes part of the completed path before the base case records it."
+              "title": "Snapshot rule",
+              "text": "Complete the live path, snapshot it at start == n, then restore the live path."
             }
           ]
         }
@@ -1268,7 +1241,10 @@
     },
     {
       "id": "alg-backtracking-partition-016",
-      "prompt": "Arrange the reasoning for a minimum-segment-length capacity prune.",
+      "prompt": "A branch must still create r segments, each of length at least m. Arrange the reasoning for a minimum-segment-length capacity prune.",
+      "constraints": [
+        "r >= 0 and m >= 1."
+      ],
       "difficulty": "foundational",
       "interaction": {
         "type": "ordering",
@@ -1279,7 +1255,7 @@
           },
           {
             "id": "compute_required",
-            "text": "Compute the minimum total length required by the remaining segment slots."
+            "text": "Compute required = r · m."
           },
           {
             "id": "compare",
@@ -1309,19 +1285,20 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Compare remaining material with minimum demand"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Compute remaining = n - start, the number of unprocessed elements.",
+                "Compute required = r · m for r remaining segment slots with minimum length m.",
+                "If remaining < required, prune because no allocation can meet every minimum.",
+                "Otherwise continue legal boundary enumeration; sufficient total length does not guarantee validity."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The bound must use the exact number of remaining slots and the stated minimum length."
-            },
-            {
-              "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The branch is impossible when remaining material cannot satisfy mandatory segment sizes. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The inequality is a necessary-capacity test. Equality may be feasible by giving exactly m elements to each slot, so it must not be pruned. Predicate constraints can still make a capacity-feasible branch fail later."
             },
             {
               "type": "callout",
@@ -1332,8 +1309,8 @@
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The branch is impossible when remaining material cannot satisfy mandatory segment sizes."
+              "title": "Capacity formula",
+              "text": "Prune exactly when n - start < r · m."
             }
           ]
         }
@@ -1350,6 +1327,7 @@
       "id": "alg-backtracking-partition-017",
       "prompt": "A length-n sequence may be cut or not cut at each internal boundary, and every resulting segment is considered valid. Select the number of complete partitions and maximum recursion depth.",
       "constraints": [
+        "n >= 1.",
         "There are n - 1 internal cut positions.",
         "Each recursive segment consumes at least one element."
       ],
@@ -1403,31 +1381,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Each internal gap contributes one binary choice"
             },
             {
               "type": "paragraph",
-              "text": "The deepest partition uses n single-element segments."
+              "text": "A length-n sequence has n - 1 gaps between adjacent elements. At each gap, independently choose cut or no cut; each binary decision vector defines exactly one complete contiguous partition."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
+              "text": "Multiplying two choices across n - 1 gaps yields exactly 2^(n - 1) partitions, represented by the available O(2^(n-1)) answer. Because every segment is valid, none of these leaves is pruned."
             },
             {
               "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Each internal boundary independently separates or joins adjacent elements. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "The deepest route cuts every gap and produces n single-element segments, one recursive segment per level. Maximum recursion depth is therefore O(n), not exponential."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Check each dimension independently",
-              "text": "Each internal boundary independently separates or joins adjacent elements. Count the number of explored states or produced values separately from the maximum live recursion state; one quantity does not automatically determine the other."
+              "text": "O(n!) models order permutations, but a partition preserves input order. The exponential number of leaves does not imply an exponential number of simultaneous frames."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Each internal boundary independently separates or joins adjacent elements."
+              "title": "Partition-count rule",
+              "text": "Contiguous order-preserving partitions correspond one-to-one with subsets of the n - 1 internal gaps."
             }
           ]
         }
@@ -1442,8 +1420,9 @@
     },
     {
       "id": "alg-backtracking-partition-018",
-      "prompt": "A collect-all partition solver returns s partitions, and each partition contains at most n segment references or copied segments. Select a lower bound on materialized output work and output space.",
+      "prompt": "A collect-all partition solver returns s partitions, and each partition contains at most n segment references or copied segments. Select a standard upper bound on materialized output work and output space.",
       "constraints": [
+        "s >= 0 and n >= 1.",
         "Every returned partition is stored independently."
       ],
       "difficulty": "foundational",
@@ -1496,31 +1475,31 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Boundaries and complete coverage"
+              "text": "Bound the retained output by partitions times maximum size"
             },
             {
               "type": "paragraph",
-              "text": "Pruning invalid segments can reduce search overhead but cannot avoid materializing required valid outputs."
+              "text": "The solver retains s independent partitions. Under the stated maximum, each stores at most n segment references or copied segment entries, so each output takes O(n) representation work and space."
             },
             {
               "type": "paragraph",
-              "text": "A partition is built by advancing one boundary through the input. Each branch chooses the next non-empty contiguous segment, validates it, and passes its exclusive end as the next start. Completion occurs only when that boundary reaches the end of the input."
+              "text": "Multiplying gives the standard upper bounds O(sn) for materialization work and O(sn) for final output space. This is not a universal lower bound because a partition may contain fewer than n stored entries; the prompt now asks for the correct upper bound."
             },
             {
               "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Returning s partitions of size up to n is inherently output-sensitive. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
+              "text": "Pruning can reduce invalid search overhead but cannot change how many valid outputs the contract requires. A stronger Θ(sn) claim would need every returned representation to have size proportional to n, which is not assumed here."
             },
             {
               "type": "callout",
               "kind": "common_mistake",
               "title": "Check each dimension independently",
-              "text": "Returning s partitions of size up to n is inherently output-sensitive. Count the number of explored states or produced values separately from the maximum live recursion state; one quantity does not automatically determine the other."
+              "text": "O(s) ignores per-partition entries, and O(n) ignores the number of retained partitions. Search stack space is a separate auxiliary quantity."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Returning s partitions of size up to n is inherently output-sensitive."
+              "title": "Output accounting",
+              "text": "For s outputs of size at most n, materialized work and retained space are each O(sn)."
             }
           ]
         }

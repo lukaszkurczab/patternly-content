@@ -3,7 +3,7 @@
   "batchId": "algorithms-sorting-based-sorting_based_mistake_review-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -29,7 +29,7 @@
   "items": [
     {
       "id": "alg-sort-review-01-name-invalid-assumption",
-      "prompt": "A proposed solution sorts customer events by amount, scans adjacent events for duplicates, and returns the first duplicate customer's original earliest event. The prompt requires preserving encounter order. Which assumption is the first one to challenge?",
+      "prompt": "An event stream is in encounter order. A proposed solution sorts events by amount, scans adjacent events for equal customer IDs, and returns the earliest event of the first customer whose second occurrence appears in the stream. Which assumption is the first one to challenge?",
       "constraints": [
         "A customer may have several events with different amounts.",
         "The required answer is defined by earliest encounter time, not by smallest amount."
@@ -70,7 +70,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A sorting-based review begins by restating the output contract. Here 'earliest' refers to encounter time, but sorting by amount replaces that order with an unrelated one. Even a perfectly implemented adjacent scan would solve a different problem, and customer equality is not guaranteed to align with amount adjacency. The first defect is therefore the unjustified preprocessing assumption, not loop length or comparability."
+              "text": "A sorting-based review begins by restating the output contract. Here the winning customer is selected by the encounter time of its second occurrence, and the returned event is that customer's earliest occurrence. Sorting by amount replaces the order used by the first rule and does not make equal customer IDs contiguous. Even a perfectly implemented adjacent scan would therefore solve a different problem. The first defect is the unjustified preprocessing assumption, not loop length or numeric comparability."
+            },
+            {
+              "type": "callout",
+              "kind": "counterexample",
+              "title": "Amount order can destroy both required relations",
+              "text": "For (time, customer, amount) events (1, A, 100), (2, B, 1), (3, A, 2), (4, B, 3), customer A is first to repeat and its earliest event is at time 1. Amount sorting produces B, A, B, A: neither customer's equal IDs are adjacent, and the order no longer identifies which second occurrence happened first."
             }
           ]
         },
@@ -134,7 +140,16 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Without an explicit contract, a reviewer cannot tell whether reordering or tie nondeterminism is a defect. Once legality is known, the sort key must be tested against the intended adjacency, grouping, or monotonicity. The consumer proof then determines whether any valid candidate was discarded. Cost and side effects describe the concrete repaired or rejected implementation; they cannot rescue an algorithm that is already semantically wrong."
+              "text": "Each review step depends on facts established by the preceding one, so changing the order risks proving properties of the wrong problem."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "State the external contract first: required order, source identities, mutation rights, and resource limits define what counts as a legal result.",
+                "Inspect the sort relation next: its key and tie rules must expose the exact adjacency, grouping, or monotonicity used downstream.",
+                "Verify the consumer under that established order: prove that its scan, runs, or pointer moves cannot discard a valid candidate.",
+                "Finally recompute time, extra space, and side effects for the complete implementation; these properties cannot rescue an algorithm that is already semantically wrong."
+              ]
             }
           ]
         }
@@ -213,6 +228,7 @@
       "prompt": "A report sorts incidents by severity and emits them in that order. The contract requires timestamp ascending and incident ID ascending within each severity. The comparator uses severity only. Which review finding is precise?",
       "constraints": [
         "Incident IDs are unique.",
+        "The severity comparison already uses the contract's required primary direction.",
         "The complete emitted order is externally visible."
       ],
       "difficulty": "intermediate",
@@ -251,7 +267,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Severity can remain primary, but the comparator must refine each severity class by timestamp and then ID. Stability preserves an existing prior order; it does not infer those fields unless the input was deliberately preordered under a documented stable multi-pass design. Reversing traversal changes severity direction and still leaves tie order unresolved. The defect is an incomplete total order, not a scanning orientation problem."
+              "text": "The comparator must reproduce every observable level of the required ordering, consulting a later field only when all earlier fields tie."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Compare severity in the already specified primary direction and return when severities differ.",
+                "For equal severity, compare timestamp ascending and return when timestamps differ.",
+                "Only when both earlier fields tie, compare unique incident ID ascending.",
+                "Return comparator equality only after all required fields agree; because IDs are unique, two distinct incidents then cannot remain tied."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Stability does not invent missing tie rules",
+              "text": "A stable sort preserves the input order of comparator-equal records. It produces timestamp-and-ID order only if that prior order was established deliberately as part of a documented stable multi-pass design. Reversing traversal likewise cannot synthesize the missing relation."
             }
           ]
         },
@@ -312,7 +343,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Sorted adjacency can be mathematically correct for a closest-value objective while the returned coordinates remain wrong. Duplicate values make post hoc value lookup ambiguous, and even distinct values require a saved permutation to map positions reliably. The repair is to decorate occurrences or sort indices before the transformation. This is a provenance defect, not an adjacency theorem or formatting issue."
+              "text": "Sorted adjacency can be mathematically correct for a closest-value objective while the returned coordinates remain wrong. A sorted position names a location in the transformed array, not in the source. Duplicate values make any attempt to reconstruct a source occurrence from the value alone ambiguous. The direct repair is to attach each original index before sorting or to sort an index permutation. This is a provenance defect, not an adjacency theorem or formatting issue."
+            },
+            {
+              "type": "callout",
+              "kind": "worked_example",
+              "title": "Transformed positions are not source indices",
+              "text": "For source values [8, 3, 8], sorting raw values yields [3, 8, 8]. The adjacent equal pair is at sorted positions 1 and 2, but the two source occurrences are at indices 0 and 2. Returning (1, 2) names one unrelated source position and loses which 8 came from where."
             }
           ]
         },
@@ -335,7 +372,8 @@
       "prompt": "A proposed solution sorts n numbers solely to compute their sum in one pass. What is the strongest review finding?",
       "constraints": [
         "There is one sum query.",
-        "Reordering provides no overflow or numeric-stability guarantee in this problem."
+        "The stated arithmetic model makes the required sum invariant under permutation.",
+        "The proposed comparison sort has Θ(n log n) worst-case time."
       ],
       "difficulty": "introductory",
       "interaction": {
@@ -373,7 +411,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Summation visits each input once while maintaining an accumulator. Under the stated numeric model, permutation does not create a new correctness property. Comparison sorting therefore computes unused order information and dominates the total time. The mathematical sum of the same multiset remains unchanged; the defect is unnecessary work, not a different answer. Numeric overflow or floating-order concerns would require separate explicit constraints."
+              "text": "Direct summation visits each of the n inputs once while maintaining one accumulator, so it takes Θ(n). Under the stated arithmetic model, permutation does not create a new correctness property. The proposed comparison sort adds Θ(n log n) work before the same Θ(n) scan, for Θ(n log n + n) = Θ(n log n) total. Sorting computes unused order information; it neither changes the required sum nor protects against an arithmetic issue excluded by the constraints."
             }
           ]
         },
@@ -393,10 +431,10 @@
     },
     {
       "id": "alg-sort-review-07-correct-total-bound",
-      "prompt": "A review note claims that comparison-sort plus one scan is O(n) because 'the algorithm has one scan loop.' What is the correct worst-case time bound?",
+      "prompt": "A review note claims that comparison-sort plus one scan is O(n) because 'the algorithm has one scan loop.' What is the tightest offered worst-case time bound?",
       "constraints": [
-        "The sort has O(n log n) worst-case time.",
-        "The scan is O(n)."
+        "The sort has Θ(n log n) worst-case time.",
+        "The scan has Θ(n) worst-case time."
       ],
       "difficulty": "introductory",
       "interaction": {
@@ -431,7 +469,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The combined cost is O(n log n + n), which simplifies to O(n log n). Counting only the explicit scan loop ignores library work performed before it. Conversely, the pipeline is not automatically O(n^2); that would require a quadratic sort, comparator, or consumer not stated here. A precise review names the sort contract rather than inferring complexity from surface loop count."
+              "text": "The sort contributes Θ(n log n), and the scan contributes Θ(n). Adding sequential phases gives Θ(n log n + n) = Θ(n log n), so the matching offered answer is O(n log n). Counting only the explicit scan loop ignores library work performed before it."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(n) is too small because the stated comparison sort alone takes Θ(n log n) in the worst case. O(n²) is a valid loose upper bound for ordinary n, but it is not the tightest offered bound and suggests quadratic work absent from both stated phases."
             }
           ]
         }
@@ -466,7 +510,7 @@
           },
           {
             "id": "invent_default_tie",
-            "text": "When tie order is unspecified, silently choose a random tie-break and document no behaviour change."
+            "text": "When deterministic tie order is required, silently choose a random tie-break and document no behaviour change."
           },
           {
             "id": "copy_for_immutability",
@@ -488,12 +532,12 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Decoration repairs provenance without changing which source occurrences exist. A defensive copy repairs forbidden mutation while honestly adding linear storage. Random tie-breaking introduces nondeterminism and may create a new observable contract rather than clarifying the old one. Omitting sort cost changes only the report, not the work performed. Review handoff should distinguish semantic repair from concealment or undocumented policy invention."
+              "text": "Decoration repairs provenance without changing which source occurrences exist. A defensive copy repairs forbidden mutation while honestly adding linear storage. Random tie-breaking violates the stated determinism instead of supplying the required order. Omitting sort cost changes only the report, not the work performed. Review handoff should distinguish semantic repair from concealment or unauthorized policy invention."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "invent_default_tie": "Random ordering is not a stable repair and can create an observable behaviour not authorized by the prompt.",
+          "invent_default_tie": "Random ordering directly violates the required deterministic tie order and cannot be presented as no behaviour change.",
           "drop_sort_cost": "Misreporting complexity does not reduce the preprocessing work or satisfy the cost contract."
         },
         "omittedCorrectExplanationsByOptionId": {

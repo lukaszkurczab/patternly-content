@@ -3,7 +3,7 @@
   "batchId": "algorithms-graph-traversal-grid_as_graph-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -36,16 +36,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "open_cells_states",
-            "text": "Each open cell is a vertex, with an edge to each in-bounds open orthogonal neighbor."
-          },
-          {
             "id": "rows_vertices",
             "text": "Each row is one vertex, because cells in a row share a coordinate."
           },
           {
             "id": "values_edges",
             "text": "Cell values are vertices and coordinates are edges."
+          },
+          {
+            "id": "open_cells_states",
+            "text": "Each open cell is a vertex, with an edge to each in-bounds open orthogonal neighbor."
           },
           {
             "id": "tree_cells",
@@ -65,8 +65,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Coordinates are states and legal moves are edges"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Treat each open coordinate (r,c) as one vertex.",
+                "For offsets (−1,0), (1,0), (0,−1), and (0,1), compute a candidate coordinate.",
+                "Create an implicit edge only when the candidate is in bounds and open.",
+                "Use BFS or DFS over those generated neighbors according to the requested output."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "A graph model names the information needed to determine future transitions. In a static maze, the current cell is sufficient state, while bounds, obstacles, and the orthogonal movement rule generate neighboring states. The grid is an implicit graph: no adjacency matrix or explicit edge list is normally needed. Once this mapping is fixed, BFS or DFS can be selected from the requested output."
+              "text": "A row cannot be one vertex because obstacles and vertical connections differ by column. Cell values alone also lose position, and maze adjacency may contain cycles, so a single parent is a traversal result rather than the input graph."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Grid mapping",
+              "text": "Use the smallest state that determines all legal future moves; in this static maze it is the open coordinate."
             }
           ]
         },
@@ -93,12 +113,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "separate_roles",
-            "text": "Blocked means the state or transition is illegal in the graph; visited means a legal state has already been discovered in this traversal."
-          },
-          {
             "id": "same_flag",
             "text": "They are semantically identical, so one permanent flag should represent both without distinction."
+          },
+          {
+            "id": "separate_roles",
+            "text": "Blocked means the state or transition is illegal in the graph; visited means a legal state has already been discovered in this traversal."
           },
           {
             "id": "blocked_after_dequeue",
@@ -122,8 +142,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Legality and traversal progress answer different questions"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Blocked is immutable problem data: entering that coordinate is not a legal transition.",
+                "Visited is execution state: the coordinate is legal, but this traversal already discovered its corresponding state.",
+                "A second query may need the same open cell to begin unseen while the obstacle remains blocked."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Treat blocked cells as absent vertices or as states with no legal entry, depending on the exact contract. Treat visited as mutable traversal metadata for legal states. Conflating the two can destroy the original maze, make repeated queries impossible, or misreport why a state is unreachable. In-place mutation is valid only when the input may be consumed and the marker cannot collide with a meaningful cell value."
+              "text": "Conflating the roles can destroy the original maze, prevent independent queries, or hide whether failure came from an obstacle or prior discovery. In-place marking is only an implementation of visited when mutation is allowed and the marker cannot collide with any meaningful input value."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Ownership rule",
+              "text": "Obstacles belong to the graph definition; visited belongs to one traversal."
             }
           ]
         },
@@ -150,10 +189,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "edges_change",
-            "text": "The vertex set can remain the same, but diagonal legal moves add edges in the 8-direction model."
-          },
-          {
             "id": "visited_changes_edges",
             "text": "Only the visited timing changes; graph edges are identical."
           },
@@ -164,6 +199,10 @@
           {
             "id": "representation_invalid",
             "text": "A grid cannot represent two adjacency rules without converting to an adjacency matrix."
+          },
+          {
+            "id": "edges_change",
+            "text": "The vertex set can remain the same, but diagonal legal moves add edges in the 8-direction model."
           }
         ],
         "acceptedOptionIds": [
@@ -179,8 +218,25 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "The neighborhood rule is the edge relation"
+            },
+            {
               "type": "paragraph",
-              "text": "Coordinates identify the same candidate states, but the set of legal neighboring coordinates differs. This can merge components and shorten paths even though the cell values are unchanged. BFS and DFS must both consume the same declared neighborhood. The transfer rule is to state direction sets, wraparound, portals, and corner-cutting rules before applying a graph algorithm."
+              "text": "Cells (0,0) and (1,1) share only a corner. Four-direction offsets create no edge between them; adding diagonal offsets in the eight-direction model creates one. The candidate vertex set is unchanged, but connectivity and shortest distances may change."
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Traversal does not define adjacency",
+              "text": "BFS and DFS explore the edges supplied by the movement contract. Neither visited timing nor traversal breadth can legalize a forbidden diagonal."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Model first",
+              "text": "Declare directions, wraparound, portals and corner-cutting rules before selecting or analyzing traversal."
             }
           ]
         },
@@ -207,20 +263,20 @@
         "selectionMode": "multiple",
         "options": [
           {
-            "id": "mutation_allowed",
-            "text": "The caller permits the grid to be mutated or no later consumer needs the original values."
-          },
-          {
-            "id": "marker_unambiguous",
-            "text": "The chosen marker cannot be confused with any meaningful unvisited cell value."
-          },
-          {
             "id": "tree_guarantee",
             "text": "The grid must be a tree, otherwise in-place marking is invalid."
           },
           {
+            "id": "mutation_allowed",
+            "text": "The caller permits the grid to be mutated or no later consumer needs the original values."
+          },
+          {
             "id": "dequeue_required",
             "text": "Visited must be written only on dequeue because enqueue-time marking changes the grid too early."
+          },
+          {
+            "id": "marker_unambiguous",
+            "text": "The chosen marker cannot be confused with any meaningful unvisited cell value."
           }
         ],
         "acceptedOptionIds": [
@@ -237,8 +293,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "In-place visited storage changes an external contract"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Mutation must be permitted, or no later consumer may need the original grid values.",
+                "The marker must be outside the domain of every meaningful unvisited cell value.",
+                "Neighbor logic must consistently recognize the marker as already discovered rather than as a new cell type."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The traversal invariant is independent of where visited state is stored. A separate boolean matrix preserves input and can be reused across read-only callers. In-place mutation saves auxiliary storage but changes the grid and requires a disjoint marker value. Cycles do not prohibit it; they make timely discovery marking more important. This is a representation trade-off, not a universal optimization."
+              "text": "A separate boolean grid preserves the input; in-place mutation can save that storage but consumes information. Cycles do not make mutation invalid, and BFS normally writes the marker at enqueue time to prevent duplicate scheduling."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Trade-off",
+              "text": "Use in-place marking only when mutation and marker semantics are both safe."
             }
           ]
         },
@@ -268,16 +343,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "coordinate_and_break",
-            "text": "(r, c, breakUsed), so the two arrivals are distinct vertices in the implicit graph."
-          },
-          {
             "id": "coordinate_only",
             "text": "(r, c) only, because every physical cell is one graph vertex in every grid problem."
           },
           {
             "id": "break_only",
             "text": "breakUsed only, because coordinates are merely visual layout."
+          },
+          {
+            "id": "coordinate_and_break",
+            "text": "(r, c, breakUsed), so the two arrivals are distinct vertices in the implicit graph."
           },
           {
             "id": "no_visited",
@@ -297,8 +372,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "One physical cell can represent two search vertices"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "State (r,c,false) can move into an adjacent wall and transition to (nextR,nextC,true).",
+                "State (r,c,true) cannot spend the wall break again.",
+                "Because their outgoing legal moves differ, visited must distinguish the two states."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The implicit graph has up to two states per cell: break unused and break used. Edges update both coordinate and resource status. Visited must use the same composite key. The general transfer rule is that history belongs in state only when it affects future transitions or cost; irrelevant history should not be retained because it multiplies the state space without changing decisions."
+              "text": "Coordinate-only visited can discard an arrival that still owns the break and may be the only route to the goal. Break state alone loses location. The implicit graph has at most 2RC states, and revisiting a coordinate under the other resource bit is not an uncontrolled duplicate."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "State rule",
+              "text": "Include history exactly when it changes future transitions or costs."
             }
           ]
         },
@@ -325,12 +419,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "bfs_layers",
-            "text": "BFS processes states by nondecreasing number of unit edges, so first discovery gives the minimum move count."
-          },
-          {
             "id": "dfs_first_path",
             "text": "The first DFS route is minimum because DFS reaches a goal before BFS finishes a layer."
+          },
+          {
+            "id": "bfs_layers",
+            "text": "BFS processes states by nondecreasing number of unit edges, so first discovery gives the minimum move count."
           },
           {
             "id": "matrix_shortest",
@@ -354,8 +448,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Move count is unweighted graph distance"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Place start in BFS layer 0.",
+                "Every legal orthogonal move adds one edge, so neighbors of layer d receive distance d + 1.",
+                "FIFO processing exhausts layer d before any layer d + 1 state is expanded.",
+                "Therefore the first discovery of goal has the minimum possible move count."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Each legal move contributes one edge and one unit of distance. FIFO processing ensures all states at distance d are handled before any state at d+1, so the first accepted discovery of the goal is optimal. DFS remains valid for reachability but not for first-path optimality. If terrain gives unequal costs, the graph model changes to weighted edges and the frontier must change accordingly."
+              "text": "DFS can prove reachability but may follow a longer route first. A matrix changes neighbor lookup, not exploration order. If terrain moves have unequal costs, layer number no longer equals objective cost and the frontier must change to a weighted shortest-path discipline."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Traversal boundary",
+              "text": "Use BFS first discovery for minimum move count only when every legal move has equal cost."
             }
           ]
         },
@@ -382,10 +496,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "implicit_linear",
-            "text": "There are O(RC) states and O(RC) local edges, while a matrix over all cells uses O((RC)²) space."
-          },
-          {
             "id": "matrix_incorrect",
             "text": "A matrix cannot represent grid edges correctly under any conditions."
           },
@@ -396,6 +506,10 @@
           {
             "id": "visited_replaces_edges",
             "text": "Because marking visited on dequeue generates all needed edges without a movement rule."
+          },
+          {
+            "id": "implicit_linear",
+            "text": "There are O(RC) states and O(RC) local edges, while a matrix over all cells uses O((RC)²) space."
           }
         ],
         "acceptedOptionIds": [
@@ -411,8 +525,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Bounded degree keeps the implicit graph linear"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Flattening an R × C grid gives N = RC possible cell vertices.",
+                "At most four candidates are generated per cell, so total neighbor checks and edges are O(4N) = O(N).",
+                "Traversal plus visited/frontier storage is therefore O(RC), aside from the input grid."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Flattening cells gives N = RC vertices, but each vertex has bounded degree, so E = O(N). On-demand direction checks preserve O(N) traversal time and O(N) visited/frontier storage. An N × N matrix is correct but costs O(N²), mostly for absent edges. The boundary changes only if the transition relation is dense or unusually expensive to compute and reuse."
+              "text": "An adjacency matrix has N rows and N columns, using O(N²) = O((RC)²) space even though almost every pair of cells is nonadjacent. It is mathematically capable of storing the graph, but on-demand direction checks provide the needed index directly."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Representation rule",
+              "text": "For a bounded-degree grid, generate edges in O(1) per state instead of materializing all cell pairs."
             }
           ]
         },

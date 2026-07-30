@@ -3,7 +3,7 @@
   "batchId": "algorithms-sorting-based-sorting_cost_and_side_effects-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -139,7 +139,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Choosing in place before reading the contract can create a correct numeric answer with an invalid side effect. Once legality is known, the representation is fixed: mutate the original, copy values, or decorate occurrences. Sorting and processing operate on that representation. The final analysis must include both the sort and any copy, rather than quoting a generic complexity disconnected from the implemented path."
+              "text": "Choosing in place before reading the contract can produce a correct numeric answer with an invalid caller-visible side effect. Each later step depends on the resolved ownership and identity requirements."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Inspect whether caller-visible reordering is permitted and whether later output needs original order or occurrence identities.",
+                "Choose the concrete representation: mutate only with permission; otherwise copy values, decorate occurrences, or sort an index permutation as required.",
+                "Sort that representation and run the downstream scan, grouping, or search.",
+                "Report total time and extra space for the actual path, including copies, decoration, sorting, and auxiliary state."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "A numeric answer does not excuse an invalid side effect",
+              "text": "Input ownership and aliases are part of correctness. Complexity must describe the representation that satisfies that contract, not an imagined in-place variant."
             }
           ]
         }
@@ -406,9 +421,10 @@
     },
     {
       "id": "alg-sort-cost-07-reused-sorted-copy-total-cost",
-      "prompt": "A read-only dataset of n records is copied and comparison-sorted once, then q independent binary-search queries are answered against that copy. What are the worst-case total time and extra-space complexities?",
+      "prompt": "A read-only dataset of n records is copied and comparison-sorted once, then q independent binary-search queries are answered against that copy. Select the tightest offered worst-case total time and extra-space bounds.",
       "constraints": [
-        "Each binary-search query costs O(log n).",
+        "Comparison sorting has worst-case Θ(n log n) time.",
+        "Each binary-search query has worst-case Θ(log n) time.",
         "The copied record array contains all n records and preserves the original input unchanged."
       ],
       "difficulty": "advanced",
@@ -455,7 +471,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Copying costs O(n), comparison sorting costs O(n log n), and q binary searches cost O(q log n). The complete bound is therefore O(n log n + q log n); neither the linear copy nor a single query erases the preprocessing term. The sorted copy uses O(n) extra space because the source must remain unchanged. Re-sorting for every query would instead cost O(q n log n) and would violate the stated reuse design."
+              "text": "Copying n records costs Θ(n), the one comparison sort costs Θ(n log n), and q worst-case binary searches cost q × Θ(log n) = Θ(q log n). Their sum is Θ(n + n log n + q log n) = Θ(n log n + q log n), matching the offered time bound. The retained defensive copy contains n records, establishing Θ(n) extra space."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(q n log n) re-sorts for every query instead of reusing one copy. O(n + q) omits both comparison sorting and logarithmic searches. O(n² + q) replaces the independent query term and uses a loose quadratic preprocessing bound. Space is not O(1) or O(log n) because the complete n-record copy remains stored."
             }
           ]
         }

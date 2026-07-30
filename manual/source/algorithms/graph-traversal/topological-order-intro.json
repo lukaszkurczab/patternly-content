@@ -3,7 +3,7 @@
   "batchId": "algorithms-graph-traversal-topological_order_intro-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -36,20 +36,20 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "p_to_q",
-            "text": "P → Q, so completing P removes one unmet prerequisite from Q."
-          },
-          {
             "id": "q_to_p",
             "text": "Q → P, because Q names P as a prerequisite."
           },
           {
-            "id": "both",
-            "text": "Add both P → Q and Q → P so the relationship is visible in either direction."
-          },
-          {
             "id": "undirected",
             "text": "Use an undirected edge because dependency is just connectivity."
+          },
+          {
+            "id": "p_to_q",
+            "text": "P → Q, so completing P removes one unmet prerequisite from Q."
+          },
+          {
+            "id": "both",
+            "text": "Add both P → Q and Q → P so the relationship is visible in either direction."
           }
         ],
         "acceptedOptionIds": [
@@ -65,8 +65,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Point from the prerequisite to what it unlocks"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Represent “P before Q” as edge P → Q.",
+                "That edge contributes one to indegree[Q], so Q begins with one unmet prerequisite.",
+                "P has no prerequisite from this relation and may become ready first.",
+                "When P is processed, traverse P → Q and decrement indegree[Q]."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Kahn's algorithm begins with vertices whose indegree is zero. When P is processed, it traverses outgoing edges and decrements Q's indegree, representing satisfaction of P. Reversing the edge changes the meaning of indegree and can produce an invalid schedule. The graph is directed even if the underlying pair of items is connected in an informal sense."
+              "text": "Reversing the edge would make processing Q unlock P, the opposite schedule. Adding both directions claims mutual dependency and creates a cycle; an undirected edge loses precedence entirely."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Orientation rule",
+              "text": "prerequisite → dependent makes indegree equal the number of unmet prerequisites."
             }
           ]
         },
@@ -93,12 +113,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "all_zero_indegree",
-            "text": "Every vertex whose indegree is zero, including isolated vertices."
-          },
-          {
             "id": "one_arbitrary",
             "text": "One arbitrary vertex, because ordinary BFS always starts from one source."
+          },
+          {
+            "id": "all_zero_indegree",
+            "text": "Every vertex whose indegree is zero, including isolated vertices."
           },
           {
             "id": "all_vertices",
@@ -122,8 +142,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Seed every item that is ready now"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "indegree[v] counts v's currently unmet incoming prerequisites.",
+                "Every vertex with indegree 0 is immediately legal to process.",
+                "An isolated vertex has no incoming edges, so it is also ready even though no traversal reaches it from another vertex."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The initial queue is a set of valid starting choices, not a single-source reachability frontier. Isolated vertices have no prerequisites and belong in it. Different queue tie orders can produce different valid topological orders. The queue makes the procedure look like BFS, but its admission rule is dependency readiness rather than unweighted distance discovery."
+              "text": "Kahn's queue is a global ready set, not a single-source reachability frontier. Choosing only one arbitrary or highest-outdegree vertex can omit independent ready work; inserting all vertices would publish dependents whose prerequisites remain unmet."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Initial frontier",
+              "text": "Enqueue all and only zero-indegree vertices."
             }
           ]
         },
@@ -177,8 +216,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Publish v on the transition to zero"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Decrement indegree[v] because processed prerequisite u has satisfied edge u → v.",
+                "Inspect the new value.",
+                "If and only if it is zero, enqueue v once as newly ready."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The indegree value summarizes how many prerequisites of v remain unsatisfied. Processing edge u → v first removes that one requirement. Only the resulting value can establish readiness; testing before the decrement can miss the zero transition, while enqueuing without the zero test can publish v too early or more than once. Parallel implementations must make this decrement-and-zero-publication transition logically atomic."
+              "text": "If indegree[v] changes from 2 to 1, another prerequisite remains and v must stay out of the queue. If it changes from 1 to 0, every prerequisite has now been processed. Testing before decrement misses this event; enqueuing without the zero test publishes too early or repeatedly."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Readiness transition",
+              "text": "decrement → test new value → enqueue exactly on zero."
             }
           ]
         }
@@ -200,10 +258,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "multiple_valid",
-            "text": "Either may appear first; the graph can have multiple valid topological orders."
-          },
-          {
             "id": "a_must_first",
             "text": "A must appear first because it was listed first in the input."
           },
@@ -214,6 +268,10 @@
           {
             "id": "cycle",
             "text": "Two initial ready vertices prove there is a cycle between them."
+          },
+          {
+            "id": "multiple_valid",
+            "text": "Either may appear first; the graph can have multiple valid topological orders."
           }
         ],
         "acceptedOptionIds": [
@@ -229,8 +287,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Incomparable ready vertices create valid tie choices"
+            },
+            {
               "type": "paragraph",
-              "text": "Kahn's algorithm can choose any zero-indegree vertex. A normal queue gives one deterministic result based on insertion order, while a priority queue can enforce another policy. Both remain valid if every directed edge points forward in the output. Uniqueness requires an additional condition, such as exactly one ready choice at every step, and is not guaranteed by DAG status alone."
+              "text": "With no path or edge constraint ordering A against B, both have zero indegree. Choosing A then B or B then A preserves every existing dependency, so both prefixes can belong to valid topological orders."
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "A FIFO queue selects one order from insertion order.",
+                "A priority queue can select a lexicographically smallest ready vertex.",
+                "Neither policy makes the mathematical order unique."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Uniqueness signal",
+              "text": "A Kahn run has a unique next choice only when the ready set contains exactly one vertex at that step."
             }
           ]
         },
@@ -257,16 +334,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "cycle_exists",
-            "text": "At least one directed cycle prevents the remaining vertices from ever reaching indegree zero."
-          },
-          {
             "id": "disconnected",
             "text": "The two remaining vertices are merely in another disconnected DAG component."
           },
           {
             "id": "matrix_error",
             "text": "The result only proves adjacency lists were used instead of a matrix."
+          },
+          {
+            "id": "cycle_exists",
+            "text": "At least one directed cycle prevents the remaining vertices from ever reaching indegree zero."
           },
           {
             "id": "late_visited",
@@ -286,8 +363,23 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "A nonempty DAG remainder must expose a ready vertex"
+            },
+            {
               "type": "paragraph",
-              "text": "If the ready queue empties while vertices remain unprocessed, those vertices form or depend on a directed cycle that keeps their indegrees positive. Comparing processedCount with V is therefore the cycle check. This is stronger than merely maintaining a visited set: ordinary reachability can traverse cyclic graphs, while topological ordering is impossible on them."
+              "text": "Assume a finite nonempty directed remainder has no cycle. Following incoming edges backward cannot continue forever, so it must end at a vertex with no incoming edge inside that remainder. That vertex would have residual indegree zero and enter Kahn's queue."
+            },
+            {
+              "type": "paragraph",
+              "text": "Here the queue is empty after only 7 of V = 9 vertices, contradicting that DAG property. At least one directed cycle remains; vertices outside the cycle may also remain if they depend on it. Disconnected acyclic regions would have seeded their own zero-indegree vertices and been processed."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Cycle check",
+              "text": "After Kahn processing, processedCount < V if and only if no complete topological order exists because a directed cycle remains."
             }
           ]
         },
@@ -314,12 +406,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "different_admission",
-            "text": "Its queue admits every vertex when its remaining indegree becomes zero, not when first reached from one source."
-          },
-          {
             "id": "bfs_faster",
             "text": "It is ordinary BFS, but BFS is always faster than DFS so the name emphasizes speed."
+          },
+          {
+            "id": "different_admission",
+            "text": "Its queue admits every vertex when its remaining indegree becomes zero, not when first reached from one source."
           },
           {
             "id": "no_graph",
@@ -343,8 +435,27 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "The same container can serve a different invariant"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Ordinary BFS admits a vertex when an edge first discovers it from a source-reachable frontier.",
+                "Kahn admits a vertex when its remaining indegree becomes zero, possibly without being reachable from one chosen start.",
+                "BFS layers encode unweighted distance; Kahn's queue encodes global dependency readiness."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Both use a FIFO container, but data-structure similarity does not imply the same algorithmic invariant. Kahn decrements prerequisite counts and publishes a vertex on the zero transition. BFS publishes a vertex on first graph discovery and uses layers for unweighted distance. Confusing the two can process a dependent before all prerequisites or incorrectly require one starting source."
+              "text": "Using first discovery for dependencies can publish a vertex after only one of several prerequisites. Requiring one source can omit independent DAG regions. FIFO is an implementation detail shared by two different state transitions."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Algorithm identity",
+              "text": "Name an algorithm by its state invariant and admission rule, not by the container it uses."
             }
           ]
         },
@@ -371,10 +482,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "process_all_ready",
-            "text": "Include zero-indegree vertices from every subgraph and the isolated vertex, producing an order of all declared vertices."
-          },
-          {
             "id": "one_component",
             "text": "Start from one arbitrary source and stop when its reachable component is exhausted."
           },
@@ -385,6 +492,10 @@
           {
             "id": "link_components",
             "text": "Add artificial edges between subgraphs so one BFS can reach all vertices."
+          },
+          {
+            "id": "process_all_ready",
+            "text": "Include zero-indegree vertices from every subgraph and the isolated vertex, producing an order of all declared vertices."
           }
         ],
         "acceptedOptionIds": [
@@ -400,8 +511,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Topological order covers the declared vertex set globally"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Compute indegree for every declared vertex in both subgraphs and for the isolate.",
+                "Seed every zero-indegree vertex, including the isolated one.",
+                "Process readiness transitions independently across both subgraphs.",
+                "Accept the result only when the output contains all V declared vertices."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Kahn initialization naturally seeds every zero-indegree vertex, so disconnectedness needs no separate traversal root logic. An isolated vertex has indegree zero and no outgoing edges; it can appear anywhere consistent with other constraints. The output length must still equal V. This differs from a single-source BFS that intentionally restricts itself to one reachable component."
+              "text": "The isolated vertex has no constraints and may appear wherever the tie policy places it. Artificial links would change the set of valid orders; a single-source traversal would omit legal independent work."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Coverage rule",
+              "text": "Kahn needs no component restarts because its initial and newly-ready queues are global over all declared vertices."
             }
           ]
         },
@@ -428,16 +559,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "lists_indegree",
-            "text": "Outgoing adjacency lists plus an indegree value for every declared vertex."
-          },
-          {
             "id": "matrix_required",
             "text": "An adjacency matrix, because dependency order needs constant-time membership for every pair."
           },
           {
             "id": "parent_only",
             "text": "One parent pointer per vertex, because dependencies form a traversal tree."
+          },
+          {
+            "id": "lists_indegree",
+            "text": "Outgoing adjacency lists plus an indegree value for every declared vertex."
           },
           {
             "id": "visited_only",
@@ -457,8 +588,28 @@
         "details": {
           "blocks": [
             {
+              "type": "heading",
+              "level": 2,
+              "text": "Charge each vertex and dependency once"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Initialize V adjacency-list headers and V indegree counters in O(V).",
+                "For each of E directed edges u → v, append v under u and increment indegree[v] once.",
+                "Each vertex enters and leaves the ready queue once, for O(V) queue work.",
+                "Processing outgoing lists decrements each edge exactly once, for O(E) work."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Building indegrees and adjacency lists takes O(V + E). Each vertex enters the ready queue once, and each directed edge causes one decrement, so processing remains O(V + E). A matrix is valid but may cost O(V²) to build or scan. Parent-only tree state cannot represent converging prerequisites, and ordinary visited state cannot replace indegree readiness."
+              "text": "Total time and representation space are O(V + E). A matrix can represent the same graph but scans or stores V² pairs. One parent cannot encode converging prerequisites, and visited alone cannot report how many prerequisites remain."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Canonical state",
+              "text": "Use outgoing adjacency lists plus one indegree counter for every declared vertex."
             }
           ]
         },

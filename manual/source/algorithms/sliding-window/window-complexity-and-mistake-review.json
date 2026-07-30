@@ -3,7 +3,7 @@
   "batchId": "algorithms-sliding-window-window-complexity-and-mistake-review",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -68,7 +68,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Syntactic nesting does not multiply iteration counts when the inner pointer keeps its progress across outer iterations. The outer loop contributes n right moves. Across the entire run, left can cross each index once, contributing at most n additional moves. With O(1) state updates per move, total work is O(n+n)=O(n). The bound would change if left reset for each right or if a validity check rescanned the window. The proof counts total operations over the complete execution rather than multiplying the maximum local loop lengths suggested by the source-code indentation."
+              "text": "Syntactic nesting does not multiply iteration counts when the inner pointer keeps its progress. `right` contributes n moves and `left` at most n, so O(1) work per move gives O(n+n)=O(n). O(1) and O(log n) cannot cover the n right increments; O(n^2) incorrectly multiplies two loop bounds even though `left` never resets. The bound would change if `left` restarted for each right or a helper rescanned the current window."
             }
           ]
         }
@@ -85,6 +85,7 @@
       "id": "alg-sw-complexity-frequency-space",
       "prompt": "A longest at-most-K-distinct window uses a hash map of frequencies. Assume expected O(1) hash operations and no more than K+1 keys during a transient violation. Select its expected time and extra-space complexities.",
       "constraints": [
+        "1 ≤ K ≤ n.",
         "Both boundaries move only forward.",
         "The map stores only keys currently represented in the window and removes zero-count keys."
       ],
@@ -133,7 +134,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Each element enters once and leaves at most once, so the number of expected constant-time map operations is linear. After repair there are at most K keys; immediately after adding a new distinct key there may be K+1, which is still O(K). Thus extra state is O(K), bounded by O(min(n, alphabetSize)) in concrete domains. If the alphabet is a fixed constant, the asymptotic space can be described as O(1), but under variable K the declared contract is O(K)."
+              "text": "Each element enters once and leaves at most once, so at most a constant multiple of n expected-O(1) map operations gives expected O(n) time. O(n log n) would match logarithmic ordered-map updates, not the stated hash assumption; O(n^2) would require resets or repeated interior scans. After repair there are at most K keys and a transient violation has at most K+1; because K≥1, K+1≤2K and space is O(K). O(1) applies only when K or the alphabet is fixed independently of input, while O(n) is a looser bound that ignores the declared K cap. In concrete domains the state is also bounded by the alphabet size."
             }
           ]
         }
@@ -148,7 +149,7 @@
     },
     {
       "id": "alg-sw-complexity-recompute-fixed-window",
-      "prompt": "There are n−k+1 fixed-length windows. An implementation recomputes each window sum by visiting all k elements instead of using a rolling update. What is its time complexity?",
+      "prompt": "There are n−k+1 fixed-length windows. An implementation recomputes each window sum by visiting all k elements instead of using a rolling update. What is the tightest offered time bound in terms of both n and k?",
       "constraints": [
         "1 ≤ k ≤ n.",
         "No prefix sums or rolling state are used."
@@ -163,19 +164,19 @@
           "time": [
             "O(n)",
             "O(k)",
+            "O((n-k+1)*k)",
             "O(n*k)",
             "O(n^2*k)"
           ]
         },
         "acceptedValuesByDimension": {
           "time": [
-            "O(n*k)"
+            "O((n-k+1)*k)"
           ]
         },
         "normalizedAliasesByDimension": {
           "time": {
-            "O((n-k+1)*k)": "O(n*k)",
-            "O(nk)": "O(n*k)"
+            "O((n−k+1)k)": "O((n-k+1)*k)"
           }
         },
         "maxPoints": 1
@@ -185,12 +186,12 @@
         "maxPoints": 1
       },
       "feedback": {
-        "reason": "The implementation performs Θ(k) work for each of Θ(n) candidate starts, giving O(nk).",
+        "reason": "The implementation performs k visits for each of exactly n−k+1 candidate starts, so its tight two-parameter bound is O((n−k+1)k).",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The exact operation count is proportional to (n−k+1)·k. In two-parameter notation this is O(nk), and when k grows with n it can become quadratic. The fixed-window pattern is linear only when overlap is reused through O(1) add/remove updates, or when an equivalent prefix-state query gives O(1) per range. Merely using left and right indices does not make the implementation O(n). If k is an externally fixed constant the expression simplifies to O(n), but the general input-parameter contract must retain k in the bound."
+              "text": "The exact work is proportional to `(n-k+1)k`: there are `n-k+1` starts and each rescan visits k values. `O(nk)` is a valid loose upper bound but not the tightest over the full domain: when k=n, only one window exists and the exact expression is O(n), whereas nk is O(n²). O(n) is not sufficient for all k because the expression reaches Θ(n²) near k≈n/2; O(k) ignores multiple starts, and O(n²k) adds an unsupported extra factor. Rolling add/remove state or prefix sums reduce each post-initialization window query to O(1), making the complete scan O(n)."
             }
           ]
         }
@@ -216,12 +217,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "expected_linear",
-            "text": "The traversal is expected O(n) under expected O(1) hash operations; a pathological hash-map worst case can be worse unless the map contract provides stronger bounds."
-          },
-          {
             "id": "worst_case_always_linear",
             "text": "Hash lookup is worst-case O(1), so the algorithm is unconditionally worst-case O(n)."
+          },
+          {
+            "id": "expected_linear",
+            "text": "The traversal is expected O(n) under expected O(1) hash operations; a pathological hash-map worst case can be worse unless the map contract provides stronger bounds."
           },
           {
             "id": "map_makes_nlogn",
@@ -277,16 +278,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "can_be_quadratic",
-            "text": "It can be O(n²) because Θ(n) right steps may each perform a Θ(n) validity scan."
-          },
-          {
             "id": "always_linear",
             "text": "It remains O(n) solely because left and right are monotone."
           },
           {
             "id": "always_logarithmic",
             "text": "A validity predicate over a window is automatically O(log n)."
+          },
+          {
+            "id": "can_be_quadratic",
+            "text": "It can be O(n²) because Θ(n) right steps may each perform a Θ(n) validity scan."
           },
           {
             "id": "constant_if_no_shrink",

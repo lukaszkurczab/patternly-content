@@ -3,7 +3,7 @@
   "batchId": "algorithms-sorting-based-custom_key_and_tie_breaking-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -32,7 +32,8 @@
       "prompt": "A scheduler must order jobs by earliest deadline, then by higher priority number, then by smaller job ID. Which key expresses the required total order for an ascending sort?",
       "constraints": [
         "Job IDs are unique.",
-        "Higher numeric priority must come earlier."
+        "Higher numeric priority must come earlier.",
+        "The key representation can negate every priority exactly without overflow."
       ],
       "difficulty": "introductory",
       "interaction": {
@@ -134,7 +135,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A hierarchical comparator is a sequence of guarded decisions. Returning on the first difference enforces the precedence contract and avoids letting a secondary field overturn a primary result. The final unique ID makes distinct records comparable. Returning equality earlier would create a partial order relative to the stated output, while comparing score before category would implement a different ranking entirely."
+              "text": "A hierarchical comparator is a sequence of guarded decisions. A later field is consulted only when all more important fields tie."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Compare category ascending and return immediately when categories differ.",
+                "Only for equal categories, compare score descending and return when scores differ.",
+                "Only when category and score both tie, compare unique ID ascending.",
+                "Return equality only when all three fields compare equal; with unique IDs this can occur only for the same record identity."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Secondary fields cannot overturn primary order",
+              "text": "Comparing score before category implements a different ranking. Returning equality before ID leaves distinct records unordered relative to the deterministic output contract."
             }
           ]
         }
@@ -397,7 +413,7 @@
     },
     {
       "id": "alg-sort-keys-07-expensive-comparator-cost",
-      "prompt": "A comparison sort performs O(n log n) comparisons. Each comparison recomputes a normalized key of length m for both records in O(m) time. What is the resulting worst-case time bound, ignoring constant factors?",
+      "prompt": "A comparison sort performs Θ(n log n) comparisons in its worst case. Each comparison recomputes a normalized key of length m for both records in Θ(m) time. What is the tightest offered resulting worst-case time bound, ignoring constant factors?",
       "constraints": [
         "Keys are not cached or precomputed.",
         "Comparing two already-computed normalized keys is O(m) in the worst case and is included in the O(m) comparison cost."
@@ -436,7 +452,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Comparison count and comparison cost multiply. Recomputing or scanning an m-length normalized key during each comparison yields O(m n log n) time. Precomputing one key per record could change the bound to O(nm + n log n) plus the cost of comparing cached representations, depending on representation. Counting only sort calls or loop syntax would hide the dominant work inside the comparator."
+              "text": "Comparison count and comparison cost multiply: Θ(n log n) comparisons × Θ(m) work per comparison = Θ(m n log n), matching the offered O(m n log n) bound. Recomputing two keys changes only a constant factor."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(n log n) hides the length-m work inside every comparison. O(n + m) adds independent terms instead of multiplying per-comparison cost. O(n²m) is a looser upper bound, not the tightest offered bound. Precomputing keys could change the accounting, but the prompt explicitly excludes caching."
             }
           ]
         }
@@ -451,7 +473,7 @@
     },
     {
       "id": "alg-sort-keys-08-transfer-tie-materiality",
-      "prompt": "Select all contracts where an explicit final tie-break is materially required rather than merely cosmetic.",
+      "prompt": "Select all contracts where tied-record order must be handled deliberately rather than treated as cosmetic.",
       "constraints": [
         "The primary and secondary business fields can tie.",
         "The implementation must satisfy only the stated contract, not an unstated preference."
@@ -488,7 +510,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Tie-breaks are required when tied-record order is observable through determinism or stable-order semantics.",
+        "reason": "Deliberate tie handling is required when tied-record order is observable through determinism or stable-order semantics.",
         "details": {
           "blocks": [
             {

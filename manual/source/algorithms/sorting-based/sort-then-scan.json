@@ -3,7 +3,7 @@
   "batchId": "algorithms-sorting-based-sort_then_scan-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -29,7 +29,7 @@
   "items": [
     {
       "id": "alg-sort-scan-01-threshold-neighbor-detection",
-      "prompt": "An unsorted list of scalar measurements must answer whether any two distinct values differ by at most D. Which sort-based follow-up is sufficient?",
+      "prompt": "An unsorted list of scalar measurements must answer whether any two distinct input occurrences differ by at most D. Which sort-based follow-up is sufficient?",
       "constraints": [
         "D is nonnegative.",
         "Only existence is required, and original positions are not part of the output."
@@ -134,7 +134,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Sorting establishes the invariant that only neighbouring values need comparison. Initializing from a real pair avoids an arbitrary sentinel and requires the stated n >= 2 boundary. The loop then examines each unprocessed adjacent relation exactly once. Returning before the loop completes would treat a prefix optimum as a global optimum, while scanning before sorting would compare unrelated input neighbours."
+              "text": "Sorting establishes the invariant that only neighbouring values need comparison. The remaining operations depend on that order and on the stated n ≥ 2 boundary."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Sort all values in ascending order so every globally minimum scalar gap has an adjacent witness.",
+                "Initialize best from sorted[1] - sorted[0], a real pair guaranteed by n ≥ 2.",
+                "For i from 2 through n - 1, compare sorted[i] - sorted[i - 1] with best and retain the smaller gap.",
+                "Return best only after every adjacent boundary has been considered."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "A prefix optimum is not yet global",
+              "text": "Returning before the scan completes can miss a later smaller gap; scanning before sorting compares arbitrary input neighbours and loses the adjacency proof."
             }
           ]
         }
@@ -230,7 +245,7 @@
           },
           {
             "id": "sort_score_then_id",
-            "text": "Sort by (score, recordId), then scan each equal-score run and choose its first two IDs."
+            "text": "Sort by (score, recordId), take the first two IDs from every equal-score run, and return the lexicographically smallest candidate pair across all runs."
           },
           {
             "id": "return_last_pair",
@@ -246,19 +261,19 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Because scan position selects the answer, the comparator must order tied records by the ID rule that defines the required first pair.",
+        "reason": "ID tie-breaking exposes the smallest pair inside each score run, but the scan must still compare those run candidates to satisfy a global lexicographic contract.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A left-to-right scan is deterministic only relative to its complete sorted order. Treating all equal scores as comparator-equal leaves their internal order dependent on input order, sort stability, or implementation. Adding record ID as the tie-break makes the first two members of each score run the lexicographically smallest IDs. A different pair-selection pass could also work, but the stated scan requires this total key."
+              "text": "Sorting by (score, recordId) makes every equal-score class contiguous and orders its IDs ascending. Therefore the first two records in a run form that run's lexicographically smallest valid pair; later members cannot improve its first ID, or its second ID when the first is fixed. Different score runs can have unrelated ID ranges, so the earliest run in score order is not necessarily the global lexicographic winner. The scan must keep the smallest candidate pair seen across all runs."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "sort_score_only": "The result can vary among legal score-only orders and therefore does not satisfy the lexicographic pair contract.",
+          "sort_score_only": "The result can vary among legal score-only orders, and returning the first run also confuses score order with the required global ID order.",
           "reverse_each_run": "Reversal deterministically chooses large IDs first, the opposite of the requested lexicographic minimum.",
-          "return_last_pair": "Changing scan position does not define the required tie order and can still depend on unstable input ordering."
+          "return_last_pair": "Changing scan position does not define ID order within a run or compare the best candidates across runs."
         }
       },
       "taxonomy": {
@@ -393,7 +408,7 @@
     },
     {
       "id": "alg-sort-scan-07-comparison-sort-neighbor-pass",
-      "prompt": "An in-place comparison sort with O(n log n) worst-case time is followed by a complete adjacent scan with O(1) work per boundary. What is the total worst-case time?",
+      "prompt": "An in-place comparison sort with Θ(n log n) worst-case time is followed by a complete adjacent scan with O(1) work per boundary. What is the tightest offered total worst-case time bound?",
       "constraints": [
         "The input has n items.",
         "No bounded-key non-comparison sorting assumption is available."
@@ -431,7 +446,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The scan contributes n - 1 constant-time comparisons, so its cost is O(n). Adding it to O(n log n) yields O(n log n + n) = O(n log n). The fact that the post-sort phase is one loop does not make the complete algorithm linear. Space depends on the concrete sort implementation and is intentionally not checked by this item."
+              "text": "The scan contributes n - 1 constant-time comparisons, so its cost is Θ(n). Adding it to the stated Θ(n log n) sort yields Θ(n log n + n) = Θ(n log n), matching the offered O(n log n) bound. Space depends on the concrete sort implementation and is intentionally not checked."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(n) omits the comparison-sort preprocessing. O(n²) is a valid loose upper bound for ordinary n but is not the tightest offered bound and implies quadratic work that this sort-plus-scan algorithm does not perform."
             }
           ]
         }

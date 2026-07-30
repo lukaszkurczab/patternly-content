@@ -3,7 +3,7 @@
   "batchId": "algorithms-linked-list-dummy_and_sentinel_nodes-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -279,7 +279,8 @@
       "prompt": "dummy.next = head. Starting with prev = dummy, a routine follows prev = prev.next k times so prev becomes the predecessor of zero-based position k. No auxiliary index exists. What are the time and extra-space costs?",
       "constraints": [
         "The list is singly linked and acyclic.",
-        "Only dummy, head, and k are initially available."
+        "Only dummy, head, and k are initially available.",
+        "The zero-based data position k exists, so 0 <= k < list length."
       ],
       "interaction": {
         "type": "complexity",
@@ -400,7 +401,7 @@
       "difficulty": "intermediate"
     },
     {
-      "prompt": "prev may be dummy or a data node, and prev.next is the node to delete. No other reference preserves the successor. Order the transition while keeping prev ready to examine the next candidate.",
+      "prompt": "prev may be dummy or a data node, and prev.next is the node to delete. No other reference preserves the successor. Order the link-changing operations; prev itself must remain unchanged so it still precedes the next candidate.",
       "constraints": [
         "prev.next is non-null and is the selected victim.",
         "Consecutive candidates may also need deletion."
@@ -419,31 +420,34 @@
           {
             "id": "bypass",
             "text": "Set prev.next = successor."
-          },
-          {
-            "id": "keep_prev",
-            "text": "Keep prev unchanged for the next candidate."
           }
         ],
         "canonicalOrder": [
           "capture_victim",
           "capture_successor",
-          "bypass",
-          "keep_prev"
+          "bypass"
         ],
         "scoringMethod": "adjacent_relations"
       },
       "scoringContract": {
         "type": "ordering",
-        "maxPoints": 3
+        "maxPoints": 2
       },
       "feedback": {
         "reason": "The victim and successor are captured before the predecessor link changes, and deletion leaves prev at the same predecessor.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "Read `victim = prev.next` while the predecessor still reaches the selected node.",
+                "Read `successor = victim.next` before any link overwrite; this reference preserves the remaining chain.",
+                "Assign `prev.next = successor` to bypass victim."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "The sequence is identical whether prev is dummy or a data node, which is the sentinel's benefit. Capturing successor before bypassing prevents loss of the remaining chain. Keeping prev unchanged is essential when consecutive nodes may be deleted; advancing to victim would move into an unlinked node and skip the new prev.next candidate."
+              "text": "The sequence is identical whether prev is dummy or a data node, which is the sentinel's benefit. There is deliberately no `prev = ...` update: after the bypass, the unchanged prev already precedes the next candidate at prev.next. Advancing prev to victim would move into an unlinked node and can skip a consecutive match."
             }
           ]
         }

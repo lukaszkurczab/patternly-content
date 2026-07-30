@@ -3,7 +3,7 @@
   "batchId": "arrays-and-strings-stable-in-place-compaction-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -29,16 +29,12 @@
   "items": [
     {
       "id": "alg-arrays-stable-compaction-001",
-      "prompt": "During stable in-place compaction, what does the write index represent after the first read positions have been processed?",
+      "prompt": "At a loop boundary in stable in-place compaction, read is the number of input positions already processed. What does write represent?",
       "difficulty": "intro",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "retained_prefix_length",
-            "text": "The number of retained values already written into the valid output prefix."
-          },
           {
             "id": "next_unread_position",
             "text": "The position of the next unread input value."
@@ -50,6 +46,10 @@
           {
             "id": "physical_array_length",
             "text": "The physical length of the array."
+          },
+          {
+            "id": "retained_prefix_length",
+            "text": "The number of retained values already written into the valid output prefix."
           }
         ],
         "acceptedOptionIds": [
@@ -117,12 +117,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "only_after_retained_write",
-            "text": "Only after a retained value has been written to array[write]."
-          },
-          {
             "id": "every_read_iteration",
             "text": "On every read iteration, whether the value is retained or removed."
+          },
+          {
+            "id": "only_after_retained_write",
+            "text": "Only after a retained value has been written to array[write]."
           },
           {
             "id": "only_when_value_removed",
@@ -191,27 +191,27 @@
     },
     {
       "id": "alg-arrays-stable-compaction-003",
-      "prompt": "Which invariant prevents stable compaction from overwriting unread input?",
+      "prompt": "At each loop boundary, read is the number of input positions already processed and write is the number of retained values already emitted. Which invariant prevents stable compaction from overtaking unread input?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "write_not_ahead_of_read",
-            "text": "At every step, write <= read."
-          },
-          {
             "id": "read_not_ahead_of_write",
-            "text": "At every step, read <= write."
+            "text": "At every loop boundary, read <= write."
           },
           {
             "id": "write_equals_length",
-            "text": "At every step, write equals n."
+            "text": "At every loop boundary, write equals n."
+          },
+          {
+            "id": "write_not_ahead_of_read",
+            "text": "At every loop boundary, write <= read."
           },
           {
             "id": "read_equals_write_plus_one",
-            "text": "At every step, read equals write + 1."
+            "text": "At every loop boundary, read equals write + 1."
           }
         ],
         "acceptedOptionIds": [
@@ -233,7 +233,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct choice is “At every step, write <= read.”. Writing to an index at or before the current read position cannot destroy future unread values. If write moved beyond read, the algorithm could overwrite input that has not yet been examined."
+              "text": "The correct choice is “At every loop boundary, write <= read.” The processed prefix is [0, read), and it can contribute at most read retained values, so write cannot be larger. During the next iteration, writing at an index below read changes only processed storage; writing at read is a self-write of the current source value."
             },
             {
               "type": "callout",
@@ -249,15 +249,15 @@
             {
               "type": "bullet_list",
               "items": [
-                "At every step, read <= write. — This permits write to move into unread territory.",
-                "At every step, write equals n. — Write should reflect retained count, which can be much smaller than n.",
-                "At every step, read equals write + 1. — Read and write may be equal for long stretches when all values are retained."
+                "At every loop boundary, read <= write. — This permits write to exceed the processed-input count and move into unread territory.",
+                "At every loop boundary, write equals n. — Write should reflect retained count, which can be much smaller than n.",
+                "At every loop boundary, read equals write + 1. — Read and write are equal whenever every processed value has been retained."
               ]
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "read_not_ahead_of_write": "This permits write to move into unread territory.",
+          "read_not_ahead_of_write": "This permits write to exceed the processed-input count and move into unread territory.",
           "write_equals_length": "Write should reflect retained count, which can be much smaller than n.",
           "read_equals_write_plus_one": "Read and write may be equal for long stretches when all values are retained."
         }
@@ -279,10 +279,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "zero",
-            "text": "0"
-          },
-          {
             "id": "one",
             "text": "1"
           },
@@ -293,6 +289,10 @@
           {
             "id": "n",
             "text": "n"
+          },
+          {
+            "id": "zero",
+            "text": "0"
           }
         ],
         "acceptedOptionIds": [
@@ -360,12 +360,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "read_left_to_right_write_next",
-            "text": "Read moves left to right, and each retained value is written to the next output position."
-          },
-          {
             "id": "sorting_after_scan",
             "text": "The retained prefix is sorted after the scan."
+          },
+          {
+            "id": "read_left_to_right_write_next",
+            "text": "Read moves left to right, and each retained value is written to the next output position."
           },
           {
             "id": "swap_with_end",
@@ -453,7 +453,7 @@
           },
           {
             "id": "advance_write",
-            "text": "Advance the write index."
+            "text": "Advance write, then advance read to the next source position."
           }
         ],
         "canonicalOrder": [
@@ -479,7 +479,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Writing occurs only after the predicate accepts the value, and write advances only after a valid output position has been filled."
+              "text": "For input [2, 5, 8] with a predicate that keeps even values, reading 2 and accepting it leads to array[write] = 2, then write advances because one output was produced and read advances because one input was consumed. Advancing either boundary before reading and deciding would change which source or destination the iteration means."
             },
             {
               "type": "callout",
@@ -498,7 +498,7 @@
                 "Read the current value at the read index.",
                 "Evaluate whether the value should be retained.",
                 "Write the retained value at the write index.",
-                "Advance the write index."
+                "Advance write because one output was produced, then advance read because one input was consumed."
               ]
             }
           ]
@@ -525,16 +525,16 @@
             "text": "Positions [0, write) contain exactly the retained values from the processed input prefix."
           },
           {
+            "id": "suffix_already_final",
+            "text": "Every position at or after write already contains its final required value."
+          },
+          {
             "id": "write_le_read",
             "text": "write never exceeds the number of input positions already processed."
           },
           {
             "id": "order_preserved",
             "text": "The retained values in [0, write) remain in original relative order."
-          },
-          {
-            "id": "suffix_already_final",
-            "text": "Every position at or after write already contains its final required value."
           }
         ],
         "acceptedOptionIds": [
@@ -688,6 +688,19 @@
                 "auxiliary space: O(1)",
                 "additional output space: O(1)"
               ]
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the tempting alternatives fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "O(k) time ignores rejected values; k can be zero while all n inputs still must be inspected.",
+                "O(n log n) time would require sorting or logarithmic work per element, neither of which occurs.",
+                "O(k) or O(n) auxiliary/output space would require a new growing container, but the compacted values reuse the input prefix."
+              ]
             }
           ]
         }
@@ -702,19 +715,19 @@
     },
     {
       "id": "alg-arrays-stable-compaction-010",
-      "prompt": "When read equals write and the current value is retained, is assigning array[write] = array[read] correct?",
+      "prompt": "During a valid iteration with read < n, read equals write and the current value is retained. Is assigning array[write] = array[read] correct?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "correct_self_assignment",
-            "text": "Yes. It is a harmless self-assignment and preserves the invariant."
-          },
-          {
             "id": "always_out_of_bounds",
             "text": "No. Equal read and write indices are always out of bounds."
+          },
+          {
+            "id": "correct_self_assignment",
+            "text": "Yes. It is a harmless self-assignment and preserves the invariant."
           },
           {
             "id": "must_skip_write_and_increment_read_only",
@@ -790,10 +803,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "gaps_and_stale_values",
-            "text": "The logical prefix can contain gaps or stale values where removed elements consumed write positions."
-          },
-          {
             "id": "read_stops_early",
             "text": "The read index automatically stops before the end."
           },
@@ -804,6 +813,10 @@
           {
             "id": "duplicates_always_removed",
             "text": "Every duplicate is automatically removed."
+          },
+          {
+            "id": "gaps_and_stale_values",
+            "text": "The logical prefix can contain gaps or stale values where removed elements consumed write positions."
           }
         ],
         "acceptedOptionIds": [
@@ -842,7 +855,7 @@
               "type": "bullet_list",
               "items": [
                 "The read index automatically stops before the end. — The write bug does not change the read loop boundary by itself.",
-                "The array is accidentally sorted. — No ordering operation is introduced.",
+                "The array is accidentally sorted. — Advancing an output boundary without writing does not compare or reorder values, so it cannot establish sorted order.",
                 "Every duplicate is automatically removed. — The bug concerns output placement, not duplicate detection."
               ]
             }
@@ -850,7 +863,7 @@
         },
         "wrongOptionExplanationsByOptionId": {
           "read_stops_early": "The write bug does not change the read loop boundary by itself.",
-          "array_becomes_sorted": "No ordering operation is introduced.",
+          "array_becomes_sorted": "Advancing an output boundary without writing does not compare or reorder values, so it cannot establish sorted order.",
           "duplicates_always_removed": "The bug concerns output placement, not duplicate detection."
         }
       },
@@ -871,12 +884,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "write_in_processed_region",
-            "text": "write is never ahead of read, so the destination lies in the processed region."
-          },
-          {
             "id": "array_values_immutable",
             "text": "Array values cannot actually be overwritten."
+          },
+          {
+            "id": "write_in_processed_region",
+            "text": "write is never ahead of read, so the destination is processed storage or the current source position, never later unread input."
           },
           {
             "id": "unread_values_copied_elsewhere",
@@ -906,7 +919,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The correct choice is “write is never ahead of read, so the destination lies in the processed region.”. A destination index less than read has already been consumed. A destination equal to read is a self-write of the current value."
+              "text": "The correct choice is “write is never ahead of read, so the destination is processed storage or the current source position, never later unread input.” A destination below read has already been consumed. A destination equal to read is a self-write of the current value. Therefore no position greater than read is modified before it is inspected."
             },
             {
               "type": "callout",
@@ -922,7 +935,7 @@
             {
               "type": "bullet_list",
               "items": [
-                "Array values cannot actually be overwritten. — In-place compaction explicitly mutates the array.",
+                "Array values cannot actually be overwritten. — In-place compaction relies on assigning retained values into earlier array positions; immutability would prevent this algorithm.",
                 "All unread values have already been copied to another collection. — The method is designed to avoid a growing backup collection.",
                 "Sorting protects unread values from modification. — Sorting is unrelated and may violate the required order."
               ]
@@ -930,7 +943,7 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "array_values_immutable": "In-place compaction explicitly mutates the array.",
+          "array_values_immutable": "In-place compaction relies on assigning retained values into earlier array positions; immutability would prevent this algorithm.",
           "unread_values_copied_elsewhere": "The method is designed to avoid a growing backup collection.",
           "sorting_protects_values": "Sorting is unrelated and may violate the required order."
         }
@@ -945,7 +958,7 @@
     },
     {
       "id": "alg-arrays-stable-compaction-013",
-      "prompt": "Arrange the checks for debugging an incorrect final logical length in a read/write compaction algorithm.",
+      "prompt": "Arrange the dependency-based checks for debugging an incorrect final logical length in a read/write compaction algorithm.",
       "difficulty": "easy",
       "interaction": {
         "type": "ordering",
@@ -956,11 +969,11 @@
           },
           {
             "id": "trace_increment_sites",
-            "text": "Trace every location where write is incremented."
+            "text": "From that meaning, derive that write increments exactly once for each retained value."
           },
           {
             "id": "test_none_and_all",
-            "text": "Test inputs where none and all values are retained."
+            "text": "Trace the derived increment rule on inputs where none and all values are retained."
           },
           {
             "id": "compare_prefix_to_count",
@@ -990,7 +1003,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The all-retained and none-retained cases expose unconditional or missing increments. The final prefix check confirms that the numeric boundary matches actual valid content."
+              "text": "If no value is retained, the derived rule predicts write = 0; if every one of n values is retained, it predicts write = n. A trace that differs identifies an unconditional or missing increment. Comparing the resulting [0, write) prefix with the predicted retained count then checks that the boundary and actual content agree."
             },
             {
               "type": "callout",
@@ -1007,9 +1020,9 @@
               "type": "ordered_list",
               "items": [
                 "State that write equals the number of retained values.",
-                "Trace every location where write is incremented.",
-                "Test inputs where none and all values are retained.",
-                "Verify that [0, write) contains exactly write valid outputs."
+                "Derive the increment rule from write's semantic meaning; do not infer meaning from buggy code.",
+                "Trace the rule on none-retained and all-retained inputs, which require the boundary values 0 and n.",
+                "Verify that [0, write) contains exactly write valid outputs; a numeric boundary without matching content is not sufficient."
               ]
             }
           ]
@@ -1036,16 +1049,16 @@
             "text": "Scan source positions from left to right."
           },
           {
+            "id": "swap_removed_with_end",
+            "text": "Swap each removed value with the last unprocessed value."
+          },
+          {
             "id": "write_only_retained",
             "text": "Write only retained values to consecutive output positions."
           },
           {
             "id": "return_write",
             "text": "Return write as the logical result length."
-          },
-          {
-            "id": "swap_removed_with_end",
-            "text": "Swap each removed value with the last unprocessed value."
           }
         ],
         "acceptedOptionIds": [
@@ -1180,7 +1193,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The write boundary advances only for a new retained value. No collection grows with n outside the input array."
+              "text": "The read index visits each of the n sorted positions once. Comparing the current value with the last retained value and conditionally writing it are constant-time operations, so total time is O(n). The write boundary and comparison state are constant-sized, and the result reuses the existing array prefix."
             },
             {
               "type": "callout",
@@ -1199,6 +1212,19 @@
                 "time: O(n)",
                 "auxiliary space: O(1)",
                 "additional output space: O(1)"
+              ]
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the tempting alternatives fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "O(log n) time would not inspect every value, but every occurrence must be classified as duplicate or new.",
+                "O(n²) time would require rescanning a growing prefix for each value; sorted adjacency makes that unnecessary.",
+                "O(n) auxiliary or additional output space would require a separate growing structure, contrary to the stated in-place prefix result."
               ]
             }
           ]
@@ -1221,12 +1247,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "reorders_retained_values",
-            "text": "A value from the end can move before retained values that originally preceded it."
-          },
-          {
             "id": "uses_two_indices",
             "text": "Any algorithm with two indices is unstable."
+          },
+          {
+            "id": "reorders_retained_values",
+            "text": "A value from the end can move before retained values that originally preceded it."
           },
           {
             "id": "requires_duplicates",
@@ -1302,10 +1328,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "returns_last_index_not_length",
-            "text": "It returns the last valid index rather than the logical output length."
-          },
-          {
             "id": "returns_too_many",
             "text": "It always reports one extra retained value."
           },
@@ -1316,6 +1338,10 @@
           {
             "id": "changes_aux_space",
             "text": "It changes auxiliary space from O(1) to O(n)."
+          },
+          {
+            "id": "returns_last_index_not_length",
+            "text": "It returns the last valid index rather than the logical output length."
           }
         ],
         "acceptedOptionIds": [
@@ -1354,7 +1380,7 @@
               "type": "bullet_list",
               "items": [
                 "It always reports one extra retained value. — Subtracting one underreports rather than overreports the retained count.",
-                "It forces the compacted prefix to become sorted. — The return expression does not reorder values.",
+                "It forces the compacted prefix to become sorted. — Changing only the reported boundary cannot compare, move, or reorder any values in the prefix.",
                 "It changes auxiliary space from O(1) to O(n). — A boundary arithmetic error does not allocate additional memory."
               ]
             }
@@ -1362,7 +1388,7 @@
         },
         "wrongOptionExplanationsByOptionId": {
           "returns_too_many": "Subtracting one underreports rather than overreports the retained count.",
-          "forces_sorting": "The return expression does not reorder values.",
+          "forces_sorting": "Changing only the reported boundary cannot compare, move, or reorder any values in the prefix.",
           "changes_aux_space": "A boundary arithmetic error does not allocate additional memory."
         }
       },
@@ -1383,12 +1409,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "stable_read_write_filter",
-            "text": "Scan left to right and write each retained character at the next write position."
-          },
-          {
             "id": "sort_then_remove",
             "text": "Sort all characters, then remove punctuation."
+          },
+          {
+            "id": "stable_read_write_filter",
+            "text": "Scan left to right and write each retained character at the next write position."
           },
           {
             "id": "set_of_characters",
@@ -1436,7 +1462,7 @@
               "items": [
                 "Sort all characters, then remove punctuation. — Sorting changes the relative order of retained characters.",
                 "Insert retained characters into a set and write the set back. — A set removes duplicate retained characters and does not preserve sequence order.",
-                "Swap punctuation with characters from the end until punctuation is outside the active range. — End swaps can reorder retained characters."
+                "Swap punctuation with characters from the end until punctuation is outside the active range. — A retained character moved from the end can jump ahead of earlier retained characters, violating relative order."
               ]
             }
           ]
@@ -1444,7 +1470,7 @@
         "wrongOptionExplanationsByOptionId": {
           "sort_then_remove": "Sorting changes the relative order of retained characters.",
           "set_of_characters": "A set removes duplicate retained characters and does not preserve sequence order.",
-          "swap_with_end": "End swaps can reorder retained characters."
+          "swap_with_end": "A retained character moved from the end can jump ahead of earlier retained characters, violating relative order."
         }
       },
       "taxonomy": {
@@ -1502,7 +1528,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Read advances because the source occurrence has been processed. Write remains unchanged because the valid prefix gains no retained value."
+              "text": "Suppose [2, 3, 4] is filtered to keep even values. After retaining 2, read = 1 and write = 1 at the next loop boundary. The current value 3 is read and rejected, so no assignment occurs and write stays 1. Advancing read to 2 records that 3 was consumed; the valid prefix [0, 1) still contains exactly [2]."
             },
             {
               "type": "callout",
@@ -1518,10 +1544,10 @@
             {
               "type": "ordered_list",
               "items": [
-                "Read the current source value.",
-                "Determine that the predicate rejects it.",
-                "Leave the write boundary unchanged.",
-                "Advance to the next source position."
+                "Read the current source value before changing either boundary.",
+                "Evaluate the predicate on that saved value and determine that it produces no output.",
+                "Leave write unchanged because the valid output prefix gains no element.",
+                "Advance read because one source occurrence has nevertheless been fully processed."
               ]
             }
           ]
@@ -1537,7 +1563,7 @@
     },
     {
       "id": "alg-arrays-stable-compaction-020",
-      "prompt": "Arrange the reasoning that proves the read/write invariant is preserved when a value is retained.",
+      "prompt": "After the current source value has been read and accepted, arrange the reasoning that proves the read/write invariant is preserved when it is retained.",
       "difficulty": "easy",
       "interaction": {
         "type": "ordering",
@@ -1582,7 +1608,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Appending the current retained value to the established prefix preserves both content and order, while the boundary relation keeps unread input safe."
+              "text": "Before the update, write <= read. If write < read, the destination is already processed; if write = read, the saved current value is written to itself. Appending that value at the exclusive boundary preserves encounter order. Incrementing write and then advancing to the next read boundary changes both retained and processed counts by one, so write <= read still holds."
             },
             {
               "type": "callout",
@@ -1598,10 +1624,10 @@
             {
               "type": "ordered_list",
               "items": [
-                "Assume [0, write) already contains the retained values from the processed prefix.",
-                "Write the accepted current value at array[write].",
-                "Increment write so the valid prefix includes the new value.",
-                "Confirm that relative order is preserved and write does not move ahead of the next read boundary."
+                "Assume the valid-prefix and write <= read invariants before updating state.",
+                "Write the already saved accepted value at array[write]; the destination cannot be later unread input.",
+                "Increment write so the valid prefix includes exactly the newly retained value.",
+                "At the next read boundary, confirm that encounter order is unchanged and both processed and retained counts increased by one."
               ]
             }
           ]
@@ -1632,18 +1658,18 @@
           },
           {
             "id": "ignore_suffix",
-            "text": "Leave positions at or after write outside the logical output contract."
+            "text": "Use the returned boundary to keep positions at or after write outside the logical output contract."
           },
           {
             "id": "return_write",
-            "text": "Return write as the logical result length."
+            "text": "Return write as the exclusive boundary and logical result length."
           }
         ],
         "canonicalOrder": [
           "stop_at_n",
           "identify_valid_prefix",
-          "ignore_suffix",
-          "return_write"
+          "return_write",
+          "ignore_suffix"
         ],
         "scoringMethod": "adjacent_relations"
       },
@@ -1662,7 +1688,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The suffix need not be cleared unless explicitly required. Returning write exposes exactly the number of retained values."
+              "text": "When read = n, the processed prefix is the entire input, so the invariant makes [0, write) the complete retained sequence. Returning write exposes both its length and exclusive boundary. The caller can then ignore [write, n), whose stale values are outside the result and need not be cleared unless another contract requires it."
             },
             {
               "type": "callout",
@@ -1678,10 +1704,10 @@
             {
               "type": "ordered_list",
               "items": [
-                "Stop when read reaches n.",
-                "Treat [0, write) as the complete compacted result.",
-                "Leave positions at or after write outside the logical output contract.",
-                "Return write as the logical result length."
+                "Stop at read = n, which proves that no source position remains unprocessed.",
+                "Apply the invariant to conclude that [0, write) is now the complete compacted result.",
+                "Return write as the result length and exclusive boundary.",
+                "Use that returned boundary to exclude [write, n) from the logical result without requiring suffix cleanup."
               ]
             }
           ]

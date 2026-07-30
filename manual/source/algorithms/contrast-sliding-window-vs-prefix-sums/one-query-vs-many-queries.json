@@ -3,7 +3,7 @@
   "batchId": "contrast-sliding-window-vs-prefix-sums-one-query-vs-many-queries-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -77,9 +77,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "A direct scan costs O(r - l + 1) time and O(1) auxiliary space."
+          {
+            "type": "paragraph",
+            "text": "Let m = r - l + 1. Starting a running sum at zero and visiting a[l], ..., a[r] reads exactly m values, so the query costs O(m) time and O(1) auxiliary space. Building P[i + 1] = P[i] + a[i] would first read all n values and retain n + 1 cumulative sums; it would then answer this one query as P[r + 1] - P[l]. Because the prompt rules out later reuse, that O(n)-time, O(n)-space index provides no subsequent benefit. The scan is therefore the sufficient baseline, especially when m is much smaller than n."
             },
             {
               "type": "callout",
@@ -89,11 +89,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "prefix_mandatory": "The one query may not repay preprocessing or memory.",
-          "sliding_all": "Only one interval is requested.",
-          "sort_range": "Sorting is unnecessary and changes order."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "prefix_mandatory": "A prefix array is legal, but it spends O(n) build time and O(n) space to save work on only one interval; the prompt provides no later query that could amortize that state.",
+        "sliding_all": "Enumerating all n - m + 1 length-m windows solves a different workload. Only the already known interval [l, r] must be summed.",
+        "sort_range": "Addition does not depend on element order, so sorting cannot make the sum easier and costs extra time; an in-place sort would also destroy the array's original index order."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -143,9 +143,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "The complete workload is O(n + q) time with O(n) retained prefix storage."
+          {
+            "type": "paragraph",
+            "text": "Build a length-(n + 1) array with P[0] = 0 and P[i + 1] = P[i] + a[i]. This preprocessing visits each source value once, so it costs O(n) time and O(n) auxiliary space. An inclusive query [l, r] is then P[r + 1] - P[l]: the shared contribution before l cancels, leaving exactly the requested interval in O(1) time. Across q arbitrary queries on the same immutable version, total time is O(n) + q·O(1) = O(n + q), while the prefix array remains O(n) live state."
             },
             {
               "type": "callout",
@@ -155,11 +155,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "move_between_queries": "Moving between arbitrary ranges may cross many elements.",
-          "sort_once": "Sorting destroys original interval membership.",
-          "scan_free": "Static data permits reuse but still requires an index."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "move_between_queries": "A moving sum is constant-time only for a bounded boundary change such as shifting one position. Arbitrary consecutive ranges can move their endpoints across Θ(n) values.",
+        "sort_once": "Sorting changes which values occupy the original indices, so a sum over sorted positions no longer answers the requested original interval.",
+        "scan_free": "Immutability makes cached state reusable; it does not create that state. Without an index, the values in each requested interval still have to be visited."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -209,9 +209,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Sequential adjacent queries can reuse a moving aggregate more compactly."
+          {
+            "type": "paragraph",
+            "text": "First sum a[0..k - 1] and use it to initialize the maximum. When the block shifts from [i, i + k - 1] to [i + 1, i + k], subtract the unique outgoing value a[i] and add the unique incoming value a[i + k], then compare the new sum with the maximum. The initialization costs O(k), and the n - k shifts cost O(1) each, for O(n) total time. On an indexable array, the current sum, maximum, and indices are O(1) auxiliary state. A prefix array could also answer every block in O(n) total time, but its O(n) retained state is not required for this one ordered traversal."
             },
             {
               "type": "callout",
@@ -221,11 +221,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "prefix_only": "Prefix sums are valid but use more state than this sequential workload needs.",
-          "scan_each": "This repeats overlap and costs O(nk).",
-          "query_count": "Their boundaries advance predictably."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "prefix_only": "Prefix sums are valid, but they are not the only reusable state: adjacent equal-length blocks differ by exactly one outgoing and one incoming value.",
+        "scan_each": "Rescanning all k positions for each of n - k + 1 blocks repeats their overlap and costs Θ((n - k + 1)k) rather than one linear traversal.",
+        "query_count": "The blocks are not unrelated random queries. Their endpoints advance together by one, which is precisely the transition a rolling sum can reuse."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -275,9 +275,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Frequent updates can dominate if the whole suffix or array must be rebuilt."
+          {
+            "type": "paragraph",
+            "text": "For P[j] = a[0] + ... + a[j - 1], a change at a[i] contributes to every P[j] with j > i. If a[i] changes by delta, that entire stored suffix must also change by delta; leaving it untouched makes later subtraction return sums from the old array version. Updating a plain prefix array can therefore take Θ(n - i), and rebuilding it takes Θ(n). When both point updates and arbitrary range sums are frequent, a dynamic cumulative structure such as a Fenwick tree or segment tree can support each operation in O(log n) instead of pretending the static prefixes remain valid."
             },
             {
               "type": "callout",
@@ -287,11 +287,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "query_wrong_sign": "The identity remains correct if prefixes are updated.",
-          "window_required": "Arbitrary dynamic queries may require a Fenwick tree, segment tree, or other structure.",
-          "sort_update": "Sorting changes index semantics."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "query_wrong_sign": "The identity P[r + 1] - P[l] works for positive, zero, and negative values. The failure is stale cumulative state, not a sign restriction.",
+        "window_required": "Mutation does not turn arbitrary interval requests into one locally advancing interval. A dynamic range-query structure may be the appropriate representation.",
+        "sort_update": "Sorting neither applies the update delta to stored prefixes nor preserves the original interval indices, so it cannot repair the representation."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -341,9 +341,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "The access pattern is sequential and local, which favors moving state."
+          {
+            "type": "paragraph",
+            "text": "After arrival t, the requested interval is always the frontier [t - k + 1, t]. Maintain its sum by adding the new value and, once more than k values have arrived, subtracting the value that just left. In a true one-pass stream that outgoing value cannot be reread from the source, so a queue or ring buffer retains at most k values: O(1) update time, O(k) retained values, and one scalar sum. Appended prefix sums could answer the same interval as P[t + 1] - P[t - k + 1], but retaining every prefix grows with the stream length. They are useful only if later historical ranges also need answers."
             },
             {
               "type": "callout",
@@ -353,11 +353,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "prefix_incorrect": "They can, but retaining all of them may be unnecessary.",
-          "queries_static": "Future data is not available.",
-          "window_random": "It represents only the current last-k interval."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "prefix_incorrect": "Prefix sums can represent an append-only stream. The objection is that keeping the full history is unnecessary for a frontier-only last-k workload.",
+        "queries_static": "Already arrived values may be stable, but future values do not exist yet; that fact does not turn the online workload into static preprocessing.",
+        "window_random": "A rolling state represents only its current interval. It cannot recover an arbitrary old [l, r] after those values have been discarded."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -407,9 +407,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Prefix preprocessing is attractive only when its build cost is recovered or the representation serves another requirement."
+          {
+            "type": "paragraph",
+            "text": "If the two interval lengths are m1 and m2, direct scans visit m1 + m2 values and use O(1) auxiliary space. Prefix preprocessing visits all n values, retains O(n) cumulative state, and then spends O(1) per query, for O(n + 2) time. Thus the relevant comparison is m1 + m2 versus n + 2, together with the memory budget. When both intervals are short relative to a very large n and no other consumer needs prefixes, direct scans can be decisively cheaper even though q = 2."
             },
             {
               "type": "callout",
@@ -419,11 +419,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "prefix_always": "Two tiny scans may be much cheaper than reading all n elements for preprocessing.",
-          "window_always": "Arbitrary ranges may not share a useful transition.",
-          "ignore_q": "Reuse is central to preprocessing decisions."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "prefix_always": "The inequality q > 1 says nothing about interval lengths. Two tiny scans may cost far less than reading and storing all n values.",
+        "window_always": "A rolling window helps only when consecutive ranges have a cheap predictable transition; two arbitrary intervals may be far apart or have different lengths.",
+        "ignore_q": "Query volume affects how often preprocessing can be reused. It matters, but it must be evaluated with lengths, updates, and memory rather than used alone."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -473,9 +473,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Version compatibility is the condition that makes reuse legal."
+          {
+            "type": "paragraph",
+            "text": "The persisted prefix array already encodes this exact immutable version, so the incremental cost of the new batch is q constant-time differences, O(q), with no new build. The original O(n) preprocessing still belongs in a report of the representation's total lifetime cost, but it is a sunk cost for the current routing decision. Rebuilding an identical valid index would duplicate work. Before reusing it, verify a version identifier or equivalent invariant; if the source changed, P[r + 1] - P[l] would combine stale cumulative values and the saved build cannot be credited."
             },
             {
               "type": "callout",
@@ -485,11 +485,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "rebuild_each_batch": "The persisted representation remains valid.",
-          "ignore_version": "Version mismatch invalidates the state.",
-          "switch_window": "Existing reusable state changes the decision."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "rebuild_each_batch": "Batch boundaries do not invalidate state. Rebuilding the same verified representation adds O(n) work without changing any answer.",
+        "ignore_version": "The prefix entries are functions of one exact source version; a mismatch makes their differences stale even if query syntax is unchanged.",
+        "switch_window": "A linear rolling traversal is not automatically cheaper than q O(1) lookups from an already available index, especially for arbitrary ranges."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -505,9 +505,9 @@
         "type": "choice",
         "selectionMode": "single",
         "options": [
-          {
-            "id": "lazy_build",
-            "text": "Answer directly at first and build prefix state only when observed cumulative query work justifies it."
+        {
+          "id": "lazy_build",
+          "text": "Answer early queries directly, then build prefix state only if a stable version reaches a defined demand threshold."
           },
           {
             "id": "eager_always",
@@ -539,9 +539,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "The transition must preserve one data version and should be based on cumulative work, not a keyword."
+          {
+            "type": "paragraph",
+            "text": "Start with no index, so a workload that receives zero queries pays zero preprocessing cost. For each direct query, track its scanned length and keep prefix state absent while cumulative demand is small. A deterministic policy can trigger a build after observed work reaches a chosen threshold comparable to the O(n) build, provided the same data version is still expected to serve queries. Past scans are sunk and do not guarantee future demand, so the threshold is an adaptive risk policy, not proof that the next query will repay construction. Build at most once per version, validate that version, and route only later compatible queries through it."
             },
             {
               "type": "callout",
@@ -551,11 +551,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "eager_always": "The work may never be used.",
-          "no_analysis": "Adaptive thresholds can be defined.",
-          "sort_later": "Sorting is unrelated to original range sums."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "eager_always": "If no compatible query arrives, every eagerly built index is pure unused time and memory.",
+        "no_analysis": "Unknown future demand prevents a perfect offline choice, but it still permits an explicit adaptive threshold with measurable worst-case cost.",
+        "sort_later": "Sorting changes original index membership and does not create cumulative sums for the requested ranges."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -607,9 +607,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Surface wording does not replace build, query, and update accounting."
+          {
+            "type": "paragraph",
+            "text": "Let q be the number of queries and L the sum of their interval lengths. Direct scans cost O(L); a static prefix representation costs O(n + q) time and O(n) retained space, before counting any rebuilds caused by updates or version replacement. Therefore q matters because it controls possible reuse, interval lengths matter because they determine the actual direct work, and mutations matter because they can invalidate cumulative state. The word “contiguous” is only a shape property shared by both strategies. It does not reveal whether boundaries are arbitrary, whether preprocessing will be reused, or whether the source stays compatible."
             },
             {
               "type": "callout",
@@ -619,14 +619,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "contiguous_word": "Both methods operate on contiguous intervals."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "query_count": "It controls reuse.",
-          "query_lengths": "Direct cost may be far below qn.",
-          "data_updates": "Rebuilds can dominate."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "contiguous_word": "Both a direct or rolling scan and prefix subtraction can operate on contiguous intervals. That word omits the workload and lifetime facts that decide between them."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "query_count": "More compatible queries create more opportunities to amortize one O(n) build; very few may leave it unrecovered.",
+        "query_lengths": "Direct cost is the sum of visited lengths L, which may be far smaller than the coarse worst-case bound qn.",
+        "data_updates": "A point update changes a suffix of plain prefixes, and a version replacement invalidates all of them, so rebuild work can dominate."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -678,9 +678,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "One frontier-local stream query does not consume the full index."
+          {
+            "type": "paragraph",
+            "text": "Prefix preprocessing retains a cumulative boundary for every source position, so its cost is best recovered by repeated requests that may choose arbitrary boundaries. Many random queries on unchanged data reuse that index directly. Repeated batches extend the same reuse across time, provided a version check proves the stored prefixes still match. Several repeatedly queried additive metrics can each have a compatible prefix array, trading additional O(n) state per metric for O(1) interval arithmetic. By contrast, a last-k stream workload requests only the current frontier interval; a rolling sum plus the outgoing-value buffer retains only the history needed for that moving boundary."
             },
             {
               "type": "callout",
@@ -690,14 +690,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "single_last_k": "A rolling window is more direct."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "many_random": "Each query becomes a prefix difference.",
-          "repeated_batches": "The build is amortized across batches.",
-          "multiple_metrics": "Parallel prefix arrays can serve them."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "single_last_k": "This workload never asks for arbitrary historical boundaries. Retaining every prefix grows with stream history, whereas a rolling sum and at most k buffered values serve the frontier directly."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "many_random": "After one O(n) build, each arbitrary [l, r] sum becomes the O(1) difference P[r + 1] - P[l].",
+        "repeated_batches": "A verified unchanged version allows the same build cost to be amortized over every later compatible batch.",
+        "multiple_metrics": "Each additive metric can store its own cumulative array; repeated interval queries can justify the corresponding time-space tradeoff."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -749,9 +749,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Large random static workloads favor prefix state."
+          {
+            "type": "paragraph",
+            "text": "For one interval of length m, a direct scan spends O(m) without an O(n) index that will never be reused. For every adjacent length-k block on an indexable array, a rolling aggregate uses the one-out/one-in transition and O(1) auxiliary state. For a true last-k stream, the same transition produces each answer online while retaining only the running sum and at most k values needed to identify future departures. These cases favor local state for different reasons: no reuse, predictable sequential reuse, or bounded online history. Millions of arbitrary ranges over immutable data have none of those restrictions and repeatedly benefit from prefix subtraction."
             },
             {
               "type": "callout",
@@ -761,14 +761,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "many_random_static": "This is a strong prefix case."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "one_short_query": "Scanning only the interval may be cheaper.",
-          "all_adjacent_fixed": "A rolling aggregate uses overlap.",
-          "online_frontier": "Moving state supports online output."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "many_random_static": "Arbitrary boundaries do not form one cheap moving transition, while immutability keeps a prefix index valid across all queries; this is a strong preprocessing case."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "one_short_query": "Scanning its m values can cost far less than building and retaining cumulative state for all n positions.",
+        "all_adjacent_fixed": "Each next block removes one known value and adds one known value, so overlap yields an O(1) transition.",
+        "online_frontier": "A bounded moving state can emit the latest answer immediately; a complete historical index is unnecessary unless old ranges will also be queried."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -820,9 +820,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "More compatible queries increase its value."
+          {
+            "type": "paragraph",
+            "text": "A prefix array is a materialized claim about both data and operation: P[j] stores the additive aggregate of one exact source version up to boundary j. A point update at i changes every later prefix; replacing the source changes the entire claim. Switching to a property that cannot be recovered by subtracting the stored additive prefixes makes the representation operationally incompatible even when the values themselves are unchanged. In contrast, an additional range-sum query on the same version changes neither data nor operation. It simply reuses the already valid state and increases the value obtained from its build."
             },
             {
               "type": "callout",
@@ -832,14 +832,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "more_queries": "That strengthens reuse."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "point_updates": "Later prefixes change.",
-          "version_change": "Stored cumulative values no longer match.",
-          "new_metric": "The existing state may not answer it."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "more_queries": "More queries with the same additive operation and source version do not invalidate anything; they strengthen amortization of the existing build."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "point_updates": "Changing a[i] changes every cumulative P[j] with j > i, so leaving the suffix untouched returns stale sums.",
+        "version_change": "The stored cumulative values describe the previous version and cannot be safely paired with the replacement.",
+        "new_metric": "Subtraction recovers only operations represented by the stored cumulative state; a new non-additive property may need a different structure."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "choose_window_or_prefix_for_query_volume",
@@ -892,10 +892,19 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Using q alone can hide short queries or update costs."
-            },
+          {
+            "type": "ordered_list",
+            "items": [
+              "Define the actual lifecycle: source length n, query count q, every interval length mi, update or version-change frequency, output timing, and the memory limit.",
+              "Derive direct work as the total number of visited elements, L = m1 + ... + mq, plus only the constant state needed for one running sum.",
+              "Derive prefix work as O(n) construction plus O(q) compatible queries, O(n) retained state, and O(n) rebuilding for each version whose cumulative values must be replaced.",
+              "Eliminate timing- or version-illegal choices, then compare L with the full prefix lifecycle cost under the available time and space budgets."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Starting from q alone wrongly treats two tiny ranges like two full-array scans. Comparing before accounting for updates treats stale prefixes as reusable, while choosing before checking output timing can select an offline build for a query that must be answered before preprocessing is possible."
+          },
             {
               "type": "callout",
               "kind": "complexity_note",
@@ -956,10 +965,19 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Reuse is safe only until a mutation or replacement invalidates it."
-            },
+          {
+            "type": "ordered_list",
+            "items": [
+              "Bind the representation to an exact source version and confirm that this version will remain immutable while its queries are served.",
+              "Build P[0] = 0 and P[i + 1] = P[i] + a[i] once for that verified version.",
+              "For every compatible inclusive range [l, r], return P[r + 1] - P[l], which cancels the contribution before l.",
+              "When mutation or replacement changes the version, stop serving queries from P and either discard it or rebuild from the new source before reuse."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Building before identifying the version can publish state with no stable owner. Answering before construction reads missing cumulative boundaries, and continuing after a change silently returns sums from the old array. Discarding a still-valid index too early instead wastes the reuse that justified preprocessing."
+          },
             {
               "type": "callout",
               "kind": "complexity_note",
@@ -1020,10 +1038,19 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "The policy must prevent duplicate builds and reject stale data versions."
-            },
+          {
+            "type": "ordered_list",
+            "items": [
+              "Begin without a prefix index; answer initial intervals by direct scan and record their visited lengths for the current source version.",
+              "After each query, evaluate a defined threshold using cumulative demand, the O(n) build cost, memory, version stability, and expected later compatible work.",
+              "If that policy triggers, construct exactly one prefix representation and bind it to the still-current version.",
+              "Route later compatible queries through prefix subtraction until a version change invalidates the representation."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Building before measuring demand defeats the purpose of a lazy policy. Rechecking the threshold without recording that construction finished can duplicate O(n) work, while reusing after a version change converts an optimization into a correctness bug. Observed past work is evidence for the policy, not a guarantee of future queries."
+          },
             {
               "type": "callout",
               "kind": "complexity_note",
@@ -1097,9 +1124,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "This is the correct baseline for a one-off short query."
+          {
+            "type": "paragraph",
+            "text": "Initialize one scalar sum and visit the m positions in the requested interval exactly once. Each visit performs constant-time read-and-add work, so m visits give O(m) time. The loop indices and running sum occupy a fixed number of machine words independent of m and n, so auxiliary space is O(1); the scalar answer does not require storing the interval. O(1) time would require an already available index, which the prompt excludes, while O(m) space would confuse inspected input values with newly allocated working memory. This O(m)-time baseline is what preprocessing must improve enough to repay its own build."
             },
             {
               "type": "callout",
@@ -1174,9 +1201,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "It equals O(qn) only in the worst case where every query spans Θ(n)."
+          {
+            "type": "paragraph",
+            "text": "Query i visits mi values and performs Θ(mi) additions. Because no state is retained to share work between queries, summing those costs gives Θ(m1 + ... + mq), reported as O(m1 + ... + mq). The same running-sum variable and loop indices are reused for every query, so peak auxiliary space remains O(1), not O(q) and not the total number of visits. The coarser O(qn) bound applies only as a worst-case upper bound because every mi is at most n; it is tight when all q intervals have length Θ(n), but it hides workloads made of short ranges."
             },
             {
               "type": "callout",
@@ -1251,9 +1278,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "The array remains live for the query workload."
+          {
+            "type": "paragraph",
+            "text": "Construct P with n + 1 entries. Writing P[i + 1] = P[i] + a[i] for all n source values costs O(n) time and O(n) auxiliary space. Each of the q queries performs two prefix reads and one subtraction, so its cost is O(1) and all query work is O(q). Adding sequential phases yields O(n + q) total time, not O(q) because construction cannot be omitted and not O(qn) because intervals are no longer scanned. The prefix representation remains live throughout the workload, so peak auxiliary space is O(n); returning q scalar answers does not make the index O(qn)."
             },
             {
               "type": "callout",
@@ -1273,9 +1300,10 @@
     {
       "id": "alg-contrast-window-prefix-queries-019",
       "prompt": "Compute every length-k block sum in one sequential pass with a rolling sum. Select total time and auxiliary space.",
-      "constraints": [
-        "The first block is summed once.",
-        "Each later block uses one subtraction and one addition."
+    "constraints": [
+      "The first block is summed once.",
+      "Each later block uses one subtraction and one addition.",
+      "The input is an indexable array, so an outgoing value can be read by index."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -1329,9 +1357,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Each element enters and leaves the moving sum at most once."
+          {
+            "type": "paragraph",
+            "text": "The first length-k block takes O(k) additions. There are n - k later starting positions, and each shift performs one indexed subtraction, one indexed addition, and one output or comparison, all O(1). Total time is therefore O(k + (n - k)) = O(n). The current sum and indices are a constant number of variables, so auxiliary space is O(1); the source array supplies the outgoing value and reported outputs are not working state. In a non-rewindable stream, the same recurrence would require retaining up to k values to know what leaves, so the O(1)-space result depends on the prompt's indexable-array boundary."
             },
             {
               "type": "callout",
@@ -1406,9 +1434,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Prefix preprocessing wins asymptotically once the compatible query workload is reused."
+          {
+            "type": "paragraph",
+            "text": "The stated direct implementation performs n constant-time visits for each of q queries, so its total is q·O(n) = O(qn). The prefix implementation visits n values once to build cumulative state and then spends O(1) on each of q subtractions, giving O(n) + q·O(1) = O(n + q). This comparison analyzes the two specified workloads; it is not advice to rescan an identical full-range answer that could simply be cached. The asymptotic improvement comes from replacing repeated interval visits with one reusable static representation, and it is legal only while the source version remains unchanged."
             },
             {
               "type": "callout",
@@ -1427,7 +1455,7 @@
     },
     {
       "id": "alg-contrast-window-prefix-queries-021",
-      "prompt": "The source array is replaced u times. For each version, a prefix array is rebuilt, and q scalar range queries are answered in total. Select total time and peak prefix space.",
+    "prompt": "The system processes u complete source-array versions of length n. It builds one prefix array for each version and answers q scalar range queries in total. Select total time and peak prefix space.",
       "constraints": [
         "Each complete rebuild costs O(n).",
         "Each query costs O(1).",
@@ -1485,9 +1513,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "Peak space remains one n-sized prefix representation if old versions are released."
+          {
+            "type": "paragraph",
+            "text": "Every one of the u versions requires a full pass over n values, so rebuild work is u·O(n) = O(un). Across all versions, q constant-time prefix differences add O(q), producing O(un + q) total time. Only one length-(n + 1) prefix array is live at a time because the constraints release the previous version before retaining the next, so peak prefix space is O(n), not O(un). Confusing total allocations over the lifecycle with simultaneously live memory yields the larger wrong bound; omitting version churn yields O(n + q) and undercounts u - 1 complete builds."
             },
             {
               "type": "callout",
@@ -1562,9 +1590,9 @@
               "level": 3,
               "text": "Compare the complete workload"
             },
-            {
-              "type": "paragraph",
-              "text": "This captures both many long queries and a few short queries without using a crude query-count rule."
+          {
+            "type": "paragraph",
+            "text": "By definition, the direct path performs exactly L constant-time element visits across all q intervals, so its total is O(L) with no separate qn assumption. The prefix path visits n source values once and performs constant-time arithmetic for each of q queries, so its total is O(n + q). The comparison is therefore L versus n + q, together with O(1) versus O(n) auxiliary state. Prefix work is asymptotically smaller when L grows beyond the build-plus-query term and the data stays valid; direct scans remain attractive when L is small, memory is constrained, or reuse may never occur."
             },
             {
               "type": "callout",

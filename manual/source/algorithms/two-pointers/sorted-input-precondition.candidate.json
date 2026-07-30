@@ -3,7 +3,7 @@
   "batchId": "two-pointers-sorted_input_precondition-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -249,7 +249,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Copying takes O(n) time and O(n) storage, sorting takes O(n log n) time with O(log n) additional stack, and scanning takes O(n) time. The total time is O(n log n), while auxiliary space is O(n+log n)=O(n). Reporting O(1) space would ignore the copy created to satisfy the no-mutation constraint. Precondition establishment and side-effect avoidance are both part of the cost model."
+              "text": "Copying takes O(n) time and O(n) storage, sorting takes O(n log n) time with O(log n) stack, and scanning takes O(n) time. Thus time is O(n + n log n + n)=O(n log n): O(n) omits sorting, while O(n^2) is not tight for the stated sort and scan. Auxiliary space is O(n + log n)=O(n), not O(1) or O(log n), because the n-element copy dominates the sort stack. Precondition establishment and the no-mutation constraint are both part of the cost model."
             }
           ]
         }
@@ -270,7 +270,7 @@
     },
     {
       "id": "alg-tp-sorted-already-sorted-scan",
-      "prompt": "The input is already sorted, and a target-sum existence query uses only left, right, and a current sum. What are the scan's time and auxiliary-space complexities?",
+      "prompt": "The input is already sorted, and a target-sum existence query uses only left, right, and a current sum. What are the scan's worst-case time and auxiliary-space complexities?",
       "interaction": {
         "type": "complexity",
         "checkedDimensions": [
@@ -311,7 +311,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "left increases and right decreases without reversal, so their combined number of moves is O(n). The implementation stores only a constant number of indices and scalar values. This is the cost of the pointer phase when the ordering precondition is already part of the input contract. It should not be confused with the O(n log n) cost of sorting an unsorted input first."
+              "text": "`left` increases and `right` decreases without reversal, so their combined movement is at most a constant multiple of n and worst-case time is O(n). O(1) and O(log n) time cannot cover an unsuccessful query that shrinks the interval one position at a time; O(n log n) is not tight because no sorting occurs in this already-sorted case. The implementation stores only a fixed number of indices and scalar values, so auxiliary space is O(1), not O(log n) or O(n). This is the pointer phase only and must not be confused with sorting an unsorted input first."
             }
           ]
         }
@@ -730,7 +730,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "First tie order to a concrete movement or skip rule; otherwise sorting may be cargo-cult preprocessing. If order is already guaranteed, no preprocessing is needed. If it is absent, mutation, stable-order, and identity requirements determine whether sorting or copying is legal. Only after including those time and space costs can the strategy be compared fairly with alternatives."
+              "text": "The audit is branch-aware: when the required order is already guaranteed, the sorting branch is unnecessary. When it is absent, semantic constraints determine which preparation costs must be counted before the final strategy decision."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Name the exact movement, elimination, or duplicate-skip rule whose proof needs ordered values.",
+                "Check whether the input contract already guarantees that order; if so, use it without preprocessing.",
+                "If order is absent, determine whether sorting may mutate protected input, destroy required encounter order, or lose original-index provenance.",
+                "Account for every required sort, copy, decorated record, and auxiliary stack in the time and space model.",
+                "Choose sort plus two pointers only if the proof becomes valid and the output, mutation, time, and memory contracts all remain legal; otherwise use another strategy."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Sortedness has a proof role and a price",
+              "text": "Do not add sorting merely because a template has `left` and `right`. Identify what ordered inequality it enables and include every semantic side effect and preprocessing cost."
             }
           ]
         }

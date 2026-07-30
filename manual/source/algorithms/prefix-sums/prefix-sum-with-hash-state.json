@@ -3,7 +3,7 @@
   "batchId": "algorithms-prefix-sums-prefix-sum-with-hash-state-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -101,12 +101,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "frequency_of_prior_prefixes",
-            "text": "The number of prior boundaries that produced that prefix value."
-          },
-          {
             "id": "last_index_only",
             "text": "Only the most recent index where the prefix value occurred."
+          },
+          {
+            "id": "frequency_of_prior_prefixes",
+            "text": "The number of prior boundaries that produced that prefix value."
           },
           {
             "id": "sorted_values",
@@ -154,6 +154,7 @@
       "prompt": "Order the operations for counting subarrays with sum k during one left-to-right prefix-hash scan.",
       "constraints": [
         "The frequency map contains only prefix boundaries that occur before the current boundary when the lookup happens.",
+        "Only nonempty subarrays count.",
         "Score is based on preserved adjacent relations."
       ],
       "difficulty": "intermediate",
@@ -200,7 +201,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Seeding zero represents the boundary before index 0. After extending s, the scan counts prior p = s - k, then records the current boundary for future ends. Recording first is wrong when k = 0 because it can count an empty current-to-current interval; the required relation is lookup-before-insert for the current prefix."
+              "text": "Each prefix state belongs to an array boundary. The map must contain only boundaries earlier than the current one when the scan counts a nonempty subarray ending here."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Before scanning, seed frequency[0] = 1 for the single boundary before index 0.",
+                "Add the current array value to s, moving s to the boundary after that element.",
+                "Add frequency[s - k] to the answer; each stored occurrence is an earlier start boundary whose difference from s is k.",
+                "Increment frequency[s] only after counting, making the current boundary available to later ends.",
+                "Advance to the next position and repeat."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Lookup must precede insertion",
+              "text": "If k = 0 and frequency[s] is incremented first, the lookup can pair the current boundary with itself and count an empty interval. Lookup-before-insert preserves the nonempty-subarray contract."
             }
           ]
         }
@@ -226,16 +243,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "represent_boundary_before_zero",
-            "text": "It represents the one boundary before index 0, allowing a current prefix equal to k to count a subarray starting at 0."
-          },
-          {
             "id": "avoid_negative_prefixes",
             "text": "It prevents the running prefix from becoming negative."
           },
           {
             "id": "sort_hash_keys",
             "text": "It makes hash-map iteration sorted by key."
+          },
+          {
+            "id": "represent_boundary_before_zero",
+            "text": "It represents the one boundary before index 0, allowing a current prefix equal to k to count a subarray starting at 0."
           },
           {
             "id": "remove_extra_space",
@@ -287,10 +304,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "matches_nonmonotonic_history",
-            "text": "It matches the required prior cumulative value even when the running sum rises and falls, so no monotonic shrink rule is needed."
-          },
-          {
             "id": "negatives_become_positive",
             "text": "The hash map converts every negative value into a positive value."
           },
@@ -301,6 +314,10 @@
           {
             "id": "sort_then_hash",
             "text": "It first sorts the array so all negative values appear before positive values."
+          },
+          {
+            "id": "matches_nonmonotonic_history",
+            "text": "It matches the required prior cumulative value even when the running sum rises and falls, so no monotonic shrink rule is needed."
           }
         ],
         "acceptedOptionIds": [
@@ -446,7 +463,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "There are n iterations, each with one required-prior lookup and one current-prefix update, giving expected O(n) time. In the worst case all n + 1 prefix values are distinct, so the map uses O(n) extra space. The rolling sum itself is constant state, but the historical frequency map is the essential auxiliary memory."
+              "text": "There are n iterations. Each performs one required-prior lookup and one current-prefix update, both expected O(1) under the stated hash-table assumption, so summing the per-element work gives expected O(n) time. In the worst case all n + 1 prefix values are distinct, so the frequency map stores O(n) entries and uses O(n) extra space."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "Expected time is not O(1) or O(log n) because all n elements are scanned, and it is not O(n^2) because no earlier boundary is rescanned inside an iteration. Space is not O(1) or O(log n) because the map can retain one distinct key per boundary, and it is not O(n^2) because at most n + 1 boundaries—and therefore at most n + 1 distinct prefix keys—exist."
             }
           ]
         }
@@ -464,6 +487,7 @@
       "prompt": "Which problem transfers the required-prior-prefix idea by storing a normalized prefix state instead of the raw sum?",
       "constraints": [
         "Subarrays are contiguous in the original order.",
+        "m is a positive integer.",
         "All qualifying subarrays must be counted."
       ],
       "difficulty": "advanced",
@@ -472,12 +496,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "sum_divisible_by_m",
-            "text": "Count subarrays whose sum is divisible by m by matching equal normalized prefix remainders."
-          },
-          {
             "id": "range_minimum",
             "text": "Answer range minima by subtracting two prefix remainders."
+          },
+          {
+            "id": "sum_divisible_by_m",
+            "text": "Count subarrays whose sum is divisible by m by matching equal normalized prefix remainders."
           },
           {
             "id": "online_sorting",
@@ -502,7 +526,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "For current remainder r, every prior boundary with the same normalized remainder defines a subarray sum divisible by m. The map still stores frequencies, and negative language remainders may need normalization into [0, m). Range minimum has no inverse, while a fixed-size maximum is governed by window movement rather than frequency matching."
+              "text": "Let p and s be an earlier and current prefix sum. Their subarray difference s - p is divisible by positive m exactly when s and p have the same remainder modulo m. Store the frequency of each normalized remainder, and add the frequency matching the current one. When a language's `%` may return a negative remainder, normalize with `((prefix % m) + m) % m`, which always lies in [0, m). Range minimum has no inverse, online sorting is not a contiguous-range aggregate, and a fixed-size maximum is governed by window movement rather than frequency matching."
             }
           ]
         },

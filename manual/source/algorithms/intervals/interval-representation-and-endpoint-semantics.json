@@ -3,7 +3,7 @@
   "batchId": "algorithms-intervals-endpoints-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -181,12 +181,24 @@
       "feedback": {
         "reason": "Half-open intervals include the start and exclude the end, yielding direct duration arithmetic, an empty [x, x), and non-overlapping adjacency.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "The three consequences come from one set definition rather than three unrelated conventions. [start, end) contains values t such that start <= t < end. Subtracting the bounds gives the interval's measure; no point satisfies x <= t < x, so [x, x) is empty; and a boundary b is excluded from [a, b) but included in [b, c), so adjacent durations do not overlap. These properties are useful only when the contract is applied consistently. A later component that treats the end as included will reintroduce off-by-one conflicts, transient sweep peaks, or accidental merges. Transfer the representation by carrying its inclusion semantics through serialization, comparison, validation, and tests."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "The three consequences come from one set definition: `[start, end)` contains exactly the values `t` satisfying `start <= t < end`."
+          },
+          {
+            "type": "bullet_list",
+            "items": [
+              "Its measure is `end - start`; excluding the endpoint avoids an extra endpoint correction.",
+              "For `[x, x)`, no value can satisfy `x <= t < x`, so the interval is empty.",
+              "At boundary `b`, `[a, b)` excludes `b` while `[b, c)` includes it, so the adjacent intervals share no occupied instant."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "These guarantees hold only when every component preserves the same contract. Treating the end as included later can reintroduce off-by-one conflicts, false sweep peaks or accidental merges. Carry the inclusion semantics through serialization, comparison, validation and tests."
+          }
+        ]
         },
         "wrongOptionExplanationsByOptionId": {
           "end_is_included": "This reverses the defining property of the half-open convention. It would describe a closed right endpoint instead."
@@ -247,12 +259,21 @@
       "feedback": {
         "reason": "The domain meaning determines the representation; the representation then determines comparison and tie rules, which can finally be implemented and tested consistently.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "Starting with a comparator such as '<=' is backwards: it encodes a semantic decision before the domain has made one. First determine whether the model represents occupied durations, inclusive integer ranges, geometric segments, or instantaneous events. Then select a representation such as [start, end) or [start, end]. Only after that choice can the overlap predicate, merge equality, and sweep tie rule be derived. The last step is consistency: normalize external inputs, reuse the same rule in every algorithm, and test equality, emptiness, and containment. Reversing adjacent steps risks a locally plausible implementation whose behavior changes between modules."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Identify whether the domain represents occupied durations, inclusive integer ranges, geometric segments or instantaneous events, including the meaning of zero width.",
+              "Choose and document a representation such as `[start, end)` or `[start, end]` that preserves that domain meaning.",
+              "Derive overlap predicates, merge equality and same-coordinate sweep order from the chosen inclusion rules.",
+              "Normalize external inputs, reuse the derived rules across algorithms and test equality, emptiness and containment counterexamples."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Starting with a comparator such as `<=` reverses the dependency: it encodes a semantic decision before the domain and representation have made one. Reordering these steps risks locally plausible modules that disagree at exactly the shared boundaries."
+          }
+        ]
         }
       },
       "taxonomy": {
@@ -469,7 +490,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The correct test evaluates the represented sets. For pair A, 100 is excluded from the first interval, so there is no shared value. For pair B, every value from 40.5 up to 40.6 lies in both intervals. Comparing lengths, summing lengths, or choosing the longer interval cannot answer the intersection question without position information. This counterexample is useful whenever an implementation introduces a duration-based shortcut: retain the endpoint predicate and treat length only as a derived quantity for cost, measure, or prioritization objectives that explicitly need it."
+            "text": "The correct test evaluates the represented sets. For pair A, `100` is excluded from the first interval, so there is no shared value. For pair B, the intersection is exactly `[40.5, 40.6)`, which is nonempty. Comparing lengths, summing lengths or choosing the longer interval cannot answer the intersection question without position information. This counterexample is useful whenever an implementation introduces a duration-based shortcut: retain the endpoint predicate and treat length only as a derived quantity for cost, measure or prioritization objectives that explicitly need it."
             }
           ]
         },
@@ -489,10 +510,11 @@
     {
       "id": "algorithms-intervals-endpoints-009",
       "prompt": "A half-open occupancy model produces one end event and one start event at the same timestamp. Which equal-time order is consistent with legal resource reuse?",
-      "constraints": [
-        "The active count is sampled while processing individual events.",
-        "Intervals use [start, end)."
-      ],
+    "constraints": [
+      "The active count is sampled while processing individual events.",
+      "Intervals use [start, end).",
+      "The end and start events belong to two different nonempty intervals."
+    ],
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",

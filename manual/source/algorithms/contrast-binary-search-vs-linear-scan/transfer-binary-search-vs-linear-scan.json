@@ -3,7 +3,7 @@
   "batchId": "contrast-binary-search-vs-linear-scan-transfer-binary-search-vs-linear-scan-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -80,7 +80,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The underlying query is similar, but legality and total cost differ between one unsorted query and many aligned sorted queries."
+              "text": "In A, an exact match may appear at any position, so inspecting a midpoint gives no basis for discarding either half; one scan costs O(n) and avoids setup. In B, comparing the target key with a midpoint in the maintained key order proves which half cannot contain the target, giving O(log n) per query without a fresh sort."
             },
             {
               "type": "heading",
@@ -89,18 +89,18 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "The change is justified by both legality and workload: the representation supplies a half-discard rule, and many queries reuse it. Sorting before every query would instead cost O(n log n) each time; keeping the existing maintained order is what makes the transfer economical."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Strategy should change when the data representation and workload cross the transfer boundary."
+              "text": "Re-derive the strategy when representation or workload changes; never attach an algorithm permanently to the word “search.”"
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "binary_both": "A has no legal half-discard rule.",
+          "binary_both": "In A, midpoint comparison cannot exclude either unsorted half, so binary search is not correct.",
           "scan_both": "B adds stable ordered structure and repeated workload that favor binary search.",
           "sort_each": "A does not amortize sorting and B is already maintained sorted."
         }
@@ -155,7 +155,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Binary search transfers again if the ordered index is enriched with the required original-position metadata."
+              "text": "A key-sorted index preserves key order, not necessarily insertion order among equal keys. Its leftmost equal key is the first in the index's tie order, which is not evidence that the record was inserted first. A scan over the original sequence can observe that identity directly; alternatively, an index can store insertion position as part of its ordering or payload."
             },
             {
               "type": "heading",
@@ -164,19 +164,19 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "The key-only binary search is still able to prove that a key exists, but it cannot prove the newly required provenance. This is an output-contract failure, not a midpoint bug. Enriching the representation can make logarithmic lookup legal again."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "A change in output identity can invalidate an otherwise legal search strategy."
+              "text": "Before reusing a search, verify that its index order encodes the exact identity the output contract asks for."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "same_binary": "The output identity contract changed.",
-          "leftmost_sorted": "Sorted duplicate order need not preserve insertion order.",
+          "same_binary": "Returning any matching key does not identify the earliest inserted matching record.",
+          "leftmost_sorted": "The leftmost key-sorted duplicate is earliest only under an explicit insertion-order tie rule.",
           "no_solution": "Scanning the original or storing provenance can answer it."
         }
       },
@@ -230,7 +230,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The decision must be re-derived from the new predicate, not inherited from the previous problem label."
+              "text": "For a first-true binary search, feasibility must have one transition such as false, false, true, true. Requiring x to be even can produce false at an odd capacity after true at the preceding even capacity, so observing one false value no longer proves that every smaller or larger region is false."
             },
             {
               "type": "heading",
@@ -239,19 +239,19 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "Changing lower-mid to upper-mid only changes progress at a boundary; it cannot repair an alternating truth pattern. Either inspect candidates without half-discarding them or derive a different ordered domain whose predicate is genuinely monotonic."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "A small semantic change can remove the one-transition property."
+              "text": "Write a short truth sequence for the new predicate; if it can change direction twice, binary search on that predicate is invalid."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "same_first_true": "Feasibility can alternate with parity.",
-          "upper_mid": "Bias does not restore monotonicity.",
+          "same_first_true": "Parity can make feasibility alternate, so the first-true discard implication no longer holds.",
+          "upper_mid": "Midpoint bias prevents some boundary loops but cannot restore a missing monotonic predicate.",
           "sorted_capacity": "They are already ordered; the truth pattern remains arbitrary."
         }
       },
@@ -305,7 +305,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The transfer boundary includes whether index construction and maintenance are legal and worthwhile."
+              "text": "The original callback is arbitrary over the raw records, so it supplies no ordered truth pattern. The new index changes the representation: it contains exactly matching records in an order that supports the stated query, allowing midpoint comparisons to discard half of that index."
             },
             {
               "type": "heading",
@@ -314,19 +314,19 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "Binary-searching the raw data remains invalid; only the query-aligned index has the missing structure. The index is correct only while updates keep it synchronized, and its build, memory, and maintenance costs must be repaid by the supported workload."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Preprocessing can create a new ordered domain where none existed before."
+              "text": "An index can make a query searchable by encoding its structure; it does not make the unindexed raw predicate monotonic."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "binary_raw": "The raw condition remains nonmonotonic.",
-          "scan_index_only": "The representation now encodes the missing structure.",
+          "binary_raw": "The raw condition still lacks a half-discard implication even though a separate index exists.",
+          "scan_index_only": "The query-aligned index now encodes the order that permits legal half-discard.",
           "ignore_maintenance": "Correctness and total cost depend on freshness and maintenance."
         }
       },
@@ -380,7 +380,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Volume may justify building additional indexes, but correctness structure still comes first."
+              "text": "Sorting by one record key orders only predicates aligned with that key. A different arbitrary callback can be true, false, then true again across the same array, so its midpoint result cannot exclude either half. Repeating that illegal operation many times never makes it correct."
             },
             {
               "type": "heading",
@@ -389,19 +389,19 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "A scan evaluates every record and therefore remains the safe default. High query volume may justify a new callback-specific index or a reformulated monotonic predicate, but the cost case is considered only after that structure preserves correctness."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Repeated-query volume does not make an illegal predicate binary-searchable."
+              "text": "First ask whether midpoint evidence permits a discard; only then ask whether repeated queries make that legal strategy worthwhile."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "binary_all_callbacks": "The callbacks may not align with the sort order.",
-          "reuse_mid": "Different arbitrary predicates can have unrelated matches.",
+          "binary_all_callbacks": "A callback unrelated to the sort key can alternate across the array, invalidating half-discard.",
+          "reuse_mid": "A midpoint useful for one arbitrary predicate gives no evidence about another predicate's matches.",
           "sort_again": "The sort key remains unrelated to callback truth."
         }
       },
@@ -455,7 +455,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The boundary is determined by the ratio of query savings to index maintenance cost."
+              "text": "With a mutation before every query, “sort once, query many times” is no longer the workload. Re-sorting each version can cost O(q n log n), while q scans cost O(qn); a maintained index has its own update cost and may or may not beat either total."
             },
             {
               "type": "heading",
@@ -464,20 +464,20 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "The safe conclusion is not that scanning always wins, but that q alone is insufficient. Compare query savings, update frequency, permitted data structures, memory, and freshness requirements over the same lifetime before changing the strategy."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Transfer requires all changed constraints to be included, not just query count."
+              "text": "Use total lifecycle cost—build plus updates plus queries—not query count as a shortcut."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "binary_due_q": "Frequent changes may invalidate or rebuild the order each time.",
+          "binary_due_q": "Frequent changes can force rebuilding the order or paying index maintenance before every query.",
           "scan_forever": "Incremental indexes or changed update/query ratios may later pay off.",
-          "ignore_updates": "Updates are part of the workload."
+          "ignore_updates": "Ignoring updates omits the work that keeps an ordered representation correct and current."
         }
       },
       "taxonomy": {
@@ -530,7 +530,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The same abstract order can support different practical and asymptotic lookup costs."
+              "text": "Binary search needs efficient access to the chosen midpoint. In a sequential-only API, reaching each midpoint can require walking from a cursor, so log n comparisons do not imply O(log n) elapsed work; repeated traversal can erase the expected advantage."
             },
             {
               "type": "heading",
@@ -539,20 +539,20 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "The values remain ordered, so correctness structure may survive, but the operation-cost model does not. A single forward scan can be O(n); alternatively, build or use a random-access index if its construction and memory are justified by repeated queries."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Algorithm transfer across data structures must preserve the operation-cost model."
+              "text": "Count the cost of obtaining each midpoint, not only the number of comparisons."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "same_log": "The access model changed.",
+          "same_log": "Logarithmically many comparisons do not give O(log n) time when each midpoint access is sequential.",
           "sort_api": "The issue is random access, not order alone.",
-          "rename_cursor": "Names do not change access complexity."
+          "rename_cursor": "Renaming a sequential cursor cannot make midpoint positions available in constant time."
         }
       },
       "taxonomy": {
@@ -605,7 +605,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Binary search becomes more attractive when the result shrinks from all matches to one boolean."
+              "text": "Returning all matches requires emitting k records, so any correct algorithm pays Ω(k) output work even after locating them. The new boolean contract removes that output obligation. Because the array is sorted by the queried key, exact binary search can now decide existence in O(log n) time."
             },
             {
               "type": "heading",
@@ -614,20 +614,20 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "If the contract later returns all matches again, boundary searches can locate the equal range in O(log n), but materializing it still costs Θ(k). The strategy changes here because both the representation and the required output support a smaller bound."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Output-contract changes can alter both legality and lower bounds."
+              "text": "Include the size of the required result in the cost model; locating an answer and emitting every answer are different operations."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "still_output_all": "The new output contract is smaller.",
+          "still_output_all": "Materializing records performs work the new boolean output contract no longer requires.",
           "binary_all_k_free": "If all results were still required, output work would remain.",
-          "scan_only": "The aligned sorted representation supports it."
+          "scan_only": "The aligned sorted representation supplies a legal logarithmic existence test, so scanning is not mandatory."
         }
       },
       "taxonomy": {
@@ -680,7 +680,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The preferred implementation can move from simplicity-driven scanning to asymptotically superior binary search."
+              "text": "Both scanning and binary search are correct on the query-aligned sorted array. At today's tiny n, the simpler scan may be acceptable, but a six-order-of-magnitude increase changes O(n) work per query far more than O(log n) work."
             },
             {
               "type": "heading",
@@ -689,18 +689,18 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "This is an engineering preference boundary rather than a correctness boundary. Revisit the measured workload, constants, and implementation risk as n grows; do not convert today's fixed input size into an O(1) claim about a variable future domain."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Transfer includes changes in the scaling regime even when correctness conditions stay constant."
+              "text": "A strategy can remain correct yet stop being the responsible choice when the input scale changes materially."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "fixed_choice": "Strategy should respond to scale changes.",
+          "fixed_choice": "An earlier engineering trade-off is not permanent when its dominant input scale changes.",
           "binary_wrong_small": "It remains correct; the issue is engineering preference.",
           "scan_o1": "n is a variable in the future workload."
         }
@@ -757,7 +757,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Each accepted change supplies a missing correctness or cost precondition."
+              "text": "A query-aligned sorted random-access representation supplies the legal half-discard rule. Repeated aligned queries can repay a one-time build or ongoing maintenance cost. A proven monotonic reformulation supplies a single transition in answer space even when there is no target value to look up."
             },
             {
               "type": "heading",
@@ -766,23 +766,23 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "These changes affect either correctness structure or total workload cost and can therefore flip the choice. Adding vocabulary such as “threshold” or “midpoint” changes neither; the discard implication must still be proved from the actual predicate or order."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Strategy transfer is driven by new structure or workload, not vocabulary."
+              "text": "Name the new invariant or cost term that crosses the boundary; a keyword is never that evidence."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "more_keywords": "Wording does not create structure."
+          "more_keywords": "Keywords do not prove sorted alignment, predicate monotonicity, or reusable preprocessing."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "ordered_representation": "A legal efficient discard rule becomes available.",
-          "many_queries": "Total workload can favor indexing.",
-          "monotonic_reformulation": "A boundary search becomes legal."
+          "ordered_representation": "Query-aligned order and random access make midpoint comparison a proof that one half cannot contain the target.",
+          "many_queries": "Repeated queries can reuse one ordered representation, allowing their accumulated savings to repay build or maintenance cost.",
+          "monotonic_reformulation": "A proven one-transition predicate makes each midpoint result sufficient to discard one side of answer space."
         }
       },
       "taxonomy": {
@@ -837,7 +837,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Changes in query semantics, output, or access can remove its applicability or advantage."
+              "text": "A nonmonotonic predicate removes the half-discard implication. A first-insertion-order output cannot be recovered from a key-only index without provenance. Sequential-only access can make midpoint retrieval expensive enough that a scan is preferable even though values remain ordered."
             },
             {
               "type": "heading",
@@ -846,23 +846,23 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "Each accepted change invalidates a different part of the binary-search contract: predicate structure, output identity, or access cost. Repeating the same stable aligned query more often removes none of those conditions and generally strengthens reuse of binary search."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Binary search is not a permanent label attached to a topic."
+              "text": "When a requirement changes, identify exactly which binary-search precondition it preserves or removes."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "more_queries": "This generally strengthens the case for binary search."
+          "more_queries": "More repetitions of the same legal aligned query generally increase the value of logarithmic lookup."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "predicate_arbitrary": "Half elimination becomes illegal.",
-          "original_identity": "The binary result identity becomes wrong.",
-          "sequential_access": "Midpoint access may lose its advantage."
+          "predicate_arbitrary": "A nonmonotonic truth pattern lets matches reappear on either side, so midpoint evaluation cannot exclude a half.",
+          "original_identity": "A key-only index does not encode first insertion order, so it cannot guarantee the newly required record identity.",
+          "sequential_access": "If reaching a midpoint requires traversal, logarithmically many comparisons may no longer mean logarithmic total time."
         }
       },
       "taxonomy": {
@@ -917,7 +917,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The same high-level noun can cross the decision boundary when any of these dimensions changes."
+              "text": "Order and monotonicity determine whether midpoint evidence can discard a half. Query count and updates determine whether preprocessing or index maintenance is repaid. Access cost, output size, and output identity determine whether the representation can produce the required result at the claimed total cost."
             },
             {
               "type": "heading",
@@ -926,23 +926,23 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "These dimensions form a re-derivation checklist: first establish the exact result contract, then prove a legal strategy, then compare complete lifecycle and output costs. Familiar variable names provide no correctness implication and should not influence the choice."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Transfer is a structured re-derivation, not analogy from surface wording."
+              "text": "Transfer the proof and cost model, not the nouns or identifier names from the earlier problem."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "variable_names": "Names do not transfer algorithmic guarantees."
+          "variable_names": "Familiar identifiers do not establish order, monotonicity, access cost, or output semantics."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "correctness_structure": "These determine applicability.",
-          "workload": "These determine amortization.",
-          "access_output": "These affect both legality and cost."
+          "correctness_structure": "Order, monotonicity, and discard implications determine whether binary search is correct before performance is considered.",
+          "workload": "Query count and update frequency determine whether preprocessing or index maintenance is repaid over the representation's lifetime.",
+          "access_output": "Midpoint access, required output size, and result identity determine both whether the representation can answer and its total cost."
         }
       },
       "taxonomy": {
@@ -997,7 +997,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A renaming pair is artificial because it changes no algorithmic fact."
+              "text": "Unsorted versus sorted-and-reused changes both legality and cost. Alternating versus monotonic truth changes whether half-discard is sound. Any match versus first original-order match changes the identity that the representation must preserve."
             },
             {
               "type": "heading",
@@ -1006,23 +1006,23 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "Each accepted pair holds the surrounding task comparable while changing a decisive property, so it exposes a real strategy boundary. Renaming an index to `mid` changes no representation, predicate, output contract, or cost and therefore cannot justify a different algorithm."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Good contrast pairs vary one decisive property while keeping the surrounding problem comparable."
+              "text": "A useful contrast explains why the decision flips; a cosmetic rewrite cannot test transfer."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "rename_only": "No material constraint changes."
+          "rename_only": "Renaming a variable changes no invariant, requirement, representation, or operation cost."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "unsorted_vs_sorted": "Both legality and amortization change.",
-          "arbitrary_vs_monotonic": "One gains a legal boundary.",
-          "any_vs_original_first": "The output identity changes."
+          "unsorted_vs_sorted": "The sorted reusable case gains both a legal half-discard rule and enough repeated work to benefit from it.",
+          "arbitrary_vs_monotonic": "A proven single truth transition permits boundary search, while an alternating condition does not.",
+          "any_vs_original_first": "First original-order identity requires provenance that an arbitrary key match does not need."
         }
       },
       "taxonomy": {
@@ -1077,7 +1077,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The rejected strategy should remain available under explicitly changed conditions."
+              "text": "A strong explanation first acknowledges why both strategies seem plausible, then names the exact legality or total-cost condition that decides between them. It also states a minimal counterfactual—such as losing monotonicity or adding a reusable aligned index—that would make the alternative appropriate."
             },
             {
               "type": "heading",
@@ -1086,23 +1086,23 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "That boundary lets the learner solve a later variant instead of memorizing “binary search is faster.” Speed alone is incomplete because an asymptotically attractive method can be illegal for the predicate or unable to return the required identity."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Contrast feedback must explain the choice and its boundary, not merely name a winner."
+              "text": "Explain the winning proof, the rejected assumption, and the smallest change that would reverse the choice."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "faster_slogan": "This omits correctness, workload, and the flip condition."
+          "faster_slogan": "A speed slogan omits legality, complete workload cost, and the condition that would flip the decision."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "both_plausible": "The contrast should acknowledge shared surface signals.",
-          "decisive_constraint": "This is the decision boundary.",
-          "alternative_boundary": "This demonstrates transfer."
+          "both_plausible": "Acknowledging the shared search surface makes clear why the decision requires analysis instead of dismissing one strategy by name.",
+          "decisive_constraint": "Naming the exact invariant or complete-cost term explains why the selected strategy wins in this scenario.",
+          "alternative_boundary": "Stating when the rejected strategy becomes valid supplies a reusable rule for the next variant."
         }
       },
       "taxonomy": {
@@ -1157,8 +1157,13 @@
               "text": "Why this choice is correct"
             },
             {
-              "type": "paragraph",
-              "text": "The final flip statement proves that the learner understands the boundary rather than memorizing a label."
+              "type": "ordered_list",
+              "items": [
+                "Recognize the resemblance to a known search problem, but do not choose from that resemblance.",
+                "Extract the result contract, available order or monotonicity, access cost, query count, and update rate.",
+                "Prove which strategies may discard work and compare their complete build, maintenance, query, and output costs.",
+                "Choose a strategy and name the smallest changed condition that would make the alternative preferable."
+              ]
             },
             {
               "type": "heading",
@@ -1167,13 +1172,13 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "The order moves from observation to proof to decision. Choosing before extracting constraints risks transferring only a surface label; stating the flip condition last demonstrates that the learner understands the decision boundary rather than one memorized answer."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Surface analogy is only the entry point to transfer reasoning."
+              "text": "Use resemblance to form hypotheses, then re-establish the invariant and cost model from the new problem."
             }
           ]
         }
@@ -1230,8 +1235,13 @@
               "text": "Why this choice is correct"
             },
             {
-              "type": "paragraph",
-              "text": "Keeping the old loop after the predicate changes is a correctness defect."
+              "type": "ordered_list",
+              "items": [
+                "Write the complete new predicate, including the exception, so no old assumption remains implicit.",
+                "List candidate values that show truth changing direction more than once.",
+                "Withdraw the old half-discard implication because a midpoint result no longer excludes an entire side.",
+                "Scan the candidates or create a different ordered representation whose predicate has one proven transition."
+              ]
             },
             {
               "type": "heading",
@@ -1240,13 +1250,13 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "The counterexample must come before replacing the algorithm because it identifies exactly which proof obligation failed. Changing midpoint bias or retaining the old loop would only preserve an implementation whose discard step is now unsound."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Transfer requires invalidating obsolete reasoning explicitly."
+              "text": "When semantics change, retire the invalid implication before selecting a replacement strategy."
             }
           ]
         }
@@ -1303,8 +1313,13 @@
               "text": "Why this choice is correct"
             },
             {
-              "type": "paragraph",
-              "text": "The index is not justified merely because future queries exist."
+              "type": "ordered_list",
+              "items": [
+                "Estimate q queries and u updates over the lifetime in which an index could be reused.",
+                "Design an ordered representation that preserves the query key and any required output identity.",
+                "Compare repeated scans with index build plus maintenance plus queries, including memory and freshness costs.",
+                "Adopt indexed binary lookup only if the representation is legal and its complete workload fits better."
+              ]
             },
             {
               "type": "heading",
@@ -1313,13 +1328,13 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "Design follows workload estimation because update rate affects which index is viable; the final comparison follows design because its maintenance cost is representation-specific. Future queries alone do not prove that preprocessing will be reused enough to pay for itself."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Repeated-query transfer is an amortization decision with correctness constraints."
+              "text": "Compare costs over one representation lifetime, after proving that the index preserves the required result."
             }
           ]
         }
@@ -1376,8 +1391,13 @@
               "text": "Why this choice is correct"
             },
             {
-              "type": "paragraph",
-              "text": "Transfer should preserve the search advantage without claiming that k outputs are free."
+              "type": "ordered_list",
+              "items": [
+                "Restate the new contract: every one of the k matching records must be returned.",
+                "On query-aligned sorted data, find the lower and upper boundaries of the equal range in O(log n).",
+                "Traverse and emit that range, paying Θ(k) output time and, when materialized, Θ(k) output space.",
+                "Compare O(log n + k) with the scan's O(n + k) under the actual representation."
+              ]
             },
             {
               "type": "heading",
@@ -1386,13 +1406,13 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "Locating the equal range must precede output accounting because binary search reduces only the search portion. When k is Θ(n), output dominates and both totals are Θ(n), even though boundary search still locates the range logarithmically."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Binary search can still help, but the output lower bound changes the total cost."
+              "text": "Separate locating k matches from emitting k matches; only the first part can be logarithmic."
             }
           ]
         }
@@ -1464,7 +1484,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The decision flips with q, legal mutation or copy cost, and practical constants."
+              "text": "A scan inspects up to n records for each of q queries, so its total is q · O(n) = O(qn). Sorting the static array once costs O(n log n), and each of q binary searches costs O(log n), giving O(n log n + q log n). The sort term is paid once only because the dataset is static."
             },
             {
               "type": "heading",
@@ -1473,13 +1493,13 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "Compare the two complete totals rather than O(n) with O(log n) in isolation. A small q may not repay sorting; as q grows, reuse can make the indexed total smaller. If mutation or copying is not allowed, this particular sort-once model is not a legal alternative."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "This formula is a reusable transfer model for static repeated exact queries."
+              "text": "For reusable preprocessing, write `build + q × query` and compare it with `q × direct query`."
             }
           ]
         }
@@ -1551,7 +1571,7 @@
             },
             {
               "type": "paragraph",
-              "text": "When k is Θ(n), both totals become Θ(n)."
+              "text": "Two boundary searches locate the equal range in O(log n), then emitting k records costs O(k), so the indexed total is O(log n + k). A full scan examines n records and emits the matches, represented here as O(n + k); since k ≤ n, this is also O(n)."
             },
             {
               "type": "heading",
@@ -1560,13 +1580,13 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "The output lower bound narrows the advantage: when k is small, logarithmic location avoids examining most records; when k = Θ(n), both expressions reduce to Θ(n). Do not report O(log n) for an operation whose contract requires materializing k outputs."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Output size narrows but does not erase the benefit of locating the range logarithmically."
+              "text": "Total time is `location + output`; binary search changes the first term, never the Ω(k) second term."
             }
           ]
         }
@@ -1637,7 +1657,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A direct method remains preferable when D(n) grows more slowly or has materially lower costs."
+              "text": "Binary search over W candidate values performs O(log W) predicate evaluations because each evaluation halves the remaining range. If one predicate check costs P(n), multiplying the layers gives O(P(n) log W), not O(log W) or O(P(n)) alone."
             },
             {
               "type": "heading",
@@ -1646,13 +1666,13 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "The direct legal solution costs D(n), so the transfer decision compares P(n) log W with D(n), along with constants and memory. The answer-space method is eligible only if the predicate is monotonic; a lower asymptotic expression cannot rescue an invalid discard rule."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "The outer logarithm is only one factor in the transferred workload."
+              "text": "For nested work, multiply predicate cost by the number of binary-search iterations before comparing strategies."
             }
           ]
         }
@@ -1724,7 +1744,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer should compare the actual data structure options rather than only sort-once versus scan."
+              "text": "The ordered structure performs q searches and u updates at O(log n) each, so the total is O(q log n + u log n) = O((q + u) log n). The plain array performs q scans at O(n) and u append updates at O(1), giving O(qn + u)."
             },
             {
               "type": "heading",
@@ -1733,13 +1753,13 @@
             },
             {
               "type": "paragraph",
-              "text": "Transfer the decision by re-checking the result contract, representation, monotonicity, and workload. The same-looking query can legitimately move from a scan to binary search when the data becomes ordered by the queried property and repeated queries repay the setup cost."
+              "text": "Neither representation wins from q alone: the ordered structure reduces query cost but makes updates logarithmic, while the append-only array keeps updates constant and queries linear. Compare the formulas for the expected q:u ratio and include memory and output semantics before choosing."
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "A different maintained representation can move both query and update costs."
+              "text": "Model every operation the representation must support; optimizing lookup can move cost into updates."
             }
           ]
         }

@@ -3,7 +3,7 @@
   "batchId": "algorithms-heap-priority-queue-k-way-merge-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -43,9 +43,9 @@
             "id": "all_remaining_values",
             "text": "Every value not yet emitted from every source."
           },
-          {
-            "id": "current_head_tagged",
-            "text": "One current head from each nonempty source, tagged with its source and next position."
+        {
+          "id": "current_head_tagged",
+          "text": "One current head from each nonempty source, tagged with the source state needed to advance that source."
           },
           {
             "id": "one_global_source",
@@ -66,7 +66,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A later value in a source cannot precede that source’s current head. The next output is therefore the minimum among at most k heads. Tagging each heap entry with source identity and position is necessary so the algorithm can advance exactly the source that supplied the popped value. Loading all remaining values abandons the frontier bound, while tracking only one source can miss a smaller head elsewhere."
+            "text": "A later value in a source cannot precede that source’s current head. The next output is therefore the minimum among at most `k` heads. Each heap entry must retain the source identity plus the cursor, index, or iterator state needed to obtain that source's successor after a pop. Loading all remaining values abandons the frontier bound, while tracking only one source can miss a smaller head elsewhere."
             }
           ]
         },
@@ -99,41 +99,45 @@
             "id": "pop_smallest",
             "text": "Remove the smallest frontier entry."
           },
-          {
-            "id": "append_output",
-            "text": "Append that value to the merged output."
-          },
-          {
-            "id": "advance_source",
-            "text": "Advance only the source recorded in the popped entry."
+        {
+          "id": "commit_and_advance",
+          "text": "Append the popped value and advance only its recorded source; these two actions may occur in either order."
           },
           {
             "id": "push_successor",
             "text": "If that source has another value, insert its new head."
           }
         ],
-        "canonicalOrder": [
-          "seed_heads",
-          "pop_smallest",
-          "append_output",
-          "advance_source",
-          "push_successor"
+      "canonicalOrder": [
+        "seed_heads",
+        "pop_smallest",
+        "commit_and_advance",
+        "push_successor"
         ],
         "scoringMethod": "adjacent_relations"
       },
       "scoringContract": {
         "type": "ordering",
-        "maxPoints": 4
+        "maxPoints": 3
       },
       "feedback": {
         "reason": "Each pop commits one output and opens exactly one successor candidate from the same source.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "Seeding creates the complete initial frontier. Popping selects the smallest eligible value, and appending records it before source state advances. Only the source that supplied the value can expose a new eligible head. Pushing that successor restores one frontier entry for the source. Repeating the pop-to-successor chain preserves both global output order and the one-head-per-source invariant."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Seed the min-heap with the first value and advancement state of every nonempty source, establishing one frontier entry per active source.",
+              "Pop the smallest visible head; per-source sortedness proves that no still-hidden value can precede it.",
+              "Append the saved value and advance only its source. These actions are independent once the popped entry has preserved both the value and source identity.",
+              "If that source has a successor, push it as the source's new head; otherwise leave the exhausted source absent."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Repeating steps two through four preserves global output order and the one-head-per-source invariant. Advancing any other source can skip its eligible head, while pushing a deeper value before its predecessor is emitted breaks the frontier proof."
+          }
+        ]
         }
       },
       "taxonomy": {
@@ -180,12 +184,21 @@
       "feedback": {
         "reason": "Each emitted head is replaced only by the successor from the same source, so A contributes 7, B contributes 3, and C still contributes 4.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "The initial frontier is {1A, 2B, 4C}. Popping 1A exposes 7A. Popping 2B exposes 3B. C has not advanced because its head has not been emitted. The next pop is therefore 3B. Retaining emitted heads would duplicate output, while loading values beyond the current head is unnecessary and weakens the frontier invariant."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Seed the frontier as `{1A, 2B, 4C}`.",
+              "Pop `1A`, append `1`, and expose A's successor `7A`: `{2B, 4C, 7A}`.",
+              "Pop `2B`, append `2`, and expose B's successor `3B`: `{3B, 4C, 7A}`.",
+              "The minimum visible head is now `3B`, so that is the next pop."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "C remains at `4C` because only the source of a popped head advances. Retaining `1A` or `2B` would duplicate output, while loading values beyond a source's head would abandon the minimal frontier without changing which value is eligible next."
+          }
+        ]
         },
         "wrongOptionExplanationsByOptionId": {
           "advance_every_source": "Only the source of the popped value advances. Advancing C before emitting 4 would skip an eligible value.",
@@ -256,7 +269,10 @@
         "learningStage": "pattern_mechanics",
         "patternVariantId": "k_way_merge",
         "problemArchetypeId": "merge_sorted_sources"
-      }
+      },
+      "constraints": [
+        "`k >= 1`, and `N` is the total number of values across all sources."
+      ]
     },
     {
       "id": "hpq-k-way-empty-and-exhausted-sources",
@@ -317,7 +333,7 @@
     },
     {
       "id": "hpq-k-way-unsorted-source-boundary",
-      "prompt": "One of the k sources may yield values out of order. Can the standard one-head-per-source heap merge still guarantee globally sorted output?",
+    "prompt": "One of the `k` sources may yield values out of order. Can the standard min-heap merge with one visible head per source still guarantee nondecreasing output?",
       "difficulty": "advanced",
       "interaction": {
         "type": "choice",

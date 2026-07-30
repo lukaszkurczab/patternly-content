@@ -3,7 +3,7 @@
   "batchId": "contrast-sliding-window-vs-prefix-sums-negative-values-break-simple-window-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -79,7 +79,7 @@
             },
             {
               "type": "paragraph",
-              "text": "With a negative outgoing value, shrinking can make the sum larger, so discarded intervals may still contain valid answers."
+              "text": "If the current sum is S and a[left] = -x for x > 0, shrinking produces S - (-x) = S + x. The total rises rather than falls, so “sum too large” no longer proves that moving left repairs the state. Worse, permanently discarding that start can remove a future answer because later negative entrants may lower the same interval. A valid review must derive the sign of both boundary updates; forward pointer motion alone proves only termination and work, not safe elimination."
             },
             {
               "type": "callout",
@@ -90,9 +90,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "negative_not_contiguous": "Sign does not affect contiguity.",
-          "prefix_forbidden": "Cumulative sums may be negative.",
-          "left_never_moves": "Variable windows depend on left movement."
+          "negative_not_contiguous": "Contiguity is determined by adjacent indices, so a negative element remains a normal member of a contiguous interval.",
+          "prefix_forbidden": "Prefix sums are ordinary cumulative totals and may be positive, zero, or negative without invalidating the prefix identity.",
+          "left_never_moves": "Variable windows routinely move left to evict members; the issue is whether that movement changes validity in the required direction."
         }
       },
       "taxonomy": {
@@ -145,7 +145,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Negative values break that relationship even though boundaries still move forward."
+              "text": "Let the maintained sum be S and let the entering value be -x. Expanding right changes the total to S - x, so it can move away from an at-least target instead of toward it. A previously over-target interval may also become valid after a negative entrant, which means an earlier start cannot be discarded merely because the current total is too large. The right index still advances monotonically, but index direction and sum direction are different properties. Mixed-sign correctness therefore needs prefix relations or another stronger invariant."
             },
             {
               "type": "callout",
@@ -156,9 +156,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "right_moves_left": "The boundary can still move right; the aggregate direction is the problem.",
-          "array_unsorted": "Sortedness is unrelated.",
-          "sum_undefined": "They are ordinary numeric sums."
+          "right_moves_left": "The right boundary can keep moving forward; the failure is that the newly added negative value moves the aggregate downward.",
+          "array_unsorted": "Sign and sort order are independent: a sorted array may contain negatives, and an unsorted array may contain only positives.",
+          "sum_undefined": "Addition is defined for negative values; what disappears is the monotone implication used to choose a boundary."
         }
       },
       "taxonomy": {
@@ -169,7 +169,7 @@
     },
     {
       "id": "alg-contrast-window-prefix-negative-003",
-      "prompt": "The array is [4, -5, 6] and the target is an exact sum of 5. Which contiguous interval is a counterexample to discarding after the prefix sum drops?",
+      "prompt": "The array is [4, -5, 6] and the target is an exact sum of 5. A faulty scan discards the start at index 0 when the running sum drops from 4 to -1. Which later contiguous interval proves that discard unsafe?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -211,7 +211,7 @@
             },
             {
               "type": "paragraph",
-              "text": "This demonstrates why local sum direction is not a safe discard signal with negative values."
+              "text": "Starting at index 0, the running totals are 4 after [4], -1 after [4, -5], and 5 after [4, -5, 6]. The temporary drop to -1 does not make the original start useless: the later +6 completes the exact target. Discarding index 0 at the drop would therefore miss the whole-array solution. The other options can be checked directly: [4] = 4, [6] = 6, and [-5, 6] = 1. Reusable counterexample rule: force a local comparison to reverse after the proposed discard."
             },
             {
               "type": "callout",
@@ -222,9 +222,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "first_only": "It sums to 4.",
-          "last_only": "It sums to 6.",
-          "middle_last": "It sums to 1."
+          "first_only": "The singleton [4] totals 4, one below the exact target 5.",
+          "last_only": "The singleton [6] totals 6, one above the exact target 5.",
+          "middle_last": "The interval [-5, 6] totals 1, so it does not establish the requested exact-sum answer."
         }
       },
       "taxonomy": {
@@ -277,7 +277,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A hash lookup for prefix[i + 1] - k does not rely on monotone value signs."
+              "text": "Define prefix[t] as the sum of the first t values, with prefix[0] = 0. The subarray [j, i] has sum prefix[i + 1] - prefix[j]. It equals k exactly when an earlier prefix[j] equals currentPrefix - k. Scan left to right, query that value before storing the current prefix, and seed 0 so intervals beginning at index 0 are visible. Equality of prefix values remains valid for arbitrary signs, unlike a shrink-versus-expand comparison."
             },
             {
               "type": "callout",
@@ -288,9 +288,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "simple_window": "Neither comparison gives a legal direction when signs are mixed.",
-          "sort_values": "Sorting destroys contiguous intervals.",
-          "positive_assumption": "Their placement determines every interval sum."
+          "simple_window": "With mixed signs, sum > k does not prove shrink is helpful and sum < k does not prove expansion is helpful; either update may reverse direction.",
+          "sort_values": "Sorting changes original adjacency, so a selected range in sorted order need not be a contiguous subarray of the input.",
+          "positive_assumption": "Negative values are not harmless cancellation: their positions determine which prefix differences and therefore which contiguous sums exist."
         }
       },
       "taxonomy": {
@@ -343,7 +343,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A known solution uses prefix sums with a monotonic deque, illustrating that prefix state may need an additional ordered invariant."
+              "text": "Let P[i] be the prefix sum before index i. A subarray [i, j) reaches k when P[j] - P[i] >= k. For each j, the shortest answer needs the largest feasible i, but prefix values are not ordered by index under mixed signs. A monotonic deque stores candidate prefix indices with increasing P values: pop from the front while the threshold is met and record j - i, then pop dominated larger-or-equal prefixes from the back before adding j. A frequency map alone answers equality counts, not this ordered threshold optimization."
             },
             {
               "type": "callout",
@@ -354,9 +354,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "same_positive_rule": "Removing or adding values no longer changes the sum monotonically.",
-          "prefix_hash_always": "Shortest-at-least queries require order-aware handling of prefix values and indices.",
-          "sort_array": "Contiguity would be lost."
+          "same_positive_rule": "A negative entrant can lower the sum and removing a negative can raise it, so the positive-value repair and stop implications no longer hold.",
+          "prefix_hash_always": "A frequency map detects exact prefix differences, but shortest-at-least requires comparing prefix order and indices; a monotonic deque supplies that dominance structure.",
+          "sort_array": "Sorting changes which values are adjacent and therefore replaces the required original contiguous candidates with different ones."
         }
       },
       "taxonomy": {
@@ -409,7 +409,7 @@
             },
             {
               "type": "paragraph",
-              "text": "That lets the algorithm prove when smaller or larger windows can be discarded."
+              "text": "With strictly positive values, adding a[right] strictly increases the sum and subtracting a[left] strictly decreases it. For a minimum-at-least objective, expand until valid, then record and shrink; once shrink becomes invalid, further shrink cannot restore validity. For a maximum-at-most objective, shrink only while over budget, then record the restored window. These are objective-specific discard proofs derived from the sign constraint. Positive target alone cannot supply them when input values may be negative."
             },
             {
               "type": "callout",
@@ -420,9 +420,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "prefix_unique": "Positive values make prefixes strictly increasing, not identical.",
-          "indices_sorted": "Indices are always ordered.",
-          "target_positive": "The input sign constraint is decisive."
+          "prefix_unique": "Positive values make successive prefix sums strictly increase; they cannot all be identical unless no positive values are added.",
+          "indices_sorted": "Array indices are ordered regardless of element signs, so this fact cannot distinguish legal and illegal sum movement.",
+          "target_positive": "A positive target does not constrain how arbitrary signed entrants or leavers change the current sum; the value domain is decisive."
         }
       },
       "taxonomy": {
@@ -475,7 +475,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Boundary indices must still move, and answer timing must handle equal-sum intervals correctly."
+              "text": "Zeros turn strict movement into non-strict movement: adding zero leaves the sum unchanged, and removing zero also leaves it unchanged. The directional proof still holds because expansion cannot decrease and shrink cannot increase the total. The implementation must nevertheless advance a boundary on every loop iteration to avoid stalling. It must also evaluate equal-sum windows according to the objective, since removing a leading zero may improve a minimum length and adding a trailing zero may improve a maximum length without changing validity."
             },
             {
               "type": "callout",
@@ -486,9 +486,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "fully_broken": "Zero does not reverse sum direction.",
-          "strict_only": "Adding or removing zero can leave it unchanged.",
-          "prefix_required": "A window can still be valid for suitable threshold objectives."
+          "fully_broken": "Zero creates a plateau but never reverses expansion or shrink direction, so suitable threshold windows remain correct.",
+          "strict_only": "Adding or removing zero leaves the aggregate unchanged even though the boundary and candidate length still change.",
+          "prefix_required": "Prefix methods remain alternatives, but a nonnegative threshold objective still has a legal window when equality and progress are handled."
         }
       },
       "taxonomy": {
@@ -541,7 +541,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The algorithm can be fast and wrong if sign changes invalidate the boundary decision."
+              "text": "If right advances n times and left advances at most n times, the loop may indeed take O(n) time. That accounting says nothing about whether an eliminated start can belong to a later answer. With mixed signs, [4, -5, 6] and target 5 shows a start can look unhelpful after the -5 and become necessary after +6. Thus the implementation can terminate quickly while returning false. Correctness needs a discard theorem; complexity only counts how often the unsupported discard executes."
             },
             {
               "type": "callout",
@@ -552,9 +552,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "pointers_quadratic": "They may be linear, but correctness is separate.",
-          "negative_forces_backtrack": "Prefix methods avoid that.",
-          "big_o_answer": "Complexity says nothing about semantic correctness."
+          "pointers_quadratic": "Two forward-only boundaries can have O(n) total movement; the defect under review is correctness, not necessarily runtime.",
+          "negative_forces_backtrack": "Negative values break the simple window proof, but prefix-based algorithms still scan forward without moving a pointer backward.",
+          "big_o_answer": "Big-O bounds operation growth only; two O(n) algorithms can compute different results when one discards valid candidates."
         }
       },
       "taxonomy": {
@@ -607,7 +607,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Frequency, not only existence, is required when the result is a count."
+              "text": "At current prefix P, every earlier boundary with prefix value P - k creates a distinct subarray ending here whose sum is k. If that value occurred c times, this step contributes c answers, not merely one. Seed frequency[0] = 1 to count intervals starting at index 0; for each element, update P, add frequency[P - k] to the result, then increment frequency[P]. Storing only existence would undercount repeated prefix values caused by zeros or cancelling signed segments."
             },
             {
               "type": "callout",
@@ -618,9 +618,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "one_current_sum": "Different earlier boundaries can share the needed prefix value.",
-          "sorted_values": "Sorting loses interval identity.",
-          "target_count": "Subarray sums are not element equality."
+          "one_current_sum": "One running total contains no history of earlier boundaries, so it cannot count multiple occurrences of the required prefix value.",
+          "sorted_values": "Sorting destroys original-order boundaries and therefore the identity of contiguous subarrays being counted.",
+          "target_count": "Occurrences of k as an element do not determine sums of multi-element intervals; the required relation is between two prefix totals."
         }
       },
       "taxonomy": {
@@ -673,7 +673,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Mixed-sign recovery cases distinguish a memorized window template from a valid invariant."
+              "text": "Use a case such as [4, -5, 6] with target 5. A template that reacts locally to the drop from 4 to -1 may discard index 0, but the later +6 makes the whole interval sum to 5. A complementary case should let removing a negative raise the sum. These inputs exercise the exact directional implications a simple window assumes. All-ones or sorted-positive cases preserve monotonicity and can pass even when signed handling is wrong; empty input tests only initialization."
             },
             {
               "type": "callout",
@@ -684,9 +684,9 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "all_ones": "That satisfies monotonic assumptions and may hide the defect.",
-          "empty_only": "It does not exercise the discard rule.",
-          "sorted_positive": "That also preserves monotonicity."
+          "all_ones": "An all-ones array satisfies strict positive monotonicity, so even an invalid mixed-sign template may appear correct.",
+          "empty_only": "Empty input tests initialization and absence handling but never executes the faulty expansion or shrink discard.",
+          "sorted_positive": "Ascending positive values also preserve directional sums and therefore do not expose the signed-value boundary failure."
         }
       },
       "taxonomy": {
@@ -741,7 +741,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The algorithm needs another state relation that does not depend on sign monotonicity."
+              "text": "A negative entrant can decrease the maintained total, and removing a negative left value can increase it. Therefore comparing the current sum with a target no longer identifies a universally safe boundary move; an earlier start may become useful after later corrections. None of this changes adjacency—the candidate is still a contiguous interval. Prefix differences replace the missing direction with an exact algebraic relation, and order-aware prefix structures can handle threshold objectives."
             },
             {
               "type": "callout",
@@ -752,12 +752,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "contiguity_removed": "The interval remains contiguous."
+          "contiguity_removed": "Element signs do not change index adjacency; the selected subarray remains contiguous even though the simple boundary proof fails."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "expand_decrease": "Expansion is no longer monotone.",
-          "shrink_increase": "Contraction is no longer monotone.",
-          "discard_invalid": "The safe-elimination rule disappears."
+          "expand_decrease": "Omitting this misses that a negative entrant can reverse the assumed effect of advancing right.",
+          "shrink_increase": "Omitting this misses that subtracting an outgoing negative can raise rather than lower the sum.",
+          "discard_invalid": "Omitting this misses the consequence: target comparison alone no longer proves that any start is permanently irrelevant."
         }
       },
       "taxonomy": {
@@ -812,7 +812,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Threshold optimization may require additional order-aware prefix structures."
+              "text": "For existence, query whether P - k has appeared before. For count, store how many times each prefix appeared and add that frequency. For longest exact sum, store the earliest index of each prefix value so P - k yields the greatest distance. All three use P[j] - P[i] = k and tolerate arbitrary signs. Shortest-at-least is an inequality and cannot use only the ordinary shrink-when-valid rule; it needs ordered prefix dominance, such as a monotonic deque."
             },
             {
               "type": "callout",
@@ -823,12 +823,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "simple_threshold_window": "Mixed signs invalidate that simple rule."
+          "simple_threshold_window": "With mixed signs, a valid window can become more valid after expansion and removing a negative can increase its sum, so shrink-when-valid is not a safe complete search."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "exact_exists": "Look for an earlier prefix equal to currentPrefix - k.",
-          "exact_count": "Store prefix frequencies.",
-          "longest_exact": "Store the earliest index for each prefix."
+          "exact_exists": "Omitting existence ignores the direct lookup for an earlier prefix equal to currentPrefix - k.",
+          "exact_count": "Omitting count ignores that prefix frequencies enumerate every earlier starting boundary with the required value.",
+          "longest_exact": "Omitting longest ignores that retaining the earliest index for each prefix maximizes the boundary distance."
         }
       },
       "taxonomy": {
@@ -882,7 +882,7 @@
             },
             {
               "type": "paragraph",
-              "text": "Zeros require careful equality handling but do not reverse direction."
+              "text": "Strictly positive values make expansion increase and shrink decrease the sum. Nonnegative values weaken those statements to nondecreasing and nonincreasing, so the same threshold proof survives if loops advance boundaries and evaluate equal-sum plateaus correctly. Arbitrary signed values remove both implications, while a positive target constrains only the comparator and cannot restore them. The value domain must therefore be stated before choosing the ordinary variable-window template."
             },
             {
               "type": "callout",
@@ -893,12 +893,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "arbitrary_signed": "The simple sum comparison is not a safe discard rule.",
-          "target_only": "Target sign does not restore monotonicity."
+          "arbitrary_signed": "Without a stronger invariant, signed entrants and leavers can reverse aggregate direction, so a target comparison cannot justify permanent discards.",
+          "target_only": "A positive target says nothing about the sign of boundary updates and therefore cannot restore monotonicity for arbitrary values."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "positive": "Boundary moves change sum in strict directions.",
-          "nonnegative": "Directional monotonicity remains."
+          "positive": "Omitting positivity loses the strict directional case in which both expansion and shrink effects are immediately determined.",
+          "nonnegative": "Omitting nonnegativity incorrectly rejects legal plateau cases where direction is preserved but equality needs careful handling."
         }
       },
       "taxonomy": {
@@ -953,7 +953,7 @@
             },
             {
               "type": "paragraph",
-              "text": "A convenient positive hit can pass even when mixed-sign logic is wrong."
+              "text": "Test a negative outgoing value because subtracting it raises the sum and directly challenges shrink direction. Test a negative incoming value because adding it lowers the sum and challenges expansion direction. Test zero runs because they preserve direction but expose strict-comparison and pointer-progress bugs. A single convenient positive case exercises none of these boundaries and can pass under an implementation that is both incomplete for zeros and incorrect for mixed signs."
             },
             {
               "type": "callout",
@@ -964,12 +964,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "positive_only_mid": "This does not test the boundary failure."
+          "positive_only_mid": "One already-valid positive window follows the easiest monotone path and cannot expose reversed sum direction or zero plateaus."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "negative_outgoing": "This tests shrink direction.",
-          "negative_incoming": "This tests expansion direction.",
-          "zeros": "This tests non-strict monotonicity and pointer progress."
+          "negative_outgoing": "Omitting this leaves the crucial counterexample where shrink increases rather than decreases the aggregate untested.",
+          "negative_incoming": "Omitting this leaves the crucial counterexample where expansion decreases rather than increases the aggregate untested.",
+          "zeros": "Omitting zero runs leaves non-strict movement, equal-sum answer timing, and mandatory boundary progress untested."
         }
       },
       "taxonomy": {
@@ -1024,7 +1024,7 @@
             },
             {
               "type": "paragraph",
-              "text": "The prefix-difference identity remains valid for all numeric signs."
+              "text": "Contiguity states the candidate shape but not a discard direction. Forward-only movement bounds work but cannot prove correctness. Negative values affect boundary legality because they can reverse both expansion and shrink effects, not merely change arithmetic magnitudes. By contrast, the identity sum(i..j) = prefix[j + 1] - prefix[i] is algebraic and remains true for every sign. It is the sound bridge to prefix lookup or stronger ordered prefix state."
             },
             {
               "type": "callout",
@@ -1035,12 +1035,12 @@
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "prefix_difference": "This is a valid identity."
+          "prefix_difference": "This statement is mathematically valid for arbitrary numeric signs and does not hide a window assumption."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "contiguous_implies_window": "Prefix methods also target contiguous sums, and sign/objective constraints matter.",
-          "forward_implies_correct": "They address work, not safe elimination.",
-          "negative_harmless": "They can reverse aggregate movement."
+          "contiguous_implies_window": "Omitting this mistake leaves candidate shape confused with the sign- and objective-specific theorem needed for boundary elimination.",
+          "forward_implies_correct": "Omitting this mistake conflates an amortized work bound with proof that discarded intervals cannot contain an answer.",
+          "negative_harmless": "Omitting this mistake ignores that negative entrants and leavers can reverse the assumed aggregate direction."
         }
       },
       "taxonomy": {
@@ -1095,8 +1095,17 @@
               "text": "Why mixed signs change the proof"
             },
             {
+              "type": "ordered_list",
+              "items": [
+                "Write the proposed move condition exactly, including which comparison advances left and which advances right.",
+                "Substitute a negative entrant and a negative outgoing value to derive whether either update reverses the assumed sum direction.",
+                "Build the smallest concrete interval whose discarded start later participates in a valid answer, proving the elimination implication false.",
+                "Replace the unsupported template with exact prefix lookup or an order-aware prefix structure matched to the result contract."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Finding a directional reversal proves that the simple template is unsupported."
+              "text": "Selecting a replacement before exposing the failed implication risks solving the wrong objective. The counterexample must follow the direction test so it attacks the actual discard rule rather than merely showing that negatives exist."
             },
             {
               "type": "callout",
@@ -1159,8 +1168,17 @@
               "text": "Why mixed signs change the proof"
             },
             {
+              "type": "ordered_list",
+              "items": [
+                "Seed frequency[0] = 1 before reading input so a prefix whose total is k represents an interval starting at index 0.",
+                "Add the current value to runningPrefix, making it the prefix after the current index.",
+                "Query frequency[runningPrefix - k]; every occurrence is an earlier boundary that forms an exact-sum-k interval ending here.",
+                "Only after the query, increment frequency[runningPrefix] for use by later endpoints."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Looking up before storing avoids counting a zero-length interval unless the contract explicitly permits it."
+              "text": "Storing before querying can pair the current prefix with itself when k = 0 and count an empty interval. Existence may store a set, counting needs frequencies, and longest length instead retains earliest indices."
             },
             {
               "type": "callout",
@@ -1223,8 +1241,17 @@
               "text": "Why mixed signs change the proof"
             },
             {
+              "type": "ordered_list",
+              "items": [
+                "Establish that every value is nonnegative; this premise owns all later direction claims.",
+                "Derive that adding a[right] cannot decrease the maintained sum.",
+                "Derive that subtracting a[left] cannot increase the maintained sum.",
+                "Combine those implications with the exact objective to prove when a start may be discarded and when expansion or shrinkage must stop."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Zeros make the implications non-strict but preserve them."
+              "text": "Zeros make the two effects non-strict but do not reverse them. Deriving a discard before stating the sign premise would be circular, and stating directions without connecting them to the objective would still leave answer timing unproved."
             },
             {
               "type": "callout",
@@ -1298,11 +1325,20 @@
             {
               "type": "heading",
               "level": 3,
-              "text": "Why mixed signs change the proof"
+              "text": "Derive prefix-hash cost"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Process each of n elements once, updating runningPrefix in O(1).",
+                "For each prefix, perform one expected-O(1) lookup of runningPrefix - k and one expected-O(1) frequency update.",
+                "Total expected time is therefore n · O(1) = O(n).",
+                "At most n + 1 distinct prefix values, including the seeded zero prefix, are retained, so auxiliary space is O(n)."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The method replaces invalid monotone pointer logic with retained cumulative-state history."
+              "text": "The O(n) time relies on the stated expected hash-table operations; a guarantee-sensitive implementation must name its map assumptions. Retaining history is the space tradeoff that replaces an invalid constant-state signed window."
             },
             {
               "type": "callout",
@@ -1376,11 +1412,20 @@
             {
               "type": "heading",
               "level": 3,
-              "text": "Why mixed signs change the proof"
+              "text": "Count every start-end pair"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Starting at index 0 evaluates n extensions; starting at index 1 evaluates n - 1, continuing down to one.",
+                "The candidate count is n + (n - 1) + ... + 1 = n(n + 1)/2 = Θ(n²).",
+                "Each extension changes the running sum and checks the result in O(1), so total worst-case time is O(n²).",
+                "Only the two boundaries, running sum, and answer are stored, giving O(1) auxiliary space."
+              ]
             },
             {
               "type": "paragraph",
-              "text": "The comparison highlights why prefix-hash state is valuable when a simple O(n) window is invalid."
+              "text": "Incremental sums remove a third loop but not the quadratic number of intervals. Prefix-hash state reduces exact-sum signed work to expected O(n) by retaining boundary history instead of revisiting every start."
             },
             {
               "type": "callout",

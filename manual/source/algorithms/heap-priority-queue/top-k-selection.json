@@ -3,7 +3,7 @@
   "batchId": "algorithms-heap-priority-queue-top-k-selection-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -76,13 +76,16 @@
           "sorted_all": "A fully sorted history maintains more state and ordering than the top-k boundary requires."
         }
       },
-      "taxonomy": {
-        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+    "taxonomy": {
+      "primarySkillAtomId": "maintain_bounded_top_k_heap",
         "secondarySkillAtomIds": [],
         "learningStage": "pattern_mechanics",
-        "patternVariantId": "top_k",
-        "problemArchetypeId": "maintain_top_k"
-      }
+      "patternVariantId": "top_k",
+      "problemArchetypeId": "maintain_top_k"
+    },
+    "constraints": [
+      "`k` is a fixed positive integer."
+    ]
     },
     {
       "id": "hpq-top-k-smallest-retained-frontier",
@@ -133,13 +136,16 @@
           "queue_k": "Recency does not determine which values are the k smallest, so FIFO state cannot enforce the rank boundary."
         }
       },
-      "taxonomy": {
-        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+    "taxonomy": {
+      "primarySkillAtomId": "maintain_bounded_top_k_heap",
         "secondarySkillAtomIds": [],
         "learningStage": "pattern_mechanics",
-        "patternVariantId": "top_k",
-        "problemArchetypeId": "maintain_top_k"
-      }
+      "patternVariantId": "top_k",
+      "problemArchetypeId": "maintain_top_k"
+    },
+    "constraints": [
+      "`k` is a fixed positive integer."
+    ]
     },
     {
       "id": "hpq-top-k-concrete-replacement",
@@ -203,6 +209,7 @@
       "prompt": "Which boundary contract is correct for a function that returns the k largest values from n inputs?",
       "constraints": [
         "The API defines k as a nonnegative integer.",
+        "When k exceeds n, this API returns all n available values rather than rejecting the request.",
         "The result may be returned in any order unless separately requested."
       ],
       "difficulty": "intermediate",
@@ -240,8 +247,16 @@
         "details": {
           "blocks": [
             {
+              "type": "bullet_list",
+              "items": [
+                "If `k = 0`, return an empty result before creating or reading a heap.",
+                "If `k >= n`, every available input belongs to the result, so no candidate needs eviction.",
+                "If `0 < k < n`, retain at most `k` candidates and evict through the exposed threshold."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "Boundary handling should be explicit before heap operations begin. For k = 0, no candidate can be retained. For k >= n, all available values belong to the answer, though a heap may still be used if later output requirements justify it. Only the strict interior case needs a fixed-size eviction threshold. Synthetic padding changes the meaning of the data and is not implied by top-k selection."
+              "text": "These cases preserve the API's requested cardinality subject to available input. For `k >= n`, a heap may still be used if another output requirement justifies it, but selection itself needs no eviction. Synthetic padding invents data and is not part of the declared contract."
             }
           ]
         },
@@ -261,7 +276,7 @@
     },
     {
       "id": "hpq-top-k-sufficient-state-size",
-      "prompt": "The only required final answer is the set of k largest values from a very long stream, and the discarded values will never be queried. Which state is sufficient?",
+      "prompt": "The only required final answer is the collection of the `k` largest arrivals from a very long insertion-only stream, and discarded values will never be queried. Which state is sufficient?",
       "difficulty": "intermediate",
       "interaction": {
         "type": "choice",
@@ -293,12 +308,12 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The top-k invariant makes the retained k candidates sufficient; values below the threshold cannot re-enter without a changed contract.",
+        "reason": "For fixed `k` under insertions only, the eviction threshold never decreases, so the retained `k` candidates are sufficient and a discarded arrival cannot later re-enter.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "For a fixed k with insertions only, once a value is discarded because it does not exceed the current threshold, future insertions cannot make that discarded value enter the top-k set. The heap therefore needs only the retained candidates. Keeping all history or sorted discarded values adds state with no supported query. Keeping only the root loses the identities of the other retained values needed for the final answer."
+              "text": "After the first `k` arrivals, the root of the retained min-heap is the kth-largest threshold. A new arrival is either discarded, leaving that threshold unchanged, or replaces the root with a larger value, after which the new threshold is at least as large. Because the threshold is monotonic, an earlier discarded value that was no larger than it can never become competitive through later insertions. The heap therefore needs only the retained candidates. Keeping all history adds unsupported state, while keeping only the root loses the other `k - 1` arrivals required in the final collection."
             }
           ]
         },
@@ -314,7 +329,12 @@
         "learningStage": "pattern_mechanics",
         "patternVariantId": "bounded_heap",
         "problemArchetypeId": "maintain_top_k"
-      }
+      },
+      "constraints": [
+        "`k` is fixed and positive.",
+        "At least `k` values arrive.",
+        "Equal-valued arrivals remain distinct candidates; no set deduplication is implied."
+      ]
     },
     {
       "id": "hpq-top-k-after-frequency-aggregation",
@@ -362,7 +382,7 @@
         "wrongOptionExplanationsByOptionId": {
           "heap_replaces_counting": "Heap order compares supplied keys; it does not aggregate equal values into counts by itself.",
           "heap_all_occurrences": "Raw occurrences do not directly identify the k most frequent distinct values and can duplicate the same value many times.",
-          "fifo_distinct_values": "First-seen order is unrelated to frequency rank."
+          "fifo_distinct_values": "FIFO assumes arrival order determines frequency rank, but first appearance and final count are independent. A queue fits arrival-order output, not top-frequency selection."
         }
       },
       "taxonomy": {
@@ -371,7 +391,11 @@
         "learningStage": "pattern_mechanics",
         "patternVariantId": "top_k",
         "problemArchetypeId": "maintain_top_k"
-      }
+      },
+      "constraints": [
+        "`k` satisfies `0 < k <= m`.",
+        "If cutoff frequencies tie, the API either accepts any tied candidate or supplies a deterministic tie-break."
+      ]
     }
   ],
   "modeStructures": {

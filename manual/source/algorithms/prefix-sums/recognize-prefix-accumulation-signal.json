@@ -3,7 +3,7 @@
   "batchId": "algorithms-prefix-sums-recognize-prefix-accumulation-signal-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -71,7 +71,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Define P[i] as the sum of the first i elements. An inclusive query [l, r] becomes P[r + 1] - P[l], so one O(n) preprocessing pass supports each query in O(1). Sorting would destroy the meaning of the original indices, and a moving window does not provide constant-time jumps between unrelated query intervals. The same signal transfers to other invertible cumulative operations, such as XOR, but not directly to range minimum."
+              "text": "Define P[i] as the sum of the first i elements, so P[0] = 0 and P[i + 1] = P[i] + A[i]. For an inclusive query [l, r], P[r + 1] contains both the elements before l and the requested range, while P[l] contains exactly the elements before l. Their difference is therefore the requested sum. One O(n) preprocessing pass supports each of the q arbitrary queries in O(1), for O(n + q) total time. Sorting would destroy the meaning of the original indices, and a moving window does not provide constant-time jumps between unrelated query intervals. The same boundary-state idea transfers to operations such as XOR, where the earlier prefix contribution can be undone, but not directly to range minimum."
             }
           ]
         },
@@ -102,12 +102,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "prefix_at_each_boundary",
-            "text": "For every boundary i, store the sum of elements with indices smaller than i."
-          },
-          {
             "id": "current_fixed_window",
             "text": "Store only the sum of the most recent fixed-size window."
+          },
+          {
+            "id": "prefix_at_each_boundary",
+            "text": "For every boundary i, store the sum of elements with indices smaller than i."
           },
           {
             "id": "sorted_prefix",
@@ -196,7 +196,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The workload first supplies the reuse signal. Next, the proposed boundary state must be defined, and then the author must verify that two states isolate the requested interval; only then does the preprocessing trade-off follow. Reversing this logic risks choosing a prefix merely because a problem mentions subarrays, even when the aggregate cannot be recovered from two prefixes."
+              "text": "The decision depends on a proof, not merely on the word “subarray.” The workload must reuse the same aggregate across many ranges, and the proposed state must let two boundaries recover exactly one requested interval."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Identify repetition: many queries request the same aggregate over different index ranges.",
+                "Define the boundary state: for sums, P[i] stores the sum of all elements before index i.",
+                "Verify the isolation rule: for inclusive [l, r], P[r + 1] - P[l] removes everything before l and leaves exactly the range.",
+                "Accept preprocessing only after the rule is valid: one O(n) build replaces repeated range scans with O(1) work per query."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Contiguity is not enough",
+              "text": "Choosing a prefix merely because a task mentions subarrays reverses the reasoning. If the requested aggregate cannot be recovered from its boundary states, the preprocessing does not solve the query."
             }
           ]
         }
@@ -222,16 +237,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "exclusive_n_plus_one",
-            "text": "Use P of length n + 1 with P[0] = 0 and P[i] equal to the sum of the first i elements."
-          },
-          {
             "id": "inclusive_n_no_identity",
             "text": "Use P of length n with P[i] equal to the sum through A[i], but apply the same subtraction formula for every l."
           },
           {
             "id": "window_sentinel",
             "text": "Use a current window sum and reset it whenever l is 0."
+          },
+          {
+            "id": "exclusive_n_plus_one",
+            "text": "Use P of length n + 1 with P[0] = 0 and P[i] equal to the sum of the first i elements."
           },
           {
             "id": "sorted_identity",
@@ -283,10 +298,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "arbitrary_many_ranges",
-            "text": "Answer 100,000 sum queries whose [l, r] boundaries arrive in arbitrary order."
-          },
-          {
             "id": "all_fixed_length_max",
             "text": "Find the maximum sum among all subarrays of one fixed length k in a single left-to-right pass."
           },
@@ -297,6 +308,10 @@
           {
             "id": "compare_two_ends",
             "text": "Find a pair in a sorted array by moving two endpoints according to the pair sum."
+          },
+          {
+            "id": "arbitrary_many_ranges",
+            "text": "Answer 100,000 sum queries whose [l, r] boundaries arrive in arbitrary order."
           }
         ],
         "acceptedOptionIds": [
@@ -442,7 +457,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The build visits n elements, and q queries each read two prefix entries, giving O(n + q) total time. A separate n + 1 prefix array is O(n) extra space. Prefix-hash variants also allocate auxiliary state—often O(n) in the worst case—so “prefix” does not imply zero additional memory."
+              "text": "Building the array performs one constant-time update for each of n values, so preprocessing costs O(n). Each of q queries reads two stored entries and subtracts them in O(1), adding O(q); the total is O(n + q). The separate array contains n + 1 numeric entries, which is O(n) extra space."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(nq) rescans all n values for every query, which the prefix prevents. O(q log n) omits the required linear build and assigns an unnecessary logarithm to a constant-time query. O(n log n + q) likewise adds sorting or tree work that is not performed. The array is not O(1) or O(log n) space because it stores one state per boundary, and it is not O(q) because its size depends on n rather than the number of queries."
             }
           ]
         }
@@ -468,12 +489,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "count_even_in_ranges",
-            "text": "Answer many queries asking how many even values occur in [l, r], by prefixing a 0/1 indicator."
-          },
-          {
             "id": "range_median_queries",
             "text": "Answer arbitrary range medians by subtracting two scalar prefix sums."
+          },
+          {
+            "id": "count_even_in_ranges",
+            "text": "Answer many queries asking how many even values occur in [l, r], by prefixing a 0/1 indicator."
           },
           {
             "id": "online_point_updates",

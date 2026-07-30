@@ -3,7 +3,7 @@
   "batchId": "algorithms-linked-list-merge_and_splice_lists-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -401,52 +401,67 @@
       "difficulty": "intermediate"
     },
     {
-      "prompt": "chosen references the smaller current source node, and chosenNext stores its original successor. tail is the last output node. Order the merge updates.",
+      "prompt": "chosen references the smaller current source node, chosenNext stores its original successor, and tail is the last output node. Select all structural dependencies required for one safe merge step.",
       "constraints": [
         "chosenNext was captured before any chosen.next overwrite.",
-        "tail and chosen are distinct before this step."
+        "tail and chosen are distinct before this step.",
+        "The next head comparison begins only after this step is complete."
       ],
       "interaction": {
-        "type": "ordering",
-        "elements": [
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
           {
-            "id": "attach_chosen",
-            "text": "Set tail.next = chosen."
+            "id": "attach_before_tail_move",
+            "text": "The old tail must receive tail.next = chosen before tail is reassigned to chosen."
           },
           {
-            "id": "advance_source",
-            "text": "Set the chosen source head = chosenNext."
+            "id": "advance_source_before_next_comparison",
+            "text": "The chosen source head must become chosenNext before the next head comparison."
           },
           {
-            "id": "advance_tail",
-            "text": "Set tail = chosen."
+            "id": "source_before_attachment",
+            "text": "The chosen source head must advance before the old tail can link to chosen."
           },
           {
-            "id": "preserve_output_exit",
-            "text": "Leave tail.next as the link that will be assigned on the next iteration or to the final remainder."
+            "id": "clear_chosen_next",
+            "text": "chosen.next must be set to null immediately after attachment, even though chosenNext preserves the source suffix."
           }
         ],
-        "canonicalOrder": [
-          "attach_chosen",
-          "advance_source",
-          "advance_tail",
-          "preserve_output_exit"
-        ],
-        "scoringMethod": "adjacent_relations"
+        "acceptedOptionIds": [
+          "attach_before_tail_move",
+          "advance_source_before_next_comparison"
+        ]
       },
       "scoringContract": {
-        "type": "ordering",
-        "maxPoints": 3
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The chosen node is first attached to the existing output, its source frontier advances using the saved successor, and only then does tail become chosen.",
+        "reason": "Attachment must use the old tail, and the saved successor must become the source frontier before the next comparison; the two state advances have no required order between them.",
         "details": {
           "blocks": [
             {
+              "type": "ordered_list",
+              "items": [
+                "While tail still references the previous output end, assign `tail.next = chosen`; moving tail first and then assigning that expression would set `chosen.next = chosen` and create a self-cycle.",
+                "Set `tail = chosen` so the next attachment uses the new output end.",
+                "Set the chosen source head to `chosenNext` before the next comparison so the selected node is not considered again."
+              ]
+            },
+            {
               "type": "paragraph",
-              "text": "attach_chosen -> advance_tail is the critical builder relation: if tail becomes chosen first and code then assigns tail.next = chosen, it creates a self-cycle. The source can advance safely because chosenNext already preserves its suffix. After tail advances, its next field is the output exit to be set by the next selected node or the final remainder. Equivalent code may combine assignments, but it must preserve these dependencies."
+              "text": "Steps 2 and 3 may occur in either order because chosenNext already preserves the original source suffix; only the attachment-before-tail-move dependency is strict. Clearing chosen.next is unnecessary and can temporarily sever the saved suffix from the structure. On the next iteration, chosen.next becomes the next selected output edge, or it is linked to the final untouched remainder."
             }
           ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "source_before_attachment": "Because chosen and chosenNext are already saved, advancing the source is independent of assigning oldTail.next = chosen.",
+          "clear_chosen_next": "The merge needs no null-termination at each iteration; clearing the link adds work and can disconnect the suffix before reconnection."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "attach_before_tail_move": "Using the old tail creates the output edge; moving tail first would make tail.next = chosen a self-link.",
+          "advance_source_before_next_comparison": "The source frontier must move to chosenNext so the selected node is consumed exactly once."
         }
       },
       "taxonomy": {

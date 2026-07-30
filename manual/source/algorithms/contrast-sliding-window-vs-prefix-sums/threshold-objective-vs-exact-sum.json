@@ -3,7 +3,7 @@
   "batchId": "contrast-sliding-window-vs-prefix-sums-threshold-objective-vs-exact-sum-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -37,7 +37,7 @@
   "items": [
     {
       "id": "alg-contrast-window-prefix-objective-001",
-      "prompt": "All values are positive, and the task asks for the minimum length with sum at least k. Which objective signal favors a variable window?",
+    "prompt": "All values and the target k are positive, and the task asks for the minimum non-empty length with sum at least k. Which objective signal favors a variable window?",
       "difficulty": "intro",
       "interaction": {
         "type": "choice",
@@ -77,9 +77,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "This is different from matching one exact cumulative difference."
+          {
+            "type": "paragraph",
+            "text": "Maintain sum for [left, right]. Adding the next positive value can only increase sum, so expansion is the only move that can turn sum < k into sum >= k. Once the threshold is met, record the current length, remove a[left], and repeat while the interval remains valid; every successful removal produces a shorter candidate ending at the same right. Strict positivity makes removal decrease sum, so after validity is lost no still-shorter interval with that right can recover it. This directional repair is what supports the window; the objective is an inequality region, not a request to match one exact prefix difference."
             },
             {
               "type": "callout",
@@ -89,11 +89,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "exact_prefix": "That relation is central to exact equality, not necessary for this positive threshold objective.",
-          "sort_values": "Sorting destroys contiguity.",
-          "one_sum": "Objective and sign constraints decide."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "exact_prefix": "Looking specifically for earlierPrefix = currentPrefix - k detects equality. Here every sum greater than k is also valid, and positive boundary effects permit direct minimization.",
+        "sort_values": "Sorting changes which values are adjacent, so a range in sorted order is not a subarray of the original sequence.",
+        "one_sum": "The word sum does not supply a movement invariant. The at-least objective and positive values jointly justify this boundary rule."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -143,9 +143,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "Hashing earlier prefixes supports the relation for arbitrary signs."
+          {
+            "type": "paragraph",
+            "text": "Let P[j] be the sum before index j, with P[0] = 0. A non-empty interval [i, j - 1] sums to k exactly when P[j] - P[i] = k, or P[i] = P[j] - k. Scan boundaries from left to right while storing prior prefix values in a hash set initialized with 0. At boundary j, compute P[j] and test whether P[j] - k has appeared before; query before inserting the current boundary so a zero target cannot manufacture an empty interval. This algebra is independent of signs. Negative values break sum-based expand/shrink direction but do not change prefix subtraction."
             },
             {
               "type": "callout",
@@ -155,11 +155,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "threshold_window": "Mixed signs invalidate that direction.",
-          "positive_assumption": "That changes the input.",
-          "sort_then_scan": "Contiguity is lost."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "threshold_window": "With mixed signs, adding a value can decrease the sum and removing one can increase it, so above/below k does not identify a safe boundary move.",
+        "positive_assumption": "Replacing negative values with zero changes every interval containing them and therefore solves a different input.",
+        "sort_then_scan": "Sorting preserves a multiset but destroys original adjacency, so its adjacent blocks do not represent the required subarrays."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -169,7 +169,7 @@
     },
     {
       "id": "alg-contrast-window-prefix-objective-003",
-      "prompt": "All values are nonnegative, and the task asks for existence of an exact sum k. Which conclusion is correct?",
+    "prompt": "All values and k are nonnegative, and the task asks whether a non-empty interval has sum exactly k. Which conclusion is correct?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -209,9 +209,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "The value domain and required reuse distinguish a nonnegative window from a more general prefix representation."
+          {
+            "type": "paragraph",
+            "text": "For one scan, add a[right], then remove values from the left only while sum > k. Nonnegative values guarantee that expansion never decreases sum and shrinking never increases it, so a sum above k cannot return to k by expanding and must be repaired from the left. After repair, report success only when sum == k and left <= right; that non-empty check matters when k = 0 and shrinking a positive singleton leaves an empty zero-sum state. A prefix set using P[j] - k is also correct and generalizes to signed values, while a reusable prefix array may fit fixed-boundary queries. Thus equality alone does not select one method."
             },
             {
               "type": "callout",
@@ -221,11 +221,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "prefix_only": "Nonnegative sum movement can support equality search.",
-          "window_any_sign": "Mixed signs break monotonicity.",
-          "no_method": "Both mechanisms can solve it under suitable contracts."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "prefix_only": "Prefix state is valid, but nonnegative boundary effects also support a carefully defined one-pass equality window.",
+        "window_any_sign": "A negative entrant or outgoing value can reverse the assumed sum change, so the same discard rule is not safe for arbitrary signs.",
+        "no_method": "Both the monotone window under this domain and the prefix-difference identity can detect a contiguous exact sum."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -235,7 +235,7 @@
     },
     {
       "id": "alg-contrast-window-prefix-objective-004",
-      "prompt": "A nonnegative window has just been shrunk until its sum is at most the budget. Why should its current length be evaluated before right advances?",
+    "prompt": "For nonnegative values and a nonnegative budget, a non-empty window has just been shrunk until its sum is at most the budget. Why should its current length be evaluated before right advances?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -275,9 +275,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "After monotone repair, the current interval is the longest valid one ending at right."
+          {
+            "type": "paragraph",
+            "text": "After adding a[right], repeatedly remove a[left] only while sum exceeds the budget. Nonnegative values make every removal non-increasing, so this loop restores validity. When it stops, the current left is the earliest valid start for this right: if a start was just discarded, the interval beginning there was still over budget; if none was discarded, index 0 is already earliest. Therefore right - left + 1 is the longest valid interval ending at right and must be compared with the global maximum before right changes. Equality is not required because every sum below the budget satisfies the at-most contract."
             },
             {
               "type": "callout",
@@ -287,11 +287,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "record_only_equal": "A longest at-most answer may have a smaller sum.",
-          "stop_first": "Later intervals may be longer.",
-          "prefix_match": "The inequality allows many valid sums."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "record_only_equal": "The optimal interval may have sum strictly below the budget, so equality would discard valid candidates.",
+        "stop_first": "The repaired interval is best only among intervals ending at this right; a later endpoint can produce a longer valid range.",
+        "prefix_match": "Searching only for prefix difference equal to the budget ignores every interval whose smaller sum is still valid."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -341,9 +341,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "Here prefix subtraction answers the requested fixed boundaries directly."
+          {
+            "type": "paragraph",
+            "text": "Build P[0] = 0 and P[i + 1] = P[i] + a[i] once for the immutable array. For every inclusive query [l, r], P[r + 1] - P[l] cancels exactly the contribution before l and leaves the arithmetic sum of the already specified interval. Construction costs O(n) and each later query costs O(1). No search is taking place: the query owns both boundaries and asks for their sum, not for an unknown interval whose aggregate equals a target. That distinction makes a prefix array, rather than a moving search window or a prefix-frequency map, the natural reusable representation."
             },
             {
               "type": "callout",
@@ -353,11 +353,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "search_window": "The query already supplies the boundaries.",
-          "prefix_hash": "No boundary discovery is needed.",
-          "sort": "Order is irrelevant to sum but sorting changes the interval representation."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "search_window": "Moving boundaries would search candidates the query did not ask for; l and r already identify the only interval to evaluate.",
+        "prefix_hash": "A hash lookup is useful when an earlier boundary must be discovered from a target difference. Here direct indexed prefix reads already identify both boundaries.",
+        "sort": "Addition is order-independent, so sorting provides no arithmetic benefit; it also breaks the meaning of the original l and r indices."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -407,9 +407,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "For this mixed-sign inequality, prefix sums combined with a monotonic deque are a known appropriate mechanism."
+          {
+            "type": "paragraph",
+            "text": "Define P[j] as the sum before index j. The interval [i, j - 1] meets the threshold when P[j] - P[i] >= k, and its length is j - i. A monotonic deque stores candidate earlier indices with increasing prefix values. For each current j, repeatedly use and remove a front while the inequality holds, recording j - front; a later right boundary can only make that same start longer. Then remove back indices whose prefix is at least P[j], because the newer j is both later and no harder to satisfy from in the future, so it dominates them. This ordered prefix state handles signed values without assuming local sum direction."
             },
             {
               "type": "callout",
@@ -419,11 +419,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "exact_hash_frequency": "The objective is inequality and shortest length, not exact equality count.",
-          "positive_window": "Negative values reverse aggregate movement.",
-          "sort_values": "Contiguity is destroyed."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "exact_hash_frequency": "A frequency lookup for exactly P[j] - k finds equality multiplicity, but it neither covers every P[i] <= P[j] - k nor selects the closest valid i needed for shortest length.",
+        "positive_window": "A negative entrant can lower the sum and removing a negative value can raise it, so the positive-domain expand/shrink repair discards starts without proof.",
+        "sort_values": "Sorting changes original adjacency, so two nearby sorted values need not form any interval in the input."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -473,9 +473,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "That changes answer timing and the boundary rule when monotonicity exists."
+          {
+            "type": "paragraph",
+            "text": "“Exactly k” accepts only aggregate k; “at least k” accepts the entire region [k, infinity). For example, a one-element sum of 7 is valid for an at-least-5 objective but invalid for an exact-5 objective. Under positive values, this semantic change also alters timing: a minimum-at-least window records every valid interval before shrinking further, whereas an exact-sum window records only equality and treats a larger sum as a state to repair. The phrase changes the result contract, but it still does not prove a simple window is legal; arbitrary signed values can remove the directional boundary effect."
             },
             {
               "type": "callout",
@@ -485,11 +485,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "contiguous": "Both problem types already concern contiguous intervals.",
-          "array": "Data-container vocabulary does not change objective semantics.",
-          "target": "Both exact and threshold objectives can have targets."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "contiguous": "Both exact and threshold tasks can restrict candidates to contiguous ranges, so this word changes shape rather than accepted sums.",
+        "array": "Renaming the sequence's container leaves the validity predicate and requested output unchanged.",
+        "target": "A target can be used by equality, at-least, or at-most predicates; the comparison operator supplies the semantics."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -539,9 +539,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "A single moving left boundary discards earlier starts that may each form distinct matches."
+          {
+            "type": "paragraph",
+            "text": "With P[0] = 0, every earlier boundary i satisfying P[i] = P[j] - k creates a distinct exact-sum interval ending before j. Store a frequency for each prefix value. At current boundary j, add frequency[P[j] - k] to the answer, then increment frequency[P[j]]; querying first excludes an empty interval when k = 0. Equal prefix values can occur at several indices, especially with zeros or signed cancellation, and every occurrence must contribute separately. A minimum-threshold window keeps only one evolving left boundary and one best length, so it deliberately discards precisely the multiplicity the count contract requires."
             },
             {
               "type": "callout",
@@ -551,11 +551,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "count_no_contiguous": "They can.",
-          "window_no_sum": "It can, but its state does not retain all exact starts.",
-          "prefix_sorted": "Hash frequencies can count in scan order."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "count_no_contiguous": "A count can enumerate contiguous subarrays just as an existence query can; multiplicity changes the output, not candidate shape.",
+        "window_no_sum": "A window can maintain one sum, but one sum and one left boundary do not retain every earlier prefix occurrence that forms a distinct match.",
+        "prefix_sorted": "Sorting prefix values would lose their scan-time boundary relation. Hash frequencies count matching prior values online in original order."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -565,7 +565,7 @@
     },
     {
       "id": "alg-contrast-window-prefix-objective-009",
-      "prompt": "All values are positive. The task asks for the maximum length with sum exactly k. Which statement is most accurate?",
+    "prompt": "All values and the target k are positive. The task asks for the maximum length with sum exactly k. Which statement is most accurate?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -605,9 +605,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "The algorithm must distinguish valid equality from merely below or above the target."
+          {
+            "type": "paragraph",
+            "text": "Add a[right] to the current sum. While sum > k, remove a[left] and advance left; strict positivity proves that expansion would only increase an already excessive sum and that each removal decreases it. When the repaired sum equals k, compare right - left + 1 with the longest answer. Do not record sum < k, because that interval satisfies an at-most predicate but not equality, and do not shrink an equal positive interval before recording it because removing anything makes it too small. Prefix differences also remain correct; storing the earliest index for each needed prefix yields the longest exact interval and generalizes beyond positive values."
             },
             {
               "type": "callout",
@@ -617,11 +617,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "threshold_same": "At-most intervals with smaller sums are not answers.",
-          "prefix_invalid": "They remain valid.",
-          "negative_required": "Negative values weaken the simple window."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "threshold_same": "An interval with sum below k is valid for at-most but invalid for exact equality, so the two result sets and optima can differ.",
+        "prefix_invalid": "For any signs, P[r + 1] - P[l] is the interval sum; equality is exactly the relation that prefix lookup expresses.",
+        "negative_required": "Strict positivity supplies the monotone movement used here. Negative values remove that simple-window guarantee rather than enabling it."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -671,9 +671,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "Strategy follows objective, signs, boundary ownership, and reuse."
+          {
+            "type": "paragraph",
+            "text": "“Contiguous sum” identifies only the candidate shape. A minimum or maximum threshold may support a moving validity boundary when signs make addition and removal directional. Exact sum under arbitrary signs instead becomes the historical relation P[i] = P[j] - k. If l and r are already supplied for many immutable queries, no boundary search is needed and a prefix array answers by subtraction. The same surface phrase therefore maps to different legal state depending on objective, value domain, who chooses boundaries, and whether preprocessing is reused. Choosing a window before checking those facts is the invalid rule."
             },
             {
               "type": "callout",
@@ -683,11 +683,11 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "threshold_sign": "This is a valid rule.",
-          "exact_history": "This is a valid rule.",
-          "known_boundaries": "This is a valid rule."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "threshold_sign": "This is valid because an inequality alone is insufficient; sign constraints must justify which boundary move can restore validity.",
+        "exact_history": "This is valid because prefix subtraction expresses equality without depending on monotone sum movement.",
+        "known_boundaries": "This is valid because repeated fixed-boundary queries reuse cumulative values instead of searching for an interval."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -739,9 +739,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "Arbitrary signs break the simple form."
+          {
+            "type": "paragraph",
+            "text": "These facts work as a bundle. An inequality defines a validity region rather than one aggregate value. A constrained value domain must then make boundary effects directional: for nonnegative sums, expansion cannot decrease the aggregate and shrinking cannot increase it. Finally, the workload must be expressible as one interval whose boundaries advance without needing discarded starts later. Under those conditions an at-most window can shrink after violation, while a minimum-at-least window can record and shrink while valid. Arbitrary signed values remove the movement proof; a negative entrant can lower a sum and removing a negative can raise it, so threshold wording alone is not enough."
             },
             {
               "type": "callout",
@@ -751,14 +751,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "arbitrary_negatives": "The simple sum window loses its discard rule."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "inequality": "A validity region can be maintained.",
-          "monotone_values": "This justifies boundary movement.",
-          "one_evolving_interval": "The state matches the search."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "arbitrary_negatives": "Without a stronger invariant, signed values make both expansion and shrinking capable of moving the sum in either direction, so the simple window cannot prove a discarded start is useless."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "inequality": "At-least or at-most semantics create a region that can remain valid across several sums and be repaired after crossing its boundary.",
+        "monotone_values": "Directional aggregate changes are the proof that a specific expand or shrink move cannot skip a better candidate.",
+        "one_evolving_interval": "A simple window retains one candidate; it fits only when earlier discarded boundaries are not needed for later outputs."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -810,9 +810,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "A first threshold-valid interval does not describe that requirement."
+          {
+            "type": "paragraph",
+            "text": "For prefix boundaries P[i] and P[j], interval [i, j - 1] sums exactly to k when P[j] - P[i] = k, so the lookup key at j is P[j] - k. This identity remains true for positive, zero, and negative values because it is algebra, not a movement rule. What the hash map stores depends on the result: a set for existence, frequency for count, earliest index for longest length, or latest useful index for shortest length. Several earlier boundaries can share a value and represent distinct candidates. A “first threshold-valid interval” neither tests equality nor preserves the payload required by these contracts."
             },
             {
               "type": "callout",
@@ -822,14 +822,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "first_valid_only": "That is a different result contract."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "difference_equation": "This identifies the lookup key.",
-          "arbitrary_signs": "The identity does not need monotonicity.",
-          "many_starts": "Map payload preserves them."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "first_valid_only": "Stopping at one inequality-valid interval does not prove an exact match and cannot answer count, shortest, or longest over all matching starts."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "difference_equation": "Rearranging P[j] - P[i] = k to P[i] = P[j] - k turns an unknown start boundary into a historical lookup.",
+        "arbitrary_signs": "Prefix subtraction remains exact even when local additions and removals have no predictable direction.",
+        "many_starts": "The map payload can preserve multiplicity or the index extremum needed by the requested output."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -881,9 +881,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "Space, reuse, and generality then decide; mixed-sign threshold correctness does not."
+          {
+            "type": "paragraph",
+            "text": "For nonnegative exact-sum existence, a monotone equality window can shrink only while sum > k, while a prefix set can look for P[j] - k; both are correct, with different generality and state. For all fixed-size sums, a rolling sum transfers adjacent blocks in O(1) per shift and a prefix array subtracts any requested pair of boundaries. The maximum fixed-size sum can reduce the outputs from either enumeration. These are legal alternatives, so access pattern, reuse, and memory decide. The ordinary shrink rule does not become legal for arbitrary signed shortest-at-least merely because a stronger prefix/deque solution exists."
             },
             {
               "type": "callout",
@@ -893,14 +893,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "mixed_sign_threshold_simple": "The simple window is invalid."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "exact_exists": "A window can exploit monotonicity; prefix lookup is also correct.",
-          "all_fixed_windows": "A rolling sum or prefix differences both work.",
-          "max_fixed_window": "Both can enumerate the same candidates."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "mixed_sign_threshold_simple": "Arbitrary negatives violate the ordinary window's directional discard proof; solving the task requires stronger ordered prefix state, not the same simple shrink rule."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "exact_exists": "Nonnegative movement supports a carefully defined equality window, while the prefix-difference identity supplies another correct route.",
+        "all_fixed_windows": "A rolling transition and two prefix reads both compute every prescribed block without changing candidate semantics.",
+        "max_fixed_window": "Either representation can produce the same block sums before the maximum reduction; one retains less state, the other supports arbitrary reuse."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -952,9 +952,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "A coincidental shared answer does not prove the methods are interchangeable."
+          {
+            "type": "paragraph",
+            "text": "Use tests that force the contracts apart. With [0, 0] and k = 0, several non-empty exact intervals share the same sum, exposing whether the output is existence, count, shortest, or longest and whether empty state is excluded. With [3] and k = 2, an at-least interval exists but no exact interval does. With [1, 0] and k = 1, exact matches of lengths one and two show that equality still needs an optimization payload. A case containing only one interval that happens to satisfy both equality and a threshold cannot reveal any of these differences and may let the wrong algorithm appear correct."
             },
             {
               "type": "callout",
@@ -964,14 +964,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "only_one_hit": "This hides the semantic difference."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "zeros": "They affect equality and minimization timing.",
-          "no_exact_but_threshold": "Threshold and exact answers differ.",
-          "exact_but_not_min": "The result may need count, shortest, or longest metadata."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "only_one_hit": "When both contracts coincidentally return the same sole interval, the test cannot expose incorrect acceptance of larger sums, lost multiplicity, or wrong length optimization."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "zeros": "Repeated equal prefixes create multiple exact starts and make empty-versus-non-empty and update timing observable.",
+        "no_exact_but_threshold": "An interval above k is accepted by at-least and rejected by equality, directly separating their valid sets.",
+        "exact_but_not_min": "Matches with different lengths force the implementation to preserve the index metadata required by shortest or longest output."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -1023,9 +1023,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "The prefix identity remains universally valid for sums."
+          {
+            "type": "paragraph",
+            "text": "Each selected claim promotes one surface feature into a universal method and is false. Exact equality can use a window when nonnegative values make above-target repair monotone. A threshold can reject a simple window when arbitrary signs destroy that same repair proof. Contiguity is shared by moving windows, prefix differences, and stronger prefix structures, so it cannot choose among them. By contrast, P[r + 1] - P[l] equals the sum of [l, r] for any numeric signs; this is a valid algebraic identity. The identity may motivate prefix state, but strategy still depends on the output payload and workload."
             },
             {
               "type": "callout",
@@ -1035,14 +1035,14 @@
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "prefix_identity": "This is a valid identity."
-        },
-        "omittedCorrectExplanationsByOptionId": {
-          "exact_never_window": "Nonnegative values can support it.",
-          "threshold_always_window": "Mixed signs can break monotonicity.",
-          "contiguous_decides": "Both operate on contiguous ranges."
-        }
+      "wrongOptionExplanationsByOptionId": {
+        "prefix_identity": "This is not a mistaken collapse: subtracting cumulative boundaries always recovers the intervening sum, although it does not by itself choose storage or output metadata."
+      },
+      "omittedCorrectExplanationsByOptionId": {
+        "exact_never_window": "Under nonnegative values, shrinking only while above k can safely search equality in one pass.",
+        "threshold_always_window": "Mixed signs make an inequality insufficient because boundary moves no longer have one aggregate direction.",
+        "contiguous_decides": "Both moving state and prefix-boundary state solve contiguous-range tasks; objective and access constraints decide."
+      }
       },
       "taxonomy": {
         "primarySkillAtomId": "distinguish_threshold_window_from_exact_sum_prefix",
@@ -1095,10 +1095,19 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "The word sum does not collapse them into one template."
-            },
+          {
+            "type": "ordered_list",
+            "items": [
+              "Write the result contract first: equality or inequality, existence or count, shortest or longest, and whether boundaries are supplied or must be found.",
+              "Declare the value domain and target boundary, including positive, nonnegative, or arbitrary signed values and whether empty intervals are excluded.",
+              "Describe the workload and timing: one evolving traversal, an online frontier, or repeated arbitrary queries over a stable source.",
+              "Choose only state whose invariant satisfies all three dimensions: a moving window, prefix array, prefix hash payload, or stronger ordered prefix structure."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Selecting state before result semantics can optimize the wrong output; ignoring signs can make a discard step unsound; ignoring workload can build an unreused index or retain too little history. The word “sum” supplies none of those missing proofs."
+          },
             {
               "type": "callout",
               "kind": "decision_rule",
@@ -1159,10 +1168,19 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "The payload is determined by whether the result is existence, count, shortest, or longest."
-            },
+          {
+            "type": "ordered_list",
+            "items": [
+              "Set P[0] = 0 and represent each non-empty interval [i, j - 1] by its earlier and current prefix boundaries P[i] and P[j].",
+              "Rewrite P[j] - P[i] = k as the historical lookup key P[i] = P[j] - k.",
+              "Choose the stored payload from the output: membership for existence, frequency for count, earliest index for longest, or latest useful index for shortest.",
+              "Scan j from left to right, query only prior state for P[j] - k, update the requested result, and then store the current boundary."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Storing before querying lets the current boundary match itself when k = 0 and can count an empty interval. Using a set for a count loses duplicate starts, while overwriting an earliest index breaks longest-length evidence. The algebra identifies the key, but the output contract determines what history must survive."
+          },
             {
               "type": "callout",
               "kind": "decision_rule",
@@ -1264,9 +1282,9 @@
               "level": 3,
               "text": "Separate the objective from the data domain"
             },
-            {
-              "type": "paragraph",
-              "text": "The prefix-hash path spends memory to avoid relying on monotone boundary movement."
+          {
+            "type": "paragraph",
+            "text": "For the nonnegative threshold window, right advances through n positions once and left also advances at most n times; nested syntax therefore performs at most 2n boundary moves, giving O(n) time. The prompt limits its state to a sum and two boundaries, so auxiliary space is O(1). The exact-sum path computes one prefix per value and performs a constant expected-time hash lookup and update at each of n boundaries, giving expected O(n) time. Up to n distinct historical prefix values and their payloads may remain live, so auxiliary space is O(n). The equal time bounds do not make the strategies interchangeable: the hash spends history to avoid the window's monotone-domain requirement."
             },
             {
               "type": "callout",

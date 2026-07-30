@@ -3,7 +3,7 @@
   "batchId": "algorithms-prefix-sums-prefix-index-conventions-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -101,12 +101,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "one_stable_boundary_meaning",
-            "text": "Every P[i] has one stable meaning—such as the aggregate of the first i elements—and all formulas are derived from that meaning."
-          },
-          {
             "id": "switch_when_convenient",
             "text": "P[i] may mean inclusive or exclusive depending on the current formula, as long as tests usually pass."
+          },
+          {
+            "id": "one_stable_boundary_meaning",
+            "text": "Every P[i] has one stable meaning—such as the aggregate of the first i elements—and all formulas are derived from that meaning."
           },
           {
             "id": "sort_to_remove_offsets",
@@ -200,7 +200,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Starting with code before defining P[i] invites accidental convention mixing. The sentinel and recurrence are derived from the written meaning, external APIs are translated into the same boundary domain, and focused edge cases verify the agreement. Tests are confirmation, not a substitute for the contract."
+              "text": "Starting with code before defining P[i] invites accidental convention mixing. Every later step must be derived from the written boundary meaning."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Write that P[i] aggregates A[0:i] and that legal boundaries range from 0 through n.",
+                "Allocate n + 1 states and set P[0] to the aggregate identity for the empty prefix.",
+                "Derive P[i + 1] from P[i] and A[i], preserving the written meaning at the next boundary.",
+                "Translate each external range contract into these boundaries—for example, inclusive [l, r] becomes [l, r + 1).",
+                "Test empty, first-element, last-element, and full-array ranges to confirm that construction and API translation agree."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Tests confirm the contract",
+              "text": "Edge tests can expose disagreement, but they do not define what P[i] means. The semantic contract must precede storage, recurrence, and query formulas."
             }
           ]
         }
@@ -226,16 +242,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "zero_from_equal_boundaries",
-            "text": "0, because P[x] - P[x] cancels the same boundary state."
-          },
-          {
             "id": "a_x",
             "text": "A[x], because both endpoints name the same element."
           },
           {
             "id": "invalid_unless_sorted",
             "text": "It is valid only if A is sorted."
+          },
+          {
+            "id": "zero_from_equal_boundaries",
+            "text": "0, because P[x] - P[x] cancels the same boundary state."
           },
           {
             "id": "current_window_sum",
@@ -302,10 +318,6 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "translate_right_plus_one",
-            "text": "Call the prefix helper with boundaries [left, right + 1), producing P[right + 1] - P[left]."
-          },
-          {
             "id": "reuse_same_pair",
             "text": "Call it with [left, right), because endpoint conventions are interchangeable."
           },
@@ -316,6 +328,10 @@
           {
             "id": "subtract_outgoing_twice",
             "text": "Use P[right] - P[left] and also subtract A[left]."
+          },
+          {
+            "id": "translate_right_plus_one",
+            "text": "Call the prefix helper with boundaries [left, right + 1), producing P[right + 1] - P[left]."
           }
         ],
         "acceptedOptionIds": [
@@ -470,7 +486,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Both common representations visit n elements to build and retain Θ(n) cumulative values. A query reads a constant number of entries, so it is O(1). The auxiliary storage remains linear; neither an exclusive sentinel nor an inclusive layout makes prefix state disappear, and hash-prefix variants may also use O(n) memory."
+              "text": "Both common representations visit each of n elements once, performing constant work per element, so build time is O(n). An inclusive layout stores n cumulative entries and an exclusive layout n + 1; both are O(n) separate space. A query reads and combines a constant number of entries, so query time is O(1)."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "Build time is not O(1) or O(log n) because every input contributes, and O(n log n) adds sorting or logarithmic work that neither convention performs. Query time has no search or scan, rejecting O(log n), O(n), and O(n²). Space is not O(1) or O(log n) because one cumulative state is retained per element or boundary, and not O(n²) because the prefix is one-dimensional."
             }
           ]
         }
@@ -496,12 +518,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "zero_row_zero_column",
-            "text": "Use an (R + 1) × (C + 1) prefix with a zero row and column, and translate lower-right coordinates by +1 on both axes."
-          },
-          {
             "id": "no_padding_mixed_indices",
             "text": "Use an R × C prefix but switch between inclusive and exclusive meanings per query term."
+          },
+          {
+            "id": "zero_row_zero_column",
+            "text": "Use an (R + 1) × (C + 1) prefix with a zero row and column, and translate lower-right coordinates by +1 on both axes."
           },
           {
             "id": "sort_rows_columns",

@@ -3,7 +3,7 @@
   "batchId": "backtracking-base-case-and-result-contract-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -27,10 +27,14 @@
     "authoringMethod": "independently_authored"
   },
   "items": [
-    {
-      "id": "alg-backtracking-base-contract-001",
-      "prompt": "A permutation solver builds a path of chosen values. When is a complete permutation ready to record?",
-      "difficulty": "intro",
+  {
+    "id": "alg-backtracking-base-contract-001",
+    "prompt": "A permutation solver builds a path of chosen values. When is a complete permutation ready to record?",
+    "constraints": [
+      "The input contains n distinct values.",
+      "The path invariant permits each input value at most once."
+    ],
+    "difficulty": "intro",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -67,38 +71,28 @@
             {
               "type": "heading",
               "level": 2,
-              "text": "Understanding the termination contract"
+            "text": "Completion follows from the path invariant"
             },
             {
               "type": "paragraph",
-              "text": "The completion condition must reflect the result contract, not merely that some progress occurred."
+            "text": "The path contains only input values and never contains the same value twice. Therefore a path of length n contains all n distinct input values exactly once, which is precisely a permutation."
             },
             {
               "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
+            "text": "A shorter path is only a prefix and still needs choices. Once length n is reached, copy the path to the results and return from that branch; attempting another choice would create an overlong, invalid result."
             },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A permutation is complete only after every input position or value has been assigned exactly once. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "A partial path is not a complete permutation. Local inequality does not establish completion. The index value does not define a completed assignment."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A permutation is complete only after every input position or value has been assigned exactly once."
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Derive completion from the result shape plus the state invariant; path length alone is sufficient here only because reuse is already forbidden."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "path_nonempty": "A partial path is not a complete permutation.",
-          "no_duplicate_value": "Local inequality does not establish completion.",
-          "index_zero": "The index value does not define a completed assignment."
+        "path_nonempty": "For n > 1, a one-value path leaves input values unassigned and is only a partial permutation.",
+        "no_duplicate_value": "One unequal adjacent pair does not prove that all n values were selected or that no earlier value was reused.",
+        "index_zero": "An index of zero usually identifies the root or first position; it says nothing about whether all n choices have been made."
         }
       },
       "taxonomy": {
@@ -109,10 +103,13 @@
         "problemArchetypeId": "enumerate_permutations"
       }
     },
-    {
-      "id": "alg-backtracking-base-contract-002",
-      "prompt": "A combination solver chooses exactly k values. Which completion condition is correct?",
-      "difficulty": "foundational",
+  {
+    "id": "alg-backtracking-base-contract-002",
+    "prompt": "A combination solver chooses exactly k values. Which completion condition is correct?",
+    "constraints": [
+      "0 <= k <= n."
+    ],
+    "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -146,41 +143,31 @@
         "reason": "The base case must encode the exact required output size.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "Candidate exhaustion is a failure or dead-end condition unless the required number of values has already been selected."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The base case must encode the exact required output size. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "The scan may reach n with fewer than k selected values. That records incomplete combinations when k is greater than one. A dead end may be incomplete and invalid."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The base case must encode the exact required output size."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Exact-size output means exact-size completion"
+          },
+          {
+            "type": "paragraph",
+            "text": "The path contains the values selected so far. When its length becomes k, it satisfies the requested output size, so store a snapshot and stop expanding that branch."
+          },
+          {
+            "type": "paragraph",
+            "text": "Reaching the end of the candidate range is different: if the path has fewer than k values, the branch is exhausted but not complete. For k = 0, the empty path satisfies the base case immediately and yields the one empty combination."
+          },
+          {
+            "type": "callout",
+            "kind": "decision_rule",
+            "title": "Separate success from exhaustion",
+            "text": "A branch with no remaining candidates succeeds only if its partial result already meets the output contract."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "start_equals_n_only": "The scan may reach n with fewer than k selected values.",
-          "first_choice": "That records incomplete combinations when k is greater than one.",
-          "no_choices": "A dead end may be incomplete and invalid."
+        "start_equals_n_only": "The start boundary can reach n while the path still contains fewer than k values, so exhaustion alone would record an incomplete combination.",
+        "first_choice": "For k > 1, one selected value does not meet the exact-size result contract.",
+        "no_choices": "Having no candidate left is a dead end; it is a valid completion only when the path length is already k."
         }
       },
       "taxonomy": {
@@ -228,41 +215,31 @@
         "reason": "Success is defined by consuming the entire target, not by a geometric property of the grid.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "Once all characters are matched, no further move is required."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Success is defined by consuming the entire target, not by a geometric property of the grid. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Grid position does not determine whether the word is fully matched. The target may be shorter than the number of cells. A dead end is not success unless the word is complete."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Success is defined by consuming the entire target, not by a geometric property of the grid."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "The target, not the board, defines success"
+          },
+          {
+            "type": "paragraph",
+            "text": "`wordIndex` is the number of target characters already matched by the current path. Equality with the target length means every required character has been consumed in order, so the solver should return success without selecting another cell."
+          },
+          {
+            "type": "paragraph",
+            "text": "Grid edges, visited-cell count, and available neighbors describe the search space, not completion. A path may finish in the middle of the grid, and a dead end before the last target character is a failure."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "In sequence-matching search, completion is consumption of the entire target; container geometry only determines which next transitions are legal."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "at_grid_edge": "Grid position does not determine whether the word is fully matched.",
-          "visited_all_cells": "The target may be shorter than the number of cells.",
-          "no_neighbors": "A dead end is not success unless the word is complete."
+        "at_grid_edge": "A valid word can finish in an interior cell, and reaching an edge before matching every character is still incomplete.",
+        "visited_all_cells": "The word may use far fewer cells than the board contains; visiting unrelated cells is not part of the result contract.",
+        "no_neighbors": "No legal neighbor means failure when unmatched characters remain, not automatic success."
         }
       },
       "taxonomy": {
@@ -273,10 +250,13 @@
         "problemArchetypeId": "search_grid_paths"
       }
     },
-    {
-      "id": "alg-backtracking-base-contract-004",
-      "prompt": "A partition solver processes a string using a start index and appends valid segments to a path. When is one full partition complete?",
-      "difficulty": "foundational",
+  {
+    "id": "alg-backtracking-base-contract-004",
+    "prompt": "A partition solver processes a string using a start index and appends valid segments to a path. When is one full partition complete?",
+    "constraints": [
+      "The path segments cover exactly the prefix [0, start), without gaps or overlap."
+    ],
+    "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -310,41 +290,31 @@
         "reason": "A partition is complete only when the chosen segments cover the entire input exactly.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "Using an exclusive start boundary makes start == length the natural completion condition."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A partition is complete only when the chosen segments cover the entire input exactly. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "A non-empty path may still leave an unprocessed suffix. One valid segment does not complete the entire input. That indicates remaining input, not completion."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A partition is complete only when the chosen segments cover the entire input exactly."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "The start boundary measures covered input"
+          },
+          {
+            "type": "paragraph",
+            "text": "The path segments cover exactly the prefix [0, start). If start equals the string length, that prefix is the whole string, so the path is a complete gap-free partition and should be recorded."
+          },
+          {
+            "type": "paragraph",
+            "text": "A nonempty path or one valid last segment proves only local progress. When start is still smaller than the length, an unprocessed suffix remains and the branch must choose another valid segment or fail."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "For segmentation, define state as the first uncovered position; completion occurs when that boundary reaches the exclusive input end."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "path_nonempty": "A non-empty path may still leave an unprocessed suffix.",
-          "segment_valid": "One valid segment does not complete the entire input.",
-          "end_less_length": "That indicates remaining input, not completion."
+        "path_nonempty": "The first valid segment can leave most of the string uncovered, so nonemptiness is only progress.",
+        "segment_valid": "The last segment satisfying its predicate does not prove that the path covers the remaining suffix.",
+        "end_less_length": "A next boundary before the exclusive end proves that input remains; it is the opposite of completion."
         }
       },
       "taxonomy": {
@@ -392,41 +362,31 @@
         "reason": "A completed result must preserve a snapshot of the path at that moment.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "When the same mutable path object is reused, result storage should receive a copy or another immutable representation."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A completed result must preserve a snapshot of the path at that moment. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Appending does not deduplicate content. The reference bug does not prevent control flow. No sorting occurs."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A completed result must preserve a snapshot of the path at that moment."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Store a value snapshot, not a live path reference"
+          },
+          {
+            "type": "paragraph",
+            "text": "Backtracking reuses one path object: after recording [1, 2], it may pop 2 and append 3 to explore [1, 3]. If results stores the object itself, both entries point to the same changing list and can end with identical or empty contents."
+          },
+          {
+            "type": "paragraph",
+            "text": "Copying the path at completion freezes the values required by that result while allowing the working path to keep changing. An immutable path value provides the same ownership boundary."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Ownership rule",
+            "text": "Mutable search state belongs to the active branch; recorded output must own a stable snapshot."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "duplicate_values_removed": "Appending does not deduplicate content.",
-          "recursion_stops": "The reference bug does not prevent control flow.",
-          "path_becomes_sorted": "No sorting occurs."
+        "duplicate_values_removed": "Appending a reference performs no value comparison or deduplication; it only stores an alias to the same object.",
+        "recursion_stops": "Aliasing corrupts stored data but does not prevent calls from returning or the search from continuing.",
+        "path_becomes_sorted": "Later append and pop operations change membership, not order by value; no sorting operation occurs."
         }
       },
       "taxonomy": {
@@ -474,41 +434,31 @@
         "reason": "A boolean existence contract permits short-circuiting on the first complete valid branch.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "The base case and recursive callers must agree on how success is represented and propagated."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A boolean existence contract permits short-circuiting on the first complete valid branch. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "That implements collect-all rather than find-one. Restoration does not mean discarding the result. The requested existence result is already known."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A boolean existence contract permits short-circuiting on the first complete valid branch."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Short-circuit an existence search"
+          },
+          {
+            "type": "paragraph",
+            "text": "At a valid leaf, return `true`. Each caller that receives `true` returns it immediately instead of exploring more siblings, because the question “does one solution exist?” has already been answered."
+          },
+          {
+            "type": "paragraph",
+            "text": "On a failed child, restore branch-local state and continue with the next candidate. If every candidate fails, return `false`. This keeps restoration separate from the truth value: undoing a temporary choice does not erase the discovered result."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Find-one propagates success; collect-all records a snapshot and continues. Choose control flow from the result contract."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "append_and_continue_all": "That implements collect-all rather than find-one.",
-          "undo_success": "Restoration does not mean discarding the result.",
-          "restart_root": "The requested existence result is already known."
+        "append_and_continue_all": "Continuing after success spends work to enumerate more solutions, which the find-one contract does not request.",
+        "undo_success": "State restoration removes a temporary assignment; it does not change the fact that a valid complete branch was found.",
+        "restart_root": "Restarting repeats work after existence is already proven and cannot improve the boolean answer."
         }
       },
       "taxonomy": {
@@ -556,41 +506,31 @@
         "reason": "The empty construction is a valid completed subset when the task enumerates all subsets.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "This illustrates why an empty input can correspond to one solution rather than zero solutions, depending on the result contract."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: The empty construction is a valid completed subset when the task enumerates all subsets. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "The empty set is itself a valid subset. Zero choices can still define one completed empty construction. No placeholder is part of the mathematical result."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "The empty construction is a valid completed subset when the task enumerates all subsets."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Zero choices can form one valid construction"
+          },
+          {
+            "type": "paragraph",
+            "text": "A subset is any selection of input elements. For an empty input, selecting nothing is valid and is the only possible selection, so the power set is {∅} and its materialized form is a collection containing one empty subset."
+          },
+          {
+            "type": "paragraph",
+            "text": "The distinction matters in recursive composition: one empty result acts as an identity that larger calls can extend, while an empty result collection means there are no valid constructions to extend."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Ask whether doing nothing satisfies the construction contract; if it does, empty input contributes one empty solution."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "no_subsets": "The empty set is itself a valid subset.",
-          "error": "Zero choices can still define one completed empty construction.",
-          "one_null_value": "No placeholder is part of the mathematical result."
+        "no_subsets": "The empty set is a valid subset of every set, including the empty set, so the result count is one rather than zero.",
+        "error": "The absence of a choice is not invalid here; it completes the one permitted empty selection.",
+        "one_null_value": "Null would be an element not present in the input, while the correct subset contains no elements at all."
         }
       },
       "taxonomy": {
@@ -601,10 +541,13 @@
         "problemArchetypeId": "enumerate_combinations"
       }
     },
-    {
-      "id": "alg-backtracking-base-contract-008",
-      "prompt": "A partial assignment violates a mandatory constraint before all variables are assigned. How should that state be classified?",
-      "difficulty": "foundational",
+  {
+    "id": "alg-backtracking-base-contract-008",
+    "prompt": "A partial assignment violates a mandatory constraint before all variables are assigned. How should that state be classified?",
+    "constraints": [
+      "No assignment to a remaining variable can repair the violation."
+    ],
+    "difficulty": "foundational",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
@@ -638,41 +581,31 @@
         "reason": "Completion and dead-end conditions must not be conflated.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "A branch can terminate because it is impossible, because it is complete, or because the result contract allows short-circuit success. Each case needs distinct behavior."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Completion and dead-end conditions must not be conflated. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Inability to continue does not imply validity. The contract requires complete valid assignments. One failed branch does not invalidate sibling results."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Completion and dead-end conditions must not be conflated."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Dead end and valid leaf are different terminal states"
+          },
+          {
+            "type": "paragraph",
+            "text": "The violated mandatory constraint cannot be repaired by any remaining assignment, so every descendant would be invalid. Return from this branch without recording a result."
+          },
+          {
+            "type": "paragraph",
+            "text": "A valid leaf satisfies every required assignment and constraint; an impossible node fails at least one nonrepairable condition. Both stop expansion, but only the valid leaf produces success or output. Failure in one sibling does not affect results from other siblings."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Classify terminal outcomes",
+            "text": "Before returning, decide whether the node is successful, impossible, or short-circuited by an already known answer; each has different output behavior."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "successful_completion": "Inability to continue does not imply validity.",
-          "record_partial": "The contract requires complete valid assignments.",
-          "restart_all": "One failed branch does not invalidate sibling results."
+        "successful_completion": "A branch can have no valid continuation precisely because it violates the contract; inability to continue does not prove success.",
+        "record_partial": "The result requires a complete valid assignment, and this partial state is already known to violate a mandatory constraint.",
+        "restart_all": "Backtracking isolates siblings, so one failed branch neither erases earlier solutions nor requires restarting the root."
         }
       },
       "taxonomy": {
@@ -720,41 +653,31 @@
         "reason": "A completed path is itself a result node and may intentionally have no outgoing choices.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "Checking completion at function entry makes the contract explicit and prevents candidate generation from skipping terminal results."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A completed path is itself a result node and may intentionally have no outgoing choices. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Complete states often intentionally stop generating children. Incorrect base-case placement can omit or duplicate results. They can and often should."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A completed path is itself a result node and may intentionally have no outgoing choices."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "A complete state is a node, not a child"
+          },
+          {
+            "type": "paragraph",
+            "text": "Suppose a size-k combination reaches path length k. That current call already represents the completed result. Its candidate loop may intentionally be empty, so code that records only while generating a child can return without ever storing the combination."
+          },
+          {
+            "type": "paragraph",
+            "text": "Check completion before expansion, record or return according to the result contract, and do not generate unrelated extra choices from a terminal node. Base-case placement therefore affects which results exist, not only speed."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Test terminal meaning on the current state before asking how to create descendants."
             }
           ]
         },
-        "wrongOptionExplanationsByOptionId": {
-          "children_always_empty": "Complete states often intentionally stop generating children.",
-          "base_cases_only_optimize": "Incorrect base-case placement can omit or duplicate results.",
-          "recursion_no_return": "They can and often should."
+      "wrongOptionExplanationsByOptionId": {
+        "children_always_empty": "A completed state normally needs no children; claiming that it always has children reverses the terminal-state contract.",
+        "base_cases_only_optimize": "A misplaced check can omit a valid leaf or record it more than once, so it changes correctness.",
+        "recursion_no_return": "A recursive call can and should return before a loop when its current state is terminal."
         }
       },
       "taxonomy": {
@@ -804,44 +727,39 @@
         "reason": "Backtracking termination can represent success, failure, or contract-driven short-circuiting.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "Each base case needs a precise semantic outcome. An expensive-looking branch is not automatically removable."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Backtracking termination can represent success, failure, or contract-driven short-circuiting. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Cost alone is not a sound termination condition."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Backtracking termination can represent success, failure, or contract-driven short-circuiting."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Three legitimate terminal meanings"
+          },
+          {
+            "type": "bullet_list",
+            "items": [
+              "Complete solution: emit a snapshot, increment a count, or return success as required.",
+              "Impossible state: return failure or no contribution because no valid descendant exists.",
+              "Find-one already satisfied: propagate the known success and skip all remaining siblings.",
+              "Large-looking branch: continue unless a sound bound proves that no required solution can be inside it."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "A base case is justified by semantic finality or proven impossibility. Estimated cost alone is not a correctness argument and cannot remove a branch that may contain a required answer."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Attach an explicit return or recording action to every terminal predicate; different predicates need not share the same outcome."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "branch_looks_large": "Cost alone is not a sound termination condition."
+        "branch_looks_large": "A costly branch may contain a valid required solution, so removing it without an impossibility proof breaks completeness."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "complete_solution": "A valid completed state must be emitted or reported.",
-          "impossible_state": "An impossible state terminates as failure.",
-          "find_one_success": "Short-circuit contracts can terminate further search."
+        "complete_solution": "The state satisfies the full output contract and must be emitted, counted, or reported as success.",
+        "impossible_state": "When no descendant can become valid, returning failure avoids useless expansion without losing an answer.",
+        "find_one_success": "Once existence is proven, the caller contract permits all remaining search to terminate immediately."
         }
       },
       "taxonomy": {
@@ -891,44 +809,39 @@
         "reason": "Recording must preserve the completed state and obey the requested result semantics.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "Mutable path reuse and mismatched find-one versus collect-all behavior are common contract defects."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Recording must preserve the completed state and obey the requested result semantics. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "A new valid solution does not invalidate earlier solutions."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Recording must preserve the completed state and obey the requested result semantics."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Recording and control flow are separate obligations"
+          },
+          {
+            "type": "bullet_list",
+            "items": [
+              "Recognize completion on the current path; no artificial sentinel choice is needed.",
+              "Freeze the path by copying it or converting it to an immutable value before later undo operations.",
+              "For collect-all, store the snapshot and continue with siblings. For find-one, return or propagate success.",
+              "Keep previously recorded sibling results because each is an independent valid output."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Copying protects data ownership; the result contract determines whether the search continues. Solving only one of those concerns still leaves either corrupted output or incorrect control flow."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "At a valid leaf, answer two questions independently: what stable value is recorded, and whether exploration should continue."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "clear_all_results": "A new valid solution does not invalidate earlier solutions."
+        "clear_all_results": "Each sibling can produce an independent valid answer, so a later solution does not invalidate snapshots already recorded."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "copy_path": "A snapshot preserves the completed result.",
-          "avoid_extra_choice": "The current path already represents the result.",
-          "follow_result_contract": "The caller contract determines control flow after recording."
+        "copy_path": "A snapshot preserves the completed values after the mutable working path is changed by undo operations.",
+        "avoid_extra_choice": "The current state already meets the completion predicate; adding a marker would change the result shape.",
+        "follow_result_contract": "Collect-all must continue to siblings, while find-one may propagate success immediately."
         }
       },
       "taxonomy": {
@@ -978,44 +891,39 @@
         "reason": "Empty input has no universal answer across backtracking problems.",
         "details": {
           "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "The correct result follows from the mathematical identity, completion condition, and target requirements."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Empty input has no universal answer across backtracking problems. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why the other answers fail",
-              "text": "Empty-input semantics depend on the result contract."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Empty input has no universal answer across backtracking problems."
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Derive empty input from each result contract"
+          },
+          {
+            "type": "bullet_list",
+            "items": [
+              "All subsets or partitions: choosing no parts can be one complete empty construction, so return a collection containing that result.",
+              "Empty board with a nonempty word: no path can consume the first required character, so return false.",
+              "No candidates with at least one required variable unassigned: no complete assignment exists, so the result collection or count is zero.",
+              "Universal error: false, because empty input is often a valid boundary handled by the normal completion or failure rule."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "The same physical input size can therefore mean identity, impossibility, or invalid input depending on the task. The mathematical result contract must decide before code chooses a default."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Ask whether the empty state already satisfies completion, proves impossibility, or violates an explicit input precondition."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "always_error": "Empty-input semantics depend on the result contract."
+        "always_error": "Empty subsets and empty partitions can be valid completed constructions, so emptiness is not universally invalid."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "one_empty_construction": "The empty construction can be a valid result.",
-          "false_for_nonempty_target": "The target cannot be completed.",
-          "zero_assignments_if_variable_required": "No complete assignment exists."
+        "one_empty_construction": "Selecting or partitioning nothing can satisfy the enumeration contract exactly once.",
+        "false_for_nonempty_target": "With no board cell, the first required target character cannot be matched.",
+        "zero_assignments_if_variable_required": "A required unassigned variable with no candidate prevents every complete assignment."
         }
       },
       "taxonomy": {
@@ -1026,10 +934,13 @@
         "problemArchetypeId": "construct_valid_assignment"
       }
     },
-    {
-      "id": "alg-backtracking-base-contract-013",
-      "prompt": "Arrange the control flow for a collect-all backtracking call.",
-      "difficulty": "foundational",
+  {
+    "id": "alg-backtracking-base-contract-013",
+    "prompt": "Arrange the control flow for a collect-all backtracking call.",
+    "constraints": [
+      "The failure predicate means a nonrepairable constraint violation, not merely that the state has no children."
+    ],
+    "difficulty": "foundational",
       "interaction": {
         "type": "ordering",
         "elements": [
@@ -1064,36 +975,31 @@
       },
       "feedback": {
         "reason": "Failure and completion are resolved before expanding nonterminal states.",
-        "details": {
-          "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "This ordering prevents invalid states from expanding and ensures completed states are recorded exactly once."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Failure and completion are resolved before expanding nonterminal states. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why this order matters",
-              "text": "The order follows causal dependencies: Reject an impossible partial state. Then If complete, record a snapshot and return from this branch. Then Enumerate legal next choices. Then Recurse for each choice and restore branch state. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Failure and completion are resolved before expanding nonterminal states."
+      "details": {
+        "blocks": [
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Resolve terminal states before expansion"
+          },
+          {
+            "type": "ordered_list",
+            "items": [
+              "Reject a state that violates a nonrepairable constraint; it has no valid descendant.",
+              "If the remaining state is complete, append a stable snapshot and return so the leaf is recorded once.",
+              "Only a valid nonterminal state needs its legal next choices generated.",
+              "For each choice, apply it, recurse, and restore the parent state before the next sibling."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "The failure predicate must mean actual impossibility, not merely “has no children”; otherwise it could swallow a valid complete leaf. Once terminal cases are excluded, the candidate loop handles only expandable states."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Invariant",
+            "text": "Every candidate loop starts from a valid, incomplete parent state, and every sibling starts from the same restored parent."
             }
           ]
         }
@@ -1144,36 +1050,31 @@
       },
       "feedback": {
         "reason": "A result must be recognized, frozen, stored, and then treated as terminal.",
-        "details": {
-          "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "Copying after later mutations would capture the wrong state, and continuing choices could create invalid overlong results."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: A result must be recognized, frozen, stored, and then treated as terminal. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why this order matters",
-              "text": "The order follows causal dependencies: Verify that the completion contract is satisfied. Then Create a snapshot of the current path. Then Append the snapshot to the results. Then Return from the completed branch without generating extra choices. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "A result must be recognized, frozen, stored, and then treated as terminal."
+      "details": {
+        "blocks": [
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Freeze the leaf before the path changes"
+          },
+          {
+            "type": "ordered_list",
+            "items": [
+              "Evaluate the completion predicate on the current path.",
+              "Copy the path while it still contains exactly the completed values.",
+              "Append that independent snapshot to the result collection.",
+              "Return from the terminal branch; later sibling exploration will mutate only the working path."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Appending before copying stores an alias, while copying after undo captures the parent rather than the leaf. Continuing to choose after exact completion can create overlong invalid candidates."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Ownership boundary",
+            "text": "The working path remains mutable; each recorded result must become independent at the completion point."
             }
           ]
         }
@@ -1186,10 +1087,14 @@
         "problemArchetypeId": "enumerate_combinations"
       }
     },
-    {
-      "id": "alg-backtracking-base-contract-015",
-      "prompt": "Arrange the checks for a find-one grid word-search call.",
-      "difficulty": "foundational",
+  {
+    "id": "alg-backtracking-base-contract-015",
+    "prompt": "Arrange the checks for a find-one grid word-search call.",
+    "constraints": [
+      "wordIndex is the number of target characters already matched before the current cell is validated.",
+      "The board or visited state must be restored before the call returns, on success and failure."
+    ],
+    "difficulty": "foundational",
       "interaction": {
         "type": "ordering",
         "elements": [
@@ -1201,20 +1106,20 @@
             "id": "bounds_and_match",
             "text": "Reject out-of-bounds, mismatched, or path-reused cells."
           },
-          {
-            "id": "mark_and_search",
-            "text": "Mark the current cell and search legal neighbors."
-          },
-          {
-            "id": "restore_and_fail",
-            "text": "Restore the cell state and return failure if no neighbor succeeds."
-          }
-        ],
-        "canonicalOrder": [
-          "target_complete",
-          "bounds_and_match",
-          "mark_and_search",
-          "restore_and_fail"
+        {
+          "id": "mark_current",
+          "text": "Mark the current cell as used by this path."
+        },
+        {
+          "id": "search_restore_return",
+          "text": "Search legal neighbors, restore the cell, then return whether any neighbor succeeded."
+        }
+      ],
+      "canonicalOrder": [
+        "target_complete",
+        "bounds_and_match",
+        "mark_current",
+        "search_restore_return"
         ],
         "scoringMethod": "adjacent_relations"
       },
@@ -1224,36 +1129,31 @@
       },
       "feedback": {
         "reason": "Success completion is checked before attempting another cell, while invalid current states fail before mutation.",
-        "details": {
-          "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "The order separates completed success, invalid failure, recursive expansion, and branch restoration."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Success completion is checked before attempting another cell, while invalid current states fail before mutation. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Why this order matters",
-              "text": "The order follows causal dependencies: If the full target is matched, return success. Then Reject out-of-bounds, mismatched, or path-reused cells. Then Mark the current cell and search legal neighbors. Then Restore the cell state and return failure if no neighbor succeeds. Reversing a dependency either evaluates an unprepared state or leaves branch state unrecovered."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Success completion is checked before attempting another cell, while invalid current states fail before mutation."
+      "details": {
+        "blocks": [
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Success, validation, expansion, restoration"
+          },
+          {
+            "type": "ordered_list",
+            "items": [
+              "If wordIndex equals the target length, return true: the previous step completed the word, so no current cell is required.",
+              "Otherwise reject an invalid coordinate, character mismatch, or cell already used by this path before mutating state.",
+              "Mark the valid current cell and recursively test the legal neighbors for the next character.",
+              "Restore the cell unconditionally, then return whether any neighbor succeeded; this preserves the board for callers on both success and failure."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "Checking bounds before the completed-target case can incorrectly reject the successful call made just beyond the last character. Skipping restoration on success can leak mutation into the caller or input even though search short-circuits."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Transfer rule",
+            "text": "Resolve completion first, reject invalid state before mutation, and restore every mutation before returning any branch result."
             }
           ]
         }
@@ -1269,9 +1169,10 @@
     {
       "id": "alg-backtracking-base-contract-016",
       "prompt": "A collect-all solver records s solutions, each containing k values, by copying the current path at completion. Select the unavoidable result-copy work and output space.",
-      "constraints": [
-        "Each completed result is stored independently.",
-        "The path copy contains k values."
+    "constraints": [
+      "s >= 1 and k >= 1.",
+      "Each completed result is stored independently.",
+      "The path copy contains k values."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -1318,36 +1219,30 @@
       },
       "feedback": {
         "reason": "Materializing s independent length-k results requires copying and storing sk values.",
-        "details": {
-          "blocks": [
-            {
-              "type": "heading",
-              "level": 2,
-              "text": "Understanding the termination contract"
-            },
-            {
-              "type": "paragraph",
-              "text": "This cost is output-sensitive and cannot be removed when the contract requires all results explicitly."
-            },
-            {
-              "type": "paragraph",
-              "text": "A backtracking call is either successful, impossible, or still expandable. The base case translates the task’s promise into code: record only a complete result, stop an impossible branch, and do not create children after a terminal outcome."
-            },
-            {
-              "type": "paragraph",
-              "text": "Start with the condition that must remain true in this branch: Materializing s independent length-k results requires copying and storing sk values. Then test whether the proposed answer preserves that condition for every legal continuation, rather than only for one convenient example."
-            },
-            {
-              "type": "callout",
-              "kind": "common_mistake",
-              "title": "Check each dimension independently",
-              "text": "Materializing s independent length-k results requires copying and storing sk values. Count the number of explored states or produced values separately from the maximum live recursion state; one quantity does not automatically determine the other."
-            },
-            {
-              "type": "callout",
-              "kind": "key_takeaway",
-              "title": "Rule to remember",
-              "text": "Materializing s independent length-k results requires copying and storing sk values."
+      "details": {
+        "blocks": [
+          {
+            "type": "heading",
+            "level": 2,
+            "text": "Derive work and storage from output volume"
+          },
+          {
+            "type": "ordered_list",
+            "items": [
+              "One completed path contains k values, so copying it costs O(k).",
+              "The solver records s independent paths, so total copy work is s · O(k) = O(sk).",
+              "The result collection retains the same s · k values, so output space is O(sk)."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "This is an unavoidable output cost under the explicit materialization contract. It is separate from search-tree work, live path space O(k), and recursion depth; excluding those terms does not reduce the bytes required by the returned results."
+          },
+          {
+            "type": "callout",
+            "kind": "key_takeaway",
+            "title": "Output lower bound",
+            "text": "When all results are returned explicitly, analyze their count times their size before considering traversal overhead."
             }
           ]
         }

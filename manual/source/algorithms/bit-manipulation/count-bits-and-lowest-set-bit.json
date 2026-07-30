@@ -3,7 +3,7 @@
   "batchId": "bit-manipulation-count-bits-and-lowest-set-bit-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -61,7 +61,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Subtracting one flips the lowest set bit to zero and turns lower zeros into ones.",
+        "reason": "If x ends in one lowest 1 followed by k zeros, x - 1 changes that suffix from 10^k to 01^k, so AND clears exactly that 1.",
         "details": {
           "blocks": [
             {
@@ -71,28 +71,28 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. Subtracting one flips the lowest set bit to zero and turns lower zeros into ones. AND with the original x removes that one while leaving higher bits unchanged."
+              "text": "A set bit is a position containing 1, and the lowest set bit is the rightmost such position. Write a positive x as P·1·0^k: P is the unchanged higher-bit prefix, the shown 1 is the lowest set bit, and the k lower positions are all zero. Subtracting one gives P·0·1^k. AND compares the two patterns position by position, producing P·0·0^k: the lowest 1 is cleared, the higher prefix is preserved, and the lower positions remain zero."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Example: 10110000 - 1 = 10101111.",
+                "AND: 10110000 AND 10101111 = 10100000.",
+                "The removed bit is 00010000; no surviving bit moved to another position."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Draw the low end of the word before calculating. The identity is about the lowest set position, so reading from the right avoids reversing the answer."
+              "text": "For any nonzero fixed-width unsigned x, x AND (x - 1) reduces popcount(x), the number of 1 bits, by exactly one. It clears; it does not isolate or shift."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "isolate_lowest_one": "That is x AND -x under two's-complement arithmetic.",
-          "set_lowest_zero": "The operation removes a set bit.",
-          "shift_right": "Higher bit positions remain in place."
+          "isolate_lowest_one": "This confuses clearing with isolation. x AND -x returns only the lowest 1; x AND (x - 1) returns all of x except that 1.",
+          "set_lowest_zero": "The lower zeros do become ones in x - 1, but AND pairs them with zeros from x, so they remain zero in the result.",
+          "shift_right": "A right shift moves every surviving bit to a lower position. Here the higher prefix stays in its original positions and only one bit is cleared."
         }
       },
       "taxonomy": {
@@ -137,7 +137,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Two's-complement negation preserves the lowest one position in both x and -x.",
+        "reason": "Two's-complement negation makes the bits above x's lowest 1 complementary while preserving that 1 and the zeros below it, so AND keeps only that position.",
         "details": {
           "blocks": [
             {
@@ -147,28 +147,28 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. Two's-complement negation preserves the lowest one position in both x and -x. AND leaves exactly that shared lowest set bit."
+              "text": "Fix the word width and write nonzero x as P·1·0^k, where the shown 1 is its lowest set bit. Two's-complement negation complements every bit and adds one. Complementing gives NOT P·0·1^k; adding one carries through the k trailing ones and produces NOT P·1·0^k. Above the shown 1, P and NOT P cannot both contain 1 in the same position; at and below it, both words contain exactly 1·0^k. Their AND is therefore 0…0·1·0^k, a one-hot mask."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Example in 8 bits: x = 10110000.",
+                "NOT x = 01001111, so -x = 01010000 after adding one.",
+                "10110000 AND 01010000 = 00010000."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Draw the low end of the word before calculating. The identity is about the lowest set position, so reading from the right avoids reversing the answer."
+              "text": "x AND -x isolates the lowest set bit only under a declared finite-width two's-complement bit model. For x = 0 it returns 0 rather than a real one-hot bit."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "highest_one": "Negation does not preserve only the most significant one.",
-          "all_ones": "Higher set bits do not all survive the AND.",
-          "zero": "A nonzero fixed-width pattern has a lowest set bit."
+          "highest_one": "The complement-and-add-one carry stops at the lowest 1, not the highest 1, so the shared position is determined from the right.",
+          "all_ones": "Above the lowest 1, x and -x have complementary bits; those positions cannot survive AND together.",
+          "zero": "Every nonzero finite bit pattern has a rightmost 1, and that position is 1 in both x and -x."
         }
       },
       "taxonomy": {
@@ -216,7 +216,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Zero contains no set bit to remove or isolate.",
+        "reason": "Although unsigned 0 - 1 wraps to an all-ones word, AND with 0 is still 0; two's-complement negation also maps 0 to 0.",
         "details": {
           "blocks": [
             {
@@ -226,28 +226,29 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. Zero contains no set bit to remove or isolate. Both AND expressions therefore produce zero."
+              "text": "Both identities need an explicit zero boundary because zero has no lowest set bit. The expressions are nevertheless defined under the models named in the prompt and can be evaluated directly."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "In w-bit unsigned arithmetic, 0 - 1 wraps modulo 2^w to 11…11.",
+                "0 AND 11…11 = 0 because every result bit includes a zero operand.",
+                "In two's complement, -0 = NOT 0 + 1 = 11…11 + 1, which wraps back to 0.",
+                "Therefore 0 AND -0 is also 0."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Draw the low end of the word before calculating. The identity is about the lowest set position, so reading from the right avoids reversing the answer."
+              "text": "An expression returning zero does not prove that its input had one set bit: both x AND (x - 1) and x AND -x also return zero for x = 0. Guard x != 0 when the algorithm requires a real low bit or tests for a power of two."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "first_all_ones": "Although 0 - 1 wraps to all ones in unsigned arithmetic, AND with zero is zero.",
-          "second_all_ones": "-0 is still zero.",
-          "undefined_both": "The question supplies a fixed-width bit model."
+          "first_all_ones": "This stops after computing 0 - 1. The question asks for the subsequent AND, and zero AND any bit pattern is zero.",
+          "second_all_ones": "Complementing zero gives all ones, but the +1 required by two's-complement negation wraps that word back to zero.",
+          "undefined_both": "The prompt explicitly supplies fixed-width unsigned subtraction and two's-complement negation, so neither operation depends on an unspecified arithmetic model."
         }
       },
       "taxonomy": {
@@ -295,7 +296,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The lowest set bit is at position 4.",
+        "reason": "Subtracting one changes the suffix 10000 to 01111, and AND with the original word clears bit 4 while retaining the higher 101 prefix.",
         "details": {
           "blocks": [
             {
@@ -305,28 +306,28 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. The lowest set bit is at position 4. Subtracting one gives 10101111, and AND clears position 4 while preserving the higher set bits."
+              "text": "Read positions from the right starting at zero. In 10110000, positions 0 through 3 are zero and position 4 is the lowest 1. Subtracting one borrows through those four zeros: the bit at position 4 becomes 0 and positions 0 through 3 become 1."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "x = 10110000.",
+                "x - 1 = 10101111.",
+                "10110000 AND 10101111 = 10100000."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Draw the low end of the word before calculating. The identity is about the lowest set position, so reading from the right avoids reversing the answer."
+              "text": "When tracing x AND (x - 1), calculate x - 1 first, then AND. Choosing x - 1 itself or the isolated lowbit answers a different intermediate or operation."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "bits_00010000": "That isolates the lowest set bit rather than clearing it.",
-          "bits_10101111": "That is x - 1 before the AND.",
-          "bits_01011000": "That resembles a right shift."
+          "bits_00010000": "00010000 is the removed bit by itself, the result of x AND -x. The requested clearing expression keeps the higher 1 bits too.",
+          "bits_10101111": "10101111 is only the intermediate x - 1. AND with the original clears its four new low 1s and yields 10100000.",
+          "bits_01011000": "01011000 is x shifted right once. The requested AND does not move the higher bits."
         }
       },
       "taxonomy": {
@@ -374,7 +375,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The lowest set position of 10110000 is bit 4.",
+        "reason": "In 8-bit two's complement, -10110000 is 01010000, whose only shared 1 with the original word is bit 4.",
         "details": {
           "blocks": [
             {
@@ -384,28 +385,28 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. The lowest set position of 10110000 is bit 4. The x AND -x identity produces the one-hot mask 00010000."
+              "text": "Two's-complement negation at a fixed width means complement every bit and add one, discarding any carry beyond the width. For x = 10110000, the rightmost 1 is at zero-based position 4, so the lowbit identity should leave the place value 2^4 = 16."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Complement x: NOT 10110000 = 01001111.",
+                "Add one: -x = 01010000.",
+                "AND the words: 10110000 AND 01010000 = 00010000."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Draw the low end of the word before calculating. The identity is about the lowest set position, so reading from the right avoids reversing the answer."
+              "text": "A lowbit result is one-hot: it contains either exactly one 1 for nonzero x or no 1 for x = 0. Any candidate retaining multiple 1s cannot be x AND -x."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "bits_10100000": "That is the lowest-set-bit removal result.",
-          "bits_01010000": "This retains extra higher information.",
-          "bits_11110000": "The isolated result must be one-hot."
+          "bits_10100000": "That is x AND (x - 1), which removes the lowest 1 instead of isolating it.",
+          "bits_01010000": "That is -x before the final AND. Its higher 1 at position 6 is zero in x and therefore does not survive.",
+          "bits_11110000": "This mask contains four 1s. For nonzero x, x AND -x must be one-hot."
         }
       },
       "taxonomy": {
@@ -421,7 +422,7 @@
     },
     {
       "id": "alg-bits-lowest-006",
-      "prompt": "How many iterations does a loop perform if it repeatedly executes x = x AND (x - 1) until x becomes zero?",
+      "prompt": "Starting from a fixed-width unsigned x, how many iterations does `while x != 0` perform when each iteration sets x = x AND (x - 1)?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -453,7 +454,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Each iteration removes exactly one set bit.",
+        "reason": "Each iteration removes exactly one current set bit, so the loop reaches zero after one iteration per 1 in the initial word.",
         "details": {
           "blocks": [
             {
@@ -463,28 +464,28 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. Each iteration removes exactly one set bit. The loop terminates after every initial one has been cleared."
+              "text": "The population count, or popcount, of x is the number of 1 bits in its representation. For nonzero x, x AND (x - 1) clears exactly the lowest current 1 and leaves every other 1 unchanged. Therefore popcount decreases by exactly one on each pass and cannot skip or create a remaining 1."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Example start: 10110100 has four set bits.",
+                "Successive values are 10110000, 10100000, 10000000, then 00000000.",
+                "Four removals reach zero, matching the initial popcount of four. If x starts at zero, the loop performs zero iterations."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
               "title": "Cost model",
-              "text": "Each removal deletes one set bit, not one numeric unit. The loop count is popcount(x), which can be much smaller than the declared word width for sparse values."
+              "text": "Use the loop invariant: after t iterations, exactly t of the original set bits have been removed. Termination at zero gives t = initial popcount(x)."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "bit_width": "Each iteration removes a one, not necessarily one bit position.",
-          "numeric_value": "The numeric value can be much larger than its popcount.",
-          "one": "Values with multiple set bits require multiple removals."
+          "bit_width": "A full-width scan examines zeros too; this loop does not. A sparse w-bit value can terminate in far fewer than w iterations.",
+          "numeric_value": "The update subtracts no fixed numeric unit. For example, x = 128 has value 128 but one set bit, so it terminates after one pass.",
+          "one": "Only zero or a one-hot value needs at most one pass. Every additional set bit requires another removal."
         }
       },
       "taxonomy": {
@@ -539,28 +540,28 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. 00100000 is the place value 2^5, so its only set bit is position 5. The one-hot mask directly identifies the lowest set-bit position."
+              "text": "Zero-based bit positions start with position 0 at the rightmost bit. A one-hot mask has exactly one 1, and a 1 at position k represents the place value 2^k. Reading 00100000 from the right gives five lower positions before the 1, so k = 5 and the mask's unsigned value is 2^5 = 32."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Label the rightmost position 0.",
+                "Move left across the five zeros: positions 0, 1, 2, 3, and 4.",
+                "The 1 is therefore at position 5."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Draw the low end of the word before calculating. The identity is about the lowest set position, so reading from the right avoids reversing the answer."
+              "text": "Do not confuse a bit's index with its place value: position k corresponds to value 2^k. Here the position is 5 and the value is 32."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "position_4": "Bit 4 would be 00010000.",
-          "position_6": "Bit 6 would be 01000000.",
-          "position_32": "32 is the place value, not the zero-based position."
+          "position_4": "Position 4 is one place too far right and would produce the mask 00010000.",
+          "position_6": "Position 6 is one place too far left and would produce the mask 01000000.",
+          "position_32": "32 is the unsigned place value 2^5 represented by the mask, not its zero-based bit index."
         }
       },
       "taxonomy": {
@@ -573,7 +574,7 @@
     },
     {
       "id": "alg-bits-lowest-008",
-      "prompt": "Which expression correctly tests whether a positive unsigned x is a power of two?",
+      "prompt": "For a fixed-width unsigned integer x, which expression correctly tests whether x is a positive power of two?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -605,7 +606,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "A positive power of two contains exactly one set bit.",
+        "reason": "A positive power of two has exactly one set bit, so clearing its lowest 1 yields zero; the separate nonzero test rejects x = 0.",
         "details": {
           "blocks": [
             {
@@ -615,28 +616,28 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. A positive power of two contains exactly one set bit. Removing its lowest set bit leaves zero; the explicit nonzero check excludes x = 0."
+              "text": "The positive powers of two are 1, 2, 4, 8, and so on. In binary each is one-hot: it has one 1 and zeros everywhere else. For any nonzero x, x AND (x - 1) clears exactly one set bit. The result is zero exactly when there was no second set bit to remain."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "x = 8: 00001000 AND 00000111 = 00000000, so 8 passes.",
+                "x = 10: 00001010 AND 00001001 = 00001000, so 10 fails.",
+                "x = 0 also makes the AND expression zero because zero AND anything is zero, so x != 0 is required."
               ]
             },
             {
               "type": "callout",
               "kind": "edge_case",
               "title": "Boundary case",
-              "text": "A positive power of two has exactly one 1 bit. The extra x > 0 check matters because x = 0 also makes x AND (x - 1) equal zero."
+              "text": "The reusable predicate is x != 0 AND (x AND (x - 1)) == 0 under a declared fixed-width unsigned model."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "clear_nonzero": "That means x has at least two set bits.",
-          "lowbit_zero": "A nonzero x always has a nonzero lowbit.",
-          "xor_one": "That recognizes only x = 1."
+          "clear_nonzero": "A nonzero clearing result means at least one set bit remains after the lowest one is removed, so x had at least two 1s and is not a power of two.",
+          "lowbit_zero": "For every nonzero x, x AND -x isolates a real one-hot bit and is nonzero. It equals zero only at the excluded boundary x = 0.",
+          "xor_one": "x XOR 1 is zero only when x equals 1 bit for bit. It rejects other powers of two such as 2, 4, and 8."
         }
       },
       "taxonomy": {
@@ -649,7 +650,7 @@
     },
     {
       "id": "alg-bits-lowest-009",
-      "prompt": "Why should a repeated x = x AND (x - 1) bit-count loop use an unsigned or explicitly fixed-width model?",
+      "prompt": "If x = x AND (x - 1) must count set bits for every possible w-bit pattern, why should the implementation use unsigned arithmetic or otherwise declare exact fixed-width behavior?",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -657,7 +658,7 @@
         "options": [
           {
             "id": "model_clarity",
-            "text": "Subtraction, negative patterns, and termination should not depend on unspecified signed overflow or width behavior."
+            "text": "Subtraction, sign-bit patterns, and termination should not depend on undefined or unspecified signed-overflow and width rules."
           },
           {
             "id": "unsigned_faster",
@@ -681,7 +682,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Bit identities are statements about a declared finite bit pattern.",
+        "reason": "The identity is defined on a finite bit pattern, but a language's signed arithmetic may reject or reinterpret sign-bit patterns before the intended bit operation is completed.",
         "details": {
           "blocks": [
             {
@@ -691,28 +692,28 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. Bit identities are statements about a declared finite bit pattern. Using unsigned or explicit fixed-width semantics makes wraparound and every intermediate value reviewable."
+              "text": "The identity x AND (x - 1) assumes a w-bit word and subtraction modulo 2^w. That model covers every bit pattern, including one whose most significant bit is 1. A signed integer type may assign such a pattern a negative numeric value and may give signed overflow different semantics: it can be undefined, trap, widen, or use an arbitrary-precision representation depending on the language."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "For the 8-bit pattern 10000000, unsigned x - 1 is 01111111 and the AND correctly yields zero.",
+                "If the same bits are treated as signed -128, evaluating x - 1 requests -129, which is outside the 8-bit signed range.",
+                "Unsigned modulo arithmetic or an explicitly documented fixed-width bit type keeps the intended transition defined."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Draw the low end of the word before calculating. The identity is about the lowest set position, so reading from the right avoids reversing the answer."
+              "text": "Before using a bit idiom, declare width, signedness, and overflow behavior. A formula that is true for w-bit words is not automatically a portable statement about every language's signed integers."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "unsigned_faster": "The issue is semantic definition, not asymptotic speed.",
-          "signed_no_bits": "They do, but language rules may differ.",
-          "loop_needs_sort": "Sorting is unrelated."
+          "unsigned_faster": "Both models can use the same number of loop iterations. The reason for unsigned or explicit-width arithmetic is defined behavior, not a better asymptotic bound.",
+          "signed_no_bits": "Signed values do have bit representations. The risk is that arithmetic on those values may not follow the modulo-w bit-pattern operation the identity assumes.",
+          "loop_needs_sort": "The loop removes set bits from one word and performs no ordering or comparison of a collection."
         }
       },
       "taxonomy": {
@@ -759,7 +760,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The operation clears the lowest one without moving or changing higher positions.",
+        "reason": "Writing x as P·1·0^k and x - 1 as P·0·1^k makes the AND result P·0·0^k, proving all three accepted properties.",
         "details": {
           "blocks": [
             {
@@ -769,31 +770,31 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. The operation clears the lowest one without moving or changing higher positions. It is a removal identity, not an isolation identity."
+              "text": "Because the prompt excludes zero, x has a lowest 1. Write its bits as P·1·0^k. Subtracting one borrows at that 1, giving P·0·1^k. AND is then P·1·0^k AND P·0·1^k = P·0·0^k."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Exactly one original 1 disappears: the boundary 1 shown in the suffix.",
+                "The prefix P appears unchanged in both operands, so every higher position keeps its value.",
+                "All k lower positions were zero in x; AND keeps them zero even though x - 1 contains ones there."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Do not confuse clearing with isolating: x AND (x - 1) removes the lowest 1, whereas x AND -x returns a one-hot mask for it."
+              "text": "The complete reusable shape is P·1·0^k → P·0·0^k. It proves removal, preservation above the boundary, and zeros below it without relying on a single example."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "isolates_one": "That describes x AND -x."
+          "isolates_one": "This reverses the output contract. x AND -x returns the removed bit alone; x AND (x - 1) returns the remainder P with that bit cleared."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "removes_one": "The lowest one is cleared.",
-          "higher_preserved": "Subtract-one changes only at and below the lowest one.",
-          "lower_zero": "Those positions were zero in x and AND keeps them zero."
+          "removes_one": "The suffix proof changes the one boundary bit from 1 to 0 and changes no other original 1.",
+          "higher_preserved": "Subtracting one does not borrow above the lowest 1, so the prefix P is identical in x and x - 1 and survives AND.",
+          "lower_zero": "The positions below the lowest 1 are zero by definition in x; AND with those zeros yields zero regardless of the ones in x - 1."
         }
       },
       "taxonomy": {
@@ -840,7 +841,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "The lowbit identity isolates one position rather than returning the remainder of x.",
+        "reason": "For nonzero x, two's-complement negation preserves only the lowest 1 as a shared set position; zero remains zero and the resulting one-hot word has unsigned value 2^k.",
         "details": {
           "blocks": [
             {
@@ -850,31 +851,31 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. The lowbit identity isolates one position rather than returning the remainder of x. Its signed numeric interpretation may be awkward at the sign position, so the bit-pattern contract should remain explicit."
+              "text": "For nonzero x = P·1·0^k, fixed-width two's-complement negation gives -x = NOT P·1·0^k. The higher prefixes are complementary, while the lowest 1 and zeros below it match. AND therefore produces 0…0·1·0^k."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "For nonzero x, exactly one bit survives, so the result is one-hot.",
+                "For x = 0, -0 is 0 and the result is 0.",
+                "A one-hot bit at position k has unsigned place value 2^k, including 2^(w - 1) when the surviving bit is the most significant bit."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Do not confuse clearing with isolating: x AND (x - 1) removes the lowest 1, whereas x AND -x returns a one-hot mask for it."
+              "text": "Interpret lowbit primarily as a w-bit mask. If its only 1 is the sign position, the same bits have unsigned value 2^(w - 1) but a negative signed interpretation."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "removes_lowbit": "That is x AND (x - 1)."
+          "removes_lowbit": "This describes the complementary clearing operation x AND (x - 1). x AND -x returns the removed position as a one-hot mask, not the remainder."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "one_hot_nonzero": "Exactly the lowest one survives.",
-          "zero_case": "Zero has no set bit.",
-          "place_value": "A one-hot bit at k has value 2^k."
+          "one_hot_nonzero": "The prefix-complement proof leaves exactly the shared lowest 1 and no higher shared 1.",
+          "zero_case": "Two's-complement negation maps zero to zero, so 0 AND 0 is zero.",
+          "place_value": "A one-hot mask at zero-based position k contributes exactly 2^k to the word's unsigned value."
         }
       },
       "taxonomy": {
@@ -890,7 +891,7 @@
     },
     {
       "id": "alg-bits-lowest-012",
-      "prompt": "Which tests are important for lowest-set-bit logic? Select all that apply.",
+      "prompt": "Which cases belong in a minimal boundary-focused test set for fixed-width lowest-set-bit removal and isolation? Select all that apply.",
       "difficulty": "foundational",
       "interaction": {
         "type": "choice",
@@ -910,7 +911,7 @@
           },
           {
             "id": "only_many_ones",
-            "text": "Only one value with many set bits."
+            "text": "No boundary cases; test only one typical value with several set bits."
           }
         ],
         "acceptedOptionIds": [
@@ -924,7 +925,7 @@
         "resultSemantics": "exact_selected_set_with_partial_v1"
       },
       "feedback": {
-        "reason": "Zero, one-hot, and sign-position cases expose different model errors.",
+        "reason": "Zero checks the no-bit boundary, a one-hot value checks the single-removal boundary, and a sign-position-only word checks width and signed-interpretation assumptions.",
         "details": {
           "blocks": [
             {
@@ -934,31 +935,31 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. Zero, one-hot, and sign-position cases expose different model errors. Dense patterns are useful but not sufficient by themselves."
+              "text": "A boundary-focused set chooses inputs where the contract changes or an implementation assumption is most exposed. Removal means x AND (x - 1); isolation means x AND -x."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "x = 0: both expressions return 0, but there is no real lowest set bit.",
+                "One-hot x: removal must return 0 and isolation must return x.",
+                "Only the most significant bit set: the mask is still one-hot, but its signed interpretation and operations around the signed minimum expose an undeclared model."
               ]
             },
             {
               "type": "callout",
               "kind": "key_takeaway",
               "title": "Key takeaway",
-              "text": "Do not confuse clearing with isolating: x AND (x - 1) removes the lowest 1, whereas x AND -x returns a one-hot mask for it."
+              "text": "A typical dense or sparse multi-bit example is useful after the boundaries, but one ordinary example alone cannot establish zero handling, one-bit termination, and sign-position semantics."
             }
           ]
         },
         "wrongOptionExplanationsByOptionId": {
-          "only_many_ones": "This misses the critical zero and one-hot boundaries."
+          "only_many_ones": "One ordinary multi-bit value may exercise repeated removal, but by itself it misses the no-bit, exactly-one-bit, and sign-position boundaries named by the contract."
         },
         "omittedCorrectExplanationsByOptionId": {
-          "zero": "It verifies the no-set-bit boundary.",
-          "power_two": "Removal should yield zero and isolation should return x.",
-          "lowbit_sign_position": "It exercises width and signed-interpretation assumptions."
+          "zero": "It verifies that both expressions return zero without pretending that a lowest set bit exists.",
+          "power_two": "A one-hot input must be removed in one step and must isolate to itself, directly checking both identities at their smallest nonzero popcount.",
+          "lowbit_sign_position": "It verifies that the implementation treats the most significant bit as a valid mask position rather than losing it to signed overflow or interpretation."
         }
       },
       "taxonomy": {
@@ -971,26 +972,26 @@
     },
     {
       "id": "alg-bits-lowest-013",
-      "prompt": "Arrange one iteration of Brian Kernighan's set-bit counting loop.",
+      "prompt": "Arrange one iteration of Brian Kernighan's set-bit counting loop so the counter is updated for a completed removal before control returns to the loop guard.",
       "difficulty": "foundational",
       "interaction": {
         "type": "ordering",
         "elements": [
           {
             "id": "check_nonzero",
-            "text": "Confirm x is nonzero."
+            "text": "Evaluate the guard x != 0 and enter the iteration only when it is true."
           },
           {
             "id": "remove_lowest",
-            "text": "Set x = x AND (x - 1)."
+            "text": "Set x = x AND (x - 1), completing one lowest-set-bit removal."
           },
           {
             "id": "increment_count",
-            "text": "Increment the set-bit counter."
+            "text": "Increment the counter for the removal just completed."
           },
           {
             "id": "repeat",
-            "text": "Continue until x becomes zero."
+            "text": "Return to the guard; stop when x has become zero."
           }
         ],
         "canonicalOrder": [
@@ -1006,7 +1007,7 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "Each iteration corresponds to exactly one removed set bit.",
+        "reason": "The nonzero guard makes the subtraction valid for a remaining bit, the update removes exactly one bit, and the counter records that completed removal before the next guard.",
         "details": {
           "blocks": [
             {
@@ -1016,21 +1017,22 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. Each iteration corresponds to exactly one removed set bit. The counter therefore equals the original popcount at termination."
+              "text": "Use the invariant: at every loop guard, count equals the number of set bits already removed, while x contains exactly the original set bits not yet removed. The guard prevents an iteration when none remain. Inside an iteration, x AND (x - 1) clears one remaining 1; incrementing count then restores the invariant before control returns to the guard."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Check x != 0.",
+                "Replace x with x AND (x - 1), reducing its popcount by one.",
+                "Increment count to record that removal.",
+                "Return to the guard; when x is zero, count equals the original popcount."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Keep the invariant visible: after each iteration, exactly one original set bit has been removed or emitted. That is the proof of both progress and correctness."
+              "text": "A different implementation may place the increment before the assignment, but this task explicitly uses the completed-removal invariant. The essential correctness fact is a one-to-one correspondence between iterations and removed set bits."
             }
           ]
         }
@@ -1080,7 +1082,7 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "The proof depends on the carry behavior of two's-complement negation.",
+        "reason": "After x is split at its lowest 1, complement-and-add-one makes the prefixes complementary while preserving the suffix 1·0^k, so AND keeps only that 1.",
         "details": {
           "blocks": [
             {
@@ -1090,21 +1092,22 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. The proof depends on the carry behavior of two's-complement negation. Width must be fixed so complement and addition are defined."
+              "text": "Let x be nonzero and write its fixed-width bits as P·1·0^k, where the shown 1 is the lowest set bit. This decomposition is the fact the proof must preserve; using an unbounded complement would leave the prefix undefined."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Identify x = P·1·0^k.",
+                "Complement within the width: NOT x = NOT P·0·1^k.",
+                "Add one. The carry crosses the k trailing ones and stops at the zero, so -x = NOT P·1·0^k.",
+                "Above the boundary P and NOT P share no 1; the boundary 1 is shared and lower positions are zero. AND yields 0…0·1·0^k."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Keep the invariant visible: after each iteration, exactly one original set bit has been removed or emitted. That is the proof of both progress and correctness."
+              "text": "The identity is a bit-pattern theorem for a declared finite two's-complement width. At x = 0 the expression returns 0, but there is no lowest set bit to isolate."
             }
           ]
         }
@@ -1122,26 +1125,26 @@
     },
     {
       "id": "alg-bits-lowest-015",
-      "prompt": "Arrange the steps for extracting every set-bit one-hot mask from x.",
+      "prompt": "Arrange the prescribed extract-emit-advance loop that outputs every set-bit one-hot mask of a fixed-width x from least significant to most significant.",
       "difficulty": "foundational",
       "interaction": {
         "type": "ordering",
         "elements": [
           {
             "id": "check_x",
-            "text": "While x is nonzero, continue."
+            "text": "While x is nonzero, begin another extraction."
           },
           {
             "id": "compute_lowbit",
-            "text": "Compute lowbit = x AND -x."
+            "text": "Save lowbit = x AND -x for the current lowest set bit."
           },
           {
             "id": "process_lowbit",
-            "text": "Use or record that one-hot mask."
+            "text": "Emit or record the saved one-hot lowbit."
           },
           {
             "id": "remove_lowbit",
-            "text": "Set x = x AND (x - 1)."
+            "text": "Remove the emitted bit with x = x AND (x - 1), then repeat."
           }
         ],
         "canonicalOrder": [
@@ -1157,7 +1160,7 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "Isolation identifies the next bit, and removal guarantees progress.",
+        "reason": "Isolation saves the current lowest one-hot bit, emission preserves it as output, and removal advances x to the next higher set bit.",
         "details": {
           "blocks": [
             {
@@ -1167,21 +1170,22 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. Isolation identifies the next bit, and removal guarantees progress. The sequence emits set bits from least significant to most significant."
+              "text": "The loop maintains two facts: every emitted mask is one-hot and belongs to the original x, and the current x contains exactly the original set bits not yet emitted. x AND -x selects the lowest remaining bit; x AND (x - 1) removes that same bit without changing the rest."
             },
             {
-              "type": "bullet_list",
+              "type": "ordered_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "For x = 10100, compute lowbit = 00100 and emit it.",
+                "Remove it: 10100 AND 10011 = 10000.",
+                "Compute lowbit = 10000 and emit it.",
+                "Remove it to obtain 00000; the loop stops with masks emitted in increasing bit-position order."
               ]
             },
             {
               "type": "callout",
               "kind": "decision_rule",
               "title": "Decision rule",
-              "text": "Keep the invariant visible: after each iteration, exactly one original set bit has been removed or emitted. That is the proof of both progress and correctness."
+              "text": "Saving lowbit separates observation from mutation. The prescribed order emits the saved mask before advancing x; each pass emits exactly one new original bit and strictly reduces popcount."
             }
           ]
         }
@@ -1248,7 +1252,7 @@
         "maxPoints": 2
       },
       "feedback": {
-        "reason": "The loop iterates once per set bit rather than once per word position.",
+        "reason": "There are p iterations and each costs O(1) in the declared word-operation model, while x and the counter occupy a constant number of words.",
         "details": {
           "blocks": [
             {
@@ -1258,21 +1262,21 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. The loop iterates once per set bit rather than once per word position. This can be faster than an O(w) full-width scan for sparse values."
+              "text": "Let the initial word contain p ones. Each update x = x AND (x - 1) removes exactly one current 1, so after t iterations p - t ones remain. Termination occurs when p - t = 0, hence t = p. The prompt assigns O(1) to subtraction, AND, comparison, assignment, and counter update on one fixed-size word."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Time: p iterations × O(1) work per iteration = O(p).",
+                "Auxiliary space: x, the counter, and fixed temporaries use O(1) machine words.",
+                "No list of the p bits is materialized, so there is no O(p) output or helper storage in this counting loop."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
               "title": "Cost model",
-              "text": "Each removal deletes one set bit, not one numeric unit. The loop count is popcount(x), which can be much smaller than the declared word width for sparse values."
+              "text": "Under this parameterization the bound is O(p), with 0 <= p <= w. A full-width scan is O(w); the removal loop does less work on sparse words, though both are bounded by the word width."
             }
           ]
         }
@@ -1287,10 +1291,11 @@
     },
     {
       "id": "alg-bits-lowest-017",
-      "prompt": "A straightforward algorithm inspects all w positions of an arbitrary-width integer to count set bits. Select time and auxiliary-space complexity.",
+      "prompt": "A straightforward algorithm inspects all w positions of a w-bit representation to count set bits. Select time and auxiliary-space complexity under the stated unit-cost model.",
       "constraints": [
         "Every bit position is examined exactly once.",
-        "Only a counter is stored."
+        "Reading one position and updating a word-sized counter each cost O(1).",
+        "Only a constant number of word-sized counters or indices is stored."
       ],
       "difficulty": "foundational",
       "interaction": {
@@ -1336,7 +1341,7 @@
         "maxPoints": 2
       },
       "feedback": {
-        "reason": "The algorithm pays for every represented position, including zeros.",
+        "reason": "Exactly w positions are inspected at O(1) cost each, and the algorithm retains only a constant number of word-sized variables.",
         "details": {
           "blocks": [
             {
@@ -1346,21 +1351,22 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. The algorithm pays for every represented position, including zeros. This contrasts with the O(popcount) removal loop under fixed-word operations."
+              "text": "The work follows the representation width, not the number of set bits. The scan visits positions 0 through w - 1 exactly once, so even an all-zero or one-hot input incurs w inspections. With O(1) cost per inspection and counter update, total time is w × O(1) = O(w)."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Input visits: w.",
+                "Work per visit: O(1).",
+                "Time: O(w).",
+                "Live helper state: a constant number of counters or indices, so auxiliary space is O(1) machine words."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
               "title": "Cost model",
-              "text": "Separate the input model from the output contract. Fixed-word identities can be O(1) per emitted bit, while an arbitrary-width scan must pay for represented positions."
+              "text": "The O(1) auxiliary claim uses the prompt's word-cost model. In a bit-level storage model, a counter up to w needs O(log w) bits; complexity answers must follow the declared unit."
             }
           ]
         }
@@ -1437,7 +1443,7 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "The algorithm performs one constant-time step per emitted set bit.",
+        "reason": "The algorithm performs p constant-time extraction/removal steps, keeps only constant working state, and materializes p fixed-word masks as required output.",
         "details": {
           "blocks": [
             {
@@ -1447,21 +1453,21 @@
             },
             {
               "type": "paragraph",
-              "text": "Treat the value as a fixed-width bit pattern. Locate the lowest 1 bit first; subtracting one changes that boundary in a predictable way, which is why the two classic identities work. The algorithm performs one constant-time step per emitted set bit. The materialized one-hot masks are required output, not auxiliary state."
+              "text": "Each pass isolates one remaining set bit, appends its one-hot mask, and removes it. Because exactly p set bits exist, there are p passes. The prompt assigns O(1) to each fixed-word operation and to appending one fixed-word mask."
             },
             {
               "type": "bullet_list",
               "items": [
-                "For x AND (x - 1), find the least-significant 1 and subtract one from x.",
-                "For x AND -x, use two's-complement negation and identify the one position both words retain.",
-                "Handle x = 0 separately when an algorithm needs a real set bit or a power of two."
+                "Time: p passes × O(1) work = O(p).",
+                "Auxiliary space excluding output: x, lowbit, and an index or loop state occupy O(1) words.",
+                "Output space: the result list contains p masks of one fixed word each, so it uses O(p) words."
               ]
             },
             {
               "type": "callout",
               "kind": "complexity_note",
               "title": "Cost model",
-              "text": "Separate the input model from the output contract. Fixed-word identities can be O(1) per emitted bit, while an arbitrary-width scan must pay for represented positions."
+              "text": "Do not charge required results to auxiliary space, but do report them separately. If the masks were arbitrary w-bit objects rather than fixed-word values, a bit-level model would describe output as O(pw) bits; that is not the model declared here."
             }
           ]
         }

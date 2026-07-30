@@ -3,7 +3,7 @@
   "batchId": "algorithms-math-and-geometry-geometry-boundary-and-precision-mistakes-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -455,7 +455,7 @@
     },
     {
       "id": "alg-mg-geometry-robust-segment-intersection-order",
-      "prompt": "Order the conceptual stages of a closed-segment intersection predicate that must handle degenerate and collinear cases.",
+      "prompt": "Order the conceptual stages of a closed-segment intersection predicate that first short-circuits degenerate objects, then uses a proper-crossing fast path before testing included zero-orientation boundaries.",
       "constraints": [
         "Endpoints use an exact predicate or an explicitly robust numeric policy.",
         "Endpoint touching counts as intersection."
@@ -503,7 +503,23 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The proper crossing test alone excludes touching and overlap. Zero orientations must therefore be paired with finite on-segment bounds, while collapsed segments need point-specific treatment before a line direction is assumed. Rejection is safe only after all declared closed-boundary cases are exhausted. This order transfers to robust geometry generally: validate object type, evaluate the generic predicate, then resolve each legal boundary explicitly."
+              "text": "The prompt fixes a short-circuit policy: object degeneracy is resolved before line predicates, the strict interior-crossing case is the general fast path, and closed-boundary contact is checked only if that fast path fails."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Detect whether AB or CD collapses to a point. Reduce one collapsed segment to point-on-segment membership; if both collapse, compare the points.",
+                "For two nondegenerate segments, compute orientations of C and D relative to AB and of A and B relative to CD using the declared exact or robust numeric policy.",
+                "If each pair has strictly opposite signs, return intersection for a proper interior crossing.",
+                "Otherwise, for each zero orientation, test whether that endpoint lies inside the other segment's closed coordinate bounds. This covers endpoint touching and collinear overlap without treating every collinear line as overlapping.",
+                "Return no intersection only after no proper crossing and no included boundary case succeeds."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Robust predicate order",
+              "text": "Classify the object, evaluate the generic predicate, resolve every contractually included boundary, then reject. Reordering can be correct only under a different explicitly declared short-circuit policy."
             }
           ]
         }

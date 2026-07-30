@@ -3,7 +3,7 @@
   "batchId": "two-pointers-converging_boundaries_and_proof-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -100,16 +100,16 @@
             "text": "right may retreat because it is the last index."
           },
           {
-            "id": "left_is_small",
-            "text": "left is small, so advancing it will reduce the sum."
+            "id": "all_with_right_too_large",
+            "text": "For every i with left <= i < right, a[i]+a[right] >= a[left]+a[right] > target, so no remaining pair using right can succeed."
           },
           {
             "id": "eventual_convergence",
             "text": "The pointers will eventually meet, which proves each move correct."
           },
           {
-            "id": "all_with_right_too_large",
-            "text": "For every i with left <= i < right, a[i]+a[right] >= a[left]+a[right] > target, so no remaining pair using right can succeed."
+            "id": "left_is_small",
+            "text": "left is small, so advancing it will reduce the sum."
           }
         ],
         "acceptedOptionIds": [
@@ -222,12 +222,12 @@
             "text": "Two-pointer proofs require odd-length arrays."
           },
           {
-            "id": "must_move_both",
-            "text": "Unsorted input is repaired by moving both pointers on each mismatch."
-          },
-          {
             "id": "endpoints_not_extrema",
             "text": "The physical endpoints are not guaranteed extrema of the remaining values, so inequalities over all partners do not follow from the endpoint sum."
+          },
+          {
+            "id": "must_move_both",
+            "text": "Unsorted input is repaired by moving both pointers on each mismatch."
           }
         ],
         "acceptedOptionIds": [
@@ -307,7 +307,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Without the candidate-interval invariant, the proof has no defined universe of remaining pairs. Sortedness then identifies the extremal partner needed to bound all pairs containing one boundary. The comparison extends from one pair to the entire boundary candidate class. Only after that class is proved impossible may the pointer move and establish the next smaller interval."
+              "text": "Each obligation depends on the previous one: the proof first defines which pairs remain, then obtains an extremal bound, then applies that bound to a complete boundary class, and only then changes the state."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "State the candidate-interval invariant: every untested pair uses two positions inside `[left, right]`.",
+                "Use sortedness to identify the largest partner available to `left` or the smallest partner available to `right`.",
+                "Extend the current strict comparison to every remaining pair containing the boundary that will be removed.",
+                "Move only that proved-impossible boundary; the smaller interval now inherits the candidate-interval invariant."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Proof before movement",
+              "text": "Progress and termination justify that the scan ends; they do not justify discarding a candidate. The quantified elimination must precede the pointer update."
             }
           ]
         }
@@ -329,24 +344,24 @@
         "selectionMode": "multiple",
         "options": [
           {
-            "id": "fast_convergence",
-            "text": "A claim that moving two pointers at once reduces the interval faster."
-          },
-          {
             "id": "candidate_interval",
             "text": "An invariant describing which interval contains all untested candidate positions."
+          },
+          {
+            "id": "fast_convergence",
+            "text": "A claim that moving two pointers at once reduces the interval faster."
           },
           {
             "id": "ordered_extremes",
             "text": "The fact that left and right are value extrema of that remaining interval."
           },
           {
-            "id": "boundary_quantification",
-            "text": "For each mismatch, an argument covering every pair that uses the boundary being removed."
-          },
-          {
             "id": "two_variable_names",
             "text": "Variables named left and right."
+          },
+          {
+            "id": "boundary_quantification",
+            "text": "For each mismatch, an argument covering every pair that uses the boundary being removed."
           }
         ],
         "acceptedOptionIds": [
@@ -505,7 +520,7 @@
     },
     {
       "id": "alg-tp-proof-monotonic-movement-complexity",
-      "prompt": "left only increases, right only decreases, and neither pointer reverses. Across the whole scan, each pointer moves at most n positions and each iteration does O(1) work. What are the time and auxiliary-space complexities?",
+      "prompt": "left only increases, right only decreases, and neither pointer reverses. Across the whole scan, each pointer moves at most n positions and each iteration does O(1) work. What are the worst-case time and auxiliary-space complexities?",
       "interaction": {
         "type": "complexity",
         "checkedDimensions": [
@@ -547,7 +562,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Although either pointer may move on different iterations, their combined movement cannot exceed a constant multiple of n. There is no nested restart or backward traversal, so the scan is O(n). The pointers, sum, and target comparison require constant auxiliary space. This complexity argument relies on monotonic movement; it does not by itself prove that the chosen moves are correct."
+              "text": "Although either pointer may move on different iterations, their combined movement is at most 2n, so O(1) work per move gives O(n) worst-case time. O(1) and O(log n) time cannot cover a worst case in which the interval shrinks one position at a time; O(n log n) and O(n^2) are not tight because there is no sorting, restart, or nested traversal. The pointers, sum, and target comparison use a fixed number of scalars, so auxiliary space is O(1), not O(log n) or O(n). This movement bound proves termination and cost, but safe elimination is still a separate correctness obligation."
             }
           ]
         }
@@ -600,7 +615,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The sorted scan is complete and linear once its precondition holds. Creating that precondition costs O(n log n), so the total is O(n log n + n)=O(n log n). Correctness and complexity are separate obligations: sorting can make the elimination proof valid while still dominating runtime. Copying also has a space consequence, but this item checks only time."
+              "text": "Copying costs O(n), sorting costs O(n log n), and the proven scan costs O(n), so the sequential total is O(n + n log n + n)=O(n log n). O(n) reports only the linear phases and omits sorting; O(1) and O(log n) cannot even cover copying or scanning all input. O(n^2) is not tight because the algorithm never enumerates every pair. Correctness and complexity are separate obligations: sorting can establish the elimination proof's precondition while still dominating runtime. Copying also has a space consequence, but this item checks only time."
             }
           ]
         }

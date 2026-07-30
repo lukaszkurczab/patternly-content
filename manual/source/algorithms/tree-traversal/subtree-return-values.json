@@ -3,7 +3,7 @@
   "batchId": "algorithms-tree-traversal-subtree_return_values-candidate-001",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -62,12 +62,12 @@
       "feedback": {
         "reason": "Fullness is a subtree property: the current node is valid only when both child subtrees are valid and its own child count satisfies the local rule.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "The recursive return captures the same property for a smaller subtree. Null may be treated as full for the child-result identity, while a non-null parent checks both returned Booleans and its local degree. Ignoring either child loses a possible violation, and a global leaf count does not characterize fullness. This local-and-child combine pattern transfers to structural predicates such as perfectness or uniform labels, with different local conditions and possibly richer returned metadata."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "Define `full(null) = true`, because an absent child contains no violating node. For a non-null node, the complete recurrence is `full(left) && full(right) && ((left == null) == (right == null))`: the equality is true exactly when both children are absent or both are present. Thus a leaf combines two true empty results with a valid zero-child degree, while a node with only one child fails locally even if its existing child subtree is full. Ignoring either child loses a possible descendant violation, and a global leaf count does not characterize the local degree of every node. The reusable pattern is to combine all child results with the current node's own condition; predicates such as perfectness or uniform labels use the same structure with different local evidence."
+          }
+        ]
         },
         "wrongOptionExplanationsByOptionId": {
           "parent_value_only": "Payload parity is unrelated to the structural requirement. It would be valid only for a value-based predicate rather than fullness.",
@@ -98,40 +98,43 @@
             "id": "define_empty_summary",
             "text": "Use the declared valid empty-subtree summary when a child is null."
           },
-          {
-            "id": "obtain_left_summary",
-            "text": "Obtain the complete summary for the left subtree."
-          },
-          {
-            "id": "obtain_right_summary",
-            "text": "Obtain the complete summary for the right subtree."
-          },
+        {
+          "id": "obtain_child_summaries",
+          "text": "Obtain the complete summaries for both child subtrees; either child may be evaluated first."
+        },
           {
             "id": "build_parent_summary",
             "text": "Check both child validity flags and value bounds, then return the current subtree's validity, minimum, and maximum."
           }
         ],
-        "canonicalOrder": [
-          "define_empty_summary",
-          "obtain_left_summary",
-          "obtain_right_summary",
-          "build_parent_summary"
-        ],
+      "canonicalOrder": [
+        "define_empty_summary",
+        "obtain_child_summaries",
+        "build_parent_summary"
+      ],
         "scoringMethod": "adjacent_relations"
       },
       "scoringContract": {
         "type": "ordering",
-        "maxPoints": 3
+        "maxPoints": 2
       },
       "feedback": {
         "reason": "The parent summary is a deterministic function of two complete child summaries and the current value, so those inputs must exist before the combine step.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "The summary is deliberately richer than one Boolean because an ancestor needs boundary values to validate its own ordering relation. The empty summary supplies neutral bounds and a valid flag. After both child summaries return, the current node checks `left.maxValue < node.value < right.minValue` under a strict policy and propagates the overall min and max. Storing min/max in global variables would mix unrelated branches; returning them keeps each subtree's evidence attached to that subtree. A duplicate policy would change the comparison operators but not the dependency structure."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "ordered_list",
+            "items": [
+              "Use `{isBST: true, minValue: +∞, maxValue: -∞}` for an empty child. These bounds make either missing-side comparison automatically true without a special case.",
+              "Obtain the left and right summaries. They are independent inputs, so evaluation order between them is irrelevant.",
+              "For current value `v`, set `isBST = left.isBST && right.isBST && left.maxValue < v && v < right.minValue`. If valid, return `min(v, left.minValue)` and `max(v, right.maxValue)` as the new bounds."
+            ]
+          },
+          {
+            "type": "paragraph",
+            "text": "A Boolean alone is insufficient because an ancestor also needs the extreme values of each child subtree. For a leaf valued `8`, the two empty summaries make `-∞ < 8 < +∞`, and its returned bounds become `8` and `8`. Storing bounds in global variables would mix unrelated branches; returning them keeps the evidence attached to the subtree it describes. A duplicate policy would change the comparison operators, but not the dependency structure."
+          }
+        ]
         }
       },
       "taxonomy": {
@@ -142,10 +145,11 @@
         "problemArchetypeId": "validate_tree_property"
       },
       "difficulty": "intermediate",
-      "constraints": [
-        "The BST policy is strict: duplicate values are not allowed.",
-        "Scoring uses preserved adjacent relations."
-      ]
+    "constraints": [
+      "The BST policy is strict: duplicate values are not allowed.",
+      "Node values are finite numbers ordered strictly between `-∞` and `+∞`.",
+      "Scoring uses preserved adjacent relations."
+    ]
     },
     {
       "id": "alg-tree-subtree-edge-height-null-identity",
@@ -243,12 +247,12 @@
       "feedback": {
         "reason": "The parent needs height for a path crossing itself, while the subtree's answer may already lie below it, so both facts must travel upward.",
         "details": {
-          "blocks": [
-            {
-              "type": "paragraph",
-              "text": "For each subtree, return `height` and `bestDiameter`. The parent forms a crossing candidate from the two heights and sets its best diameter to the maximum of that candidate and both child bests. This keeps all required evidence compositional and avoids a traversal-wide mutable maximum. A global maximum can also yield a correct one-pass implementation when its ownership and reset rules are explicit, but it weakens the reusable return contract. Returning height alone loses a diameter that does not pass through an ancestor."
-            }
-          ]
+        "blocks": [
+          {
+            "type": "paragraph",
+            "text": "Using edge counts, let an empty child return `height = -1` and `bestDiameter = 0`. After receiving both child summaries, a non-null node computes `height = 1 + max(left.height, right.height)`. A path crossing the node has `left.height + right.height + 2` edges, so `bestDiameter = max(left.bestDiameter, right.bestDiameter, crossing)`. For a leaf, the crossing value is `-1 + -1 + 2 = 0`, as required. The two fields preserve both possibilities: an ancestor needs height to form a new crossing path, while the final answer may already lie entirely in one child. Node-count conventions shift the constants but require the same pair of facts. A correctly owned traversal-wide maximum is another valid implementation contract, but height alone with no such state loses the child-contained answer."
+          }
+        ]
         },
         "wrongOptionExplanationsByOptionId": {
           "height_only_no_other_state": "Height is enough for the parent's crossing candidate but cannot preserve a diameter entirely inside one child. It becomes sufficient only when a separate, correctly owned global best is explicitly part of the contract.",

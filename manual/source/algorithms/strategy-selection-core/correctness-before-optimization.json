@@ -3,7 +3,7 @@
   "batchId": "algorithms-strategy-selection-core-correctness_before_optimization-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -84,7 +84,7 @@
     },
     {
       "id": "ssc-correctness-preserve-original-indices",
-      "prompt": "A task must return original indices. An in-place sort followed by two pointers is fast but loses the required identity mapping; sorting indexed records is slightly slower and uses more memory but fits all limits. Which candidate should be selected?",
+      "prompt": "A pair-sum task must return two distinct original indices whose values sum to T. An in-place sort followed by two pointers is fast but loses the required identity mapping; sorting indexed records is slightly slower and uses more memory but fits all limits. Which candidate should be selected?",
       "constraints": [
         "Return original indices.",
         "Duplicate values may exist.",
@@ -168,8 +168,8 @@
         ],
         "canonicalOrder": [
           "contract",
-          "proof",
           "measure",
+          "proof",
           "optimize"
         ],
         "scoringMethod": "adjacent_relations"
@@ -179,12 +179,25 @@
         "maxPoints": 3
       },
       "feedback": {
-        "reason": "Correct semantics and proof obligations precede performance diagnosis. Optimization then targets demonstrated cost without discarding the reference oracle.",
+        "reason": "Correct semantics anchor the process, performance evidence identifies what must change, and proof obligations precede replacement. Optimization then targets demonstrated cost without discarding the reference oracle.",
         "details": {
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A safe optimization process begins with an unambiguous function and a simple implementation or model that can generate expected results. A faster mechanism must state why its compressed state, discard rule, or preprocessing produces the same answers. Only then does measurement or constraint analysis identify which cost must change. The optimized implementation should continue to be checked against the reference on bounded or randomized cases. The order prevents a fast heuristic from silently becoming the new specification. The transfer boundary is any optimization that changes observable semantics or lacks an equivalence argument; it must return to the proof step."
+              "text": "A safe optimization process follows the evidence dependencies:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Fix the observable output contract and keep a simple correct reference that can generate expected results on bounded inputs.",
+                "Measure the reference or apply the maximum constraints to identify a real time, space, or latency failure and the exact work that causes it.",
+                "Design the candidate invariant, compressed state, discard rule, or preprocessing and prove that it preserves the reference result for the complete domain.",
+                "Implement the replacement, remove the demonstrated repeated work, and continue differential regression checks against the reference on edge and randomized bounded cases."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Measurement precedes candidate proof because it identifies what actually needs to change; proof precedes replacement because speed cannot establish equivalence. The sequence prevents a fast heuristic from silently becoming the new specification. Any optimization that changes observable semantics or lacks an equivalence argument returns to the proof step."
             }
           ]
         }
@@ -290,7 +303,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "A prefix sum can exceed every individual input value because it accumulates many terms. Signed 32-bit storage cannot represent 10^14, so overflow changes the stored prefix values and can corrupt range differences. Wraparound preserves modular arithmetic, not ordinary integer sums, unless the output contract explicitly asks for a modulus. The 64-bit implementation has the same asymptotic time and space and satisfies the numeric range. The transfer rule is to prove bounds for intermediate state before micro-optimizing type width or arithmetic."
+              "text": "A prefix sum can exceed every individual input value because it accumulates many terms. A signed 32-bit integer ranges from −2^31 to 2^31 − 1, approximately ±2.1·10^9, so it cannot represent 10^14. A signed 64-bit integer reaches about ±9.22·10^18 and covers the stated bound. If a runtime wraps 32-bit overflow, it preserves arithmetic modulo 2^32 rather than ordinary integer sums; other language models may trap or leave signed overflow undefined. In every case the narrow implementation violates this contract. The 64-bit version has the same asymptotic cost and correct range. The transfer rule is to prove bounds for intermediate state before micro-optimizing type width or arithmetic."
             }
           ]
         },

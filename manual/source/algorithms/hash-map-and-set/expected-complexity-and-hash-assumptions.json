@@ -3,7 +3,7 @@
   "batchId": "algorithms-hash-map-and-set-expected-complexity-and-hash-assumptions-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -35,16 +35,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "expected_constant_possible_linear_worst",
-            "text": "Expected O(1) under ordinary distribution assumptions, with O(n) worst case possible for n stored keys."
-          },
-          {
             "id": "worst_constant",
             "text": "Worst-case O(1) for every key distribution and implementation."
           },
           {
             "id": "always_logarithmic",
             "text": "Always O(log n) because the table must search a balanced tree."
+          },
+          {
+            "id": "expected_constant_possible_linear_worst",
+            "text": "Expected O(1) under ordinary distribution assumptions, with O(n) worst case possible for n stored keys."
           }
         ],
         "acceptedOptionIds": [
@@ -124,7 +124,26 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Per-operation expected O(1) does not collapse the loop count. Two operations per element is still O(1) work per iteration, producing expected O(n) total time. The table may store n distinct keys, so extra space is O(n). This is the standard aggregate model for seen sets, frequency maps, and complement maps under fixed-width keys."
+              "text": "The scan executes at most 2n hash operations. Under the prompt's expected-O(1) operation model, 2n · O(1) = O(n) expected total time. The table holds at most n fixed-width key entries, so its worst input-size extra space is O(n)."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Reject the other bounds"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Time O(1) mistakes one operation's cost for the cost of n iterations, and O(log n) is too small for a scan that may inspect every key.",
+                "Time O(n log n) would require logarithmic work per key, while O(n²) would require linear work per key; neither follows from expected-constant hashing.",
+                "Space O(1) or O(log n) cannot retain n distinct entries, while O(n²) exceeds the maximum one entry per processed key."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Model boundary",
+              "text": "The time result is expected or amortized under well-distributed hashing and geometric resizing; it is not a deterministic worst-case claim."
             }
           ]
         }
@@ -143,18 +162,18 @@
     },
     {
       "id": "alg-hms-complexity-resize-amortization",
-      "prompt": "A resizable hash table occasionally rebuilds its storage, making one insertion cost O(n). Which conclusion is justified over a long sequence of insertions under its standard resizing policy?",
+      "prompt": "A resizable hash table grows capacity by a constant factor, such as doubling, when a load threshold is reached. A rebuild can make one insertion cost O(n). Which conclusion is justified over a long sequence of insertions?",
       "interaction": {
         "type": "choice",
         "selectionMode": "single",
         "options": [
           {
-            "id": "amortized_constant",
-            "text": "Insertions can still be amortized or expected O(1) because expensive rebuilds are spread across many operations."
-          },
-          {
             "id": "every_insert_linear",
             "text": "Every insertion is O(n) because some insertion triggers a rebuild."
+          },
+          {
+            "id": "amortized_constant",
+            "text": "The resizing component of insertion can still be amortized O(1) because expensive rebuilds are spread across many operations."
           },
           {
             "id": "rebuild_free",
@@ -175,7 +194,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Amortized analysis bounds the total cost of a sequence rather than each individual insertion. Geometric capacity growth typically makes the sum of all rebuild work linear in the number of insertions, yielding O(1) amortized insertion. This does not make the worst single insertion constant, and it still assumes the implementation follows the stated policy."
+              "text": "Amortized analysis bounds the whole sequence rather than every insertion separately. With capacities 1, 2, 4, … up to N, the rebuild work is 1 + 2 + 4 + … < 2N = O(N). Adding N ordinary insertions keeps total work O(N), so average amortized cost is O(1) per insertion. A resize-triggering insertion can still take O(N); the conclusion depends on the stated geometric growth."
             }
           ]
         },
@@ -238,7 +257,26 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The O(1) lookup description begins after a hash code and relevant comparisons are available; it does not make arbitrary-size key processing free. Across n strings, reading or hashing all characters costs O(nm). Retaining all string keys can also require O(nm) space, depending on whether the table stores references or copied key content under the item’s accounting convention."
+              "text": "Hashing one string reads m characters, so n strings require n · O(m) = O(nm) hashing work. The n expected-O(1) table operations add O(n), which is no larger. Under the stated accounting convention, retaining n keys of m characters each requires O(nm) extra space."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Reject the other bounds"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Time O(n) ignores key length, while O(n + m) hashes only one length-m string instead of n such strings.",
+                "Time O(nm log m) would include sorting each string, which is not performed, and O(n²) invents pairwise string processing.",
+                "Space O(1), O(n), and O(m) each omit at least one growing dimension of n retained length-m key contents."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Storage convention",
+              "text": "If an implementation retained only references to caller-owned immutable strings, internal table storage could be O(n); this item explicitly counts the retained key content, making it O(nm)."
             }
           ]
         }
@@ -264,16 +302,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "need_specified_guarantee",
-            "text": "Do not rely on a generic expected-O(1) hash claim; choose an implementation with a documented worst-case bound or an ordered alternative."
-          },
-          {
             "id": "generic_hash_enough",
             "text": "Any hash map automatically provides worst-case O(1), so no implementation detail matters."
           },
           {
             "id": "set_instead_of_map",
             "text": "Replacing the map with a set creates the required worst-case guarantee."
+          },
+          {
+            "id": "need_specified_guarantee",
+            "text": "Do not rely on a generic expected-O(1) hash claim; choose an implementation with a documented worst-case bound or an ordered alternative."
           }
         ],
         "acceptedOptionIds": [
@@ -316,12 +354,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "payload_semantics_differ",
-            "text": "The map can preserve a payload such as count or index, while the set preserves membership only."
-          },
-          {
             "id": "interchangeable",
             "text": "They are interchangeable for every algorithm because their expected complexity is similar."
+          },
+          {
+            "id": "payload_semantics_differ",
+            "text": "The map can preserve a payload such as count or index, while the set preserves membership only."
           },
           {
             "id": "set_has_counts",
@@ -368,16 +406,16 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "different_information",
-            "text": "The output distinguishes multiplicities, which the set does not preserve."
-          },
-          {
             "id": "map_faster",
             "text": "The map is asymptotically faster than the set."
           },
           {
             "id": "set_worst_linear_map_constant",
             "text": "Only the set has collision worst cases; the map is worst-case constant."
+          },
+          {
+            "id": "different_information",
+            "text": "The output distinguishes multiplicities, which the set does not preserve."
           }
         ],
         "acceptedOptionIds": [
@@ -420,12 +458,12 @@
         "selectionMode": "single",
         "options": [
           {
-            "id": "semantics_not_cost",
-            "text": "Operation order changes the state invariant and may allow the current occurrence to satisfy a prior-occurrence check; equal cost does not make the orders equivalent."
-          },
-          {
             "id": "check_more_expensive",
             "text": "Lookup is always asymptotically more expensive than insertion."
+          },
+          {
+            "id": "semantics_not_cost",
+            "text": "Operation order changes the state invariant and may allow the current occurrence to satisfy a prior-occurrence check; equal cost does not make the orders equivalent."
           },
           {
             "id": "insert_never_allowed",

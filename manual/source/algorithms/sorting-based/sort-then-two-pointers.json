@@ -3,7 +3,7 @@
   "batchId": "algorithms-sorting-based-sort_then_two_pointers-candidate-v1",
   "trackId": "algorithms",
   "familyId": "algorithms",
-  "contentVersion": "algorithms-core-0007",
+  "contentVersion": "algorithms-core-0008",
   "taxonomyVersion": "algorithms-taxonomy-v2",
   "declaredModes": [
     "algorithms-learn-approach",
@@ -134,7 +134,22 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The algorithm maintains the invariant that every unexamined candidate lies within the current closed pointer interval. The current endpoint sum determines which entire boundary row or column is impossible. Movement occurs only after that comparison. Rechecking left < right prevents using one occurrence twice. Computing in a wider type belongs before the comparison because overflow could reverse the apparent ordering relation."
+              "text": "The algorithm maintains the invariant that every unexamined candidate lies within the current closed pointer interval. Each action depends on the state produced by the previous one."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Compute values[left] + values[right] in a type wide enough for the input bounds.",
+                "Compare that exact sum with T.",
+                "Return on equality; if the sum is below T increment left, otherwise decrement right.",
+                "Before the next iteration, recheck left < right so one occurrence cannot pair with itself."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Movement follows the current comparison",
+              "text": "For a low sum, any pair using the same left value and a smaller right value is also too low; for a high sum, any pair using the same right value and a larger left value is also too high. Overflow before comparison would invalidate this ordering proof."
             }
           ]
         }
@@ -377,7 +392,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "Sort-then-two-pointers is a valid deterministic strategy when reordering or copying and O(n log n) time are acceptable. It is not universally dominant. Here a complement set preserves input order and answers the single query in expected linear time using the allowed memory. The decision could reverse under strict memory limits, adversarial hash requirements, or repeated operations that reuse sorted order."
+              "text": "Sort-then-two-pointers is valid when reordering or copying and O(n log n) time are acceptable, but it is not universally dominant. For the hash alternative, scan x in original order, first test whether T - x is already in the set, and only then insert x. Query-before-insert prevents one occurrence from pairing with itself while still allowing two equal occurrences to match on the second one. This gives expected O(n) time and O(n) worst-case auxiliary space under the stated hash assumption. The decision can reverse under strict memory limits, adversarial hash guarantees, or repeated operations that reuse sorted order."
             }
           ]
         },
@@ -397,9 +412,9 @@
     },
     {
       "id": "alg-sort-two-pointers-07-sort-dominates-pointer-pass",
-      "prompt": "An array may be reordered, and the result needs only pair values rather than source indices. A comparison sort is followed by one opposite-end pointer pass. What is the complete worst-case time complexity?",
+      "prompt": "An array may be reordered, and the result needs only pair values rather than source indices. A comparison sort is followed by one opposite-end pointer pass. What is the tightest offered complete worst-case time bound?",
       "constraints": [
-        "The comparison sort has O(n log n) worst-case time.",
+        "The comparison sort has Θ(n log n) worst-case time.",
         "Each pointer moves inward at most n positions in total."
       ],
       "difficulty": "intermediate",
@@ -435,7 +450,13 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "The two pointers move monotonically inward, so the search phase performs O(n) pointer advances. That fact does not erase preprocessing. Comparison sorting costs O(n log n), and O(n log n) + O(n) simplifies to O(n log n). The answer is intentionally time-only: source identity and defensive-copy space are outside this values-only, mutation-permitted contract."
+              "text": "The two pointers move monotonically inward, so across the whole search they perform Θ(n) or fewer advances. Adding that linear pass to the stated Θ(n log n) comparison sort gives Θ(n log n + n) = Θ(n log n), matching the offered O(n log n) bound. Source identity and defensive-copy space are outside this values-only, mutation-permitted contract."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Why the other offered bounds are wrong",
+              "text": "O(n) counts only the pointer phase and omits sorting. O(n²) is a loose upper bound, not the tightest offered bound; monotone pointers do not enumerate all pairs after the sort."
             }
           ]
         }
@@ -492,7 +513,7 @@
           "blocks": [
             {
               "type": "paragraph",
-              "text": "For sums, increasing left cannot decrease the sum and decreasing right cannot increase it. That supports exact search and batched counting of all partners under a threshold. XOR changes discontinuously with bit patterns. Products over mixed signs have different monotonic regions and need sign partitioning or another method before a pointer proof can be made. The transfer signal is monotone endpoint influence, not simply a two-value expression."
+              "text": "For exact sums, increasing left cannot decrease the sum and decreasing right cannot increase it, giving the one-boundary elimination rule. For counting sums at most T, if values[left] + values[right] ≤ T, then sorted order proves that every partner from left + 1 through right also pairs with values[left] at most T; add right - left pairs and increment left. If the endpoint sum is too large, decrement right. XOR changes discontinuously with bit patterns. Products over mixed signs have different monotonic regions and need sign partitioning or another method. The transfer signal is monotone endpoint influence, not simply a two-value expression."
             }
           ]
         },

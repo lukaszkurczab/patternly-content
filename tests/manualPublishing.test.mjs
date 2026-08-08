@@ -448,7 +448,7 @@ test("repository has no retired manifest ingress", async () => {
 
 test("fixtures and noncanonical paths cannot enter production publishing code", async () => {
   const source = await readFile("scripts/publishing/pipeline.mjs", "utf8"); assert.doesNotMatch(source, /tests\/fixtures|tracks\/algorithms|tracks\/cloud-certification|slice\(0, 40\)|Math\.random/);
-  const workflow = await readFile(".github/workflows/real-content-release.yml", "utf8"); assert.match(workflow, /algorithms-real-content/); assert.match(workflow, /certification-real-content/); assert.doesNotMatch(workflow, /continue-on-error/);
+  const workflow = await readFile(".github/workflows/real-content-release.yml", "utf8"); assert.match(workflow, /release-candidate/); assert.match(workflow, /ci-release-gate\.mjs/); assert.doesNotMatch(workflow, /continue-on-error|build:real:(algorithms|certification)/);
 });
 
 test("Algorithms batch taxonomy uses mental-unit legal families, not family entry-unit equality", async () => {

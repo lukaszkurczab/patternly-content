@@ -129,6 +129,14 @@ test("technical evidence paths retain distinct immutable manifests for one techn
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("technical evidence emission permits another track's newly generated evidence", async () => {
+  const path = await root({ algorithms: algorithmsBatch(), certification: certificationBatch(), technicalEvidence: false });
+  try {
+    await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
+    await assert.doesNotReject(() => emitTechnicalEvidence({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }));
+  } finally { await rm(path, { recursive: true }); }
+});
+
 test("technical evidence survives a clean multi-commit release cycle and invalidates changed inputs", async () => {
   const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
   try {

@@ -61,10 +61,11 @@ async function technicalInputCommit(root, override) {
     return text(stdout.trim(), "technicalInputCommit", "SOURCE_COMMIT_UNAVAILABLE");
   } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "A buildable source repository must have a technical input commit."); }
 }
-async function assertCleanSource(root, override) {
+async function assertCleanSource(root, override, { includeEvidence = true } = {}) {
   if (override) return sourceCommit(root, override); // Test-only injected identity; CLI never supplies it.
   const commit = await sourceCommit(root);
-  const { stdout } = await git(root, ["status", "--porcelain", "--untracked-files=all", "--", "manual", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json", "evidence"]);
+  const paths = ["manual", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json", ...(includeEvidence ? ["evidence"] : [])];
+  const { stdout } = await git(root, ["status", "--porcelain", "--untracked-files=all", "--", ...paths]);
   if (stdout.trim()) throw new PublishingFailure("DIRTY_SOURCE", "Canonical publishing inputs contain staged, unstaged, or untracked changes.");
   return commit;
 }
@@ -676,7 +677,7 @@ async function technicalEvidenceRecords(root, trackId, technicalCommit) {
 }
 function evidenceIdentity(value) { if (Array.isArray(value)) return value.map(evidenceIdentity); const { validatedAtSourceCommit, evidenceId, ...identity } = value; return identity; }
 export async function emitTechnicalEvidence({ root = ROOT, trackId, sourceRepositoryCommit }) {
-  await assertCleanSource(root, sourceRepositoryCommit); const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId);
+  await assertCleanSource(root, sourceRepositoryCommit, { includeEvidence: false }); const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId);
   const technical = durableEnvelope({ evidenceKind: "technical-validation", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: { technicalEvidence: inspected.source.technicalEvidence } });
   const coverage = inspected.family.familyId === "algorithms" ? durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) }) : undefined;
   const technicalPath = technicalEvidencePath(root, trackId, technicalCommit, inputManifestSha256); const coveragePath = coverage && simulationCoveragePath(root, trackId, coverage);

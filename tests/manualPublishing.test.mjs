@@ -115,6 +115,20 @@ test("technical evidence is mandatory before a release candidate can validate", 
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("technical evidence paths retain distinct immutable manifests for one technical commit", async () => {
+  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+  try {
+    const first = await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
+    const firstBytes = await readFile(first.path, "utf8");
+    const schemaPath = join(path, "schemas/publishing/technical-validation-evidence.schema.json"); const schema = JSON.parse(await readFile(schemaPath, "utf8")); schema.title = "Changed durable evidence manifest input"; await writeFile(schemaPath, JSON.stringify(schema));
+    await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_TECHNICAL_EVIDENCE"));
+    const second = await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
+    assert.notEqual(second.path, first.path);
+    assert.equal(await readFile(first.path, "utf8"), firstBytes);
+    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }));
+  } finally { await rm(path, { recursive: true }); }
+});
+
 test("technical evidence survives a clean multi-commit release cycle and invalidates changed inputs", async () => {
   const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
   try {

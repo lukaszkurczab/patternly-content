@@ -659,6 +659,9 @@ function durableEnvelope({ evidenceKind, inspected, sourceCommit: sourceCommitVa
 function simulationCoveragePath(root, trackId, coverage) {
   return join(root, "evidence", trackId, "simulation", `${coverage.profileId}-${coverage.sourceCommit}-${coverage.inputManifestSha256}.coverage.json`);
 }
+function technicalEvidencePath(root, trackId, technicalCommit, inputManifestSha256) {
+  return join(root, "evidence", trackId, "technical", `${technicalCommit}-${inputManifestSha256}.json`);
+}
 async function readDurableEvidence(path, expected) {
   let prior;
   try { prior = await json(path); } catch (error) { if (error?.code === "ENOENT") return undefined; throw error; }
@@ -666,7 +669,7 @@ async function readDurableEvidence(path, expected) {
   return prior;
 }
 async function technicalEvidenceRecords(root, trackId, technicalCommit) {
-  const path = join(root, "evidence", trackId, "technical", `${technicalCommit}.json`); const envelope = await readDurableEvidence(path);
+  const inputManifestSha256 = await sourceManifestSha256(root, trackId); const path = technicalEvidencePath(root, trackId, technicalCommit, inputManifestSha256); const envelope = await readDurableEvidence(path);
   if (!envelope) return { path, envelope: undefined, records: [] };
   if (envelope.evidenceKind !== "technical-validation" || !Array.isArray(envelope.technicalEvidence)) throw new PublishingFailure("INVALID_DURABLE_EVIDENCE", "Technical durable evidence has an invalid shape.");
   return { path, envelope, records: envelope.technicalEvidence };
@@ -676,7 +679,7 @@ export async function emitTechnicalEvidence({ root = ROOT, trackId, sourceReposi
   await assertCleanSource(root, sourceRepositoryCommit); const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId);
   const technical = durableEnvelope({ evidenceKind: "technical-validation", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: { technicalEvidence: inspected.source.technicalEvidence } });
   const coverage = inspected.family.familyId === "algorithms" ? durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) }) : undefined;
-  const technicalPath = join(root, "evidence", trackId, "technical", `${technicalCommit}.json`); const coveragePath = coverage && simulationCoveragePath(root, trackId, coverage);
+  const technicalPath = technicalEvidencePath(root, trackId, technicalCommit, inputManifestSha256); const coveragePath = coverage && simulationCoveragePath(root, trackId, coverage);
   const priorTechnical = await readDurableEvidence(technicalPath, technical); const priorCoverage = coverage && await readDurableEvidence(coveragePath);
   if (!priorTechnical) { await mkdir(dirname(technicalPath), { recursive: true }); await writeFile(technicalPath, canonicalJson(technical)); }
   if (coverage && (!priorCoverage || canonicalJson(durableIdentity(priorCoverage)) !== canonicalJson(durableIdentity(coverage)))) { await mkdir(dirname(coveragePath), { recursive: true }); await writeFile(coveragePath, canonicalJson(coverage)); }

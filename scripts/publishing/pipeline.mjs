@@ -628,8 +628,17 @@ const DURABLE_EVIDENCE_SCHEMA_VERSION = 1;
 const DURABLE_EVIDENCE_GENERATOR_VERSION = "algorithms-release-evidence-v1";
 function durableIdentity(value) { const { generatedAt, evidenceSha256, ...identity } = value; return identity; }
 function durableEvidence(value) { return { ...value, evidenceSha256: canonicalHash(durableIdentity(value)) }; }
-async function sourceManifestSha256(root, trackId) {
+async function sourceManifestSha256(root, trackId, technicalCommit) {
   const paths = ["manual/source", "manual/assets", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json"];
+  if (/^[a-f0-9]{40}$/.test(technicalCommit ?? "")) {
+    try {
+      const { stdout } = await git(root, ["ls-tree", "-r", "--name-only", technicalCommit, "--", ...paths]);
+      const entries = await Promise.all(stdout.trim().split("\n").filter(Boolean).map(async (path) => [path, hash((await git(root, ["show", `${technicalCommit}:${path}`])).stdout)]));
+      return canonicalHash({ trackId, files: entries.sort(([a], [b]) => compare(a, b)) });
+    } catch (error) {
+      throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "A buildable source repository must expose the committed technical input tree.");
+    }
+  }
   const entries = [];
   for (const path of paths) {
     const target = join(root, path);
@@ -670,14 +679,14 @@ async function readDurableEvidence(path, expected) {
   return prior;
 }
 async function technicalEvidenceRecords(root, trackId, technicalCommit) {
-  const inputManifestSha256 = await sourceManifestSha256(root, trackId); const path = technicalEvidencePath(root, trackId, technicalCommit, inputManifestSha256); const envelope = await readDurableEvidence(path);
+  const inputManifestSha256 = await sourceManifestSha256(root, trackId, technicalCommit); const path = technicalEvidencePath(root, trackId, technicalCommit, inputManifestSha256); const envelope = await readDurableEvidence(path);
   if (!envelope) return { path, envelope: undefined, records: [] };
   if (envelope.evidenceKind !== "technical-validation" || !Array.isArray(envelope.technicalEvidence)) throw new PublishingFailure("INVALID_DURABLE_EVIDENCE", "Technical durable evidence has an invalid shape.");
   return { path, envelope, records: envelope.technicalEvidence };
 }
 function evidenceIdentity(value) { if (Array.isArray(value)) return value.map(evidenceIdentity); const { validatedAtSourceCommit, evidenceId, ...identity } = value; return identity; }
 export async function emitTechnicalEvidence({ root = ROOT, trackId, sourceRepositoryCommit }) {
-  await assertCleanSource(root, sourceRepositoryCommit, { includeEvidence: false }); const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId);
+  await assertCleanSource(root, sourceRepositoryCommit, { includeEvidence: false }); const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId, technicalCommit);
   const technical = durableEnvelope({ evidenceKind: "technical-validation", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: { technicalEvidence: inspected.source.technicalEvidence } });
   const coverage = inspected.family.familyId === "algorithms" ? durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) }) : undefined;
   const technicalPath = technicalEvidencePath(root, trackId, technicalCommit, inputManifestSha256); const coveragePath = coverage && simulationCoveragePath(root, trackId, coverage);
@@ -688,7 +697,7 @@ export async function emitTechnicalEvidence({ root = ROOT, trackId, sourceReposi
   return { evidence: (priorTechnical ?? technical).technicalEvidence, path: technicalPath, coveragePath, technicalEvidenceSha256: (priorTechnical ?? technical).evidenceSha256, coverageSha256: resolvedCoverage?.evidenceSha256, technicalInputFingerprint: inspected.source.technicalInputFingerprint, technicalInputCommit: technicalCommit };
 }
 export async function validateTrack({ root = ROOT, trackId, sourceRepositoryCommit }) {
-  const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId); const evidenceSchema = await json(join(root, "schemas", "publishing", "technical-validation-evidence.schema.json")); const technical = await technicalEvidenceRecords(root, trackId, technicalCommit); if (!technical.envelope || technical.envelope.familyId !== inspected.family.familyId || technical.envelope.contentVersion !== inspected.source.contentVersion || technical.envelope.taxonomyVersion !== inspected.source.taxonomyVersion || technical.envelope.inputManifestSha256 !== inputManifestSha256 || technical.envelope.sourceCommit !== technicalCommit || technical.envelope.technicalInputCommit !== technicalCommit) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching tracked durable technical evidence."); const evidence = technical.records; evidence.forEach((entry, index) => validateJsonSchema(entry, evidenceSchema, `technical evidence ${index}`)); const expectedEvidence = new Map(inspected.source.technicalEvidence.map((entry) => [entry.evidenceId, entry])); const currentEvidence = evidence.filter((entry) => entry.result === "passed" && entry.technicalInputFingerprint === inspected.source.technicalInputFingerprint && expectedEvidence.has(entry.evidenceId) && canonicalJson(evidenceIdentity(entry)) === canonicalJson(evidenceIdentity(expectedEvidence.get(entry.evidenceId)))); if (currentEvidence.length !== expectedEvidence.size) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching immutable passed technical evidence.");
+  const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId, technicalCommit); const evidenceSchema = await json(join(root, "schemas", "publishing", "technical-validation-evidence.schema.json")); const technical = await technicalEvidenceRecords(root, trackId, technicalCommit); if (!technical.envelope || technical.envelope.familyId !== inspected.family.familyId || technical.envelope.contentVersion !== inspected.source.contentVersion || technical.envelope.taxonomyVersion !== inspected.source.taxonomyVersion || technical.envelope.inputManifestSha256 !== inputManifestSha256 || technical.envelope.sourceCommit !== technicalCommit || technical.envelope.technicalInputCommit !== technicalCommit) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching tracked durable technical evidence."); const evidence = technical.records; evidence.forEach((entry, index) => validateJsonSchema(entry, evidenceSchema, `technical evidence ${index}`)); const expectedEvidence = new Map(inspected.source.technicalEvidence.map((entry) => [entry.evidenceId, entry])); const currentEvidence = evidence.filter((entry) => entry.result === "passed" && entry.technicalInputFingerprint === inspected.source.technicalInputFingerprint && expectedEvidence.has(entry.evidenceId) && canonicalJson(evidenceIdentity(entry)) === canonicalJson(evidenceIdentity(expectedEvidence.get(entry.evidenceId)))); if (currentEvidence.length !== expectedEvidence.size) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching immutable passed technical evidence.");
   if (inspected.family.familyId === "algorithms") { const expectedCoverage = durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) }); const coverage = await readDurableEvidence(simulationCoveragePath(root, trackId, expectedCoverage), expectedCoverage); if (!coverage) throw new PublishingFailure("MISSING_SIMULATION_COVERAGE", "Current simulation pool needs matching tracked durable coverage evidence."); }
   return inspected;
 }

@@ -1,0 +1,106 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+import {
+  TARGET_TRACK_FAMILIES,
+  TRACK_BRIEF_SCHEMA_PATH,
+  loadCanonicalTrackBriefs,
+  validateTrackBrief
+} from "../scripts/product/track-briefs.mjs";
+
+const requiredContractFields = [
+  "jobToBeDone",
+  "targetLearner",
+  "internalFamily",
+  "taxonomyOutline",
+  "freeNodeId",
+  "validModes",
+  "goalTemplates",
+  "progressDimensions",
+  "packageContentPlan",
+  "launchCommercialGate"
+];
+
+const schema = JSON.parse(await readFile(TRACK_BRIEF_SCHEMA_PATH, "utf8"));
+const canonicalBriefs = await loadCanonicalTrackBriefs();
+
+const copy = (value) => structuredClone(value);
+
+test("canonical catalogue has exactly ten distinct LEARNING-PRODUCTS-001 briefs", () => {
+  assert.equal(canonicalBriefs.length, 10);
+  assert.deepEqual(new Set(canonicalBriefs.map((brief) => brief.trackId)), new Set(Object.keys(TARGET_TRACK_FAMILIES)));
+  assert.deepEqual(new Set(canonicalBriefs.map((brief) => brief.internalFamily)), new Set(["certification", "coding_interview", "design_interview"]));
+});
+
+test("strict schema requires the ten product-contract brief fields", () => {
+  for (const field of requiredContractFields) assert.ok(schema.required.includes(field), `${field} must be required`);
+  assert.equal(schema.additionalProperties, false);
+  for (const brief of canonicalBriefs) {
+    for (const field of requiredContractFields) assert.ok(Object.hasOwn(brief, field), `${brief.trackId} must include ${field}`);
+  }
+});
+
+test("canonical briefs contain concrete non-empty contracts and no unavailable-product wording", () => {
+  const serialized = JSON.stringify(canonicalBriefs);
+  assert.doesNotMatch(serialized, /coming[ -]soon|placeholder|\btbd\b|\btodo\b/i);
+  for (const brief of canonicalBriefs) {
+    assert.ok(brief.taxonomyOutline.length >= 3);
+    assert.ok(brief.validModes.length > 0);
+    assert.ok(brief.goalTemplates.length > 0);
+    assert.ok(brief.progressDimensions.length > 0);
+    assert.ok(brief.packageContentPlan.contentScopes.length > 0);
+    assert.ok(brief.packageContentPlan.provenanceRules.length > 0);
+  }
+});
+
+test("launch gate records only the factual admission requirement", () => {
+  for (const brief of canonicalBriefs) {
+    assert.deepEqual(brief.launchCommercialGate, {
+      productionRegistryAdmission: "realFreeVerticalAndCompleteCoreLoop"
+    });
+  }
+
+  const claimedAdmission = copy(canonicalBriefs[0]);
+  claimedAdmission.launchCommercialGate.admitted = true;
+  assert.throws(() => validateTrackBrief(claimedAdmission, schema), /launchCommercialGate\.admitted is not allowed/);
+
+  const weakenedGate = copy(canonicalBriefs[0]);
+  weakenedGate.launchCommercialGate.productionRegistryAdmission = "briefApproved";
+  assert.throws(() => validateTrackBrief(weakenedGate, schema), /must equal "realFreeVerticalAndCompleteCoreLoop"/);
+});
+
+test("validator rejects empty, unavailable, duplicate, and family-invalid brief data", () => {
+  const empty = copy(canonicalBriefs[0]);
+  empty.jobToBeDone = "   ";
+  assert.throws(() => validateTrackBrief(empty, schema), /jobToBeDone must not be empty/);
+
+  const unavailable = copy(canonicalBriefs[0]);
+  unavailable.targetLearner = "Coming soon";
+  assert.throws(() => validateTrackBrief(unavailable, schema), /prohibited unavailable-product wording/);
+
+  const duplicateMode = copy(canonicalBriefs[0]);
+  duplicateMode.validModes.push(duplicateMode.validModes[0]);
+  assert.throws(() => validateTrackBrief(duplicateMode, schema), /validModes must contain distinct entries/);
+
+  const wrongFamily = copy(canonicalBriefs.find((brief) => brief.trackId === "coding-interview-dsa-problem-solving"));
+  wrongFamily.internalFamily = "certification";
+  assert.throws(() => validateTrackBrief(wrongFamily, schema), /must be coding_interview/);
+});
+
+test("source-backed briefs preserve current Coding Interview and GCP identities", async () => {
+  const codingBrief = canonicalBriefs.find((brief) => brief.trackId === "coding-interview-dsa-problem-solving");
+  const codingTaxonomy = JSON.parse(await readFile("config/taxonomy/coding-interview-dsa-problem-solving.json", "utf8"));
+  const codingTrack = JSON.parse(await readFile("config/tracks/coding-interview-dsa-problem-solving.json", "utf8"));
+  assert.equal(codingBrief.internalFamily, codingTrack.familyId);
+  assert.ok(codingTaxonomy.roadmapNodes.some((node) => node.id === codingBrief.freeNodeId));
+  assert.deepEqual(new Set(codingBrief.validModes), new Set(codingTrack.modeConfiguration.userModeMappings.map((mapping) => mapping.userModeId)));
+
+  const gcpBrief = canonicalBriefs.find((brief) => brief.trackId === "google-cloud-associate-cloud-engineer");
+  const gcpTaxonomy = JSON.parse(await readFile("config/taxonomy/google-cloud-associate-cloud-engineer.json", "utf8"));
+  const gcpTrack = JSON.parse(await readFile("config/tracks/google-cloud-associate-cloud-engineer.json", "utf8"));
+  const certificationFamily = JSON.parse(await readFile("config/families/certification.json", "utf8"));
+  assert.equal(gcpBrief.internalFamily, gcpTrack.familyId);
+  assert.ok(gcpTaxonomy.cloudDomains.includes(gcpBrief.freeNodeId));
+  assert.deepEqual(new Set(gcpBrief.validModes), new Set(certificationFamily.modes.map((mode) => mode.id)));
+});

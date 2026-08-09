@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import { catalogueFingerprint, loadCurricula, validateCurriculum } from "../scripts/curriculum/curricula.mjs";
+import { buildExistingContentInventories } from "../scripts/curriculum/curriculum-inventory.mjs";
 import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
 
 const curricula = await loadCurricula();
@@ -38,6 +41,37 @@ test("Coding Interview preserves its verified 26-node, 2,375-item base while eve
   assert.equal(coding.authoringItemCount, coding.targetItemCount - coding.existingVerifiedItemCount);
   assert.ok(coding.nodes.every((node) => node.existingVerifiedItemCount + node.authoringItemCount === node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0)));
   assert.ok(coding.nodes.every((node) => node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0) >= 120));
+  const blocks = coding.nodes.flatMap((node) => node.learningBlocks);
+  assert.equal(blocks.length, 78);
+  assert.equal(blocks.flatMap((block) => block.coverageTargets).length, 234);
+  for (const block of blocks) {
+    assert.deepEqual(new Set(block.coverageTargets.map((target) => target.learningOperation)), new Set(["recognition", "selection", "boundary"]));
+    assert.deepEqual(new Set(block.coverageTargets.flatMap((target) => target.directSkillOrDecisionAtomIds)), new Set(block.skillOrDecisionAtoms.map((atom) => atom.atomId)));
+    assert.ok(block.coverageTargets.every((target) => target.directSkillOrDecisionAtomIds.includes(target.primarySkillOrDecisionAtomId)));
+  }
+});
+
+test("coverage-target schema exposes direct ownership and the atomic decision boundary", async () => {
+  const schema = JSON.parse(await readFile("schemas/curriculum/curriculum-coverage-target.schema.json", "utf8"));
+  assert.ok(schema.required.includes("directSkillOrDecisionAtomIds"));
+  assert.deepEqual(schema.properties.learningOperation.enum, ["recognition", "selection", "boundary", "decision_diagnosis"]);
+  assert.equal(schema.allOf[0].if.properties.learningOperation.const, "decision_diagnosis");
+  assert.equal(schema.allOf[0].then.properties.directSkillOrDecisionAtomIds.maxItems, 1);
+});
+
+test("Coding existing inventory maps every verified item without inventing per-item operations", async () => {
+  const outputDirectory = await mkdtemp(join(tmpdir(), "patternly-coding-inventory-"));
+  try {
+    const { codingInventory } = await buildExistingContentInventories({ outputDirectory });
+    assert.equal(codingInventory.itemCount, 2375);
+    assert.deepEqual(codingInventory.classifications, { aligned: 2375 });
+    assert.equal(codingInventory.coverageOwnershipContract.plannedTargetSemantics, "block_operation_across_direct_atoms");
+    assert.equal(codingInventory.coverageOwnershipContract.itemOperationAttribution, "not_claimed_without_source_evidence");
+    assert.ok(codingInventory.items.every((item) => item.primaryCurriculumNodeId && item.primaryCurriculumBlockId && item.primarySkillOrDecisionAtomId));
+    assert.ok(codingInventory.items.every((item) => !Object.hasOwn(item, "learningOperation") && !Object.hasOwn(item, "operation")));
+  } finally {
+    await rm(outputDirectory, { recursive: true, force: true });
+  }
 });
 
 test("validator rejects missing boundaries, stale GCP identities, unsupported interactions, and count drift", () => {
@@ -58,6 +92,149 @@ test("validator rejects missing boundaries, stale GCP identities, unsupported in
   const boundary = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
   boundary.nodes[0].learningBlocks[0].coverageTargets[0].decisiveBoundary = "";
   assert.throws(() => validateCurriculum(boundary, codingBrief), /INCOMPLETE_COVERAGE_TARGET/);
+  const operationCount = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
+  const operationCountBrief = briefs.find((entry) => entry.trackId === operationCount.trackId);
+  operationCount.nodes[0].learningBlocks[0].coverageTargets[0].operationVariantCounts.SIG.requiredVariantCount -= 1;
+  assert.throws(() => validateCurriculum(operationCount, operationCountBrief), /SEMANTIC_MATRIX_COUNT_FAILURE/);
+  const falsePrecision = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
+  falsePrecision.nodes[0].learningBlocks[0].coverageTargets[0].operationVariantCounts.SIG.derivation = { combinationRule: "sum", axes: [{ axisId: "fake", members: ["case"] }] };
+  assert.throws(() => validateCurriculum(falsePrecision, operationCountBrief), /FALSE_PRECISION_VARIANT_MATRIX/);
+  const quotaLanguage = clone(curricula.find((entry) => entry.trackId === "backend-system-design-interview"));
+  const quotaLanguageBrief = briefs.find((entry) => entry.trackId === quotaLanguage.trackId);
+  quotaLanguage.nodes[0].learningBlocks[0].coverageTargets[0].scenarioOrSurfaceVariationAxes[0] = "primary case";
+  assert.throws(() => validateCurriculum(quotaLanguage, quotaLanguageBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
+  const floorLanguage = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
+  floorLanguage.nodes[0].learningBlocks[0].coverageTargets[0].variantCountRationale = "Variants are allocated from the verified node floor.";
+  assert.throws(() => validateCurriculum(floorLanguage, codingBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
+  const compoundDiagnosis = clone(curricula.find((entry) => entry.trackId === "hashicorp-terraform-associate-004"));
+  const compoundDiagnosisBrief = briefs.find((entry) => entry.trackId === compoundDiagnosis.trackId);
+  compoundDiagnosis.nodes[0].learningBlocks[0].coverageTargets[0].diagnosticDecision += " In the same diagnosis, perform another decision.";
+  assert.throws(() => validateCurriculum(compoundDiagnosis, compoundDiagnosisBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
+  const metaAxis = clone(curricula.find((entry) => entry.trackId === "hashicorp-terraform-associate-004"));
+  metaAxis.nodes[0].learningBlocks[0].coverageTargets[0].scenarioOrSurfaceVariationAxes[0] = "evidence supporting branch A";
+  assert.throws(() => validateCurriculum(metaAxis, compoundDiagnosisBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
+  const reachability = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
+  const reachabilityBrief = briefs.find((entry) => entry.trackId === reachability.trackId);
+  const firstBlock = reachability.nodes[0].learningBlocks[0];
+  for (const target of firstBlock.coverageTargets) target.directSkillOrDecisionAtomIds = [target.primarySkillOrDecisionAtomId];
+  assert.throws(() => validateCurriculum(reachability, reachabilityBrief), /UNOWNED_BLOCK_ATOM/);
+
+  const missingDirect = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
+  delete missingDirect.nodes[0].learningBlocks[0].coverageTargets[0].directSkillOrDecisionAtomIds;
+  assert.throws(() => validateCurriculum(missingDirect, codingBrief), /MISSING_CURRICULUM_FIELD/);
+
+  const primaryOutsideDirect = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
+  const selection = primaryOutsideDirect.nodes[0].learningBlocks[0].coverageTargets.find((target) => target.learningOperation === "selection");
+  selection.directSkillOrDecisionAtomIds = selection.directSkillOrDecisionAtomIds.filter((atomId) => atomId !== selection.primarySkillOrDecisionAtomId);
+  assert.throws(() => validateCurriculum(primaryOutsideDirect, codingBrief), /PRIMARY_ATOM_NOT_DIRECT/);
+
+  const incompleteOperations = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
+  incompleteOperations.nodes[0].learningBlocks[0].coverageTargets.find((target) => target.learningOperation === "boundary").learningOperation = "recognition";
+  assert.throws(() => validateCurriculum(incompleteOperations, codingBrief), /INCOMPLETE_CODING_BLOCK_OPERATIONS/);
+
+  const nonCodingGroupTarget = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
+  const nonCodingBlock = nonCodingGroupTarget.nodes.flatMap((node) => node.learningBlocks).find((block) => block.skillOrDecisionAtoms.length > 1);
+  nonCodingBlock.coverageTargets[0].directSkillOrDecisionAtomIds.push(nonCodingBlock.skillOrDecisionAtoms[1].atomId);
+  assert.throws(() => validateCurriculum(nonCodingGroupTarget, operationCountBrief), /INVALID_ATOMIC_DECISION_TARGET/);
+});
+
+test("validator rejects systematic non-Coding quota signatures without rejecting one local equal pair", () => {
+  const aws = curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate");
+  const awsBrief = briefs.find((entry) => entry.trackId === aws.trackId);
+
+  const uniformTargetCounts = clone(aws);
+  let cloneIndex = 0;
+  for (const block of uniformTargetCounts.nodes.flatMap((node) => node.learningBlocks).filter((candidate) => candidate.coverageTargets.length === 1)) {
+    const original = block.coverageTargets[0];
+    const duplicate = clone(original);
+    duplicate.coverageTargetId = `${original.coverageTargetId}:distinct-quota-copy-${cloneIndex++}`;
+    for (const field of ["diagnosticDecision", "decisiveBoundary", "misconceptionOrCompetingDecision", "transferBoundary"]) duplicate[field] = `${duplicate[field]} Distinct systematic-copy evidence ${cloneIndex}.`;
+    duplicate.requiredVariantCount = 4;
+    for (const operation of Object.values(duplicate.operationVariantCounts)) operation.requiredVariantCount = 1;
+    original.requiredVariantCount -= 4;
+    for (const operation of Object.values(original.operationVariantCounts)) operation.requiredVariantCount -= 1;
+    block.coverageTargets.push(duplicate);
+  }
+  assert.throws(() => validateCurriculum(uniformTargetCounts, awsBrief), /UNIFORM_TARGET_COUNT_SIGNATURE/);
+
+  const mirroredPairs = clone(aws);
+  for (const node of mirroredPairs.nodes) {
+    for (const block of node.learningBlocks.filter((candidate) => candidate.coverageTargets.length > 1)) {
+      const [source, ...targets] = block.coverageTargets;
+      for (const target of targets) {
+        target.scenarioOrSurfaceVariationAxes = [...source.scenarioOrSurfaceVariationAxes];
+        target.requiredVariantCount = source.requiredVariantCount;
+        target.operationVariantCounts = clone(source.operationVariantCounts);
+      }
+      block.targetItemCount = block.coverageTargets.reduce((sum, target) => sum + target.requiredVariantCount, 0);
+      block.existingVerifiedItemCount = 0;
+      block.authoringItemCount = block.targetItemCount;
+    }
+    node.existingVerifiedItemCount = 0;
+    node.authoringItemCount = node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0);
+  }
+  assert.throws(() => validateCurriculum(mirroredPairs, awsBrief), /MIRRORED_TARGET_PAIR_SIGNATURE/);
+
+  const oneLocalPair = clone(aws);
+  const localBlock = oneLocalPair.nodes.flatMap((node) => node.learningBlocks).find((block) => block.coverageTargets.length > 1);
+  const [source, target] = localBlock.coverageTargets;
+  target.scenarioOrSurfaceVariationAxes = [...source.scenarioOrSurfaceVariationAxes];
+  target.requiredVariantCount = source.requiredVariantCount;
+  target.operationVariantCounts = clone(source.operationVariantCounts);
+  localBlock.targetItemCount = localBlock.coverageTargets.reduce((sum, entry) => sum + entry.requiredVariantCount, 0);
+  localBlock.existingVerifiedItemCount = 0;
+  localBlock.authoringItemCount = localBlock.targetItemCount;
+  const localNode = oneLocalPair.nodes.find((node) => node.nodeId === localBlock.nodeId);
+  localNode.existingVerifiedItemCount = 0;
+  localNode.authoringItemCount = localNode.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0);
+  oneLocalPair.existingVerifiedItemCount = 0;
+  oneLocalPair.targetItemCount = oneLocalPair.nodes.flatMap((node) => node.learningBlocks).reduce((sum, block) => sum + block.targetItemCount, 0);
+  oneLocalPair.authoringItemCount = oneLocalPair.targetItemCount;
+  assert.doesNotThrow(() => validateCurriculum(oneLocalPair, awsBrief));
+});
+
+test("mode feasibility counts only legal scoped target variants and validates simulation uniqueness", () => {
+  const coding = curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving");
+  const codingBrief = briefs.find((entry) => entry.trackId === coding.trackId);
+  const firstNode = coding.nodes[0];
+  const scopedCount = (curriculum, modeId, nodeId) => curriculum.nodes
+    .filter((node) => node.nodeId === nodeId)
+    .flatMap((node) => node.learningBlocks)
+    .flatMap((block) => block.coverageTargets)
+    .filter((target) => target.interactionContractStatus === "existing_supported" && target.modeRoles.includes(modeId))
+    .reduce((sum, target) => sum + target.requiredVariantCount, 0);
+
+  const crossScope = clone(coding);
+  const guided = crossScope.modePoolPlans.find((pool) => pool.modeId === "coding-interview-guided-practice");
+  guided.declaredScope = [firstNode.nodeId];
+  guided.requiredUniqueItems = scopedCount(crossScope, guided.modeId, firstNode.nodeId) + 1;
+  assert.ok(guided.requiredUniqueItems < crossScope.targetItemCount);
+  assert.throws(() => validateCurriculum(crossScope, codingBrief), /MODE_POOL_INSUFFICIENT/);
+
+  const undeclaredMode = clone(coding);
+  const learn = undeclaredMode.modePoolPlans.find((pool) => pool.modeId === "coding-interview-learn-approach");
+  learn.declaredScope = [firstNode.nodeId];
+  for (const target of undeclaredMode.nodes[0].learningBlocks.flatMap((block) => block.coverageTargets)) target.modeRoles = target.modeRoles.filter((modeId) => modeId !== learn.modeId);
+  assert.throws(() => validateCurriculum(undeclaredMode, codingBrief), /MODE_POOL_INSUFFICIENT/);
+
+  const unsupportedInteraction = clone(coding);
+  const review = unsupportedInteraction.modePoolPlans.find((pool) => pool.modeId === "coding-interview-weak-area-review");
+  review.declaredScope = [firstNode.nodeId];
+  for (const target of unsupportedInteraction.nodes[0].learningBlocks.flatMap((block) => block.coverageTargets)) target.interactionContractStatus = "family_contract_required";
+  assert.throws(() => validateCurriculum(unsupportedInteraction, codingBrief), /MODE_POOL_INSUFFICIENT/);
+
+  const simulation = clone(coding);
+  const simulationPlan = simulation.simulationOrCasePoolPlans[0];
+  const simulationModeId = simulation.modePoolPlans.find((pool) => pool.modeId.endsWith("-simulation")).modeId;
+  simulationPlan.declaredScope = [firstNode.nodeId];
+  simulationPlan.uniqueItemCount = scopedCount(simulation, simulationModeId, firstNode.nodeId) + 1;
+  assert.ok(simulationPlan.uniqueItemCount < simulation.targetItemCount);
+  assert.throws(() => validateCurriculum(simulation, codingBrief), /MODE_POOL_INSUFFICIENT/);
+
+  const undersizedSimulation = clone(coding);
+  const requiredSimulationItems = undersizedSimulation.modePoolPlans.find((pool) => pool.modeId.endsWith("-simulation")).requiredUniqueItems;
+  undersizedSimulation.simulationOrCasePoolPlans[0].uniqueItemCount = requiredSimulationItems - 1;
+  assert.throws(() => validateCurriculum(undersizedSimulation, codingBrief), /MODE_POOL_INSUFFICIENT/);
 });
 
 test("curriculum specifications are separate from publishing discovery", async () => {

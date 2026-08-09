@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 const REPOSITORY_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const TRACK_SOURCE_DIRECTORIES = Object.freeze({
   "coding-interview-dsa-problem-solving": "manual/source/coding-interview-dsa-problem-solving",
-  "google-cloud-associate-cloud-engineer": "manual/source/google-cloud-associate-cloud-engineer",
 });
 
 const WORD_PATTERN = /[\p{L}\p{N}]+(?:['’+-][\p{L}\p{N}]+)*/gu;

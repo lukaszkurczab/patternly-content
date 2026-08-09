@@ -3,7 +3,6 @@
 ## Canonical manual ingress
 
 - Coding Interview batches: `manual/source/coding-interview-dsa-problem-solving/*.json`, conforming to `schemas/publishing/coding-interview-manual-source.schema.json`.
-- Certification batches: `manual/source/google-cloud-associate-cloud-engineer/*.json`, conforming to `schemas/publishing/certification-manual-source.schema.json`.
 
 Test fixtures, generated artifacts, and releases are never discovery roots. Moving existing question files is `MANUAL ONLY`; no pipeline command migrates, copies, or reads them.
 
@@ -29,9 +28,6 @@ npm run inspect:real:coding-interview
 npm run evidence:real:coding-interview
 npm run validate:real:coding-interview
 npm run build:real:coding-interview
-npm run evidence:real:gcp-ace
-npm run validate:real:gcp-ace
-npm run build:real:gcp-ace
 npm run validate:track -- --track coding-interview-dsa-problem-solving
 npm run build:track -- --track coding-interview-dsa-problem-solving
 npm run verify:artifact -- --artifact artifacts/tracks/coding-interview-dsa-problem-solving/<version>/track-artifact.json

@@ -13,8 +13,9 @@ const blockKindByFamily = Object.freeze({ coding_interview: "coding_mental_unit"
 const requiredTrack = ["schemaVersion", "curriculumVersion", "trackId", "familyId", "trackBriefReference", "freeNodeId", "entryPrerequisites", "learnerOutcome", "sourceBasis", "nodes", "crossNodeRelationships", "modePoolPlans", "simulationOrCasePoolPlans", "contentOwnershipRules", "crossTrackOverlapRules", "targetItemCount"];
 const requiredNode = ["nodeId", "trackId", "stableLabel", "learnerFacingOutcome", "packageOwnership", "freeOrPremiumRole", "prerequisiteNodeIds", "includedDecisionScope", "explicitExclusions", "officialObjectiveRefs", "learningBlockRefs", "modeRoles", "crossNodeTransferRefs", "sourceAndMaintenancePolicy", "learningBlocks"];
 const requiredBlock = ["blockId", "blockKind", "nodeId", "primaryDecisionModel", "learningObjective", "entryKnowledge", "decisiveSignals", "preconditions", "governingMechanismOrInvariant", "legalAndIllegalDecisions", "failureBoundaries", "falseHeuristicsOrMisconceptions", "transferBoundary", "skillOrDecisionAtoms", "supportedLearningOperations", "coverageTargets", "targetItemCount", "countRationale", "modeRoles", "overlapExclusions", "sourceRequirements", "maintenanceRisk"];
-const requiredTarget = ["coverageTargetId", "blockId", "primarySkillOrDecisionAtomId", "diagnosticDecision", "learningObjective", "decisiveBoundary", "misconceptionOrCompetingDecision", "transferBoundary", "learningOperation", "preferredInteractionContract", "interactionContractStatus", "difficultyIntent", "modeRoles", "scenarioOrSurfaceVariationAxes", "requiredVariantCount", "variantCountRationale", "sourceRequirements", "overlapExclusions"];
+const requiredTarget = ["coverageTargetId", "blockId", "primarySkillOrDecisionAtomId", "directSkillOrDecisionAtomIds", "diagnosticDecision", "learningObjective", "decisiveBoundary", "misconceptionOrCompetingDecision", "transferBoundary", "learningOperation", "preferredInteractionContract", "interactionContractStatus", "difficultyIntent", "modeRoles", "scenarioOrSurfaceVariationAxes", "requiredVariantCount", "variantCountRationale", "sourceRequirements", "overlapExclusions"];
 const supportedInteractions = Object.freeze({ coding_interview: new Set(["choice", "ordering", "complexity"]), certification: new Set(["choice"]), design_interview: new Set() });
+const codingBlockOperations = Object.freeze(["recognition", "selection", "boundary"]);
 
 export class CurriculumValidationError extends Error {
   constructor(code, message) { super(`${code}: ${message}`); this.code = code; }
@@ -39,6 +40,73 @@ function walkAcyclic(nodes) {
   nodes.forEach((node) => visit(node.nodeId));
 }
 
+function assertSemanticMatrix(target, curriculum) {
+  if (curriculum.familyId === "coding_interview") return;
+  const requiredClasses = curriculum.familyId === "certification" ? ["SIG", "DEC", "BND", "XFR"] : ["S", "D", "F", "T"];
+  const allowedClasses = new Set([...requiredClasses, ...(curriculum.familyId === "design_interview" ? ["I"] : [])]);
+  const operations = target.operationVariantCounts;
+  const operationKeys = Object.keys(operations ?? {});
+  if (!operations || requiredClasses.some((key) => !operationKeys.includes(key)) || operationKeys.some((key) => !allowedClasses.has(key))) fail("INVALID_TARGET_CLASS", `${target.coverageTargetId} has no family-appropriate operation counts.`);
+  if (operationKeys.includes("I") && !/(synthesis|end_to_end|case_integration)/.test(target.blockId)) fail("INVALID_TARGET_CLASS", `${target.coverageTargetId} uses integrated-case variants outside a synthesis block.`);
+  const computed = Object.values(operations).reduce((sum, operation) => {
+    if (!Number.isInteger(operation.requiredVariantCount) || operation.requiredVariantCount < 1 || !operation.countRationale?.trim()) fail("INVALID_VARIANT_DERIVATION", `${target.coverageTargetId} has no accountable operation count.`);
+    if (operation.derivation) fail("FALSE_PRECISION_VARIANT_MATRIX", `${target.coverageTargetId} enumerates unwritten item cells instead of an authoring coverage contract.`);
+    return sum + operation.requiredVariantCount;
+  }, 0);
+  if (computed !== target.requiredVariantCount) fail("SEMANTIC_MATRIX_COUNT_FAILURE", `${target.coverageTargetId} operation counts do not reconcile.`);
+}
+
+function assertTargetAtomSemantics(target, block, curriculum) {
+  const directAtoms = target.directSkillOrDecisionAtomIds;
+  if (!Array.isArray(directAtoms) || !directAtoms.length || new Set(directAtoms).size !== directAtoms.length) fail("INVALID_DIRECT_ATOM_OWNERSHIP", `${target.coverageTargetId} must declare a non-empty unique direct atom set.`);
+  const blockAtomIds = new Set(block.skillOrDecisionAtoms.map((atom) => atom.atomId));
+  if (directAtoms.some((atomId) => !blockAtomIds.has(atomId))) fail("MISSING_TARGET_ATOM", `${target.coverageTargetId} references an atom outside its block.`);
+  if (!directAtoms.includes(target.primarySkillOrDecisionAtomId)) fail("PRIMARY_ATOM_NOT_DIRECT", `${target.coverageTargetId} primary atom must belong to its direct atom set.`);
+  if (curriculum.familyId === "coding_interview") {
+    if (!codingBlockOperations.includes(target.learningOperation)) fail("INVALID_CODING_BLOCK_OPERATION", `${target.coverageTargetId} must use recognition, selection, or boundary block-operation semantics.`);
+  } else if (target.learningOperation !== "decision_diagnosis" || directAtoms.length !== 1 || directAtoms[0] !== target.primarySkillOrDecisionAtomId) {
+    fail("INVALID_ATOMIC_DECISION_TARGET", `${target.coverageTargetId} must remain one atomic decision owned by its primary atom.`);
+  }
+  return directAtoms;
+}
+
+const fillerPattern = /(governing context|familiar product or pattern|retained semantic cells|product-name similarity|this boundary is specific to|ownership boundary must remain intact|superficially similar|named mechanism|mechanism of .*|evidence that selects .*|\bevidence supporting\b|\bcondition that reverses the classification\b|failure boundary for .*|transfer condition for .*|\b(primary|secondary|tertiary|quaternary|quinary)-case\b|\bprimary case\b|\bcompeting case\b|\blifecycle change\b|\boperational consequence\b|\bin the same diagnosis\b|block orremediate|verified node floor|allocated from[^.]*\bfloor\b)/i;
+function assertNoCurriculumFiller(value, label) {
+  if (fillerPattern.test(value)) fail("QUOTA_DRIVEN_CURRICULUM_ARTIFACT", `${label} contains mechanical or false-precision curriculum language.`);
+}
+
+function assertPoolScope(pool, nodes, label, inheritedScope) {
+  const declaredScope = pool.declaredScope ?? inheritedScope;
+  if (!Array.isArray(declaredScope) || !declaredScope.length || new Set(declaredScope).size !== declaredScope.length) fail("MODE_POOL_SCOPE_MISMATCH", `${label} must declare a non-empty unique node scope.`);
+  const nodeIds = new Set(nodes.map((node) => node.nodeId));
+  if (declaredScope.some((nodeId) => !nodeIds.has(nodeId))) fail("MODE_POOL_SCOPE_MISMATCH", `${label} references an absent node.`);
+  return new Set(declaredScope);
+}
+
+function assertRequiredPoolSize(pool, field, label) {
+  const required = pool[field];
+  if (pool.status === "planned_coverage_sufficient" && (!Number.isInteger(required) || required < 1)) fail("INVALID_MODE_POOL_SIZE", `${label}.${field} must be a positive integer when coverage is sufficient.`);
+  if (required !== undefined && (!Number.isInteger(required) || required < 1)) fail("INVALID_MODE_POOL_SIZE", `${label}.${field} must be a positive integer.`);
+  return required;
+}
+
+function eligibleVariantCount(nodes, scope, modeId) {
+  return nodes
+    .filter((node) => scope.has(node.nodeId))
+    .flatMap((node) => node.learningBlocks)
+    .flatMap((block) => block.coverageTargets)
+    .filter((target) => target.interactionContractStatus === "existing_supported" && target.modeRoles.includes(modeId))
+    .reduce((sum, target) => sum + target.requiredVariantCount, 0);
+}
+
+function simulationModePlan(pool, curriculum) {
+  if (pool.modeId) return curriculum.modePoolPlans.find((plan) => plan.modeId === pool.modeId);
+  const poolKind = pool.poolId?.split(":").at(-1);
+  const candidates = curriculum.modePoolPlans.filter((plan) => poolKind === "simulation" && plan.modeId.endsWith("-simulation"));
+  if (candidates.length !== 1) fail("MODE_POOL_CONTRACT_MISMATCH", `${curriculum.trackId}/${pool.poolId ?? "simulation-or-case"} cannot be mapped to exactly one declared mode.`);
+  return candidates[0];
+}
+
 export function validateCurriculum(curriculum, brief) {
   assertKeys(curriculum, requiredTrack, "curriculum");
   if (curriculum.schemaVersion !== "patternly-track-curriculum-v1" || curriculum.curriculumVersion !== CURRICULUM_VERSION) fail("INVALID_CURRICULUM_VERSION", `${curriculum.trackId} has a noncanonical curriculum version.`);
@@ -46,11 +114,13 @@ export function validateCurriculum(curriculum, brief) {
   for (const field of ["trackBriefReference", "learnerOutcome"]) assertText(curriculum[field], `curriculum.${field}`);
   if (!Array.isArray(curriculum.nodes) || !curriculum.nodes.length || !Array.isArray(curriculum.sourceBasis) || !curriculum.sourceBasis.length) fail("INVALID_CURRICULUM_SHAPE", `${curriculum.trackId} needs nodes and source basis.`);
   const sourceIds = curriculum.sourceBasis.map((source) => source.sourceId); assertUnique(sourceIds, `${curriculum.trackId} source IDs`);
+  if (curriculum.familyId === "design_interview" && sourceIds.length < 5) fail("INSUFFICIENT_DESIGN_SOURCE_BASIS", `${curriculum.trackId} cannot ground all design mechanisms in a single generic source.`);
   for (const source of curriculum.sourceBasis) {
     for (const field of ["sourceId", "url", "title", "guideVersion", "checkedDate", "volatility"]) assertText(source[field], `source.${field}`);
     if (curriculum.familyId === "certification" && !/^https:\/\//.test(source.url)) fail("INVALID_CERTIFICATION_SOURCE", `${curriculum.trackId} must use a public official source URL.`);
   }
   const nodes = curriculum.nodes; assertUnique(nodes.map((node) => node.nodeId), `${curriculum.trackId} node IDs`); walkAcyclic(nodes);
+  const order = new Map(nodes.map((node, index) => [node.nodeId, index]));
   const blockIds = []; const atomIds = []; const targetIds = [];
   for (const node of nodes) {
     assertKeys(node, requiredNode, `node ${node.nodeId}`);
@@ -58,30 +128,50 @@ export function validateCurriculum(curriculum, brief) {
     if (!node.learnerFacingOutcome?.trim() || !node.includedDecisionScope?.trim() || !node.explicitExclusions?.length) fail("INCOHERENT_NODE", `${curriculum.trackId}/${node.nodeId} lacks outcome, scope, or explicit exclusion.`);
     if (node.freeOrPremiumRole === "free" && node.nodeId !== curriculum.freeNodeId) fail("FREE_NODE_OUTSIDE_BRIEF", `${curriculum.trackId}/${node.nodeId} is not the brief free node.`);
     if (node.freeOrPremiumRole === "premium" && node.nodeId === curriculum.freeNodeId) fail("FREE_NODE_ROLE_MISMATCH", `${curriculum.trackId}/${node.nodeId} must be free.`);
-    if (curriculum.familyId === "certification" && (!node.officialObjectiveRefs.length || node.officialObjectiveRefs.some((ref) => !sourceIds.some((sourceId) => ref.startsWith(`${sourceId}:`))))) fail("MISSING_OFFICIAL_OBJECTIVE_SOURCE", `${curriculum.trackId}/${node.nodeId} has an unregistered official objective reference.`);
+    if (node.prerequisiteNodeIds.some((id) => !order.has(id) || order.get(id) >= order.get(node.nodeId))) fail("INVALID_PREREQUISITE_ORDER", `${curriculum.trackId}/${node.nodeId} prerequisite must be an earlier canonical node.`);
+    if (curriculum.familyId === "certification" && (!node.officialObjectiveRefs.length || node.officialObjectiveRefs.some((ref) => !/^(task-|section-|objective-|skills-measured-|kubernetes-fundamentals|container-orchestration|cloud-native-application-delivery|cloud-native-architecture|concepts-and-capabilities|implement-foundry-solutions|identities-and-governance|implement-and-manage-storage|deploy-and-manage-compute-resources|configure-and-manage-virtual-networking|monitor-and-maintain-azure-resources)/.test(ref)))) fail("MISSING_OFFICIAL_OBJECTIVE_SOURCE", `${curriculum.trackId}/${node.nodeId} has no real provider objective keys.`);
     if (!Array.isArray(node.learningBlocks) || node.learningBlocks.length < 2 || new Set(node.learningBlockRefs).size !== node.learningBlocks.length) fail("INCOMPLETE_NODE_BLOCKS", `${curriculum.trackId}/${node.nodeId} lacks coherent block ownership.`);
     for (const block of node.learningBlocks) {
       assertKeys(block, requiredBlock, `block ${block.blockId}`); blockIds.push(block.blockId);
       if (block.nodeId !== node.nodeId || block.blockKind !== blockKindByFamily[curriculum.familyId]) fail("INVALID_FAMILY_BLOCK_KIND", `${curriculum.trackId}/${block.blockId} has invalid family block kind.`);
       if (!block.decisiveSignals?.length || !block.failureBoundaries?.length || !block.falseHeuristicsOrMisconceptions?.length || !block.transferBoundary?.trim()) fail("INCOMPLETE_DECISION_BLOCK", `${curriculum.trackId}/${block.blockId} lacks boundary diagnosis.`);
+      if (!block.sourceRequirements.every((requirement) => sourceIds.includes(requirement.sourceId))) fail("MISSING_BLOCK_SOURCE", `${curriculum.trackId}/${block.blockId} references an undeclared source.`);
       if (!block.countRationale?.trim() || !Array.isArray(block.coverageTargets) || !block.coverageTargets.length) fail("INVALID_BLOCK_COUNT", `${curriculum.trackId}/${block.blockId} lacks a count rationale or targets.`);
       const calculated = block.coverageTargets.reduce((sum, target) => sum + target.requiredVariantCount, 0);
       if (block.targetItemCount !== calculated) fail("COUNT_RECONCILIATION_FAILURE", `${curriculum.trackId}/${block.blockId} target count does not equal coverage variants.`);
       assertVolumeAccounting(block, block.targetItemCount, `${curriculum.trackId}/${block.blockId}`);
-      for (const atom of block.skillOrDecisionAtoms) { assertText(atom.atomId, `atom in ${block.blockId}`); atomIds.push(atom.atomId); }
+      for (const atom of block.skillOrDecisionAtoms) { assertText(atom.atomId, `atom in ${block.blockId}`); assertText(atom.observableAction, `atom ${atom.atomId}.observableAction`); assertNoCurriculumFiller(`${atom.atomId} ${atom.observableAction}`, `atom ${atom.atomId}`); atomIds.push(atom.atomId); }
       for (const target of block.coverageTargets) {
         assertKeys(target, requiredTarget, `target ${target.coverageTargetId}`); targetIds.push(target.coverageTargetId);
-        if (target.blockId !== block.blockId || !block.skillOrDecisionAtoms.some((atom) => atom.atomId === target.primarySkillOrDecisionAtomId)) fail("MISSING_TARGET_ATOM", `${target.coverageTargetId} has no block-owned atom.`);
+        if (target.blockId !== block.blockId) fail("MISSING_TARGET_ATOM", `${target.coverageTargetId} belongs to a different block.`);
+        assertTargetAtomSemantics(target, block, curriculum);
         if (!target.decisiveBoundary?.trim() || !target.misconceptionOrCompetingDecision?.trim() || !target.transferBoundary?.trim()) fail("INCOMPLETE_COVERAGE_TARGET", `${target.coverageTargetId} lacks decisive coverage fields.`);
-        if (!Number.isInteger(target.requiredVariantCount) || target.requiredVariantCount < 1 || target.scenarioOrSurfaceVariationAxes.length < 2 || new Set(target.scenarioOrSurfaceVariationAxes).size !== target.scenarioOrSurfaceVariationAxes.length) fail("INVALID_VARIANT_PLAN", `${target.coverageTargetId} has ungrounded or duplicate variants.`);
+        if (!Number.isInteger(target.requiredVariantCount) || target.requiredVariantCount < 1 || target.scenarioOrSurfaceVariationAxes.length < 2 || target.scenarioOrSurfaceVariationAxes.length > 5 || new Set(target.scenarioOrSurfaceVariationAxes).size !== target.scenarioOrSurfaceVariationAxes.length) fail("INVALID_VARIANT_PLAN", `${target.coverageTargetId} has ungrounded or duplicate variants.`);
         if (!target.variantCountRationale?.trim() || !target.modeRoles?.length) fail("INVALID_VARIANT_RATIONALE", `${target.coverageTargetId} lacks variant rationale or mode role.`);
+        assertNoCurriculumFiller([target.diagnosticDecision, target.decisiveBoundary, target.misconceptionOrCompetingDecision, target.transferBoundary, target.variantCountRationale, ...target.scenarioOrSurfaceVariationAxes].join(" "), target.coverageTargetId);
+        assertSemanticMatrix(target, curriculum);
         if (target.interactionContractStatus === "existing_supported" && !supportedInteractions[curriculum.familyId].has(target.preferredInteractionContract)) fail("UNSUPPORTED_ACTIVE_INTERACTION", `${target.coverageTargetId} claims unsupported ${target.preferredInteractionContract}.`);
         if (!["existing_supported", "family_contract_required", "blocked_by_contract"].includes(target.interactionContractStatus)) fail("INVALID_INTERACTION_STATUS", `${target.coverageTargetId} has invalid interaction status.`);
+      }
+      const directlyOwnedAtomIds = new Set(block.coverageTargets.flatMap((target) => target.directSkillOrDecisionAtomIds));
+      if (block.skillOrDecisionAtoms.some((atom) => !directlyOwnedAtomIds.has(atom.atomId))) fail("UNOWNED_BLOCK_ATOM", `${curriculum.trackId}/${block.blockId} contains an atom outside its direct coverage contract.`);
+      if (curriculum.familyId === "coding_interview") {
+        const operations = block.coverageTargets.map((target) => target.learningOperation).sort();
+        if (operations.length !== codingBlockOperations.length || new Set(operations).size !== operations.length || codingBlockOperations.some((operation) => !operations.includes(operation))) fail("INCOMPLETE_CODING_BLOCK_OPERATIONS", `${curriculum.trackId}/${block.blockId} must expose exactly one recognition, selection, and boundary operation.`);
       }
     }
     assertVolumeAccounting(node, nodeCount(node), `${curriculum.trackId}/${node.nodeId}`);
   }
   assertUnique(blockIds, `${curriculum.trackId} block IDs`); assertUnique(atomIds, `${curriculum.trackId} atom IDs`); assertUnique(targetIds, `${curriculum.trackId} coverage target IDs`);
+  if (curriculum.familyId !== "coding_interview") {
+    const fingerprints = nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.coverageTargets.map((target) => `${target.diagnosticDecision}|${target.decisiveBoundary}|${target.misconceptionOrCompetingDecision}|${target.transferBoundary}`)));
+    assertUnique(fingerprints, `${curriculum.trackId} diagnostic fingerprints`);
+    const blocks = nodes.flatMap((node) => node.learningBlocks);
+    if (blocks.length > 1 && new Set(blocks.map((block) => block.coverageTargets.length)).size === 1) fail("UNIFORM_TARGET_COUNT_SIGNATURE", `${curriculum.trackId} repeats one target-count template across every block.`);
+    const multiTargetBlocks = blocks.filter((block) => block.coverageTargets.length > 1);
+    const hasMirroredPair = (block) => block.coverageTargets.some((target, index, targets) => targets.slice(index + 1).some((candidate) => target.requiredVariantCount === candidate.requiredVariantCount && JSON.stringify([...target.scenarioOrSurfaceVariationAxes].sort()) === JSON.stringify([...candidate.scenarioOrSurfaceVariationAxes].sort())));
+    if (multiTargetBlocks.length > 1 && multiTargetBlocks.every(hasMirroredPair)) fail("MIRRORED_TARGET_PAIR_SIGNATURE", `${curriculum.trackId} repeats equal-count targets with identical variation axes across every multi-target block.`);
+  }
   if (nodes.filter((node) => node.nodeId === curriculum.freeNodeId).length !== 1) fail("MISSING_FREE_NODE", `${curriculum.trackId} must own exactly one free node.`);
   const total = nodes.reduce((sum, node) => sum + nodeCount(node), 0); if (total !== curriculum.targetItemCount) fail("TRACK_COUNT_RECONCILIATION_FAILURE", `${curriculum.trackId} total does not equal node totals.`); assertVolumeAccounting(curriculum, total, curriculum.trackId);
   if (curriculum.trackId === "google-cloud-associate-cloud-engineer" && JSON.stringify(curriculum).match(/ace-q-\d+/)) fail("GCP_ZERO_RETENTION_FAILURE", "GCP curriculum may not retain old instructional item identities.");
@@ -91,13 +181,33 @@ export function validateCurriculum(curriculum, brief) {
   const modeIds = curriculum.modePoolPlans.map((pool) => pool.modeId);
   assertUnique(modeIds, `${curriculum.trackId} mode pool IDs`);
   if (modeIds.length !== brief.validModes.length || brief.validModes.some((modeId) => !modeIds.includes(modeId))) fail("MODE_POOL_CONTRACT_MISMATCH", `${curriculum.trackId} must account for every declared user mode.`);
-  for (const pool of [...curriculum.modePoolPlans, ...curriculum.simulationOrCasePoolPlans]) {
+  if (curriculum.familyId === "design_interview" && ![...curriculum.modePoolPlans, ...curriculum.simulationOrCasePoolPlans].every((pool) => pool.status === "blocked_by_contract")) fail("DESIGN_CONTRACT_INVENTED", `${curriculum.trackId} must not claim an unsupported design runtime.`);
+  for (const pool of curriculum.modePoolPlans) {
+    const label = `${curriculum.trackId}/${pool.modeId}`;
     if (!status.has(pool.status)) fail("INVALID_MODE_FEASIBILITY_STATUS", `${curriculum.trackId} pool has invalid status.`);
-    if (pool.status === "blocked_by_contract" && !pool.missingContractOwner) fail("MISSING_CONTRACT_GAP_OWNER", `${curriculum.trackId} blocked pool lacks owner.`);
-    if (pool.status === "planned_coverage_sufficient" && pool.requiredUniqueItems && pool.requiredUniqueItems > total) fail("MODE_POOL_INSUFFICIENT", `${curriculum.trackId}/${pool.modeId} exceeds unique planned coverage.`);
-    if (pool.declaredScope?.some((nodeId) => !nodes.some((node) => node.nodeId === nodeId))) fail("MODE_POOL_SCOPE_MISMATCH", `${curriculum.trackId}/${pool.modeId} references an absent node.`);
+    if (pool.status === "blocked_by_contract" && !pool.missingContractOwner) fail("MISSING_CONTRACT_GAP_OWNER", `${label} blocked pool lacks owner.`);
+    const scope = assertPoolScope(pool, nodes, label);
+    const required = assertRequiredPoolSize(pool, "requiredUniqueItems", label);
+    if (pool.status === "planned_coverage_sufficient" && required > eligibleVariantCount(nodes, scope, pool.modeId)) fail("MODE_POOL_INSUFFICIENT", `${label} exceeds eligible planned variants in its declared scope.`);
   }
-  if (curriculum.familyId === "design_interview" && !curriculum.modePoolPlans.every((pool) => pool.status === "blocked_by_contract")) fail("DESIGN_CONTRACT_INVENTED", `${curriculum.trackId} must not claim an unsupported design runtime.`);
+  for (const pool of curriculum.simulationOrCasePoolPlans) {
+    const label = `${curriculum.trackId}/${pool.poolId ?? "simulation-or-case"}`;
+    if (!status.has(pool.status)) fail("INVALID_MODE_FEASIBILITY_STATUS", `${label} has invalid status.`);
+    if (pool.status === "blocked_by_contract" && !pool.missingContractOwner) fail("MISSING_CONTRACT_GAP_OWNER", `${label} blocked pool lacks owner.`);
+    if (pool.status !== "planned_coverage_sufficient") {
+      assertPoolScope(pool, nodes, label);
+      assertRequiredPoolSize(pool, "uniqueItemCount", label);
+      continue;
+    }
+    const modePlan = simulationModePlan(pool, curriculum);
+    if (!modePlan || modePlan.status !== "planned_coverage_sufficient") fail("MODE_POOL_CONTRACT_MISMATCH", `${label} claims coverage without a feasible declared mode.`);
+    const modeScope = assertPoolScope(modePlan, nodes, `${curriculum.trackId}/${modePlan.modeId}`);
+    const scope = assertPoolScope(pool, nodes, label, modePlan.declaredScope);
+    if ([...scope].some((nodeId) => !modeScope.has(nodeId))) fail("MODE_POOL_SCOPE_MISMATCH", `${label} expands beyond its declared mode scope.`);
+    const required = assertRequiredPoolSize(pool, "uniqueItemCount", label);
+    if (required < modePlan.requiredUniqueItems) fail("MODE_POOL_INSUFFICIENT", `${label} does not satisfy ${modePlan.modeId}.requiredUniqueItems.`);
+    if (required > eligibleVariantCount(nodes, scope, modePlan.modeId)) fail("MODE_POOL_INSUFFICIENT", `${label} exceeds eligible planned variants in its declared scope.`);
+  }
   return curriculum;
 }
 

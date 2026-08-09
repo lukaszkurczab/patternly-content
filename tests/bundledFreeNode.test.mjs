@@ -1,21 +1,25 @@
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { cp, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { promisify } from "node:util";
 
-import { bundledFreeNodeFromInputs, canonicalBundledFreeNodePath, generateBundledFreeNode, payloadFromBundledFreeNode, prepareBundledFreeNodeSession, verifyBundledFreeNodeRecord, writeBundledFreeNode } from "../scripts/product/bundled-free-node.mjs";
+import { bundledFreeNodeFromInputs, canonicalBundledFreeNodePath, generateBundledFreeNode, payloadFromBundledFreeNode, prepareBundledFreeNodeSession, validateBundledFreeNode, verifyBundledFreeNodeRecord, writeBundledFreeNode } from "../scripts/product/bundled-free-node.mjs";
 import { validateFreeNodeExperienceProfile } from "../scripts/product/free-node-experience-profile.mjs";
 import { inventoryFromPinnedRelease } from "../scripts/product/free-node-inventory.mjs";
 import { canonicalJson, PublishingFailure, validateCanonicalJsonSchema } from "../scripts/publishing/pipeline.mjs";
 
 const COMMIT = "a".repeat(40);
-const TRACKS = ["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer"];
+const TRACKS = ["coding-interview-dsa-problem-solving"];
 const fails = (code) => (error) => error instanceof PublishingFailure && error.code === code;
 const clone = structuredClone;
 const load = async (path) => JSON.parse(await readFile(path, "utf8"));
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+const exec = promisify(execFile);
+const git = (root, ...args) => exec("git", args, { cwd: root });
 
 async function inputs(trackId) {
   const [brief, pins, profile, profileSchema, track, packageConfiguration, packageConfigurationSchema] = await Promise.all([
@@ -34,6 +38,13 @@ async function fixtureRoot() {
   return root;
 }
 
+async function committedFixtureRoot() {
+  const root = await fixtureRoot();
+  await git(root, "init"); await git(root, "config", "user.email", "tests@patternly.local"); await git(root, "config", "user.name", "Patternly Tests");
+  await git(root, "add", "."); await git(root, "commit", "-m", "fixture");
+  return root;
+}
+
 test("actual pinned inventories build deterministic compressed v2 packages with exact provenance", async () => {
   const schema = await load("schemas/product/bundled-free-node.schema.json");
   for (const trackId of TRACKS) {
@@ -47,7 +58,7 @@ test("actual pinned inventories build deterministic compressed v2 packages with 
     assert.equal(first.manifest.payloadUncompressedSize, bytes.byteLength);
     assert.equal(first.manifest.payloadCompressedSha256, sha256(compressed));
     assert.equal(first.manifest.payloadCanonicalSha256, sha256(bytes));
-    assert.equal(first.manifest.itemCount, trackId.startsWith("coding") ? 158 : 82);
+    assert.equal(first.manifest.itemCount, 158);
     assert.equal(first.manifest.provenance.profileSourceRepositoryCommit, COMMIT);
     assert.equal(first.manifest.provenance.freeNodeExperienceProfileCanonicalSha256, sha256(canonicalJson(payload.freeNodeExperienceProfile)));
     const source = await inputs(trackId);
@@ -57,6 +68,32 @@ test("actual pinned inventories build deterministic compressed v2 packages with 
     assert.equal(first.manifest.provenance.technicalInputFingerprint, source.pin.technicalInputFingerprint);
     assert.equal(first.manifest.minimumAppVersion, "0.1.0");
   }
+});
+
+test("historical package validation ignores provenance-only commit drift but rejects dirty and material inputs", async () => {
+  const root = await committedFixtureRoot();
+  const trackId = TRACKS[0];
+  const recordedCommit = "b".repeat(40);
+  try {
+    const record = await generateBundledFreeNode({ root, trackId, profileSourceRepositoryCommit: recordedCommit });
+    const bundledFreeNodePath = canonicalBundledFreeNodePath(record);
+    await mkdir(join(root, "artifacts", "bundled-free-nodes", trackId, record.manifest.packageVersion), { recursive: true });
+    await writeFile(join(root, bundledFreeNodePath), canonicalJson(record));
+
+    await assert.doesNotReject(() => validateBundledFreeNode({ root, bundledFreeNodePath }));
+
+    const profilePath = join(root, "config", "free-node-experience-profiles", `${trackId}.json`);
+    const originalProfileBytes = await readFile(profilePath, "utf8");
+    await writeFile(profilePath, `${originalProfileBytes}\n`);
+    await assert.rejects(() => validateBundledFreeNode({ root, bundledFreeNodePath }), fails("DIRTY_BUNDLED_FREE_NODE_SOURCE"));
+    await writeFile(profilePath, originalProfileBytes);
+
+    const trackPath = join(root, "config", "tracks", `${trackId}.json`); const track = await load(trackPath);
+    track.modeConfiguration.practiceBlueprints[0].minimumActualLength = 4;
+    await writeFile(trackPath, canonicalJson(track));
+    await git(root, "add", "config/tracks"); await git(root, "commit", "-m", "material track change");
+    await assert.rejects(() => validateBundledFreeNode({ root, bundledFreeNodePath }), fails("BUNDLED_FREE_NODE_MISMATCH"));
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("Coding package prepares every approved immediate mode and excludes full-track-only structures", async () => {
@@ -89,19 +126,6 @@ test("Coding Weak Area Review is package-local, evidence-conditioned, unique, an
   assert.throws(() => prepareBundledFreeNodeSession(record, { modeId: "coding-interview-weak-area-review", requestedLength: 10, evidence: [{ itemId: "premium-item", source: "due_queue", due: true }] }), fails("REVIEW_ITEM_OUTSIDE_PACKAGE"));
 });
 
-test("GCP Focus and evidence-conditioned reviews remain exactly setup_environment", async () => {
-  const record = await generateBundledFreeNode({ trackId: TRACKS[1], profileSourceRepositoryCommit: COMMIT }); const { payload } = payloadFromBundledFreeNode(record);
-  assert.deepEqual(record.manifest.modeIds, ["certification-focus-practice", "certification-quick-review", "certification-weak-area-review"]);
-  assert.deepEqual(Object.keys(payload.modeStructures), ["configurations"]);
-  for (const requestedLength of [10, 20, 40]) { const session = prepareBundledFreeNodeSession(record, { modeId: "certification-focus-practice", requestedLength }); assert.equal(session.actualLength, requestedLength); assert.equal(new Set(session.itemIds).size, requestedLength); }
-  assert.ok(payload.items.every((item) => item.domain === "setup_environment"));
-  for (const modeId of ["certification-weak-area-review", "certification-quick-review"]) assert.equal(prepareBundledFreeNodeSession(record, { modeId, requestedLength: 10 }).status, "unavailable");
-  const due = payload.items.slice(0, 14).map((item) => ({ itemId: item.id, source: "due_queue", due: true }));
-  assert.equal(prepareBundledFreeNodeSession(record, { modeId: "certification-weak-area-review", requestedLength: 20, evidence: due }).actualLength, 14);
-  assert.equal(prepareBundledFreeNodeSession(record, { modeId: "certification-quick-review", requestedLength: 10, evidence: due }).actualLength, 10);
-  for (const excluded of ["diagnostic", "scenario", "mixed", "exam", "custom", "learn"]) assert.equal(JSON.stringify(payload.modeStructures).includes(excluded), false);
-});
-
 test("profile semantic validation rejects all-modes Free, invented IDs, excluded modes, bad Custom mapping, and unbounded reviews", async () => {
   for (const trackId of TRACKS) {
     const value = await inputs(trackId); const validate = (profile) => validateFreeNodeExperienceProfile({ ...value, schema: value.profileSchema, profile });
@@ -119,8 +143,6 @@ test("profile semantic validation rejects all-modes Free, invented IDs, excluded
   const longCustom = clone(coding.profile); longCustom.modes.find((entry) => entry.modeId === "coding-interview-custom-practice").requestedLengths = [20]; assert.throws(() => validateFreeNodeExperienceProfile({ ...coding, schema: coding.profileSchema, profile: longCustom }), fails("INVALID_FREE_NODE_MODE_CONFIGURATION"));
   const wrongMapping = clone(coding.profile); wrongMapping.modes.find((entry) => entry.modeId === "coding-interview-custom-practice").blueprintModeId = "coding-interview-custom-practice"; assert.throws(() => validateFreeNodeExperienceProfile({ ...coding, schema: coding.profileSchema, profile: wrongMapping }), fails("INVALID_FREE_NODE_MODE_CONFIGURATION"));
   const excludedCoding = clone(coding.profile); excludedCoding.modes[0].modeId = "coding-interview-simulation"; assert.throws(() => validateFreeNodeExperienceProfile({ ...coding, schema: coding.profileSchema, profile: excludedCoding }), fails("INVALID_FREE_NODE_MODE_SET"));
-  const gcp = await inputs(TRACKS[1]); const inventedSymmetry = clone(gcp.profile); inventedSymmetry.modes[0].modeId = "certification-custom-practice"; assert.throws(() => validateFreeNodeExperienceProfile({ ...gcp, schema: gcp.profileSchema, profile: inventedSymmetry }), fails("FREE_NODE_MODE_OUTSIDE_TRACK"));
-  const excludedGcp = clone(gcp.profile); excludedGcp.modes[0].modeId = "certification-exam-simulation"; assert.throws(() => validateFreeNodeExperienceProfile({ ...gcp, schema: gcp.profileSchema, profile: excludedGcp }), fails("INVALID_FREE_NODE_MODE_SET"));
 });
 
 test("builder rejects mixed inventories and compatibility sets crossing into Premium", async () => {
@@ -142,7 +164,7 @@ test("technical evidence pins are loaded, byte-verified, identity-verified, and 
   const tampered = { ...canonical, technicalEvidenceBytes: Buffer.from(`${canonical.technicalEvidenceBytes.toString("utf8")} `) };
   assert.throws(() => bundledFreeNodeFromInputs(tampered), fails("TECHNICAL_EVIDENCE_CHECKSUM_MISMATCH"));
 
-  const wrongPath = { ...canonical, pin: { ...canonical.pin, technicalEvidencePath: `evidence/${TRACKS[1]}/technical/copied.json` } };
+  const wrongPath = { ...canonical, pin: { ...canonical.pin, technicalEvidencePath: "evidence/other-track/technical/copied.json" } };
   assert.throws(() => bundledFreeNodeFromInputs(wrongPath), fails("INVALID_FREE_NODE_INVENTORY_PINS"));
 
   const wrongIdentity = { ...canonical, pin: { ...canonical.pin, technicalEvidenceIdentitySha256: "0".repeat(64) } };
@@ -163,8 +185,5 @@ test("checksum mutation, immutable overwrite, and failed generation are fail-clo
     assert.equal(canonicalBundledFreeNodePath(first.record), `artifacts/bundled-free-nodes/${TRACKS[0]}/${TRACKS[0]}-free-node-0001/package.json`);
     await assert.rejects(() => writeBundledFreeNode({ root, trackId: TRACKS[0], profileSourceRepositoryCommit: COMMIT }), fails("IMMUTABLE_BUNDLED_FREE_NODE"));
     const before = await readFile(first.path, "utf8"); assert.equal(before, canonicalJson(first.record));
-    const profilePath = join(root, `config/free-node-experience-profiles/${TRACKS[1]}.json`); const invalid = await load(profilePath); invalid.modes[0].selection.freeNodeId = "premium"; await writeFile(profilePath, canonicalJson(invalid));
-    await assert.rejects(() => writeBundledFreeNode({ root, trackId: TRACKS[1], profileSourceRepositoryCommit: COMMIT }), fails("FREE_NODE_POLICY_NOT_CLOSED"));
-    const absentPath = join(root, "artifacts/bundled-free-nodes", TRACKS[1]); await assert.rejects(() => stat(absentPath), (error) => error.code === "ENOENT");
   } finally { await rm(root, { recursive: true, force: true }); }
 });

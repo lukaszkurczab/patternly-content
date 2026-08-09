@@ -9,7 +9,6 @@ import { auditExplanationQuality } from "../scripts/audit/explanationQualityAudi
 async function createAuditRoot() {
   const root = await mkdtemp(join(tmpdir(), "patternly-explanation-audit-"));
   await mkdir(join(root, "manual/source/coding-interview-dsa-problem-solving"), { recursive: true });
-  await mkdir(join(root, "manual/source/google-cloud-associate-cloud-engineer"), { recursive: true });
   return root;
 }
 
@@ -42,36 +41,11 @@ test("explanation audit includes every item exactly once and keeps signals advis
         },
       ],
     }));
-    await writeFile(join(root, "manual/source/google-cloud-associate-cloud-engineer/example.json"), JSON.stringify({
-      batchId: "certification-batch",
-      familyId: "certification",
-      items: [
-        {
-          id: "cert-1",
-          type: "single",
-          domain: "operations",
-          tags: ["monitoring"],
-          feedback: {
-            reason: "The requirement selects the monitoring capability.",
-            details: {
-              blocks: [
-                {
-                  type: "paragraph",
-                  text: "Monitoring shows metrics.",
-                },
-              ],
-            },
-            wrongOptionExplanationsByOptionId: {},
-          },
-        },
-      ],
-    }));
-
     const result = await auditExplanationQuality({ root });
 
     assert.equal(result.schemaVersion, "patternly-explanation-quality-audit-v1");
-    assert.equal(result.scope.itemCount, 2);
-    assert.deepEqual(result.items.map((item) => item.itemId), ["alg-1", "cert-1"]);
+    assert.equal(result.scope.itemCount, 1);
+    assert.deepEqual(result.items.map((item) => item.itemId), ["alg-1"]);
     assert.match(result.interpretation, /do not approve or reject/i);
     assert.deepEqual(
       result.items[0].riskSignals.map((signal) => signal.code),
@@ -81,10 +55,6 @@ test("explanation audit includes every item exactly once and keeps signals advis
         "short_details_review_priority",
         "short_wrong_option_explanation",
       ],
-    );
-    assert.deepEqual(
-      result.items[1].riskSignals.map((signal) => signal.code),
-      ["paragraph_only_details", "short_details_review_priority"],
     );
   } finally {
     await rm(root, { recursive: true });

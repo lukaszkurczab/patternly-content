@@ -762,7 +762,7 @@ export async function buildTrack({ root = ROOT, trackId, outputRoot = join(ROOT,
   return { artifact, path: out, reportPath };
 }
 export async function buildReleaseCandidate({ root = ROOT, outputRoot, sourceRepositoryCommit }) {
-  const tracks = ["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer"];
+  const tracks = ["coding-interview-dsa-problem-solving"];
   const builds = await Promise.all(tracks.map((trackId) => buildTrack({ root, trackId, outputRoot, ...(sourceRepositoryCommit ? { sourceRepositoryCommit } : {}) })));
   const artifacts = await Promise.all(builds.map(async ({ path }) => verifyArtifact(path)));
   return Object.freeze(artifacts.map(({ checksumSha256, contentVersion, trackId }) => Object.freeze({ trackId, contentVersion, checksumSha256 })));

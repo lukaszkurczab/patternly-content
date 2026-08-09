@@ -31,12 +31,6 @@ const IMPLEMENTED_FREE_PROFILES = Object.freeze({
     profileVersion: "1",
     profilePath: "config/free-node-experience-profiles/coding-interview-dsa-problem-solving.json",
     modeIds: Object.freeze(["coding-interview-learn-approach", "coding-interview-guided-practice", "coding-interview-custom-practice", "coding-interview-weak-area-review"])
-  }),
-  "google-cloud-associate-cloud-engineer": Object.freeze({
-    profileId: "google-cloud-associate-cloud-engineer-free-node-v1",
-    profileVersion: "1",
-    profilePath: "config/free-node-experience-profiles/google-cloud-associate-cloud-engineer.json",
-    modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
   })
 });
 

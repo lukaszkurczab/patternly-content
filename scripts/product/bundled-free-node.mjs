@@ -381,7 +381,8 @@ export async function validateBundledFreeNode({ root = ROOT, bundledFreeNodePath
   const schema = await readJson(join(root, "schemas/product/bundled-free-node.schema.json"));
   validateCanonicalJsonSchema(record, schema, "bundled Free node"); verifyBundledFreeNodeRecord(record);
   if (bundledFreeNodePath !== canonicalBundledFreeNodePath(record)) fail("INVALID_PATH", "Bundled Free-node package path must match its immutable package identity.");
-  const expected = await generateBundledFreeNode({ root, trackId: record.manifest.trackId });
+  await generateBundledFreeNode({ root, trackId: record.manifest.trackId });
+  const expected = await generateBundledFreeNode({ root, trackId: record.manifest.trackId, profileSourceRepositoryCommit: record.manifest.provenance.profileSourceRepositoryCommit });
   if (canonicalJson(record) !== canonicalJson(expected)) fail("BUNDLED_FREE_NODE_MISMATCH", "Bundled Free node does not exactly equal its pinned release, profile, brief, inventory, and package version inputs.");
   return record;
 }

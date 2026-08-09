@@ -11,30 +11,20 @@ const release = async (id) => JSON.parse(await readFile(`artifacts/releases/${id
 const briefFor = async (trackId) => (await loadCanonicalTrackBriefs()).find((brief) => brief.trackId === trackId);
 const pinFor = async (trackId) => (await loadCanonicalFreeNodeInventoryPins()).find((pin) => pin.trackId === trackId);
 
-test("free-node inventories are deterministic, sorted, and pin the current verified release artifacts", async () => {
-  const [coding, gcp] = await Promise.all([
-    generateFreeNodeInventory({ releaseId: "patternly-core-0018", trackId: "coding-interview-dsa-problem-solving" }),
-    generateFreeNodeInventory({ releaseId: "patternly-core-0018", trackId: "google-cloud-associate-cloud-engineer" })
-  ]);
+test("the active free-node inventory is deterministic, sorted, and pinned to its verified release artifact", async () => {
+  const coding = await generateFreeNodeInventory({ releaseId: "patternly-core-0018", trackId: "coding-interview-dsa-problem-solving" });
   assert.deepEqual({ trackId: coding.trackId, familyId: coding.familyId, freeNodeId: coding.freeNodeId, selector: coding.selector, release: coding.producer.releaseId, contentVersion: coding.producer.contentVersion, count: coding.itemCount }, { trackId: "coding-interview-dsa-problem-solving", familyId: "coding_interview", freeNodeId: "complexity_and_constraints", selector: { field: "taxonomy.roadmapNodeId", equals: "complexity_and_constraints" }, release: "patternly-core-0018", contentVersion: "coding-interview-dsa-problem-solving-0004", count: 158 });
-  assert.deepEqual({ trackId: gcp.trackId, familyId: gcp.familyId, freeNodeId: gcp.freeNodeId, selector: gcp.selector, release: gcp.producer.releaseId, contentVersion: gcp.producer.contentVersion, count: gcp.itemCount }, { trackId: "google-cloud-associate-cloud-engineer", familyId: "certification", freeNodeId: "setup_environment", selector: { field: "domain", equals: "setup_environment" }, release: "patternly-core-0018", contentVersion: "gcp-ace-0016", count: 82 });
-  for (const inventory of [coding, gcp]) {
-    assert.deepEqual(inventory.items.map((item) => item.id), [...inventory.items.map((item) => item.id)].sort());
-    assert.equal(new Set(inventory.items.map((item) => item.id)).size, inventory.itemCount);
-  }
+  assert.deepEqual(coding.items.map((item) => item.id), [...coding.items.map((item) => item.id)].sort());
+  assert.equal(new Set(coding.items.map((item) => item.id)).size, coding.itemCount);
 });
 
 test("free-node inventory rejects a wrong node, a release-track mismatch, and a brief-track mismatch", async () => {
   const codingRelease = await release("patternly-core-0018");
-  const codingOnlyRelease = await release("patternly-core-0017");
   const codingBrief = await briefFor("coding-interview-dsa-problem-solving");
-  const gcpBrief = await briefFor("google-cloud-associate-cloud-engineer");
   const codingPin = await pinFor("coding-interview-dsa-problem-solving");
-  const gcpPin = await pinFor("google-cloud-associate-cloud-engineer");
   const missingNodeBrief = { ...codingBrief, freeNodeId: "not_a_real_node", packageContentPlan: { ...codingBrief.packageContentPlan, bundledFreeNodeId: "not_a_real_node" } };
   assert.throws(() => inventoryFromPinnedRelease({ release: codingRelease, releaseId: "patternly-core-0018", brief: missingNodeBrief, trackId: codingBrief.trackId, pin: codingPin }), fails("EMPTY_FREE_NODE"));
   assert.throws(() => inventoryFromPinnedRelease({ release: codingRelease, releaseId: "patternly-core-0018", brief: codingBrief, trackId: "google-cloud-associate-cloud-engineer", pin: codingPin }), fails("BRIEF_TRACK_MISMATCH"));
-  assert.throws(() => inventoryFromPinnedRelease({ release: codingOnlyRelease, releaseId: "patternly-core-0017", brief: gcpBrief, trackId: "google-cloud-associate-cloud-engineer", pin: gcpPin }), fails("RELEASE_TRACK_MISMATCH"));
 });
 
 test("free-node inventory refuses checksum-tampered pinned artifacts", async () => {
@@ -48,14 +38,11 @@ test("free-node inventory refuses checksum-tampered pinned artifacts", async () 
 
 test("free-node inventory allows only the exact canonical release pins", async () => {
   await assert.rejects(() => generateFreeNodeInventory({ releaseId: "patternly-core-0016", trackId: "coding-interview-dsa-problem-solving" }), fails("FREE_NODE_INVENTORY_PIN_MISMATCH"));
-  const gcpBrief = await briefFor("google-cloud-associate-cloud-engineer");
-  const gcpPin = await pinFor("google-cloud-associate-cloud-engineer");
-  const mismatchedRelease = clone(await release("patternly-core-0016")); mismatchedRelease.manifest.releaseId = "patternly-core-0017";
-  assert.throws(() => inventoryFromPinnedRelease({ release: mismatchedRelease, releaseId: "patternly-core-0017", brief: gcpBrief, trackId: gcpBrief.trackId, pin: gcpPin }), fails("FREE_NODE_INVENTORY_PIN_MISMATCH"));
+  await assert.rejects(() => generateFreeNodeInventory({ releaseId: "patternly-core-0018", trackId: "google-cloud-associate-cloud-engineer" }), fails("MISSING_FREE_NODE_INVENTORY_PIN"));
 });
 
 test("free-node inventory pins verify exact owned technical-evidence bytes and internal identity", async () => {
-  for (const trackId of ["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer"]) {
+  for (const trackId of ["coding-interview-dsa-problem-solving"]) {
     const pin = await pinFor(trackId); const bytes = await readFile(pin.technicalEvidencePath);
     const verified = verifyPinnedTechnicalEvidence({ pin, bytes });
     assert.equal(verified.fileSha256, pin.technicalEvidenceFileSha256);

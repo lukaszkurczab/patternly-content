@@ -503,12 +503,12 @@ test("artifact and release are immutable, exact-byte checked, and tracks remain 
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("release candidate gate builds and verifies both canonical tracks in an isolated output root", async () => {
+test("release candidate gate builds and verifies only the active Coding track in an isolated output root", async () => {
   const path = await root({ coding_interview: algorithmsBatch(), certification: certificationBatch() });
   try {
     const candidate = await buildReleaseCandidate({ root: path, outputRoot: join(path, "release-candidate"), sourceRepositoryCommit: COMMIT });
-    assert.deepEqual(candidate.map((entry) => entry.trackId), ["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer"]);
-    assert.ok(candidate.every((entry) => entry.contentVersion.endsWith("fixture-v2") || entry.contentVersion.endsWith("fixture-v1")));
+    assert.deepEqual(candidate.map((entry) => entry.trackId), ["coding-interview-dsa-problem-solving"]);
+    assert.ok(candidate.every((entry) => entry.contentVersion.endsWith("fixture-v2")));
     assert.ok(candidate.every((entry) => /^[a-f0-9]{64}$/.test(entry.checksumSha256)));
   } finally { await rm(path, { recursive: true }); }
 });
@@ -527,15 +527,18 @@ test("certification publishes a validated, explicit exam experience profile", as
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("Certification publishing declares every canonical mode, including the profile-backed simulation", async () => {
-  const [family, source] = await Promise.all([
-    readFile("config/families/certification.json", "utf8").then(JSON.parse),
-    readFile("manual/source/google-cloud-associate-cloud-engineer/gcp-ace-0001.json", "utf8").then(JSON.parse),
-  ]);
-  const expected = ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review", "certification-exam-simulation"];
-  assert.deepEqual(family.modes.map((mode) => mode.id), expected);
-  assert.deepEqual(source.declaredModes, expected);
-  assert.doesNotMatch(JSON.stringify({ family, source }), /cloud-practice|cloud-review/);
+test("Certification fixture publishing declares every canonical mode, including the profile-backed simulation", async () => {
+  const path = await root({ certification: certificationBatch() });
+  try {
+    const [family, source] = await Promise.all([
+      readFile(join(path, "config/families/certification.json"), "utf8").then(JSON.parse),
+      readFile(join(path, "manual/source/google-cloud-associate-cloud-engineer/fixture.json"), "utf8").then(JSON.parse),
+    ]);
+    const expected = ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review", "certification-exam-simulation"];
+    assert.deepEqual(family.modes.map((mode) => mode.id), expected);
+    assert.deepEqual(source.declaredModes, expected);
+    assert.doesNotMatch(JSON.stringify({ family, source }), /cloud-practice|cloud-review/);
+  } finally { await rm(path, { recursive: true }); }
 });
 
 test("Certification readiness reports every declared mode and its exact eligible scopes", async () => {

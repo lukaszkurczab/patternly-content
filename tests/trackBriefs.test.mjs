@@ -75,7 +75,7 @@ test("briefs keep complete-track validModes separate from intended or implemente
   for (const brief of canonicalBriefs) {
     assert.ok(brief.freeNodeExperience.modeIds.every((modeId) => brief.validModes.includes(modeId)));
     assert.ok(brief.freeNodeExperience.modeIds.length < brief.validModes.length);
-    if (["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer"].includes(brief.trackId)) {
+    if (brief.trackId === "coding-interview-dsa-problem-solving") {
       assert.equal(brief.freeNodeExperience.implementationStatus, "profile_implemented");
       assert.ok(brief.freeNodeExperience.profilePath);
     } else {
@@ -107,19 +107,11 @@ test("validator rejects empty, unavailable, duplicate, and family-invalid brief 
   assert.throws(() => validateTrackBrief(wrongFamily, schema), /must be coding_interview/);
 });
 
-test("source-backed briefs preserve current Coding Interview and GCP identities", async () => {
+test("only Coding Interview has an active source-backed brief", async () => {
   const codingBrief = canonicalBriefs.find((brief) => brief.trackId === "coding-interview-dsa-problem-solving");
   const codingTaxonomy = JSON.parse(await readFile("config/taxonomy/coding-interview-dsa-problem-solving.json", "utf8"));
   const codingTrack = JSON.parse(await readFile("config/tracks/coding-interview-dsa-problem-solving.json", "utf8"));
   assert.equal(codingBrief.internalFamily, codingTrack.familyId);
   assert.ok(codingTaxonomy.roadmapNodes.some((node) => node.id === codingBrief.freeNodeId));
   assert.deepEqual(new Set(codingBrief.validModes), new Set(codingTrack.modeConfiguration.userModeMappings.map((mapping) => mapping.userModeId)));
-
-  const gcpBrief = canonicalBriefs.find((brief) => brief.trackId === "google-cloud-associate-cloud-engineer");
-  const gcpTaxonomy = JSON.parse(await readFile("config/taxonomy/google-cloud-associate-cloud-engineer.json", "utf8"));
-  const gcpTrack = JSON.parse(await readFile("config/tracks/google-cloud-associate-cloud-engineer.json", "utf8"));
-  const certificationFamily = JSON.parse(await readFile("config/families/certification.json", "utf8"));
-  assert.equal(gcpBrief.internalFamily, gcpTrack.familyId);
-  assert.ok(gcpTaxonomy.cloudDomains.includes(gcpBrief.freeNodeId));
-  assert.deepEqual(new Set(gcpBrief.validModes), new Set(certificationFamily.modes.map((mode) => mode.id)));
 });

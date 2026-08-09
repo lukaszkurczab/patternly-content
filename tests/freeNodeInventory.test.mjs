@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile, rm, writeFile } from "node:fs/promises";
-import { generateFreeNodeInventory, inventoryFromPinnedRelease, loadCanonicalFreeNodeInventoryPins, validateFreeNodeInventory, writeFreeNodeInventory } from "../scripts/product/free-node-inventory.mjs";
+import { generateFreeNodeInventory, inventoryFromPinnedRelease, loadCanonicalFreeNodeInventoryPins, validateFreeNodeInventory, verifyPinnedTechnicalEvidence, writeFreeNodeInventory } from "../scripts/product/free-node-inventory.mjs";
 import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
 import { PublishingFailure } from "../scripts/publishing/pipeline.mjs";
 
@@ -51,6 +51,19 @@ test("free-node inventory allows only the exact canonical release pins", async (
   const gcpPin = await pinFor("google-cloud-associate-cloud-engineer");
   const mismatchedRelease = clone(await release("patternly-core-0016")); mismatchedRelease.manifest.releaseId = "patternly-core-0017";
   assert.throws(() => inventoryFromPinnedRelease({ release: mismatchedRelease, releaseId: "patternly-core-0017", brief: gcpBrief, trackId: gcpBrief.trackId, pin: gcpPin }), fails("FREE_NODE_INVENTORY_PIN_MISMATCH"));
+});
+
+test("free-node inventory pins verify exact owned technical-evidence bytes and internal identity", async () => {
+  for (const trackId of ["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer"]) {
+    const pin = await pinFor(trackId); const bytes = await readFile(pin.technicalEvidencePath);
+    const verified = verifyPinnedTechnicalEvidence({ pin, bytes });
+    assert.equal(verified.fileSha256, pin.technicalEvidenceFileSha256);
+    assert.equal(verified.identitySha256, pin.technicalEvidenceIdentitySha256);
+    assert.ok(verified.evidence.technicalEvidence.every((entry) => entry.result === "passed" && entry.technicalInputFingerprint === pin.technicalInputFingerprint));
+    assert.throws(() => verifyPinnedTechnicalEvidence({ pin, bytes: Buffer.concat([bytes, Buffer.from(" ")]) }), fails("TECHNICAL_EVIDENCE_CHECKSUM_MISMATCH"));
+    assert.throws(() => verifyPinnedTechnicalEvidence({ pin: { ...pin, technicalEvidencePath: `evidence/other-track/technical/${trackId}.json` }, bytes }), fails("INVALID_FREE_NODE_INVENTORY_PINS"));
+    assert.throws(() => verifyPinnedTechnicalEvidence({ pin: { ...pin, technicalEvidenceFileSha256: "0".repeat(64) }, bytes }), fails("TECHNICAL_EVIDENCE_CHECKSUM_MISMATCH"));
+  }
 });
 
 test("free-node inventory validation detects fingerprint tampering and exact-set drift", async () => {

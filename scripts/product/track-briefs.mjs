@@ -21,6 +21,24 @@ export const TARGET_TRACK_FAMILIES = Object.freeze({
 
 const PROHIBITED_BRIEF_TEXT = /\b(?:coming[ -]soon|placeholder|tbd|todo)\b/i;
 const canonical = (value) => JSON.stringify(value, Object.keys(value ?? {}).sort());
+const INTENDED_FREE_MODES_BY_FAMILY = Object.freeze({
+  certification: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"]),
+  design_interview: Object.freeze(["design-interview-learn-framework", "design-interview-guided-case", "design-interview-weak-area-review"])
+});
+const IMPLEMENTED_FREE_PROFILES = Object.freeze({
+  "coding-interview-dsa-problem-solving": Object.freeze({
+    profileId: "coding-interview-dsa-problem-solving-free-node-v1",
+    profileVersion: "1",
+    profilePath: "config/free-node-experience-profiles/coding-interview-dsa-problem-solving.json",
+    modeIds: Object.freeze(["coding-interview-learn-approach", "coding-interview-guided-practice", "coding-interview-custom-practice", "coding-interview-weak-area-review"])
+  }),
+  "google-cloud-associate-cloud-engineer": Object.freeze({
+    profileId: "google-cloud-associate-cloud-engineer-free-node-v1",
+    profileVersion: "1",
+    profilePath: "config/free-node-experience-profiles/google-cloud-associate-cloud-engineer.json",
+    modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
+  })
+});
 
 export class TrackBriefValidationError extends Error {
   constructor(code, message) {
@@ -80,6 +98,20 @@ export function validateTrackBrief(brief, schema) {
   const expectedFamily = TARGET_TRACK_FAMILIES[brief.trackId];
   if (brief.internalFamily !== expectedFamily) fail("trackBrief.internalFamily", `must be ${expectedFamily} for ${brief.trackId}.`);
   if (brief.packageContentPlan.bundledFreeNodeId !== brief.freeNodeId) fail("trackBrief.packageContentPlan.bundledFreeNodeId", "must match freeNodeId.");
+  const freeExperience = brief.freeNodeExperience;
+  if (freeExperience.modeIds.some((modeId) => !brief.validModes.includes(modeId))) fail("trackBrief.freeNodeExperience.modeIds", "must be a subset of complete-track validModes.");
+  if (freeExperience.modeIds.length === brief.validModes.length) fail("trackBrief.freeNodeExperience.modeIds", "must not treat every complete-track validMode as a Free mode.");
+  const implemented = IMPLEMENTED_FREE_PROFILES[brief.trackId];
+  if (implemented) {
+    if (freeExperience.implementationStatus !== "profile_implemented") fail("trackBrief.freeNodeExperience.implementationStatus", "must identify factual profile implementation for a content-backed track.");
+    for (const field of ["profileId", "profileVersion", "profilePath"]) if (freeExperience[field] !== implemented[field]) fail(`trackBrief.freeNodeExperience.${field}`, "does not match its canonical implemented profile.");
+    if (JSON.stringify(freeExperience.modeIds) !== JSON.stringify(implemented.modeIds)) fail("trackBrief.freeNodeExperience.modeIds", "does not match the Product Owner-approved implemented Free mode set.");
+  } else {
+    if (freeExperience.implementationStatus !== "intended") fail("trackBrief.freeNodeExperience.implementationStatus", "must remain an intended contract without factual package claims.");
+    for (const field of ["profileId", "profileVersion", "profilePath"]) if (Object.hasOwn(freeExperience, field)) fail(`trackBrief.freeNodeExperience.${field}`, "must not claim a profile for a descriptor-only track.");
+    const expectedModes = INTENDED_FREE_MODES_BY_FAMILY[brief.internalFamily];
+    if (!expectedModes || JSON.stringify(freeExperience.modeIds) !== JSON.stringify(expectedModes)) fail("trackBrief.freeNodeExperience.modeIds", "does not match the family-valid intended Free experience.");
+  }
   if (brief.internalFamily === "certification" && !brief.goalTemplates.includes("prepare_for_a_certification")) fail("trackBrief.goalTemplates", "must include the certification goal for a certification track.");
   if (brief.internalFamily !== "certification" && brief.goalTemplates.includes("prepare_for_a_certification")) fail("trackBrief.goalTemplates", "must not expose a certification goal for an interview track.");
   if (brief.internalFamily === "certification" && brief.goalTemplates.includes("prepare_for_an_interview")) fail("trackBrief.goalTemplates", "must not expose an interview goal for a certification track.");

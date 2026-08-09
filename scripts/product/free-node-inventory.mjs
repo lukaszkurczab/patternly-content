@@ -1,7 +1,7 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { canonicalJson, PublishingFailure, validateCanonicalJsonSchema, verifyArtifactRecord } from "../publishing/pipeline.mjs";
+import { canonicalJson, hash, PublishingFailure, validateCanonicalJsonSchema, verifyArtifactRecord } from "../publishing/pipeline.mjs";
 import { ROOT, loadCanonicalTrackBriefs } from "./track-briefs.mjs";
 
 export const FREE_NODE_INVENTORY_SCHEMA_VERSION = "patternly-free-node-inventory-v1";
@@ -56,18 +56,41 @@ function validatePins(pins) {
   if (pins.schemaVersion !== FREE_NODE_INVENTORY_PINS_SCHEMA_VERSION || !Array.isArray(pins.pins) || !pins.pins.length) fail("INVALID_FREE_NODE_INVENTORY_PINS", "Free-node inventory pins have an invalid top-level contract.");
   const trackIds = new Set();
   for (const pin of pins.pins) {
-    exactKeys(pin, ["trackId", "releaseId", "contentVersion", "sourceRepositoryCommit", "artifactChecksumSha256"], "free-node inventory pin");
-    for (const [field, expression] of [["trackId", /^.+$/], ["releaseId", /^.+$/], ["contentVersion", /^.+$/], ["sourceRepositoryCommit", /^[a-f0-9]{40}$/], ["artifactChecksumSha256", /^[a-f0-9]{64}$/]]) if (typeof pin[field] !== "string" || !expression.test(pin[field])) fail("INVALID_FREE_NODE_INVENTORY_PINS", `Free-node inventory pin ${field} is invalid.`);
+    exactKeys(pin, ["trackId", "releaseId", "contentVersion", "sourceRepositoryCommit", "artifactChecksumSha256", "technicalEvidencePath", "technicalEvidenceFileSha256", "technicalEvidenceIdentitySha256", "technicalInputFingerprint"], "free-node inventory pin");
+    for (const [field, expression] of [["trackId", /^.+$/], ["releaseId", /^.+$/], ["contentVersion", /^.+$/], ["sourceRepositoryCommit", /^[a-f0-9]{40}$/], ["artifactChecksumSha256", /^[a-f0-9]{64}$/], ["technicalEvidencePath", /^evidence\/.+\.json$/], ["technicalEvidenceFileSha256", /^[a-f0-9]{64}$/], ["technicalEvidenceIdentitySha256", /^[a-f0-9]{64}$/], ["technicalInputFingerprint", /^[a-f0-9]{64}$/]]) if (typeof pin[field] !== "string" || !expression.test(pin[field])) fail("INVALID_FREE_NODE_INVENTORY_PINS", `Free-node inventory pin ${field} is invalid.`);
     if (trackIds.has(pin.trackId)) fail("INVALID_FREE_NODE_INVENTORY_PINS", `Free-node inventory pins duplicate ${pin.trackId}.`);
     trackIds.add(pin.trackId);
   }
   return pins.pins;
 }
 
+export function verifyPinnedTechnicalEvidence({ root = ROOT, pin, bytes }) {
+  const expectedPrefix = `evidence/${pin.trackId}/technical/`;
+  if (!pin.technicalEvidencePath.startsWith(expectedPrefix) || pin.technicalEvidencePath.includes("..")) fail("INVALID_FREE_NODE_INVENTORY_PINS", `Technical evidence path is not owned by ${pin.trackId}.`);
+  const evidenceBytes = typeof bytes === "string" ? Buffer.from(bytes, "utf8") : bytes;
+  if (!Buffer.isBuffer(evidenceBytes) || hash(evidenceBytes) !== pin.technicalEvidenceFileSha256) fail("TECHNICAL_EVIDENCE_CHECKSUM_MISMATCH", `Pinned technical evidence file bytes differ for ${pin.trackId}.`);
+  let evidence;
+  try { evidence = JSON.parse(evidenceBytes.toString("utf8")); } catch { fail("INVALID_TECHNICAL_EVIDENCE", `Pinned technical evidence is not JSON for ${pin.trackId}.`); }
+  const { generatedAt, evidenceSha256, ...identity } = evidence;
+  const identitySha256 = hash(`canonical-json-v1\n${canonicalJson(identity).trimEnd()}`);
+  if (evidenceSha256 !== identitySha256 || evidenceSha256 !== pin.technicalEvidenceIdentitySha256) fail("TECHNICAL_EVIDENCE_IDENTITY_MISMATCH", `Pinned technical evidence identity differs for ${pin.trackId}.`);
+  if (evidence.evidenceKind !== "technical-validation" || evidence.trackId !== pin.trackId || evidence.contentVersion !== pin.contentVersion || evidence.sourceCommit !== evidence.technicalInputCommit || !/^[a-f0-9]{40}$/.test(evidence.sourceCommit) || !/^[a-f0-9]{64}$/.test(evidence.inputManifestSha256)) fail("TECHNICAL_EVIDENCE_PROVENANCE_MISMATCH", `Pinned technical evidence provenance differs for ${pin.trackId}.`);
+  const expectedFilename = `${evidence.sourceCommit}-${evidence.inputManifestSha256}.json`;
+  if (pin.technicalEvidencePath !== `${expectedPrefix}${expectedFilename}`) fail("TECHNICAL_EVIDENCE_PROVENANCE_MISMATCH", `Pinned technical evidence path identity differs for ${pin.trackId}.`);
+  if (!Array.isArray(evidence.technicalEvidence) || !evidence.technicalEvidence.length || evidence.technicalEvidence.some((entry) => entry.result !== "passed" || entry.technicalInputFingerprint !== pin.technicalInputFingerprint)) fail("TECHNICAL_EVIDENCE_PROVENANCE_MISMATCH", `Pinned technical evidence does not prove the exact technical input for ${pin.trackId}.`);
+  return Object.freeze({ evidence, fileSha256: pin.technicalEvidenceFileSha256, identitySha256, sourceCommit: evidence.sourceCommit, inputManifestSha256: evidence.inputManifestSha256 });
+}
+
 export async function loadCanonicalFreeNodeInventoryPins({ root = ROOT } = {}) {
   const [pins, schema] = await Promise.all([readJson(join(root, "config", "free-node-inventory-pins.json")), readJson(join(root, "schemas", "product", "free-node-inventory-pins.schema.json"))]);
   validateCanonicalJsonSchema(pins, schema, "free-node inventory pins");
-  return Object.freeze(validatePins(pins).map((pin) => Object.freeze(pin)));
+  const validated = validatePins(pins);
+  for (const pin of validated) {
+    let bytes;
+    try { bytes = await readFile(resolve(root, pin.technicalEvidencePath)); } catch (error) { if (error?.code === "ENOENT") fail("MISSING_TECHNICAL_EVIDENCE", `Pinned technical evidence file is absent for ${pin.trackId}.`); throw error; }
+    verifyPinnedTechnicalEvidence({ root, pin, bytes });
+  }
+  return Object.freeze(validated.map((pin) => Object.freeze(pin)));
 }
 
 function assertCanonicalPin({ pin, releaseId, artifact, trackId }) {

@@ -1,44 +1,30 @@
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { gunzipSync, gzipSync } from "node:zlib";
+import { promisify } from "node:util";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { canonicalJson, PublishingFailure, validateCanonicalJsonSchema, verifyArtifactRecord } from "../publishing/pipeline.mjs";
-import { inventoryFromPinnedRelease, loadCanonicalFreeNodeInventoryPins, validateFreeNodeInventory } from "./free-node-inventory.mjs";
+import { FREE_NODE_EXPERIENCE_PROFILE_SCHEMA_VERSION, loadCanonicalFreeNodeExperienceProfiles, validateFreeNodeExperienceProfile } from "./free-node-experience-profile.mjs";
+import { inventoryFromPinnedRelease, loadCanonicalFreeNodeInventoryPins, validateFreeNodeInventory, verifyPinnedTechnicalEvidence } from "./free-node-inventory.mjs";
 import { ROOT, loadCanonicalTrackBriefs } from "./track-briefs.mjs";
 
-export const BUNDLED_FREE_NODE_SCHEMA_VERSION = "bundled-free-node-v1";
-export const BUNDLED_FREE_NODE_PAYLOAD_SCHEMA_VERSION = "bundled-free-node-payload-v1";
+export const BUNDLED_FREE_NODE_SCHEMA_VERSION = "bundled-free-node-v2";
+export const BUNDLED_FREE_NODE_PAYLOAD_SCHEMA_VERSION = "bundled-free-node-payload-v2";
+export const BUNDLED_FREE_NODE_BUILDER_VERSION = "bundled-free-node-builder-v2";
+export const BUNDLED_FREE_NODE_COMPRESSION = "gzip-level-9-mtime-0-v1";
+
+const exec = promisify(execFile);
 const compare = (left, right) => left === right ? 0 : left < right ? -1 : 1;
 const fail = (code, message) => { throw new PublishingFailure(code, message); };
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const isObject = (value) => !!value && typeof value === "object" && !Array.isArray(value);
-const itemReferenceKeys = new Set(["itemIds", "resolvedItemIds", "scenarioItemIds", "sourceItemIds", "targetItemIds"]);
 
 function exactKeys(value, keys, label, code = "INVALID_BUNDLED_FREE_NODE") {
   if (!isObject(value) || canonicalJson(Object.keys(value).sort(compare)) !== canonicalJson([...keys].sort(compare))) fail(code, `${label} has an unsupported shape.`);
-}
-
-function itemReferences(value, key, references = []) {
-  if (Array.isArray(value)) {
-    if (itemReferenceKeys.has(key)) {
-      for (const entry of value) if (typeof entry === "string") references.push(entry);
-    } else {
-      for (const entry of value) itemReferences(entry, undefined, references);
-    }
-    return references;
-  }
-  if (isObject(value)) for (const [childKey, child] of Object.entries(value)) itemReferences(child, childKey, references);
-  return references;
-}
-
-function assetReferences(value, references = []) {
-  if (Array.isArray(value)) for (const entry of value) assetReferences(entry, references);
-  else if (isObject(value)) for (const [key, child] of Object.entries(value)) {
-    if (key === "assetId" && typeof child === "string") references.push(child);
-    assetReferences(child, references);
-  }
-  return references;
 }
 
 function artifactFor(release, trackId) {
@@ -65,176 +51,145 @@ function preflightInventory({ artifact, brief, inventory }) {
     if (nodeValue(item, inventory.selector) !== brief.freeNodeId) fail("MIXED_FREE_NODE", `Inventory item ${entry.id} belongs outside ${brief.freeNodeId}.`);
     selected.push(item);
   }
-  if (selected.length !== inventory.itemCount || new Set(selected.map((item) => item.id)).size !== selected.length) fail("INVALID_FREE_NODE_INVENTORY", "Bundled free-node inventory count or identity set is invalid.");
-  return { bank, allItemsById, selected: selected.sort((left, right) => compare(left.id, right.id)) };
+  if (selected.length !== inventory.itemCount || new Set(selected.map((item) => item.id)).size !== selected.length) fail("INVALID_FREE_NODE_INVENTORY", "Bundled Free-node inventory count or identity set is invalid.");
+  return { bank, selected: selected.sort((left, right) => compare(left.id, right.id)) };
 }
 
-function requireClosedItemReferences({ label, value, allItemIds, selectedItemIds, issues }) {
-  const references = [...new Set(itemReferences(value))].sort(compare);
-  const dangling = references.filter((id) => !allItemIds.has(id));
-  if (dangling.length) fail("DANGLING_FREE_NODE_REFERENCE", `${label} references unknown item ${dangling[0]}.`);
-  const outside = references.filter((id) => !selectedItemIds.has(id));
-  if (outside.length) issues.push(`${label} references ${outside.length} item(s) outside the free node`);
-  return { references, closed: references.length > 0 && outside.length === 0 };
-}
-
-function failModeClosure(family, itemCount, issues) {
-  const distinct = [...new Set(issues)];
-  const shown = distinct.slice(0, 10);
-  const remaining = distinct.length - shown.length;
-  fail("FREE_NODE_MODE_NOT_CLOSED", `Published ${family} modes are not closed over ${itemCount} free-node items: ${shown.join("; ")}${remaining > 0 ? `; plus ${remaining} further non-node-closed reference(s)` : ""}.`);
-}
-
-function codingModeStructures({ bank, modeIds, selectedItems, allItemsById }) {
-  const issues = [];
-  const selectedItemIds = new Set(selectedItems.map((item) => item.id));
-  const allItemIds = new Set(allItemsById.keys());
-  const blueprintsByMode = new Map();
-  for (const blueprint of bank.practiceBlueprints) {
-    const owners = blueprintsByMode.get(blueprint.modeId) ?? [];
-    owners.push(blueprint);
-    blueprintsByMode.set(blueprint.modeId, owners);
+function assetReferences(value, references = []) {
+  if (Array.isArray(value)) for (const entry of value) assetReferences(entry, references);
+  else if (isObject(value)) for (const [key, child] of Object.entries(value)) {
+    if (key === "assetId" && typeof child === "string") references.push(child);
+    assetReferences(child, references);
   }
-  const auxiliaryDefinitions = {
-    recognition_sets: ["recognitionSets", "setId"],
-    contrast_sets: ["contrastSets", "setId"],
-    interleaved_scope: ["interleavedScopes", "scopeId"],
-    simulation_pool: ["simulationPools", "poolId"]
-  };
-  const auxiliaryMaps = Object.fromEntries(Object.entries(auxiliaryDefinitions).map(([kind, [field, idField]]) => [kind, new Map(bank[field].map((entry) => [entry[idField], entry]))]));
-  const selectedAuxiliaryIds = Object.fromEntries(Object.values(auxiliaryDefinitions).map(([field]) => [field, new Set()]));
-  const selectedBlueprints = [];
-
-  for (const modeId of modeIds) {
-    const modeIssues = [];
-    const owners = blueprintsByMode.get(modeId) ?? [];
-    if (owners.length !== 1) { issues.push(`${modeId} has ${owners.length} exact published mode owners`); continue; }
-    const blueprint = owners[0];
-    const own = requireClosedItemReferences({ label: `${modeId} blueprint`, value: blueprint, allItemIds, selectedItemIds, issues: modeIssues });
-    const composition = blueprint.composition;
-    if (!isObject(composition) || !Array.isArray(composition.ids)) fail("DANGLING_FREE_NODE_REFERENCE", `${modeId} has no valid published composition.`);
-    let composedItemIds = [];
-    if (composition.kind === "item_ids") {
-      composedItemIds = composition.ids;
-      const dangling = composedItemIds.filter((id) => !allItemIds.has(id));
-      if (dangling.length) fail("DANGLING_FREE_NODE_REFERENCE", `${modeId} references unknown item ${dangling[0]}.`);
-      const outside = composedItemIds.filter((id) => !selectedItemIds.has(id));
-      if (outside.length) modeIssues.push(`${modeId} composition references ${outside.length} item(s) outside the free node`);
-    } else {
-      const definition = auxiliaryDefinitions[composition.kind];
-      if (!definition) fail("DANGLING_FREE_NODE_REFERENCE", `${modeId} uses unsupported composition ${composition.kind}.`);
-      const [field] = definition;
-      for (const id of composition.ids) {
-        const entry = auxiliaryMaps[composition.kind].get(id);
-        if (!entry) fail("DANGLING_FREE_NODE_REFERENCE", `${modeId} references unknown ${composition.kind} ${id}.`);
-        const closure = requireClosedItemReferences({ label: `${modeId}/${id}`, value: entry, allItemIds, selectedItemIds, issues: modeIssues });
-        if (!closure.references.length) modeIssues.push(`${modeId}/${id} has a global item scope`);
-        if (closure.closed) selectedAuxiliaryIds[field].add(id);
-        composedItemIds.push(...closure.references);
-      }
-    }
-    const composed = [...new Set(composedItemIds)].sort(compare);
-    const resolved = [...new Set(blueprint.resolvedItemIds ?? [])].sort(compare);
-    if (canonicalJson(composed) !== canonicalJson(resolved)) fail("DANGLING_FREE_NODE_REFERENCE", `${modeId} resolved items differ from its exact published composition.`);
-    if (!own.references.length) modeIssues.push(`${modeId} has a global item scope`);
-    if (modeIssues.length) issues.push(`${modeId} is not node-closed (${modeIssues[0]}${modeIssues.length > 1 ? `; ${modeIssues.length - 1} further reference issue(s)` : ""})`);
-    else if (own.closed && composed.length > 0 && composed.every((id) => selectedItemIds.has(id))) selectedBlueprints.push(blueprint);
-  }
-
-  const compatibilityById = new Map(bank.compatibilitySets.map((entry) => [entry.id, entry]));
-  const compatibilityIssues = [];
-  for (const item of selectedItems) for (const membershipId of item.compatibilityMemberships ?? []) {
-    const entry = compatibilityById.get(membershipId);
-    if (!entry) fail("DANGLING_FREE_NODE_REFERENCE", `${item.id} references unknown compatibility set ${membershipId}.`);
-    const closure = requireClosedItemReferences({ label: `compatibility set ${membershipId}`, value: entry, allItemIds, selectedItemIds, issues: compatibilityIssues });
-    if (closure.closed) selectedAuxiliaryIds.compatibilitySets.add(membershipId);
-  }
-  if (compatibilityIssues.length) issues.push(`selected item compatibility is not node-closed (${compatibilityIssues[0]}${compatibilityIssues.length > 1 ? `; ${compatibilityIssues.length - 1} further reference issue(s)` : ""})`);
-
-  const selectedPoolIds = selectedAuxiliaryIds.simulationPools;
-  const selectedProfiles = bank.simulationProfiles.filter((profile) => selectedPoolIds.has(profile.poolId));
-  for (const poolId of selectedPoolIds) if (selectedProfiles.filter((profile) => profile.poolId === poolId).length !== 1) fail("DANGLING_FREE_NODE_REFERENCE", `Simulation pool ${poolId} must have exactly one published profile.`);
-  if (issues.length) failModeClosure("Coding Interview", selectedItemIds.size, issues);
-  if (selectedBlueprints.length !== modeIds.length) fail("FREE_NODE_MODE_NOT_CLOSED", "Not every Coding Interview free-node mode has an exact closed owner.");
-  return Object.freeze({
-    practiceBlueprints: selectedBlueprints,
-    recognitionSets: bank.recognitionSets.filter((entry) => selectedAuxiliaryIds.recognitionSets.has(entry.setId)),
-    contrastSets: bank.contrastSets.filter((entry) => selectedAuxiliaryIds.contrastSets.has(entry.setId)),
-    interleavedScopes: bank.interleavedScopes.filter((entry) => selectedAuxiliaryIds.interleavedScopes.has(entry.scopeId)),
-    compatibilitySets: bank.compatibilitySets.filter((entry) => selectedAuxiliaryIds.compatibilitySets.has(entry.id)),
-    simulationPools: bank.simulationPools.filter((entry) => selectedAuxiliaryIds.simulationPools.has(entry.poolId)),
-    simulationProfiles: selectedProfiles
-  });
+  return references;
 }
 
-const certificationModeFields = new Map([
-  ["certification-diagnostic-baseline", "diagnosticBaseline"],
-  ["certification-focus-practice", "focusPractice"],
-  ["certification-scenario-practice", "scenarioPractice"],
-  ["certification-weak-area-review", "weakAreaReview"],
-  ["certification-mixed-practice", "mixedPractice"],
-  ["certification-quick-review", "quickReview"],
-  ["certification-exam-simulation", "examExperienceProfile"]
-]);
-
-function certificationModeStructures({ bank, modeIds, freeNodeId, selectedItems, allItemsById }) {
-  const issues = [];
-  const selectedItemIds = new Set(selectedItems.map((item) => item.id));
-  const allItemIds = new Set(allItemsById.keys());
-  const selected = {};
-  for (const modeId of modeIds) {
-    const field = certificationModeFields.get(modeId);
-    if (!field || !isObject(bank[field])) { issues.push(`${modeId} has no exact published mode owner`); continue; }
-    const structure = bank[field];
-    const closure = requireClosedItemReferences({ label: `${modeId} structure`, value: structure, allItemIds, selectedItemIds, issues });
-    if (field === "focusPractice") {
-      const domains = Array.isArray(structure.topicIds) ? structure.topicIds : [];
-      if (!domains.length || domains.some((domain) => domain !== freeNodeId)) issues.push(`${modeId} has a global or mixed domain scope`);
-    } else if (field === "examExperienceProfile") {
-      const domains = structure.blueprint?.sections?.map((section) => section.contentDomainId) ?? [];
-      if (!domains.length || domains.some((domain) => domain !== freeNodeId)) issues.push(`${modeId} has a global or mixed exam domain scope`);
-      if (structure.questionCount?.maximum > selectedItems.length) issues.push(`${modeId} requires more items than the free node contains`);
-    } else if (field === "weakAreaReview" || field === "quickReview") {
-      if (!closure.references.length) issues.push(`${modeId} uses a global evidence/catalog scope without an exact node boundary`);
-    } else if (!closure.references.length) issues.push(`${modeId} has no exact item scope`);
-    selected[field] = structure;
-  }
-  if (issues.length) failModeClosure("Certification", selectedItemIds.size, issues);
-  if (Object.keys(selected).length !== modeIds.length) fail("FREE_NODE_MODE_NOT_CLOSED", "Not every Certification free-node mode has an exact closed owner.");
-  return Object.freeze(selected);
-}
-
-function selectedAssets(bank, selectedItems) {
+function selectedAssets(bank, selectedItems, assetBytesById) {
   const references = [...new Set(selectedItems.flatMap((item) => assetReferences(item)))].sort(compare);
   const declared = new Map((bank.feedbackAssets ?? []).map((asset) => [asset.id, asset]));
-  const assets = references.map((id) => {
+  return Object.freeze(references.map((id) => {
     const asset = declared.get(id);
     if (!asset) fail("DANGLING_FREE_NODE_REFERENCE", `Free-node item references undeclared asset ${id}.`);
-    return asset;
+    const bytesBase64 = assetBytesById?.[id];
+    if (typeof bytesBase64 !== "string" || !bytesBase64.length) fail("DANGLING_FREE_NODE_REFERENCE", `Free-node asset bytes are absent from the package input: ${id}.`);
+    const bytes = Buffer.from(bytesBase64, "base64");
+    if (bytes.toString("base64") !== bytesBase64 || sha256(bytes) !== asset.sha256) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", `Free-node asset bytes differ from the immutable source artifact: ${id}.`);
+    return Object.freeze({ id, mediaType: "image/svg+xml", sha256: asset.sha256, bytesBase64 });
+  }));
+}
+
+function exactTaxonomySubset(taxonomy, selectedItems, familyId, freeNodeId) {
+  if (familyId === "certification") {
+    if (!taxonomy.cloudDomains?.includes(freeNodeId)) fail("DANGLING_FREE_NODE_REFERENCE", `Certification taxonomy does not own ${freeNodeId}.`);
+    return Object.freeze({ ...taxonomy, cloudDomains: Object.freeze([freeNodeId]) });
+  }
+  const ids = {
+    roadmapNodes: new Set([freeNodeId]), mentalUnits: new Set(), patternFamilies: new Set(), patternVariants: new Set(), problemArchetypes: new Set(), skillAtoms: new Set(), learningStages: new Set(), falseHeuristics: new Set()
+  };
+  for (const item of selectedItems) {
+    const value = item.taxonomy;
+    ids.mentalUnits.add(value.primaryMentalUnitId); ids.patternFamilies.add(value.patternFamilyId); ids.problemArchetypes.add(value.problemArchetypeId); ids.skillAtoms.add(value.primarySkillAtomId); ids.learningStages.add(value.learningStage);
+    for (const id of value.secondarySkillAtomIds ?? []) ids.skillAtoms.add(id);
+    if (value.patternVariantId) ids.patternVariants.add(value.patternVariantId);
+    if (value.falseHeuristicId) ids.falseHeuristics.add(value.falseHeuristicId);
+  }
+  const byId = (field) => new Map((taxonomy[field] ?? []).map((entry) => [entry.id, entry]));
+  const mental = byId("mentalUnits");
+  for (const id of ids.mentalUnits) {
+    const entry = mental.get(id);
+    if (!entry || entry.roadmapNodeId !== freeNodeId) fail("DANGLING_FREE_NODE_REFERENCE", `Free-node mental unit ${id} is absent or outside ${freeNodeId}.`);
+    ids.patternFamilies.add(entry.primaryPatternFamilyId); for (const value of entry.legalPatternFamilyIds ?? []) ids.patternFamilies.add(value); for (const value of entry.patternVariantIds ?? []) ids.patternVariants.add(value); for (const value of entry.problemArchetypeIds ?? []) ids.problemArchetypes.add(value); ids.skillAtoms.add(entry.primarySkillAtomId); for (const value of entry.secondarySkillAtomIds ?? []) ids.skillAtoms.add(value); ids.learningStages.add(entry.learningStage);
+  }
+  const select = (field) => {
+    if (field === "learningStages") {
+      const available = new Set(taxonomy.learningStages ?? []); const values = [...ids.learningStages].sort(compare);
+      if (values.some((id) => !available.has(id))) fail("DANGLING_FREE_NODE_REFERENCE", "Free-node taxonomy has a missing learningStages reference.");
+      return Object.freeze(values);
+    }
+    const entries = byId(field); const values = [...ids[field]].sort(compare).map((id) => entries.get(id));
+    if (values.some((entry) => !entry)) fail("DANGLING_FREE_NODE_REFERENCE", `Free-node taxonomy has a missing ${field} reference.`);
+    return Object.freeze(values);
+  };
+  const result = Object.freeze({
+    schemaVersion: taxonomy.schemaVersion, trackId: taxonomy.trackId, taxonomyVersion: taxonomy.taxonomyVersion,
+    roadmapNodes: select("roadmapNodes"), mentalUnits: select("mentalUnits"), patternFamilies: select("patternFamilies"), patternVariants: select("patternVariants"), problemArchetypes: select("problemArchetypes"), skillAtoms: select("skillAtoms"), learningStages: select("learningStages"), falseHeuristics: select("falseHeuristics")
   });
-  return Object.freeze(assets);
+  if (result.roadmapNodes.length !== 1 || result.roadmapNodes[0].id !== freeNodeId || result.roadmapNodes[0].prerequisiteNodeIds?.length) fail("FREE_NODE_TAXONOMY_NOT_CLOSED", "Bundled Coding Interview taxonomy must contain one prerequisite-free Free node.");
+  return result;
 }
 
-function validateModeContract(brief, artifact) {
-  const briefModes = [...new Set(brief.validModes ?? [])].sort(compare);
-  const artifactModes = [...new Set(artifact.declaredModes ?? [])].sort(compare);
-  if (!briefModes.length || artifactModes.length !== artifact.declaredModes.length || artifactModes.some((modeId) => !briefModes.includes(modeId))) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", `Track brief does not contain every exact declared artifact mode for ${brief.trackId}.`);
-  return briefModes;
+function nodeLocalModeStructures({ profile, bank, selectedItems }) {
+  const structures = { configurations: profile.modes };
+  if (profile.familyId === "coding_interview") {
+    const selectedIds = new Set(selectedItems.map((item) => item.id));
+    const compatibilityById = new Map(bank.compatibilitySets.map((entry) => [entry.id, entry]));
+    const compatibilityIds = new Set();
+    for (const item of selectedItems) for (const membershipId of item.compatibilityMemberships ?? []) {
+      const entry = compatibilityById.get(membershipId);
+      if (!entry) fail("DANGLING_FREE_NODE_REFERENCE", `${item.id} references unknown compatibility set ${membershipId}.`);
+      const members = [...(entry.itemIds ?? []), ...(entry.sourceItemIds ?? []), ...(entry.targetItemIds ?? [])];
+      if (!members.length || members.some((id) => !selectedIds.has(id))) fail("FREE_NODE_COMPATIBILITY_NOT_CLOSED", `Compatibility set ${membershipId} crosses into Premium content.`);
+      compatibilityIds.add(membershipId);
+    }
+    structures.userModeMappings = profile.modes.map((entry) => Object.freeze({ userModeId: entry.modeId, blueprintModeId: entry.blueprintModeId }));
+    structures.compatibilitySets = bank.compatibilitySets.filter((entry) => compatibilityIds.has(entry.id));
+  }
+  return Object.freeze(structures);
 }
 
-export function bundledFreeNodeFromInputs({ release, releaseId, brief, inventory, pin }) {
-  if (!isObject(brief) || brief.packageContentPlan?.bundledFreeNodeId !== brief.freeNodeId) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", "Track brief does not own one exact bundled free node.");
+function authoredFeedback(item) {
+  const feedback = item?.feedback;
+  return typeof feedback?.reason === "string" && feedback.reason.length > 0 && isObject(feedback.details) && Array.isArray(feedback.details.blocks) && feedback.details.blocks.length > 0;
+}
+
+function proveImmediateCoverage(profile, selectedItems) {
+  if (selectedItems.some((item) => !authoredFeedback(item))) fail("FREE_NODE_FEEDBACK_NOT_CLOSED", "Every bundled item must carry authored Reason and Details feedback.");
+  const mentalCounts = new Map();
+  for (const item of selectedItems) if (item.taxonomy?.primaryMentalUnitId) mentalCounts.set(item.taxonomy.primaryMentalUnitId, (mentalCounts.get(item.taxonomy.primaryMentalUnitId) ?? 0) + 1);
+  for (const mode of profile.modes.filter((entry) => entry.availability === "immediate")) {
+    const required = Math.max(...mode.requestedLengths);
+    if (mode.selection.kind === "learner_selected_free_node_mental_unit") {
+      if (!mentalCounts.size || [...mentalCounts.values()].some((count) => count < required)) fail("FREE_NODE_SESSION_NOT_PREPARABLE", `${mode.modeId} cannot prepare ${required} unique items for every Free-node mental unit.`);
+    } else if (selectedItems.length < required) fail("FREE_NODE_SESSION_NOT_PREPARABLE", `${mode.modeId} cannot prepare ${required} unique package-local items.`);
+  }
+}
+
+function validateCompleteTrackContract({ brief, artifact, profile }) {
+  const artifactModes = [...new Set(artifact.declaredModes ?? [])];
+  if (artifactModes.length !== artifact.declaredModes.length || artifactModes.some((modeId) => !brief.validModes.includes(modeId))) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", "Track brief does not contain every exact full-track artifact mode.");
+  if (profile.modes.some((entry) => !artifactModes.includes(entry.blueprintModeId))) fail("UNSUPPORTED_FREE_NODE_MODE", "A Free profile blueprint mode is absent from the immutable full-track artifact.");
+  const profileModes = profile.modes.map((entry) => entry.modeId);
+  if (canonicalJson([...profileModes].sort(compare)) === canonicalJson([...brief.validModes].sort(compare))) fail("ALL_VALID_MODES_TREATED_AS_FREE", "Complete-track validModes must remain distinct from the Free profile.");
+}
+
+function validatedTechnicalEvidence({ pin, technicalEvidenceBytes, buildReport, artifact }) {
+  const verified = verifyPinnedTechnicalEvidence({ pin, bytes: technicalEvidenceBytes });
+  if (!isObject(buildReport) || buildReport.phase !== "build" || buildReport.trackId !== artifact.trackId || buildReport.familyId !== artifact.familyId || buildReport.contentVersion !== artifact.contentVersion || buildReport.taxonomyVersion !== artifact.taxonomyVersion || buildReport.sourceRepositoryCommit !== artifact.sourceRepositoryCommit || buildReport.checksumSha256 !== artifact.checksumSha256 || buildReport.technicalInputFingerprint !== pin.technicalInputFingerprint) fail("TECHNICAL_EVIDENCE_PROVENANCE_MISMATCH", `Immutable build report and pinned technical evidence differ for ${artifact.trackId}.`);
+  return verified;
+}
+
+function validatePackageConfiguration(packageConfiguration, schema, trackId) {
+  validateCanonicalJsonSchema(packageConfiguration, schema, "bundled Free-node package versions");
+  const packages = packageConfiguration.packages;
+  if (new Set(packages.map((entry) => entry.trackId)).size !== packages.length || new Set(packages.map((entry) => entry.packageVersion)).size !== packages.length) fail("DUPLICATE_BUNDLED_FREE_NODE_PACKAGE", "Package track IDs and versions must be unique.");
+  const matches = packages.filter((entry) => entry.trackId === trackId);
+  if (matches.length !== 1 || !/^\d+\.\d+\.\d+$/.test(matches[0].minimumAppVersion) || !new RegExp(`^${trackId}-free-node-[0-9]{4}$`).test(matches[0].packageVersion)) fail("INVALID_BUNDLED_FREE_NODE_PACKAGE_VERSION", `No canonical immutable package version exists for ${trackId}.`);
+  return matches[0];
+}
+
+export function bundledFreeNodeFromInputs({ release, releaseId, brief, inventory, pin, profile, profileSchema, track, family, taxonomy, packageConfiguration, packageConfigurationSchema, profileSourceRepositoryCommit, assetBytesById = {}, technicalEvidenceBytes, buildReport }) {
+  if (!isObject(brief) || brief.packageContentPlan?.bundledFreeNodeId !== brief.freeNodeId) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", "Track brief does not own one exact bundled Free node.");
+  if (!/^[a-f0-9]{40}$/.test(profileSourceRepositoryCommit ?? "")) fail("INVALID_BUNDLED_FREE_NODE_PROVENANCE", "Profile source commit must be an exact Git commit.");
+  validateFreeNodeExperienceProfile({ profile, schema: profileSchema, brief, track, family });
+  const packagePin = validatePackageConfiguration(packageConfiguration, packageConfigurationSchema, brief.trackId);
   const artifact = artifactFor(release, brief.trackId);
-  const { bank, allItemsById, selected } = preflightInventory({ artifact, brief, inventory });
+  const technicalEvidence = validatedTechnicalEvidence({ pin, technicalEvidenceBytes, buildReport, artifact });
+  const { bank, selected } = preflightInventory({ artifact, brief, inventory });
   const expectedInventory = inventoryFromPinnedRelease({ release, releaseId, brief, trackId: brief.trackId, pin });
   if (canonicalJson(inventory) !== canonicalJson(expectedInventory)) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", `Inventory does not exactly equal the canonical pinned selection for ${brief.trackId}.`);
-  const modeIds = validateModeContract(brief, artifact);
-  const modes = artifact.familyId === "coding_interview"
-    ? codingModeStructures({ bank, modeIds, selectedItems: selected, allItemsById })
-    : artifact.familyId === "certification"
-      ? certificationModeStructures({ bank, modeIds, freeNodeId: brief.freeNodeId, selectedItems: selected, allItemsById })
-      : fail("UNSUPPORTED_BUNDLED_FREE_NODE_FAMILY", `No bundled free-node builder exists for ${artifact.familyId}.`);
-  const assets = selectedAssets(bank, selected);
+  validateCompleteTrackContract({ brief, artifact, profile });
+  proveImmediateCoverage(profile, selected);
+  const assets = selectedAssets(bank, selected, assetBytesById);
   const payload = Object.freeze({
     schemaVersion: BUNDLED_FREE_NODE_PAYLOAD_SCHEMA_VERSION,
     trackId: brief.trackId,
@@ -242,13 +197,18 @@ export function bundledFreeNodeFromInputs({ release, releaseId, brief, inventory
     freeNodeId: brief.freeNodeId,
     contentVersion: artifact.contentVersion,
     taxonomyVersion: artifact.taxonomyVersion,
-    modeStructures: modes,
+    freeNodeExperienceProfile: profile,
+    modeStructures: nodeLocalModeStructures({ profile, bank, selectedItems: selected }),
+    taxonomy: exactTaxonomySubset(taxonomy, selected, artifact.familyId, brief.freeNodeId),
     assets,
     items: selected
   });
-  const payloadCanonicalSha256 = sha256(canonicalJson(payload));
+  const payloadBytes = Buffer.from(canonicalJson(payload), "utf8");
+  const compressed = gzipSync(payloadBytes, { level: 9, mtime: 0 });
+  const modeIds = profile.modes.map((entry) => entry.modeId).sort(compare);
   const manifest = Object.freeze({
     bundleKind: "bundled_free_node",
+    packageVersion: packagePin.packageVersion,
     trackId: brief.trackId,
     familyId: artifact.familyId,
     freeNodeId: brief.freeNodeId,
@@ -257,114 +217,206 @@ export function bundledFreeNodeFromInputs({ release, releaseId, brief, inventory
     itemCount: selected.length,
     modeIds,
     assetCount: assets.length,
+    profileId: profile.profileId,
+    profileVersion: profile.profileVersion,
+    minimumAppVersion: packagePin.minimumAppVersion,
     payloadSchemaVersion: BUNDLED_FREE_NODE_PAYLOAD_SCHEMA_VERSION,
-    payloadCanonicalSha256,
+    payloadCompression: BUNDLED_FREE_NODE_COMPRESSION,
+    payloadUncompressedSize: payloadBytes.byteLength,
+    payloadCompressedSize: compressed.byteLength,
+    payloadCanonicalSha256: sha256(payloadBytes),
+    payloadCompressedSha256: sha256(compressed),
     provenance: Object.freeze({
       releaseId,
       sourceRepositoryCommit: artifact.sourceRepositoryCommit,
       sourceArtifactSchemaVersion: artifact.schemaVersion,
       sourceArtifactChecksumSha256: artifact.checksumSha256,
+      technicalEvidencePath: pin.technicalEvidencePath,
+      technicalEvidenceFileSha256: technicalEvidence.fileSha256,
+      technicalEvidenceIdentitySha256: technicalEvidence.identitySha256,
+      technicalEvidenceSourceCommit: technicalEvidence.sourceCommit,
+      technicalEvidenceInputManifestSha256: technicalEvidence.inputManifestSha256,
+      technicalInputFingerprint: pin.technicalInputFingerprint,
       inventorySchemaVersion: inventory.schemaVersion,
       inventoryCanonicalSha256: sha256(canonicalJson(inventory)),
       trackBriefSchemaVersion: brief.schemaVersion,
-      trackBriefCanonicalSha256: sha256(canonicalJson(brief))
+      trackBriefCanonicalSha256: sha256(canonicalJson(brief)),
+      freeNodeExperienceProfileSchemaVersion: profile.schemaVersion,
+      freeNodeExperienceProfileCanonicalSha256: sha256(canonicalJson(profile)),
+      profileSourceRepositoryCommit,
+      trackConfigCanonicalSha256: sha256(canonicalJson(track)),
+      builderVersion: BUNDLED_FREE_NODE_BUILDER_VERSION
     })
   });
-  return Object.freeze({ schemaVersion: BUNDLED_FREE_NODE_SCHEMA_VERSION, manifest, payload });
+  return Object.freeze({ schemaVersion: BUNDLED_FREE_NODE_SCHEMA_VERSION, manifest, payloadGzipBase64: compressed.toString("base64") });
+}
+
+export function payloadFromBundledFreeNode(record) {
+  const encoded = record?.payloadGzipBase64;
+  if (typeof encoded !== "string" || !encoded.length) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node compressed payload is absent.");
+  const compressed = Buffer.from(encoded, "base64");
+  if (compressed.toString("base64") !== encoded) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node payload is not canonical base64.");
+  let bytes;
+  try { bytes = gunzipSync(compressed); } catch { fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node payload is not valid deterministic gzip data."); }
+  let payload;
+  try { payload = JSON.parse(bytes.toString("utf8")); } catch { fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node payload is not JSON."); }
+  if (!bytes.equals(Buffer.from(canonicalJson(payload), "utf8"))) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node payload is not canonical JSON before compression.");
+  return { payload, compressed, bytes };
+}
+
+function itemBelongsToPayloadNode(item, payload) {
+  return payload.familyId === "coding_interview" ? item.taxonomy?.roadmapNodeId === payload.freeNodeId : item.domain === payload.freeNodeId;
 }
 
 export function verifyBundledFreeNodeRecord(record) {
-  exactKeys(record, ["schemaVersion", "manifest", "payload"], "bundled free node");
-  exactKeys(record.manifest, ["bundleKind", "trackId", "familyId", "freeNodeId", "contentVersion", "taxonomyVersion", "itemCount", "modeIds", "assetCount", "payloadSchemaVersion", "payloadCanonicalSha256", "provenance"], "bundled free-node manifest");
-  exactKeys(record.manifest.provenance, ["releaseId", "sourceRepositoryCommit", "sourceArtifactSchemaVersion", "sourceArtifactChecksumSha256", "inventorySchemaVersion", "inventoryCanonicalSha256", "trackBriefSchemaVersion", "trackBriefCanonicalSha256"], "bundled free-node provenance");
-  exactKeys(record.payload, ["schemaVersion", "trackId", "familyId", "freeNodeId", "contentVersion", "taxonomyVersion", "modeStructures", "assets", "items"], "bundled free-node payload");
-  if (record.schemaVersion !== BUNDLED_FREE_NODE_SCHEMA_VERSION || record.manifest.bundleKind !== "bundled_free_node" || record.payload.schemaVersion !== BUNDLED_FREE_NODE_PAYLOAD_SCHEMA_VERSION) fail("INVALID_BUNDLED_FREE_NODE", "Bundled free-node schema identity is invalid.");
-  if (!Number.isInteger(record.manifest.itemCount) || record.manifest.itemCount < 1 || !Number.isInteger(record.manifest.assetCount) || record.manifest.assetCount < 0 || !Array.isArray(record.manifest.modeIds) || !record.manifest.modeIds.length) fail("INVALID_BUNDLED_FREE_NODE", "Bundled free-node counts or modes are invalid.");
-  if (!Array.isArray(record.payload.items) || !Array.isArray(record.payload.assets) || !isObject(record.payload.modeStructures) || record.manifest.modeIds.some((modeId) => typeof modeId !== "string" || !modeId)) fail("INVALID_BUNDLED_FREE_NODE", "Bundled free-node payload collections are invalid.");
-  const sortedModes = [...record.manifest.modeIds].sort(compare);
-  if (new Set(sortedModes).size !== sortedModes.length || canonicalJson(sortedModes) !== canonicalJson(record.manifest.modeIds)) fail("INVALID_BUNDLED_FREE_NODE", "Bundled free-node modes must be unique and sorted.");
-  for (const [label, value, expression] of [
-    ["payloadCanonicalSha256", record.manifest.payloadCanonicalSha256, /^[a-f0-9]{64}$/],
-    ["sourceRepositoryCommit", record.manifest.provenance.sourceRepositoryCommit, /^[a-f0-9]{40}$/],
-    ["sourceArtifactChecksumSha256", record.manifest.provenance.sourceArtifactChecksumSha256, /^[a-f0-9]{64}$/],
-    ["inventoryCanonicalSha256", record.manifest.provenance.inventoryCanonicalSha256, /^[a-f0-9]{64}$/],
-    ["trackBriefCanonicalSha256", record.manifest.provenance.trackBriefCanonicalSha256, /^[a-f0-9]{64}$/]
-  ]) if (typeof value !== "string" || !expression.test(value)) fail("INVALID_BUNDLED_FREE_NODE", `${label} is invalid.`);
-  if (record.manifest.payloadCanonicalSha256 !== sha256(canonicalJson(record.payload))) fail("BUNDLED_FREE_NODE_CHECKSUM_MISMATCH", "Bundled free-node payload differs from its canonical SHA-256.");
-  if (record.manifest.itemCount !== record.payload.items.length || record.manifest.assetCount !== record.payload.assets.length) fail("INVALID_BUNDLED_FREE_NODE", "Bundled free-node manifest counts differ from its payload.");
-  for (const field of ["trackId", "familyId", "freeNodeId", "contentVersion", "taxonomyVersion"]) if (record.manifest[field] !== record.payload[field]) fail("INVALID_BUNDLED_FREE_NODE", `Bundled free-node manifest and payload ${field} differ.`);
-  const modeKeys = Object.keys(record.payload.modeStructures).sort(compare);
-  if (record.manifest.familyId === "coding_interview") {
-    const expected = ["compatibilitySets", "contrastSets", "interleavedScopes", "practiceBlueprints", "recognitionSets", "simulationPools", "simulationProfiles"].sort(compare);
-    if (canonicalJson(modeKeys) !== canonicalJson(expected)) fail("INVALID_BUNDLED_FREE_NODE", "Coding Interview bundled mode structure has an unsupported shape.");
-  } else {
-    const expected = record.manifest.modeIds.map((modeId) => certificationModeFields.get(modeId));
-    if (expected.some((field) => !field) || canonicalJson(modeKeys) !== canonicalJson(expected.sort(compare))) fail("INVALID_BUNDLED_FREE_NODE", "Certification bundled mode structure has an unsupported shape.");
+  exactKeys(record, ["schemaVersion", "manifest", "payloadGzipBase64"], "bundled Free node");
+  exactKeys(record.manifest, ["bundleKind", "packageVersion", "trackId", "familyId", "freeNodeId", "contentVersion", "taxonomyVersion", "itemCount", "modeIds", "assetCount", "profileId", "profileVersion", "minimumAppVersion", "payloadSchemaVersion", "payloadCompression", "payloadUncompressedSize", "payloadCompressedSize", "payloadCanonicalSha256", "payloadCompressedSha256", "provenance"], "bundled Free-node manifest");
+  exactKeys(record.manifest.provenance, ["releaseId", "sourceRepositoryCommit", "sourceArtifactSchemaVersion", "sourceArtifactChecksumSha256", "technicalEvidencePath", "technicalEvidenceFileSha256", "technicalEvidenceIdentitySha256", "technicalEvidenceSourceCommit", "technicalEvidenceInputManifestSha256", "technicalInputFingerprint", "inventorySchemaVersion", "inventoryCanonicalSha256", "trackBriefSchemaVersion", "trackBriefCanonicalSha256", "freeNodeExperienceProfileSchemaVersion", "freeNodeExperienceProfileCanonicalSha256", "profileSourceRepositoryCommit", "trackConfigCanonicalSha256", "builderVersion"], "bundled Free-node provenance");
+  if (record.schemaVersion !== BUNDLED_FREE_NODE_SCHEMA_VERSION || record.manifest.bundleKind !== "bundled_free_node" || record.manifest.payloadSchemaVersion !== BUNDLED_FREE_NODE_PAYLOAD_SCHEMA_VERSION || record.manifest.payloadCompression !== BUNDLED_FREE_NODE_COMPRESSION) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node schema or compression identity is invalid.");
+  const { payload, compressed, bytes } = payloadFromBundledFreeNode(record);
+  exactKeys(payload, ["schemaVersion", "trackId", "familyId", "freeNodeId", "contentVersion", "taxonomyVersion", "freeNodeExperienceProfile", "modeStructures", "taxonomy", "assets", "items"], "bundled Free-node payload");
+  if (payload.schemaVersion !== BUNDLED_FREE_NODE_PAYLOAD_SCHEMA_VERSION || record.manifest.payloadUncompressedSize !== bytes.byteLength || record.manifest.payloadCompressedSize !== compressed.byteLength || record.manifest.payloadCanonicalSha256 !== sha256(bytes) || record.manifest.payloadCompressedSha256 !== sha256(compressed)) fail("BUNDLED_FREE_NODE_CHECKSUM_MISMATCH", "Bundled Free-node payload bytes, sizes, or SHA-256 differ from the manifest.");
+  for (const field of ["trackId", "familyId", "freeNodeId", "contentVersion", "taxonomyVersion"]) if (record.manifest[field] !== payload[field]) fail("INVALID_BUNDLED_FREE_NODE", `Bundled Free-node manifest and payload ${field} differ.`);
+  if (!Array.isArray(payload.items) || !payload.items.length || new Set(payload.items.map((item) => item.id)).size !== payload.items.length || payload.items.some((item) => !itemBelongsToPayloadNode(item, payload))) fail("MIXED_FREE_NODE", "Bundled payload items must be unique and belong to the exact Free node.");
+  if (!Array.isArray(payload.assets) || record.manifest.itemCount !== payload.items.length || record.manifest.assetCount !== payload.assets.length) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node manifest counts differ from payload collections.");
+  for (const asset of payload.assets) {
+    exactKeys(asset, ["id", "mediaType", "sha256", "bytesBase64"], "bundled Free-node asset");
+    const bytes = Buffer.from(asset.bytesBase64, "base64");
+    if (bytes.toString("base64") !== asset.bytesBase64 || asset.mediaType !== "image/svg+xml" || sha256(bytes) !== asset.sha256) fail("BUNDLED_FREE_NODE_CHECKSUM_MISMATCH", `Bundled asset ${asset.id} bytes differ from its SHA-256.`);
+  }
+  const profile = payload.freeNodeExperienceProfile;
+  const modeIds = profile.modes.map((entry) => entry.modeId).sort(compare);
+  if (record.manifest.profileId !== profile.profileId || record.manifest.profileVersion !== profile.profileVersion || canonicalJson(record.manifest.modeIds) !== canonicalJson(modeIds)) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node manifest differs from its exact profile modes.");
+  if (record.manifest.provenance.freeNodeExperienceProfileSchemaVersion !== FREE_NODE_EXPERIENCE_PROFILE_SCHEMA_VERSION || record.manifest.provenance.freeNodeExperienceProfileCanonicalSha256 !== sha256(canonicalJson(profile))) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", "Bundled Free-node profile differs from its provenance.");
+  for (const field of ["technicalEvidenceFileSha256", "technicalEvidenceIdentitySha256", "technicalEvidenceInputManifestSha256", "technicalInputFingerprint"]) if (!/^[a-f0-9]{64}$/.test(record.manifest.provenance[field])) fail("INVALID_BUNDLED_FREE_NODE", `Bundled Free-node ${field} is invalid.`);
+  if (!/^[a-f0-9]{40}$/.test(record.manifest.provenance.technicalEvidenceSourceCommit) || !record.manifest.provenance.technicalEvidencePath.startsWith(`evidence/${record.manifest.trackId}/technical/`)) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node technical evidence provenance is invalid.");
+  const configurationKeys = payload.familyId === "coding_interview" ? ["compatibilitySets", "configurations", "userModeMappings"] : ["configurations"];
+  if (canonicalJson(Object.keys(payload.modeStructures).sort(compare)) !== canonicalJson(configurationKeys.sort(compare))) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node mode structures have an unsupported family shape.");
+  if (canonicalJson(payload.modeStructures.configurations) !== canonicalJson(profile.modes)) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node configurations differ from its profile.");
+  if (payload.familyId === "coding_interview") {
+    const expectedMappings = profile.modes.map((entry) => ({ userModeId: entry.modeId, blueprintModeId: entry.blueprintModeId }));
+    if (canonicalJson(payload.modeStructures.userModeMappings) !== canonicalJson(expectedMappings)) fail("INVALID_BUNDLED_FREE_NODE", "Coding Custom and canonical user-mode mappings differ from the profile.");
+    const itemIds = new Set(payload.items.map((item) => item.id));
+    if (payload.modeStructures.compatibilitySets.some((entry) => [...(entry.itemIds ?? []), ...(entry.sourceItemIds ?? []), ...(entry.targetItemIds ?? [])].some((id) => !itemIds.has(id)))) fail("FREE_NODE_COMPATIBILITY_NOT_CLOSED", "Bundled compatibility data crosses outside package items.");
   }
   return record;
 }
 
-async function canonicalInputs({ root, trackId }) {
-  const [briefs, pins] = await Promise.all([loadCanonicalTrackBriefs({ root }), loadCanonicalFreeNodeInventoryPins({ root })]);
-  const brief = briefs.find((entry) => entry.trackId === trackId);
-  const pin = pins.find((entry) => entry.trackId === trackId);
-  if (!brief || !pin) fail("MISSING_BUNDLED_FREE_NODE_INPUT", `Canonical brief or inventory pin is absent for ${trackId}.`);
-  const inventoryPath = join("artifacts", "free-node-inventories", pin.releaseId, `${trackId}.json`);
-  const [release, inventory] = await Promise.all([
-    readJson(join(root, "artifacts", "releases", pin.releaseId, "release.json")),
-    validateFreeNodeInventory({ root, inventoryPath })
-  ]);
-  return { release, releaseId: pin.releaseId, brief, inventory, pin };
+function unavailable(modeId, requestedLength) {
+  return Object.freeze({ status: "unavailable", modeId, requestedLength, actualLength: 0, itemIds: Object.freeze([]), shortened: true, disclosure: "No eligible Free-node review evidence is currently available." });
 }
 
-export async function generateBundledFreeNode({ root = ROOT, trackId }) {
-  return bundledFreeNodeFromInputs(await canonicalInputs({ root, trackId }));
+export function prepareBundledFreeNodeSession(record, { modeId, requestedLength, mentalUnitId, feedbackOption, evidence = [] }) {
+  verifyBundledFreeNodeRecord(record);
+  const { payload } = payloadFromBundledFreeNode(record);
+  const configuration = payload.freeNodeExperienceProfile.modes.find((entry) => entry.modeId === modeId);
+  if (!configuration || !configuration.requestedLengths.includes(requestedLength)) fail("UNSUPPORTED_FREE_NODE_SESSION", "Requested mode or length is outside the Free-node profile.");
+  const byId = new Map(payload.items.map((item) => [item.id, item]));
+  let candidates;
+  if (configuration.availability === "evidence_conditioned") {
+    const eligible = [];
+    for (const entry of evidence) {
+      if (!isObject(entry) || typeof entry.itemId !== "string") fail("INVALID_REVIEW_EVIDENCE", "Review evidence must name an exact item.");
+      const item = byId.get(entry.itemId);
+      if (!item) fail("REVIEW_ITEM_OUTSIDE_PACKAGE", `Review evidence resolves item ${entry.itemId} outside the package.`);
+      const due = entry.source === "due_queue" && entry.due === true && configuration.selection.reviewSources.includes("due_queue");
+      const miss = entry.source === "session_misses" && entry.committed === true && configuration.selection.reviewSources.includes("session_misses");
+      if (due || miss) eligible.push(item);
+    }
+    candidates = [...new Map(eligible.map((item) => [item.id, item])).values()].sort((left, right) => compare(left.id, right.id));
+    if (!candidates.length) return unavailable(modeId, requestedLength);
+  } else if (configuration.selection.kind === "learner_selected_free_node_mental_unit") {
+    if (typeof mentalUnitId !== "string" || !mentalUnitId) fail("INVALID_FREE_NODE_MENTAL_UNIT", "Custom Practice requires one Free-node mental unit.");
+    if (!configuration.feedbackOptions.includes(feedbackOption)) fail("INVALID_FREE_NODE_FEEDBACK_OPTION", "Custom Practice feedback option is unsupported.");
+    candidates = payload.items.filter((item) => item.taxonomy?.primaryMentalUnitId === mentalUnitId).sort((left, right) => compare(left.id, right.id));
+    if (!candidates.length) fail("INVALID_FREE_NODE_MENTAL_UNIT", "Custom Practice mental unit is outside the package.");
+  } else candidates = [...payload.items].sort((left, right) => compare(left.id, right.id));
+  const selected = candidates.slice(0, requestedLength);
+  if (configuration.availability === "immediate" && selected.length !== requestedLength) fail("FREE_NODE_SESSION_NOT_PREPARABLE", "An immediately available Free mode cannot prepare its declared unique length.");
+  const shortened = selected.length < requestedLength;
+  return Object.freeze({ status: "ready", modeId, requestedLength, actualLength: selected.length, itemIds: Object.freeze(selected.map((item) => item.id)), shortened, ...(shortened ? { disclosure: `Only ${selected.length} eligible Free-node review item(s) are currently available.` } : {}), ...(feedbackOption ? { feedbackOption } : {}) });
+}
+
+async function loadPackageConfiguration(root, trackId) {
+  const [configuration, schema] = await Promise.all([readJson(join(root, "config/bundled-free-node-packages.json")), readJson(join(root, "schemas/product/bundled-free-node-packages.schema.json"))]);
+  validatePackageConfiguration(configuration, schema, trackId);
+  return { configuration, schema };
+}
+
+async function profileSourceCommit(root, paths) {
+  let status;
+  try { status = (await exec("git", ["status", "--porcelain", "--untracked-files=all", "--", ...paths], { cwd: root })).stdout.trim(); } catch { fail("SOURCE_COMMIT_UNAVAILABLE", "Bundled Free-node package requires a Git source repository."); }
+  if (status) fail("DIRTY_BUNDLED_FREE_NODE_SOURCE", "Bundled Free-node profile, brief, schemas, builder, or package version has uncommitted changes.");
+  const commit = (await exec("git", ["log", "-1", "--format=%H", "--", ...paths], { cwd: root })).stdout.trim();
+  if (!/^[a-f0-9]{40}$/.test(commit)) fail("SOURCE_COMMIT_UNAVAILABLE", "Bundled Free-node profile source commit is unavailable.");
+  return commit;
+}
+
+async function canonicalInputs({ root, trackId, injectedProfileSourceCommit }) {
+  const [briefs, pins, profiles, packageOwner] = await Promise.all([loadCanonicalTrackBriefs({ root }), loadCanonicalFreeNodeInventoryPins({ root }), loadCanonicalFreeNodeExperienceProfiles({ root }), loadPackageConfiguration(root, trackId)]);
+  const brief = briefs.find((entry) => entry.trackId === trackId); const pin = pins.find((entry) => entry.trackId === trackId); const profile = profiles.find((entry) => entry.trackId === trackId);
+  if (!brief || !pin || !profile) fail("MISSING_BUNDLED_FREE_NODE_INPUT", `Canonical brief, profile, or inventory pin is absent for ${trackId}.`);
+  const inventoryPath = join("artifacts", "free-node-inventories", pin.releaseId, `${trackId}.json`);
+  const [release, inventory, profileSchema, track, family, taxonomy, technicalEvidenceBytes, buildReport] = await Promise.all([
+    readJson(join(root, "artifacts", "releases", pin.releaseId, "release.json")), validateFreeNodeInventory({ root, inventoryPath }), readJson(join(root, "schemas/product/free-node-experience-profile.schema.json")), readJson(join(root, `config/tracks/${trackId}.json`)), readJson(join(root, `config/families/${profile.familyId}.json`)), readJson(join(root, `config/taxonomy/${trackId}.json`))
+    , readFile(resolve(root, pin.technicalEvidencePath)), readJson(join(root, "artifacts", "tracks", trackId, pin.contentVersion, "build-report.json"))
+  ]);
+  const artifact = artifactFor(release, trackId); const bank = JSON.parse(artifact.artifactBytes).bank; const assetBytesById = {};
+  for (const asset of bank.feedbackAssets ?? []) assetBytesById[asset.id] = (await readFile(join(root, asset.sourcePath))).toString("base64");
+  const sourcePaths = [brief.freeNodeExperience.profilePath, `docs/track-briefs/${trackId}.json`, `config/tracks/${trackId}.json`, "config/bundled-free-node-packages.json", "schemas/product", "scripts/product", "package.json", "package-lock.json"];
+  const sourceCommit = injectedProfileSourceCommit ?? await profileSourceCommit(root, sourcePaths);
+  return { release, releaseId: pin.releaseId, brief, inventory, pin, profile, profileSchema, track, family, taxonomy, packageConfiguration: packageOwner.configuration, packageConfigurationSchema: packageOwner.schema, profileSourceRepositoryCommit: sourceCommit, assetBytesById, technicalEvidenceBytes, buildReport };
+}
+
+export async function generateBundledFreeNode({ root = ROOT, trackId, profileSourceRepositoryCommit }) {
+  return bundledFreeNodeFromInputs(await canonicalInputs({ root, trackId, injectedProfileSourceCommit: profileSourceRepositoryCommit }));
+}
+
+export function canonicalBundledFreeNodePath(record) {
+  return join("artifacts", "bundled-free-nodes", record.manifest.trackId, record.manifest.packageVersion, "package.json");
 }
 
 export async function validateBundledFreeNode({ root = ROOT, bundledFreeNodePath }) {
   const record = await readJson(resolve(root, bundledFreeNodePath));
-  const schema = await readJson(join(root, "schemas", "product", "bundled-free-node.schema.json"));
-  validateCanonicalJsonSchema(record, schema, "bundled free node");
-  verifyBundledFreeNodeRecord(record);
+  const schema = await readJson(join(root, "schemas/product/bundled-free-node.schema.json"));
+  validateCanonicalJsonSchema(record, schema, "bundled Free node"); verifyBundledFreeNodeRecord(record);
+  if (bundledFreeNodePath !== canonicalBundledFreeNodePath(record)) fail("INVALID_PATH", "Bundled Free-node package path must match its immutable package identity.");
   const expected = await generateBundledFreeNode({ root, trackId: record.manifest.trackId });
-  if (canonicalJson(record) !== canonicalJson(expected)) fail("BUNDLED_FREE_NODE_MISMATCH", "Bundled free node does not exactly equal its pinned release, brief, and inventory inputs.");
+  if (canonicalJson(record) !== canonicalJson(expected)) fail("BUNDLED_FREE_NODE_MISMATCH", "Bundled Free node does not exactly equal its pinned release, profile, brief, inventory, and package version inputs.");
   return record;
 }
 
 function bundledOutput(root, outputPath) {
-  const target = resolve(root, outputPath);
-  const rel = relative(root, target);
-  const prefix = `artifacts${process.platform === "win32" ? "\\" : "/"}bundled-free-nodes${process.platform === "win32" ? "\\" : "/"}`;
-  if (!rel || rel === ".." || rel.startsWith("..") || !rel.startsWith(prefix)) fail("INVALID_PATH", `Bundled free-node output must remain in artifacts/bundled-free-nodes: ${outputPath}.`);
+  const target = resolve(root, outputPath); const rel = relative(root, target); const prefix = `artifacts${process.platform === "win32" ? "\\" : "/"}bundled-free-nodes${process.platform === "win32" ? "\\" : "/"}`;
+  if (!rel || rel === ".." || rel.startsWith("..") || !rel.startsWith(prefix)) fail("INVALID_PATH", `Bundled Free-node output must remain in artifacts/bundled-free-nodes: ${outputPath}.`);
   return target;
 }
 
-export async function writeBundledFreeNode({ root = ROOT, trackId, outputPath }) {
-  const target = bundledOutput(root, outputPath);
-  const record = await generateBundledFreeNode({ root, trackId });
-  await mkdir(dirname(target), { recursive: true });
-  try {
-    await writeFile(target, canonicalJson(record), { flag: "wx" });
-  } catch (error) {
-    if (error?.code === "EEXIST") fail("IMMUTABLE_BUNDLED_FREE_NODE", `Bundled free-node output already exists: ${outputPath}.`);
+export async function writeBundledFreeNode({ root = ROOT, trackId, profileSourceRepositoryCommit }) {
+  const record = await generateBundledFreeNode({ root, trackId, profileSourceRepositoryCommit });
+  const outputPath = canonicalBundledFreeNodePath(record); const target = bundledOutput(root, outputPath); const versionDirectory = dirname(target);
+  try { await stat(versionDirectory); fail("IMMUTABLE_BUNDLED_FREE_NODE", `Bundled Free-node package version already exists: ${outputPath}.`); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+  const pending = `${versionDirectory}.pending-${sha256(canonicalJson(record))}`;
+  await mkdir(dirname(versionDirectory), { recursive: true }); await mkdir(pending, { recursive: false });
+  try { await writeFile(join(pending, "package.json"), canonicalJson(record), { flag: "wx" }); await rename(pending, versionDirectory); } catch (error) {
+    await rm(pending, { recursive: true, force: true });
+    if (["EEXIST", "ENOTEMPTY"].includes(error?.code)) fail("IMMUTABLE_BUNDLED_FREE_NODE", `Bundled Free-node package version already exists: ${outputPath}.`);
     throw error;
   }
-  return Object.freeze({ record, path: target });
+  return Object.freeze({ record, path: target, canonicalSha256: sha256(canonicalJson(record)), canonicalSize: Buffer.byteLength(canonicalJson(record)) });
 }
 
 const [command, ...args] = process.argv.slice(2);
 function options(required) {
-  const values = new Map();
-  if (args.includes("--help")) return undefined;
+  const values = new Map(); if (args.includes("--help")) return undefined;
   for (let index = 0; index < args.length; index += 2) { const flag = args[index]; const value = args[index + 1]; if (!required.includes(flag) || !value || value.startsWith("--") || values.has(flag)) fail("USAGE", `Invalid argument: ${flag ?? ""}`); values.set(flag, value); }
-  for (const flag of required) if (!values.has(flag)) fail("USAGE", `${flag} is required.`);
-  return values;
+  for (const flag of required) if (!values.has(flag)) fail("USAGE", `${flag} is required.`); return values;
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const usage = "Use build-bundled-free-node --track <id> --output <path>, or validate-bundled-free-node --input <path>.";
+  const usage = "Use build-bundled-free-node --track <id>, or validate-bundled-free-node --input <canonical path>.";
   try {
     if (!command || command === "--help") process.stdout.write(`${usage}\n`);
-    else if (command === "build-bundled-free-node") { const values = options(["--track", "--output"]); if (!values) process.stdout.write(`${usage}\n`); else process.stdout.write(`${JSON.stringify((await writeBundledFreeNode({ trackId: values.get("--track"), outputPath: values.get("--output") })).record, null, 2)}\n`); }
+    else if (command === "build-bundled-free-node") { const values = options(["--track"]); if (!values) process.stdout.write(`${usage}\n`); else process.stdout.write(`${JSON.stringify(await writeBundledFreeNode({ trackId: values.get("--track") }), null, 2)}\n`); }
     else if (command === "validate-bundled-free-node") { const values = options(["--input"]); if (!values) process.stdout.write(`${usage}\n`); else process.stdout.write(`${JSON.stringify(await validateBundledFreeNode({ bundledFreeNodePath: values.get("--input") }), null, 2)}\n`); }
     else fail("USAGE", usage);
   } catch (error) { process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`); process.exitCode = 1; }

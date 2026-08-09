@@ -18,6 +18,7 @@ const requiredContractFields = [
   "validModes",
   "goalTemplates",
   "progressDimensions",
+  "freeNodeExperience",
   "packageContentPlan",
   "launchCommercialGate"
 ];
@@ -68,6 +69,24 @@ test("launch gate records only the factual admission requirement", () => {
   const weakenedGate = copy(canonicalBriefs[0]);
   weakenedGate.launchCommercialGate.productionRegistryAdmission = "briefApproved";
   assert.throws(() => validateTrackBrief(weakenedGate, schema), /must equal "realFreeVerticalAndCompleteCoreLoop"/);
+});
+
+test("briefs keep complete-track validModes separate from intended or implemented Free experience", () => {
+  for (const brief of canonicalBriefs) {
+    assert.ok(brief.freeNodeExperience.modeIds.every((modeId) => brief.validModes.includes(modeId)));
+    assert.ok(brief.freeNodeExperience.modeIds.length < brief.validModes.length);
+    if (["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer"].includes(brief.trackId)) {
+      assert.equal(brief.freeNodeExperience.implementationStatus, "profile_implemented");
+      assert.ok(brief.freeNodeExperience.profilePath);
+    } else {
+      assert.deepEqual(Object.keys(brief.freeNodeExperience).sort(), ["implementationStatus", "modeIds"]);
+      assert.equal(brief.freeNodeExperience.implementationStatus, "intended");
+    }
+  }
+  const allModesFree = copy(canonicalBriefs[0]); allModesFree.freeNodeExperience.modeIds = [...allModesFree.validModes];
+  assert.throws(() => validateTrackBrief(allModesFree, schema), /must not treat every complete-track validMode as a Free mode/);
+  const fakeEvidence = copy(canonicalBriefs.find((brief) => brief.freeNodeExperience.implementationStatus === "intended")); fakeEvidence.freeNodeExperience.profileId = "fake-profile";
+  assert.throws(() => validateTrackBrief(fakeEvidence, schema), /must not claim a profile/);
 });
 
 test("validator rejects empty, unavailable, duplicate, and family-invalid brief data", () => {

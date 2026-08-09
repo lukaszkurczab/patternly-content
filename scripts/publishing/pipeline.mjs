@@ -299,7 +299,7 @@ export function selectSimulationPlan({ profile, pool, items, selectionSeed, stat
 }
 export function selectSimulationItems(input) { return selectSimulationPlan(input).itemIds; }
 const PRACTICE_MODE_IDS = ["coding-interview-learn-approach", "coding-interview-guided-practice", "coding-interview-recognize-patterns", "coding-interview-contrast-practice", "coding-interview-weak-area-review", "coding-interview-independent-practice"];
-const SIMULATION_MODE_ID = "coding-interview-interview-simulation";
+const SIMULATION_MODE_ID = "coding-interview-simulation";
 const USER_MODE_MAPPINGS = [
   ["coding-interview-learn-approach", "coding-interview-learn-approach"],
   ["coding-interview-guided-practice", "coding-interview-guided-practice"],
@@ -308,7 +308,7 @@ const USER_MODE_MAPPINGS = [
   ["coding-interview-contrast-practice", "coding-interview-contrast-practice"],
   ["coding-interview-weak-area-review", "coding-interview-weak-area-review"],
   ["coding-interview-independent-practice", "coding-interview-independent-practice"],
-  ["coding-interview-interview-simulation", "coding-interview-interview-simulation"],
+  ["coding-interview-simulation", "coding-interview-simulation"],
 ];
 function trackModeConfiguration(track) {
   const configuration = record(track.modeConfiguration, "Coding Interview track modeConfiguration", "MISSING_TRACK_MODE_CONFIGURATION");

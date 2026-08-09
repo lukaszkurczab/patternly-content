@@ -59,8 +59,8 @@ test("canonical discovery is deterministic and ignores noncanonical content", as
     assert.deepEqual(Object.keys(bank).sort(), [...APPLICATION_ALGORITHMS_BANK_KEYS].sort());
     assert.deepEqual(Object.keys(bank.items[0]).sort(), [...APPLICATION_ALGORITHMS_ITEM_KEYS].sort());
     assert.deepEqual(bank.feedbackAssets, [{ id: "algorithms/complexity-linear-vs-nested", sourcePath: "manual/assets/coding-interview-dsa-problem-solving/complexity-linear-vs-nested.svg", sha256: "890413bf6613f20db0120a700511b5493eccad334619d006641662716f1708f5" }]);
-    const simulation = bank.practiceBlueprints.find((entry) => entry.modeId === "coding-interview-interview-simulation");
-    assert.deepEqual({ ...simulation, resolvedItemIds: undefined }, { blueprintId: "fixture-interview-simulation", blueprintVersion: "1", modeId: "coding-interview-interview-simulation", requestedLengths: [40], defaultRequestedLength: 40, shortening: "prohibited", minimumActualLength: 40, composition: { kind: "simulation_pool", ids: ["fixture-pool"] }, resolvedItemIds: undefined });
+    const simulation = bank.practiceBlueprints.find((entry) => entry.modeId === "coding-interview-simulation");
+    assert.deepEqual({ ...simulation, resolvedItemIds: undefined }, { blueprintId: "fixture-interview-simulation", blueprintVersion: "1", modeId: "coding-interview-simulation", requestedLengths: [40], defaultRequestedLength: 40, shortening: "prohibited", minimumActualLength: 40, composition: { kind: "simulation_pool", ids: ["fixture-pool"] }, resolvedItemIds: undefined });
     assert.equal(simulation.resolvedItemIds.length, 40); assert.equal(new Set(simulation.resolvedItemIds).size, 40); assert.ok(simulation.resolvedItemIds.every((id) => bank.simulationPools[0].itemIds.includes(id)));
     assert.doesNotMatch(JSON.stringify(bank), /resolvedModeDeclarations|technicalValidationEvidence|sourceOverrides|relationMetadata/);
   } finally { await rm(first, { recursive: true }); await rm(second, { recursive: true }); }
@@ -83,7 +83,7 @@ test("Coding Interview build report proves readiness for all eight user modes wi
 test("Coding Interview track configuration owns six practice blueprints and rejects batch-owned blueprints", async () => {
   const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
-    const trackPath = join(path, "config/tracks/coding-interview-dsa-problem-solving.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); assert.equal(track.modeConfiguration.practiceBlueprints.length, 6); assert.equal(track.modeConfiguration.simulationBlueprint.modeId, "coding-interview-interview-simulation");
+    const trackPath = join(path, "config/tracks/coding-interview-dsa-problem-solving.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); assert.equal(track.modeConfiguration.practiceBlueprints.length, 6); assert.equal(track.modeConfiguration.simulationBlueprint.modeId, "coding-interview-simulation");
     delete track.modeConfiguration; await writeFile(trackPath, JSON.stringify(track)); await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("MISSING_TRACK_MODE_CONFIGURATION"));
     await fixtureRoot(path, { coding_interview: algorithmsBatch(), technicalEvidence: false }); const sourcePath = join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.modeStructures.practiceBlueprints = []; await writeFile(sourcePath, JSON.stringify(source)); await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INVALID_SCHEMA"));
   } finally { await rm(path, { recursive: true }); }

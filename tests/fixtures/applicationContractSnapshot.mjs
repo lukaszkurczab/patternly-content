@@ -17,5 +17,5 @@ export const APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS = Object.freeze(["constra
 export const APPLICATION_ALGORITHM_MODE_IDS = Object.freeze([
   "coding-interview-learn-approach", "coding-interview-guided-practice", "coding-interview-recognize-patterns",
   "coding-interview-contrast-practice", "coding-interview-weak-area-review",
-  "coding-interview-independent-practice", "coding-interview-interview-simulation",
+  "coding-interview-independent-practice", "coding-interview-simulation",
 ]);

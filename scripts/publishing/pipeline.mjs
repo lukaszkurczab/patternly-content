@@ -69,6 +69,24 @@ async function assertCleanSource(root, override, { includeEvidence = true } = {}
   if (stdout.trim()) throw new PublishingFailure("DIRTY_SOURCE", "Canonical publishing inputs contain staged, unstaged, or untracked changes.");
   return commit;
 }
+async function assertCleanWorktree(root, override) {
+  if (override) return sourceCommit(root, override); // Test-only injected identity; CLI never supplies it.
+  const commit = await sourceCommit(root);
+  const { stdout } = await git(root, ["status", "--porcelain", "--untracked-files=all"]);
+  if (stdout.trim()) throw new PublishingFailure("DIRTY_SOURCE", "Immutable release publication requires a clean Git worktree.");
+  return commit;
+}
+async function gitExitZero(root, args) {
+  try { await git(root, args); return true; } catch (error) { if (error?.code === 1) return false; throw error; }
+}
+const releaseInputPaths = ["manual", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json", "evidence"];
+async function assertArtifactSourceIntegrity(root, artifactSourceCommit, publicationCommit, artifacts, override) {
+  if (override) return;
+  try { await git(root, ["cat-file", "-e", `${artifactSourceCommit}^{commit}`]); } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "Artifact source commit is unavailable in the publishing repository."); }
+  if (!await gitExitZero(root, ["merge-base", "--is-ancestor", artifactSourceCommit, publicationCommit])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Artifact source commit must be an ancestor of the clean publication commit.");
+  if (!await gitExitZero(root, ["diff", "--quiet", `${artifactSourceCommit}..${publicationCommit}`, "--", ...releaseInputPaths])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Canonical source or durable evidence changed after the artifact source commit.");
+  for (const trackId of artifacts.map((artifact) => artifact.trackId)) await validateTrack({ root, trackId });
+}
 const indexed = (entries) => new Map(entries.map((entry) => [text(entry?.id, "taxonomy id", "INVALID_REFERENCE"), entry]));
 function codingInterviewTaxonomy(taxonomy) {
   if (taxonomy.schemaVersion !== "coding-interview-taxonomy-v2") throw new PublishingFailure("MISSING_CANONICAL_TAXONOMY", "Coding Interview canonical taxonomy mappings are not installed.");
@@ -726,7 +744,7 @@ const releaseIdentifier = (value) => {
   return releaseId;
 };
 export async function publishRelease({ root = ROOT, releaseId, artifactPaths, outputRoot = join(ROOT, "artifacts"), sourceRepositoryCommit }) {
-  const cleanCommit = await assertCleanSource(root, sourceRepositoryCommit); const canonicalReleaseId = releaseIdentifier(releaseId); const paths = list(artifactPaths, "artifactPaths", "INVALID_RELEASE"); if (!paths.length) throw new PublishingFailure("INVALID_RELEASE", "A release must contain at least one verified track artifact."); const artifacts = await Promise.all(paths.map(verifyArtifact)); unique(artifacts.map((artifact) => artifact.trackId), "INVALID_RELEASE", "release track IDs"); if (artifacts.some((artifact) => artifact.sourceRepositoryCommit !== cleanCommit)) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Every artifact must be built from the exact source commit named by its release."); const release = { manifest: { envelopeVersion: 1, releaseId: canonicalReleaseId, sourceRepositoryCommit: cleanCommit }, artifacts: artifacts.sort((a, b) => compare(a.trackId, b.trackId)) }; const releaseDirectory = join(outputRoot, "releases", canonicalReleaseId); const out = join(releaseDirectory, "release.json"); const exported = join(releaseDirectory, "generated-bundled-content.mjs");
+  const publicationCommit = await assertCleanWorktree(root, sourceRepositoryCommit); const canonicalReleaseId = releaseIdentifier(releaseId); const paths = list(artifactPaths, "artifactPaths", "INVALID_RELEASE"); if (!paths.length) throw new PublishingFailure("INVALID_RELEASE", "A release must contain at least one verified track artifact."); const artifacts = await Promise.all(paths.map(verifyArtifact)); unique(artifacts.map((artifact) => artifact.trackId), "INVALID_RELEASE", "release track IDs"); const sourceCommits = [...new Set(artifacts.map((artifact) => artifact.sourceRepositoryCommit))]; if (sourceCommits.length !== 1) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Every artifact must be built from the exact source commit named by its release."); const artifactSourceCommit = sourceCommits[0]; if (sourceRepositoryCommit && artifactSourceCommit !== sourceRepositoryCommit) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Every artifact must be built from the exact source commit named by its release."); await assertArtifactSourceIntegrity(root, artifactSourceCommit, publicationCommit, artifacts, sourceRepositoryCommit); const release = { manifest: { envelopeVersion: 1, releaseId: canonicalReleaseId, sourceRepositoryCommit: artifactSourceCommit }, artifacts: artifacts.sort((a, b) => compare(a.trackId, b.trackId)) }; const releaseDirectory = join(outputRoot, "releases", canonicalReleaseId); const out = join(releaseDirectory, "release.json"); const exported = join(releaseDirectory, "generated-bundled-content.mjs");
   try { await stat(releaseDirectory); throw new PublishingFailure("IMMUTABLE_VERSION", `Release already exists: ${releaseId}.`); } catch (error) { if (error?.code !== "ENOENT") throw error; } const pendingDirectory = `${releaseDirectory}.pending-${canonicalHash(release)}`;
   await mkdir(dirname(releaseDirectory), { recursive: true }); await mkdir(pendingDirectory, { recursive: false });
   try { await writeFile(join(pendingDirectory, "release.json"), canonicalJson(release)); await writeFile(join(pendingDirectory, "generated-bundled-content.mjs"), `export const GENERATED_BUNDLED_CONTENT_RELEASE = Object.freeze(${JSON.stringify(release)});\n`); await rename(pendingDirectory, releaseDirectory); } catch (error) { await rm(pendingDirectory, { recursive: true, force: true }); throw error; }

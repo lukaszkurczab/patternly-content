@@ -149,6 +149,61 @@ test("technical evidence survives a clean multi-commit release cycle and invalid
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("publish derives its manifest source from committed artifacts across the evidence and artifact commits", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    await commitFixtureInputs(path, "technical inputs");
+    await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" });
+    const evidenceCommit = await commitFixtureInputs(path, "technical evidence");
+    const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out });
+    await commitFixtureInputs(path, "immutable artifact");
+    const release = await publishRelease({ root: path, releaseId: "fixture-release", artifactPaths: [artifact.path], outputRoot: out });
+    assert.equal(release.release.manifest.sourceRepositoryCommit, evidenceCommit);
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("publish rejects dirty worktrees, divergent canonical inputs, and artifacts without one common source", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), certification: certificationBatch(), technicalEvidence: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    await commitFixtureInputs(path, "technical inputs");
+    await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await emitTechnicalEvidence({ root: path, trackId: "google-cloud-associate-cloud-engineer" });
+    await commitFixtureInputs(path, "technical evidence");
+    const out = join(path, "artifacts"); const algorithm = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }); const certification = await buildTrack({ root: path, trackId: "google-cloud-associate-cloud-engineer", outputRoot: out });
+    await commitFixtureInputs(path, "immutable artifacts");
+    await writeFile(join(path, "untracked-release-input"), "dirty\n");
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "dirty-release", artifactPaths: [algorithm.path], outputRoot: out }), fails("DIRTY_SOURCE"));
+    await rm(join(path, "untracked-release-input"));
+    const divergentSource = join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"); const divergent = JSON.parse(await readFile(divergentSource, "utf8")); divergent.items[0].prompt = "Changed after immutable artifact."; await writeFile(divergentSource, JSON.stringify(divergent)); await commitFixtureInputs(path, "divergent source");
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "divergent-release", artifactPaths: [algorithm.path], outputRoot: out }), fails("SOURCE_COMMIT_MISMATCH"));
+    const raw = JSON.parse(await readFile(certification.path, "utf8")); raw.sourceRepositoryCommit = "different-source-commit"; await writeFile(certification.path, JSON.stringify(raw)); await commitFixtureInputs(path, "mismatched artifact source");
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "mismatched-release", artifactPaths: [algorithm.path, certification.path], outputRoot: out }), fails("SOURCE_COMMIT_MISMATCH"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("publish rejects an artifact source commit unavailable from the publishing repository", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    await commitFixtureInputs(path, "technical inputs"); await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
+    const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }); await commitFixtureInputs(path, "immutable artifact");
+    const raw = JSON.parse(await readFile(artifact.path, "utf8")); raw.sourceRepositoryCommit = "unreachable-artifact-source"; await writeFile(artifact.path, JSON.stringify(raw)); await commitFixtureInputs(path, "unreachable artifact source");
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "unreachable-source", artifactPaths: [artifact.path], outputRoot: out }), fails("SOURCE_COMMIT_UNAVAILABLE"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("publish rejects durable-evidence-only divergence after an immutable artifact", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    await commitFixtureInputs(path, "technical inputs"); const emitted = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
+    const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }); await commitFixtureInputs(path, "immutable artifact");
+    await writeFile(emitted.path, `${await readFile(emitted.path, "utf8")} `); await commitFixtureInputs(path, "divergent durable evidence");
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "evidence-diverged", artifactPaths: [artifact.path], outputRoot: out }), fails("SOURCE_COMMIT_MISMATCH"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
 test("simulation coverage evidence is immutable for each committed technical input", async () => {
   const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {

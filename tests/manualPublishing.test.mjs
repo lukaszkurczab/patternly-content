@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { execFile } from "node:child_process";
 import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { buildReleaseCandidate, buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
@@ -37,6 +38,14 @@ async function cleanGitReleaseFixture(path) {
   await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test"); await commitFixtureInputs(path, "technical inputs");
   const evidence = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
   return evidence;
+}
+async function commitPublisherOnlyChange(path, message = "publisher-only change") {
+  const pathToPublisher = join(path, "scripts/publishing/pipeline.mjs");
+  const original = await readFile(new URL("../scripts/publishing/pipeline.mjs", import.meta.url), "utf8");
+  const changed = original.replace("if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(releaseId))", "if (typeof releaseId !== \"string\" || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(releaseId))");
+  assert.notEqual(changed, original); await mkdir(dirname(pathToPublisher), { recursive: true }); await writeFile(pathToPublisher, changed);
+  await commitFixtureInputs(path, message);
+  return import(pathToFileURL(pathToPublisher).href);
 }
 
 test("canonical discovery is deterministic and ignores noncanonical content", async () => {
@@ -149,7 +158,7 @@ test("technical evidence survives a clean multi-commit release cycle and invalid
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("publish derives its manifest source from committed artifacts across the evidence and artifact commits", async () => {
+test("publish rebuild-proves artifacts across evidence, artifact, and publisher-only commits", async () => {
   const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
     await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
@@ -158,8 +167,45 @@ test("publish derives its manifest source from committed artifacts across the ev
     const evidenceCommit = await commitFixtureInputs(path, "technical evidence");
     const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out });
     await commitFixtureInputs(path, "immutable artifact");
-    const release = await publishRelease({ root: path, releaseId: "fixture-release", artifactPaths: [artifact.path], outputRoot: out });
+    const publisher = await commitPublisherOnlyChange(path);
+    const release = await publisher.publishRelease({ root: path, releaseId: "fixture-release", artifactPaths: [artifact.path], outputRoot: out });
     assert.equal(release.release.manifest.sourceRepositoryCommit, evidenceCommit);
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("publish rejects a valid-checksum tampered artifact after a publisher-only commit", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    await commitFixtureInputs(path, "technical inputs"); await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
+    const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }); await commitFixtureInputs(path, "immutable artifact");
+    const tampered = JSON.parse(await readFile(artifact.path, "utf8")); tampered.artifactBytes = `${tampered.artifactBytes} `; tampered.checksumSha256 = hash(tampered.artifactBytes); await writeFile(artifact.path, JSON.stringify(tampered)); await commitPublisherOnlyChange(path, "publisher-only change with tampered artifact");
+    const rebuildDirectoriesBefore = (await readdir(tmpdir())).filter((entry) => entry.startsWith("patternly-release-rebuild-")).sort();
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "tampered-publisher-release", artifactPaths: [artifact.path], outputRoot: out }), fails("ARTIFACT_REBUILD_MISMATCH"));
+    assert.deepEqual((await readdir(tmpdir())).filter((entry) => entry.startsWith("patternly-release-rebuild-")).sort(), rebuildDirectoriesBefore);
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("publish rejects a source override and cannot use it to bypass a dirty worktree", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    await commitFixtureInputs(path, "technical inputs"); await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
+    const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }); await commitFixtureInputs(path, "immutable artifact");
+    await writeFile(join(path, "dirty-release-input"), "dirty\n");
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "override-release", artifactPaths: [artifact.path], outputRoot: out, sourceRepositoryCommit: artifact.artifact.sourceRepositoryCommit }), fails("INVALID_RELEASE"));
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "dirty-release", artifactPaths: [artifact.path], outputRoot: out }), fails("DIRTY_SOURCE"));
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("publish blocks manual drift even when the publisher also changed", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    await commitFixtureInputs(path, "technical inputs"); await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
+    const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }); await commitFixtureInputs(path, "immutable artifact");
+    const sourcePath = join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.items[0].prompt = "Changed after immutable artifact."; await writeFile(sourcePath, JSON.stringify(source)); await commitPublisherOnlyChange(path, "publisher and manual change");
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "manual-publisher-release", artifactPaths: [artifact.path], outputRoot: out }), fails("SOURCE_COMMIT_MISMATCH"));
   } finally { await rm(path, { recursive: true }); }
 });
 
@@ -399,18 +445,19 @@ test("build checks every immutable target before making an artifact visible", as
 });
 
 test("artifact and release are immutable, exact-byte checked, and tracks remain independent", async () => {
-  const path = await root({ coding_interview: algorithmsBatch(), certification: certificationBatch() });
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
-    const out = join(path, "out"); const algorithm = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" });
+    await cleanGitReleaseFixture(path);
+    const out = join(path, "out"); const algorithm = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }); await commitFixtureInputs(path, "immutable artifact");
     assert.deepEqual(Object.keys(algorithm.artifact).sort(), ["artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"]);
-    await assert.rejects(() => buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("IMMUTABLE_VERSION"));
-    await assert.rejects(() => publishRelease({ root: path, releaseId: "--help", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("INVALID_RELEASE"));
-    await assert.rejects(() => publishRelease({ root: path, releaseId: "empty-release", artifactPaths: [], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("INVALID_RELEASE"));
+    await assert.rejects(() => buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }), fails("IMMUTABLE_VERSION"));
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "--help", artifactPaths: [algorithm.path], outputRoot: out }), fails("INVALID_RELEASE"));
+    await assert.rejects(() => publishRelease({ root: path, releaseId: "empty-release", artifactPaths: [], outputRoot: out }), fails("INVALID_RELEASE"));
     await assert.rejects(() => stat(join(out, "releases/--help")), (error) => error?.code === "ENOENT");
     const mismatched = JSON.parse(await readFile(algorithm.path, "utf8")); mismatched.sourceRepositoryCommit = "different-fixture-source-commit"; await writeFile(algorithm.path, JSON.stringify(mismatched));
-    await assert.rejects(() => publishRelease({ root: path, releaseId: "mismatched-source", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("SOURCE_COMMIT_MISMATCH"));
-    await writeFile(algorithm.path, JSON.stringify(algorithm.artifact));
-    const release = await publishRelease({ root: path, releaseId: "coding-interview-only", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["coding-interview-dsa-problem-solving"]); assert.match(await readFile(release.exportPath, "utf8"), /GENERATED_BUNDLED_CONTENT_RELEASE/);
+    await commitFixtureInputs(path, "unavailable artifact source"); await assert.rejects(() => publishRelease({ root: path, releaseId: "mismatched-source", artifactPaths: [algorithm.path], outputRoot: out }), fails("SOURCE_COMMIT_UNAVAILABLE"));
+    await writeFile(algorithm.path, JSON.stringify(algorithm.artifact)); await commitFixtureInputs(path, "restore immutable artifact");
+    const release = await publishRelease({ root: path, releaseId: "coding-interview-only", artifactPaths: [algorithm.path], outputRoot: out }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["coding-interview-dsa-problem-solving"]); assert.match(await readFile(release.exportPath, "utf8"), /GENERATED_BUNDLED_CONTENT_RELEASE/);
     const raw = JSON.parse(await readFile(algorithm.path, "utf8")); raw.artifactBytes += " "; await writeFile(algorithm.path, JSON.stringify(raw)); await assert.rejects(() => verifyArtifact(algorithm.path), fails("CHECKSUM_MISMATCH"));
   } finally { await rm(path, { recursive: true }); }
 });

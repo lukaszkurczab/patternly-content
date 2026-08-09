@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -57,7 +58,7 @@ async function sourceCommit(root, override) {
 async function technicalInputCommit(root, override) {
   if (override) return sourceCommit(root, override);
   try {
-    const { stdout } = await git(root, ["log", "-1", "--format=%H", "--", "manual/source", "manual/assets", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json"]);
+    const { stdout } = await git(root, ["log", "-1", "--format=%H", "--", "manual/source", "manual/assets", "config", "schemas/publishing", "package.json", "package-lock.json"]);
     return text(stdout.trim(), "technicalInputCommit", "SOURCE_COMMIT_UNAVAILABLE");
   } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "A buildable source repository must have a technical input commit."); }
 }
@@ -69,8 +70,7 @@ async function assertCleanSource(root, override, { includeEvidence = true } = {}
   if (stdout.trim()) throw new PublishingFailure("DIRTY_SOURCE", "Canonical publishing inputs contain staged, unstaged, or untracked changes.");
   return commit;
 }
-async function assertCleanWorktree(root, override) {
-  if (override) return sourceCommit(root, override); // Test-only injected identity; CLI never supplies it.
+async function assertCleanWorktree(root) {
   const commit = await sourceCommit(root);
   const { stdout } = await git(root, ["status", "--porcelain", "--untracked-files=all"]);
   if (stdout.trim()) throw new PublishingFailure("DIRTY_SOURCE", "Immutable release publication requires a clean Git worktree.");
@@ -79,12 +79,11 @@ async function assertCleanWorktree(root, override) {
 async function gitExitZero(root, args) {
   try { await git(root, args); return true; } catch (error) { if (error?.code === 1) return false; throw error; }
 }
-const releaseInputPaths = ["manual", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json", "evidence"];
-async function assertArtifactSourceIntegrity(root, artifactSourceCommit, publicationCommit, artifacts, override) {
-  if (override) return;
+const releaseSourceInputPaths = ["manual", "config", "schemas/publishing", "package.json", "package-lock.json", "evidence"];
+async function assertArtifactSourceIntegrity(root, artifactSourceCommit, publicationCommit, artifacts) {
   try { await git(root, ["cat-file", "-e", `${artifactSourceCommit}^{commit}`]); } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "Artifact source commit is unavailable in the publishing repository."); }
   if (!await gitExitZero(root, ["merge-base", "--is-ancestor", artifactSourceCommit, publicationCommit])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Artifact source commit must be an ancestor of the clean publication commit.");
-  if (!await gitExitZero(root, ["diff", "--quiet", `${artifactSourceCommit}..${publicationCommit}`, "--", ...releaseInputPaths])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Canonical source or durable evidence changed after the artifact source commit.");
+  if (!await gitExitZero(root, ["diff", "--quiet", `${artifactSourceCommit}..${publicationCommit}`, "--", ...releaseSourceInputPaths])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Canonical source or durable evidence changed after the artifact source commit.");
   for (const trackId of artifacts.map((artifact) => artifact.trackId)) await validateTrack({ root, trackId });
 }
 const indexed = (entries) => new Map(entries.map((entry) => [text(entry?.id, "taxonomy id", "INVALID_REFERENCE"), entry]));
@@ -647,7 +646,7 @@ const DURABLE_EVIDENCE_GENERATOR_VERSION = "coding-interview-release-evidence-v1
 function durableIdentity(value) { const { generatedAt, evidenceSha256, ...identity } = value; return identity; }
 function durableEvidence(value) { return { ...value, evidenceSha256: canonicalHash(durableIdentity(value)) }; }
 async function sourceManifestSha256(root, trackId, technicalCommit) {
-  const paths = ["manual/source", "manual/assets", "config", "schemas/publishing", "scripts/publishing", "package.json", "package-lock.json"];
+  const paths = ["manual/source", "manual/assets", "config", "schemas/publishing", "package.json", "package-lock.json"];
   if (/^[a-f0-9]{40}$/.test(technicalCommit ?? "")) {
     try {
       const { stdout } = await git(root, ["ls-tree", "-r", "--name-only", technicalCommit, "--", ...paths]);
@@ -721,7 +720,7 @@ export async function validateTrack({ root = ROOT, trackId, sourceRepositoryComm
 }
 function bankFor(validated) { if (validated.track.familyId !== "coding_interview") return { formatVersion: 1, trackId: validated.track.trackId, familyId: validated.track.familyId, contentVersion: validated.source.contentVersion, examExperienceProfile: validated.source.examExperienceProfile, diagnosticBaseline: validated.source.diagnosticBaseline, focusPractice: validated.source.focusPractice, scenarioPractice: validated.source.scenarioPractice, weakAreaReview: validated.source.weakAreaReview, mixedPractice: validated.source.mixedPractice, quickReview: validated.source.quickReview, items: validated.source.items }; const modes = compileModeDeclarations(validated.source.modeStructures); return Object.freeze({ formatVersion: 1, trackId: "coding-interview-dsa-problem-solving", familyId: "coding_interview", contentVersion: validated.source.contentVersion, feedbackAssets: Object.freeze(validated.source.feedbackAssets.map((asset) => Object.freeze({ ...asset }))), items: Object.freeze(validated.source.items.map((item) => compilePublishedCodingInterviewItem(item, item.compatibilityMemberships, item.itemFingerprint))), ...modes }); }
 export async function buildTrack({ root = ROOT, trackId, outputRoot = join(ROOT, "artifacts"), sourceRepositoryCommit }) {
-  const cleanCommit = await assertCleanSource(root, sourceRepositoryCommit); const validated = await validateTrack({ root, trackId, ...(sourceRepositoryCommit ? { sourceRepositoryCommit } : {}) }); const bank = bankFor(validated); const artifactBytes = canonicalJson({ envelopeVersion: 1, schemaVersion: "published-bank-v1", contentVersion: validated.source.contentVersion, taxonomyVersion: validated.source.taxonomyVersion, bank });
+  const cleanCommit = await assertCleanSource(root, sourceRepositoryCommit); const injectedIdentity = sourceRepositoryCommit && !/^[a-f0-9]{40}$/.test(sourceRepositoryCommit); const validated = await validateTrack({ root, trackId, ...(injectedIdentity ? { sourceRepositoryCommit } : {}) }); const bank = bankFor(validated); const artifactBytes = canonicalJson({ envelopeVersion: 1, schemaVersion: "published-bank-v1", contentVersion: validated.source.contentVersion, taxonomyVersion: validated.source.taxonomyVersion, bank });
   const artifact = { trackId, familyId: validated.track.familyId, contentVersion: validated.source.contentVersion, taxonomyVersion: validated.source.taxonomyVersion, schemaVersion: "published-bank-v1", checksumSha256: hash(artifactBytes), sourceRepositoryCommit: cleanCommit, declaredModes: validated.source.declaredModes, artifactBytes };
   const versionDirectory = join(outputRoot, "tracks", trackId, artifact.contentVersion); const out = join(versionDirectory, "track-artifact.json"); const reportPath = join(versionDirectory, "build-report.json");
   try { await stat(versionDirectory); throw new PublishingFailure("IMMUTABLE_VERSION", `Artifact version already exists: ${trackId}/${artifact.contentVersion}.`); } catch (error) { if (error?.code !== "ENOENT") throw error; }
@@ -738,13 +737,23 @@ export async function buildReleaseCandidate({ root = ROOT, outputRoot, sourceRep
   return Object.freeze(artifacts.map(({ checksumSha256, contentVersion, trackId }) => Object.freeze({ trackId, contentVersion, checksumSha256 })));
 }
 export async function verifyArtifact(path) { const artifact = await json(path); const expectedKeys = ["artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"]; if (canonicalJson(Object.keys(artifact).sort(compare)) !== canonicalJson(expectedKeys)) throw new PublishingFailure("INVALID_ARTIFACT", "Track artifact reference has an unsupported external shape."); if (hash(text(artifact.artifactBytes, "artifactBytes")) !== artifact.checksumSha256) throw new PublishingFailure("CHECKSUM_MISMATCH", "Artifact bytes do not match checksum."); const envelope = JSON.parse(artifact.artifactBytes); if (envelope.envelopeVersion !== 1 || envelope.schemaVersion !== "published-bank-v1" || envelope.contentVersion !== artifact.contentVersion || envelope.taxonomyVersion !== artifact.taxonomyVersion || envelope.bank.trackId !== artifact.trackId || envelope.bank.familyId !== artifact.familyId) throw new PublishingFailure("INVALID_ARTIFACT", "Published artifact envelope identity is invalid."); if (artifact.familyId === "coding_interview") { const bankKeys = ["compatibilitySets", "contentVersion", "contrastSets", "familyId", "feedbackAssets", "formatVersion", "interleavedScopes", "items", "practiceBlueprints", "recognitionSets", "simulationPools", "simulationProfiles", "trackId"]; const requiredItemKeys = ["compatibilityMemberships", "feedback", "id", "interaction", "itemFingerprint", "prompt", "provenance", "scoringContract", "taxonomy"]; const optionalItemKeys = ["constraints", "difficulty"]; const validItem = (item) => { const keys = Object.keys(item); return requiredItemKeys.every((key) => keys.includes(key)) && keys.every((key) => requiredItemKeys.includes(key) || optionalItemKeys.includes(key)); }; const validAsset = (asset) => asset && typeof asset === "object" && canonicalJson(Object.keys(asset).sort(compare)) === canonicalJson(["id", "sha256", "sourcePath"]) && /^[a-z0-9][a-z0-9/_-]*$/.test(asset.id) && /^manual\/assets\/coding-interview-dsa-problem-solving\/.+\.svg$/.test(asset.sourcePath) && /^[a-f0-9]{64}$/.test(asset.sha256); if (canonicalJson(Object.keys(envelope.bank).sort(compare)) !== canonicalJson(bankKeys) || envelope.bank.formatVersion !== 1 || envelope.bank.contentVersion !== artifact.contentVersion || !Array.isArray(envelope.bank.feedbackAssets) || envelope.bank.feedbackAssets.some((asset) => !validAsset(asset)) || envelope.bank.items.some((item) => !validItem(item))) throw new PublishingFailure("INVALID_ARTIFACT", "Coding Interview published bank does not conform to the exact application contract."); } else { const bankKeys = ["contentVersion", "diagnosticBaseline", "examExperienceProfile", "familyId", "focusPractice", "formatVersion", "items", "mixedPractice", "quickReview", "scenarioPractice", "trackId", "weakAreaReview"]; if (canonicalJson(Object.keys(envelope.bank).sort(compare)) !== canonicalJson(bankKeys) || envelope.bank.formatVersion !== 1 || envelope.bank.contentVersion !== artifact.contentVersion) throw new PublishingFailure("INVALID_ARTIFACT", "Certification published bank does not conform to the exact application contract."); } return artifact; }
+async function assertArtifactsRebuild(root, artifacts, artifactSourceCommit) {
+  const outputRoot = await mkdtemp(join(tmpdir(), "patternly-release-rebuild-"));
+  try {
+    for (const artifact of artifacts) {
+      const rebuilt = await buildTrack({ root, trackId: artifact.trackId, outputRoot, sourceRepositoryCommit: artifactSourceCommit });
+      if (canonicalJson(rebuilt.artifact) !== canonicalJson(artifact)) throw new PublishingFailure("ARTIFACT_REBUILD_MISMATCH", `Artifact does not match a deterministic rebuild from its declared source commit: ${artifact.trackId}.`);
+    }
+  } finally { await rm(outputRoot, { recursive: true, force: true }); }
+}
 const releaseIdentifier = (value) => {
   const releaseId = text(value, "releaseId", "INVALID_RELEASE");
   if (!/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(releaseId)) throw new PublishingFailure("INVALID_RELEASE", "releaseId must be a lowercase hyphenated identifier and cannot be an option.");
   return releaseId;
 };
 export async function publishRelease({ root = ROOT, releaseId, artifactPaths, outputRoot = join(ROOT, "artifacts"), sourceRepositoryCommit }) {
-  const publicationCommit = await assertCleanWorktree(root, sourceRepositoryCommit); const canonicalReleaseId = releaseIdentifier(releaseId); const paths = list(artifactPaths, "artifactPaths", "INVALID_RELEASE"); if (!paths.length) throw new PublishingFailure("INVALID_RELEASE", "A release must contain at least one verified track artifact."); const artifacts = await Promise.all(paths.map(verifyArtifact)); unique(artifacts.map((artifact) => artifact.trackId), "INVALID_RELEASE", "release track IDs"); const sourceCommits = [...new Set(artifacts.map((artifact) => artifact.sourceRepositoryCommit))]; if (sourceCommits.length !== 1) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Every artifact must be built from the exact source commit named by its release."); const artifactSourceCommit = sourceCommits[0]; if (sourceRepositoryCommit && artifactSourceCommit !== sourceRepositoryCommit) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Every artifact must be built from the exact source commit named by its release."); await assertArtifactSourceIntegrity(root, artifactSourceCommit, publicationCommit, artifacts, sourceRepositoryCommit); const release = { manifest: { envelopeVersion: 1, releaseId: canonicalReleaseId, sourceRepositoryCommit: artifactSourceCommit }, artifacts: artifacts.sort((a, b) => compare(a.trackId, b.trackId)) }; const releaseDirectory = join(outputRoot, "releases", canonicalReleaseId); const out = join(releaseDirectory, "release.json"); const exported = join(releaseDirectory, "generated-bundled-content.mjs");
+  if (sourceRepositoryCommit !== undefined) throw new PublishingFailure("INVALID_RELEASE", "Release publication derives source identity from verified artifacts and does not accept an override.");
+  const publicationCommit = await assertCleanWorktree(root); const canonicalReleaseId = releaseIdentifier(releaseId); const paths = list(artifactPaths, "artifactPaths", "INVALID_RELEASE"); if (!paths.length) throw new PublishingFailure("INVALID_RELEASE", "A release must contain at least one verified track artifact."); const artifacts = await Promise.all(paths.map(verifyArtifact)); unique(artifacts.map((artifact) => artifact.trackId), "INVALID_RELEASE", "release track IDs"); const sourceCommits = [...new Set(artifacts.map((artifact) => artifact.sourceRepositoryCommit))]; if (sourceCommits.length !== 1) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Every artifact must be built from the exact source commit named by its release."); const artifactSourceCommit = sourceCommits[0]; await assertArtifactSourceIntegrity(root, artifactSourceCommit, publicationCommit, artifacts); await assertArtifactsRebuild(root, artifacts, artifactSourceCommit); const release = { manifest: { envelopeVersion: 1, releaseId: canonicalReleaseId, sourceRepositoryCommit: artifactSourceCommit }, artifacts: artifacts.sort((a, b) => compare(a.trackId, b.trackId)) }; const releaseDirectory = join(outputRoot, "releases", canonicalReleaseId); const out = join(releaseDirectory, "release.json"); const exported = join(releaseDirectory, "generated-bundled-content.mjs");
   try { await stat(releaseDirectory); throw new PublishingFailure("IMMUTABLE_VERSION", `Release already exists: ${releaseId}.`); } catch (error) { if (error?.code !== "ENOENT") throw error; } const pendingDirectory = `${releaseDirectory}.pending-${canonicalHash(release)}`;
   await mkdir(dirname(releaseDirectory), { recursive: true }); await mkdir(pendingDirectory, { recursive: false });
   try { await writeFile(join(pendingDirectory, "release.json"), canonicalJson(release)); await writeFile(join(pendingDirectory, "generated-bundled-content.mjs"), `export const GENERATED_BUNDLED_CONTENT_RELEASE = Object.freeze(${JSON.stringify(release)});\n`); await rename(pendingDirectory, releaseDirectory); } catch (error) { await rm(pendingDirectory, { recursive: true, force: true }); throw error; }

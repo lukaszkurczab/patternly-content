@@ -1,0 +1,535 @@
+{
+  "schemaVersion": "coding-interview-manual-source-v2",
+  "batchId": "coding-interview-hash-map-and-set-frequency-counting-candidate-v1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "familyId": "coding_interview",
+  "contentVersion": "coding-interview-dsa-problem-solving-0001",
+  "taxonomyVersion": "coding-interview-taxonomy-v2",
+  "declaredModes": [
+    "coding-interview-learn-approach",
+    "coding-interview-guided-practice",
+    "coding-interview-recognize-patterns",
+    "coding-interview-contrast-practice",
+    "coding-interview-weak-area-review",
+    "coding-interview-independent-practice",
+    "coding-interview-interview-simulation"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "hash_map_and_set",
+    "primaryMentalUnitId": "frequency_counting",
+    "patternFamilyId": "hash_map_and_set"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro",
+    "createdAt": "2026-07-18",
+    "contentBatchId": "coding-interview-hash-map-and-set-frequency-counting-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-hms-frequency-increment-invariant",
+      "prompt": "Order the steps that update a frequency map so count[value] equals the number of processed occurrences after each iteration.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "read_value",
+            "text": "Read the current value."
+          },
+          {
+            "id": "read_old_count",
+            "text": "Read its stored count, using zero when the key is absent."
+          },
+          {
+            "id": "write_incremented",
+            "text": "Write old count + 1 for that value."
+          },
+          {
+            "id": "advance",
+            "text": "Advance to the next input value."
+          }
+        ],
+        "canonicalOrder": [
+          "read_value",
+          "read_old_count",
+          "write_incremented",
+          "advance"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Each update derives the new count from the prior count before the loop invariant is advanced.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Maintain processed-prefix counts"
+            },
+            {
+              "type": "paragraph",
+              "text": "Before an iteration, map[x] equals the number of x occurrences in the already processed prefix, and an absent key represents zero. The current occurrence must be added before the prefix is considered processed."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Read the current value v.",
+                "Read old = map[v], substituting 0 when v is absent.",
+                "Write map[v] = old + 1; the invariant now holds for the prefix including this occurrence.",
+                "Advance only after the updated map represents the enlarged processed prefix."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "worked_example",
+              "title": "Trace [4, 2, 4]",
+              "text": "The count for 4 changes 0 → 1 on the first value and 1 → 2 on the last value. Overwriting with 1 or recording only presence would lose the second occurrence."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_map",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-frequency-multiset-equality",
+      "prompt": "The arrays [1, 1, 2, 3] and [1, 2, 2, 3] have the same length and the same distinct values but different multiplicities. Which state can decide whether they are equal as multisets?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "presence_set",
+            "text": "A set of distinct values."
+          },
+          {
+            "id": "array_length_only",
+            "text": "Only the total length of each array."
+          },
+          {
+            "id": "frequency_map",
+            "text": "A value-to-count map."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frequency_map"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Multiset equality is equality of per-value multiplicities, not only equality of distinct members.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A frequency map represents the complete multiset signature: every key’s count must match. Here the first map has counts {1: 2, 2: 1, 3: 1}, while the second has {1: 1, 2: 2, 3: 1}, so they differ. Both a presence set and total length are identical for these arrays and lose the decisive per-value multiplicity. The same boundary appears in permutation checks, inventory reconciliation, and resource-consumption validation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "presence_set": "Both arrays can have the same set even when their multiplicities differ, so presence loses the decisive information.",
+          "array_length_only": "Equal lengths do not identify which values occur how many times, and an unequal length alone does not provide a complete multiset comparison."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_map",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "introductory"
+    },
+    {
+      "id": "alg-hms-frequency-decrement-remove-zero",
+      "prompt": "An event removes one occurrence of key k from maintained frequency state. Order the steps so absence and zero count remain equivalent in the canonical map.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "verify_positive",
+            "text": "Verify that k currently has a positive count."
+          },
+          {
+            "id": "decrement",
+            "text": "Decrease the stored count by one."
+          },
+          {
+            "id": "remove_if_zero",
+            "text": "Delete k if the new count is zero."
+          },
+          {
+            "id": "continue",
+            "text": "Continue with the next event."
+          }
+        ],
+        "canonicalOrder": [
+          "verify_positive",
+          "decrement",
+          "remove_if_zero",
+          "continue"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The update must prevent negative counts and remove zero-valued keys if key presence is used as the positive-count predicate.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Keep absence equivalent to zero"
+            },
+            {
+              "type": "paragraph",
+              "text": "The canonical representation uses an absent key for count zero and a present key only for a positive count. Therefore contains(k) and count(k) > 0 remain equivalent."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Verify count[k] > 0 so the removal event cannot create a negative count.",
+                "Write the decremented value count[k] - 1.",
+                "If that new value is zero, delete k instead of retaining a zero-valued entry.",
+                "Continue only after presence again means positive multiplicity."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "edge_case",
+              "title": "Alternative representation",
+              "text": "Keeping zero-valued keys can be correct only under a different invariant where every consumer tests the numeric payload; a plain key-existence check would then give the wrong positive-count answer."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_map",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-frequency-threshold-crossing-order",
+      "prompt": "The program must report the exact iteration when a value’s count becomes 3. Which update sequence is correct?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "test_then_increment",
+            "text": "Test whether the old count equals 3, then increment."
+          },
+          {
+            "id": "increment_then_test",
+            "text": "Increment the value’s count, then test whether the new count equals 3."
+          },
+          {
+            "id": "insert_presence_then_test",
+            "text": "Insert the value into a set, then test membership."
+          }
+        ],
+        "acceptedOptionIds": [
+          "increment_then_test"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The event is defined by the post-update count, so the increment must occur before the equality test.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "“Check before or after update” is not a universal rule; it depends on which state the condition describes. Here the condition is that the current occurrence raises the cumulative count to three, so the new state must be computed first. For duplicate detection, by contrast, checking prior presence before recording the current occurrence is the correct invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "test_then_increment": "Testing the old count reports one occurrence late because the event that creates count 3 has not yet been reflected.",
+          "insert_presence_then_test": "Membership cannot distinguish the first, second, and third occurrences, so it cannot detect the threshold crossing."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_map",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-frequency-most-common-state",
+      "prompt": "A task must return the value with the highest occurrence count. Which hash state is sufficient to support the comparison?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "seen_values",
+            "text": "A set of values that appeared."
+          },
+          {
+            "id": "value_to_boolean",
+            "text": "A map from value to true."
+          },
+          {
+            "id": "value_to_count",
+            "text": "A map from value to count, plus a rule for comparing counts."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_to_count"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Selecting a most frequent value requires the numeric multiplicity associated with each key.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The map establishes the count invariant; a separate scan of entries or an online maximum tracker can then choose the largest count under a stated tie rule. Presence is insufficient because all seen values would look equal. If ties or stable ordering matter, that additional contract must also be represented."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "seen_values": "A set shows which candidates exist but gives no basis for ranking them by multiplicity.",
+          "value_to_boolean": "A boolean payload is semantically the same as set membership and still loses all count differences."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_map",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-frequency-count-versus-bucket",
+      "prompt": "A report must return every record in each category, not only category sizes. What is missing from a value-to-count map?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "presence_bit",
+            "text": "A boolean showing the category exists."
+          },
+          {
+            "id": "member_bucket",
+            "text": "A bucket of the original records for each category key."
+          },
+          {
+            "id": "larger_integer",
+            "text": "A wider integer type for the count."
+          }
+        ],
+        "acceptedOptionIds": [
+          "member_bucket"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Counts summarize group size; returning group members requires a key-to-bucket payload.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A frequency map is a lossy aggregation by design. It answers “how many?” but not “which ones?” When the output changes to materialized groups, the payload must change to a list or another member-preserving structure. This is a transfer boundary between counting and grouping, even though both use hash maps."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "presence_bit": "Presence retains even less information than the count and still cannot reconstruct group members.",
+          "larger_integer": "Numeric width can prevent overflow, but it cannot recover the identities of records that were never stored."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_map",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "alg-hms-frequency-expected-cost",
+      "prompt": "A frequency pass processes n fixed-width values and updates one hash-map count per value. At most n distinct keys are stored. Under ordinary hashing assumptions, classify expected time and extra space.",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "extra_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n log n)",
+            "O(n^2)"
+          ],
+          "extra_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n^2)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "extra_space": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {},
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "There is one expected-constant map update per input element and up to n distinct count entries.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Let d be the number of distinct values, with d ≤ n. The loop performs n read-modify-write operations, so expected O(1) per update gives n · O(1) = O(n) expected time. The map stores d count entries, giving O(d) extra space and O(n) in the all-distinct input case."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Reject the other bounds"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Time O(1) ignores n updates, and O(log n) is too small for a pass that may read every input value.",
+                "Time O(n log n) would charge logarithmic ordered-map work that ordinary hashing does not perform, while O(n²) is not the expected bound under the stated hashing assumptions.",
+                "Space O(1) or O(log n) cannot hold n distinct count entries, and O(n²) overstates a map with at most one entry per input value."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Guarantee boundary",
+              "text": "The linear time bound is expected or amortized for well-distributed hashes and resizing; it does not claim worst-case constant lookup under arbitrary collisions."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_map",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Assume fixed-width keys and a conventional resizable hash table with well-distributed hashes."
+      ]
+    },
+    {
+      "id": "alg-hms-frequency-weighted-events-transfer",
+      "prompt": "Events carry an integer weight w, and the required total for each key is the sum of its event weights. How should the frequency update generalize?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "add_one",
+            "text": "state[key] = previous total + 1"
+          },
+          {
+            "id": "set_weight",
+            "text": "state[key] = w, overwriting the previous total"
+          },
+          {
+            "id": "store_presence",
+            "text": "Insert key into a set and discard w"
+          },
+          {
+            "id": "add_weight",
+            "text": "state[key] = previous total + w"
+          }
+        ],
+        "acceptedOptionIds": [
+          "add_weight"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The maintained payload is an additive aggregate, so each event contributes its weight to the prior total.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Frequency counting is a special case of keyed aggregation where every event weight equals one. Replacing +1 with +w preserves the invariant that state[key] equals the sum of processed weights for that key. The transfer stops when the aggregate is non-associative or needs member order, in which case a different payload or processing contract is required."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "add_one": "Adding one counts events rather than accumulating their stated weights.",
+          "set_weight": "Overwriting retains only the most recent weight and loses earlier contributions.",
+          "store_presence": "Presence discards both multiplicity and weight, so it cannot produce the required totals."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_map",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_map",
+        "problemArchetypeId": "group_or_count_values"
+      },
+      "difficulty": "advanced"
+    }
+  ],
+  "modeStructures": {
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

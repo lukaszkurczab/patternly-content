@@ -1,0 +1,595 @@
+{
+  "schemaVersion": "coding-interview-manual-source-v2",
+  "batchId": "coding-interview-math-and-geometry-integer-arithmetic-and-overflow-candidate-v1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "familyId": "coding_interview",
+  "contentVersion": "coding-interview-dsa-problem-solving-0001",
+  "taxonomyVersion": "coding-interview-taxonomy-v2",
+  "declaredModes": [
+    "coding-interview-learn-approach",
+    "coding-interview-guided-practice",
+    "coding-interview-recognize-patterns",
+    "coding-interview-contrast-practice",
+    "coding-interview-weak-area-review",
+    "coding-interview-independent-practice",
+    "coding-interview-interview-simulation"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "math_and_geometry",
+    "primaryMentalUnitId": "integer_arithmetic_and_overflow",
+    "patternFamilyId": "math_and_geometry"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "OpenAI GPT-5.6 Pro (candidate authoring; not a human reviewer)",
+    "createdAt": "2026-07-18T12:00:00.000Z",
+    "contentBatchId": "coding-interview-math-and-geometry-integer-arithmetic-and-overflow-candidate-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-mg-int-widen-before-squaring",
+      "prompt": "Points O, A, and B have signed 32-bit coordinates in the range [-50,000, 50,000]. You must compare the squared Euclidean distances from O to A and from O to B exactly. Which implementation preserves the comparison?",
+      "constraints": [
+        "The comparison must be exact.",
+        "Square roots are unnecessary.",
+        "Signed 32-bit multiplication may overflow."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "widen_operands_first",
+            "text": "Convert each coordinate difference to signed 64-bit before multiplying, then compare dx*dx + dy*dy."
+          },
+          {
+            "id": "cast_sum_afterward",
+            "text": "Compute dx*dx + dy*dy in signed 32-bit, then cast the completed sum to signed 64-bit."
+          },
+          {
+            "id": "float32_distances",
+            "text": "Convert the coordinate differences to 32-bit float, take square roots, and compare the rounded distances."
+          },
+          {
+            "id": "manhattan_substitute",
+            "text": "Compare |dx| + |dy| because it preserves the same nearest-point ordering."
+          }
+        ],
+        "acceptedOptionIds": [
+          "widen_operands_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The multiplication must occur in a type wide enough for every squared term; widening only after the product is too late.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For A = (Ax, Ay), the squared distance from O is (Ax - Ox)^2 + (Ay - Oy)^2. Each coordinate difference can range from -100,000 to 100,000, so a square can reach 10,000,000,000 and the sum can reach 20,000,000,000. Those intermediates exceed signed 32-bit but fit signed 64-bit."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Convert both operands of each subtraction to signed 64-bit before forming the difference.",
+                "Square the resulting 64-bit differences and add the two terms in signed 64-bit.",
+                "Compare the two squared sums directly; square root is strictly increasing on nonnegative values and is unnecessary."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Range rule",
+              "text": "Choose the type from the largest intermediate, not the input fields or final comparison result. Widen before the first operation that can exceed the narrow range."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "cast_sum_afterward": "The overflow happens while evaluating the 32-bit products, before the cast can preserve anything. A wider destination does not retroactively repair a narrow intermediate.",
+          "float32_distances": "A 32-bit float cannot represent every integer near 20,000,000,000, so distinct exact squared distances can round together or be misordered. Exact 64-bit integer sums are available.",
+          "manhattan_substitute": "Manhattan distance is a different metric. From O = (0,0), A = (3,3) is closer than B = (5,0) in Euclidean distance, but Manhattan distance ranks B closer."
+        }
+      },
+      "difficulty": "foundational",
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-int-lcm-divide-before-multiply",
+      "prompt": "For nonnegative signed 64-bit integers a and b, you need lcm(a,b). The result is known to fit in signed 64-bit, and if either input is zero the result must be zero. Which evaluation order minimizes avoidable overflow?",
+      "constraints": [
+        "g = gcd(a,b) is computed exactly.",
+        "A checked or wider multiplication is still required when the reduced product may exceed the target type."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "divide_then_multiply",
+            "text": "Return 0 for a==0 or b==0; otherwise compute (a / g) * b with checked or wider multiplication."
+          },
+          {
+            "id": "multiply_then_divide",
+            "text": "Compute (a * b) / g in signed 64-bit because the final lcm is known to fit."
+          },
+          {
+            "id": "floating_ratio",
+            "text": "Compute round((double)a * (double)b / (double)g)."
+          },
+          {
+            "id": "repeated_addition",
+            "text": "Accumulate a*b by adding a exactly b times in signed 64-bit, then divide the accumulated product by g."
+          }
+        ],
+        "acceptedOptionIds": [
+          "divide_then_multiply"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Dividing by the gcd before multiplication reduces the intermediate magnitude while preserving the exact lcm identity.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Let g = gcd(a,b). For nonzero nonnegative inputs, a = g·q for an exact integer q, so a·b/g = q·b = (a/g)·b. Computing q first removes the shared factor before any product is formed. Under this prompt's guarantee that lcm(a,b) fits signed 64-bit, q·b also fits because it is exactly that lcm; a checked multiply still makes the guarantee observable instead of allowing silent overflow if an upstream bound is wrong. Handle zero before division, especially a = b = 0 where g is zero. The reusable rule is to cancel exact factors before multiplying, never after a possibly overflowing product."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "multiply_then_divide": "The product a*b may overflow even when the quotient fits. Integer overflow occurs before the division can cancel the common factor.",
+          "floating_ratio": "Rounding a floating approximation cannot guarantee the exact integer lcm for large inputs.",
+          "repeated_addition": "This reconstructs the potentially overflowing product a*b before dividing by g; replacing multiplication with repeated addition does not reduce its peak magnitude and is much slower."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
+    },
+    {
+      "id": "alg-mg-int-orientation-full-int32-range",
+      "prompt": "Points A, B, and C may use any signed 32-bit coordinate. You need the exact sign of (Bx-Ax)*(Cy-Ay) - (By-Ay)*(Cx-Ax). Which numeric plan is valid for the full input domain?",
+      "constraints": [
+        "The sign must be exact.",
+        "Coordinate differences can require more than signed 32-bit.",
+        "The subtraction of two products must also fit."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "widen_difference_and_products",
+            "text": "Convert coordinates to a sufficiently wide exact type before subtraction and evaluate the determinant in that type, such as signed 128-bit or checked big-integer arithmetic."
+          },
+          {
+            "id": "int64_products_only",
+            "text": "Subtract coordinates in signed 32-bit, then cast each difference to signed 64-bit before multiplication."
+          },
+          {
+            "id": "slope_double",
+            "text": "Compute both slopes as double and compare them with ==."
+          },
+          {
+            "id": "wraparound_sign",
+            "text": "Use signed 64-bit wraparound and trust the sign bit of the wrapped determinant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "widen_difference_and_products"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Full-range coordinate differences and their products exceed narrower integer domains, so widening must happen before both subtraction and multiplication.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The determinant is an exact orientation predicate: its sign distinguishes the two turn directions and zero means collinear. Because the inputs span the full signed 32-bit range, the type must be chosen from the complete expression rather than from one coordinate."
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "A difference such as Bx - Ax can range from -(2^32 - 1) to +(2^32 - 1), so subtraction must already occur wider than signed 32-bit.",
+                "Each product can have magnitude (2^32 - 1)^2, which can exceed signed 64-bit.",
+                "Subtracting products of opposite signs can approach 2·(2^32 - 1)^2, so the final determinant also needs more than 64 signed bits.",
+                "Signed 128-bit or exact big-integer arithmetic covers these intermediates and preserves negative, zero, and positive results."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Exact-predicate rule",
+              "text": "Widen before coordinate subtraction, not only before multiplication. An exact geometric classification is trustworthy only if every intermediate in the predicate is exact."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "int64_products_only": "The coordinate subtraction has already overflowed before the cast, and full-range difference products can also exceed signed 64-bit.",
+          "slope_double": "Slope division is undefined for vertical directions and equality of rounded floating values is not an exact orientation predicate.",
+          "wraparound_sign": "Wraparound changes the mathematical determinant and can invert its sign; the resulting orientation is not trustworthy."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-int-minimum-signed-magnitude",
+      "prompt": "A signed 32-bit value x may equal -2^31. An algorithm needs the nonnegative magnitude of x before a gcd or divisibility calculation. Which approach is defined for every input?",
+      "constraints": [
+        "The mathematical magnitude may require 2^31.",
+        "The result may be stored in a wider signed type or an unsigned magnitude type."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "widen_before_negation",
+            "text": "Convert x to signed 64-bit before negation, or use an unsigned-magnitude routine that never negates x in signed 32-bit."
+          },
+          {
+            "id": "abs_int32",
+            "text": "Call 32-bit abs(x) and store the result in signed 32-bit."
+          },
+          {
+            "id": "negate_then_cast",
+            "text": "Evaluate -x in signed 32-bit, then cast the result to signed 64-bit."
+          },
+          {
+            "id": "floating_abs",
+            "text": "Convert x to float, call abs, then cast back to integer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "widen_before_negation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The minimum signed value has no positive counterpart in the same signed width, so widening must precede negation.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A two's-complement signed 32-bit range is [-2^31, 2^31 - 1], so it contains -2^31 but not the positive magnitude +2^31. A 64-bit conversion preserves x exactly; negating the converted -2^31 then produces representable +2^31. An unsigned routine is also valid only if it derives the magnitude with defined unsigned operations rather than first evaluating -x in signed 32-bit. This boundary transfers to absolute differences, sign normalization, and every formula that assumes a signed minimum can be negated in place."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "abs_int32": "The required positive magnitude is outside the signed 32-bit range, so a 32-bit absolute-value operation cannot represent it.",
+          "negate_then_cast": "The undefined or overflowing negation occurs before the cast; casting afterward is too late.",
+          "floating_abs": "A 32-bit float does not exactly represent every signed 32-bit integer, so values near the limits can lose low bits before conversion back. A wider exact integer solves the boundary directly."
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "divisibility_and_cycles"
+      }
+    },
+    {
+      "id": "alg-mg-int-compare-products-exactly",
+      "prompt": "Positive signed 64-bit values a, b, c, and d can each be as large as 10^12. You need to decide whether a*b < c*d exactly. Which method has a direct correctness argument?",
+      "constraints": [
+        "No tolerance is permitted.",
+        "The products can exceed signed 64-bit."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "wide_exact_products",
+            "text": "Evaluate both products in a sufficiently wide exact integer type and compare them."
+          },
+          {
+            "id": "subtract_int64",
+            "text": "Evaluate a*b - c*d in signed 64-bit and inspect its sign."
+          },
+          {
+            "id": "compare_double_ratios",
+            "text": "Compare (double)a/(double)c with (double)d/(double)b."
+          },
+          {
+            "id": "truncate_quotients",
+            "text": "Compare a/c with d/b using integer division."
+          }
+        ],
+        "acceptedOptionIds": [
+          "wide_exact_products"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An exact wider product preserves the ordering without division, truncation, or rounded equality assumptions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Each product can be as large as 10^24, while signed 64-bit ends near 9.22·10^18. A sufficiently wide exact integer type represents both products, so its `<` result is identical to the mathematical comparison; signed 128-bit is wide enough for the stated 10^24 bound. Subtracting in 64-bit can overflow, floating ratios can round distinct rational values together, and integer ratios discard remainders. If no wider exact type exists, a dedicated overflow-safe product-comparison algorithm must prove every quotient, remainder, and sign branch rather than relying on an informal division rewrite."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "subtract_int64": "Both products and their difference may overflow before the sign is inspected.",
+          "compare_double_ratios": "Division introduces rounding and special cases; close rational values can collapse to the same floating representation.",
+          "truncate_quotients": "Integer division discards remainders, so unequal rational values can produce the same quotient or the wrong ordering."
+        }
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-int-overflow-safe-modular-product",
+      "prompt": "Select all implementation strategies that can compute (a*b) mod m for arbitrary signed 64-bit a and b and positive m without overflowing a signed 64-bit intermediate.",
+      "constraints": [
+        "The result must be normalized to [0,m).",
+        "The implementation must define behavior for negative a or b."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "widen_then_normalize",
+            "text": "Normalize operands, multiply them in a sufficiently wide exact type, reduce modulo m, and normalize the remainder."
+          },
+          {
+            "id": "add_and_double",
+            "text": "Normalize operands and use add-and-double modular multiplication with an overflow-avoiding modular-add routine that compares before adding."
+          },
+          {
+            "id": "multiply_then_percent",
+            "text": "Evaluate a*b in signed 64-bit and then apply % m."
+          },
+          {
+            "id": "floating_fmod",
+            "text": "Convert a and b to double, multiply, and use fmod."
+          }
+        ],
+        "acceptedOptionIds": [
+          "widen_then_normalize",
+          "add_and_double"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Both accepted strategies prevent the full product from overflowing and explicitly normalize signed remainders.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "First map a and b to canonical residues in [0,m): compute r = x % m and, only when r < 0, add m. This conditional avoids the unnecessary r + m that can overflow in the common formula ((x % m) + m) % m when r is already nonnegative and m is near the signed limit. Two accepted strategies then avoid evaluating the original signed 64-bit product."
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Wide exact product: multiply the normalized residues in a type that covers values below m^2, reduce modulo m, and return the canonical residue.",
+                "Add-and-double: scan the bits of one residue. When a bit is set, replace result with modularAdd(result, term, m); replace term with modularAdd(term, term, m) for the next bit.",
+                "For residues x,y in [0,m), modularAdd can avoid x+y overflow by returning x - (m - y) when x >= m - y, otherwise x + y. Both branches stay in [0,m)."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Reduction boundary",
+              "text": "Applying % m after an overflowing multiplication or addition is too late. Every operation before a reduction must already be exact or proven not to overflow."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "multiply_then_percent": "The signed 64-bit multiplication is evaluated before `% m`; if it overflows, the later remainder is applied to a corrupted value and cannot recover the mathematical product.",
+          "floating_fmod": "Double cannot represent every signed 64-bit integer, much less every product of two such integers, so rounding can change the modular residue."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "widen_then_normalize": "After canonical normalization, an exact type that covers values below m^2 can form the product without overflow; reducing that exact product yields the mathematical residue.",
+          "add_and_double": "Binary decomposition expresses the product as selected doubled residues. An overflow-avoiding modular-add routine keeps each accumulated or doubled term in [0,m), so no full product is formed."
+        }
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "modular_arithmetic",
+        "problemArchetypeId": "divisibility_and_cycles"
+      }
+    },
+    {
+      "id": "alg-mg-int-safe-square-root-loop-guard",
+      "prompt": "For a nonnegative signed 64-bit n, trial division tests candidate d while d is at most sqrt(n). Which loop guard avoids both d*d overflow and floating-point boundary error?",
+      "constraints": [
+        "d is positive.",
+        "Integer division uses the same nonnegative domain."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "division_guard",
+            "text": "Continue while d <= n / d."
+          },
+          {
+            "id": "square_guard",
+            "text": "Continue while d*d <= n in signed 64-bit."
+          },
+          {
+            "id": "sqrt_equality_guard",
+            "text": "Compute s = sqrt((double)n) and continue while d <= (long long)s."
+          },
+          {
+            "id": "strict_division_guard",
+            "text": "Continue while d < n / d."
+          }
+        ],
+        "acceptedOptionIds": [
+          "division_guard"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For positive d and nonnegative n, d <= n/d is the integer-safe form of d*d <= n and includes the exact-square boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For d > 0 and n >= 0, integer division gives d <= floor(n/d) exactly when d^2 <= n: multiplying the first inequality by positive d preserves its direction, and flooring introduces no false positive because d is an integer. The guard never forms d*d, so it cannot overflow. The non-strict boundary is essential: for n = 49 and d = 7, 7 <= 49/7 is true and the square factor is tested; `d < n/d` would skip it. A floating square root can round after n is converted to double near the 64-bit limit. Reuse the quotient rewrite only after proving the divisor is positive and the signs preserve the inequality."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "square_guard": "Near the top of signed 64-bit, d*d can overflow even though the loop condition is mathematically meaningful.",
+          "sqrt_equality_guard": "A floating square root can round at an integer boundary and is unnecessary for an exact integer loop guard.",
+          "strict_division_guard": "The strict comparison skips d when n is exactly d*d, missing a square factor."
+        }
+      },
+      "difficulty": "foundational-transfer",
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "prime_factorization",
+        "problemArchetypeId": "count_or_generate_primes"
+      }
+    },
+    {
+      "id": "alg-mg-int-safe-determinant-evaluation-order",
+      "prompt": "Order the steps for evaluating an exact orientation determinant from signed integer coordinates when overflow is possible.",
+      "constraints": [
+        "The output is the sign: negative, zero, or positive.",
+        "A zero determinant must remain distinguishable as a degenerate or collinear case."
+      ],
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "establish_range",
+            "text": "Establish coordinate bounds and select an exact type that covers differences, products, and their subtraction."
+          },
+          {
+            "id": "form_differences",
+            "text": "Convert to that type and form both direction-vector differences from the same origin."
+          },
+          {
+            "id": "form_products",
+            "text": "Evaluate the two cross products in the selected type."
+          },
+          {
+            "id": "subtract_products",
+            "text": "Subtract the products in the selected type."
+          },
+          {
+            "id": "classify_sign",
+            "text": "Classify negative, zero, or positive without replacing zero by a default turn."
+          }
+        ],
+        "canonicalOrder": [
+          "establish_range",
+          "form_differences",
+          "form_products",
+          "subtract_products",
+          "classify_sign"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 4
+      },
+      "feedback": {
+        "reason": "Range selection must precede every arithmetic operation, and zero must be classified explicitly after the exact determinant is formed.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For vectors B - A and C - A, the determinant is (Bx - Ax)(Cy - Ay) - (By - Ay)(Cx - Ax). Its sign is meaningful only if every difference, product, and subtraction was exact; widening after any one of them cannot repair earlier overflow."
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Use the coordinate bounds to derive the largest difference, product, and product difference, then select an exact type covering all three.",
+                "Convert coordinates to that type before forming B - A and C - A.",
+                "Multiply the widened components to obtain the two cross-product terms.",
+                "Subtract those exact products to obtain the determinant.",
+                "Classify determinant < 0, determinant = 0, or determinant > 0; keep zero as the collinear or degenerate boundary."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Predicate workflow",
+              "text": "Prove the numeric domain first, evaluate entirely inside it, and only then interpret every legal result. This sequence transfers to exact dot products, discriminants, and rational comparisons."
+            }
+          ]
+        }
+      },
+      "difficulty": "foundational-boundary",
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    }
+  ],
+  "modeStructures": {
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -8,17 +8,17 @@ import { auditExplanationQuality } from "../scripts/audit/explanationQualityAudi
 
 async function createAuditRoot() {
   const root = await mkdtemp(join(tmpdir(), "patternly-explanation-audit-"));
-  await mkdir(join(root, "manual/source/algorithms"), { recursive: true });
-  await mkdir(join(root, "manual/source/cloud-certification"), { recursive: true });
+  await mkdir(join(root, "manual/source/coding-interview-dsa-problem-solving"), { recursive: true });
+  await mkdir(join(root, "manual/source/google-cloud-associate-cloud-engineer"), { recursive: true });
   return root;
 }
 
 test("explanation audit includes every item exactly once and keeps signals advisory", async () => {
   const root = await createAuditRoot();
   try {
-    await writeFile(join(root, "manual/source/algorithms/example.json"), JSON.stringify({
+    await writeFile(join(root, "manual/source/coding-interview-dsa-problem-solving/example.json"), JSON.stringify({
       batchId: "algorithm-batch",
-      familyId: "algorithms",
+      familyId: "coding_interview",
       taxonomy: { primaryMentalUnitId: "array_invariant" },
       items: [
         {
@@ -42,7 +42,7 @@ test("explanation audit includes every item exactly once and keeps signals advis
         },
       ],
     }));
-    await writeFile(join(root, "manual/source/cloud-certification/example.json"), JSON.stringify({
+    await writeFile(join(root, "manual/source/google-cloud-associate-cloud-engineer/example.json"), JSON.stringify({
       batchId: "certification-batch",
       familyId: "certification",
       items: [
@@ -95,7 +95,7 @@ test("explanation audit detects duplicate item identities instead of merging the
   const root = await createAuditRoot();
   try {
     const batch = {
-      familyId: "algorithms",
+      familyId: "coding_interview",
       taxonomy: { primaryMentalUnitId: "unit" },
       items: [{
         id: "duplicate",
@@ -107,11 +107,11 @@ test("explanation audit detects duplicate item identities instead of merging the
         },
       }],
     };
-    await writeFile(join(root, "manual/source/algorithms/one.json"), JSON.stringify({ ...batch, batchId: "one" }));
-    await writeFile(join(root, "manual/source/algorithms/two.json"), JSON.stringify({ ...batch, batchId: "two" }));
+    await writeFile(join(root, "manual/source/coding-interview-dsa-problem-solving/one.json"), JSON.stringify({ ...batch, batchId: "one" }));
+    await writeFile(join(root, "manual/source/coding-interview-dsa-problem-solving/two.json"), JSON.stringify({ ...batch, batchId: "two" }));
 
     await assert.rejects(
-      () => auditExplanationQuality({ root, trackId: "algorithms" }),
+      () => auditExplanationQuality({ root, trackId: "coding-interview-dsa-problem-solving" }),
       /Duplicate explanation-audit item identity/,
     );
   } finally {
@@ -122,9 +122,9 @@ test("explanation audit detects duplicate item identities instead of merging the
 test("complexity and ordering signals inspect reasoning form without rejecting content", async () => {
   const root = await createAuditRoot();
   try {
-    await writeFile(join(root, "manual/source/algorithms/forms.json"), JSON.stringify({
+    await writeFile(join(root, "manual/source/coding-interview-dsa-problem-solving/forms.json"), JSON.stringify({
       batchId: "forms",
-      familyId: "algorithms",
+      familyId: "coding_interview",
       taxonomy: { primaryMentalUnitId: "forms" },
       items: [
         {
@@ -148,7 +148,7 @@ test("complexity and ordering signals inspect reasoning form without rejecting c
       ],
     }));
 
-    const result = await auditExplanationQuality({ root, trackId: "algorithms" });
+    const result = await auditExplanationQuality({ root, trackId: "coding-interview-dsa-problem-solving" });
     assert.ok(result.items.find((item) => item.itemId === "ordering").riskSignals.some((signal) => signal.code === "ordering_without_sequence_format"));
     assert.ok(result.items.find((item) => item.itemId === "complexity").riskSignals.some((signal) => signal.code === "complexity_without_derivation_signal"));
   } finally {

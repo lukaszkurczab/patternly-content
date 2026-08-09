@@ -1,0 +1,1819 @@
+{
+  "schemaVersion": "coding-interview-manual-source-v2",
+  "batchId": "contrast-binary-search-vs-linear-scan-transfer-binary-search-vs-linear-scan-v1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "familyId": "coding_interview",
+  "contentVersion": "coding-interview-dsa-problem-solving-0001",
+  "taxonomyVersion": "coding-interview-taxonomy-v2",
+  "declaredModes": [
+    "coding-interview-learn-approach",
+    "coding-interview-guided-practice",
+    "coding-interview-recognize-patterns",
+    "coding-interview-contrast-practice",
+    "coding-interview-weak-area-review",
+    "coding-interview-independent-practice",
+    "coding-interview-interview-simulation"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "contrast_binary_search_vs_linear_scan",
+    "primaryMentalUnitId": "transfer_binary_search_vs_linear_scan",
+    "patternFamilyId": "binary_search"
+  },
+  "batchKind": "contrast",
+  "contrastMetadata": {
+    "contrastedMentalUnitIds": [
+      "recognize_binary_search_signal",
+      "boundaries_and_loop_invariants",
+      "reason_about_indexed_scans"
+    ],
+    "falseHeuristicId": "binary_search_is_always_better_than_linear_scan",
+    "transferBoundary": "Re-evaluate binary search versus scanning whenever query semantics, preprocessing reuse, mutation rate, access model, predicate monotonicity, or output contract changes."
+  },
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-18T00:00:00.000Z",
+    "contentBatchId": "contrast-binary-search-vs-linear-scan-transfer-binary-search-vs-linear-scan-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-contrast-binary-scan-transfer-001",
+      "prompt": "Scenario A: one exact query on unsorted data. Scenario B: the same data is now maintained in sorted random-access form and receives many exact queries. How should the strategy transfer?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan_then_binary",
+            "text": "Use a scan in A; use binary search in B after verifying the maintained order and query key."
+          },
+          {
+            "id": "binary_both",
+            "text": "Use binary search in both because the task is called search."
+          },
+          {
+            "id": "scan_both",
+            "text": "Use scanning in both because it was correct in A."
+          },
+          {
+            "id": "sort_each",
+            "text": "Sort from scratch before every query in both scenarios."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scan_then_binary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Strategy should change when the data representation and workload cross the transfer boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "In A, an exact match may appear at any position, so inspecting a midpoint gives no basis for discarding either half; one scan costs O(n) and avoids setup. In B, comparing the target key with a midpoint in the maintained key order proves which half cannot contain the target, giving O(log n) per query without a fresh sort."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The change is justified by both legality and workload: the representation supplies a half-discard rule, and many queries reuse it. Sorting before every query would instead cost O(n log n) each time; keeping the existing maintained order is what makes the transfer economical."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Re-derive the strategy when representation or workload changes; never attach an algorithm permanently to the word “search.”"
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "binary_both": "In A, midpoint comparison cannot exclude either unsorted half, so binary search is not correct.",
+          "scan_both": "B adds stable ordered structure and repeated workload that favor binary search.",
+          "sort_each": "A does not amortize sorting and B is already maintained sorted."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-002",
+      "prompt": "A sorted array initially asks for any exact target. The requirement changes to the first record in original insertion order among matching keys, and no provenance is stored. What changes?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "binary_to_scan",
+            "text": "The key-only binary search no longer satisfies the output contract; scan the original order or build a provenance-aware index."
+          },
+          {
+            "id": "same_binary",
+            "text": "Keep returning any midpoint match."
+          },
+          {
+            "id": "leftmost_sorted",
+            "text": "Return the leftmost sorted duplicate and assume it is earliest inserted."
+          },
+          {
+            "id": "no_solution",
+            "text": "The query is impossible under every representation."
+          }
+        ],
+        "acceptedOptionIds": [
+          "binary_to_scan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A change in output identity can invalidate an otherwise legal search strategy.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "A key-sorted index preserves key order, not necessarily insertion order among equal keys. Its leftmost equal key is the first in the index's tie order, which is not evidence that the record was inserted first. A scan over the original sequence can observe that identity directly; alternatively, an index can store insertion position as part of its ordering or payload."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The key-only binary search is still able to prove that a key exists, but it cannot prove the newly required provenance. This is an output-contract failure, not a midpoint bug. Enriching the representation can make logarithmic lookup legal again."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Before reusing a search, verify that its index order encodes the exact identity the output contract asks for."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_binary": "Returning any matching key does not identify the earliest inserted matching record.",
+          "leftmost_sorted": "The leftmost key-sorted duplicate is earliest only under an explicit insertion-order tie rule.",
+          "no_solution": "Scanning the original or storing provenance can answer it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-003",
+      "prompt": "A predicate-search problem changes from “capacity at least x is feasible” to “capacity x is feasible only when x is even.” What strategy change is required?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "binary_to_scan_or_model",
+            "text": "The predicate is no longer monotonic; scan candidates or reformulate with additional structure."
+          },
+          {
+            "id": "same_first_true",
+            "text": "Keep the same first-true binary search."
+          },
+          {
+            "id": "upper_mid",
+            "text": "Change only the midpoint bias."
+          },
+          {
+            "id": "sorted_capacity",
+            "text": "Sort candidate capacities."
+          }
+        ],
+        "acceptedOptionIds": [
+          "binary_to_scan_or_model"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A small semantic change can remove the one-transition property.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "For a first-true binary search, feasibility must have one transition such as false, false, true, true. Requiring x to be even can produce false at an odd capacity after true at the preceding even capacity, so observing one false value no longer proves that every smaller or larger region is false."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Changing lower-mid to upper-mid only changes progress at a boundary; it cannot repair an alternating truth pattern. Either inspect candidates without half-discarding them or derive a different ordered domain whose predicate is genuinely monotonic."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Write a short truth sequence for the new predicate; if it can change direction twice, binary search on that predicate is invalid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_first_true": "Parity can make feasibility alternate, so the first-true discard implication no longer holds.",
+          "upper_mid": "Midpoint bias prevents some boundary loops but cannot restore a missing monotonic predicate.",
+          "sorted_capacity": "They are already ordered; the truth pattern remains arbitrary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-004",
+      "prompt": "An arbitrary-condition scan becomes performance-critical. A maintained sorted index of exactly the matching records is introduced. Which transfer is now possible?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "search_index",
+            "text": "Search the new query-aligned index with binary search for supported ordered queries."
+          },
+          {
+            "id": "binary_raw",
+            "text": "Binary-search the original arbitrary condition without using the index."
+          },
+          {
+            "id": "scan_index_only",
+            "text": "The new index can never change the algorithm."
+          },
+          {
+            "id": "ignore_maintenance",
+            "text": "Use the index without accounting for update maintenance."
+          }
+        ],
+        "acceptedOptionIds": [
+          "search_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preprocessing can create a new ordered domain where none existed before.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "The original callback is arbitrary over the raw records, so it supplies no ordered truth pattern. The new index changes the representation: it contains exactly matching records in an order that supports the stated query, allowing midpoint comparisons to discard half of that index."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Binary-searching the raw data remains invalid; only the query-aligned index has the missing structure. The index is correct only while updates keep it synchronized, and its build, memory, and maintenance costs must be repaid by the supported workload."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "An index can make a query searchable by encoding its structure; it does not make the unindexed raw predicate monotonic."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "binary_raw": "The raw condition still lacks a half-discard implication even though a separate index exists.",
+          "scan_index_only": "The query-aligned index now encodes the order that permits legal half-discard.",
+          "ignore_maintenance": "Correctness and total cost depend on freshness and maintenance."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-005",
+      "prompt": "A stable sorted array receives many queries, but each query asks whether any value satisfies a different arbitrary callback. Which default remains appropriate?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan_callbacks",
+            "text": "Scan for each callback unless the callback contract guarantees monotonicity or a matching index exists."
+          },
+          {
+            "id": "binary_all_callbacks",
+            "text": "Binary-search every callback because the data is sorted."
+          },
+          {
+            "id": "reuse_mid",
+            "text": "Cache one midpoint and use it for every callback."
+          },
+          {
+            "id": "sort_again",
+            "text": "Sort again before each callback."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scan_callbacks"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Repeated-query volume does not make an illegal predicate binary-searchable.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Sorting by one record key orders only predicates aligned with that key. A different arbitrary callback can be true, false, then true again across the same array, so its midpoint result cannot exclude either half. Repeating that illegal operation many times never makes it correct."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "A scan evaluates every record and therefore remains the safe default. High query volume may justify a new callback-specific index or a reformulated monotonic predicate, but the cost case is considered only after that structure preserves correctness."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "First ask whether midpoint evidence permits a discard; only then ask whether repeated queries make that legal strategy worthwhile."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "binary_all_callbacks": "A callback unrelated to the sort key can alternate across the array, invalidating half-discard.",
+          "reuse_mid": "A midpoint useful for one arbitrary predicate gives no evidence about another predicate's matches.",
+          "sort_again": "The sort key remains unrelated to callback truth."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-006",
+      "prompt": "A one-query unsorted workload grows into q queries, but the data also changes before every query. Which conclusion is safest?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "recompute_workload",
+            "text": "Recompute preprocessing and maintenance costs; high q alone does not guarantee sorting once is useful."
+          },
+          {
+            "id": "binary_due_q",
+            "text": "Switch automatically to binary search because q is large."
+          },
+          {
+            "id": "scan_forever",
+            "text": "Never reconsider the scan because it was initially correct."
+          },
+          {
+            "id": "ignore_updates",
+            "text": "Evaluate only query cost."
+          }
+        ],
+        "acceptedOptionIds": [
+          "recompute_workload"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Transfer requires all changed constraints to be included, not just query count.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "With a mutation before every query, “sort once, query many times” is no longer the workload. Re-sorting each version can cost O(q n log n), while q scans cost O(qn); a maintained index has its own update cost and may or may not beat either total."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The safe conclusion is not that scanning always wins, but that q alone is insufficient. Compare query savings, update frequency, permitted data structures, memory, and freshness requirements over the same lifetime before changing the strategy."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Use total lifecycle cost—build plus updates plus queries—not query count as a shortcut."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "binary_due_q": "Frequent changes can force rebuilding the order or paying index maintenance before every query.",
+          "scan_forever": "Incremental indexes or changed update/query ratios may later pay off.",
+          "ignore_updates": "Ignoring updates omits the work that keeps an ordered representation correct and current."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-007",
+      "prompt": "A sorted array exact-search implementation is moved to a sequential-only storage API. What should happen to the strategy analysis?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reassess_access",
+            "text": "Reassess midpoint-access cost; a scan or a separate random-access index may become preferable."
+          },
+          {
+            "id": "same_log",
+            "text": "Keep claiming O(log n) because the values remain sorted."
+          },
+          {
+            "id": "sort_api",
+            "text": "Sort the API endpoints."
+          },
+          {
+            "id": "rename_cursor",
+            "text": "Rename the sequential cursor to mid."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reassess_access"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Algorithm transfer across data structures must preserve the operation-cost model.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Binary search needs efficient access to the chosen midpoint. In a sequential-only API, reaching each midpoint can require walking from a cursor, so log n comparisons do not imply O(log n) elapsed work; repeated traversal can erase the expected advantage."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The values remain ordered, so correctness structure may survive, but the operation-cost model does not. A single forward scan can be O(n); alternatively, build or use a random-access index if its construction and memory are justified by repeated queries."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Count the cost of obtaining each midpoint, not only the number of comparisons."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_log": "Logarithmically many comparisons do not give O(log n) time when each midpoint access is sequential.",
+          "sort_api": "The issue is random access, not order alone.",
+          "rename_cursor": "Renaming a sequential cursor cannot make midpoint positions available in constant time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-008",
+      "prompt": "A scan returns all k matching records. The requirement changes to return only whether any match exists, and records are available in a sorted query-aligned array. Which change becomes possible?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "binary_existence",
+            "text": "Use exact binary search for existence, removing the Ω(k) output requirement."
+          },
+          {
+            "id": "still_output_all",
+            "text": "Continue materializing all k records because the old implementation did."
+          },
+          {
+            "id": "binary_all_k_free",
+            "text": "Use binary search and claim all k outputs cost O(log n)."
+          },
+          {
+            "id": "scan_only",
+            "text": "Existence can never use binary search."
+          }
+        ],
+        "acceptedOptionIds": [
+          "binary_existence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Output-contract changes can alter both legality and lower bounds.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Returning all matches requires emitting k records, so any correct algorithm pays Ω(k) output work even after locating them. The new boolean contract removes that output obligation. Because the array is sorted by the queried key, exact binary search can now decide existence in O(log n) time."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "If the contract later returns all matches again, boundary searches can locate the equal range in O(log n), but materializing it still costs Θ(k). The strategy changes here because both the representation and the required output support a smaller bound."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Include the size of the required result in the cost model; locating an answer and emitting every answer are different operations."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "still_output_all": "Materializing records performs work the new boolean output contract no longer requires.",
+          "binary_all_k_free": "If all results were still required, output work would remain.",
+          "scan_only": "The aligned sorted representation supplies a legal logarithmic existence test, so scanning is not mandatory."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-009",
+      "prompt": "A sorted array is tiny today but n is expected to grow by six orders of magnitude while the query contract stays exact and aligned. Which transfer principle applies?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scale_revisit",
+            "text": "A scan may be acceptable now, but the growing domain makes the binary-search asymptotic advantage increasingly material."
+          },
+          {
+            "id": "fixed_choice",
+            "text": "The initial scan choice must never be revisited."
+          },
+          {
+            "id": "binary_wrong_small",
+            "text": "Binary search is incorrect on small inputs."
+          },
+          {
+            "id": "scan_o1",
+            "text": "The scan remains O(1) because current n is small."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scale_revisit"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Transfer includes changes in the scaling regime even when correctness conditions stay constant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Both scanning and binary search are correct on the query-aligned sorted array. At today's tiny n, the simpler scan may be acceptable, but a six-order-of-magnitude increase changes O(n) work per query far more than O(log n) work."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "This is an engineering preference boundary rather than a correctness boundary. Revisit the measured workload, constants, and implementation risk as n grows; do not convert today's fixed input size into an O(1) claim about a variable future domain."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "A strategy can remain correct yet stop being the responsible choice when the input scale changes materially."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "fixed_choice": "An earlier engineering trade-off is not permanent when its dominant input scale changes.",
+          "binary_wrong_small": "It remains correct; the issue is engineering preference.",
+          "scan_o1": "n is a variable in the future workload."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-010",
+      "prompt": "Which changes can flip a scan decision to binary search? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "ordered_representation",
+            "text": "The data becomes query-aligned, sorted, and random-access."
+          },
+          {
+            "id": "many_queries",
+            "text": "A stable dataset receives enough repeated aligned queries to amortize preprocessing."
+          },
+          {
+            "id": "monotonic_reformulation",
+            "text": "The arbitrary condition is reformulated and proven monotonic."
+          },
+          {
+            "id": "more_keywords",
+            "text": "The problem statement adds words such as threshold and midpoint."
+          }
+        ],
+        "acceptedOptionIds": [
+          "ordered_representation",
+          "many_queries",
+          "monotonic_reformulation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Strategy transfer is driven by new structure or workload, not vocabulary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "A query-aligned sorted random-access representation supplies the legal half-discard rule. Repeated aligned queries can repay a one-time build or ongoing maintenance cost. A proven monotonic reformulation supplies a single transition in answer space even when there is no target value to look up."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "These changes affect either correctness structure or total workload cost and can therefore flip the choice. Adding vocabulary such as “threshold” or “midpoint” changes neither; the discard implication must still be proved from the actual predicate or order."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Name the new invariant or cost term that crosses the boundary; a keyword is never that evidence."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "more_keywords": "Keywords do not prove sorted alignment, predicate monotonicity, or reusable preprocessing."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "ordered_representation": "Query-aligned order and random access make midpoint comparison a proof that one half cannot contain the target.",
+          "many_queries": "Repeated queries can reuse one ordered representation, allowing their accumulated savings to repay build or maintenance cost.",
+          "monotonic_reformulation": "A proven one-transition predicate makes each midpoint result sufficient to discard one side of answer space."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-011",
+      "prompt": "Which changes can flip a binary-search decision to scanning? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "predicate_arbitrary",
+            "text": "The query predicate becomes nonmonotonic in the available order."
+          },
+          {
+            "id": "original_identity",
+            "text": "The result changes to first original-order match and the index lacks provenance."
+          },
+          {
+            "id": "sequential_access",
+            "text": "The data moves to a sequential-only representation without an index."
+          },
+          {
+            "id": "more_queries",
+            "text": "The same stable aligned exact query is repeated more often."
+          }
+        ],
+        "acceptedOptionIds": [
+          "predicate_arbitrary",
+          "original_identity",
+          "sequential_access"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Binary search is not a permanent label attached to a topic.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "A nonmonotonic predicate removes the half-discard implication. A first-insertion-order output cannot be recovered from a key-only index without provenance. Sequential-only access can make midpoint retrieval expensive enough that a scan is preferable even though values remain ordered."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Each accepted change invalidates a different part of the binary-search contract: predicate structure, output identity, or access cost. Repeating the same stable aligned query more often removes none of those conditions and generally strengthens reuse of binary search."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "When a requirement changes, identify exactly which binary-search precondition it preserves or removes."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "more_queries": "More repetitions of the same legal aligned query generally increase the value of logarithmic lookup."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "predicate_arbitrary": "A nonmonotonic truth pattern lets matches reappear on either side, so midpoint evaluation cannot exclude a half.",
+          "original_identity": "A key-only index does not encode first insertion order, so it cannot guarantee the newly required record identity.",
+          "sequential_access": "If reaching a midpoint requires traversal, logarithmically many comparisons may no longer mean logarithmic total time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-012",
+      "prompt": "Which dimensions should be re-evaluated when transferring the binary-search-versus-scan decision to a new problem? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "correctness_structure",
+            "text": "Order, monotonicity, and legal discard implications."
+          },
+          {
+            "id": "workload",
+            "text": "Single versus repeated queries and update frequency."
+          },
+          {
+            "id": "access_output",
+            "text": "Data access model, output size, and identity requirements."
+          },
+          {
+            "id": "variable_names",
+            "text": "Whether familiar identifiers appear."
+          }
+        ],
+        "acceptedOptionIds": [
+          "correctness_structure",
+          "workload",
+          "access_output"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Transfer is a structured re-derivation, not analogy from surface wording.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Order and monotonicity determine whether midpoint evidence can discard a half. Query count and updates determine whether preprocessing or index maintenance is repaid. Access cost, output size, and output identity determine whether the representation can produce the required result at the claimed total cost."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "These dimensions form a re-derivation checklist: first establish the exact result contract, then prove a legal strategy, then compare complete lifecycle and output costs. Familiar variable names provide no correctness implication and should not influence the choice."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Transfer the proof and cost model, not the nouns or identifier names from the earlier problem."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "variable_names": "Familiar identifiers do not establish order, monotonicity, access cost, or output semantics."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "correctness_structure": "Order, monotonicity, and discard implications determine whether binary search is correct before performance is considered.",
+          "workload": "Query count and update frequency determine whether preprocessing or index maintenance is repaid over the representation's lifetime.",
+          "access_output": "Midpoint access, required output size, and result identity determine both whether the representation can answer and its total cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-013",
+      "prompt": "Which paired scenarios differ by a decisive strategy boundary? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "unsorted_vs_sorted",
+            "text": "One exact query on unsorted data versus many exact queries on a stable sorted array."
+          },
+          {
+            "id": "arbitrary_vs_monotonic",
+            "text": "An alternating condition versus a proven false-to-true predicate."
+          },
+          {
+            "id": "any_vs_original_first",
+            "text": "Any key match versus first original-order match without provenance."
+          },
+          {
+            "id": "rename_only",
+            "text": "The same implementation with index renamed to mid."
+          }
+        ],
+        "acceptedOptionIds": [
+          "unsorted_vs_sorted",
+          "arbitrary_vs_monotonic",
+          "any_vs_original_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Good contrast pairs vary one decisive property while keeping the surrounding problem comparable.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Unsorted versus sorted-and-reused changes both legality and cost. Alternating versus monotonic truth changes whether half-discard is sound. Any match versus first original-order match changes the identity that the representation must preserve."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Each accepted pair holds the surrounding task comparable while changing a decisive property, so it exposes a real strategy boundary. Renaming an index to `mid` changes no representation, predicate, output contract, or cost and therefore cannot justify a different algorithm."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "A useful contrast explains why the decision flips; a cosmetic rewrite cannot test transfer."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "rename_only": "Renaming a variable changes no invariant, requirement, representation, or operation cost."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "unsorted_vs_sorted": "The sorted reusable case gains both a legal half-discard rule and enough repeated work to benefit from it.",
+          "arbitrary_vs_monotonic": "A proven single truth transition permits boundary search, while an alternating condition does not.",
+          "any_vs_original_first": "First original-order identity requires provenance that an arbitrary key match does not need."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-014",
+      "prompt": "Which statements should appear in a strong transferred-strategy explanation? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "both_plausible",
+            "text": "Why both binary search and scanning initially appear plausible."
+          },
+          {
+            "id": "decisive_constraint",
+            "text": "The exact condition that makes one strategy legal or cheaper."
+          },
+          {
+            "id": "alternative_boundary",
+            "text": "When the rejected strategy would become appropriate."
+          },
+          {
+            "id": "faster_slogan",
+            "text": "Only the statement that one method is faster."
+          }
+        ],
+        "acceptedOptionIds": [
+          "both_plausible",
+          "decisive_constraint",
+          "alternative_boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Contrast feedback must explain the choice and its boundary, not merely name a winner.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "A strong explanation first acknowledges why both strategies seem plausible, then names the exact legality or total-cost condition that decides between them. It also states a minimal counterfactual—such as losing monotonicity or adding a reusable aligned index—that would make the alternative appropriate."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "That boundary lets the learner solve a later variant instead of memorizing “binary search is faster.” Speed alone is incomplete because an asymptotically attractive method can be illegal for the predicate or unable to return the required identity."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Explain the winning proof, the rejected assumption, and the smallest change that would reverse the choice."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "faster_slogan": "A speed slogan omits legality, complete workload cost, and the condition that would flip the decision."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "both_plausible": "Acknowledging the shared search surface makes clear why the decision requires analysis instead of dismissing one strategy by name.",
+          "decisive_constraint": "Naming the exact invariant or complete-cost term explains why the selected strategy wins in this scenario.",
+          "alternative_boundary": "Stating when the rejected strategy becomes valid supplies a reusable rule for the next variant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-015",
+      "prompt": "Arrange the transfer analysis for a new search problem.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "map_surface",
+            "text": "Identify surface similarities to known binary-search and scan cases."
+          },
+          {
+            "id": "extract_constraints",
+            "text": "Extract order, predicate, output, access, query-count, and update constraints."
+          },
+          {
+            "id": "derive_legality_cost",
+            "text": "Derive legal strategies and their complete workload costs."
+          },
+          {
+            "id": "state_flip",
+            "text": "Choose the strategy and state the minimal change that would flip the decision."
+          }
+        ],
+        "canonicalOrder": [
+          "map_surface",
+          "extract_constraints",
+          "derive_legality_cost",
+          "state_flip"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Surface analogy is only the entry point to transfer reasoning.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Recognize the resemblance to a known search problem, but do not choose from that resemblance.",
+                "Extract the result contract, available order or monotonicity, access cost, query count, and update rate.",
+                "Prove which strategies may discard work and compare their complete build, maintenance, query, and output costs.",
+                "Choose a strategy and name the smallest changed condition that would make the alternative preferable."
+              ]
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The order moves from observation to proof to decision. Choosing before extracting constraints risks transferring only a surface label; stating the flip condition last demonstrates that the learner understands the decision boundary rather than one memorized answer."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Use resemblance to form hypotheses, then re-establish the invariant and cost model from the new problem."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-016",
+      "prompt": "Arrange the response when a formerly monotonic query gains an exception that breaks monotonicity.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "update_predicate",
+            "text": "Write the new complete predicate including the exception."
+          },
+          {
+            "id": "find_transition_break",
+            "text": "Show where truth can change direction more than once."
+          },
+          {
+            "id": "withdraw_discard",
+            "text": "Remove the old binary-search half-discard assumption."
+          },
+          {
+            "id": "replace_or_index",
+            "text": "Use scanning or build a representation that restores ordered structure."
+          }
+        ],
+        "canonicalOrder": [
+          "update_predicate",
+          "find_transition_break",
+          "withdraw_discard",
+          "replace_or_index"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Transfer requires invalidating obsolete reasoning explicitly.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Write the complete new predicate, including the exception, so no old assumption remains implicit.",
+                "List candidate values that show truth changing direction more than once.",
+                "Withdraw the old half-discard implication because a midpoint result no longer excludes an entire side.",
+                "Scan the candidates or create a different ordered representation whose predicate has one proven transition."
+              ]
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The counterexample must come before replacing the algorithm because it identifies exactly which proof obligation failed. Changing midpoint bias or retaining the old loop would only preserve an implementation whose discard step is now unsound."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "When semantics change, retire the invalid implication before selecting a replacement strategy."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-017",
+      "prompt": "Arrange the response when repeated queries make preprocessing attractive.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "estimate_q_updates",
+            "text": "Estimate query and update volume over the representation lifetime."
+          },
+          {
+            "id": "design_index",
+            "text": "Choose an ordered, provenance-preserving representation."
+          },
+          {
+            "id": "compare_totals",
+            "text": "Compare build and maintenance plus queries against repeated scans."
+          },
+          {
+            "id": "adopt_if_better",
+            "text": "Adopt binary-search lookup only when the legal total workload and memory fit."
+          }
+        ],
+        "canonicalOrder": [
+          "estimate_q_updates",
+          "design_index",
+          "compare_totals",
+          "adopt_if_better"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Repeated-query transfer is an amortization decision with correctness constraints.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Estimate q queries and u updates over the lifetime in which an index could be reused.",
+                "Design an ordered representation that preserves the query key and any required output identity.",
+                "Compare repeated scans with index build plus maintenance plus queries, including memory and freshness costs.",
+                "Adopt indexed binary lookup only if the representation is legal and its complete workload fits better."
+              ]
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Design follows workload estimation because update rate affects which index is viable; the final comparison follows design because its maintenance cost is representation-specific. Future queries alone do not prove that preprocessing will be reused enough to pay for itself."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Compare costs over one representation lifetime, after proving that the index preserves the required result."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-018",
+      "prompt": "Arrange the review when the output changes from one match to all matches.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_new_output",
+            "text": "State that every matching occurrence must be returned."
+          },
+          {
+            "id": "locate_range",
+            "text": "Use legal boundaries to locate the equal range when data is sorted."
+          },
+          {
+            "id": "account_output",
+            "text": "Include Θ(k) work and space to emit k matches."
+          },
+          {
+            "id": "compare_scan",
+            "text": "Compare O(log n + k) with a scan under the actual data and output contract."
+          }
+        ],
+        "canonicalOrder": [
+          "state_new_output",
+          "locate_range",
+          "account_output",
+          "compare_scan"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Binary search can still help, but the output lower bound changes the total cost.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Restate the new contract: every one of the k matching records must be returned.",
+                "On query-aligned sorted data, find the lower and upper boundaries of the equal range in O(log n).",
+                "Traverse and emit that range, paying Θ(k) output time and, when materialized, Θ(k) output space.",
+                "Compare O(log n + k) with the scan's O(n + k) under the actual representation."
+              ]
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Locating the equal range must precede output accounting because binary search reduces only the search portion. When k is Θ(n), output dominates and both totals are Θ(n), even though boundary search still locates the range logarithmically."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Separate locating k matches from emitting k matches; only the first part can be logarithmic."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-019",
+      "prompt": "A static unsorted array receives q exact queries. Select the total time of repeated scans and of sorting once followed by binary searches.",
+      "constraints": [
+        "Sorting is comparison-based.",
+        "No updates occur."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "scan_time",
+          "indexed_time"
+        ],
+        "availableValuesByDimension": {
+          "scan_time": [
+            "O(qn)",
+            "O(n log n + q log n)",
+            "O(n+q)",
+            "O(q log n)"
+          ],
+          "indexed_time": [
+            "O(qn)",
+            "O(n log n + q log n)",
+            "O(n+q)",
+            "O(nq log n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "scan_time": [
+            "O(qn)"
+          ],
+          "indexed_time": [
+            "O(n log n + q log n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "scan_time": {
+            "repeated_scans": "O(qn)"
+          },
+          "indexed_time": {
+            "sort_then_queries": "O(n log n + q log n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "This formula is a reusable transfer model for static repeated exact queries.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "A scan inspects up to n records for each of q queries, so its total is q · O(n) = O(qn). Sorting the static array once costs O(n log n), and each of q binary searches costs O(log n), giving O(n log n + q log n). The sort term is paid once only because the dataset is static."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Compare the two complete totals rather than O(n) with O(log n) in isolation. A small q may not repay sorting; as q grows, reuse can make the indexed total smaller. If mutation or copying is not allowed, this particular sort-once model is not a legal alternative."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "For reusable preprocessing, write `build + q × query` and compare it with `q × direct query`."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-020",
+      "prompt": "A sorted array query returns all k matches. Compare boundary search plus output with a full scan plus output.",
+      "constraints": [
+        "Two boundary searches cost O(log n) total.",
+        "Writing each matching result costs O(1)."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "binary_range_time",
+          "scan_time"
+        ],
+        "availableValuesByDimension": {
+          "binary_range_time": [
+            "O(log n)",
+            "O(k)",
+            "O(log n + k)",
+            "O(nk)"
+          ],
+          "scan_time": [
+            "O(n)",
+            "O(k)",
+            "O(n + k)",
+            "O(log n + k)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "binary_range_time": [
+            "O(log n + k)"
+          ],
+          "scan_time": [
+            "O(n + k)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "binary_range_time": {
+            "locate_then_emit": "O(log n + k)"
+          },
+          "scan_time": {
+            "scan_then_emit": "O(n + k)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Output size narrows but does not erase the benefit of locating the range logarithmically.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Two boundary searches locate the equal range in O(log n), then emitting k records costs O(k), so the indexed total is O(log n + k). A full scan examines n records and emits the matches, represented here as O(n + k); since k ≤ n, this is also O(n)."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The output lower bound narrows the advantage: when k is small, logarithmic location avoids examining most records; when k = Θ(n), both expressions reduce to Θ(n). Do not report O(log n) for an operation whose contract requires materializing k outputs."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Total time is `location + output`; binary search changes the first term, never the Ω(k) second term."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-021",
+      "prompt": "A candidate predicate costs P(n), candidate range width is W, and a direct legal scan-style solution costs D(n). Select the answer-space binary cost and the correct transfer comparison.",
+      "constraints": [
+        "The predicate is monotonic and binary search uses O(log W) evaluations."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "binary_cost",
+          "decision_rule"
+        ],
+        "availableValuesByDimension": {
+          "binary_cost": [
+            "O(log W)",
+            "O(P(n))",
+            "O(P(n) log W)",
+            "O(WP(n))"
+          ],
+          "decision_rule": [
+            "always_binary",
+            "always_scan",
+            "compare_P(n)logW_with_D(n)",
+            "compare_names"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "binary_cost": [
+            "O(P(n) log W)"
+          ],
+          "decision_rule": [
+            "compare_P(n)logW_with_D(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "binary_cost": {
+            "predicate_times_iterations": "O(P(n) log W)"
+          },
+          "decision_rule": {
+            "full_legal_cost": "compare_P(n)logW_with_D(n)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The outer logarithm is only one factor in the transferred workload.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Binary search over W candidate values performs O(log W) predicate evaluations because each evaluation halves the remaining range. If one predicate check costs P(n), multiplying the layers gives O(P(n) log W), not O(log W) or O(P(n)) alone."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The direct legal solution costs D(n), so the transfer decision compares P(n) log W with D(n), along with constants and memory. The answer-space method is eligible only if the predicate is monotonic; a lower asymptotic expression cannot rescue an invalid discard rule."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "For nested work, multiply predicate cost by the number of binary-search iterations before comparing strategies."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-transfer-022",
+      "prompt": "A dataset has q exact queries and u updates. A maintained ordered structure costs O(log n) per query and O(log n) per update; a plain array costs O(n) per query and O(1) per append update. Select total time for both models.",
+      "constraints": [
+        "The maintained structure preserves the required query semantics.",
+        "Updates are append-like in the plain array model."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "ordered_structure_time",
+          "plain_array_time"
+        ],
+        "availableValuesByDimension": {
+          "ordered_structure_time": [
+            "O((q+u) log n)",
+            "O(qn+u)",
+            "O(q log n+un)",
+            "O(qun)"
+          ],
+          "plain_array_time": [
+            "O((q+u) log n)",
+            "O(qn+u)",
+            "O(q+u)",
+            "O(qu)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "ordered_structure_time": [
+            "O((q+u) log n)"
+          ],
+          "plain_array_time": [
+            "O(qn+u)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "ordered_structure_time": {
+            "queries_and_updates": "O((q+u) log n)"
+          },
+          "plain_array_time": {
+            "scans_and_appends": "O(qn+u)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "A different maintained representation can move both query and update costs.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "The ordered structure performs q searches and u updates at O(log n) each, so the total is O(q log n + u log n) = O((q + u) log n). The plain array performs q scans at O(n) and u append updates at O(1), giving O(qn + u)."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Neither representation wins from q alone: the ordered structure reduces query cost but makes updates logarithmic, while the append-only array keeps updates constant and queries linear. Compare the formulas for the expected q:u ratio and include memory and output semantics before choosing."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Model every operation the representation must support; optimizing lookup can move cost into updates."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_binary_search_vs_scan_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    }
+  ],
+  "modeStructures": {
+    "recognitionSets": [],
+    "contrastSets": [
+      {
+        "setId": "contrast-binary-vs-scan-transfer-binary-search-vs-linear-scan-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "transfer_binary_search_vs_linear_scan",
+        "contrastedMentalUnitIds": [
+          "recognize_binary_search_signal",
+          "boundaries_and_loop_invariants",
+          "reason_about_indexed_scans"
+        ],
+        "falseHeuristicId": "binary_search_is_always_better_than_linear_scan",
+        "transferBoundary": "Re-evaluate binary search versus scanning whenever query semantics, preprocessing reuse, mutation rate, access model, predicate monotonicity, or output contract changes.",
+        "itemIds": [
+          "alg-contrast-binary-scan-transfer-001",
+          "alg-contrast-binary-scan-transfer-002",
+          "alg-contrast-binary-scan-transfer-003",
+          "alg-contrast-binary-scan-transfer-004",
+          "alg-contrast-binary-scan-transfer-005",
+          "alg-contrast-binary-scan-transfer-006",
+          "alg-contrast-binary-scan-transfer-007",
+          "alg-contrast-binary-scan-transfer-008",
+          "alg-contrast-binary-scan-transfer-009",
+          "alg-contrast-binary-scan-transfer-010",
+          "alg-contrast-binary-scan-transfer-011",
+          "alg-contrast-binary-scan-transfer-012",
+          "alg-contrast-binary-scan-transfer-013",
+          "alg-contrast-binary-scan-transfer-014",
+          "alg-contrast-binary-scan-transfer-015",
+          "alg-contrast-binary-scan-transfer-016",
+          "alg-contrast-binary-scan-transfer-017",
+          "alg-contrast-binary-scan-transfer-018",
+          "alg-contrast-binary-scan-transfer-019",
+          "alg-contrast-binary-scan-transfer-020",
+          "alg-contrast-binary-scan-transfer-021",
+          "alg-contrast-binary-scan-transfer-022"
+        ]
+      }
+    ],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

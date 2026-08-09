@@ -10,9 +10,9 @@ test("content workflows retain full technical-input history and clean locked ins
   assert.equal((realReleaseWorkflow.match(/uses: actions\/checkout@v4\n        with:\n          fetch-depth: 0/g) ?? []).length, 1);
   assert.equal((realReleaseWorkflow.match(/cache-dependency-path: package-lock\.json/g) ?? []).length, 1);
   assert.equal((realReleaseWorkflow.match(/- run: npm ci/g) ?? []).length, 1);
-  assert.ok(realReleaseWorkflow.indexOf("- run: npm ci") < realReleaseWorkflow.indexOf("Algorithms validate hard gate"));
-  assert.ok(realReleaseWorkflow.indexOf("Algorithms validate hard gate") < realReleaseWorkflow.indexOf("Certification validate hard gate"));
+  assert.ok(realReleaseWorkflow.indexOf("- run: npm ci") < realReleaseWorkflow.indexOf("Coding Interview validate hard gate"));
+  assert.ok(realReleaseWorkflow.indexOf("Coding Interview validate hard gate") < realReleaseWorkflow.indexOf("Certification validate hard gate"));
   assert.ok(realReleaseWorkflow.indexOf("Certification validate hard gate") < realReleaseWorkflow.indexOf("Build isolated release candidate"));
-  assert.doesNotMatch(realReleaseWorkflow, /build:real:(algorithms|certification)/);
+  assert.doesNotMatch(realReleaseWorkflow, /build:real:(coding_interview|certification)/);
   assert.match(realReleaseWorkflow, /node scripts\/publishing\/ci-release-gate\.mjs/);
 });

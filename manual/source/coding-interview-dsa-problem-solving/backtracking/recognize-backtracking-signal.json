@@ -1,0 +1,1278 @@
+{
+  "schemaVersion": "coding-interview-manual-source-v2",
+  "batchId": "backtracking-recognize-backtracking-signal-v1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "familyId": "coding_interview",
+  "contentVersion": "coding-interview-dsa-problem-solving-0001",
+  "taxonomyVersion": "coding-interview-taxonomy-v2",
+  "declaredModes": [
+    "coding-interview-learn-approach",
+    "coding-interview-guided-practice",
+    "coding-interview-recognize-patterns",
+    "coding-interview-contrast-practice",
+    "coding-interview-weak-area-review",
+    "coding-interview-independent-practice",
+    "coding-interview-interview-simulation"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "backtracking",
+    "primaryMentalUnitId": "recognize_backtracking_signal",
+    "patternFamilyId": "backtracking"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-17T00:00:00.000Z",
+    "contentBatchId": "backtracking-recognize-backtracking-signal-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-backtracking-recognize-signal-001",
+      "prompt": "Which requirement is the strongest signal for a backtracking search?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "enumerate_valid_configurations",
+            "text": "Enumerate every configuration that satisfies a set of constraints."
+          },
+          {
+            "id": "single_linear_aggregate",
+            "text": "Compute one running sum over an array."
+          },
+          {
+            "id": "sorted_lookup",
+            "text": "Find one value in a sorted array."
+          },
+          {
+            "id": "frequency_report",
+            "text": "Count how many times each value appears."
+          }
+        ],
+        "acceptedOptionIds": [
+          "enumerate_valid_configurations"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Backtracking is appropriate when a solution is assembled through a sequence of choices and multiple legal branches may need exploration.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "What makes this a choice tree"
+            },
+            {
+              "type": "paragraph",
+              "text": "A node represents one partial configuration, and each outgoing edge represents a legal next choice. To enumerate every valid completion, the algorithm chooses one edge, updates branch-local state, explores that subtree, restores the parent state, and then tries the next edge."
+            },
+            {
+              "type": "paragraph",
+              "text": "The other tasks have one determined update at each input value, or a monotonic rule that permanently discards candidates. They do not require returning to the same parent state to explore sibling decisions."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Classification test",
+              "text": "Look for a partial candidate with several legal continuations whose effects must be isolated while one or more completions are searched. Recursion or a large input alone is not enough."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "single_linear_aggregate": "A running sum has one fixed update per element; it never returns to an earlier prefix to try a sibling choice.",
+          "sorted_lookup": "Binary search uses a monotonic comparison to discard one half permanently, so it does not explore and restore alternative branches.",
+          "frequency_report": "Frequency counting maps each value to one deterministic counter update rather than constructing alternative partial solutions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-002",
+      "prompt": "A task asks for all length-k combinations chosen from n distinct values. Which structural description best matches the search?",
+      "constraints": [
+        "0 <= k <= n."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "choice_tree",
+            "text": "A depth-k choice tree in which each level chooses the next value."
+          },
+          {
+            "id": "single_scan",
+            "text": "One deterministic left-to-right scan with no branching."
+          },
+          {
+            "id": "binary_lookup",
+            "text": "A binary search over sorted candidate values."
+          },
+          {
+            "id": "frequency_table",
+            "text": "A frequency table containing all values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "choice_tree"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each partial combination branches on the legal candidates for the next position.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Choice tree for combinations"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Begin at the root with an empty combination and a start index of 0.",
+                "At a node, choose one candidate at or after the start index, append it, and recurse with the next index so that value cannot be reused.",
+                "When the path contains k values, copy it to the output.",
+                "Remove the last value and try the next candidate from the same parent state."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The tree has depth k. The increasing start boundary makes selections order-independent: choosing values at indices 1 then 3 represents the combination once, while the reversed ordering is never generated."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "When an output is an unordered selection without reuse, carry a forward-only candidate boundary and restore the path after each recursive choice."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "single_scan": "One forced pass can visit every value, but it cannot emit all alternative size-k selections without maintaining branching choice state.",
+          "binary_lookup": "Binary search locates a target or boundary by discarding candidates; it does not construct every combination.",
+          "frequency_table": "A frequency table records multiplicities, but it neither chooses k distinct positions nor enumerates the resulting selections."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "enumerate_combinations"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-003",
+      "prompt": "Which task is least likely to require backtracking?",
+      "constraints": [
+        "The array in the maximum task is nonempty."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "maximum_scan",
+            "text": "Return the maximum value in an unsorted array."
+          },
+          {
+            "id": "all_permutations",
+            "text": "Generate all permutations of distinct values."
+          },
+          {
+            "id": "word_path",
+            "text": "Determine whether a word can be formed by a non-reusing path through a grid."
+          },
+          {
+            "id": "valid_assignments",
+            "text": "List all assignments satisfying pairwise constraints."
+          }
+        ],
+        "acceptedOptionIds": [
+          "maximum_scan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A maximum can be computed by a deterministic linear scan with one running best value.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why a maximum is not a search tree"
+            },
+            {
+              "type": "paragraph",
+              "text": "Maintain `best` as the maximum of the prefix already scanned. Each new value causes exactly one update, `best = max(best, value)`, and no later observation can require trying an alternative version of an earlier prefix. That gives a deterministic O(n) scan."
+            },
+            {
+              "type": "paragraph",
+              "text": "Permutation generation branches on unused values; a non-reusing grid path branches on legal neighbors with path-local visited state; constrained assignments branch on candidate values. Those tasks may need to undo a choice and try a sibling, unlike maximum selection."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Prefer the direct invariant",
+              "text": "If one compact state summarizes the processed prefix and every next transition is forced, use that direct algorithm instead of backtracking."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "all_permutations": "Each output position can choose among several unused values, so sibling choices must be explored and isolated.",
+          "word_path": "The path branches on neighboring cells and uses branch-local visited state.",
+          "valid_assignments": "Each variable may accept several candidates, and a later conflict can require undoing an earlier assignment."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-004",
+      "prompt": "A problem asks whether at least one valid assignment exists. Does the find-one result contract rule out backtracking?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_short_circuit",
+            "text": "No. Backtracking may stop as soon as one complete valid branch succeeds."
+          },
+          {
+            "id": "yes_all_only",
+            "text": "Yes. Backtracking is valid only when every solution must be returned."
+          },
+          {
+            "id": "yes_no_output",
+            "text": "Yes. Boolean results never require search."
+          },
+          {
+            "id": "only_if_sorted",
+            "text": "Backtracking is allowed only when candidates are sorted."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_short_circuit"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Backtracking describes how alternatives are explored, not whether the result contains one solution or all solutions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Search strategy versus result contract"
+            },
+            {
+              "type": "paragraph",
+              "text": "A find-one solver chooses a candidate, recurses, and immediately propagates `true` when a complete valid branch is found. If that branch fails, it restores its state and tries the next candidate. Exhausting every branch returns `false`."
+            },
+            {
+              "type": "paragraph",
+              "text": "A collect-all solver uses the same choice tree but copies each complete solution and continues with siblings. Thus output cardinality changes the stopping rule and cost, not whether reversible branch exploration is a valid strategy."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "For existence, short-circuit on the first successful leaf. For enumeration, record a copy at each valid leaf and keep searching."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "yes_all_only": "Backtracking can stop at the first valid leaf; it does not require visiting every valid completion.",
+          "yes_no_output": "A boolean can summarize whether any branch succeeds even though discovering that branch requires search.",
+          "only_if_sorted": "Sorting can support ordering or duplicate control, but reversible search does not generally require sorted candidates."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-005",
+      "prompt": "Which detail most clearly distinguishes backtracking from an unrestricted brute-force loop over complete candidates?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "partial_invariant",
+            "text": "The search builds a partial candidate, isolates sibling choices, and may reject impossible prefixes."
+          },
+          {
+            "id": "large_input",
+            "text": "The input size is large."
+          },
+          {
+            "id": "uses_recursion",
+            "text": "The implementation uses recursion."
+          },
+          {
+            "id": "nested_loops",
+            "text": "The code contains nested loops."
+          }
+        ],
+        "acceptedOptionIds": [
+          "partial_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Backtracking reasons about partial solutions, legal next choices, and restoration between branches.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Structured exploration of partial candidates"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "State invariant: the current path is a well-defined partial candidate.",
+                "Legal choices: only transitions that preserve local constraints create children.",
+                "Sound pruning: reject a node only when no descendant can satisfy the result contract.",
+                "Restoration: after one child returns, restore the exact parent state before exploring a sibling."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "An unrestricted complete-candidate loop generates a whole candidate before testing it. Backtracking may still be exponential, but it can reject impossible prefixes and shares their construction across descendants."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "What is not enough",
+              "text": "Large input, recursion, or nested loops describe scale or syntax. None proves that the algorithm explores isolated sibling choices from a shared parent state."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "large_input": "Input size affects feasibility, but both direct and branching algorithms can receive large inputs; it does not identify the state transition.",
+          "uses_recursion": "Tree traversal, divide-and-conquer, and memoized recurrences can all use recursion without reversible sibling choices.",
+          "nested_loops": "Nested loops enumerate fixed index dimensions; they do not by themselves maintain and restore a constrained partial candidate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "constraints_and_pruning",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-006",
+      "prompt": "A string may be split at multiple positions, and every segment must satisfy a predicate. Which signal points to backtracking?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "choose_next_boundary",
+            "text": "At each position, choose among multiple legal next segment boundaries."
+          },
+          {
+            "id": "compare_adjacent",
+            "text": "Only compare each character with its neighbor."
+          },
+          {
+            "id": "sort_segments",
+            "text": "Sort the eventual segments alphabetically."
+          },
+          {
+            "id": "count_characters",
+            "text": "Count the frequency of each character."
+          }
+        ],
+        "acceptedOptionIds": [
+          "choose_next_boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Segmentation forms a tree whose edges are possible next cut positions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "A cut position is a branch choice"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Let index i be the first character not yet assigned to a segment.",
+                "Try each end j > i as a possible next cut.",
+                "If substring [i, j) satisfies the segment predicate, append it and recurse from j.",
+                "Remove that segment after the recursive call so another end position is tested from the same prefix."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "A leaf at the end of the string is one complete valid partition. Multiple valid end positions from the same i create siblings, which is the backtracking signal."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "For partition problems, use the unprocessed boundary as state and each valid next endpoint as a choice."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "compare_adjacent": "Local neighbor comparisons may test one property, but they do not choose among all possible segment endpoints.",
+          "sort_segments": "Sorting completed segments changes output order; it does not discover which cut positions form valid partitions.",
+          "count_characters": "Character frequencies discard position, while segmentation depends on contiguous boundaries and their order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "partition_search",
+        "problemArchetypeId": "partition_sequence"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-007",
+      "prompt": "Which grid task has a backtracking signal rather than a standard flood-fill signal?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "path_spells_word",
+            "text": "Find a path that spells a target word without reusing a cell in the same path."
+          },
+          {
+            "id": "count_components",
+            "text": "Count connected components while each cell may be visited globally once."
+          },
+          {
+            "id": "compute_row_sums",
+            "text": "Compute the sum of each row."
+          },
+          {
+            "id": "find_minimum_cell",
+            "text": "Find the smallest cell value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "path_spells_word"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The word-path task explores alternative neighbor choices with visited state scoped to the current path.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Path-local versus global visited state"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "At a cell, verify the next target character and mark the cell used for the current path.",
+                "Try each legal neighboring cell as the next branch.",
+                "If no branch completes the word, unmark the cell before returning so a sibling path can use it."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Flood fill and component counting answer global reachability, so a cell can remain visited after its first discovery. Word-path search asks about one candidate path; a cell excluded by one path may be legal in another, which requires restoration."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Visited-state test",
+              "text": "If visited means globally processed, use traversal state. If it means already used in this candidate, restore it between sibling candidates."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "count_components": "Global reachability can use ordinary DFS or BFS without undoing visited state.",
+          "compute_row_sums": "Each row has one deterministic accumulation path, with no candidate path or branch-local constraint to restore.",
+          "find_minimum_cell": "A full scan with one running minimum examines every cell once and never explores sibling choices."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_search",
+        "problemArchetypeId": "search_grid_paths"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-008",
+      "prompt": "A problem asks for one shortest path in an unweighted graph. Which observation argues against choosing backtracking as the primary approach?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bfs_structure",
+            "text": "Layered breadth-first exploration directly guarantees the shortest number of edges."
+          },
+          {
+            "id": "has_choices",
+            "text": "The graph has more than one outgoing edge."
+          },
+          {
+            "id": "uses_path",
+            "text": "The result is a path."
+          },
+          {
+            "id": "needs_visited",
+            "text": "The algorithm needs visited state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bfs_structure"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A specialized polynomial-time traversal should be preferred when it directly satisfies the objective.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Let the objective choose the traversal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Breadth-first search processes vertices in nondecreasing distance from the source: distance 0, then 1 edge, then 2 edges, and so on. Therefore the first time the target is discovered, its path uses the minimum number of edges."
+            },
+            {
+              "type": "paragraph",
+              "text": "A backtracking path search can enumerate many simple paths before proving which is shortest, potentially exploring exponentially many candidates. Graph branching, a path-shaped result, and visited state occur in BFS too; they do not override BFS's direct shortest-path invariant."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "Before choosing backtracking, check whether ordering, monotonicity, dynamic programming, or a graph traversal proves the requested optimum directly."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "has_choices": "Multiple outgoing edges create branching, but BFS handles that branching while preserving distance layers and does not restore path choices.",
+          "uses_path": "A path is an output shape, not an algorithm classification; BFS can reconstruct one shortest path through parent pointers.",
+          "needs_visited": "Visited state is also central to ordinary BFS and DFS because it prevents repeated graph exploration."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "search_grid_paths"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-009",
+      "prompt": "Which phrase is an unsafe reason by itself to classify a problem as backtracking?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "uses_recursion",
+            "text": "\"The solution uses recursion.\""
+          },
+          {
+            "id": "all_valid_outputs",
+            "text": "\"The task asks for all valid outputs under constraints.\""
+          },
+          {
+            "id": "reversible_choice",
+            "text": "\"Each branch makes a reversible choice and explores alternatives.\""
+          },
+          {
+            "id": "partial_constraints",
+            "text": "\"A partial assignment can be rejected before completion.\""
+          }
+        ],
+        "acceptedOptionIds": [
+          "uses_recursion"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Recursion is an implementation mechanism, not a sufficient classification rule.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Recursion is syntax, not the classification"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Tree traversal recursively follows the tree's existing children; it does not construct alternative candidates.",
+                "Divide-and-conquer recursively solves a fixed set of subproblems and combines them.",
+                "Dynamic programming may express a recurrence recursively while caching repeated states.",
+                "Backtracking constructs a partial candidate, tries alternative legal choices, and isolates their effects."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Asking for all constrained outputs, making reversible choices, and rejecting impossible partial assignments are structural evidence. Merely seeing a recursive function says nothing about those properties."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Inspect the state transition",
+              "text": "Classify the algorithm by what one call represents and how sibling calls relate, not by whether the implementation uses the call stack."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "all_valid_outputs": "Enumerating all constrained outputs is a strong signal because several valid completions may branch from one partial candidate.",
+          "reversible_choice": "Trying a choice and restoring its effects before a sibling is the central choose-recurse-unchoose mechanism.",
+          "partial_constraints": "Rejecting an impossible partial assignment is sound pruning inside a choice tree, another strong structural signal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-010",
+      "prompt": "A task generates all subsets of n distinct values. What is the branching decision at each input position in a common backtracking formulation?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "include_or_exclude",
+            "text": "Include the current value or exclude it."
+          },
+          {
+            "id": "left_or_right_half",
+            "text": "Search the left half or the right half of a sorted array."
+          },
+          {
+            "id": "increment_or_decrement",
+            "text": "Increment or decrement the value."
+          },
+          {
+            "id": "sort_or_not",
+            "text": "Sort the input or leave it unsorted."
+          }
+        ],
+        "acceptedOptionIds": [
+          "include_or_exclude"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each position contributes a binary membership choice.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Binary membership decisions"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "At input index i, append value i and recurse to represent inclusion.",
+                "Remove that value to restore the parent path.",
+                "Recurse without it to represent exclusion.",
+                "At i = n, copy the path as one completed subset."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "There are n decision levels and two branches per level, giving 2^n leaves. A different formulation can choose the next included index directly, but it represents the same family of membership choices."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "When each independent item may be selected or skipped, an include/exclude tree is the direct backtracking model."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "left_or_right_half": "Searching one half discards candidates to locate a target; subset generation must preserve both membership alternatives for every value.",
+          "increment_or_decrement": "A subset keeps original values unchanged and decides membership, so modifying a value creates different data rather than a selection.",
+          "sort_or_not": "Sorting may normalize output order, but it is a preprocessing decision, not the per-value branch that enumerates subsets."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "enumerate_combinations"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-011",
+      "prompt": "A solver assigns one value to each variable and must satisfy constraints involving earlier assignments. What state transition suggests backtracking?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "assign_check_recurse_undo",
+            "text": "Assign a candidate, check consistency, recurse, then undo the assignment."
+          },
+          {
+            "id": "sum_once",
+            "text": "Add every candidate value into one running total."
+          },
+          {
+            "id": "sort_once",
+            "text": "Sort variables once and return the order."
+          },
+          {
+            "id": "lookup_once",
+            "text": "Read one precomputed answer from a table."
+          }
+        ],
+        "acceptedOptionIds": [
+          "assign_check_recurse_undo"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Variable assignment is a sequence of constrained choices whose effects must be isolated between branches.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "The canonical branch transition"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Choose a candidate for the next unassigned variable.",
+                "Check every constraint whose required variables are now assigned; reject immediately if one fails.",
+                "Record the assignment and recurse to the next variable.",
+                "Remove the assignment after the call so the next candidate starts from the same parent state."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The invariant is that the current mapping contains exactly the assignments on the root-to-current path and satisfies all constraints that can already be evaluated. Restoration prevents a candidate tried in one sibling from leaking into another."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "For constraint satisfaction, bind one decision, validate every newly decidable constraint, recurse, and unbind."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sum_once": "One total collapses which value belongs to which variable and cannot represent alternative partial assignments.",
+          "sort_once": "Sorting variables can influence search order, but it neither chooses candidate values nor checks their consistency.",
+          "lookup_once": "A fixed lookup returns an already computed result; it does not construct, validate, and restore candidate assignments."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "constraints_and_pruning",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-012",
+      "prompt": "Which result requirement most strongly suggests output-sensitive backtracking?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "return_every_solution",
+            "text": "Return every valid permutation satisfying the constraints."
+          },
+          {
+            "id": "return_count_length",
+            "text": "Return the input length."
+          },
+          {
+            "id": "return_first_value",
+            "text": "Return the first array element."
+          },
+          {
+            "id": "return_sorted_copy",
+            "text": "Return a sorted copy of the input."
+          }
+        ],
+        "acceptedOptionIds": [
+          "return_every_solution"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "When all solutions must be materialized, runtime must at least scale with the number and size of those outputs.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why enumeration is output-sensitive"
+            },
+            {
+              "type": "paragraph",
+              "text": "Suppose there are m valid permutations of length n. Merely materializing them requires writing m · n values, so any complete enumerator has an output lower bound of Ω(mn), regardless of how efficiently invalid branches are rejected."
+            },
+            {
+              "type": "paragraph",
+              "text": "Backtracking shares prefix construction: a partial permutation is extended by each legal unused value, copied at a valid leaf, and restored for the next sibling. Pruning can reduce invalid exploration but cannot remove the cost of required outputs."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "When every valid construction must be returned, express complexity in terms of both explored states and total output size."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "return_count_length": "Input length is already available in constant time and does not require constructing alternative candidates.",
+          "return_first_value": "Reading one existing element requires no branching, validation, or enumeration.",
+          "return_sorted_copy": "Sorting chooses one ordered arrangement of the input; it does not enumerate all valid permutations under constraints."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "enumerate_permutations"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-013",
+      "prompt": "Which features are strong backtracking signals? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "partial_solution",
+            "text": "The algorithm builds a partial solution one decision at a time."
+          },
+          {
+            "id": "multiple_legal_choices",
+            "text": "A state can have multiple legal next choices."
+          },
+          {
+            "id": "branch_restoration",
+            "text": "Mutable branch state must be restored before exploring a sibling."
+          },
+          {
+            "id": "single_deterministic_pass",
+            "text": "Every input position has exactly one forced transition."
+          }
+        ],
+        "acceptedOptionIds": [
+          "partial_solution",
+          "multiple_legal_choices",
+          "branch_restoration"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Backtracking combines partial construction, branching, and branch-local state isolation.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Evaluate each signal"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Partial solution: each call represents a candidate prefix rather than a completed answer only.",
+                "Multiple legal choices: those choices become sibling subtrees from the same state.",
+                "Branch restoration: mutable effects from one sibling must not contaminate another; copying immutable state is an equivalent isolation mechanism.",
+                "Single forced transition: with no alternative child to revisit, this feature alone describes a deterministic pass rather than backtracking."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The syntax can vary, but the conceptual model must contain a partial candidate, alternative continuations, and state isolation across those alternatives."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Classification boundary",
+              "text": "One forced recursive child is not a choice tree. Several candidate children that share a parent but require isolated state are."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "single_deterministic_pass": "A forced transition has no sibling alternative to explore or restore, so it does not establish a backtracking search."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "partial_solution": "A partial candidate gives each search-tree node a precise meaning and determines which completions remain possible.",
+          "multiple_legal_choices": "Several valid next decisions create sibling branches that may each contain a solution.",
+          "branch_restoration": "Restoring or copying state ensures each sibling is evaluated from the same parent candidate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-014",
+      "prompt": "Which tasks can naturally be modeled as backtracking choice trees? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "permutations",
+            "text": "Generate all permutations of distinct values."
+          },
+          {
+            "id": "constrained_assignment",
+            "text": "Assign values to variables subject to partial consistency constraints."
+          },
+          {
+            "id": "palindrome_partition",
+            "text": "Enumerate all partitions whose segments satisfy a predicate."
+          },
+          {
+            "id": "array_sum",
+            "text": "Compute the sum of all array values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "permutations",
+          "constrained_assignment",
+          "palindrome_partition"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "These tasks construct outputs by exploring alternative legal next choices.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Map each task to its choices"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Permutation: choose any unused value for the next output position.",
+                "Constrained assignment: choose a candidate for the next variable and reject inconsistent prefixes.",
+                "Predicate-based partition: choose the next segment endpoint among the valid cuts.",
+                "Array sum: add the next value to one accumulator; there is no alternative construction to revisit."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The first three produce a tree because one partial candidate can have several legal children. The sum has one forced transition per element and is therefore a direct scan."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "Name the state and the set of legal next decisions. If that set can contain siblings whose effects must be isolated, the choice-tree model fits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "array_sum": "Each element contributes through one fixed addition, so the algorithm never restores a prefix to explore a different continuation."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "permutations": "Each level chooses one unused value, and restoration makes it available to sibling orderings.",
+          "constrained_assignment": "Each candidate value is a sibling branch whose consistency is checked against the current partial assignment.",
+          "palindrome_partition": "Each valid next segment boundary creates a different suffix subproblem and output path."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-015",
+      "prompt": "Which statements prevent the false heuristic that backtracking is merely unstructured brute force? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "state_invariant",
+            "text": "Each recursion level has a defined partial-state invariant."
+          },
+          {
+            "id": "legal_choices",
+            "text": "Candidate generation is limited to legal next choices."
+          },
+          {
+            "id": "sound_pruning",
+            "text": "A branch may be cut only when no completion can satisfy the contract."
+          },
+          {
+            "id": "prune_unpromising",
+            "text": "Any branch that looks slow may be removed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "state_invariant",
+          "legal_choices",
+          "sound_pruning"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Correct backtracking is governed by explicit state, choice, completion, and pruning contracts.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Contracts that make the search correct"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "State invariant: define exactly what the current partial candidate contains and which constraints it already satisfies.",
+                "Legal-choice rule: generate only next decisions permitted from that state.",
+                "Sound-pruning proof: cut a branch only when every completion from it must violate the result contract.",
+                "Restoration rule: return to the parent state before evaluating the next sibling."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "A branch that merely looks expensive may still contain a required solution. Pruning based on runtime intuition breaks completeness unless an impossibility argument shows that no valid descendant exists."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Transfer rule",
+              "text": "Optimization may change the number of visited nodes, but it must not change the set of valid leaves required by the result contract."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "prune_unpromising": "A slow-looking branch can still contain a valid solution; removing it without an impossibility proof can make the search incomplete."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "state_invariant": "The invariant defines what one node means and which facts every descendant may rely on.",
+          "legal_choices": "Restricting children to legal transitions gives the search tree its problem-specific structure.",
+          "sound_pruning": "An impossibility proof removes only branches that cannot contribute a required answer."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "constraints_and_pruning",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    },
+    {
+      "id": "alg-backtracking-recognize-signal-016",
+      "prompt": "A full choice tree has branching factor b and maximum depth d, with O(1) work per node besides recursion. Select an upper bound on visited nodes and recursion-stack space.",
+      "constraints": [
+        "Assume b >= 2 and d >= 1.",
+        "Every internal node may generate up to b children.",
+        "No pruning is guaranteed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "visited_nodes",
+          "recursion_space"
+        ],
+        "availableValuesByDimension": {
+          "visited_nodes": [
+            "O(d)",
+            "O(bd)",
+            "O(b^d)",
+            "O(d^b)"
+          ],
+          "recursion_space": [
+            "O(1)",
+            "O(b)",
+            "O(d)",
+            "O(b^d)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "visited_nodes": [
+            "O(b^d)"
+          ],
+          "recursion_space": [
+            "O(d)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "visited_nodes": {
+            "exponential_tree": "O(b^d)"
+          },
+          "recursion_space": {
+            "depth": "O(d)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The search tree can grow exponentially in depth, while depth-first recursion retains only one root-to-leaf path.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Derive the two bounds separately"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Level i contains at most b^i nodes: one root at i = 0, at most b children at i = 1, and so on.",
+                "Through depth d, the total is 1 + b + ... + b^d = (b^(d + 1) - 1) / (b - 1). For b >= 2, this is O(b^d).",
+                "Depth-first recursion explores one branch at a time, so at most one frame per level is live. A root-to-leaf path has d + 1 frames, which is O(d) stack space."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Visited-node count measures total work across all branches; recursion space measures only the maximum live path. Pruning or smaller candidate sets can reduce visited nodes, but the prompt guarantees neither."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Do not equate time and stack",
+              "text": "A depth-first search can visit exponentially many nodes sequentially while retaining only a linear-depth call stack."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_choice_tree_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "choice_tree",
+        "problemArchetypeId": "construct_valid_assignment"
+      }
+    }
+  ],
+  "modeStructures": {
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

@@ -8,7 +8,6 @@ import { tmpdir } from "node:os";
 import { buildReleaseCandidate, buildTrack, CANONICAL_SERIALIZATION_VERSION, emitTechnicalEvidence, hash, inspectTrack, PublishingFailure, publishRelease, selectSimulationItems, selectSimulationPlan, validateTrack, verifyArtifact } from "../scripts/publishing/pipeline.mjs";
 import { algorithmsBatch, certificationBatch, certificationDiagnosticBaseline, certificationExamExperienceProfile, fixtureRoot } from "./fixtures/manualPublishingFixture.mjs";
 import { APPLICATION_ALGORITHMS_BANK_KEYS, APPLICATION_ALGORITHMS_ITEM_KEYS, APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS, APPLICATION_ALGORITHM_MODE_IDS } from "./fixtures/applicationContractSnapshot.mjs";
-import { generatedTypeScript, structuralPayload, taxonomyFingerprint } from "../scripts/taxonomy/export-algorithms-taxonomy.mjs";
 
 const COMMIT = "fixture-source-commit";
 const exec = promisify(execFile);
@@ -36,132 +35,132 @@ async function fixtureGit(root, ...args) { return exec("git", args, { cwd: root 
 async function commitFixtureInputs(root, message) { await fixtureGit(root, "add", "-A"); await fixtureGit(root, "commit", "-m", message); return (await fixtureGit(root, "rev-parse", "HEAD")).stdout.trim(); }
 async function cleanGitReleaseFixture(path) {
   await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test"); await commitFixtureInputs(path, "technical inputs");
-  const evidence = await emitTechnicalEvidence({ root: path, trackId: "algorithms" }); await commitFixtureInputs(path, "technical evidence");
+  const evidence = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
   return evidence;
 }
 
 test("canonical discovery is deterministic and ignores noncanonical content", async () => {
-  const first = await root({ algorithms: algorithmsBatch() }); const second = await root({ algorithms: algorithmsBatch(), legacy: true });
+  const first = await root({ coding_interview: algorithmsBatch() }); const second = await root({ coding_interview: algorithmsBatch(), legacy: true });
   try {
-    const a = await buildTrack({ root: first, trackId: "algorithms", outputRoot: join(first, "out"), sourceRepositoryCommit: COMMIT });
-    const b = await buildTrack({ root: second, trackId: "algorithms", outputRoot: join(second, "out"), sourceRepositoryCommit: COMMIT });
+    const a = await buildTrack({ root: first, trackId: "coding-interview-dsa-problem-solving", outputRoot: join(first, "out"), sourceRepositoryCommit: COMMIT });
+    const b = await buildTrack({ root: second, trackId: "coding-interview-dsa-problem-solving", outputRoot: join(second, "out"), sourceRepositoryCommit: COMMIT });
     assert.equal(a.artifact.artifactBytes, b.artifact.artifactBytes);
     assert.equal(JSON.parse(a.artifact.artifactBytes).bank.items[0].taxonomy.roadmapNodeId, "arrays_and_strings");
     const bank = JSON.parse(a.artifact.artifactBytes).bank;
     assert.deepEqual(Object.keys(bank).sort(), [...APPLICATION_ALGORITHMS_BANK_KEYS].sort());
     assert.deepEqual(Object.keys(bank.items[0]).sort(), [...APPLICATION_ALGORITHMS_ITEM_KEYS].sort());
-    assert.deepEqual(bank.feedbackAssets, [{ id: "algorithms/complexity-linear-vs-nested", sourcePath: "manual/assets/algorithms/complexity-linear-vs-nested.svg", sha256: "890413bf6613f20db0120a700511b5493eccad334619d006641662716f1708f5" }]);
-    const simulation = bank.practiceBlueprints.find((entry) => entry.modeId === "algorithms-interview-simulation");
-    assert.deepEqual({ ...simulation, resolvedItemIds: undefined }, { blueprintId: "fixture-interview-simulation", blueprintVersion: "1", modeId: "algorithms-interview-simulation", requestedLengths: [40], defaultRequestedLength: 40, shortening: "prohibited", minimumActualLength: 40, composition: { kind: "simulation_pool", ids: ["fixture-pool"] }, resolvedItemIds: undefined });
+    assert.deepEqual(bank.feedbackAssets, [{ id: "algorithms/complexity-linear-vs-nested", sourcePath: "manual/assets/coding-interview-dsa-problem-solving/complexity-linear-vs-nested.svg", sha256: "890413bf6613f20db0120a700511b5493eccad334619d006641662716f1708f5" }]);
+    const simulation = bank.practiceBlueprints.find((entry) => entry.modeId === "coding-interview-interview-simulation");
+    assert.deepEqual({ ...simulation, resolvedItemIds: undefined }, { blueprintId: "fixture-interview-simulation", blueprintVersion: "1", modeId: "coding-interview-interview-simulation", requestedLengths: [40], defaultRequestedLength: 40, shortening: "prohibited", minimumActualLength: 40, composition: { kind: "simulation_pool", ids: ["fixture-pool"] }, resolvedItemIds: undefined });
     assert.equal(simulation.resolvedItemIds.length, 40); assert.equal(new Set(simulation.resolvedItemIds).size, 40); assert.ok(simulation.resolvedItemIds.every((id) => bank.simulationPools[0].itemIds.includes(id)));
     assert.doesNotMatch(JSON.stringify(bank), /resolvedModeDeclarations|technicalValidationEvidence|sourceOverrides|relationMetadata/);
   } finally { await rm(first, { recursive: true }); await rm(second, { recursive: true }); }
 });
 
-test("publisher accepts only exact application Algorithms mode IDs", async () => {
-  const track = JSON.parse(await readFile("config/tracks/algorithms.json", "utf8")); assert.deepEqual([...track.modeConfiguration.practiceBlueprints.map((entry) => entry.modeId), track.modeConfiguration.simulationBlueprint.modeId], APPLICATION_ALGORITHM_MODE_IDS);
-  const path = await root({ algorithms: algorithmsBatch({ declaredModes: ["retired-local-mode-id"] }), technicalEvidence: false });
-  try { await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_MODE")); } finally { await rm(path, { recursive: true }); }
+test("publisher accepts only exact application Coding Interview mode IDs", async () => {
+  const track = JSON.parse(await readFile("config/tracks/coding-interview-dsa-problem-solving.json", "utf8")); assert.deepEqual([...track.modeConfiguration.practiceBlueprints.map((entry) => entry.modeId), track.modeConfiguration.simulationBlueprint.modeId], APPLICATION_ALGORITHM_MODE_IDS);
+  const path = await root({ coding_interview: algorithmsBatch({ declaredModes: ["retired-local-mode-id"] }), technicalEvidence: false });
+  try { await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INVALID_MODE")); } finally { await rm(path, { recursive: true }); }
 });
 
-test("Algorithms build report proves readiness for all eight user modes without an eighth blueprint", async () => {
-  const inspected = await inspectTrack({ trackId: "algorithms", sourceRepositoryCommit: COMMIT });
+test("Coding Interview build report proves readiness for all eight user modes without an eighth blueprint", async () => {
+  const inspected = await inspectTrack({ trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT });
   assert.equal(inspected.source.modeStructures.userModeReadiness.length, 8);
-  assert.deepEqual(inspected.source.modeStructures.userModeReadiness.find((entry) => entry.userModeId === "algorithms-custom-practice"), { userModeId: "algorithms-custom-practice", blueprintModeId: "algorithms-guided-practice", requestedLengths: [10, 20, 40], availableUniqueItemCount: 2375 });
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
-  try { const trackPath = join(path, "config/tracks/algorithms.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); track.modeConfiguration.userModeMappings = track.modeConfiguration.userModeMappings.filter((entry) => entry.userModeId !== "algorithms-custom-practice"); await writeFile(trackPath, JSON.stringify(track)); await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_TRACK_MODE_CONFIGURATION")); } finally { await rm(path, { recursive: true }); }
+  assert.deepEqual(inspected.source.modeStructures.userModeReadiness.find((entry) => entry.userModeId === "coding-interview-custom-practice"), { userModeId: "coding-interview-custom-practice", blueprintModeId: "coding-interview-guided-practice", requestedLengths: [10, 20, 40], availableUniqueItemCount: 2375 });
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+  try { const trackPath = join(path, "config/tracks/coding-interview-dsa-problem-solving.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); track.modeConfiguration.userModeMappings = track.modeConfiguration.userModeMappings.filter((entry) => entry.userModeId !== "coding-interview-custom-practice"); await writeFile(trackPath, JSON.stringify(track)); await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INVALID_TRACK_MODE_CONFIGURATION")); } finally { await rm(path, { recursive: true }); }
 });
 
-test("Algorithms track configuration owns six practice blueprints and rejects batch-owned blueprints", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+test("Coding Interview track configuration owns six practice blueprints and rejects batch-owned blueprints", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
-    const trackPath = join(path, "config/tracks/algorithms.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); assert.equal(track.modeConfiguration.practiceBlueprints.length, 6); assert.equal(track.modeConfiguration.simulationBlueprint.modeId, "algorithms-interview-simulation");
-    delete track.modeConfiguration; await writeFile(trackPath, JSON.stringify(track)); await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_TRACK_MODE_CONFIGURATION"));
-    await fixtureRoot(path, { algorithms: algorithmsBatch(), technicalEvidence: false }); const sourcePath = join(path, "manual/source/algorithms/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.modeStructures.practiceBlueprints = []; await writeFile(sourcePath, JSON.stringify(source)); await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_SCHEMA"));
+    const trackPath = join(path, "config/tracks/coding-interview-dsa-problem-solving.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); assert.equal(track.modeConfiguration.practiceBlueprints.length, 6); assert.equal(track.modeConfiguration.simulationBlueprint.modeId, "coding-interview-interview-simulation");
+    delete track.modeConfiguration; await writeFile(trackPath, JSON.stringify(track)); await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("MISSING_TRACK_MODE_CONFIGURATION"));
+    await fixtureRoot(path, { coding_interview: algorithmsBatch(), technicalEvidence: false }); const sourcePath = join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.modeStructures.practiceBlueprints = []; await writeFile(sourcePath, JSON.stringify(source)); await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INVALID_SCHEMA"));
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("every declared selectable Algorithms scope must satisfy its largest visible session length", async () => {
+test("every declared selectable Coding Interview scope must satisfy its largest visible session length", async () => {
   const batch = algorithmsBatch({
-    declaredModes: ["algorithms-recognize-patterns"],
+    declaredModes: ["coding-interview-recognize-patterns"],
     modeStructures: {
       recognitionSets: [{ setId: "short-recognition", setVersion: "v1", taxonomyScope: { roadmapNodeIds: ["arrays_and_strings"] }, legalLearningStages: ["foundations"], itemIds: Array.from({ length: 10 }, (_, index) => `fixture-algorithm-${index + 1}`) }],
       contrastSets: [], interleavedScopes: [], compatibilitySets: [], simulationPools: [], simulationProfiles: [],
     },
   });
-  const path = await root({ algorithms: batch, technicalEvidence: false });
-  try { await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MODE_UNREADY")); } finally { await rm(path, { recursive: true }); }
+  const path = await root({ coding_interview: batch, technicalEvidence: false });
+  try { await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("MODE_UNREADY")); } finally { await rm(path, { recursive: true }); }
 });
 
 test("constraints and difficulty compile as the application contract's legal optional fields", async () => {
   const batch = algorithmsBatch(); batch.items[0].constraints = ["fixture constraint"]; batch.items[0].difficulty = "foundational";
-  const path = await root({ algorithms: batch });
+  const path = await root({ coding_interview: batch });
   try {
-    const built = await buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT }); const item = JSON.parse(built.artifact.artifactBytes).bank.items.find((entry) => entry.id === "fixture-algorithm-1");
+    const built = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT }); const item = JSON.parse(built.artifact.artifactBytes).bank.items.find((entry) => entry.id === "fixture-algorithm-1");
     assert.deepEqual(Object.keys(item).filter((key) => APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS.includes(key)).sort(), [...APPLICATION_ALGORITHMS_ITEM_OPTIONAL_KEYS].sort()); assert.deepEqual(item.constraints, ["fixture constraint"]); assert.equal(item.difficulty, "foundational");
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("empty canonical ingress is explicit even with a legacy bank", async () => {
-  const path = await root({ legacy: true }); try { await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("EMPTY_INGRESS")); } finally { await rm(path, { recursive: true }); }
+  const path = await root({ legacy: true }); try { await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("EMPTY_INGRESS")); } finally { await rm(path, { recursive: true }); }
 });
 
 test("technical evidence is mandatory before a release candidate can validate", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
-    await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_TECHNICAL_EVIDENCE"));
-    await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
-    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }));
+    await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("MISSING_TECHNICAL_EVIDENCE"));
+    await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT });
+    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("technical evidence paths retain distinct immutable manifests for one technical commit", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
-    const first = await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
+    const first = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT });
     const firstBytes = await readFile(first.path, "utf8");
     const schemaPath = join(path, "schemas/publishing/technical-validation-evidence.schema.json"); const schema = JSON.parse(await readFile(schemaPath, "utf8")); schema.title = "Changed durable evidence manifest input"; await writeFile(schemaPath, JSON.stringify(schema));
-    await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_TECHNICAL_EVIDENCE"));
-    const second = await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
+    await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("MISSING_TECHNICAL_EVIDENCE"));
+    const second = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT });
     assert.notEqual(second.path, first.path);
     assert.equal(await readFile(first.path, "utf8"), firstBytes);
-    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }));
+    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("technical evidence emission permits another track's newly generated evidence", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), certification: certificationBatch(), technicalEvidence: false });
+  const path = await root({ coding_interview: algorithmsBatch(), certification: certificationBatch(), technicalEvidence: false });
   try {
-    await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT });
-    await assert.doesNotReject(() => emitTechnicalEvidence({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }));
+    await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT });
+    await assert.doesNotReject(() => emitTechnicalEvidence({ root: path, trackId: "google-cloud-associate-cloud-engineer", sourceRepositoryCommit: COMMIT }));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("technical evidence survives a clean multi-commit release cycle and invalidates changed inputs", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
     await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
-    const technicalCommit = await commitFixtureInputs(path, "technical inputs"); const initial = await inspectTrack({ root: path, trackId: "algorithms" }); const emitted = await emitTechnicalEvidence({ root: path, trackId: "algorithms" }); const evidence = emitted.evidence[0];
+    const technicalCommit = await commitFixtureInputs(path, "technical inputs"); const initial = await inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" }); const emitted = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); const evidence = emitted.evidence[0];
     assert.equal(evidence.validatedAtSourceCommit, technicalCommit); assert.equal(evidence.technicalInputFingerprint, initial.source.technicalInputFingerprint);
-    const evidenceCommit = await commitFixtureInputs(path, "technical evidence"); const reused = await emitTechnicalEvidence({ root: path, trackId: "algorithms" }); assert.deepEqual(reused.evidence, emitted.evidence);
-    const validated = await validateTrack({ root: path, trackId: "algorithms" }); const built = await buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out") });
+    const evidenceCommit = await commitFixtureInputs(path, "technical evidence"); const reused = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); assert.deepEqual(reused.evidence, emitted.evidence);
+    const validated = await validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" }); const built = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: join(path, "out") });
     assert.equal(validated.source.technicalInputFingerprint, evidence.technicalInputFingerprint); assert.equal(built.artifact.sourceRepositoryCommit, evidenceCommit);
-    const sourcePath = join(path, "manual/source/algorithms/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.items[0].prompt = "Choose all changed technical invariants."; await writeFile(sourcePath, JSON.stringify(source)); await commitFixtureInputs(path, "changed source"); const changed = await inspectTrack({ root: path, trackId: "algorithms" }); assert.notEqual(changed.source.technicalInputFingerprint, evidence.technicalInputFingerprint); await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms" }), fails("MISSING_TECHNICAL_EVIDENCE"));
+    const sourcePath = join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.items[0].prompt = "Choose all changed technical invariants."; await writeFile(sourcePath, JSON.stringify(source)); await commitFixtureInputs(path, "changed source"); const changed = await inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" }); assert.notEqual(changed.source.technicalInputFingerprint, evidence.technicalInputFingerprint); await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" }), fails("MISSING_TECHNICAL_EVIDENCE"));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("simulation coverage evidence is immutable for each committed technical input", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
     await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
     await commitFixtureInputs(path, "initial technical inputs");
-    const first = await emitTechnicalEvidence({ root: path, trackId: "algorithms" });
+    const first = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" });
     const firstCoverageBytes = await readFile(first.coveragePath, "utf8");
     await commitFixtureInputs(path, "initial technical evidence");
 
-    const sourcePath = join(path, "manual/source/algorithms/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.items[0].prompt = "Choose all changed simulation coverage invariants."; await writeFile(sourcePath, JSON.stringify(source));
+    const sourcePath = join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.items[0].prompt = "Choose all changed simulation coverage invariants."; await writeFile(sourcePath, JSON.stringify(source));
     await commitFixtureInputs(path, "changed technical inputs");
-    const second = await emitTechnicalEvidence({ root: path, trackId: "algorithms" });
+    const second = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" });
 
     assert.notEqual(second.technicalInputCommit, first.technicalInputCommit);
     assert.notEqual(second.coveragePath, first.coveragePath);
@@ -173,38 +172,38 @@ test("simulation coverage evidence is immutable for each committed technical inp
 
 test("build rejects modified and untracked technical evidence outside the committed release candidate", async () => {
   for (const kind of ["modified", "untracked"]) {
-    const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+    const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
     try {
       const evidence = await cleanGitReleaseFixture(path);
       if (kind === "modified") await writeFile(evidence.path, `${await readFile(evidence.path, "utf8")} `);
-      else { const untracked = join(path, "evidence/algorithms/technical/untracked.json"); await mkdir(dirname(untracked), { recursive: true }); await writeFile(untracked, "{}\n"); }
-      await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out") }), fails("DIRTY_SOURCE"));
+      else { const untracked = join(path, "evidence/coding-interview-dsa-problem-solving/technical/untracked.json"); await mkdir(dirname(untracked), { recursive: true }); await writeFile(untracked, "{}\n"); }
+      await assert.rejects(() => buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: join(path, "out") }), fails("DIRTY_SOURCE"));
     } finally { await rm(path, { recursive: true }); }
   }
 });
 
 test("technical input fingerprint includes config, taxonomy, and source schema", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
     await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test"); await commitFixtureInputs(path, "technical inputs");
-    const baseline = (await inspectTrack({ root: path, trackId: "algorithms" })).source.technicalInputFingerprint;
-    const familyPath = join(path, "config/families/algorithms.json"); const family = JSON.parse(await readFile(familyPath, "utf8")); family.technicalRevision = 1; await writeFile(familyPath, JSON.stringify(family)); assert.notEqual((await inspectTrack({ root: path, trackId: "algorithms" })).source.technicalInputFingerprint, baseline);
-    const taxonomyPath = join(path, "config/taxonomy/algorithms.json"); const taxonomy = JSON.parse(await readFile(taxonomyPath, "utf8")); taxonomy.roadmapNodes.push({ id: "unused_valid_node" }); await writeFile(taxonomyPath, JSON.stringify(taxonomy)); assert.notEqual((await inspectTrack({ root: path, trackId: "algorithms" })).source.technicalInputFingerprint, baseline);
-    const schemaPath = join(path, "schemas/publishing/algorithms-manual-source.schema.json"); const schema = JSON.parse(await readFile(schemaPath, "utf8")); schema.title = "Changed technical schema"; await writeFile(schemaPath, JSON.stringify(schema)); assert.notEqual((await inspectTrack({ root: path, trackId: "algorithms" })).source.technicalInputFingerprint, baseline);
+    const baseline = (await inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" })).source.technicalInputFingerprint;
+    const familyPath = join(path, "config/families/coding_interview.json"); const family = JSON.parse(await readFile(familyPath, "utf8")); family.technicalRevision = 1; await writeFile(familyPath, JSON.stringify(family)); assert.notEqual((await inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" })).source.technicalInputFingerprint, baseline);
+    const taxonomyPath = join(path, "config/taxonomy/coding-interview-dsa-problem-solving.json"); const taxonomy = JSON.parse(await readFile(taxonomyPath, "utf8")); taxonomy.roadmapNodes.push({ id: "unused_valid_node" }); await writeFile(taxonomyPath, JSON.stringify(taxonomy)); assert.notEqual((await inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" })).source.technicalInputFingerprint, baseline);
+    const schemaPath = join(path, "schemas/publishing/coding-interview-manual-source.schema.json"); const schema = JSON.parse(await readFile(schemaPath, "utf8")); schema.title = "Changed technical schema"; await writeFile(schemaPath, JSON.stringify(schema)); assert.notEqual((await inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" })).source.technicalInputFingerprint, baseline);
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("validation is read-only and cannot publish a subset", async () => {
-  const path = await root({ algorithms: algorithmsBatch() });
+  const path = await root({ coding_interview: algorithmsBatch() });
   try {
-    const source = join(path, "manual/source/algorithms/fixture.json"); const before = await readFile(source, "utf8");
-    await validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }); assert.equal(await readFile(source, "utf8"), before);
+    const source = join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"); const before = await readFile(source, "utf8");
+    await validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }); assert.equal(await readFile(source, "utf8"), before);
     const invalid = algorithmsBatch({ invalidChoice: true }); await writeFile(source, JSON.stringify(invalid));
-    await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT }), fails("INVALID_RESPONSE"));
+    await assert.rejects(() => buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT }), fails("INVALID_RESPONSE"));
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("rich Algorithms feedback accepts only the safe block document contract", async () => {
+test("rich Coding Interview feedback accepts only the safe block document contract", async () => {
   const supported = algorithmsBatch();
   supported.items[0].feedback.details = { blocks: [
     { type: "heading", level: 2, text: "Why this works" },
@@ -215,34 +214,34 @@ test("rich Algorithms feedback accepts only the safe block document contract", a
     { type: "image", assetId: "algorithms/complexity-linear-vs-nested", alt: "Local complexity comparison diagram" },
     { type: "callout", kind: "key_takeaway", title: "Remember", text: "State the invariant before optimizing." },
   ] };
-  const validPath = await root({ algorithms: supported, technicalEvidence: false });
-  try { await assert.doesNotReject(() => inspectTrack({ root: validPath, trackId: "algorithms", sourceRepositoryCommit: COMMIT })); } finally { await rm(validPath, { recursive: true }); }
+  const validPath = await root({ coding_interview: supported, technicalEvidence: false });
+  try { await assert.doesNotReject(() => inspectTrack({ root: validPath, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT })); } finally { await rm(validPath, { recursive: true }); }
 
-  for (const [details, code] of [["Former string details", "INVALID_SCHEMA"], [{ blocks: [{ type: "html", html: "<p>Unsafe</p>" }] }, "INVALID_SCHEMA"], [{ blocks: [{ type: "code", language: "javascript", code: "return 1" }] }, "INVALID_SCHEMA"], [{ blocks: [{ type: "image", assetId: "https://example.test/image.png", alt: "Remote image" }] }, "INVALID_RESPONSE"], [{ blocks: [{ type: "image", assetId: "algorithms/unknown-local", alt: "Unknown local image" }] }, "INVALID_RESPONSE"]]) {
+  for (const [details, code] of [["Former string details", "INVALID_SCHEMA"], [{ blocks: [{ type: "html", html: "<p>Unsafe</p>" }] }, "INVALID_SCHEMA"], [{ blocks: [{ type: "code", language: "javascript", code: "return 1" }] }, "INVALID_SCHEMA"], [{ blocks: [{ type: "image", assetId: "https://example.test/image.png", alt: "Remote image" }] }, "INVALID_RESPONSE"], [{ blocks: [{ type: "image", assetId: "coding_interview/unknown-local", alt: "Unknown local image" }] }, "INVALID_RESPONSE"]]) {
     const batch = algorithmsBatch(); batch.items[0].feedback.details = details;
-    const path = await root({ algorithms: batch, technicalEvidence: false });
-    try { await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails(code)); } finally { await rm(path, { recursive: true }); }
+    const path = await root({ coding_interview: batch, technicalEvidence: false });
+    try { await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails(code)); } finally { await rm(path, { recursive: true }); }
   }
 });
 
 test("taxonomy is batch-owned and fully resolved on each item", async () => {
   for (const [batch, code] of [[algorithmsBatch({ badTaxonomy: true }), "INVALID_REFERENCE"], [algorithmsBatch({ duplicate: true }), "DUPLICATE_ID"]]) {
-    const path = await root({ algorithms: batch, technicalEvidence: false }); try { await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails(code)); } finally { await rm(path, { recursive: true }); }
+    const path = await root({ coding_interview: batch, technicalEvidence: false }); try { await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails(code)); } finally { await rm(path, { recursive: true }); }
   }
   const overriding = algorithmsBatch(); overriding.items[0].taxonomy.roadmapNodeId = "arrays_and_strings";
-  const path = await root({ algorithms: overriding, technicalEvidence: false }); try { await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_SCHEMA")); } finally { await rm(path, { recursive: true }); }
+  const path = await root({ coding_interview: overriding, technicalEvidence: false }); try { await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INVALID_SCHEMA")); } finally { await rm(path, { recursive: true }); }
 });
 
 test("choice scoring rejects isCorrect-era incomplete contracts", async () => {
   const batch = algorithmsBatch(); delete batch.items[0].feedback.omittedCorrectExplanationsByOptionId;
-  const path = await root({ algorithms: batch, technicalEvidence: false }); try { await assert.rejects(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_RESPONSE")); } finally { await rm(path, { recursive: true }); }
+  const path = await root({ coding_interview: batch, technicalEvidence: false }); try { await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INVALID_RESPONSE")); } finally { await rm(path, { recursive: true }); }
 });
 
 test("simulation has an explicit pool, profile, deterministic legal selector, and no truncation", async () => {
-  const tooSmall = await root({ algorithms: algorithmsBatch({ count: 39 }), technicalEvidence: false }); try { await assert.rejects(() => validateTrack({ root: tooSmall, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INSUFFICIENT_POOL")); } finally { await rm(tooSmall, { recursive: true }); }
-  const batch = algorithmsBatch({ count: 41 }); const path = await root({ algorithms: batch });
+  const tooSmall = await root({ coding_interview: algorithmsBatch({ count: 39 }), technicalEvidence: false }); try { await assert.rejects(() => validateTrack({ root: tooSmall, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INSUFFICIENT_POOL")); } finally { await rm(tooSmall, { recursive: true }); }
+  const batch = algorithmsBatch({ count: 41 }); const path = await root({ coding_interview: batch });
   try {
-    const inspected = await validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit" }); const pool = inspected.source.modeStructures.simulationPools[0]; const profile = inspected.source.modeStructures.simulationProfiles[0];
+    const inspected = await validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: "fixture-source-commit" }); const pool = inspected.source.modeStructures.simulationPools[0]; const profile = inspected.source.modeStructures.simulationProfiles[0];
     const one = selectSimulationItems({ profile, pool, items: inspected.source.items, selectionSeed: "a" }); const two = selectSimulationItems({ profile, pool, items: [...inspected.source.items].reverse(), selectionSeed: "a" });
     assert.equal(one.length, 40); assert.equal(new Set(one).size, 40); assert.deepEqual(one, two); assert.ok(one.every((id) => pool.itemIds.includes(id))); assert.notDeepEqual(one, pool.itemIds.slice(0, 40));
   } finally { await rm(path, { recursive: true }); }
@@ -250,9 +249,9 @@ test("simulation has an explicit pool, profile, deterministic legal selector, an
 
 test("simulation selection prefers declared targets without weakening fixed-40 constraints", async () => {
   const batch = algorithmsBatch({ count: 41 }); batch.items.forEach((entry, index) => { entry.difficulty = index === 40 ? "other" : "target"; });
-  const path = await root({ algorithms: batch });
+  const path = await root({ coding_interview: batch });
   try {
-    const inspected = await validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }); const pool = inspected.source.modeStructures.simulationPools[0]; const profile = { ...inspected.source.modeStructures.simulationProfiles[0], distributions: [{ dimension: "difficulty", buckets: [{ valueId: "target", minimum: 0, target: 40, maximum: 40 }, { valueId: "other", minimum: 0, target: 0, maximum: 40 }] }] };
+    const inspected = await validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }); const pool = inspected.source.modeStructures.simulationPools[0]; const profile = { ...inspected.source.modeStructures.simulationProfiles[0], distributions: [{ dimension: "difficulty", buckets: [{ valueId: "target", minimum: 0, target: 40, maximum: 40 }, { valueId: "other", minimum: 0, target: 0, maximum: 40 }] }] };
     const selected = selectSimulationPlan({ profile, pool, items: inspected.source.items, selectionSeed: "targets" }); assert.equal(selected.itemIds.length, 40); assert.equal(selected.diagnostics.targetDeviation, 0); assert.ok(selected.itemIds.every((id) => id !== "fixture-algorithm-41"));
   } finally { await rm(path, { recursive: true }); }
 });
@@ -300,72 +299,72 @@ test("simulation treats minima and maxima as hard constraints and distinguishes 
 });
 
 test("technical evidence binds exact immutable item fingerprints and content versions", async () => {
-  const path = await root({ algorithms: algorithmsBatch() });
+  const path = await root({ coding_interview: algorithmsBatch() });
   try {
-    const sourcePath = join(path, "manual/source/algorithms/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); const original = await inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }); source.items[0].prompt = "Select all changed learner-visible invariants."; source.contentVersion = "algorithms-fixture-v3"; await writeFile(sourcePath, JSON.stringify(source));
-    const emitted = await emitTechnicalEvidence({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit-v3" }); const changed = emitted.evidence.find((entry) => entry.batchId === "fixture-algorithms-batch");
-    assert.notEqual(changed.itemFingerprints["fixture-algorithm-1"], original.source.itemFingerprints["fixture-algorithm-1"]); await assert.doesNotReject(() => validateTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: "fixture-source-commit-v3" }));
+    const sourcePath = join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); const original = await inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }); source.items[0].prompt = "Select all changed learner-visible invariants."; source.contentVersion = "coding-interview-fixture-v3"; await writeFile(sourcePath, JSON.stringify(source));
+    const emitted = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: "fixture-source-commit-v3" }); const changed = emitted.evidence.find((entry) => entry.batchId === "fixture-coding-interview-batch");
+    assert.notEqual(changed.itemFingerprints["fixture-algorithm-1"], original.source.itemFingerprints["fixture-algorithm-1"]); await assert.doesNotReject(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: "fixture-source-commit-v3" }));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("symmetric compatibility accepts overlap and bounded solver exposes its limit", async () => {
   const batch = algorithmsBatch(); batch.modeStructures.compatibilitySets = [{ id: "fixture-symmetric", version: "v1", relation: "same_mechanism", direction: "symmetric", sourceItemIds: ["fixture-algorithm-1", "fixture-algorithm-2"], targetItemIds: ["fixture-algorithm-2", "fixture-algorithm-1"], relationMetadata: { mechanismBoundary: "arrays_and_strings" } }];
-  const path = await root({ algorithms: batch, technicalEvidence: false });
+  const path = await root({ coding_interview: batch, technicalEvidence: false });
   try {
-    const inspected = await inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }); const pool = inspected.source.modeStructures.simulationPools[0]; const profile = inspected.source.modeStructures.simulationProfiles[0];
+    const inspected = await inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }); const pool = inspected.source.modeStructures.simulationPools[0]; const profile = inspected.source.modeStructures.simulationProfiles[0];
     assert.deepEqual(inspected.source.items[0].compatibilityMemberships, ["fixture-symmetric"]);
     assert.throws(() => selectSimulationPlan({ profile, pool, items: inspected.source.items, selectionSeed: "limit", stateLimit: 1 }), (error) => fails("SIMULATION_SOLVER_LIMIT")(error) && /visitedStates/.test(error.message) && /stateLimit/.test(error.message) && /bestSolutionFound/.test(error.message) && /optimalityProven":false/.test(error.message));
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("real source without canonical Algorithms taxonomy stops after ingress discovery", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+test("real source without canonical Coding Interview taxonomy stops after ingress discovery", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
-    await writeFile(join(path, "config/taxonomy/algorithms.json"), JSON.stringify({ schemaVersion: "algorithms-taxonomy-v1", trackId: "algorithms", taxonomyVersion: "algorithms-taxonomy-v2" }));
-    await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("MISSING_CANONICAL_TAXONOMY"));
+    await writeFile(join(path, "config/taxonomy/coding-interview-dsa-problem-solving.json"), JSON.stringify({ schemaVersion: "coding-interview-taxonomy-v1", trackId: "coding-interview-dsa-problem-solving", taxonomyVersion: "coding-interview-taxonomy-v2" }));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("MISSING_CANONICAL_TAXONOMY"));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("build refuses dirty or untracked canonical inputs before emitting an artifact", async () => {
-  const path = await root({ algorithms: algorithmsBatch() });
+  const path = await root({ coding_interview: algorithmsBatch() });
   try {
     await exec("git", ["init", "-q"], { cwd: path }); await exec("git", ["config", "user.email", "fixture@example.test"], { cwd: path }); await exec("git", ["config", "user.name", "Fixture"], { cwd: path }); await exec("git", ["add", "."], { cwd: path }); await exec("git", ["commit", "-qm", "fixture"], { cwd: path });
-    await writeFile(join(path, "manual/source/algorithms/untracked.json"), "{}\n");
-    await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: join(path, "out") }), fails("DIRTY_SOURCE"));
+    await writeFile(join(path, "manual/source/coding-interview-dsa-problem-solving/untracked.json"), "{}\n");
+    await assert.rejects(() => buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: join(path, "out") }), fails("DIRTY_SOURCE"));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("build checks every immutable target before making an artifact visible", async () => {
-  const path = await root({ algorithms: algorithmsBatch() });
+  const path = await root({ coding_interview: algorithmsBatch() });
   try {
-    const out = join(path, "out"); const report = join(out, "tracks/algorithms/algorithms-fixture-v2/build-report.json"); await mkdir(dirname(report), { recursive: true }); await writeFile(report, "existing\n");
-    await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: out, sourceRepositoryCommit: COMMIT }), fails("IMMUTABLE_VERSION"));
-    await assert.rejects(() => stat(join(out, "tracks/algorithms/algorithms-fixture-v2/track-artifact.json")), (error) => error?.code === "ENOENT");
+    const out = join(path, "out"); const report = join(out, "tracks/coding-interview-dsa-problem-solving/coding-interview-fixture-v2/build-report.json"); await mkdir(dirname(report), { recursive: true }); await writeFile(report, "existing\n");
+    await assert.rejects(() => buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out, sourceRepositoryCommit: COMMIT }), fails("IMMUTABLE_VERSION"));
+    await assert.rejects(() => stat(join(out, "tracks/coding-interview-dsa-problem-solving/coding-interview-fixture-v2/track-artifact.json")), (error) => error?.code === "ENOENT");
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("artifact and release are immutable, exact-byte checked, and tracks remain independent", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), certification: certificationBatch() });
+  const path = await root({ coding_interview: algorithmsBatch(), certification: certificationBatch() });
   try {
-    const out = join(path, "out"); const algorithm = await buildTrack({ root: path, trackId: "algorithms", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" });
+    const out = join(path, "out"); const algorithm = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" });
     assert.deepEqual(Object.keys(algorithm.artifact).sort(), ["artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"]);
-    await assert.rejects(() => buildTrack({ root: path, trackId: "algorithms", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("IMMUTABLE_VERSION"));
+    await assert.rejects(() => buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("IMMUTABLE_VERSION"));
     await assert.rejects(() => publishRelease({ root: path, releaseId: "--help", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("INVALID_RELEASE"));
     await assert.rejects(() => publishRelease({ root: path, releaseId: "empty-release", artifactPaths: [], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("INVALID_RELEASE"));
     await assert.rejects(() => stat(join(out, "releases/--help")), (error) => error?.code === "ENOENT");
     const mismatched = JSON.parse(await readFile(algorithm.path, "utf8")); mismatched.sourceRepositoryCommit = "different-fixture-source-commit"; await writeFile(algorithm.path, JSON.stringify(mismatched));
     await assert.rejects(() => publishRelease({ root: path, releaseId: "mismatched-source", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }), fails("SOURCE_COMMIT_MISMATCH"));
     await writeFile(algorithm.path, JSON.stringify(algorithm.artifact));
-    const release = await publishRelease({ root: path, releaseId: "algorithms-only", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["algorithms"]); assert.match(await readFile(release.exportPath, "utf8"), /GENERATED_BUNDLED_CONTENT_RELEASE/);
+    const release = await publishRelease({ root: path, releaseId: "coding-interview-only", artifactPaths: [algorithm.path], outputRoot: out, sourceRepositoryCommit: "fixture-source-commit" }); assert.deepEqual(release.release.artifacts.map((entry) => entry.trackId), ["coding-interview-dsa-problem-solving"]); assert.match(await readFile(release.exportPath, "utf8"), /GENERATED_BUNDLED_CONTENT_RELEASE/);
     const raw = JSON.parse(await readFile(algorithm.path, "utf8")); raw.artifactBytes += " "; await writeFile(algorithm.path, JSON.stringify(raw)); await assert.rejects(() => verifyArtifact(algorithm.path), fails("CHECKSUM_MISMATCH"));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("release candidate gate builds and verifies both canonical tracks in an isolated output root", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), certification: certificationBatch() });
+  const path = await root({ coding_interview: algorithmsBatch(), certification: certificationBatch() });
   try {
     const candidate = await buildReleaseCandidate({ root: path, outputRoot: join(path, "release-candidate"), sourceRepositoryCommit: COMMIT });
-    assert.deepEqual(candidate.map((entry) => entry.trackId), ["algorithms", "cloud-certification"]);
+    assert.deepEqual(candidate.map((entry) => entry.trackId), ["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer"]);
     assert.ok(candidate.every((entry) => entry.contentVersion.endsWith("fixture-v2") || entry.contentVersion.endsWith("fixture-v1")));
     assert.ok(candidate.every((entry) => /^[a-f0-9]{64}$/.test(entry.checksumSha256)));
   } finally { await rm(path, { recursive: true }); }
@@ -374,21 +373,21 @@ test("release candidate gate builds and verifies both canonical tracks in an iso
 test("certification publishes a validated, explicit exam experience profile", async () => {
   const path = await root({ certification: certificationBatch() });
   try {
-    const inspected = await inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT });
+    const inspected = await inspectTrack({ root: path, trackId: "google-cloud-associate-cloud-engineer", sourceRepositoryCommit: COMMIT });
     assert.deepEqual(inspected.source.examExperienceProfile, certificationExamExperienceProfile);
     assert.deepEqual(inspected.source.diagnosticBaseline, certificationDiagnosticBaseline);
-    const output = await buildTrack({ root: path, trackId: "cloud-certification", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT });
+    const output = await buildTrack({ root: path, trackId: "google-cloud-associate-cloud-engineer", outputRoot: join(path, "out"), sourceRepositoryCommit: COMMIT });
     assert.deepEqual(JSON.parse(output.artifact.artifactBytes).bank.examExperienceProfile, certificationExamExperienceProfile);
     assert.deepEqual(JSON.parse(output.artifact.artifactBytes).bank.diagnosticBaseline, certificationDiagnosticBaseline);
-    const profilePath = join(path, "config/tracks/cloud-certification.json"); const track = JSON.parse(await readFile(profilePath, "utf8")); track.profile.navigation = "free_navigation"; await writeFile(profilePath, JSON.stringify(track));
-    await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("INVALID_EXAM_EXPERIENCE_PROFILE"));
+    const profilePath = join(path, "config/tracks/google-cloud-associate-cloud-engineer.json"); const track = JSON.parse(await readFile(profilePath, "utf8")); track.profile.navigation = "free_navigation"; await writeFile(profilePath, JSON.stringify(track));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "google-cloud-associate-cloud-engineer", sourceRepositoryCommit: COMMIT }), fails("INVALID_EXAM_EXPERIENCE_PROFILE"));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("Certification publishing declares every canonical mode, including the profile-backed simulation", async () => {
   const [family, source] = await Promise.all([
     readFile("config/families/certification.json", "utf8").then(JSON.parse),
-    readFile("manual/source/cloud-certification/gcp-ace-0001.json", "utf8").then(JSON.parse),
+    readFile("manual/source/google-cloud-associate-cloud-engineer/gcp-ace-0001.json", "utf8").then(JSON.parse),
   ]);
   const expected = ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review", "certification-exam-simulation"];
   assert.deepEqual(family.modes.map((mode) => mode.id), expected);
@@ -399,7 +398,7 @@ test("Certification publishing declares every canonical mode, including the prof
 test("Certification readiness reports every declared mode and its exact eligible scopes", async () => {
   const path = await root({ certification: certificationBatch() });
   try {
-    const readiness = (await inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT })).source.modeReadiness;
+    const readiness = (await inspectTrack({ root: path, trackId: "google-cloud-associate-cloud-engineer", sourceRepositoryCommit: COMMIT })).source.modeReadiness;
     assert.deepEqual([...new Set(readiness.map((entry) => entry.modeId))], ["certification-diagnostic-baseline", "certification-focus-practice", "certification-scenario-practice", "certification-weak-area-review", "certification-mixed-practice", "certification-quick-review", "certification-exam-simulation"]);
     assert.deepEqual(readiness.find((entry) => entry.modeId === "certification-diagnostic-baseline"), { modeId: "certification-diagnostic-baseline", scope: { kind: "explicit_item_ids", id: "gcp-ace-diagnostic-baseline-v1" }, requestedLengths: [40], shortening: "prohibited", requiredUniqueItemCount: 40, availableUniqueItemCount: 40, profileConstraints: [] });
     const scenario = readiness.find((entry) => entry.modeId === "certification-scenario-practice");
@@ -412,66 +411,62 @@ test("Certification readiness reports every declared mode and its exact eligible
 test("Certification refuses a declared mode without a readiness owner", async () => {
   const path = await root({ certification: certificationBatch() });
   try {
-    const sourcePath = join(path, "manual/source/cloud-certification/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.declaredModes.push("certification-unowned"); await writeFile(sourcePath, JSON.stringify(source));
+    const sourcePath = join(path, "manual/source/google-cloud-associate-cloud-engineer/fixture.json"); const source = JSON.parse(await readFile(sourcePath, "utf8")); source.declaredModes.push("certification-unowned"); await writeFile(sourcePath, JSON.stringify(source));
     const familyPath = join(path, "config/families/certification.json"); const family = JSON.parse(await readFile(familyPath, "utf8")); family.modes.push({ id: "certification-unowned", minimumPool: 1 }); await writeFile(familyPath, JSON.stringify(family));
-    await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("MISSING_MODE_READINESS_OWNER"));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "google-cloud-associate-cloud-engineer", sourceRepositoryCommit: COMMIT }), fails("MISSING_MODE_READINESS_OWNER"));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("Certification refuses a partial publication that omits the canonical simulation", async () => {
   const path = await root({ certification: certificationBatch() });
   try {
-    const sourcePath = join(path, "manual/source/cloud-certification/fixture.json");
+    const sourcePath = join(path, "manual/source/google-cloud-associate-cloud-engineer/fixture.json");
     const source = JSON.parse(await readFile(sourcePath, "utf8"));
     source.declaredModes = source.declaredModes.filter((modeId) => modeId !== "certification-exam-simulation");
     await writeFile(sourcePath, JSON.stringify(source));
-    await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("INVALID_MODE"));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "google-cloud-associate-cloud-engineer", sourceRepositoryCommit: COMMIT }), fails("INVALID_MODE"));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("Certification Diagnostic Baseline rejects a shortened, duplicated, or out-of-bank fixed selection", async () => {
   const path = await root({ certification: certificationBatch() });
   try {
-    const trackPath = join(path, "config/tracks/cloud-certification.json");
+    const trackPath = join(path, "config/tracks/google-cloud-associate-cloud-engineer.json");
     const track = JSON.parse(await readFile(trackPath, "utf8"));
     track.modeConfiguration.diagnosticBaseline.itemIds[39] = track.modeConfiguration.diagnosticBaseline.itemIds[0];
     await writeFile(trackPath, JSON.stringify(track));
-    await assert.rejects(() => inspectTrack({ root: path, trackId: "cloud-certification", sourceRepositoryCommit: COMMIT }), fails("INVALID_TRACK_MODE_CONFIGURATION"));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "google-cloud-associate-cloud-engineer", sourceRepositoryCommit: COMMIT }), fails("INVALID_TRACK_MODE_CONFIGURATION"));
   } finally { await rm(path, { recursive: true }); }
 });
 
 test("repository has no retired manifest ingress", async () => {
-  for (const path of ["manifest.json", "tracks/algorithms/manifest.json", "tracks/cloud-certification/manifest.json"]) {
+  for (const path of ["manifest.json", "tracks/coding-interview-dsa-problem-solving/manifest.json", "tracks/google-cloud-associate-cloud-engineer/manifest.json"]) {
     await assert.rejects(() => stat(path), (error) => error?.code === "ENOENT");
   }
 });
 
 test("fixtures and noncanonical paths cannot enter production publishing code", async () => {
-  const source = await readFile("scripts/publishing/pipeline.mjs", "utf8"); assert.doesNotMatch(source, /tests\/fixtures|tracks\/algorithms|tracks\/cloud-certification|slice\(0, 40\)|Math\.random/);
-  const workflow = await readFile(".github/workflows/real-content-release.yml", "utf8"); assert.match(workflow, /release-candidate/); assert.match(workflow, /ci-release-gate\.mjs/); assert.doesNotMatch(workflow, /continue-on-error|build:real:(algorithms|certification)/);
+  const source = await readFile("scripts/publishing/pipeline.mjs", "utf8"); assert.doesNotMatch(source, /tests\/fixtures|tracks\/coding_interview|tracks\/google-cloud-associate-cloud-engineer|slice\(0, 40\)|Math\.random/);
+  const workflow = await readFile(".github/workflows/real-content-release.yml", "utf8"); assert.match(workflow, /release-candidate/); assert.match(workflow, /ci-release-gate\.mjs/); assert.doesNotMatch(workflow, /continue-on-error|build:real:(coding_interview|certification)/);
 });
 
-test("Algorithms batch taxonomy uses mental-unit legal families, not family entry-unit equality", async () => {
-  const path = await root({ algorithms: algorithmsBatch(), technicalEvidence: false });
+test("Coding Interview batch taxonomy uses mental-unit legal families, not family entry-unit equality", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
-    const taxonomyPath = join(path, "config/taxonomy/algorithms.json"); const taxonomy = JSON.parse(await readFile(taxonomyPath, "utf8"));
+    const taxonomyPath = join(path, "config/taxonomy/coding-interview-dsa-problem-solving.json"); const taxonomy = JSON.parse(await readFile(taxonomyPath, "utf8"));
     taxonomy.mentalUnits.push({ id: "later_arrays_unit", roadmapNodeId: "arrays_and_strings", unitKind: "direct", primaryPatternFamilyId: "arrays_and_strings", legalPatternFamilyIds: ["arrays_and_strings"], primarySkillAtomId: "later_arrays_skill", secondarySkillAtomIds: [], learningStage: "foundations", patternVariantIds: [], problemArchetypeIds: [] });
     taxonomy.skillAtoms.push({ id: "later_arrays_skill", primaryMentalUnitId: "later_arrays_unit" }); await writeFile(taxonomyPath, JSON.stringify(taxonomy));
-    const batch = algorithmsBatch(); batch.taxonomy.primaryMentalUnitId = "later_arrays_unit"; batch.items.forEach((item) => { item.taxonomy.primarySkillAtomId = "later_arrays_skill"; }); await writeFile(join(path, "manual/source/algorithms/fixture.json"), JSON.stringify(batch));
-    await assert.doesNotReject(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }));
-    batch.taxonomy.patternFamilyId = "unknown_family"; await writeFile(join(path, "manual/source/algorithms/fixture.json"), JSON.stringify(batch));
-    await assert.rejects(() => inspectTrack({ root: path, trackId: "algorithms", sourceRepositoryCommit: COMMIT }), fails("INVALID_REFERENCE"));
+    const batch = algorithmsBatch(); batch.taxonomy.primaryMentalUnitId = "later_arrays_unit"; batch.items.forEach((item) => { item.taxonomy.primarySkillAtomId = "later_arrays_skill"; }); await writeFile(join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"), JSON.stringify(batch));
+    await assert.doesNotReject(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }));
+    batch.taxonomy.patternFamilyId = "unknown_family"; await writeFile(join(path, "manual/source/coding-interview-dsa-problem-solving/fixture.json"), JSON.stringify(batch));
+    await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INVALID_REFERENCE"));
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("taxonomy exporter fingerprints exactly the generated structural payload", () => {
-  const taxonomy = { taxonomyVersion: "algorithms-taxonomy-v2", learningStages: ["foundations"], roadmapNodes: [{ id: "arrays" }], mentalUnits: [], patternFamilies: [], patternVariants: [], problemArchetypes: [], skillAtoms: [], falseHeuristics: [] };
-  const output = generatedTypeScript(taxonomy); assert.match(output, /GENERATED FILE — DO NOT EDIT MANUALLY/); assert.match(output, /patternly-content\/config\/taxonomy\/algorithms\.json/); assert.match(output, new RegExp(taxonomyFingerprint(structuralPayload(taxonomy))));
-});
 
-test("Algorithms structural SOT has the resolved node, family, and cross-family unit contract", async () => {
-  const taxonomy = JSON.parse(await readFile("config/taxonomy/algorithms.json", "utf8"));
-  assert.equal(taxonomy.taxonomyVersion, "algorithms-taxonomy-v2"); assert.deepEqual(taxonomy.roadmapNodes.map((node) => node.order), Array.from({ length: 26 }, (_, index) => index + 1));
+test("Coding Interview structural SOT has the resolved node, family, and cross-family unit contract", async () => {
+  const taxonomy = JSON.parse(await readFile("config/taxonomy/coding-interview-dsa-problem-solving.json", "utf8"));
+  assert.equal(taxonomy.taxonomyVersion, "coding-interview-taxonomy-v2"); assert.deepEqual(taxonomy.roadmapNodes.map((node) => node.order), Array.from({ length: 26 }, (_, index) => index + 1));
   assert.equal(taxonomy.roadmapNodes.filter((node) => node.contentOwnership === "direct").length, 20); assert.equal(taxonomy.roadmapNodes.filter((node) => node.contentOwnership === "cross_family").length, 6); assert.equal(taxonomy.patternFamilies.length, 21);
   const units = new Map(taxonomy.mentalUnits.map((unit) => [unit.id, unit])); assert.equal(units.size, taxonomy.mentalUnits.length); assert.equal(units.get("recursion_base_case_and_result_contract").roadmapNodeId, "recursion_basics"); assert.equal(units.get("backtracking_base_case_and_result_contract").roadmapNodeId, "backtracking"); assert.equal(units.has("base_case_and_result_contract"), false);
   assert.equal(taxonomy.mentalUnits.filter((unit) => unit.unitKind === "strategy").length, 8); const contrast = taxonomy.mentalUnits.filter((unit) => unit.unitKind === "contrast"); assert.equal(contrast.length, 40); assert.ok(contrast.every((unit) => unit.learningStage === "contrast_practice" && unit.contrastedMentalUnitIds.length > 0));

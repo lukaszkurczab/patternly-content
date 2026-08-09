@@ -1,0 +1,1496 @@
+{
+  "schemaVersion": "coding-interview-manual-source-v2",
+  "batchId": "contrast-sliding-window-vs-prefix-sums-positive-monotonic-window-boundary-v1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "familyId": "coding_interview",
+  "contentVersion": "coding-interview-dsa-problem-solving-0001",
+  "taxonomyVersion": "coding-interview-taxonomy-v2",
+  "declaredModes": [
+    "coding-interview-learn-approach",
+    "coding-interview-guided-practice",
+    "coding-interview-recognize-patterns",
+    "coding-interview-contrast-practice",
+    "coding-interview-weak-area-review",
+    "coding-interview-independent-practice",
+    "coding-interview-interview-simulation"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "contrast_sliding_window_vs_prefix_sums",
+    "primaryMentalUnitId": "positive_monotonic_window_boundary",
+    "patternFamilyId": "sliding_window"
+  },
+  "batchKind": "contrast",
+  "contrastMetadata": {
+    "contrastedMentalUnitIds": [
+      "recognize_sliding_window_signal",
+      "recognize_prefix_accumulation_signal"
+    ],
+    "falseHeuristicId": "every_contiguous_sum_problem_is_sliding_window",
+    "transferBoundary": "A variable sum window is justified when extending and shrinking have predictable directional effects, typically under nonnegative values; without that monotonic boundary, pointer movement cannot safely discard candidates."
+  },
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-18T00:00:00.000Z",
+    "contentBatchId": "contrast-sliding-window-vs-prefix-sums-positive-monotonic-window-boundary-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-contrast-window-prefix-positive-001",
+      "prompt": "All values are positive, and the task asks for the minimum-length contiguous interval with sum at least target. Which invariant supports a variable window?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shrink_valid",
+            "text": "After right makes the window valid, repeatedly move left while validity remains, recording each shortest valid candidate."
+          },
+          {
+            "id": "shrink_invalid",
+            "text": "Move left whenever the sum is below target."
+          },
+          {
+            "id": "expand_valid_forever",
+            "text": "Never shrink after reaching target."
+          },
+          {
+            "id": "prefix_only",
+            "text": "Positive values forbid sliding windows."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shrink_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "With positive values, expansion strictly increases sum and shrinking strictly decreases it.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Maintain the sum of the inclusive window [left, right]. Advancing right adds a positive value, so an insufficient sum can only move toward the threshold. Once the sum reaches target, record the current length before removing a[left]; that removal produces the next shorter candidate ending at the same right. Repeat while the sum remains valid. When a removal makes the sum too small, further removals would only decrease it again, so no still-shorter window at this right can qualify and right must advance. This is the discard proof, not merely a loop template."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shrink_invalid": "When sum is below target, removing a positive left value makes the deficit larger, so shrink moves in the wrong direction.",
+          "expand_valid_forever": "Keeping the first valid start explores only longer windows and can miss a shorter valid interval ending at the same or a later right boundary.",
+          "prefix_only": "Positive values are exactly what make expansion and shrinkage directional; prefix sums are possible, but they are not the only correct strategy."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-002",
+      "prompt": "All values are nonnegative, and the task asks for the longest interval with sum at most budget. Which rule is natural?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shrink_over_budget",
+            "text": "Expand right; while sum exceeds budget, move left; record the valid length afterward."
+          },
+          {
+            "id": "shrink_under_budget",
+            "text": "Shrink while sum is below budget."
+          },
+          {
+            "id": "stop_first_valid",
+            "text": "Stop at the first valid interval."
+          },
+          {
+            "id": "exact_prefix_only",
+            "text": "Use exact-sum prefix lookup because the objective is at most."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shrink_over_budget"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Expansion cannot decrease the sum, so an over-budget interval remains over budget until enough left values are removed.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Add a[right] to the maintained sum. If the total exceeds budget, every window ending at this right with the same or an earlier start contains at least as much nonnegative cost, so those starts cannot be valid. Remove a[left] and advance left until sum <= budget. The first restored window is the longest valid one ending at right because moving left farther could only shorten it. Record right - left + 1 after repair, then continue to the next right boundary. Each discarded start stays invalid for future extensions because additional nonnegative values cannot lower its sum."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shrink_under_budget": "A below-budget window is already valid; shrinking it discards length even though the maximum-length objective prefers keeping the earliest legal start.",
+          "stop_first_valid": "The first valid interval proves only existence. A later right boundary can produce a longer valid interval that must still be compared.",
+          "exact_prefix_only": "The objective is an inequality, not exact equality, and nonnegative values provide the monotone repair rule needed by a window."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-003",
+      "prompt": "Why do positive values create a legal discard rule for a minimum-sum-threshold window?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "directional_effect",
+            "text": "Any further right extension can only increase sum, and removing left can only decrease it."
+          },
+          {
+            "id": "prefix_equal",
+            "text": "All prefix sums become equal."
+          },
+          {
+            "id": "indices_monotonic",
+            "text": "Indices are ordered in every array."
+          },
+          {
+            "id": "target_sorted",
+            "text": "The target is numerically sorted."
+          }
+        ],
+        "acceptedOptionIds": [
+          "directional_effect"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The sign constraint links each boundary move to a known aggregate direction.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Strict positivity gives two directional facts. Extending right strictly increases the sum, so an insufficient window should grow rather than discard its start. Removing left strictly decreases the sum, so once a valid window becomes invalid during minimization, removing still more values cannot restore the at-least predicate. Therefore the algorithm may stop shrinking at that right boundary and resume expansion without revisiting the shorter invalid windows it skipped. The same reasoning also explains the boundary: a negative entering or outgoing value could reverse either direction and invalidate the discard."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_equal": "With strictly positive values, each new prefix adds a positive amount, so prefix sums strictly increase rather than remain equal.",
+          "indices_monotonic": "Indices increase in almost every forward scan; their order does not determine whether a boundary move raises or lowers the maintained sum.",
+          "target_sorted": "The target is one scalar threshold, not a sequence whose ordering could justify a pointer movement."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-004",
+      "prompt": "Zeros are allowed in a nonnegative minimum-length sum-at-least-positive-target problem. Which statement is correct?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "plateau_care",
+            "text": "The window remains monotone, but zero removals may leave the sum unchanged, so the loop must still advance boundaries and test shorter candidates."
+          },
+          {
+            "id": "zero_breaks",
+            "text": "Any zero invalidates the window method."
+          },
+          {
+            "id": "strict_increase",
+            "text": "Every right expansion strictly increases sum."
+          },
+          {
+            "id": "prefix_required",
+            "text": "Prefix hashing is the only correct strategy."
+          }
+        ],
+        "acceptedOptionIds": [
+          "plateau_care"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Nonnegative values preserve nondecreasing expansion and nonincreasing shrinkage.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Nonnegative values make expansion nondecreasing and shrinkage nonincreasing, which is sufficient for the window proof even when a zero creates a plateau. During the valid-state loop, record the current length, subtract a[left], and advance left on every iteration. If a[left] is zero, the sum stays valid but the window becomes shorter, so that new state must also be evaluated. Advancing the boundary independently of whether the sum changes prevents an infinite loop. The process stops only after the positive target is no longer met or the window becomes empty."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_breaks": "A zero can leave the sum unchanged, but it never reverses the nondecreasing expansion or nonincreasing shrink direction that correctness needs.",
+          "strict_increase": "Adding or removing zero creates an equal-sum state, so strict movement of the aggregate is not guaranteed even though the pointer must progress.",
+          "prefix_required": "Prefix sums remain an alternative representation, but the nonnegative threshold still has a legal variable-window invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-005",
+      "prompt": "For positive values, when should a minimum-length sum-at-least-target algorithm record an answer?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "before_each_shrink",
+            "text": "Whenever the current window is valid, before removing its left value, and again while validity continues."
+          },
+          {
+            "id": "only_end",
+            "text": "Only after the entire array is processed."
+          },
+          {
+            "id": "only_invalid",
+            "text": "Only when the sum drops below target."
+          },
+          {
+            "id": "first_valid_only",
+            "text": "Only the first time any window reaches target."
+          }
+        ],
+        "acceptedOptionIds": [
+          "before_each_shrink"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every valid state in the shrink loop is a candidate.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "For each right boundary, first expand the sum. While sum >= target, the current [left, right] is a valid candidate, so compare its length with the best answer before changing membership. Then subtract a[left] and advance left. If the shortened window is still valid, record it on the next loop iteration; it is strictly shorter and may improve the minimum. Recording only after the loop would inspect the first invalid state, while recording only once would miss the shortest valid suffix ending at this right."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "only_end": "By the end of the array, earlier valid windows have already been removed from state, so their lengths cannot be reconstructed from the final window alone.",
+          "only_invalid": "The state after sum drops below target violates the answer predicate; the last valid state existed immediately before that removal.",
+          "first_valid_only": "Shrinking the same right boundary or processing a later boundary can produce a shorter valid interval than the first one found."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-006",
+      "prompt": "For nonnegative values and k >= 0, a non-empty exact-sum-k existence problem is considered. Which conclusion is accurate?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "window_can_work",
+            "text": "A carefully defined variable window can work because sum movement is monotone, although zeros and equality handling need explicit rules."
+          },
+          {
+            "id": "prefix_only",
+            "text": "Exact equality always forbids a window."
+          },
+          {
+            "id": "window_always_any_sign",
+            "text": "The same rule works unchanged for arbitrary negative values."
+          },
+          {
+            "id": "sort_two_pointer",
+            "text": "Sort the values and use opposite ends."
+          }
+        ],
+        "acceptedOptionIds": [
+          "window_can_work"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Objective semantics and value constraints jointly decide the method.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Maintain the sum of [left, right] while right advances. Because all values are nonnegative, shrink while sum > k: removing left cannot increase the sum, and extending right cannot decrease it. Check sum == k for a non-empty window after each expansion and after any necessary shrink. Zeros require explicit boundary progress and non-empty handling because several different windows can share the same sum, especially when k = 0. A prefix-frequency map also works and is the more general method for signed values, but equality alone does not forbid a window under this nonnegative contract."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_only": "Prefix lookup is not exclusive here: nonnegative values make comparisons with k directional enough for an expand-and-shrink existence scan.",
+          "window_always_any_sign": "With mixed signs, extending can lower the sum and removing a negative can raise it, so the same discard rule is unsound.",
+          "sort_two_pointer": "Sorting changes original adjacency, so a pair found after sorting need not correspond to any contiguous subarray of the input."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-007",
+      "prompt": "The array contains at least one strictly positive value, the target is zero, and answers must be non-empty. What minimum length should a sum-at-least-target contract return?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "first_singleton",
+            "text": "Every non-empty interval is valid, so the minimum length is 1 if the array is non-empty."
+          },
+          {
+            "id": "zero_length",
+            "text": "Return length 0 even though empty intervals are forbidden."
+          },
+          {
+            "id": "no_answer",
+            "text": "No positive sum can be at least zero."
+          },
+          {
+            "id": "prefix_hash",
+            "text": "Only a prefix-frequency map can answer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "first_singleton"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Edge-case behavior depends on whether empty intervals are allowed.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Every strictly positive singleton has sum > 0 and therefore satisfies sum >= 0. Because the result contract forbids empty intervals, length 0 is not an eligible candidate; because the array is guaranteed non-empty, a singleton always exists. No non-empty interval can be shorter than one element, so the global minimum is exactly 1 and a scan may return as soon as it establishes that contract. If empty input or empty intervals were allowed, the result rule would need to state those cases separately."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_length": "Length 0 denotes an empty interval, which the prompt explicitly excludes even though its sum would conventionally be zero.",
+          "no_answer": "Every available singleton has a strictly positive sum, and every positive number is at least the zero target.",
+          "prefix_hash": "No frequency lookup is needed: the non-empty lower bound of one and the positive singleton guarantee determine the answer immediately."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-008",
+      "prompt": "The API defines an explicit no-solution result. No interval reaches a positive target in a positive-valued array. What should the window algorithm return?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "explicit_none",
+            "text": "The contract's explicit no-solution result after scanning all right boundaries."
+          },
+          {
+            "id": "last_window",
+            "text": "The final interval even though it is invalid."
+          },
+          {
+            "id": "zero_without_contract",
+            "text": "Always zero regardless of the API contract."
+          },
+          {
+            "id": "prefix_sum_total",
+            "text": "The total array sum as a length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "explicit_none"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Monotonicity makes the search complete, not guaranteed to succeed.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "The scan is complete because every right boundary is processed and, under positive values, every legal shorter candidate ending there is examined by the shrink loop. If none reaches target, no valid interval exists; monotonicity proves search coverage but cannot manufacture a solution. The algorithm must therefore return the API's declared absence representation, such as null or a named sentinel. Returning an invalid final window confuses internal state with output, while returning numeric zero without a declared convention can collide with a legitimate length under a different empty-interval contract."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "last_window": "The final maintained window is still below the positive target, so returning it violates the answer predicate.",
+          "zero_without_contract": "A raw zero is meaningful only if the public API declares it as the absence sentinel; the prompt instead requires its explicit no-solution result.",
+          "prefix_sum_total": "The total sum is evidence that the threshold is unreachable, but it is neither an interval length nor the declared absence value."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-009",
+      "prompt": "Which change destroys the positive monotonic boundary most directly?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "allow_negative",
+            "text": "Allow arbitrary negative values."
+          },
+          {
+            "id": "larger_target",
+            "text": "Increase the target while values remain nonnegative."
+          },
+          {
+            "id": "more_elements",
+            "text": "Increase n."
+          },
+          {
+            "id": "use_long_integer",
+            "text": "Use a wider numeric type."
+          }
+        ],
+        "acceptedOptionIds": [
+          "allow_negative"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A negative incoming or outgoing value can reverse the aggregate effect of a boundary move.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "The window proof needs expansion to be nondecreasing and shrinkage to be nonincreasing. Allowing arbitrary negative values breaks both directions: a negative entrant can lower an over-threshold sum, and removing a negative left value can raise the remaining sum. A start discarded as currently unhelpful may therefore become useful after a later negative value arrives. Increasing target or n changes how much work or how often validity occurs, but not the sign of boundary effects. A wider integer type changes overflow range, not the mathematical invariant."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "larger_target": "A larger threshold may delay the first valid window, but positive or nonnegative additions and removals still move the sum in the same directions.",
+          "more_elements": "Increasing n adds boundary positions and work; it does not change how any individual nonnegative value affects the sum.",
+          "use_long_integer": "A wider type can prevent arithmetic overflow, but it neither introduces negative contributions nor changes the real-number monotonicity proof."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-010",
+      "prompt": "Which facts justify a positive or nonnegative threshold window? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "expand_direction",
+            "text": "Adding the next value cannot decrease the sum."
+          },
+          {
+            "id": "shrink_direction",
+            "text": "Removing the left value cannot increase the sum."
+          },
+          {
+            "id": "contiguous_objective",
+            "text": "The candidate is one contiguous interval with movable boundaries."
+          },
+          {
+            "id": "target_keyword",
+            "text": "The prompt contains the word target."
+          }
+        ],
+        "acceptedOptionIds": [
+          "expand_direction",
+          "shrink_direction",
+          "contiguous_objective"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The method needs both a matching interval search space and directional aggregate effects.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Three facts are jointly relevant. The answer must be one contiguous interval so [left, right] represents the candidate rather than an arbitrary subset. Adding a nonnegative right value cannot decrease the sum, which tells the algorithm when expansion can help. Removing a nonnegative left value cannot increase the sum, which tells it when shrinkage can repair or optimize. The word “target” supplies none of these facts: targets also appear in signed prefix-sum problems and unrelated pair searches. Reusable rule: identify candidate shape and derive both boundary effects before discarding a start."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "target_keyword": "The word “target” states only that a value is compared; it does not establish contiguity, value signs, or directional boundary effects."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "expand_direction": "Omitting expansion direction leaves no proof that moving right can reach or preserve the threshold in a predictable way.",
+          "shrink_direction": "Omitting shrink direction leaves no proof that removing left repairs invalidity or safely explores shorter candidates.",
+          "contiguous_objective": "Omitting contiguity ignores whether one pair of boundaries actually represents every legal answer candidate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-011",
+      "prompt": "Which objectives naturally fit a nonnegative variable window? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "min_at_least",
+            "text": "Minimum length with sum at least target."
+          },
+          {
+            "id": "max_at_most",
+            "text": "Maximum length with sum at most budget."
+          },
+          {
+            "id": "exact_nonnegative",
+            "text": "Existence of exact sum k with carefully handled zeros."
+          },
+          {
+            "id": "arbitrary_signed_exact",
+            "text": "Exact sum k with arbitrary signed values using the same simple rule."
+          }
+        ],
+        "acceptedOptionIds": [
+          "min_at_least",
+          "max_at_most",
+          "exact_nonnegative"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The objective must align with the direction supplied by nonnegative values.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "For minimum length with sum at least target, expand until valid, then record and shrink while validity remains. For maximum length with sum at most budget, expand, shrink only while invalid, then record the restored longest ending-at-right candidate. For exact sum k with nonnegative values, expand, shrink while sum > k, and check equality with explicit zero and non-empty handling. These objectives differ in answer timing, but all use the same nonnegative directional boundary. Arbitrary signed exact sum does not: later negatives can rescue an earlier start, so prefix sums plus lookup are the general linear approach."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_signed_exact": "With arbitrary signs, expansion may decrease the sum and removing a negative may increase it, so the same one-way discard rule can skip a valid exact-sum interval."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "min_at_least": "Omitting this misses the objective that records every valid window before shrinking to find the shortest candidate at each right.",
+          "max_at_most": "Omitting this misses the complementary objective that repairs only over-budget windows and then records the longest valid ending at right.",
+          "exact_nonnegative": "Omitting this incorrectly treats equality as incompatible even though nonnegative sums support shrink-while-above with explicit zero handling."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-012",
+      "prompt": "Which edge cases require explicit loop or result rules? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "zeros",
+            "text": "Zeros that leave the sum unchanged while a boundary moves."
+          },
+          {
+            "id": "no_solution",
+            "text": "No valid interval."
+          },
+          {
+            "id": "target_nonpositive",
+            "text": "A nonpositive threshold when empty intervals may or may not be legal."
+          },
+          {
+            "id": "positive_middle",
+            "text": "Only one ordinary case with a unique middle answer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zeros",
+          "no_solution",
+          "target_nonpositive"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Monotone correctness does not remove API and loop-boundary decisions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Zeros test whether the implementation advances a boundary even when the sum is unchanged and whether it records equal-sum windows required by the objective. A no-solution input tests initialization and the exact public absence value instead of returning stale state. A nonpositive threshold tests whether empty intervals are permitted: if they are, length 0 may dominate; if they are not, the algorithm must consider the shortest legal non-empty candidate or absence. An ordinary interior example exercises none of these loop-progress, initialization, or API-boundary decisions."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "positive_middle": "One ordinary interior solution does not test zero plateaus, absence initialization, or the contract boundary between empty and non-empty intervals."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "zeros": "Omitting zero runs leaves strict-versus-nonstrict comparisons and pointer progress untested when the aggregate remains unchanged.",
+          "no_solution": "Omitting absence leaves best-answer initialization and the public no-solution representation unspecified.",
+          "target_nonpositive": "Omitting nonpositive thresholds leaves the decisive empty-versus-non-empty interval contract unresolved."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-013",
+      "prompt": "Which mistaken claims bypass the monotonic-window proof? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "contiguous_always",
+            "text": "Every contiguous-sum problem supports a simple window."
+          },
+          {
+            "id": "two_pointers_proof",
+            "text": "Using left and right variables proves safe elimination."
+          },
+          {
+            "id": "positive_boundary",
+            "text": "Nonnegative values can create monotone sum movement."
+          },
+          {
+            "id": "first_valid_best",
+            "text": "The first valid threshold interval is always globally shortest."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contiguous_always",
+          "two_pointers_proof",
+          "first_valid_best"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A correct window argument must name the monotone effect and complete answer search.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "paragraph",
+              "text": "Contiguity defines the candidate shape but does not prove that moving either boundary safely discards candidates; signed sums are the counterexample. Naming variables left and right likewise describes representation rather than correctness. The first valid interval is only a local event: later right boundaries or further valid shrink steps can produce a shorter answer. By contrast, nonnegative values genuinely establish that expansion cannot lower and shrinkage cannot raise the sum. A review must preserve that real premise while rejecting the three unsupported shortcuts."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "positive_boundary": "This is not a mistaken shortcut: nonnegative values directly establish the directional sum effects used in the window proof."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "contiguous_always": "Omitting this error would leave the false belief that candidate shape alone replaces value-sign and objective-specific discard proofs.",
+          "two_pointers_proof": "Omitting this error confuses variable names with the directional theorem that must justify every boundary move.",
+          "first_valid_best": "Omitting this error ignores both additional valid shrinks at the same right and shorter candidates at later right boundaries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-014",
+      "prompt": "Sequence the minimization pass for a positive sum-at-least window.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "extend",
+            "text": "Add a[right] as right advances."
+          },
+          {
+            "id": "check_valid",
+            "text": "While the sum is at least target, the current window is a candidate."
+          },
+          {
+            "id": "record",
+            "text": "Record its length against the best answer."
+          },
+          {
+            "id": "shrink",
+            "text": "Subtract a[left], increment left, and continue while still valid."
+          }
+        ],
+        "canonicalOrder": [
+          "extend",
+          "check_valid",
+          "record",
+          "shrink"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The shrink loop enumerates all shortest candidates ending at each right boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Add a[right] so the maintained sum first represents the expanded inclusive window [left, right].",
+                "Test sum >= target; only a valid window may enter the minimum-length comparison.",
+                "Record right - left + 1 before changing membership, preserving the current valid candidate.",
+                "Subtract a[left], advance left, and return to the validity test so every shorter valid suffix ending at this right is measured."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Recording after shrink would either lose the just-removed valid interval or score the first invalid state. Positivity makes the stopping relation safe: once shrink drops the sum below target, further removals cannot raise it, so right must advance."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-015",
+      "prompt": "Sequence the repair-and-measure pass for a nonnegative sum-at-most window.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "extend",
+            "text": "Add the new right value."
+          },
+          {
+            "id": "repair",
+            "text": "While the sum exceeds budget, subtract left values and advance left."
+          },
+          {
+            "id": "valid_state",
+            "text": "Once the sum is at most budget, the current window is valid."
+          },
+          {
+            "id": "record",
+            "text": "Update the maximum length with right - left + 1."
+          }
+        ],
+        "canonicalOrder": [
+          "extend",
+          "repair",
+          "valid_state",
+          "record"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "For nonnegative values, shrinking is the only way to repair an over-budget interval.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Add the new a[right] so sum and [left, right] describe the same expanded candidate.",
+                "While sum > budget, subtract the outgoing a[left] before advancing left; this keeps state aligned with membership.",
+                "Exit the repair loop only when sum <= budget, establishing a valid current window.",
+                "Record right - left + 1; the first restored window is the longest valid candidate ending at this right."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Recording before repair could score an invalid interval, while shrinking after validity is restored would discard length needed by the maximum objective. Nonnegative values prove that every earlier discarded start would have at least as large a sum."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-016",
+      "prompt": "Arrange the correctness proof for the shrink step in a minimum-length positive window.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "positive_left",
+            "text": "The outgoing left value is positive or nonnegative."
+          },
+          {
+            "id": "sum_direction",
+            "text": "Removing it cannot increase the sum."
+          },
+          {
+            "id": "candidate_order",
+            "text": "Each shrink produces a strictly shorter interval at the same right boundary."
+          },
+          {
+            "id": "stop_rule",
+            "text": "When the next state is invalid, further shrinking cannot restore threshold validity."
+          }
+        ],
+        "canonicalOrder": [
+          "positive_left",
+          "sum_direction",
+          "candidate_order",
+          "stop_rule"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The stop rule follows from monotone contraction.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "State the sign premise: the outgoing left value is nonnegative, and strictly positive when strict sum decrease is claimed.",
+                "Derive the aggregate effect: subtracting that value cannot increase the window sum.",
+                "Observe that advancing left makes the interval strictly shorter while preserving the same right endpoint.",
+                "Once the sum falls below the at-least target, conclude that further shrinkage cannot restore validity and stop this inner pass."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The sign premise must precede the direction claim; without it, removing a negative could increase the sum. The direction claim must precede the stop rule, otherwise stopping after the first invalid shrink is an unsupported leap."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-017",
+      "prompt": "Arrange the zero-aware review of a nonnegative window.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "use_non_strict",
+            "text": "State that aggregate movement is nondecreasing or nonincreasing, not necessarily strict."
+          },
+          {
+            "id": "ensure_pointer_progress",
+            "text": "Ensure every loop iteration changes a boundary even when sum stays equal."
+          },
+          {
+            "id": "record_equal_states",
+            "text": "Evaluate shorter or longer equal-sum windows according to the objective."
+          },
+          {
+            "id": "test_zero_runs",
+            "text": "Test leading, trailing, and interior zero runs."
+          }
+        ],
+        "canonicalOrder": [
+          "use_non_strict",
+          "ensure_pointer_progress",
+          "record_equal_states",
+          "test_zero_runs"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Zeros preserve legality but expose stalled or prematurely stopped loops.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Describe expansion as nondecreasing and shrinkage as nonincreasing; zeros invalidate strict wording but not direction.",
+                "Require every loop iteration to advance left or right even when adding or removing zero leaves sum unchanged.",
+                "Evaluate equal-sum windows according to the objective: zero removals may reveal a shorter minimum candidate, while zero extensions may preserve a longer maximum candidate.",
+                "Test leading, trailing, and interior zero runs, including all-zero windows and k = 0 when equality is supported."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Testing examples before defining non-strict movement can hide the wrong invariant, and checking sum change without pointer progress can miss an infinite loop. Answer timing is separate because an unchanged sum may still accompany a better length."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-018",
+      "prompt": "Arrange the decision audit before applying a threshold window.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_objective",
+            "text": "State minimum/maximum and at-least/at-most semantics."
+          },
+          {
+            "id": "state_values",
+            "text": "State whether values are positive, nonnegative, or arbitrary signed."
+          },
+          {
+            "id": "derive_moves",
+            "text": "Derive the aggregate effect of expanding and shrinking."
+          },
+          {
+            "id": "select",
+            "text": "Use the window only if those effects justify every discard and stopping rule."
+          }
+        ],
+        "canonicalOrder": [
+          "state_objective",
+          "state_values",
+          "derive_moves",
+          "select"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The template is derived from objective and value domain.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the moving window is legal"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Write the exact objective and comparator, such as minimum length with sum at least target or maximum length with sum at most budget.",
+                "State the permitted value domain: strictly positive, nonnegative, or arbitrary signed.",
+                "From that domain, derive how adding right and removing left can change the maintained aggregate.",
+                "Select a window only if those effects justify its repair loop, answer timing, stopping rule, and permanent discard of skipped starts."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Choosing a template before the objective and value domain reverses the dependency: the same contiguous-sum wording needs different methods under different signs or equality semantics. If no discard theorem follows, use a prefix-based or other method rather than forcing a window."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-019",
+      "prompt": "A nonnegative variable-window algorithm advances right across n values and advances left at most n times. Select total time and auxiliary space when only sum and boundaries are stored.",
+      "constraints": [
+        "Each boundary move performs O(1) work."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "auxiliary_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "two_monotone_pointers": "O(n)"
+          },
+          "auxiliary_space": {
+            "sum_and_indices": "O(1)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The nested while loop is not quadratic because each pointer crosses each index at most once.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Derive the two-boundary cost"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "right advances from 0 through n - 1 exactly once, for n O(1) expansion updates.",
+                "left never moves backward and advances at most n times across all inner-loop executions, adding at most n O(1) shrink updates.",
+                "The total work is therefore O(n + n) = O(n), not O(n²) despite the syntactically nested while loop.",
+                "The maintained sum, left, right, and best answer use a constant number of machine words, so auxiliary space is O(1)."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "The linear counting argument establishes cost only. Correctness still depends on the nonnegative directional invariant that makes every left advance a safe permanent discard."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-window-prefix-positive-020",
+      "prompt": "A brute-force algorithm evaluates every contiguous interval of an n-value array using an O(1) incremental sum per extension. Select worst-case time and auxiliary space.",
+      "constraints": [
+        "The algorithm starts an extension scan from every left boundary."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n log n)",
+            "O(n²)",
+            "O(2^n)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n²)"
+          ],
+          "auxiliary_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "all_intervals": "O(n²)"
+          },
+          "auxiliary_space": {
+            "running_sum": "O(1)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "There are Θ(n²) contiguous intervals.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Count all interval extensions"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "For left = 0, the extension scan evaluates n intervals; for left = 1 it evaluates n - 1, continuing down to one interval.",
+                "The total candidate count is n + (n - 1) + ... + 1 = n(n + 1)/2 = Θ(n²).",
+                "Each extension updates the running sum and evaluates the candidate in O(1), so total worst-case time is O(n²).",
+                "The algorithm stores only loop boundaries, one running sum, and the best answer, giving O(1) auxiliary space."
+              ]
+            },
+            {
+              "type": "paragraph",
+              "text": "Incremental summation removes an extra O(length) recomputation but does not remove the quadratic number of intervals. A linear window is legal only when the value domain and objective prove that whole families of starts can be discarded."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Check the directional invariant",
+              "text": "For a sum threshold, a simple variable window is justified only when extending right cannot lower the sum and removing left cannot raise it. With nonnegative values this lets the algorithm repair a boundary and discard candidates without needing to revisit them; an arbitrary negative value removes that proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_positive_monotonic_window_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    }
+  ],
+  "modeStructures": {
+    "recognitionSets": [],
+    "contrastSets": [
+      {
+        "setId": "contrast-window-prefix-positive-monotonic-window-boundary-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "positive_monotonic_window_boundary",
+        "contrastedMentalUnitIds": [
+          "recognize_sliding_window_signal",
+          "recognize_prefix_accumulation_signal"
+        ],
+        "falseHeuristicId": "every_contiguous_sum_problem_is_sliding_window",
+        "transferBoundary": "A variable sum window is justified when extending and shrinking have predictable directional effects, typically under nonnegative values; without that monotonic boundary, pointer movement cannot safely discard candidates.",
+        "itemIds": [
+          "alg-contrast-window-prefix-positive-001",
+          "alg-contrast-window-prefix-positive-002",
+          "alg-contrast-window-prefix-positive-003",
+          "alg-contrast-window-prefix-positive-004",
+          "alg-contrast-window-prefix-positive-005",
+          "alg-contrast-window-prefix-positive-006",
+          "alg-contrast-window-prefix-positive-007",
+          "alg-contrast-window-prefix-positive-008",
+          "alg-contrast-window-prefix-positive-009",
+          "alg-contrast-window-prefix-positive-010",
+          "alg-contrast-window-prefix-positive-011",
+          "alg-contrast-window-prefix-positive-012",
+          "alg-contrast-window-prefix-positive-013",
+          "alg-contrast-window-prefix-positive-014",
+          "alg-contrast-window-prefix-positive-015",
+          "alg-contrast-window-prefix-positive-016",
+          "alg-contrast-window-prefix-positive-017",
+          "alg-contrast-window-prefix-positive-018",
+          "alg-contrast-window-prefix-positive-019",
+          "alg-contrast-window-prefix-positive-020"
+        ]
+      }
+    ],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

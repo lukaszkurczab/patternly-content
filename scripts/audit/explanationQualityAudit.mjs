@@ -4,8 +4,8 @@ import { fileURLToPath } from "node:url";
 
 const REPOSITORY_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const TRACK_SOURCE_DIRECTORIES = Object.freeze({
-  algorithms: "manual/source/algorithms",
-  "cloud-certification": "manual/source/cloud-certification",
+  "coding-interview-dsa-problem-solving": "manual/source/coding-interview-dsa-problem-solving",
+  "google-cloud-associate-cloud-engineer": "manual/source/google-cloud-associate-cloud-engineer",
 });
 
 const WORD_PATTERN = /[\p{L}\p{N}]+(?:['’+-][\p{L}\p{N}]+)*/gu;
@@ -85,7 +85,7 @@ function auditItem({ batch, item, sourcePath, trackId }) {
       wordCount: wordCount(text),
     }));
   const formats = [...new Set(blocks.map((block) => block.type))].sort();
-  const interactionType = trackId === "algorithms"
+  const interactionType = trackId === "coding-interview-dsa-problem-solving"
     ? item.interaction?.type ?? "unknown"
     : item.type ?? "unknown";
   const riskSignals = collectRiskSignals({
@@ -99,12 +99,12 @@ function auditItem({ batch, item, sourcePath, trackId }) {
 
   return {
     trackId,
-    familyId: batch.familyId ?? (trackId === "algorithms" ? "algorithms" : "certification"),
+    familyId: batch.familyId ?? (trackId === "coding-interview-dsa-problem-solving" ? "coding_interview" : "certification"),
     sourcePath,
     batchId: batch.batchId ?? batch.contentVersion,
     itemId: item.id,
     interactionType,
-    learningObjective: trackId === "algorithms"
+    learningObjective: trackId === "coding-interview-dsa-problem-solving"
       ? {
           kind: "primary_skill_atom",
           id: item.taxonomy?.primarySkillAtomId,
@@ -153,7 +153,7 @@ function collectRiskSignals({
       "Details contains Reason verbatim; verify that it adds mechanism, application and transfer rather than repetition.",
     ));
   }
-  const shortThreshold = trackId === "algorithms" ? 45 : 30;
+  const shortThreshold = trackId === "coding-interview-dsa-problem-solving" ? 45 : 30;
   if (detailsWordCount < shortThreshold) {
     signals.push(signal(
       "short_details_review_priority",

@@ -1,0 +1,1733 @@
+{
+  "schemaVersion": "coding-interview-manual-source-v2",
+  "batchId": "arrays-and-strings-stable-in-place-compaction-v1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "familyId": "coding_interview",
+  "contentVersion": "coding-interview-dsa-problem-solving-0001",
+  "taxonomyVersion": "coding-interview-taxonomy-v2",
+  "declaredModes": [
+    "coding-interview-learn-approach",
+    "coding-interview-guided-practice",
+    "coding-interview-recognize-patterns",
+    "coding-interview-contrast-practice",
+    "coding-interview-weak-area-review",
+    "coding-interview-independent-practice",
+    "coding-interview-interview-simulation"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "arrays_and_strings",
+    "primaryMentalUnitId": "stable_in_place_compaction",
+    "patternFamilyId": "arrays_and_strings"
+  },
+  "batchKind": "standard",
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-17T00:00:00.000Z",
+    "contentBatchId": "arrays-and-strings-stable-in-place-compaction-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-arrays-stable-compaction-001",
+      "prompt": "At a loop boundary in stable in-place compaction, read is the number of input positions already processed. What does write represent?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "next_unread_position",
+            "text": "The position of the next unread input value."
+          },
+          {
+            "id": "number_removed_only",
+            "text": "Only the number of removed values."
+          },
+          {
+            "id": "physical_array_length",
+            "text": "The physical length of the array."
+          },
+          {
+            "id": "retained_prefix_length",
+            "text": "The number of retained values already written into the valid output prefix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "retained_prefix_length"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The write index is the boundary between the valid compacted prefix and unused positions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “The number of retained values already written into the valid output prefix.”. After processing a prefix of the input, positions [0, write) contain exactly the retained values from that processed prefix in their original relative order."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The write index is the boundary between the valid compacted prefix and unused positions."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The position of the next unread input value. — The read index, not the write index, tracks the next input position to inspect.",
+                "Only the number of removed values. — Removed count can be derived from read and write, but it is not the direct meaning of write.",
+                "The physical length of the array. — Compaction usually changes the logical result length without changing physical storage length."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "next_unread_position": "The read index, not the write index, tracks the next input position to inspect.",
+          "number_removed_only": "Removed count can be derived from read and write, but it is not the direct meaning of write.",
+          "physical_array_length": "Compaction usually changes the logical result length without changing physical storage length."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-002",
+      "prompt": "A filter keeps values satisfying a predicate. When should the write index advance?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "every_read_iteration",
+            "text": "On every read iteration, whether the value is retained or removed."
+          },
+          {
+            "id": "only_after_retained_write",
+            "text": "Only after a retained value has been written to array[write]."
+          },
+          {
+            "id": "only_when_value_removed",
+            "text": "Only when the current value is removed."
+          },
+          {
+            "id": "once_after_loop",
+            "text": "Only once after the scan finishes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "only_after_retained_write"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Write counts retained output positions, so it advances exactly when one output value is produced.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “Only after a retained value has been written to array[write].”. If a value is removed, no new valid output position is created. Incrementing write anyway would leave gaps or include stale values in the logical prefix."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Write counts retained output positions, so it advances exactly when one output value is produced."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "On every read iteration, whether the value is retained or removed. — This makes write track processed input rather than retained output.",
+                "Only when the current value is removed. — Removed values should not consume positions in the compacted prefix.",
+                "Only once after the scan finishes. — The algorithm needs the current output boundary during the scan."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "every_read_iteration": "This makes write track processed input rather than retained output.",
+          "only_when_value_removed": "Removed values should not consume positions in the compacted prefix.",
+          "once_after_loop": "The algorithm needs the current output boundary during the scan."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-003",
+      "prompt": "At each loop boundary, read is the number of input positions already processed and write is the number of retained values already emitted. Which invariant prevents stable compaction from overtaking unread input?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "read_not_ahead_of_write",
+            "text": "At every loop boundary, read <= write."
+          },
+          {
+            "id": "write_equals_length",
+            "text": "At every loop boundary, write equals n."
+          },
+          {
+            "id": "write_not_ahead_of_read",
+            "text": "At every loop boundary, write <= read."
+          },
+          {
+            "id": "read_equals_write_plus_one",
+            "text": "At every loop boundary, read equals write + 1."
+          }
+        ],
+        "acceptedOptionIds": [
+          "write_not_ahead_of_read"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The output boundary can lag behind the read position but must never move ahead of it.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “At every loop boundary, write <= read.” The processed prefix is [0, read), and it can contribute at most read retained values, so write cannot be larger. During the next iteration, writing at an index below read changes only processed storage; writing at read is a self-write of the current source value."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The output boundary can lag behind the read position but must never move ahead of it."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "At every loop boundary, read <= write. — This permits write to exceed the processed-input count and move into unread territory.",
+                "At every loop boundary, write equals n. — Write should reflect retained count, which can be much smaller than n.",
+                "At every loop boundary, read equals write + 1. — Read and write are equal whenever every processed value has been retained."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "read_not_ahead_of_write": "This permits write to exceed the processed-input count and move into unread territory.",
+          "write_equals_length": "Write should reflect retained count, which can be much smaller than n.",
+          "read_equals_write_plus_one": "Read and write may be equal for long stretches when all values are retained."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-005",
+      "prompt": "A filter removes every input value. What should the final write index be?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one",
+            "text": "1"
+          },
+          {
+            "id": "n_minus_one",
+            "text": "n - 1"
+          },
+          {
+            "id": "n",
+            "text": "n"
+          },
+          {
+            "id": "zero",
+            "text": "0"
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "No retained values means the valid compacted prefix has length zero.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “0”. Read still scans the entire input, but write never advances because no output value is produced."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "No retained values means the valid compacted prefix has length zero."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "1 — The algorithm does not reserve a placeholder output position.",
+                "n - 1 — This confuses an index with the number of retained values.",
+                "n — Processed input count and retained output count are different."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "one": "The algorithm does not reserve a placeholder output position.",
+          "n_minus_one": "This confuses an index with the number of retained values.",
+          "n": "Processed input count and retained output count are different."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-006",
+      "prompt": "Why does stable compaction preserve the relative order of retained values?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sorting_after_scan",
+            "text": "The retained prefix is sorted after the scan."
+          },
+          {
+            "id": "read_left_to_right_write_next",
+            "text": "Read moves left to right, and each retained value is written to the next output position."
+          },
+          {
+            "id": "swap_with_end",
+            "text": "Each removed value is swapped with the final element."
+          },
+          {
+            "id": "duplicates_removed",
+            "text": "Removing duplicates automatically preserves order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "read_left_to_right_write_next"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Values are emitted in the same order in which they are encountered.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “Read moves left to right, and each retained value is written to the next output position.”. The write index increases monotonically, so later retained values cannot be placed before earlier retained values."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Values are emitted in the same order in which they are encountered."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The retained prefix is sorted after the scan. — Sorting would impose a new order rather than preserve the original one.",
+                "Each removed value is swapped with the final element. — Swapping from the end can change the relative order of retained values.",
+                "Removing duplicates automatically preserves order. — Duplicate behavior and stability are separate contract dimensions."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sorting_after_scan": "Sorting would impose a new order rather than preserve the original one.",
+          "swap_with_end": "Swapping from the end can change the relative order of retained values.",
+          "duplicates_removed": "Duplicate behavior and stability are separate contract dimensions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-007",
+      "prompt": "Arrange the operations for one iteration of stable compaction when the current value should be retained.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "read_current",
+            "text": "Read the current value at the read index."
+          },
+          {
+            "id": "evaluate_predicate",
+            "text": "Evaluate whether the value should be retained."
+          },
+          {
+            "id": "write_current",
+            "text": "Write the retained value at the write index."
+          },
+          {
+            "id": "advance_write",
+            "text": "Advance write, then advance read to the next source position."
+          }
+        ],
+        "canonicalOrder": [
+          "read_current",
+          "evaluate_predicate",
+          "write_current",
+          "advance_write"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The decision must be based on the source value before the output boundary advances.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "For input [2, 5, 8] with a predicate that keeps even values, reading 2 and accepting it leads to array[write] = 2, then write advances because one output was produced and read advances because one input was consumed. Advancing either boundary before reading and deciding would change which source or destination the iteration means."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The decision must be based on the source value before the output boundary advances."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Read the current value at the read index.",
+                "Evaluate whether the value should be retained.",
+                "Write the retained value at the write index.",
+                "Advance write because one output was produced, then advance read because one input was consumed."
+              ]
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-008",
+      "prompt": "Which statements are valid invariants during stable in-place compaction? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "valid_prefix",
+            "text": "Positions [0, write) contain exactly the retained values from the processed input prefix."
+          },
+          {
+            "id": "suffix_already_final",
+            "text": "Every position at or after write already contains its final required value."
+          },
+          {
+            "id": "write_le_read",
+            "text": "write never exceeds the number of input positions already processed."
+          },
+          {
+            "id": "order_preserved",
+            "text": "The retained values in [0, write) remain in original relative order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "valid_prefix",
+          "write_le_read",
+          "order_preserved"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The invariant describes the completed prefix and the safe relation between read and write.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “Positions [0, write) contain exactly the retained values from the processed input prefix.”, “write never exceeds the number of input positions already processed.”, “The retained values in [0, write) remain in original relative order.”. Only [0, write) is guaranteed to be valid output during the scan. The suffix may still contain unread input or stale values."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The invariant describes the completed prefix and the safe relation between read and write."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Every position at or after write already contains its final required value. — The suffix is not part of the established output invariant and may change later."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "suffix_already_final": "The suffix is not part of the established output invariant and may change later."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "valid_prefix": "This is the semantic meaning of the write boundary.",
+          "write_le_read": "It prevents writes from moving into unread input.",
+          "order_preserved": "Stable left-to-right emission preserves relative order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-009",
+      "prompt": "A stable in-place filter scans n elements, uses read and write indices, and returns the logical length k. Select its time, auxiliary-space, and additional output-space complexity.",
+      "constraints": [
+        "Every input element is inspected once.",
+        "The result is stored in the existing array prefix."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space",
+          "additional_output_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(k)",
+            "O(n)",
+            "O(n log n)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(k)",
+            "O(n)"
+          ],
+          "additional_output_space": [
+            "O(1)",
+            "O(k)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "auxiliary_space": [
+            "O(1)"
+          ],
+          "additional_output_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "linear": "O(n)"
+          },
+          "auxiliary_space": {
+            "constant": "O(1)"
+          },
+          "additional_output_space": {
+            "reuses_input": "O(1)"
+          }
+        },
+        "maxPoints": 3
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The scan is linear and reuses the input array as the logical output buffer.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "Read visits all n positions. A constant number of indices gives O(1) auxiliary space, and no growing result container is allocated outside the input."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Complexity rule",
+              "text": "The scan is linear and reuses the input array as the logical output buffer."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Report each required dimension"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "time: O(n)",
+                "auxiliary space: O(1)",
+                "additional output space: O(1)"
+              ]
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the tempting alternatives fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "O(k) time ignores rejected values; k can be zero while all n inputs still must be inspected.",
+                "O(n log n) time would require sorting or logarithmic work per element, neither of which occurs.",
+                "O(k) or O(n) auxiliary/output space would require a new growing container, but the compacted values reuse the input prefix."
+              ]
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-010",
+      "prompt": "During a valid iteration with read < n, read equals write and the current value is retained. Is assigning array[write] = array[read] correct?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "always_out_of_bounds",
+            "text": "No. Equal read and write indices are always out of bounds."
+          },
+          {
+            "id": "correct_self_assignment",
+            "text": "Yes. It is a harmless self-assignment and preserves the invariant."
+          },
+          {
+            "id": "must_skip_write_and_increment_read_only",
+            "text": "No. write must not advance when read equals write."
+          },
+          {
+            "id": "must_swap_with_end",
+            "text": "No. The value must be swapped with the final element."
+          }
+        ],
+        "acceptedOptionIds": [
+          "correct_self_assignment"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Writing a retained value to its existing position is semantically correct.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “Yes. It is a harmless self-assignment and preserves the invariant.”. An implementation may optionally avoid the assignment as a micro-optimization, but it must still advance write because one output value was retained."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Writing a retained value to its existing position is semantically correct."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "No. Equal read and write indices are always out of bounds. — Equal indices can be any valid processed position.",
+                "No. write must not advance when read equals write. — Skipping the write is harmless, but failing to advance write breaks the retained-count invariant.",
+                "No. The value must be swapped with the final element. — End swaps are unnecessary and can violate stability."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always_out_of_bounds": "Equal indices can be any valid processed position.",
+          "must_skip_write_and_increment_read_only": "Skipping the write is harmless, but failing to advance write breaks the retained-count invariant.",
+          "must_swap_with_end": "End swaps are unnecessary and can violate stability."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-011",
+      "prompt": "A buggy filter increments write on every iteration but writes only retained values. What failure can occur?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "read_stops_early",
+            "text": "The read index automatically stops before the end."
+          },
+          {
+            "id": "array_becomes_sorted",
+            "text": "The array is accidentally sorted."
+          },
+          {
+            "id": "duplicates_always_removed",
+            "text": "Every duplicate is automatically removed."
+          },
+          {
+            "id": "gaps_and_stale_values",
+            "text": "The logical prefix can contain gaps or stale values where removed elements consumed write positions."
+          }
+        ],
+        "acceptedOptionIds": [
+          "gaps_and_stale_values"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Write positions must correspond one-to-one with retained outputs.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “The logical prefix can contain gaps or stale values where removed elements consumed write positions.”. Advancing write for removed values falsely expands the valid prefix without placing a valid retained value at that position."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Write positions must correspond one-to-one with retained outputs."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "The read index automatically stops before the end. — The write bug does not change the read loop boundary by itself.",
+                "The array is accidentally sorted. — Advancing an output boundary without writing does not compare or reorder values, so it cannot establish sorted order.",
+                "Every duplicate is automatically removed. — The bug concerns output placement, not duplicate detection."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "read_stops_early": "The write bug does not change the read loop boundary by itself.",
+          "array_becomes_sorted": "Advancing an output boundary without writing does not compare or reorder values, so it cannot establish sorted order.",
+          "duplicates_always_removed": "The bug concerns output placement, not duplicate detection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-012",
+      "prompt": "Why is it safe to overwrite array[write] while scanning left to right?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "array_values_immutable",
+            "text": "Array values cannot actually be overwritten."
+          },
+          {
+            "id": "write_in_processed_region",
+            "text": "write is never ahead of read, so the destination is processed storage or the current source position, never later unread input."
+          },
+          {
+            "id": "unread_values_copied_elsewhere",
+            "text": "All unread values have already been copied to another collection."
+          },
+          {
+            "id": "sorting_protects_values",
+            "text": "Sorting protects unread values from modification."
+          }
+        ],
+        "acceptedOptionIds": [
+          "write_in_processed_region"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The read/write invariant keeps writes behind the frontier of unread input.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “write is never ahead of read, so the destination is processed storage or the current source position, never later unread input.” A destination below read has already been consumed. A destination equal to read is a self-write of the current value. Therefore no position greater than read is modified before it is inspected."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The read/write invariant keeps writes behind the frontier of unread input."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Array values cannot actually be overwritten. — In-place compaction relies on assigning retained values into earlier array positions; immutability would prevent this algorithm.",
+                "All unread values have already been copied to another collection. — The method is designed to avoid a growing backup collection.",
+                "Sorting protects unread values from modification. — Sorting is unrelated and may violate the required order."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "array_values_immutable": "In-place compaction relies on assigning retained values into earlier array positions; immutability would prevent this algorithm.",
+          "unread_values_copied_elsewhere": "The method is designed to avoid a growing backup collection.",
+          "sorting_protects_values": "Sorting is unrelated and may violate the required order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-013",
+      "prompt": "Arrange the dependency-based checks for debugging an incorrect final logical length in a read/write compaction algorithm.",
+      "difficulty": "easy",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_write_meaning",
+            "text": "State that write equals the number of retained values."
+          },
+          {
+            "id": "trace_increment_sites",
+            "text": "From that meaning, derive that write increments exactly once for each retained value."
+          },
+          {
+            "id": "test_none_and_all",
+            "text": "Trace the derived increment rule on inputs where none and all values are retained."
+          },
+          {
+            "id": "compare_prefix_to_count",
+            "text": "Verify that [0, write) contains exactly write valid outputs."
+          }
+        ],
+        "canonicalOrder": [
+          "state_write_meaning",
+          "trace_increment_sites",
+          "test_none_and_all",
+          "compare_prefix_to_count"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Debugging should start from the semantic meaning of the boundary and then verify every state transition.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "If no value is retained, the derived rule predicts write = 0; if every one of n values is retained, it predicts write = n. A trace that differs identifies an unconditional or missing increment. Comparing the resulting [0, write) prefix with the predicted retained count then checks that the boundary and actual content agree."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Debugging should start from the semantic meaning of the boundary and then verify every state transition."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "State that write equals the number of retained values.",
+                "Derive the increment rule from write's semantic meaning; do not infer meaning from buggy code.",
+                "Trace the rule on none-retained and all-retained inputs, which require the boundary values 0 and n.",
+                "Verify that [0, write) contains exactly write valid outputs; a numeric boundary without matching content is not sufficient."
+              ]
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-014",
+      "prompt": "Which implementation choices preserve stable compaction semantics? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "left_to_right_read",
+            "text": "Scan source positions from left to right."
+          },
+          {
+            "id": "swap_removed_with_end",
+            "text": "Swap each removed value with the last unprocessed value."
+          },
+          {
+            "id": "write_only_retained",
+            "text": "Write only retained values to consecutive output positions."
+          },
+          {
+            "id": "return_write",
+            "text": "Return write as the logical result length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "left_to_right_read",
+          "write_only_retained",
+          "return_write"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Stability requires left-to-right emission into consecutive output positions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “Scan source positions from left to right.”, “Write only retained values to consecutive output positions.”, “Return write as the logical result length.”. The final write index defines the valid prefix. Swapping from the end can reorder retained values and therefore violates stable semantics."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Stability requires left-to-right emission into consecutive output positions."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Swap each removed value with the last unprocessed value. — This may be useful for unstable removal but can change relative order."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "swap_removed_with_end": "This may be useful for unstable removal but can change relative order."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "left_to_right_read": "Encounter order is the source order that stability must preserve.",
+          "write_only_retained": "Consecutive retained writes create a gap-free logical prefix.",
+          "return_write": "The caller needs the exclusive boundary of the valid compacted result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-015",
+      "prompt": "A sorted array is compacted in place to keep one copy of each distinct value. Select the time, auxiliary-space, and additional output-space complexity.",
+      "constraints": [
+        "The array contains n elements.",
+        "Only read and write indices are used.",
+        "The result is the existing array prefix."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space",
+          "additional_output_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(n²)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(n)",
+            "O(n²)"
+          ],
+          "additional_output_space": [
+            "O(1)",
+            "O(n)",
+            "O(n²)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "auxiliary_space": [
+            "O(1)"
+          ],
+          "additional_output_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "linear": "O(n)"
+          },
+          "auxiliary_space": {
+            "constant": "O(1)"
+          },
+          "additional_output_space": {
+            "in_place_prefix": "O(1)"
+          }
+        },
+        "maxPoints": 3
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Each input position is scanned once, and the compacted result reuses existing storage.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The read index visits each of the n sorted positions once. Comparing the current value with the last retained value and conditionally writing it are constant-time operations, so total time is O(n). The write boundary and comparison state are constant-sized, and the result reuses the existing array prefix."
+            },
+            {
+              "type": "callout",
+              "kind": "complexity_note",
+              "title": "Complexity rule",
+              "text": "Each input position is scanned once, and the compacted result reuses existing storage."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Report each required dimension"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "time: O(n)",
+                "auxiliary space: O(1)",
+                "additional output space: O(1)"
+              ]
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the tempting alternatives fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "O(log n) time would not inspect every value, but every occurrence must be classified as duplicate or new.",
+                "O(n²) time would require rescanning a growing prefix for each value; sorted adjacency makes that unnecessary.",
+                "O(n) auxiliary or additional output space would require a separate growing structure, contrary to the stated in-place prefix result."
+              ]
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "in_place_duplicate_collapse",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-016",
+      "prompt": "A removal algorithm swaps every unwanted value with the last active element and shrinks the active range. Why is this not a stable compaction algorithm?",
+      "difficulty": "easy",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "uses_two_indices",
+            "text": "Any algorithm with two indices is unstable."
+          },
+          {
+            "id": "reorders_retained_values",
+            "text": "A value from the end can move before retained values that originally preceded it."
+          },
+          {
+            "id": "requires_duplicates",
+            "text": "The method works only when duplicates exist."
+          },
+          {
+            "id": "always_linear_space",
+            "text": "It necessarily allocates O(n) auxiliary space."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reorders_retained_values"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Stable compaction must preserve the original relative order of all retained values.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “A value from the end can move before retained values that originally preceded it.”. Swapping from the end can be correct when order is irrelevant, but it changes the positional sequence and therefore violates a stable output contract."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Stable compaction must preserve the original relative order of all retained values."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Any algorithm with two indices is unstable. — Index count does not determine stability; update rules do.",
+                "The method works only when duplicates exist. — The issue is removal and order, not duplicate presence.",
+                "It necessarily allocates O(n) auxiliary space. — The method can be in place and still be unstable."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "uses_two_indices": "Index count does not determine stability; update rules do.",
+          "requires_duplicates": "The issue is removal and order, not duplicate presence.",
+          "always_linear_space": "The method can be in place and still be unstable."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-017",
+      "prompt": "A compaction function returns write - 1 instead of write. What is the likely defect?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "returns_too_many",
+            "text": "It always reports one extra retained value."
+          },
+          {
+            "id": "forces_sorting",
+            "text": "It forces the compacted prefix to become sorted."
+          },
+          {
+            "id": "changes_aux_space",
+            "text": "It changes auxiliary space from O(1) to O(n)."
+          },
+          {
+            "id": "returns_last_index_not_length",
+            "text": "It returns the last valid index rather than the logical output length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "returns_last_index_not_length"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Write is the exclusive end of the valid prefix and therefore already equals its length.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “It returns the last valid index rather than the logical output length.”. Subtracting one converts the boundary into the final index. It also produces -1 for an empty result, which is not the logical length."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Write is the exclusive end of the valid prefix and therefore already equals its length."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "It always reports one extra retained value. — Subtracting one underreports rather than overreports the retained count.",
+                "It forces the compacted prefix to become sorted. — Changing only the reported boundary cannot compare, move, or reorder any values in the prefix.",
+                "It changes auxiliary space from O(1) to O(n). — A boundary arithmetic error does not allocate additional memory."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "returns_too_many": "Subtracting one underreports rather than overreports the retained count.",
+          "forces_sorting": "Changing only the reported boundary cannot compare, move, or reorder any values in the prefix.",
+          "changes_aux_space": "A boundary arithmetic error does not allocate additional memory."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-018",
+      "prompt": "A character array should be normalized in place by removing punctuation while preserving all letters, digits, duplicates, and relative order. Which approach matches the contract?",
+      "difficulty": "easy",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_then_remove",
+            "text": "Sort all characters, then remove punctuation."
+          },
+          {
+            "id": "stable_read_write_filter",
+            "text": "Scan left to right and write each retained character at the next write position."
+          },
+          {
+            "id": "set_of_characters",
+            "text": "Insert retained characters into a set and write the set back."
+          },
+          {
+            "id": "swap_with_end",
+            "text": "Swap punctuation with characters from the end until punctuation is outside the active range."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stable_read_write_filter"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A stable read/write filter removes only ignored characters while preserving every retained occurrence in order.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "The correct choice is “Scan left to right and write each retained character at the next write position.”. Sorting, set conversion, and end swaps each destroy at least one required property: order or multiplicity."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "A stable read/write filter removes only ignored characters while preserving every retained occurrence in order."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Why the other choices fail"
+            },
+            {
+              "type": "bullet_list",
+              "items": [
+                "Sort all characters, then remove punctuation. — Sorting changes the relative order of retained characters.",
+                "Insert retained characters into a set and write the set back. — A set removes duplicate retained characters and does not preserve sequence order.",
+                "Swap punctuation with characters from the end until punctuation is outside the active range. — A retained character moved from the end can jump ahead of earlier retained characters, violating relative order."
+              ]
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sort_then_remove": "Sorting changes the relative order of retained characters.",
+          "set_of_characters": "A set removes duplicate retained characters and does not preserve sequence order.",
+          "swap_with_end": "A retained character moved from the end can jump ahead of earlier retained characters, violating relative order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "normalize_and_compare_sequences"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-019",
+      "prompt": "Arrange the state transitions for one iteration when the current value is rejected by a stable compaction predicate.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "read_current",
+            "text": "Read the current source value."
+          },
+          {
+            "id": "evaluate_false",
+            "text": "Determine that the predicate rejects it."
+          },
+          {
+            "id": "leave_write",
+            "text": "Leave the write boundary unchanged."
+          },
+          {
+            "id": "advance_read",
+            "text": "Advance to the next source position."
+          }
+        ],
+        "canonicalOrder": [
+          "read_current",
+          "evaluate_false",
+          "leave_write",
+          "advance_read"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "A rejected value consumes input but produces no output position.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "Suppose [2, 3, 4] is filtered to keep even values. After retaining 2, read = 1 and write = 1 at the next loop boundary. The current value 3 is read and rejected, so no assignment occurs and write stays 1. Advancing read to 2 records that 3 was consumed; the valid prefix [0, 1) still contains exactly [2]."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "A rejected value consumes input but produces no output position."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Read the current source value before changing either boundary.",
+                "Evaluate the predicate on that saved value and determine that it produces no output.",
+                "Leave write unchanged because the valid output prefix gains no element.",
+                "Advance read because one source occurrence has nevertheless been fully processed."
+              ]
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-020",
+      "prompt": "After the current source value has been read and accepted, arrange the reasoning that proves the read/write invariant is preserved when it is retained.",
+      "difficulty": "easy",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "assume_prefix_valid",
+            "text": "Assume [0, write) already contains the retained values from the processed prefix."
+          },
+          {
+            "id": "write_next_retained",
+            "text": "Write the accepted current value at array[write]."
+          },
+          {
+            "id": "advance_boundary",
+            "text": "Increment write so the valid prefix includes the new value."
+          },
+          {
+            "id": "confirm_order_and_safety",
+            "text": "Confirm that relative order is preserved and write does not move ahead of the next read boundary."
+          }
+        ],
+        "canonicalOrder": [
+          "assume_prefix_valid",
+          "write_next_retained",
+          "advance_boundary",
+          "confirm_order_and_safety"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The proof follows the invariant before the iteration, the state update, and the invariant after the update.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "Before the update, write <= read. If write < read, the destination is already processed; if write = read, the saved current value is written to itself. Appending that value at the exclusive boundary preserves encounter order. Incrementing write and then advancing to the next read boundary changes both retained and processed counts by one, so write <= read still holds."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "The proof follows the invariant before the iteration, the state update, and the invariant after the update."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Assume the valid-prefix and write <= read invariants before updating state.",
+                "Write the already saved accepted value at array[write]; the destination cannot be later unread input.",
+                "Increment write so the valid prefix includes exactly the newly retained value.",
+                "At the next read boundary, confirm that encounter order is unchanged and both processed and retained counts increased by one."
+              ]
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    },
+    {
+      "id": "alg-arrays-stable-compaction-021",
+      "prompt": "Arrange the finalization steps after the read index has processed the entire input.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "stop_at_n",
+            "text": "Stop when read reaches n."
+          },
+          {
+            "id": "identify_valid_prefix",
+            "text": "Treat [0, write) as the complete compacted result."
+          },
+          {
+            "id": "ignore_suffix",
+            "text": "Use the returned boundary to keep positions at or after write outside the logical output contract."
+          },
+          {
+            "id": "return_write",
+            "text": "Return write as the exclusive boundary and logical result length."
+          }
+        ],
+        "canonicalOrder": [
+          "stop_at_n",
+          "identify_valid_prefix",
+          "return_write",
+          "ignore_suffix"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Completion freezes the established output prefix and reports its exclusive boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "How to reason it out"
+            },
+            {
+              "type": "paragraph",
+              "text": "When read = n, the processed prefix is the entire input, so the invariant makes [0, write) the complete retained sequence. Returning write exposes both its length and exclusive boundary. The caller can then ignore [write, n), whose stale values are outside the result and need not be cleared unless another contract requires it."
+            },
+            {
+              "type": "callout",
+              "kind": "decision_rule",
+              "title": "Decision rule",
+              "text": "Completion freezes the established output prefix and reports its exclusive boundary."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Check the sequence"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Stop at read = n, which proves that no source position remains unprocessed.",
+                "Apply the invariant to conclude that [0, write) is now the complete compacted result.",
+                "Return write as the result length and exclusive boundary.",
+                "Use that returned boundary to exclude [write, n) from the logical result without requiring suffix cleanup."
+              ]
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_boundary",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "stable_compaction",
+        "problemArchetypeId": "remove_or_compact_in_place"
+      }
+    }
+  ],
+  "modeStructures": {
+    "recognitionSets": [],
+    "contrastSets": [],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

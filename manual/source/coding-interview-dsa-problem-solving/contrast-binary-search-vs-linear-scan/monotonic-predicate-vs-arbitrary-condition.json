@@ -1,0 +1,1478 @@
+{
+  "schemaVersion": "coding-interview-manual-source-v2",
+  "batchId": "contrast-binary-search-vs-linear-scan-monotonic-predicate-vs-arbitrary-condition-v1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "familyId": "coding_interview",
+  "contentVersion": "coding-interview-dsa-problem-solving-0001",
+  "taxonomyVersion": "coding-interview-taxonomy-v2",
+  "declaredModes": [
+    "coding-interview-learn-approach",
+    "coding-interview-guided-practice",
+    "coding-interview-recognize-patterns",
+    "coding-interview-contrast-practice",
+    "coding-interview-weak-area-review",
+    "coding-interview-independent-practice",
+    "coding-interview-interview-simulation"
+  ],
+  "taxonomy": {
+    "roadmapNodeId": "contrast_binary_search_vs_linear_scan",
+    "primaryMentalUnitId": "monotonic_predicate_vs_arbitrary_condition",
+    "patternFamilyId": "binary_search"
+  },
+  "batchKind": "contrast",
+  "contrastMetadata": {
+    "contrastedMentalUnitIds": [
+      "recognize_binary_search_signal",
+      "boundaries_and_loop_invariants",
+      "reason_about_indexed_scans"
+    ],
+    "falseHeuristicId": "using_left_right_mid_proves_logarithmic_complexity",
+    "transferBoundary": "Binary-search a predicate only when its truth pattern has one directional transition over the ordered domain; scan arbitrary conditions that can change back and forth."
+  },
+  "authoringProvenance": {
+    "author": "lukasz-kurczab",
+    "createdAt": "2026-07-18T00:00:00.000Z",
+    "contentBatchId": "contrast-binary-search-vs-linear-scan-monotonic-predicate-vs-arbitrary-condition-v1",
+    "authoringMethod": "independently_authored"
+  },
+  "items": [
+    {
+      "id": "alg-contrast-binary-scan-monotonic-001",
+      "prompt": "Which truth pattern supports a first-true binary search over increasing candidates?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "false_true_suffix",
+            "text": "false, false, ..., false, true, true, ..., true."
+          },
+          {
+            "id": "alternating",
+            "text": "false, true, false, true."
+          },
+          {
+            "id": "single_true",
+            "text": "false, false, true, false, false."
+          },
+          {
+            "id": "arbitrary",
+            "text": "Any pattern, provided mid is checked."
+          }
+        ],
+        "acceptedOptionIds": [
+          "false_true_suffix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A first-true search needs one persistent false-to-true transition.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "For a false-prefix/true-suffix pattern, `P(mid) = false` proves every candidate through mid is false, so the answer must be right. `P(mid) = true` makes mid a candidate but leaves open an earlier true value, so the search retains mid and moves left."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Alternation gives multiple transitions, and a single isolated true value becomes false again; in either pattern, one midpoint cannot reject a whole side. Merely checking mid does not create the missing implication. The all-false and all-true patterns are legal edge cases because each is a false-prefix/true-suffix pattern with the transition outside or at the start of the domain."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Write the expected truth sequence before deriving a boundary-search update rule."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "alternating": "Alternating truth values create multiple transitions, so neither midpoint result classifies an entire side.",
+          "single_true": "Truth does not remain true after the transition.",
+          "arbitrary": "Checking mid observes one candidate but supplies no implication about the unchecked candidates."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-002",
+      "prompt": "The condition P(i) is true when the sorted value at index i is at least target. Why is P monotonic?",
+      "difficulty": "intro",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sorted_suffix",
+            "text": "Once one value is at least target, every later sorted value is also at least target."
+          },
+          {
+            "id": "index_increases",
+            "text": "Indices increase numerically."
+          },
+          {
+            "id": "mid_exists",
+            "text": "A midpoint can be computed."
+          },
+          {
+            "id": "target_fixed",
+            "text": "The target is fixed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sorted_suffix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Monotonicity is an implication across the ordered domain.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "If `i <= j` in an ascending array, then `a[i] <= a[j]`. Therefore `a[i] >= target` implies `a[j] >= target`: once P becomes true, it remains true at every later index."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The implication, not the existence of indices or a midpoint, licenses discarding a side. A fixed target is necessary to state this P but is not sufficient for arbitrary data order: `[10,1]` against target 5 would yield true then false. Here ascending value order supplies the missing relation."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Prove how candidate order propagates truth; do not infer monotonicity from loop mechanics."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "index_increases": "Index order alone does not constrain the condition.",
+          "mid_exists": "Every finite index range has a midpoint, including nonmonotonic conditions.",
+          "target_fixed": "A fixed target does not make arbitrary input order monotonic."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-003",
+      "prompt": "The condition P(i) is true when the sorted value at index i is even. Which method is generally required to find the first even value?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scan",
+            "text": "A scan, because parity can alternate throughout sorted numeric values."
+          },
+          {
+            "id": "binary",
+            "text": "Binary search, because the values are sorted."
+          },
+          {
+            "id": "first_true",
+            "text": "A first-true template without a monotonicity proof."
+          },
+          {
+            "id": "lower_bound_two",
+            "text": "Lower bound for the value 2."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An arbitrary property of sorted values need not be monotonic in the sort key.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "On the sorted array `[1,2,3,4,5,6]`, parity is false, true, false, true, false, true. If an odd midpoint is inspected, even values can still exist on both sides; if an even midpoint is inspected, an earlier even may still exist on the left while later odds remain on the right."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Scan from the beginning to preserve the “first” contract. Sortedness by magnitude, a first-true template, and `lower_bound(2)` all fail because parity is not a threshold on value; the first even need not equal 2. A maintained ordered index of even positions would add the structure the raw array lacks."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Test the predicate’s truth sequence, not whether its input values happen to be sorted."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "binary": "Sorted numeric magnitude does not order parity truth.",
+          "first_true": "The predicate can revert from true to false.",
+          "lower_bound_two": "The first even value need not be 2 and later odd values remain possible."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-004",
+      "prompt": "A candidate capacity x is feasible if all jobs finish before a deadline, and increasing capacity cannot make the schedule worse. Which strategy contrast is correct?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "binary_first_feasible",
+            "text": "Binary-search the first feasible capacity; a scan is correct but may inspect many more candidates."
+          },
+          {
+            "id": "scan_only",
+            "text": "Only a scan is correct because feasibility is computed rather than stored."
+          },
+          {
+            "id": "arbitrary_binary",
+            "text": "Binary search is valid for every computed boolean predicate."
+          },
+          {
+            "id": "exact_search",
+            "text": "Search for a capacity value already present in the job list."
+          }
+        ],
+        "acceptedOptionIds": [
+          "binary_first_feasible"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A monotonic feasibility predicate creates an ordered answer boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Let `P(x)` mean that capacity x finishes every job by the deadline. The stated guarantee gives `P(x) => P(y)` for every `y >= x`, so infeasible capacities form a prefix and feasible capacities form a suffix."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "A first-feasible boundary search can evaluate computed capacities directly; they need not appear in the job list. A scan is still correct but may test every capacity. Computation does not force scanning, while returning any computed boolean does not guarantee binary search—the capacity implication is the decisive fact."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Binary search can operate on an ordered answer space when feasibility has a proven threshold."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "scan_only": "A computed predicate can still be monotonic and support a legal boundary search over its input domain.",
+          "arbitrary_binary": "A computed boolean may alternate; binary search additionally needs the stated capacity-to-feasibility implication.",
+          "exact_search": "The answer domain is capacity values, not input membership."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-005",
+      "prompt": "A condition over an ordered integer domain is true for x < 10, false for 10 <= x < 20, and true again for x >= 20. Is the ordinary false-to-true boundary-search template valid for this predicate?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_multiple_regions",
+            "text": "No. The true set has multiple separated regions, so one midpoint outcome cannot eliminate a whole side consistently."
+          },
+          {
+            "id": "yes_first_true",
+            "text": "Yes. A first true exists at the beginning."
+          },
+          {
+            "id": "yes_last_region",
+            "text": "Yes. Ignore the earlier true region and search the later one."
+          },
+          {
+            "id": "yes_upper_mid",
+            "text": "Yes, with an upper-biased midpoint."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_multiple_regions"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Ordinary boundary search represents one transition, not multiple valid intervals.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "The truth sequence has a true-to-false transition at 10 and a false-to-true transition at 20. Thus neither `P(mid) = true` nor `P(mid) = false` has one consistent meaning for which side can be discarded."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The existence or location of a first true candidate does not validate the first-true template; its updates require a false prefix followed by one persistent true suffix. Ignoring the earlier interval changes the query, and midpoint bias only prevents stalled bounds. Scan, decompose known intervals, or reformulate the query."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "A midpoint convention controls progress; only predicate structure controls correctness."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "yes_first_true": "The template assumes a false prefix followed by a true suffix, which is not present.",
+          "yes_last_region": "Ignoring the earlier true interval changes the predicate region being searched and no longer implements the stated template.",
+          "yes_upper_mid": "An upper-biased midpoint can guarantee loop progress but cannot remove the predicate’s two transitions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-006",
+      "prompt": "Which statement is sufficient to prove a false-to-true predicate P is monotonic?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "true_implies_later_true",
+            "text": "For all a <= b, P(a) true implies P(b) true."
+          },
+          {
+            "id": "one_true_example",
+            "text": "P is true at one large candidate."
+          },
+          {
+            "id": "one_false_example",
+            "text": "P is false at one small candidate."
+          },
+          {
+            "id": "sorted_input",
+            "text": "The data used by P is sorted."
+          }
+        ],
+        "acceptedOptionIds": [
+          "true_implies_later_true"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Monotonicity is a universal implication over candidate order.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "For every ordered pair `a <= b`, the implication `P(a) => P(b)` rules out a true value followed by a false one. It therefore permits only a false prefix and a true suffix. Equivalently, `!P(b) => !P(a)` says a false b makes every earlier candidate false."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "One true example or one false example establishes only one point and cannot rule out later reversals. Sorted input constrains the values used by P only when P follows that ordering; for example, “is even” remains nonmonotonic. The proof must quantify over the whole candidate domain."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Examples can refute monotonicity, but only a domain-wide implication proves it."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "one_true_example": "One true observation does not rule out a later false candidate and therefore cannot prove persistence.",
+          "one_false_example": "A single false does not prove a false prefix.",
+          "sorted_input": "Sorted inputs help only when P follows that sort relation; unrelated properties can still alternate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-007",
+      "prompt": "A predicate is monotonic, but it changes from true to false as candidates increase. Which boundary search matches a maximum feasible answer?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "last_true",
+            "text": "Search for the last true candidate."
+          },
+          {
+            "id": "first_true",
+            "text": "Search for the first true candidate."
+          },
+          {
+            "id": "first_false_as_answer",
+            "text": "Return the first false candidate."
+          },
+          {
+            "id": "scan_required",
+            "text": "Monotonic true-to-false predicates cannot be binary-searched."
+          }
+        ],
+        "acceptedOptionIds": [
+          "last_true"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The transition direction and optimization objective determine the retained side.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "For a true-prefix/false-suffix predicate, a true midpoint is feasible and becomes the current answer, but a larger feasible candidate may exist, so search right. A false midpoint proves every later candidate false, so search left."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Return the last retained true candidate. First true usually names the domain’s smallest feasible value, and first false is the boundary immediately after the maximum feasible answer rather than the feasible answer itself. If all candidates are false, report no feasible answer; if all are true, the maximum is the domain’s upper endpoint."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Derive first/last and true/false together from the requested optimum."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "first_true": "That usually returns the smallest, not the maximum feasible value.",
+          "first_false_as_answer": "The first false candidate lies outside the feasible prefix and therefore cannot be returned as a feasible answer.",
+          "scan_required": "A true-prefix/false-suffix pattern supports last-true or first-false boundary search after the updates are reversed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-008",
+      "prompt": "A predicate is deterministic but nonmonotonic. Does determinism alone justify binary search?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no",
+            "text": "No. Stable repeated answers are necessary but not sufficient; one directional transition is still required."
+          },
+          {
+            "id": "yes",
+            "text": "Yes. Deterministic booleans always form a searchable boundary."
+          },
+          {
+            "id": "yes_sorted_domain",
+            "text": "Yes whenever candidate values are ordered."
+          },
+          {
+            "id": "yes_constant_cost",
+            "text": "Yes whenever P(x) is O(1)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Predicate stability and predicate monotonicity are distinct requirements.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Determinism means repeated evaluation of the same x returns the same result. It does not relate different candidates: a fixed sequence such as false, true, false is fully deterministic and still has two transitions."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Candidate order supplies positions, not a truth implication, and O(1) evaluation changes only the cost per check. Binary search needs both stable evaluations and a one-transition proof; without monotonicity, scan every necessary candidate even though each result is repeatable."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Separate “same input, same output” from “ordered inputs, one truth transition.”"
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "yes": "They can alternate in a fixed repeatable pattern.",
+          "yes_sorted_domain": "The truth relation must align with that order.",
+          "yes_constant_cost": "Cheap evaluation does not create a discard implication."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-009",
+      "prompt": "A sorted array is queried for the first value whose decimal representation contains digit 7. Which diagnosis is correct?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "arbitrary_scan",
+            "text": "The condition is arbitrary in numeric order, so scan unless a separate index or interval decomposition is provided."
+          },
+          {
+            "id": "sorted_binary",
+            "text": "Binary-search because the numeric values are sorted."
+          },
+          {
+            "id": "lower_bound_7",
+            "text": "Use lower_bound(7) and return that index."
+          },
+          {
+            "id": "mid_digit",
+            "text": "Check the midpoint digit pattern and discard the opposite pattern."
+          }
+        ],
+        "acceptedOptionIds": [
+          "arbitrary_scan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The query property must be monotonic in the sort order, not merely definable from each value.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "In increasing order, `6,7,8,17,18,27,28` yields false, true, false, true, false, true, false. Digit containment repeatedly appears and disappears, so a midpoint result does not make either side uniformly irrelevant."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "`lower_bound(7)` finds the first value at least 7, not the first representation containing 7, and checking one midpoint pattern supplies no side-wide implication. Scan the raw array for the first match, or use a maintained index of matching values or a proven interval decomposition."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "A computable property is not automatically an order-aligned boundary."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sorted_binary": "Digit containment can appear and disappear repeatedly even while the numeric values increase.",
+          "lower_bound_7": "Values such as 17, 70, and 107 do not form one suffix beginning at 7.",
+          "mid_digit": "A matching or nonmatching midpoint does not determine digit containment anywhere else on either side."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-010",
+      "prompt": "A first-true predicate is false for all candidates. Which result distinguishes a boundary search from an exact-match search?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "upper_sentinel",
+            "text": "Return the declared upper sentinel or not-found boundary, such as n for [0, n)."
+          },
+          {
+            "id": "last_mid",
+            "text": "Return the last midpoint checked."
+          },
+          {
+            "id": "zero",
+            "text": "Return the first candidate even though it is false."
+          },
+          {
+            "id": "scan_first",
+            "text": "Return the first candidate a scan would visit."
+          }
+        ],
+        "acceptedOptionIds": [
+          "upper_sentinel"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Monotonic boundary search remains defined even when the transition lies just outside the concrete domain.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "For the half-open domain `[0,n)`, define the conceptual boundary range as `[0,n]`. If P is false at every concrete index, the first-true boundary is n: a sentinel meaning that no concrete candidate satisfies P."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Returning the last midpoint, zero, or the first visited candidate would return a known-false concrete index and depends on traversal history. A boundary search returns the declared boundary even when it lies just outside the concrete domain; callers then interpret n as not found."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Specify all-false and all-true sentinels before writing the loop."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "last_mid": "It is false and has no boundary meaning.",
+          "zero": "Index zero is known false in the all-false case, so returning it invents a match.",
+          "scan_first": "Visit order does not define the first true boundary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-011",
+      "prompt": "Which predicates are monotonic in the stated increasing candidate direction? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "at_least_target",
+            "text": "In ascending data, valueAt(i) >= target."
+          },
+          {
+            "id": "capacity_feasible",
+            "text": "Capacity x is sufficient when larger capacity cannot hurt."
+          },
+          {
+            "id": "minimum_distance_valid",
+            "text": "A demanded minimum distance d is achievable when larger d can only make placement harder."
+          },
+          {
+            "id": "is_prime",
+            "text": "Candidate x is prime."
+          }
+        ],
+        "acceptedOptionIds": [
+          "at_least_target",
+          "capacity_feasible",
+          "minimum_distance_valid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Monotonicity can be false-to-true or true-to-false.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "`valueAt(i) >= target` is false-to-true because later sorted values cannot decrease. Sufficient capacity is false-to-true because adding capacity cannot break feasibility. Achievable minimum distance is true-to-false because a larger demanded separation cannot restore a placement already impossible at a smaller separation."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "Each selected predicate has a single directional implication even though the orientation differs. Primality does not: 2 and 3 are prime, 4 is not, and 5 is prime again. It therefore cannot use an ordinary one-boundary search in numeric candidate order."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Name both the truth orientation and the requested boundary before choosing updates."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "is_prime": "Prime and composite candidates recur as x increases, so primality has multiple truth transitions."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "at_least_target": "Once true, later values remain at least target.",
+          "capacity_feasible": "Feasibility is false-to-true.",
+          "minimum_distance_valid": "Validity is true-to-false."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-012",
+      "prompt": "Which conditions are arbitrary rather than single-boundary predicates in ordinary numeric order? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "even",
+            "text": "x is even."
+          },
+          {
+            "id": "contains_digit",
+            "text": "The decimal representation of x contains digit 7."
+          },
+          {
+            "id": "equals_target",
+            "text": "x equals one fixed target across all integers."
+          },
+          {
+            "id": "at_least",
+            "text": "x is at least target."
+          }
+        ],
+        "acceptedOptionIds": [
+          "even",
+          "contains_digit",
+          "equals_target"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An exact equality spike or recurring property is not a persistent prefix or suffix.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "Evenness alternates. Decimal digit containment appears in separated numeric intervals. Equality with one fixed target is false below the target, true at the target, then false above it. None is a persistent prefix or suffix over all integers."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "`x >= target` is the control: once true, it remains true. Exact target search on a sorted array is still binary-searchable, but its proof uses the three-way comparison to reject values below or above the target; it does not pretend that the equality boolean itself is monotonic."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Do not confuse exact-search comparison logic with first-true monotonic-predicate logic."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "at_least": "Once x reaches target, every larger x also satisfies the condition, giving one false-to-true boundary."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "even": "Truth alternates.",
+          "contains_digit": "Truth can appear and disappear repeatedly.",
+          "equals_target": "Truth is false, true once, then false."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-013",
+      "prompt": "Which facts should be checked before replacing a predicate scan with binary search? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "ordered_domain",
+            "text": "Candidates have a declared total order and bounded search range."
+          },
+          {
+            "id": "stable_predicate",
+            "text": "The predicate returns a stable result for the same candidate during the search."
+          },
+          {
+            "id": "one_transition_proof",
+            "text": "A proof establishes one directional truth transition."
+          },
+          {
+            "id": "boolean_return",
+            "text": "The helper returns a boolean."
+          }
+        ],
+        "acceptedOptionIds": [
+          "ordered_domain",
+          "stable_predicate",
+          "one_transition_proof"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A boolean interface does not imply a binary-searchable boolean structure.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "The ordered bounded domain defines what “left,” “right,” and termination mean. Predicate stability ensures a discarded region cannot later change classification. The one-transition proof turns a midpoint result into a side-wide implication."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "All three selected facts are required by the workflow. A boolean return type supplies only two possible values; it does not prevent false, true, false. A scan can check such a pattern directly, but binary search would discard unchecked candidates without proof."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "An API type describes outputs; the correctness proof must describe their order across the domain."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "boolean_return": "Boolean-valued predicates can alternate repeatedly, so the return type alone supplies no legal half discard."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "ordered_domain": "The transition needs a domain.",
+          "stable_predicate": "Earlier elimination must remain valid.",
+          "one_transition_proof": "This is the half-discard basis."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-014",
+      "prompt": "Which edge cases belong to a valid first-true monotonic contract? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "all_false",
+            "text": "The predicate is false for the entire domain."
+          },
+          {
+            "id": "all_true",
+            "text": "The predicate is true for the entire domain."
+          },
+          {
+            "id": "transition_first_last",
+            "text": "The transition occurs at the first or last concrete candidate."
+          },
+          {
+            "id": "two_transitions",
+            "text": "The predicate changes false-to-true and later true-to-false."
+          }
+        ],
+        "acceptedOptionIds": [
+          "all_false",
+          "all_true",
+          "transition_first_last"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A monotonic predicate may have no internal transition or one at an endpoint.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "All false is a boundary at the upper sentinel; all true is a boundary at the first candidate. A transition at either endpoint is the ordinary one-transition shape with an empty false prefix or a one-element true suffix."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "A correct loop must preserve and return each of these boundaries without reading outside the domain. A later true-to-false reversal is not another endpoint case: it violates persistence after the first true and requires a different problem decomposition."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Model empty prefixes and suffixes explicitly so edge cases follow the same invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "two_transitions": "Returning to false after the first true breaks the persistent true suffix required by first-true search."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "all_false": "The boundary may be the upper sentinel.",
+          "all_true": "The first candidate is the boundary.",
+          "transition_first_last": "Endpoint retention must work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-015",
+      "prompt": "Which changes can convert an arbitrary-condition scan into a legal binary-search workflow? Select all that apply.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "precompute_sorted_matches",
+            "text": "Build and maintain a sorted index of candidates satisfying the condition, then search that index for an aligned query."
+          },
+          {
+            "id": "reformulate_threshold",
+            "text": "Reformulate the objective as a monotonic threshold predicate and prove it."
+          },
+          {
+            "id": "partition_intervals",
+            "text": "Decompose the domain into known monotonic intervals and search the relevant interval under an explicit rule."
+          },
+          {
+            "id": "rename_condition",
+            "text": "Rename the predicate to isValid."
+          }
+        ],
+        "acceptedOptionIds": [
+          "precompute_sorted_matches",
+          "reformulate_threshold",
+          "partition_intervals"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The strategy boundary moves when new structure is created or proved.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "A sorted match index replaces the arbitrary raw predicate with an aligned search over stored matches. A threshold reformulation can expose a one-transition feasibility boundary. Known monotonic intervals can be searched separately when an explicit rule identifies which interval can contain the requested answer."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "These changes create or prove new searchable structure and may introduce build, update, and storage costs that must be justified by the workload. Renaming the original predicate changes neither its truth sequence nor the information available for discarding a side."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "A faster query requires a real invariant or index, not binary-search-shaped syntax."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "rename_condition": "The name `isValid` adds no order relation and cannot remove repeated truth transitions."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "precompute_sorted_matches": "The representation now has ordered searchable structure.",
+          "reformulate_threshold": "A one-boundary domain may emerge.",
+          "partition_intervals": "The added structure limits transitions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-016",
+      "prompt": "Arrange the audit for deciding whether a predicate scan can become binary search.",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "list_candidates",
+            "text": "Define the ordered candidate domain."
+          },
+          {
+            "id": "sample_counterexamples",
+            "text": "Look for a < b < c that creates more than one truth transition."
+          },
+          {
+            "id": "prove_implication",
+            "text": "If no counterexample exists, prove the directional implication for all candidates."
+          },
+          {
+            "id": "choose_method",
+            "text": "Use boundary search when proven monotonic; otherwise retain scanning or add structure."
+          }
+        ],
+        "canonicalOrder": [
+          "list_candidates",
+          "sample_counterexamples",
+          "prove_implication",
+          "choose_method"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Counterexample search is a diagnostic aid, while correctness ultimately needs a universal proof.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "The audit has four dependent steps:"
+            },
+            {
+              "type": "ordered_list",
+              "items": [
+                "Declare the bounded candidate domain and its increasing order.",
+                "Try to refute monotonicity with ordered candidates whose truth values change direction more than once.",
+                "If no counterexample settles the question, prove the required implication for every ordered pair in the domain.",
+                "Only then select first-true or last-true boundary search; otherwise keep the scan or add explicit searchable structure."
+              ]
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "One counterexample can reject a universal claim; passing samples cannot replace the universal proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-017",
+      "prompt": "A monotonic predicate over W candidates costs O(1) per evaluation. An arbitrary-condition scan over the same W candidates also costs O(1) per evaluation. Select worst-case time for each.",
+      "constraints": [
+        "The monotonic search halves the candidate range.",
+        "The arbitrary condition may require checking every candidate."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "monotonic_binary_time",
+          "arbitrary_scan_time"
+        ],
+        "availableValuesByDimension": {
+          "monotonic_binary_time": [
+            "O(1)",
+            "O(log W)",
+            "O(W)",
+            "O(W log W)"
+          ],
+          "arbitrary_scan_time": [
+            "O(1)",
+            "O(log W)",
+            "O(W)",
+            "O(W log W)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "monotonic_binary_time": [
+            "O(log W)"
+          ],
+          "arbitrary_scan_time": [
+            "O(W)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "monotonic_binary_time": {
+            "one_transition": "O(log W)"
+          },
+          "arbitrary_scan_time": {
+            "all_candidates": "O(W)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The asymptotic contrast follows from predicate structure.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "A monotonic boundary search halves the remaining candidate count after every O(1) evaluation. After k evaluations at most `W / 2^k` candidates remain, so choosing k = ceil(log2 W) reduces the range to at most one candidate: O(log W)."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "For an arbitrary condition, one false or true evaluation does not classify any other candidate. In the worst case the only match is last or no match exists, so all W O(1) evaluations are required: O(W). O(1) ignores the number of evaluations, while O(W log W) incorrectly multiplies rather than contrasts the two strategies."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "Separate evaluation cost from evaluation count, then multiply them."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-contrast-binary-scan-monotonic-018",
+      "prompt": "A monotonic predicate evaluation costs O(n), and its candidate range has W values. A direct scan over W candidates evaluates the same O(n) condition at each candidate. Select worst-case time for both.",
+      "constraints": [
+        "Binary search performs O(log W) predicate calls.",
+        "The scan may perform W predicate calls."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "binary_time",
+          "scan_time"
+        ],
+        "availableValuesByDimension": {
+          "binary_time": [
+            "O(log W)",
+            "O(n log W)",
+            "O(nW)",
+            "O(W)"
+          ],
+          "scan_time": [
+            "O(n)",
+            "O(W)",
+            "O(n log W)",
+            "O(nW)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "binary_time": [
+            "O(n log W)"
+          ],
+          "scan_time": [
+            "O(nW)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "binary_time": {
+            "predicate_times_log_range": "O(n log W)"
+          },
+          "scan_time": {
+            "predicate_times_candidates": "O(nW)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Binary search reduces the number of expensive evaluations only because the predicate is monotonic.",
+        "details": {
+          "blocks": [
+            {
+              "type": "heading",
+              "level": 2,
+              "text": "Why this choice is correct"
+            },
+            {
+              "type": "paragraph",
+              "text": "The monotonic search performs O(log W) predicate calls and each call costs O(n), so its total is `O(n) × O(log W) = O(n log W)`. Halving candidates does not make an individual evaluation cheaper."
+            },
+            {
+              "type": "heading",
+              "level": 3,
+              "text": "Contrast the strategies"
+            },
+            {
+              "type": "paragraph",
+              "text": "The scan may evaluate all W candidates, each in O(n), giving `O(W) × O(n) = O(nW)`. O(log W) and O(W) omit predicate cost; O(n) assumes only one evaluation. The logarithmic reduction is legal only because one monotonic result classifies an entire discarded region."
+            },
+            {
+              "type": "callout",
+              "kind": "key_takeaway",
+              "title": "Key takeaway",
+              "text": "An expensive predicate changes the multiplier, not the boundary-search proof."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_monotonic_predicate_from_arbitrary_condition",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    }
+  ],
+  "modeStructures": {
+    "recognitionSets": [],
+    "contrastSets": [
+      {
+        "setId": "contrast-binary-vs-scan-monotonic-predicate-vs-arbitrary-condition-v1",
+        "setVersion": "v1",
+        "primaryMentalUnitId": "monotonic_predicate_vs_arbitrary_condition",
+        "contrastedMentalUnitIds": [
+          "recognize_binary_search_signal",
+          "boundaries_and_loop_invariants",
+          "reason_about_indexed_scans"
+        ],
+        "falseHeuristicId": "using_left_right_mid_proves_logarithmic_complexity",
+        "transferBoundary": "Binary-search a predicate only when its truth pattern has one directional transition over the ordered domain; scan arbitrary conditions that can change back and forth.",
+        "itemIds": [
+          "alg-contrast-binary-scan-monotonic-001",
+          "alg-contrast-binary-scan-monotonic-002",
+          "alg-contrast-binary-scan-monotonic-003",
+          "alg-contrast-binary-scan-monotonic-004",
+          "alg-contrast-binary-scan-monotonic-005",
+          "alg-contrast-binary-scan-monotonic-006",
+          "alg-contrast-binary-scan-monotonic-007",
+          "alg-contrast-binary-scan-monotonic-008",
+          "alg-contrast-binary-scan-monotonic-009",
+          "alg-contrast-binary-scan-monotonic-010",
+          "alg-contrast-binary-scan-monotonic-011",
+          "alg-contrast-binary-scan-monotonic-012",
+          "alg-contrast-binary-scan-monotonic-013",
+          "alg-contrast-binary-scan-monotonic-014",
+          "alg-contrast-binary-scan-monotonic-015",
+          "alg-contrast-binary-scan-monotonic-016",
+          "alg-contrast-binary-scan-monotonic-017",
+          "alg-contrast-binary-scan-monotonic-018"
+        ]
+      }
+    ],
+    "interleavedScopes": [],
+    "compatibilitySets": [],
+    "simulationPools": [],
+    "simulationProfiles": []
+  }
+}

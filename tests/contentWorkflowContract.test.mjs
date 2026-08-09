@@ -15,4 +15,6 @@ test("content workflows retain full technical-input history and clean locked ins
   assert.ok(realReleaseWorkflow.indexOf("Certification validate hard gate") < realReleaseWorkflow.indexOf("Build isolated release candidate"));
   assert.doesNotMatch(realReleaseWorkflow, /build:real:(coding_interview|certification)/);
   assert.match(realReleaseWorkflow, /node scripts\/publishing\/ci-release-gate\.mjs/);
+  assert.match(architectureWorkflow, /validate:bundled-free-node -- --input artifacts\/bundled-free-nodes\/coding-interview-dsa-problem-solving\/coding-interview-dsa-problem-solving-free-node-0001\/package\.json/);
+  assert.match(architectureWorkflow, /validate:bundled-free-node -- --input artifacts\/bundled-free-nodes\/google-cloud-associate-cloud-engineer\/google-cloud-associate-cloud-engineer-free-node-0001\/package\.json/);
 });

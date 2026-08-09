@@ -158,28 +158,69 @@ test("technical evidence survives a clean multi-commit release cycle and invalid
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("publish rebuild-proves artifacts across evidence, artifact, and publisher-only commits", async () => {
+test("product Free-package records do not invalidate full-track technical evidence", async () => {
+  const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+  try {
+    await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+    await commitFixtureInputs(path, "technical inputs"); const emitted = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
+    await writeFile(join(path, "config/free-node-inventory-pins.json"), "{}\n");
+    await mkdir(join(path, "config/free-node-experience-profiles"), { recursive: true }); await writeFile(join(path, "config/free-node-experience-profiles/coding-interview-dsa-problem-solving.json"), "{}\n");
+    await mkdir(join(path, "artifacts/free-node-inventories/release"), { recursive: true }); await writeFile(join(path, "artifacts/free-node-inventories/release/coding-interview-dsa-problem-solving.json"), "{}\n");
+    await mkdir(join(path, "artifacts/bundled-free-nodes/coding-interview-dsa-problem-solving/package"), { recursive: true }); await writeFile(join(path, "artifacts/bundled-free-nodes/coding-interview-dsa-problem-solving/package/package.json"), "{}\n");
+    const productCommit = await commitFixtureInputs(path, "product package records"); const reused = await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" });
+    assert.equal(reused.technicalInputCommit, emitted.technicalInputCommit); assert.equal(reused.path, emitted.path);
+    await assert.doesNotReject(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" }));
+    const built = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: join(path, "out") }); assert.equal(built.artifact.sourceRepositoryCommit, productCommit);
+  } finally { await rm(path, { recursive: true }); }
+});
+
+test("every consumed full-track dependency invalidates prior technical evidence", async () => {
+  const paths = [
+    "manual/source/coding-interview-dsa-problem-solving/fixture.json",
+    "manual/assets/coding-interview-dsa-problem-solving/feedback-assets.json",
+    "config/tracks/coding-interview-dsa-problem-solving.json",
+    "config/families/coding_interview.json",
+    "config/taxonomy/coding-interview-dsa-problem-solving.json",
+    "schemas/publishing/coding-interview-manual-source.schema.json",
+    "schemas/publishing/coding-interview-feedback-assets.schema.json",
+    "schemas/publishing/technical-validation-evidence.schema.json",
+    "scripts/publishing/pipeline.mjs",
+    "package.json",
+    "package-lock.json",
+  ];
+  for (const relativePath of paths) {
+    const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
+    try {
+      await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
+      await commitFixtureInputs(path, "technical inputs"); await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
+      const target = join(path, relativePath); await mkdir(dirname(target), { recursive: true }); let prior = ""; try { prior = await readFile(target, "utf8"); } catch (error) { if (error?.code !== "ENOENT") throw error; }
+      await writeFile(target, `${prior}${prior ? "\n" : "{}\n"}`); await commitFixtureInputs(path, `changed ${relativePath}`);
+      await assert.rejects(() => validateTrack({ root: path, trackId: "coding-interview-dsa-problem-solving" }), fails("MISSING_TECHNICAL_EVIDENCE"), relativePath);
+    } finally { await rm(path, { recursive: true }); }
+  }
+});
+
+test("publisher dependency changes invalidate evidence before release publication", async () => {
   const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
     await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
     await commitFixtureInputs(path, "technical inputs");
     await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" });
-    const evidenceCommit = await commitFixtureInputs(path, "technical evidence");
+    await commitFixtureInputs(path, "technical evidence");
     const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out });
     await commitFixtureInputs(path, "immutable artifact");
     const publisher = await commitPublisherOnlyChange(path);
-    const release = await publisher.publishRelease({ root: path, releaseId: "fixture-release", artifactPaths: [artifact.path], outputRoot: out });
-    assert.equal(release.release.manifest.sourceRepositoryCommit, evidenceCommit);
+    await assert.rejects(() => publisher.publishRelease({ root: path, releaseId: "fixture-release", artifactPaths: [artifact.path], outputRoot: out }), (error) => error?.code === "SOURCE_COMMIT_MISMATCH");
   } finally { await rm(path, { recursive: true }); }
 });
 
-test("publish rejects a valid-checksum tampered artifact after a publisher-only commit", async () => {
+test("publish rejects a valid-checksum tampered artifact after an unrelated commit", async () => {
   const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try {
     await fixtureGit(path, "init"); await fixtureGit(path, "config", "user.email", "fixture@example.test"); await fixtureGit(path, "config", "user.name", "Fixture Test");
     await commitFixtureInputs(path, "technical inputs"); await emitTechnicalEvidence({ root: path, trackId: "coding-interview-dsa-problem-solving" }); await commitFixtureInputs(path, "technical evidence");
     const out = join(path, "artifacts"); const artifact = await buildTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", outputRoot: out }); await commitFixtureInputs(path, "immutable artifact");
-    const tampered = JSON.parse(await readFile(artifact.path, "utf8")); tampered.artifactBytes = `${tampered.artifactBytes} `; tampered.checksumSha256 = hash(tampered.artifactBytes); await writeFile(artifact.path, JSON.stringify(tampered)); await commitPublisherOnlyChange(path, "publisher-only change with tampered artifact");
+    const tampered = JSON.parse(await readFile(artifact.path, "utf8")); tampered.artifactBytes = `${tampered.artifactBytes} `; tampered.checksumSha256 = hash(tampered.artifactBytes); await writeFile(artifact.path, JSON.stringify(tampered)); await writeFile(join(path, "release-note.txt"), "unrelated\n"); await commitFixtureInputs(path, "unrelated change with tampered artifact");
     const rebuildDirectoriesBefore = (await readdir(tmpdir())).filter((entry) => entry.startsWith("patternly-release-rebuild-")).sort();
     await assert.rejects(() => publishRelease({ root: path, releaseId: "tampered-publisher-release", artifactPaths: [artifact.path], outputRoot: out }), fails("ARTIFACT_REBUILD_MISMATCH"));
     assert.deepEqual((await readdir(tmpdir())).filter((entry) => entry.startsWith("patternly-release-rebuild-")).sort(), rebuildDirectoriesBefore);

@@ -56,10 +56,30 @@ async function sourceCommit(root, override) {
   if (override) return text(override, "sourceRepositoryCommit");
   try { return (await git(root, ["rev-parse", "HEAD"])).stdout.trim(); } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "A buildable source repository must have a current Git commit."); }
 }
-async function technicalInputCommit(root, override) {
+async function technicalJson(root, path, commit) {
+  if (/^[a-f0-9]{40}$/.test(commit ?? "")) return JSON.parse((await git(root, ["show", `${commit}:${path}`])).stdout);
+  return json(inside(root, path));
+}
+async function technicalInputPaths(root, trackId, commit) {
+  const trackPath = `config/tracks/${trackId}.json`; const track = await technicalJson(root, trackPath, commit);
+  const familyPath = `config/families/${text(track.familyId, "track familyId")}.json`;
+  const taxonomyPath = relative(root, inside(root, text(track.taxonomyPath, "track taxonomyPath")));
+  const manualSchemaPath = `schemas/publishing/${track.familyId === "coding_interview" ? "coding-interview-manual-source.schema.json" : "certification-manual-source.schema.json"}`;
+  const paths = [
+    `manual/source/${trackId}`, trackPath, familyPath, taxonomyPath, manualSchemaPath,
+    "schemas/publishing/technical-validation-evidence.schema.json", "scripts/publishing/pipeline.mjs", "package.json", "package-lock.json"
+  ];
+  if (track.familyId === "coding_interview") {
+    const manifestPath = `manual/assets/${trackId}/feedback-assets.json`; const manifest = await technicalJson(root, manifestPath, commit);
+    paths.push(manifestPath, "schemas/publishing/coding-interview-feedback-assets.schema.json");
+    for (const asset of list(manifest.assets, "Coding Interview feedback assets", "INVALID_ASSET_MANIFEST")) paths.push(relative(root, inside(root, text(asset?.sourcePath, "Coding Interview feedback asset sourcePath", "INVALID_ASSET_MANIFEST"))));
+  }
+  return [...new Set(paths)].sort(compare);
+}
+async function technicalInputCommit(root, trackId, override) {
   if (override) return sourceCommit(root, override);
   try {
-    const { stdout } = await git(root, ["log", "-1", "--format=%H", "--", "manual/source", "manual/assets", "config", "schemas/publishing", "package.json", "package-lock.json"]);
+    const { stdout } = await git(root, ["log", "-1", "--format=%H", "--", ...await technicalInputPaths(root, trackId)]);
     return text(stdout.trim(), "technicalInputCommit", "SOURCE_COMMIT_UNAVAILABLE");
   } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "A buildable source repository must have a technical input commit."); }
 }
@@ -80,12 +100,22 @@ async function assertCleanWorktree(root) {
 async function gitExitZero(root, args) {
   try { await git(root, args); return true; } catch (error) { if (error?.code === 1) return false; throw error; }
 }
-const releaseSourceInputPaths = ["manual", "config", "schemas/publishing", "package.json", "package-lock.json", "evidence"];
 async function assertArtifactSourceIntegrity(root, artifactSourceCommit, publicationCommit, artifacts) {
   try { await git(root, ["cat-file", "-e", `${artifactSourceCommit}^{commit}`]); } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "Artifact source commit is unavailable in the publishing repository."); }
   if (!await gitExitZero(root, ["merge-base", "--is-ancestor", artifactSourceCommit, publicationCommit])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Artifact source commit must be an ancestor of the clean publication commit.");
-  if (!await gitExitZero(root, ["diff", "--quiet", `${artifactSourceCommit}..${publicationCommit}`, "--", ...releaseSourceInputPaths])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", "Canonical source or durable evidence changed after the artifact source commit.");
-  for (const trackId of artifacts.map((artifact) => artifact.trackId)) await validateTrack({ root, trackId });
+  for (const trackId of artifacts.map((artifact) => artifact.trackId)) {
+    const technicalCommit = await technicalInputCommit(root, trackId); const releaseInputs = await technicalInputPaths(root, trackId, technicalCommit);
+    if (!await gitExitZero(root, ["diff", "--quiet", `${artifactSourceCommit}..${publicationCommit}`, "--", ...releaseInputs])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", `Canonical source changed after the artifact source commit: ${trackId}.`);
+    const inputManifestSha256 = await sourceManifestSha256(root, trackId, technicalCommit);
+    const technical = await technicalEvidenceRecords(root, trackId, technicalCommit); const evidencePaths = [relative(root, technical.path)];
+    const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit });
+    if (inspected.family.familyId === "coding_interview") {
+      const coverage = durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) });
+      evidencePaths.push(relative(root, simulationCoveragePath(root, trackId, coverage)));
+    }
+    if (!await gitExitZero(root, ["diff", "--quiet", `${artifactSourceCommit}..${publicationCommit}`, "--", ...evidencePaths])) throw new PublishingFailure("SOURCE_COMMIT_MISMATCH", `Durable evidence changed after the artifact source commit: ${trackId}.`);
+    await validateTrack({ root, trackId });
+  }
 }
 const indexed = (entries) => new Map(entries.map((entry) => [text(entry?.id, "taxonomy id", "INVALID_REFERENCE"), entry]));
 function codingInterviewTaxonomy(taxonomy) {
@@ -647,7 +677,7 @@ const DURABLE_EVIDENCE_GENERATOR_VERSION = "coding-interview-release-evidence-v1
 function durableIdentity(value) { const { generatedAt, evidenceSha256, ...identity } = value; return identity; }
 function durableEvidence(value) { return { ...value, evidenceSha256: canonicalHash(durableIdentity(value)) }; }
 async function sourceManifestSha256(root, trackId, technicalCommit) {
-  const paths = ["manual/source", "manual/assets", "config", "schemas/publishing", "package.json", "package-lock.json"];
+  const paths = await technicalInputPaths(root, trackId, technicalCommit);
   if (/^[a-f0-9]{40}$/.test(technicalCommit ?? "")) {
     try {
       const { stdout } = await git(root, ["ls-tree", "-r", "--name-only", technicalCommit, "--", ...paths]);
@@ -704,7 +734,7 @@ async function technicalEvidenceRecords(root, trackId, technicalCommit) {
 }
 function evidenceIdentity(value) { if (Array.isArray(value)) return value.map(evidenceIdentity); const { validatedAtSourceCommit, evidenceId, ...identity } = value; return identity; }
 export async function emitTechnicalEvidence({ root = ROOT, trackId, sourceRepositoryCommit }) {
-  await assertCleanSource(root, sourceRepositoryCommit, { includeEvidence: false }); const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId, technicalCommit);
+  await assertCleanSource(root, sourceRepositoryCommit, { includeEvidence: false }); const technicalCommit = await technicalInputCommit(root, trackId, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId, technicalCommit);
   const technical = durableEnvelope({ evidenceKind: "technical-validation", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: { technicalEvidence: inspected.source.technicalEvidence } });
   const coverage = inspected.family.familyId === "coding_interview" ? durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) }) : undefined;
   const technicalPath = technicalEvidencePath(root, trackId, technicalCommit, inputManifestSha256); const coveragePath = coverage && simulationCoveragePath(root, trackId, coverage);
@@ -715,7 +745,7 @@ export async function emitTechnicalEvidence({ root = ROOT, trackId, sourceReposi
   return { evidence: (priorTechnical ?? technical).technicalEvidence, path: technicalPath, coveragePath, technicalEvidenceSha256: (priorTechnical ?? technical).evidenceSha256, coverageSha256: resolvedCoverage?.evidenceSha256, technicalInputFingerprint: inspected.source.technicalInputFingerprint, technicalInputCommit: technicalCommit };
 }
 export async function validateTrack({ root = ROOT, trackId, sourceRepositoryCommit }) {
-  const technicalCommit = await technicalInputCommit(root, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId, technicalCommit); const evidenceSchema = await json(join(root, "schemas", "publishing", "technical-validation-evidence.schema.json")); const technical = await technicalEvidenceRecords(root, trackId, technicalCommit); if (!technical.envelope || technical.envelope.familyId !== inspected.family.familyId || technical.envelope.contentVersion !== inspected.source.contentVersion || technical.envelope.taxonomyVersion !== inspected.source.taxonomyVersion || technical.envelope.inputManifestSha256 !== inputManifestSha256 || technical.envelope.sourceCommit !== technicalCommit || technical.envelope.technicalInputCommit !== technicalCommit) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching tracked durable technical evidence."); const evidence = technical.records; evidence.forEach((entry, index) => validateJsonSchema(entry, evidenceSchema, `technical evidence ${index}`)); const expectedEvidence = new Map(inspected.source.technicalEvidence.map((entry) => [entry.evidenceId, entry])); const currentEvidence = evidence.filter((entry) => entry.result === "passed" && entry.technicalInputFingerprint === inspected.source.technicalInputFingerprint && expectedEvidence.has(entry.evidenceId) && canonicalJson(evidenceIdentity(entry)) === canonicalJson(evidenceIdentity(expectedEvidence.get(entry.evidenceId)))); if (currentEvidence.length !== expectedEvidence.size) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching immutable passed technical evidence.");
+  const technicalCommit = await technicalInputCommit(root, trackId, sourceRepositoryCommit); const inspected = await inspectTrack({ root, trackId, sourceRepositoryCommit: technicalCommit }); const inputManifestSha256 = await sourceManifestSha256(root, trackId, technicalCommit); const evidenceSchema = await json(join(root, "schemas", "publishing", "technical-validation-evidence.schema.json")); const technical = await technicalEvidenceRecords(root, trackId, technicalCommit); if (!technical.envelope || technical.envelope.familyId !== inspected.family.familyId || technical.envelope.contentVersion !== inspected.source.contentVersion || technical.envelope.taxonomyVersion !== inspected.source.taxonomyVersion || technical.envelope.inputManifestSha256 !== inputManifestSha256 || technical.envelope.sourceCommit !== technicalCommit || technical.envelope.technicalInputCommit !== technicalCommit) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching tracked durable technical evidence."); const evidence = technical.records; evidence.forEach((entry, index) => validateJsonSchema(entry, evidenceSchema, `technical evidence ${index}`)); const expectedEvidence = new Map(inspected.source.technicalEvidence.map((entry) => [entry.evidenceId, entry])); const currentEvidence = evidence.filter((entry) => entry.result === "passed" && entry.technicalInputFingerprint === inspected.source.technicalInputFingerprint && expectedEvidence.has(entry.evidenceId) && canonicalJson(evidenceIdentity(entry)) === canonicalJson(evidenceIdentity(expectedEvidence.get(entry.evidenceId)))); if (currentEvidence.length !== expectedEvidence.size) throw new PublishingFailure("MISSING_TECHNICAL_EVIDENCE", "Current technical inputs need matching immutable passed technical evidence.");
   if (inspected.family.familyId === "coding_interview") { const expectedCoverage = durableEnvelope({ evidenceKind: "simulation-coverage", inspected, sourceCommit: technicalCommit, inputManifestSha256, payload: simulationCoverage(inspected) }); const coverage = await readDurableEvidence(simulationCoveragePath(root, trackId, expectedCoverage), expectedCoverage); if (!coverage) throw new PublishingFailure("MISSING_SIMULATION_COVERAGE", "Current simulation pool needs matching tracked durable coverage evidence."); }
   return inspected;
 }

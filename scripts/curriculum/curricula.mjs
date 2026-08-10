@@ -30,10 +30,24 @@ const status = new Set(["planned_coverage_sufficient", "planned_coverage_insuffi
 
 function assertUnique(values, label) { if (new Set(values).size !== values.length) fail("DUPLICATE_CURRICULUM_ID", `${label} must be unique.`); }
 const sameRefs = (left, right) => JSON.stringify([...new Set(left)].sort()) === JSON.stringify([...new Set(right)].sort());
+function normalizedSourceUrl(url) {
+  const parsed = new URL(url);
+  let path = parsed.pathname;
+  for (let attempts = 0; attempts < 3; attempts += 1) {
+    const decoded = decodeURIComponent(path);
+    if (decoded === path) break;
+    path = decoded;
+  }
+  if (/%[0-9a-f]{2}/i.test(path)) throw new Error("Source path has excessive percent encoding.");
+  path = path.normalize("NFC").replace(/\/{2,}/g, "/").toLowerCase().replace(/\/+$/, "") || "/";
+  return `${parsed.protocol.toLowerCase()}//${parsed.host.toLowerCase()}${path}`;
+}
 function assertCertificationObjectiveBindings(curriculum, registry) {
   if (curriculum.familyId !== "certification" || !registry) return;
   if (curriculum.officialObjectiveRegistryRef !== registry.__registryPath) fail("MISSING_CERTIFICATION_OBJECTIVE_REGISTRY", `${curriculum.trackId} must name its exact repo-relative objective registry.`);
   const objectiveIds = new Set(registry.objectives.map((objective) => objective.objectiveId));
+  const officialSourceIds = new Set(registry.sources.map((source) => source.sourceId));
+  const officialSourceUrls = new Set(registry.sources.map((source) => normalizedSourceUrl(source.url)));
   // Objective numbers are provider-defined: GCP uses `1.1`, while Terraform
   // Associate uses alphanumeric keys such as `4h`. The stable registry prefix
   // is consequently the identifier through its final separator, not a
@@ -69,9 +83,9 @@ function assertCertificationObjectiveBindings(curriculum, registry) {
           if (requirements.authoringGate !== "resolved_for_authoring" || !productRefs.length) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} cannot claim authoring readiness without direct product sources.`);
           const coveredMechanisms = new Set();
           for (const sourceId of productRefs) {
-            const source = sourceById.get(sourceId); let parsed;
-            try { parsed = new URL(source?.url); } catch { fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} has an unresolved direct product source.`); }
-            if (source.sourceKind !== "direct_first_party_product_documentation" || parsed.protocol !== "https:" || !registry.firstPartyDocumentationHosts.includes(parsed.hostname) || !isCalendarDate(source.checkedDate) || !source.version?.trim() || !source.volatility?.trim() || !source.title?.trim() || !Array.isArray(source.mechanismOrProductProperties)) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} has an invalid direct product source.`);
+            const source = sourceById.get(sourceId); let parsed; let normalizedUrl;
+            try { parsed = new URL(source?.url); normalizedUrl = normalizedSourceUrl(source.url); } catch { fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} has an unresolved direct product source.`); }
+            if (officialSourceIds.has(sourceId) || officialSourceUrls.has(normalizedUrl) || source.sourceKind !== "direct_first_party_product_documentation" || parsed.protocol !== "https:" || !registry.firstPartyDocumentationHosts.includes(parsed.hostname) || !isCalendarDate(source.checkedDate) || !source.version?.trim() || !source.volatility?.trim() || !source.title?.trim() || !Array.isArray(source.mechanismOrProductProperties)) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} has an invalid direct product source.`);
             source.mechanismOrProductProperties.forEach((property) => coveredMechanisms.add(property));
           }
           if (product.testedMechanismOrProductProperties.some((property) => !coveredMechanisms.has(property))) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} lacks direct documentation for every tested mechanism.`);

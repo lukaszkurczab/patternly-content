@@ -13,6 +13,44 @@ const curricula = await loadCurricula();
 const briefs = await loadCanonicalTrackBriefs();
 const certificationRegistries = await loadCertificationObjectiveRegistries({ root: process.cwd() });
 const clone = (value) => structuredClone(value);
+const az104Objective = (number) => `az-104-2026-04-17-${number}`;
+const AZ104_BLOCK_OBJECTIVE_REFS = Object.freeze({
+  scope_and_resource_model: ["1.3", "3.1"], portal_cli_powershell_arm_boundary: ["3.1", "1.2", "2.1"], safe_change_ownership_diagnostic: ["1.3"],
+  user_group_lifecycle: ["1.1"], groups_licenses_external_users: ["1.1"], sspr_and_identity_operations: ["1.1"],
+  rbac_scope_and_effective_access: ["1.2"], policy_locks_tags: ["1.3"], resource_group_subscription_management_group: ["1.3"], budgets_advisor_cost_controls: ["1.3"],
+  account_configuration_endpoints: ["2.2"], firewall_network_access: ["2.1"], sas_keys_rbac_stored_policy: ["2.1"], redundancy_replication_encryption: ["2.2"],
+  blob_container_file_share: ["2.3"], tiers_lifecycle_versioning: ["2.3"], soft_delete_snapshots_recovery: ["2.3"], explorer_azcopy_transfer: ["2.2"],
+  template_interpretation: ["3.1"], modification_parameters_dependencies: ["3.1"], deployment_and_validation: ["3.1"], export_and_conversion: ["3.1"],
+  vm_create_size_disk_encryption: ["3.2"], zones_and_availability_sets: ["3.2"], scale_sets: ["3.2"], move_and_resource_lifecycle: ["3.2"],
+  container_registry: ["3.3"], aci_vs_container_apps_provision: ["3.3"], sizing_and_scaling: ["3.3"],
+  plan_and_app_configuration: ["3.4"], tls_dns_networking: ["3.4"], scaling_and_slots: ["3.4"], backup_and_lifecycle: ["3.4"],
+  vnet_subnet_ip_design: ["4.1"], peering_and_routes: ["4.1"], connectivity_troubleshooting: ["4.1"],
+  nsg_asg_effective_rules: ["4.2"], bastion_service_private_endpoints: ["4.2"], dns: ["4.3"], load_balancing_and_troubleshooting: ["4.3"],
+  metrics_logs_queries: ["5.1"], alerts_actions_processing: ["5.1"], resource_insights: ["5.1"], network_watcher_connection_monitor: ["5.1"],
+  vaults_and_policy: ["5.2"], backup_and_restore: ["5.2"], site_recovery_and_failover: ["5.2"], recovery_reports_and_alerts: ["5.2"]
+});
+const AZ104_ATOM_OBJECTIVE_REFS = Object.freeze({
+  "scope_and_resource_model/azure_resources_correct_management_group_subscription_resource_group_resource_scope": ["1.3"],
+  "scope_and_resource_model/resource_provider_regional_dependencies_deployment": ["3.1"],
+  "portal_cli_powershell_arm_boundary/portal_cli_powershell_arm_bicep_based_repeatability_operational_context": ["3.1"],
+  "portal_cli_powershell_arm_boundary/plane_resource_operations_data_plane_access_operations": ["1.2", "2.1"]
+});
+function assertExactAz104Bindings(curriculum) {
+  const blocks = curriculum.nodes.flatMap((node) => node.learningBlocks);
+  assert.deepEqual(new Set(blocks.map((block) => block.blockId)), new Set(Object.keys(AZ104_BLOCK_OBJECTIVE_REFS)));
+  for (const block of blocks) {
+    const expectedBlockRefs = AZ104_BLOCK_OBJECTIVE_REFS[block.blockId].map(az104Objective);
+    assert.deepEqual(block.officialObjectiveRefs, expectedBlockRefs, `${block.blockId} block refs`);
+    assert.deepEqual(block.sourceRequirements.map((requirement) => requirement.purpose), ["official-objective"], `${block.blockId} source purpose`);
+    for (const atom of block.skillOrDecisionAtoms) {
+      const expectedAtomRefs = (AZ104_ATOM_OBJECTIVE_REFS[`${block.blockId}/${atom.atomId}`] ?? AZ104_BLOCK_OBJECTIVE_REFS[block.blockId]).map(az104Objective);
+      assert.deepEqual(atom.officialObjectiveRefs, expectedAtomRefs, `${block.blockId}/${atom.atomId} atom refs`);
+      const target = block.coverageTargets.find((candidate) => candidate.primarySkillOrDecisionAtomId === atom.atomId);
+      assert.deepEqual(target.officialObjectiveRefs, expectedAtomRefs, `${target.coverageTargetId} target refs`);
+      assert.deepEqual(target.sourceRequirements.requirements[0].objectiveRefs, expectedAtomRefs, `${target.coverageTargetId} gate refs`);
+    }
+  }
+}
 
 test("curriculum catalogue represents every release track without admitting active content", () => {
   assert.equal(curricula.length, 10);
@@ -417,6 +455,76 @@ test("Terraform 004 exact objective registry governs alphanumeric objective bind
   const sensitiveRationales = Object.values(sensitiveTarget.operationVariantCounts).map((entry) => entry.countRationale).join(" ");
   for (const term of ["sensitive redaction", "plan\/state persistence", "ephemeral", "write-only", "reference-only"]) assert.match(sensitiveRationales, new RegExp(term));
   assert.doesNotMatch(sensitiveRationales, /mark sensitive values plaintext exposure, input modality, output contract/);
+});
+
+test("AZ-104 exact objective registry governs all nested bindings, Azure Monitor Insights, and practice-only simulation", () => {
+  const az104 = clone(curricula.find((entry) => entry.trackId === "microsoft-azure-administrator-associate-az-104"));
+  const brief = briefs.find((entry) => entry.trackId === az104.trackId);
+  const registry = certificationRegistries.get(az104.trackId);
+  const blocks = az104.nodes.flatMap((node) => node.learningBlocks);
+  const atoms = blocks.flatMap((block) => block.skillOrDecisionAtoms);
+  const targets = blocks.flatMap((block) => block.coverageTargets);
+  assert.equal(registry.domains.length, 5);
+  assert.equal(registry.objectives.length, 15);
+  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 82);
+  assert.deepEqual(registry.domains.map((domain) => domain.weight.value), ["20–25%", "15–20%", "20–25%", "15–20%", "10–15%"]);
+  assert.equal(az104.nodes.length, 13);
+  assert.equal(blocks.length, 48);
+  assert.equal(atoms.length, 81);
+  assert.equal(targets.length, 81);
+  assert.equal(az104.targetItemCount, 2536);
+  assert.equal(az104.existingVerifiedItemCount, 0);
+  assert.equal(az104.authoringItemCount, 2536);
+  assert.deepEqual(az104.objectiveExclusions, []);
+  assert.deepEqual(az104.entryPrerequisites, ["Familiarity with operating systems, networking, servers, and virtualization.", "Experience with PowerShell, Azure CLI, the Azure portal, Azure Resource Manager templates or Bicep files, and Microsoft Entra ID."]);
+  assert.match(az104.learnerOutcome, /Implement, manage, secure, govern, monitor, and recover Azure/i);
+  assert.doesNotThrow(() => validateCurriculum(az104, brief, registry));
+  assertExactAz104Bindings(az104);
+  assert.deepEqual(Object.fromEntries(registry.sources.map((source) => [source.sourceId, source.authoritativeFor])), {
+    "microsoft-az-104-study-guide": ["guide_version", "domains", "weights", "objectives", "scope_statements", "audience_profile"],
+    "microsoft-az-104-certification-page": ["certification_identity", "audience_profile", "duration", "delivery"],
+    "microsoft-exam-duration-experience": ["duration", "navigation", "flagging", "timeout_behavior"],
+    "microsoft-exam-scoring-reports": ["scored_unscored_distinction"],
+    "microsoft-register-schedule-exam": ["delivery"]
+  });
+  assert.ok(atoms.every((atom) => atom.officialObjectiveRefs.every((ref) => /^az-104-2026-04-17-(?:[1-5]\.\d)$/.test(ref))));
+  assert.ok(targets.every((target) => target.sourceRequirements.authoringGate === "blocked_until_all_requirements_resolve" && target.sourceRequirements.requirements[0].resolvedAtCurriculumStage === true && target.sourceRequirements.requirements[1].resolvedAtCurriculumStage === false && target.sourceRequirements.requirements[1].directFirstPartySourceRefs.length === 0 && target.sourceRequirements.requirements[1].testedMechanismOrProductProperties[0] === target.primarySkillOrDecisionAtomId));
+  const insights = blocks.find((block) => block.blockId === "resource_insights");
+  assert.deepEqual(insights.officialObjectiveRefs, ["az-104-2026-04-17-5.1"]);
+  assert.equal(insights.skillOrDecisionAtoms[0].atomId, "azure_monitor_insights_vm_storage_network_monitoring");
+  assert.equal(insights.coverageTargets[0].coverageTargetId, "microsoft-azure-administrator-associate-az-104:resource_insights:azure_monitor_insights_vm_storage_network_monitoring");
+  assert.equal(insights.coverageTargets[0].requiredVariantCount, 32);
+  assert.deepEqual(Object.fromEntries(Object.entries(insights.coverageTargets[0].operationVariantCounts).map(([operation, value]) => [operation, value.requiredVariantCount])), { SIG: 10, DEC: 8, BND: 7, XFR: 7 });
+  assert.equal(JSON.stringify(az104).includes("classify_resource_insights_evidence"), false);
+  assert.equal(JSON.stringify(insights).includes("Advisor"), false);
+  assert.equal(JSON.stringify(blocks.find((block) => block.blockId === "budgets_advisor_cost_controls")).includes("Advisor"), true);
+  assert.equal(az104.nodes.find((node) => node.nodeId === "monitoring_and_alerting").officialObjectiveRefs[0], "az-104-2026-04-17-5.1");
+  assert.equal(az104.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems, 50);
+  assert.equal(az104.simulationOrCasePoolPlans[0].uniqueItemCount, 50);
+  assert.equal(az104.simulationOrCasePoolPlans[0].simulationClaim, "patternly_practice_not_provider_faithful");
+  const resolveWithSource = (sourceId, url) => {
+    const candidate = clone(az104); const target = candidate.nodes[0].learningBlocks[0].coverageTargets[0];
+    candidate.sourceBasis = candidate.sourceBasis.filter((source) => source.sourceId !== sourceId);
+    candidate.sourceBasis.push({ sourceId, sourceKind: "direct_first_party_product_documentation", url, title: "Relabelled direct documentation", guideVersion: "not_documented", version: "current", volatility: "high", checkedDate: "2026-08-10", mechanismOrProductProperties: [target.primarySkillOrDecisionAtomId] });
+    target.sourceRequirements.authoringGate = "resolved_for_authoring";
+    target.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true;
+    target.sourceRequirements.requirements[1].directFirstPartySourceRefs = [sourceId];
+    return candidate;
+  };
+  const sameId = resolveWithSource("microsoft-az-104-study-guide", "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104");
+  assert.throws(() => validateCurriculum(sameId, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const relabelledStudyGuide = resolveWithSource("renamed-az104-study-guide", "https://LEARN.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104/?ignored=query#ignored");
+  assert.throws(() => validateCurriculum(relabelledStudyGuide, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const encodedStudyGuide = resolveWithSource("encoded-az104-study-guide", "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/%61z%2D104");
+  assert.throws(() => validateCurriculum(encodedStudyGuide, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const caseVariantStudyGuide = resolveWithSource("case-variant-az104-study-guide", "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/AZ-104");
+  assert.throws(() => validateCurriculum(caseVariantStudyGuide, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const directProductDocumentation = resolveWithSource("azure-monitor-insights-product-doc", "https://learn.microsoft.com/en-us/azure/azure-monitor/insights-overview/");
+  assert.doesNotThrow(() => validateCurriculum(directProductDocumentation, brief, registry));
+  const wrongButCoherent = clone(az104); const wrongNode = wrongButCoherent.nodes.find((node) => node.nodeId === "entra_users_groups_and_lifecycle"); const wrongBlock = wrongNode.learningBlocks.find((block) => block.blockId === "user_group_lifecycle"); const wrongAtom = wrongBlock.skillOrDecisionAtoms[0]; const wrongTarget = wrongBlock.coverageTargets.find((target) => target.primarySkillOrDecisionAtomId === wrongAtom.atomId); const wrongRefs = [az104Objective("1.3")];
+  wrongAtom.officialObjectiveRefs = wrongRefs; wrongTarget.officialObjectiveRefs = wrongRefs; wrongTarget.sourceRequirements.requirements[0].objectiveRefs = wrongRefs; wrongBlock.officialObjectiveRefs = [az104Objective("1.3"), az104Objective("1.1")]; wrongNode.officialObjectiveRefs = [az104Objective("1.3"), az104Objective("1.1")];
+  assert.doesNotThrow(() => validateCurriculum(wrongButCoherent, brief, registry));
+  assert.throws(() => assertExactAz104Bindings(wrongButCoherent), assert.AssertionError);
 });
 
 test("AI-901 exact objective registry governs seven current objectives, source gates, and practice-only simulation", () => {

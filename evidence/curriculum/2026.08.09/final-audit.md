@@ -1,20 +1,20 @@
 # Curriculum coverage specification
 
-Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `4bc87183272c67c42717d64adae138bd049dbb9ae244ab3fbf6a8402a9630146`.
+Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `4975e54da2ecd835421a70f3cd54235c3231da766f4b4a41f986064bcd792c5f`.
 
 ## Release tracks
 
 | Track | Family | Before nodes/target | After nodes/target | Blocks | Verified existing | New authoring | Free | Premium | Mode state |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| aws-certified-solutions-architect-associate | certification | 4/480 | 11/2496 | 39 | 0 | 2496 | 171 | 2325 | planned_coverage_only_not_admitted |
+| aws-certified-solutions-architect-associate | certification | 4/480 | 11/2496 | 39 | 0 | 2496 | 171 | 2325 | structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04 |
 | backend-system-design-interview | design_interview | 5/600 | 8/1154 | 35 | 0 | 1154 | 121 | 1033 | blocked_by_contract |
 | coding-interview-dsa-problem-solving | coding_interview | 26/3404 | 26/3404 | 78 | 2375 | 1029 | 158 | 3246 | active_contract_and_planned_coverage |
 | frontend-system-design-interview | design_interview | 5/600 | 9/1460 | 45 | 0 | 1460 | 120 | 1340 | blocked_by_contract |
-| google-cloud-associate-cloud-engineer | certification | 5/600 | 10/2011 | 36 | 0 | 2011 | 176 | 1835 | planned_coverage_only_not_admitted |
-| hashicorp-terraform-associate-004 | certification | 5/600 | 9/1695 | 32 | 0 | 1695 | 179 | 1516 | planned_coverage_only_not_admitted |
-| kubernetes-cloud-native-associate-kcna | certification | 4/480 | 10/1514 | 31 | 0 | 1514 | 159 | 1355 | planned_coverage_only_not_admitted |
-| microsoft-azure-administrator-associate-az-104 | certification | 5/600 | 13/2536 | 48 | 0 | 2536 | 188 | 2348 | planned_coverage_only_not_admitted |
-| microsoft-azure-ai-fundamentals-ai-901 | certification | 5/600 | 8/1363 | 27 | 0 | 1363 | 130 | 1233 | planned_coverage_only_not_admitted |
+| google-cloud-associate-cloud-engineer | certification | 5/600 | 10/2011 | 36 | 0 | 2011 | 176 | 1835 | structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04 |
+| hashicorp-terraform-associate-004 | certification | 5/600 | 9/1695 | 32 | 0 | 1695 | 179 | 1516 | structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04 |
+| kubernetes-cloud-native-associate-kcna | certification | 4/480 | 10/1514 | 31 | 0 | 1514 | 159 | 1355 | structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04 |
+| microsoft-azure-administrator-associate-az-104 | certification | 5/600 | 13/2536 | 48 | 0 | 2536 | 188 | 2348 | structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04 |
+| microsoft-azure-ai-fundamentals-ai-901 | certification | 5/600 | 8/1363 | 27 | 0 | 1363 | 130 | 1233 | structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04 |
 | object-oriented-design-interview | design_interview | 5/600 | 7/1101 | 34 | 0 | 1101 | 122 | 979 | blocked_by_contract |
 
 ## Node targets
@@ -181,26 +181,35 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `4bc8
 | 7 | testing_evolution_and_case_synthesis | 190 | 0 | 190 | premium |
 
 
+## Certification graph reconciliation
+
+- aws-certified-solutions-architect-associate: 12/12 prerequisite edges reconciled; reconciled_structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04.
+- google-cloud-associate-cloud-engineer: 19/19 prerequisite edges reconciled; reconciled_structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04.
+- hashicorp-terraform-associate-004: 10/10 prerequisite edges reconciled; reconciled_structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04.
+- kubernetes-cloud-native-associate-kcna: 14/14 prerequisite edges reconciled; reconciled_structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04.
+- microsoft-azure-administrator-associate-az-104: 19/19 prerequisite edges reconciled; reconciled_structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04.
+- microsoft-azure-ai-fundamentals-ai-901: 11/11 prerequisite edges reconciled; reconciled_structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04.
+
 ## Contract gaps
 
-Design Interview authoring remains blocked by the application-owned selection/scoring interaction contract. Certification curricula are frozen planning contracts, not runtime admission; each authoring change must add its real track/taxonomy/source/release contract atomically. Coding retains an active source pipeline, but new authoring must first bind items to coverage targets and advance the full source cohort to a new immutable content version.
+Certification structure is provisional, its reported volume is unverified, and authoring is blocked pending CERT-CORR-01_to_CERT-CORR-04. Certification rows and counts are reported planning values, not an accepted backlog or feasibility claim. Design Interview remains outside this correction and authoring remains blocked by the application-owned selection/scoring interaction contract. Coding remains an accepted baseline with its active source pipeline and existing pre-authoring gates.
 
 ## Audit
 
-Second-pass audit: curriculum_frozen_with_recorded_runtime_boundary. Resolved defects: CURR-001, CURR-006, CURR-002, CURR-003.
+Second-pass audit: certification_structure_provisional. Resolved defects: CURR-001, CURR-006, CURR-002, CURR-003.
 
 - node_boundaries_and_learning_blocks: passed — Every node owns two or more family-appropriate blocks; target ownership and track totals reconcile.
-- prerequisites_and_order: passed — The validator requires an acyclic DAG and every prerequisite to precede its dependent node.
-- overlap_and_ownership: passed — Every non-Coding decision target owns exactly one atom; Coding block operations explicitly own their direct atom set.
+- prerequisites_and_order: certification_reconciled_structure_provisional — Certification relationships exactly reconcile each declared prerequisite edge, with valid endpoints, canonical IDs, forward direction, and pair-specific reasons; later certification correction stages remain required.
+- overlap_and_ownership: certification_provisional — Coding ownership is accepted. Certification ownership and overlap remain provisional pending exact objective registry and slot-plan correction stages.
 - misconceptions_and_transfer: passed — Every target declares a competing decision or misconception plus decisive and transfer boundaries.
-- variant_distinctness_and_filler: passed_with_authoring_gate — Uniform target-count and systematic mirrored-pair signatures fail validation; future item wording still requires human distinctness review.
-- session_pool_and_modes: passed_as_planned_capacity — Planned pools are scoped to mode-eligible interaction shapes and simulation uniqueness is checked. This does not admit Certification tracks to runtime; Design remains blocked_by_contract.
+- variant_distinctness_and_filler: certification_unverified — Certification variant accounting is provisional and cannot establish authored-item distinctness before CERT-CORR-02 through CERT-CORR-04.
+- session_pool_and_modes: certification_unverified — Certification declared pools are reported only as raw planning values and are blocked pending CERT-CORR-01 through CERT-CORR-04; Design remains blocked_by_contract.
 - free_premium_packages: passed — Exactly one brief-owned Free node exists per track and every node is an immutable whole-node package boundary.
-- source_and_provenance: passed_with_maintenance_gate — Source IDs resolve; certification objectives retain current first-party guide provenance and require release-time volatile-fact recheck.
-- cross_family_reuse: passed — Coding uses block operations, Certification uses SIG/DEC/BND/XFR, and Design uses S/D/F/T[/I] without claiming an unsupported runtime.
-- authoring_cost: quantified — 16359 future items across the final block-level backlog.
+- source_and_provenance: certification_registry_pending_CERT-CORR-01 — Certification exact official objective registry and source mapping remain pending CERT-CORR-01.
+- cross_family_reuse: certification_provisional — Coding and Design contracts retain their current meaning; Certification aggregate SIG/DEC/BND/XFR planning is not accepted pending later correction stages.
+- authoring_cost: certification_volume_unverified — Certification volume and its authoring gap are not accepted in this stage; authoring remains blocked pending CERT-CORR-01 through CERT-CORR-04.
 
-Completion boundary: The curriculum and authoring backlog are frozen. Question authoring must not start until its handoff's machine-binding gate is implemented: Coding needs coverage-target binding plus a coherent new content-version cohort; Certification needs a real track/taxonomy/source/release contract; Design additionally needs the application-owned selection/scoring interaction contract. The GCP active-source cutover is resolved while immutable historical bytes remain preserved.
+Completion boundary: Certification structure is provisional, its volume is unverified, and authoring is blocked pending CERT-CORR-01 through CERT-CORR-04. Coding remains an accepted baseline; Design remains outside this correction and blocked by its interaction contract.
 
 ## First safe authoring batch
 

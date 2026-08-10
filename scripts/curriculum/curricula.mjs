@@ -40,6 +40,37 @@ function walkAcyclic(nodes) {
   nodes.forEach((node) => visit(node.nodeId));
 }
 
+function assertCertificationRelationshipGraph(curriculum, nodes, order) {
+  if (curriculum.familyId !== "certification") return;
+  const relationships = curriculum.crossNodeRelationships;
+  if (!Array.isArray(relationships)) fail("INVALID_CERTIFICATION_RELATIONSHIP", `${curriculum.trackId} must declare certification relationships.`);
+  const nodesById = new Map(nodes.map((node) => [node.nodeId, node]));
+  const nodeIds = new Set(nodesById.keys());
+  const expectedEdges = new Set(nodes.flatMap((node) => node.prerequisiteNodeIds.map((fromNodeId) => `${fromNodeId}→${node.nodeId}`)));
+  const actualEdges = new Set(); const reasons = [];
+  for (const relationship of relationships) {
+    for (const field of ["relationshipId", "fromNodeId", "toNodeId", "fromBlockId", "toBlockId", "fromAtomId", "toAtomId", "bridgeType", "kind", "reason"]) if (!Object.hasOwn(relationship, field)) fail("MISSING_CERTIFICATION_RELATIONSHIP_FIELD", `${curriculum.trackId} relationship.${field} is required.`);
+    assertText(relationship.relationshipId, `${curriculum.trackId} relationshipId`); assertText(relationship.fromNodeId, `${curriculum.trackId} fromNodeId`); assertText(relationship.toNodeId, `${curriculum.trackId} toNodeId`); assertText(relationship.fromBlockId, `${curriculum.trackId} fromBlockId`); assertText(relationship.toBlockId, `${curriculum.trackId} toBlockId`); assertText(relationship.fromAtomId, `${curriculum.trackId} fromAtomId`); assertText(relationship.toAtomId, `${curriculum.trackId} toAtomId`); assertText(relationship.bridgeType, `${curriculum.trackId} bridgeType`); assertText(relationship.kind, `${curriculum.trackId} kind`); assertText(relationship.reason, `${curriculum.trackId} reason`);
+    if (!nodeIds.has(relationship.fromNodeId) || !nodeIds.has(relationship.toNodeId)) fail("STALE_CERTIFICATION_RELATIONSHIP_NODE", `${curriculum.trackId}/${relationship.relationshipId} references an absent node.`);
+    if (relationship.fromNodeId === relationship.toNodeId) fail("SELF_CERTIFICATION_RELATIONSHIP", `${curriculum.trackId}/${relationship.relationshipId} may not be self-referential.`);
+    const edge = `${relationship.fromNodeId}→${relationship.toNodeId}`;
+    if (relationship.relationshipId !== edge) fail("NONCANONICAL_CERTIFICATION_RELATIONSHIP_ID", `${curriculum.trackId}/${relationship.relationshipId} must equal ${edge}.`);
+    if (relationship.kind !== "prerequisite_and_transfer") fail("INVALID_CERTIFICATION_RELATIONSHIP_KIND", `${curriculum.trackId}/${relationship.relationshipId} must be prerequisite_and_transfer.`);
+    if (order.get(relationship.fromNodeId) >= order.get(relationship.toNodeId)) fail("INVALID_CERTIFICATION_RELATIONSHIP_ORDER", `${curriculum.trackId}/${relationship.relationshipId} must point forward.`);
+    const fromBlock = nodesById.get(relationship.fromNodeId).learningBlocks.find((block) => block.blockId === relationship.fromBlockId);
+    const toBlock = nodesById.get(relationship.toNodeId).learningBlocks.find((block) => block.blockId === relationship.toBlockId);
+    if (!fromBlock || !toBlock) fail("INVALID_CERTIFICATION_RELATIONSHIP_ANCHOR", `${curriculum.trackId}/${relationship.relationshipId} anchors must be owned by their declared endpoints.`);
+    if (!fromBlock.skillOrDecisionAtoms.some((atom) => atom.atomId === relationship.fromAtomId) || !toBlock.skillOrDecisionAtoms.some((atom) => atom.atomId === relationship.toAtomId)) fail("INVALID_CERTIFICATION_RELATIONSHIP_ATOM", `${curriculum.trackId}/${relationship.relationshipId} atoms must be owned by their declared block anchors.`);
+    if (!["enables", "constrains", "supplies_evidence_for", "transfers_into"].includes(relationship.bridgeType)) fail("INVALID_CERTIFICATION_RELATIONSHIP_BRIDGE_TYPE", `${curriculum.trackId}/${relationship.relationshipId} bridgeType is invalid.`);
+    const canonicalReason = `${relationship.fromNodeId}/${relationship.fromBlockId}/${relationship.fromAtomId} ${relationship.bridgeType.replaceAll("_", " ")} ${relationship.toNodeId}/${relationship.toBlockId}/${relationship.toAtomId}.`;
+    if (relationship.reason !== canonicalReason) fail("NONCANONICAL_CERTIFICATION_RELATIONSHIP_REASON", `${curriculum.trackId}/${relationship.relationshipId} reason must equal its canonical atom bridge.`);
+    actualEdges.add(edge); reasons.push(relationship.reason);
+  }
+  assertUnique(relationships.map((relationship) => relationship.relationshipId), `${curriculum.trackId} relationship IDs`);
+  assertUnique(reasons, `${curriculum.trackId} relationship reasons`);
+  if (actualEdges.size !== relationships.length || actualEdges.size !== expectedEdges.size || [...expectedEdges].some((edge) => !actualEdges.has(edge))) fail("CERTIFICATION_PREREQUISITE_GRAPH_MISMATCH", `${curriculum.trackId} relationships must exactly reconcile prerequisite edges.`);
+}
+
 function assertSemanticMatrix(target, curriculum) {
   if (curriculum.familyId === "coding_interview") return;
   const requiredClasses = curriculum.familyId === "certification" ? ["SIG", "DEC", "BND", "XFR"] : ["S", "D", "F", "T"];
@@ -121,6 +152,7 @@ export function validateCurriculum(curriculum, brief) {
   }
   const nodes = curriculum.nodes; assertUnique(nodes.map((node) => node.nodeId), `${curriculum.trackId} node IDs`); walkAcyclic(nodes);
   const order = new Map(nodes.map((node, index) => [node.nodeId, index]));
+  assertCertificationRelationshipGraph(curriculum, nodes, order);
   const blockIds = []; const atomIds = []; const targetIds = [];
   for (const node of nodes) {
     assertKeys(node, requiredNode, `node ${node.nodeId}`);

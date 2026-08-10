@@ -43,7 +43,7 @@ function assertCertificationObjectiveBindings(curriculum, registry) {
   const assertRefs = (refs, label) => {
     if (!Array.isArray(refs) || !refs.length) fail("UNKNOWN_CERTIFICATION_OBJECTIVE", `${label} requires one or more exact objective refs.`);
     for (const ref of refs) {
-      if (ref.startsWith("section-") || ref.startsWith("objective-")) fail("REMOVED_CERTIFICATION_OBJECTIVE", `${label} references removed historical objective ${ref}.`);
+      if (ref.startsWith("section-") || ref.startsWith("objective-") || registry.removedObjectiveIds?.includes(ref)) fail("REMOVED_CERTIFICATION_OBJECTIVE", `${label} references removed historical objective ${ref}.`);
       if (!ref.startsWith(sharedPrefix)) fail("CERTIFICATION_OBJECTIVE_TRACK_MISMATCH", `${label} references objective ${ref} from another track.`);
       if (!objectiveIds.has(ref)) fail("UNKNOWN_CERTIFICATION_OBJECTIVE", `${label} references unknown objective ${ref}.`);
     }
@@ -88,6 +88,12 @@ function assertCertificationObjectiveBindings(curriculum, registry) {
   const sourceIds = new Set(registry.sources.map((source) => source.sourceId)); const exclusionReasons = new Set(["provider_scope_removed", "provider_scope_not_assessable", "duplicate_provider_objective"]);
   for (const exclusion of exclusions) { const objective = registry.objectives.find((candidate) => candidate.objectiveId === exclusion.objectiveId); if (!objective || !exclusionReasons.has(exclusion.reasonCode) || !Array.isArray(exclusion.evidenceSourceRefs) || !exclusion.evidenceSourceRefs.length || exclusion.evidenceSourceRefs.some((sourceId) => !sourceIds.has(sourceId)) || typeof exclusion.evidenceBackedRationale !== "string" || exclusion.evidenceBackedRationale.length < 80 || (!exclusion.evidenceBackedRationale.includes(objective.providerLabel) && !exclusion.evidenceBackedRationale.includes(objective.providerObjectiveNumber)) || exclusion.evidenceSourceRefs.some((sourceId) => !exclusion.evidenceBackedRationale.includes(sourceId))) fail("INVALID_OBJECTIVE_EXCLUSION", `${curriculum.trackId} has an invalid objective exclusion.`); }
   for (const objectiveId of objectiveIds) if (!covered.has(objectiveId) && !exclusions.some((exclusion) => exclusion.objectiveId === objectiveId)) fail("UNCOVERED_CERTIFICATION_OBJECTIVE", `${curriculum.trackId} does not cover ${objectiveId}.`);
+  const documentedItemCount = registry.examProfile.itemCountOrRange;
+  if (documentedItemCount.status === "documented" && Number.isInteger(documentedItemCount.value)) {
+    const simulationMode = curriculum.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation");
+    const simulationPool = curriculum.simulationOrCasePoolPlans.find((pool) => pool.poolId === `${curriculum.trackId}:simulation`);
+    if (simulationMode?.requiredUniqueItems !== documentedItemCount.value || simulationPool?.uniqueItemCount !== documentedItemCount.value) fail("MODE_POOL_INSUFFICIENT", `${curriculum.trackId} simulation counts must match the documented provider item count.`);
+  }
   if (curriculum.simulationOrCasePoolPlans.some((pool) => pool.simulationClaim !== "patternly_practice_not_provider_faithful")) fail("UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED", `${curriculum.trackId} may offer only a Patternly practice simulation while provider behavior remains undocumented.`);
 }
 function nodeCount(node) { return node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0); }

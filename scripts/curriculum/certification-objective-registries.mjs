@@ -8,6 +8,13 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const text = (value) => typeof value === "string" && value.trim();
 const sourceRefsResolve = (refs, sourceIds) => Array.isArray(refs) && refs.length > 0 && refs.every((sourceId) => sourceIds.has(sourceId));
 const httpsUrl = (value) => { try { return new URL(value).protocol === "https:"; } catch { return false; } };
+const profileAuthorityCapability = Object.freeze({ itemCountOrRange: "item_count", scoredUnscoredDistinction: "scored_unscored_distinction", duration: "duration", responseFormats: "response_formats", navigation: "navigation", answerChanges: "answer_changes", flagging: "flagging", navigator: "navigator", sectionRules: "section_rules", timeoutBehavior: "timeout_behavior", delivery: "delivery" });
+const sha256 = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+function validateRawGithubIdentity(source, parsed, trackId) {
+  if (parsed.hostname !== "raw.githubusercontent.com") return;
+  const identity = source.urlIdentity; const digest = source.contentDigest;
+  if (!identity || identity.kind !== "github_raw_file" || !text(identity.owner) || !text(identity.repository) || !text(identity.ref) || !text(identity.path) || identity.path.startsWith("/") || !digest || digest.algorithm !== "sha256" || !sha256(digest.value) || !source.authoritativeFor?.includes(`content_sha256:${digest.value}`) || parsed.search || parsed.hash || parsed.pathname !== `/${identity.owner}/${identity.repository}/${identity.ref}/${identity.path}`) fail("INVALID_RAW_GITHUB_SOURCE_IDENTITY", `${trackId}/${source.sourceId} must pin the exact GitHub raw owner, repository, ref, path, and SHA-256 digest.`);
+}
 export const isCalendarDate = (value) => {
   if (typeof value !== "string" || !datePattern.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number); const date = new Date(Date.UTC(year, month - 1, day));
@@ -31,6 +38,7 @@ export function validateCertificationObjectiveRegistry(registry, filename = `${r
     if (!isCalendarDate(source.checkedDate)) fail("INVALID_SOURCE_CHECKED_DATE", `${registry.trackId}/${source.sourceId} requires a calendar checkedDate.`);
     let hostname; try { hostname = new URL(source.url).hostname; } catch { hostname = null; }
     if (!text(source.sourceId) || !text(source.sourceType) || !httpsUrl(source.url) || !registry.officialSourceHosts.includes(hostname) || !text(source.title) || !text(source.provider) || source.provider !== registry.provider || !isCalendarDate(source.checkedDate) || !text(source.sourceVolatility) || !text(source.version) || !Array.isArray(source.authoritativeFor) || !source.authoritativeFor.length || source.authoritativeFor.some((entry) => !text(entry))) fail("INVALID_CERTIFICATION_SOURCE_PROVENANCE", `${registry.trackId}/${source.sourceId} has incomplete or invalid source provenance.`);
+    validateRawGithubIdentity(source, new URL(source.url), registry.trackId);
   }
   for (const domain of registry.domains) {
     for (const field of ["domainId", "providerDomainNumber", "providerLabel", "weight", "sourceRefs", "checkedDate"]) if (!Object.hasOwn(domain, field)) fail("MISSING_CERTIFICATION_DOMAIN_FIELD", `${registry.trackId} domain.${field} is required.`);
@@ -50,7 +58,7 @@ export function validateCertificationObjectiveRegistry(registry, filename = `${r
     if (!value || !["documented", "not_documented"].includes(value.status) || !isCalendarDate(value.checkedDate)) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId}.examProfile.${field} has invalid provenance.`);
     if (!Array.isArray(value.sourceRefs)) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId}.examProfile.${field} requires sourceRefs.`);
     if (value.status === "not_documented" && (value.value !== null || value.sourceRefs.length)) fail("UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED", `${registry.trackId}.examProfile.${field} must not carry an inferred value.`);
-    if (value.status === "documented" && (value.value == null || !sourceRefsResolve(value.sourceRefs, sourceIds))) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId}.examProfile.${field} lacks documented source evidence.`);
+    if (value.status === "documented" && (value.value == null || !sourceRefsResolve(value.sourceRefs, sourceIds) || !value.sourceRefs.some((sourceId) => registry.sources.find((source) => source.sourceId === sourceId).authoritativeFor.includes(profileAuthorityCapability[field])))) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId}.examProfile.${field} lacks a source explicitly authoritative for ${profileAuthorityCapability[field]}.`);
   }
   const eligibility = registry.examProfile.faithfulSimulationEligibility;
   const undocumentedFields = profileFields.filter((field) => registry.examProfile[field].status === "not_documented");

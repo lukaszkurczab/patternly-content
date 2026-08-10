@@ -5,6 +5,9 @@ const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const fail = (code, message) => { const error = new Error(`${code}: ${message}`); error.code = code; throw error; };
 const unique = (values, label) => { if (new Set(values).size !== values.length) fail("DUPLICATE_CERTIFICATION_OBJECTIVE_ID", `${label} must be unique.`); };
+const text = (value) => typeof value === "string" && value.trim();
+const sourceRefsResolve = (refs, sourceIds) => Array.isArray(refs) && refs.length > 0 && refs.every((sourceId) => sourceIds.has(sourceId));
+const httpsUrl = (value) => { try { return new URL(value).protocol === "https:"; } catch { return false; } };
 export const isCalendarDate = (value) => {
   if (typeof value !== "string" || !datePattern.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number); const date = new Date(Date.UTC(year, month - 1, day));
@@ -12,28 +15,46 @@ export const isCalendarDate = (value) => {
 };
 
 export function validateCertificationObjectiveRegistry(registry, filename = `${registry.trackId}.json`) {
-  for (const field of ["schemaVersion", "trackId", "provider", "certification", "examVariant", "guideVersion", "checkedDate", "firstPartyDocumentationHosts", "sources", "domains", "objectives", "examProfile"]) if (!Object.hasOwn(registry, field)) fail("MISSING_CERTIFICATION_OBJECTIVE_REGISTRY_FIELD", `${field} is required.`);
+  for (const field of ["schemaVersion", "trackId", "provider", "certification", "examVariant", "guideVersion", "checkedDate", "officialSourceHosts", "firstPartyDocumentationHosts", "sources", "domains", "objectives", "examProfile"]) if (!Object.hasOwn(registry, field)) fail("MISSING_CERTIFICATION_OBJECTIVE_REGISTRY_FIELD", `${field} is required.`);
   if (registry.schemaVersion !== "patternly-certification-objective-registry-v1") fail("INVALID_CERTIFICATION_OBJECTIVE_REGISTRY_VERSION", `${registry.trackId} has an unsupported schema version.`);
   if (filename !== `${registry.trackId}.json`) fail("CERTIFICATION_OBJECTIVE_REGISTRY_FILENAME_MISMATCH", `${filename} must match ${registry.trackId}.`);
   if (!isCalendarDate(registry.checkedDate)) fail("INVALID_SOURCE_CHECKED_DATE", `${registry.trackId}.checkedDate must be a calendar date.`);
-  if (!Array.isArray(registry.firstPartyDocumentationHosts) || !registry.firstPartyDocumentationHosts.length || registry.firstPartyDocumentationHosts.some((host) => typeof host !== "string" || !host.trim()) || new Set(registry.firstPartyDocumentationHosts).size !== registry.firstPartyDocumentationHosts.length) fail("INVALID_FIRST_PARTY_DOCUMENTATION_HOST", `${registry.trackId} must declare unique first-party documentation hosts.`);
+  const validateHosts = (hosts, code, label) => Array.isArray(hosts) && hosts.length && hosts.every((host) => text(host) && !host.includes(":") && !host.includes("/") && host === host.toLowerCase()) && new Set(hosts).size === hosts.length || fail(code, `${registry.trackId} must declare unique clean ${label} hosts.`);
+  validateHosts(registry.officialSourceHosts, "INVALID_OFFICIAL_SOURCE_HOST", "official source");
+  validateHosts(registry.firstPartyDocumentationHosts, "INVALID_FIRST_PARTY_DOCUMENTATION_HOST", "provider-owned documentation");
   if (registry.guideVersion !== "not_documented" && !registry.guideVersion?.trim()) fail("INVALID_GUIDE_VERSION_STATE", `${registry.trackId}.guideVersion must be explicit or not_documented.`);
+  if (!Array.isArray(registry.sources) || !registry.sources.length || !Array.isArray(registry.domains) || !registry.domains.length || !Array.isArray(registry.objectives) || !registry.objectives.length) fail("INVALID_CERTIFICATION_OBJECTIVE_REGISTRY", `${registry.trackId} requires non-empty sources, domains, and objectives.`);
   unique(registry.sources.map((source) => source.sourceId), `${registry.trackId} source IDs`); unique(registry.domains.map((domain) => domain.domainId), `${registry.trackId} domain IDs`); unique(registry.objectives.map((objective) => objective.objectiveId), `${registry.trackId} objective IDs`);
   const sourceIds = new Set(registry.sources.map((source) => source.sourceId)); const domainIds = new Set(registry.domains.map((domain) => domain.domainId)); const scopeIds = [];
-  for (const source of registry.sources) if (!isCalendarDate(source.checkedDate) || (source.version !== "not_documented" && !source.version?.trim())) fail("INVALID_SOURCE_CHECKED_DATE", `${registry.trackId}/${source.sourceId} requires checkedDate and explicit version state.`);
+  for (const source of registry.sources) {
+    for (const field of ["sourceId", "sourceType", "url", "title", "provider", "checkedDate", "sourceVolatility", "version", "authoritativeFor"]) if (!Object.hasOwn(source, field)) fail("MISSING_CERTIFICATION_SOURCE_FIELD", `${registry.trackId} source.${field} is required.`);
+    if (!isCalendarDate(source.checkedDate)) fail("INVALID_SOURCE_CHECKED_DATE", `${registry.trackId}/${source.sourceId} requires a calendar checkedDate.`);
+    let hostname; try { hostname = new URL(source.url).hostname; } catch { hostname = null; }
+    if (!text(source.sourceId) || !text(source.sourceType) || !httpsUrl(source.url) || !registry.officialSourceHosts.includes(hostname) || !text(source.title) || !text(source.provider) || source.provider !== registry.provider || !isCalendarDate(source.checkedDate) || !text(source.sourceVolatility) || !text(source.version) || !Array.isArray(source.authoritativeFor) || !source.authoritativeFor.length || source.authoritativeFor.some((entry) => !text(entry))) fail("INVALID_CERTIFICATION_SOURCE_PROVENANCE", `${registry.trackId}/${source.sourceId} has incomplete or invalid source provenance.`);
+  }
+  for (const domain of registry.domains) {
+    for (const field of ["domainId", "providerDomainNumber", "providerLabel", "weight", "sourceRefs", "checkedDate"]) if (!Object.hasOwn(domain, field)) fail("MISSING_CERTIFICATION_DOMAIN_FIELD", `${registry.trackId} domain.${field} is required.`);
+    if (!text(domain.domainId) || !text(domain.providerDomainNumber) || !text(domain.providerLabel) || !domain.weight || !["documented", "not_documented"].includes(domain.weight.status) || !isCalendarDate(domain.checkedDate) || !sourceRefsResolve(domain.sourceRefs, sourceIds)) fail("INVALID_CERTIFICATION_DOMAIN_PROVENANCE", `${registry.trackId}/${domain.domainId} has invalid source provenance.`);
+  }
   for (const objective of registry.objectives) {
-    if (!domainIds.has(objective.parentDomainId) || !isCalendarDate(objective.checkedDate) || !objective.sourceRefs?.every((sourceId) => sourceIds.has(sourceId))) fail("INVALID_CERTIFICATION_OBJECTIVE_REGISTRY", `${objective.objectiveId} has invalid domain or source provenance.`);
-    for (const scope of objective.scopeStatements) { scopeIds.push(scope.scopeStatementId); if (!isCalendarDate(scope.checkedDate) || !scope.sourceRefs?.every((sourceId) => sourceIds.has(sourceId))) fail("INVALID_CERTIFICATION_OBJECTIVE_REGISTRY", `${scope.scopeStatementId} has invalid source provenance.`); }
+    for (const field of ["objectiveId", "providerObjectiveNumber", "providerLabel", "parentDomainId", "objectiveWeight", "parentDomainWeight", "scopeStatements", "sourceRefs", "checkedDate"]) if (!Object.hasOwn(objective, field)) fail("MISSING_CERTIFICATION_OBJECTIVE_FIELD", `${registry.trackId} objective.${field} is required.`);
+    if (!text(objective.objectiveId) || !text(objective.providerObjectiveNumber) || !text(objective.providerLabel) || !domainIds.has(objective.parentDomainId) || !objective.objectiveWeight || !objective.parentDomainWeight || !Array.isArray(objective.scopeStatements) || !isCalendarDate(objective.checkedDate) || !sourceRefsResolve(objective.sourceRefs, sourceIds)) fail("INVALID_CERTIFICATION_OBJECTIVE_PROVENANCE", `${objective.objectiveId} has invalid domain or source provenance.`);
+    for (const scope of objective.scopeStatements) { for (const field of ["scopeStatementId", "providerLabel", "sourceRefs", "checkedDate"]) if (!Object.hasOwn(scope, field)) fail("MISSING_CERTIFICATION_SCOPE_FIELD", `${objective.objectiveId} scope.${field} is required.`); scopeIds.push(scope.scopeStatementId); if (!text(scope.scopeStatementId) || !text(scope.providerLabel) || !isCalendarDate(scope.checkedDate) || !sourceRefsResolve(scope.sourceRefs, sourceIds)) fail("INVALID_CERTIFICATION_SCOPE_PROVENANCE", `${scope.scopeStatementId} has invalid source provenance.`); }
   }
   unique(scopeIds, `${registry.trackId} scope statement IDs`);
-  for (const [field, value] of Object.entries(registry.examProfile)) {
-    if (field === "profileId" || field === "examVariant" || field === "guideVersion" || field === "faithfulSimulationEligibility") continue;
+  const profileFields = ["itemCountOrRange", "scoredUnscoredDistinction", "duration", "responseFormats", "navigation", "answerChanges", "flagging", "navigator", "sectionRules", "timeoutBehavior", "delivery"];
+  for (const field of ["profileId", "examVariant", "guideVersion", "faithfulSimulationEligibility", ...profileFields]) if (!Object.hasOwn(registry.examProfile, field)) fail("MISSING_EXAM_PROFILE_FIELD", `${registry.trackId}.examProfile.${field} is required.`);
+  if (!text(registry.examProfile.profileId) || registry.examProfile.examVariant !== registry.examVariant || registry.examProfile.guideVersion !== registry.guideVersion) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId} exam profile identity must match the registry.`);
+  for (const field of profileFields) {
+    const value = registry.examProfile[field];
     if (!value || !["documented", "not_documented"].includes(value.status) || !isCalendarDate(value.checkedDate)) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId}.examProfile.${field} has invalid provenance.`);
+    if (!Array.isArray(value.sourceRefs)) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId}.examProfile.${field} requires sourceRefs.`);
     if (value.status === "not_documented" && (value.value !== null || value.sourceRefs.length)) fail("UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED", `${registry.trackId}.examProfile.${field} must not carry an inferred value.`);
-    if (value.status === "documented" && (value.value == null || !value.sourceRefs.length || !value.sourceRefs.every((sourceId) => sourceIds.has(sourceId)))) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId}.examProfile.${field} lacks documented source evidence.`);
+    if (value.status === "documented" && (value.value == null || !sourceRefsResolve(value.sourceRefs, sourceIds))) fail("INVALID_EXAM_PROFILE_PROVENANCE", `${registry.trackId}.examProfile.${field} lacks documented source evidence.`);
   }
   const eligibility = registry.examProfile.faithfulSimulationEligibility;
-  if (eligibility?.status !== "blocked_by_undocumented_provider_behavior" || eligibility?.allowedPatternlyClaim !== "practice_simulation_not_provider_faithful") fail("UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED", `${registry.trackId} cannot claim provider-faithful simulation.`);
+  const undocumentedFields = profileFields.filter((field) => registry.examProfile[field].status === "not_documented");
+  if (eligibility?.status !== "blocked_by_undocumented_provider_behavior" || eligibility?.allowedPatternlyClaim !== "practice_simulation_not_provider_faithful" || !text(eligibility.forbiddenClaim) || !isCalendarDate(eligibility.checkedDate) || !Array.isArray(eligibility.undocumentedFields) || eligibility.undocumentedFields.length !== undocumentedFields.length || undocumentedFields.some((field) => !eligibility.undocumentedFields.includes(field)) || eligibility.undocumentedFields.some((field) => !undocumentedFields.includes(field))) fail("UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED", `${registry.trackId} cannot claim provider-faithful simulation.`);
   return registry;
 }
 

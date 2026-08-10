@@ -1,6 +1,6 @@
 # Curriculum coverage specification
 
-Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `7e1438eacd87efa29c21cad7235a72c5e19a1bd7b98b19d259e6f602c57b89a5`.
+Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `18ef233a7d1f6a7123d6a56ee2b260ad9b9769937c0b7840e4c891b078423c3a`.
 
 ## Release tracks
 
@@ -11,7 +11,7 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `7e14
 | coding-interview-dsa-problem-solving | coding_interview | 26/3404 | 26/3404 | 78 | 2375 | 1029 | 158 | 3246 | active_contract_and_planned_coverage |
 | frontend-system-design-interview | design_interview | 5/600 | 9/1460 | 45 | 0 | 1460 | 120 | 1340 | blocked_by_contract |
 | google-cloud-associate-cloud-engineer | certification | 5/600 | 10/2011 | 36 | 0 | 2011 | 176 | 1835 | exact_objectives_verified_volume_unverified_authoring_blocked_pending_mechanism_docs_and_CERT-CORR-02_to_CERT-CORR-04 |
-| hashicorp-terraform-associate-004 | certification | 5/600 | 9/1695 | 32 | 0 | 1695 | 179 | 1516 | registry_pending_authoring_blocked |
+| hashicorp-terraform-associate-004 | certification | 5/600 | 9/1695 | 32 | 0 | 1695 | 179 | 1516 | exact_objectives_verified_volume_unverified_authoring_blocked_pending_mechanism_docs_and_CERT-CORR-02_to_CERT-CORR-04 |
 | kubernetes-cloud-native-associate-kcna | certification | 4/480 | 10/1514 | 31 | 0 | 1514 | 159 | 1355 | registry_pending_authoring_blocked |
 | microsoft-azure-administrator-associate-az-104 | certification | 5/600 | 13/2536 | 48 | 0 | 2536 | 188 | 2348 | registry_pending_authoring_blocked |
 | microsoft-azure-ai-fundamentals-ai-901 | certification | 5/600 | 8/1363 | 27 | 0 | 1363 | 130 | 1233 | registry_pending_authoring_blocked |
@@ -185,7 +185,7 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `7e14
 
 - aws-certified-solutions-architect-associate: 12/12 prerequisite edges reconciled; registry_pending_CERT-CORR-01-aws-certified-solutions-architect-associate_authoring_blocked.
 - google-cloud-associate-cloud-engineer: 19/19 prerequisite edges reconciled; CERT-CORR-01_exact_registry_complete_direct_mechanism_docs_unresolved_volume_unverified_authoring_blocked_pending_CERT-CORR-02_to_CERT-CORR-04.
-- hashicorp-terraform-associate-004: 10/10 prerequisite edges reconciled; registry_pending_CERT-CORR-01-hashicorp-terraform-associate-004_authoring_blocked.
+- hashicorp-terraform-associate-004: 10/10 prerequisite edges reconciled; CERT-CORR-01_exact_registry_complete_direct_mechanism_docs_unresolved_volume_unverified_authoring_blocked_pending_CERT-CORR-02_to_CERT-CORR-04.
 - kubernetes-cloud-native-associate-kcna: 14/14 prerequisite edges reconciled; registry_pending_CERT-CORR-01-kubernetes-cloud-native-associate-kcna_authoring_blocked.
 - microsoft-azure-administrator-associate-az-104: 19/19 prerequisite edges reconciled; registry_pending_CERT-CORR-01-microsoft-azure-administrator-associate-az-104_authoring_blocked.
 - microsoft-azure-ai-fundamentals-ai-901: 11/11 prerequisite edges reconciled; registry_pending_CERT-CORR-01-microsoft-azure-ai-fundamentals-ai-901_authoring_blocked.
@@ -194,14 +194,14 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `7e14
 
 - aws-certified-solutions-architect-associate: registry_pending; authoring_blocked.
 - google-cloud-associate-cloud-engineer: exact current registry verified; 12/12 objectives covered, 0 exclusions; mappings 10/36/66/66; direct first-party mechanism documentation remains unresolved, volume unverified, and authoring blocked. New-guide gaps remain later slot/content work: enterprise identity/setup and Cloud Asset Inventory/Gemini/WIF; Agent Runtime, accelerators, notebooks and developer environments; newer data/storage products, Database Center and CMEK; AI-assisted tooling, networking, and operations mechanisms.
-- hashicorp-terraform-associate-004: registry_pending; authoring_blocked.
+- hashicorp-terraform-associate-004: exact current registry verified; 37/37 objectives covered, 0 exclusions; mappings 9/32/55/55; direct first-party mechanism documentation remains unresolved, volume unverified, and authoring blocked. New-guide gaps remain later slot/content work: direct first-party Terraform mechanism documentation for every target; objective-level volume and slot distinctness validation in CERT-CORR-02 through CERT-CORR-04.
 - kubernetes-cloud-native-associate-kcna: registry_pending; authoring_blocked.
 - microsoft-azure-administrator-associate-az-104: registry_pending; authoring_blocked.
 - microsoft-azure-ai-fundamentals-ai-901: registry_pending; authoring_blocked.
 
 ## Contract gaps
 
-GCP completed CERT-CORR-01 exact-registry work, but direct first-party mechanism documentation is unresolved; its volume remains unverified and authoring is blocked pending CERT-CORR-02_to_CERT-CORR-04. The other five certification tracks remain registry_pending in their named CERT-CORR-01 stages. All certification rows and counts are planning values, not an accepted backlog or feasibility claim. Design Interview remains blocked by its application-owned selection/scoring interaction contract. Coding remains an accepted baseline with its active source pipeline and existing pre-authoring gates.
+GCP and Terraform completed CERT-CORR-01 exact-registry work, but direct first-party mechanism documentation is unresolved; their volumes remain unverified and authoring is blocked pending CERT-CORR-02_to_CERT-CORR-04. The other four certification tracks remain registry_pending in their named CERT-CORR-01 stages. All certification rows and counts are planning values, not an accepted backlog or feasibility claim. Design Interview remains blocked by its application-owned selection/scoring interaction contract. Coding remains an accepted baseline with its active source pipeline and existing pre-authoring gates.
 
 ## Audit
 
@@ -212,13 +212,13 @@ Second-pass audit: certification_structure_provisional. Resolved defects: CURR-0
 - overlap_and_ownership: certification_provisional — Coding ownership is accepted. Certification ownership and overlap remain provisional pending exact objective registry and slot-plan correction stages.
 - misconceptions_and_transfer: passed — Every target declares a competing decision or misconception plus decisive and transfer boundaries.
 - variant_distinctness_and_filler: certification_unverified — Certification variant accounting is provisional and cannot establish authored-item distinctness before CERT-CORR-02 through CERT-CORR-04.
-- session_pool_and_modes: certification_unverified — GCP completed exact-registry work but its mechanism documentation and later CERT-CORR-02 through CERT-CORR-04 remain blocked; the other five tracks remain registry_pending in CERT-CORR-01. Design remains blocked_by_contract.
+- session_pool_and_modes: certification_unverified — GCP and Terraform completed exact-registry work but their mechanism documentation and later CERT-CORR-02 through CERT-CORR-04 remain blocked; the other four tracks remain registry_pending in CERT-CORR-01. Design remains blocked_by_contract.
 - free_premium_packages: passed — Exactly one brief-owned Free node exists per track and every node is an immutable whole-node package boundary.
-- source_and_provenance: one_of_six_exact_registries_complete — GCP has a verified exact registry and unresolved direct mechanism documentation; the remaining five exact registries remain pending their individual CERT-CORR-01 stages.
+- source_and_provenance: two_of_six_exact_registries_complete — GCP and Terraform have verified exact registries and unresolved direct mechanism documentation; the remaining four exact registries remain pending their individual CERT-CORR-01 stages.
 - cross_family_reuse: certification_provisional — Coding and Design contracts retain their current meaning; Certification aggregate SIG/DEC/BND/XFR planning is not accepted pending later correction stages.
-- authoring_cost: certification_volume_unverified — Certification volume and its authoring gap are not accepted: GCP awaits direct mechanism documentation and CERT-CORR-02 through CERT-CORR-04, while the other five tracks await their named CERT-CORR-01 stages.
+- authoring_cost: certification_volume_unverified — Certification volume and its authoring gap are not accepted: GCP and Terraform await direct mechanism documentation and CERT-CORR-02 through CERT-CORR-04, while the other four tracks await their named CERT-CORR-01 stages.
 
-Completion boundary: One of six certification tracks has completed CERT-CORR-01 exact-registry work (GCP); its direct mechanism documentation remains unresolved. Five registries remain pending their named CERT-CORR-01 track stages. All certification volumes are unverified and authoring is blocked; CERT-CORR-02 through CERT-CORR-04 remain pending. Coding remains an accepted baseline; Design remains blocked by its interaction contract.
+Completion boundary: Two of six certification tracks have completed CERT-CORR-01 exact-registry work (GCP and Terraform); their direct mechanism documentation remains unresolved. Four registries remain pending their named CERT-CORR-01 track stages. All certification volumes are unverified and authoring is blocked; CERT-CORR-02 through CERT-CORR-04 remain pending. Coding remains an accepted baseline; Design remains blocked by its interaction contract.
 
 ## First safe authoring batch
 

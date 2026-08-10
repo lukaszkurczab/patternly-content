@@ -364,3 +364,67 @@ test("GCP exact objective registry governs every nested binding and blocks autho
   const unsupportedExclusion = clone(gcp); unsupportedExclusion.objectiveExclusions = [{ objectiveId: "gcp-ace-standard-1.1", reasonCode: "provider_scope_removed", evidenceSourceRefs: ["google-ace-standard-exam-guide"], evidenceBackedRationale: "Setting up cloud projects and accounts. is excluded because it is no longer a valid provider scope despite this deliberately generic explanation." }];
   assert.throws(() => validateCurriculum(unsupportedExclusion, brief, registry), /INVALID_OBJECTIVE_EXCLUSION/);
 });
+
+test("Terraform 004 exact objective registry governs alphanumeric objective bindings and profile provenance", () => {
+  const terraform = clone(curricula.find((entry) => entry.trackId === "hashicorp-terraform-associate-004"));
+  const brief = briefs.find((entry) => entry.trackId === terraform.trackId);
+  const registry = certificationRegistries.get(terraform.trackId);
+  assert.equal(registry.domains.length, 8);
+  assert.equal(registry.objectives.length, 37);
+  assert.deepEqual(registry.officialSourceHosts, ["developer.hashicorp.com"]);
+  assert.doesNotThrow(() => validateCurriculum(terraform, brief, registry));
+  assert.equal(terraform.nodes.length, 9);
+  assert.equal(terraform.nodes.flatMap((node) => node.learningBlocks).length, 32);
+  assert.equal(terraform.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.coverageTargets)).length, 55);
+  assert.equal(terraform.targetItemCount, 1695);
+  assert.equal(terraform.existingVerifiedItemCount, 0);
+  assert.equal(terraform.authoringItemCount, 1695);
+  const dependencyTarget = terraform.nodes.flatMap((node) => node.learningBlocks).find((block) => block.blockId === "references_implicit_explicit_dependencies").coverageTargets.find((target) => target.primarySkillOrDecisionAtomId === "select_explicit_dependency_or_replacement_lifecycle_rule");
+  assert.deepEqual(dependencyTarget.officialObjectiveRefs, ["terraform-associate-004-4f"]);
+  const sensitiveTarget = terraform.nodes.flatMap((node) => node.learningBlocks).find((block) => block.blockId === "sensitive_data_and_secrets_vault").coverageTargets.find((target) => target.primarySkillOrDecisionAtomId === "select_sensitive_ephemeral_or_write_only_value_handling");
+  assert.deepEqual(sensitiveTarget.officialObjectiveRefs, ["terraform-associate-004-4h"]);
+  const crossTrack = clone(terraform); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-1.1"];
+  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
+  const removed = clone(terraform); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["objective-1a"];
+  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
+  const misspelled = clone(terraform); misspelled.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["terraform-associate-004-9z"];
+  assert.throws(() => validateCurriculum(misspelled, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
+  const uncovered = clone(terraform); const objective = "terraform-associate-004-8d"; const replaceObjective = (refs) => [...new Set(refs.map((ref) => ref === objective ? "terraform-associate-004-8b" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaceObjective(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaceObjective(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaceObjective(atom.officialObjectiveRefs); for (const target of block.coverageTargets) { target.officialObjectiveRefs = replaceObjective(target.officialObjectiveRefs); target.sourceRequirements.requirements[0].objectiveRefs = replaceObjective(target.sourceRequirements.requirements[0].objectiveRefs); } } }
+  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
+  const badProfile = clone(registry); badProfile.examProfile.duration.checkedDate = "2026-02-30";
+  assert.throws(() => validateCertificationObjectiveRegistry(badProfile), /INVALID_EXAM_PROFILE_PROVENANCE/);
+  const inventedSimulation = clone(registry); inventedSimulation.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "faithful_terraform_exam_simulation";
+  assert.throws(() => validateCertificationObjectiveRegistry(inventedSimulation), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+  const unownedRegistrySource = clone(terraform); const target = unownedRegistrySource.nodes[0].learningBlocks[0].coverageTargets[0]; unownedRegistrySource.sourceBasis.push({ sourceId: "unowned-registry-doc", sourceKind: "direct_first_party_product_documentation", url: "https://registry.terraform.io/v1/attacker/provider", title: "Attacker Registry provider", checkedDate: "2026-08-10", guideVersion: "associate-004", version: "1", volatility: "high", mechanismOrProductProperties: [target.primarySkillOrDecisionAtomId] }); target.sourceRequirements.authoringGate = "resolved_for_authoring"; target.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; target.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["unowned-registry-doc"];
+  assert.throws(() => validateCurriculum(unownedRegistrySource, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const badSource = clone(registry); delete badSource.sources[0].authoritativeFor;
+  assert.throws(() => validateCertificationObjectiveRegistry(badSource), /MISSING_CERTIFICATION_SOURCE_FIELD/);
+  const badSourceUrl = clone(registry); badSourceUrl.sources[0].url = "http://developer.hashicorp.com/not-secure";
+  assert.throws(() => validateCertificationObjectiveRegistry(badSourceUrl), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
+  const untrustedOfficialSource = clone(registry); untrustedOfficialSource.sources[0].url = "https://example.invalid/terraform-associate-004";
+  assert.throws(() => validateCertificationObjectiveRegistry(untrustedOfficialSource), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
+  const badDomain = clone(registry); badDomain.domains[0].sourceRefs = [];
+  assert.throws(() => validateCertificationObjectiveRegistry(badDomain), /INVALID_CERTIFICATION_DOMAIN_PROVENANCE/);
+  const badObjective = clone(registry); badObjective.objectives[0].sourceRefs = ["missing-source"];
+  assert.throws(() => validateCertificationObjectiveRegistry(badObjective), /INVALID_CERTIFICATION_OBJECTIVE_PROVENANCE/);
+  const scoped = clone(registry); const scopedObjective = scoped.objectives.find((objective) => objective.scopeStatements.length); scopedObjective.scopeStatements[0].checkedDate = "2026-02-30";
+  assert.throws(() => validateCertificationObjectiveRegistry(scoped), /INVALID_CERTIFICATION_SCOPE_PROVENANCE/);
+  const badEligibility = clone(registry); badEligibility.examProfile.faithfulSimulationEligibility.undocumentedFields = [];
+  assert.throws(() => validateCertificationObjectiveRegistry(badEligibility), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+  const dependencyRationales = Object.values(dependencyTarget.operationVariantCounts).map((entry) => entry.countRationale).join(" ");
+  for (const term of ["implicit", "depends_on", "create_before_destroy", "replacement ordering"]) assert.match(dependencyRationales, new RegExp(term));
+  assert.doesNotMatch(dependencyRationales, /add depends, hidden dependency, depends_on scope/);
+  const sensitiveRationales = Object.values(sensitiveTarget.operationVariantCounts).map((entry) => entry.countRationale).join(" ");
+  for (const term of ["sensitive redaction", "plan\/state persistence", "ephemeral", "write-only", "reference-only"]) assert.match(sensitiveRationales, new RegExp(term));
+  assert.doesNotMatch(sensitiveRationales, /mark sensitive values plaintext exposure, input modality, output contract/);
+});
+
+test("registry schema and validation constrain official exam source hosts independently from mechanism documentation hosts", async () => {
+  const schema = JSON.parse(await readFile("schemas/curriculum/certification-objective-registry.schema.json", "utf8"));
+  assert.ok(schema.required.includes("officialSourceHosts"));
+  assert.equal(schema.properties.officialSourceHosts.minItems, 1);
+  const gcp = certificationRegistries.get("google-cloud-associate-cloud-engineer");
+  assert.deepEqual(gcp.officialSourceHosts, ["cloud.google.com", "services.google.com", "support.google.com"]);
+  const badHost = clone(gcp); badHost.officialSourceHosts = ["cloud.google.com/"];
+  assert.throws(() => validateCertificationObjectiveRegistry(badHost), /INVALID_OFFICIAL_SOURCE_HOST/);
+});

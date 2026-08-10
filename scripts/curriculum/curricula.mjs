@@ -34,11 +34,16 @@ function assertCertificationObjectiveBindings(curriculum, registry) {
   if (curriculum.familyId !== "certification" || !registry) return;
   if (curriculum.officialObjectiveRegistryRef !== registry.__registryPath) fail("MISSING_CERTIFICATION_OBJECTIVE_REGISTRY", `${curriculum.trackId} must name its exact repo-relative objective registry.`);
   const objectiveIds = new Set(registry.objectives.map((objective) => objective.objectiveId));
-  const sharedPrefix = registry.objectives[0].objectiveId.replace(/\d+(?:\.\d+)?$/, "");
+  // Objective numbers are provider-defined: GCP uses `1.1`, while Terraform
+  // Associate uses alphanumeric keys such as `4h`. The stable registry prefix
+  // is consequently the identifier through its final separator, not a
+  // numeric-suffix heuristic.
+  const firstObjectiveId = registry.objectives[0].objectiveId;
+  const sharedPrefix = firstObjectiveId.slice(0, firstObjectiveId.lastIndexOf("-") + 1);
   const assertRefs = (refs, label) => {
     if (!Array.isArray(refs) || !refs.length) fail("UNKNOWN_CERTIFICATION_OBJECTIVE", `${label} requires one or more exact objective refs.`);
     for (const ref of refs) {
-      if (ref.startsWith("section-")) fail("REMOVED_CERTIFICATION_OBJECTIVE", `${label} references removed historical objective ${ref}.`);
+      if (ref.startsWith("section-") || ref.startsWith("objective-")) fail("REMOVED_CERTIFICATION_OBJECTIVE", `${label} references removed historical objective ${ref}.`);
       if (!ref.startsWith(sharedPrefix)) fail("CERTIFICATION_OBJECTIVE_TRACK_MISMATCH", `${label} references objective ${ref} from another track.`);
       if (!objectiveIds.has(ref)) fail("UNKNOWN_CERTIFICATION_OBJECTIVE", `${label} references unknown objective ${ref}.`);
     }

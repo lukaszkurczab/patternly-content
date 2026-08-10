@@ -419,6 +419,51 @@ test("Terraform 004 exact objective registry governs alphanumeric objective bind
   assert.doesNotMatch(sensitiveRationales, /mark sensitive values plaintext exposure, input modality, output contract/);
 });
 
+test("AI-901 exact objective registry governs seven current objectives, source gates, and practice-only simulation", () => {
+  const ai901 = clone(curricula.find((entry) => entry.trackId === "microsoft-azure-ai-fundamentals-ai-901"));
+  const brief = briefs.find((entry) => entry.trackId === ai901.trackId);
+  const registry = certificationRegistries.get(ai901.trackId);
+  assert.equal(registry.domains.length, 2);
+  assert.deepEqual(registry.domains.map((domain) => domain.weight.value), ["40–45%", "55–60%"]);
+  assert.equal(registry.objectives.length, 7);
+  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 29);
+  const registrySources = new Map(registry.sources.map((source) => [source.sourceId, source.url]));
+  assert.equal(registrySources.get("microsoft-exam-scoring-reports"), "https://learn.microsoft.com/en-us/credentials/certifications/exam-scoring-reports");
+  assert.equal(registrySources.get("microsoft-register-schedule-exam"), "https://learn.microsoft.com/en-us/credentials/certifications/register-schedule-exam");
+  const curriculumSources = new Map(ai901.sourceBasis.map((source) => [source.sourceId, source.url]));
+  assert.equal(curriculumSources.get("microsoft-exam-scoring-reports"), registrySources.get("microsoft-exam-scoring-reports"));
+  assert.equal(curriculumSources.get("microsoft-register-schedule-exam"), registrySources.get("microsoft-register-schedule-exam"));
+  assert.equal(ai901.nodes.length, 8);
+  assert.equal(ai901.nodes.flatMap((node) => node.learningBlocks).length, 27);
+  assert.equal(ai901.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.coverageTargets)).length, 44);
+  assert.equal(ai901.targetItemCount, 1363);
+  assert.equal(ai901.existingVerifiedItemCount, 0);
+  assert.equal(ai901.authoringItemCount, 1363);
+  assert.deepEqual(ai901.entryPrerequisites, ["Foundational Python syntax and programming techniques.", "Familiarity with Azure resources."]);
+  assert.match(ai901.learnerOutcome, /implement Azure AI solutions/i);
+  assert.doesNotThrow(() => validateCurriculum(ai901, brief, registry));
+  const target = ai901.nodes[0].learningBlocks[0].coverageTargets[0];
+  assert.deepEqual(target.officialObjectiveRefs, ["ai-901-2026-04-15-1.3"]);
+  const crossTrack = clone(ai901); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-1.1"];
+  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
+  const removed = clone(ai901); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["section-concepts-and-capabilities"];
+  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
+  const unknown = clone(ai901); unknown.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["ai-901-2026-04-15-9.9"];
+  assert.throws(() => validateCurriculum(unknown, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
+  const uncovered = clone(ai901); const objective = "ai-901-2026-04-15-2.4"; const replaceObjective = (refs) => [...new Set(refs.map((ref) => ref === objective ? "ai-901-2026-04-15-2.3" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaceObjective(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaceObjective(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaceObjective(atom.officialObjectiveRefs); for (const coverageTarget of block.coverageTargets) { coverageTarget.officialObjectiveRefs = replaceObjective(coverageTarget.officialObjectiveRefs); coverageTarget.sourceRequirements.requirements[0].objectiveRefs = replaceObjective(coverageTarget.sourceRequirements.requirements[0].objectiveRefs); } } }
+  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
+  const fakeMechanism = clone(ai901); fakeMechanism.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].directFirstPartySourceRefs = ["microsoft-ai-901-study-guide"];
+  assert.throws(() => validateCurriculum(fakeMechanism, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const badHost = clone(registry); badHost.sources[0].url = "https://example.invalid/ai-901";
+  assert.throws(() => validateCertificationObjectiveRegistry(badHost), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
+  const badProfile = clone(registry); badProfile.examProfile.itemCountOrRange.value = 50;
+  assert.throws(() => validateCertificationObjectiveRegistry(badProfile), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+  const faithfulClaim = clone(registry); faithfulClaim.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "provider_faithful_ai901_simulation";
+  assert.throws(() => validateCertificationObjectiveRegistry(faithfulClaim), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+  const simulatedClaim = clone(ai901); simulatedClaim.simulationOrCasePoolPlans[0].simulationClaim = "provider_faithful_ai901_simulation";
+  assert.throws(() => validateCurriculum(simulatedClaim, brief, registry), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+});
+
 test("registry schema and validation constrain official exam source hosts independently from mechanism documentation hosts", async () => {
   const schema = JSON.parse(await readFile("schemas/curriculum/certification-objective-registry.schema.json", "utf8"));
   assert.ok(schema.required.includes("officialSourceHosts"));

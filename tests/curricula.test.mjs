@@ -5,11 +5,13 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { catalogueFingerprint, loadCurricula, validateCurriculum } from "../scripts/curriculum/curricula.mjs";
+import { loadCertificationObjectiveRegistries, validateCertificationObjectiveRegistry } from "../scripts/curriculum/certification-objective-registries.mjs";
 import { buildExistingContentInventories } from "../scripts/curriculum/curriculum-inventory.mjs";
 import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
 
 const curricula = await loadCurricula();
 const briefs = await loadCanonicalTrackBriefs();
+const certificationRegistries = await loadCertificationObjectiveRegistries({ root: process.cwd() });
 const clone = (value) => structuredClone(value);
 
 test("curriculum catalogue represents every release track without admitting active content", () => {
@@ -317,4 +319,48 @@ test("curriculum specifications are separate from publishing discovery", async (
   assert.doesNotMatch(`${pipeline}\n${publishingScripts}`, /config\/curricula/);
   const gcp = curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer");
   assert.doesNotMatch(JSON.stringify(gcp), /ace-q-\d+/);
+});
+
+test("GCP exact objective registry governs every nested binding and blocks authoring", () => {
+  const gcp = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
+  const brief = briefs.find((entry) => entry.trackId === gcp.trackId);
+  const registry = certificationRegistries.get(gcp.trackId);
+  assert.equal(registry.domains.length, 4);
+  assert.equal(registry.objectives.length, 12);
+  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 94);
+  assert.doesNotThrow(() => validateCurriculum(gcp, brief, registry));
+  const crossTrack = clone(gcp); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["aws-saa-1.1"];
+  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
+  const removed = clone(gcp); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["section-5-configure-access-and-security"];
+  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
+  const misspelled = clone(gcp); misspelled.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-9.9"];
+  assert.throws(() => validateCurriculum(misspelled, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
+  const missing = clone(gcp); missing.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = [];
+  assert.throws(() => validateCurriculum(missing, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
+  const nestedMismatch = clone(gcp); nestedMismatch.nodes[0].learningBlocks[0].officialObjectiveRefs = ["gcp-ace-standard-1.2"];
+  assert.throws(() => validateCurriculum(nestedMismatch, brief, registry), /OBJECTIVE_BINDING_DERIVATION_MISMATCH/);
+  const uncovered = clone(gcp); const objective = "gcp-ace-standard-4.2"; const replaceObjective = (refs) => [...new Set(refs.map((ref) => ref === objective ? "gcp-ace-standard-4.1" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaceObjective(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaceObjective(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaceObjective(atom.officialObjectiveRefs); for (const target of block.coverageTargets) { target.officialObjectiveRefs = replaceObjective(target.officialObjectiveRefs); target.sourceRequirements.requirements[0].objectiveRefs = replaceObjective(target.sourceRequirements.requirements[0].objectiveRefs); } } }
+  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
+  const authoringReady = clone(gcp); authoringReady.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].resolvedAtCurriculumStage = true;
+  assert.throws(() => validateCurriculum(authoringReady, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const unresolvedFakeRef = clone(gcp); unresolvedFakeRef.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].directFirstPartySourceRefs = ["pretend-doc"];
+  assert.throws(() => validateCurriculum(unresolvedFakeRef, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const resolvedWrongHost = clone(gcp); const resolvedTarget = resolvedWrongHost.nodes[0].learningBlocks[0].coverageTargets[0]; resolvedWrongHost.sourceBasis.push({ sourceId: "wrong-host-doc", sourceKind: "direct_first_party_product_documentation", url: "https://example.com/product", title: "Wrong host", checkedDate: "2026-08-10", guideVersion: "not_documented", version: "not_documented", volatility: "high", mechanismOrProductProperties: [resolvedTarget.primarySkillOrDecisionAtomId] }); resolvedTarget.sourceRequirements.authoringGate = "resolved_for_authoring"; resolvedTarget.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; resolvedTarget.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["wrong-host-doc"];
+  assert.throws(() => validateCurriculum(resolvedWrongHost, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const resolvedMissingMechanism = clone(gcp); const missingMechanismTarget = resolvedMissingMechanism.nodes[0].learningBlocks[0].coverageTargets[0]; resolvedMissingMechanism.sourceBasis.push({ sourceId: "gcp-doc", sourceKind: "direct_first_party_product_documentation", url: "https://cloud.google.com/docs/product", title: "Product documentation", checkedDate: "2026-08-10", guideVersion: "not_documented", version: "not_documented", volatility: "high", mechanismOrProductProperties: ["another-mechanism"] }); missingMechanismTarget.sourceRequirements.authoringGate = "resolved_for_authoring"; missingMechanismTarget.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; missingMechanismTarget.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["gcp-doc"];
+  assert.throws(() => validateCurriculum(resolvedMissingMechanism, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const resolvedSource = clone(gcp); const resolvedSourceTarget = resolvedSource.nodes[0].learningBlocks[0].coverageTargets[0]; resolvedSource.sourceBasis.push({ sourceId: "gcp-direct-doc", sourceKind: "direct_first_party_product_documentation", url: "https://docs.cloud.google.com/product", title: "Product documentation", checkedDate: "2026-08-10", guideVersion: "not_documented", version: "not_documented", volatility: "high", mechanismOrProductProperties: [resolvedSourceTarget.primarySkillOrDecisionAtomId] }); resolvedSourceTarget.sourceRequirements.authoringGate = "resolved_for_authoring"; resolvedSourceTarget.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; resolvedSourceTarget.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["gcp-direct-doc"];
+  assert.doesNotThrow(() => validateCurriculum(resolvedSource, brief, registry));
+  const badProfile = clone(registry); badProfile.examProfile.navigation.value = { enabled: true };
+  assert.throws(() => validateCertificationObjectiveRegistry(badProfile), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+  const badDate = clone(registry); badDate.sources[0].checkedDate = "tomorrow";
+  assert.throws(() => validateCertificationObjectiveRegistry(badDate), /INVALID_SOURCE_CHECKED_DATE/);
+  const rolloverDate = clone(registry); rolloverDate.sources[0].checkedDate = "2026-99-99";
+  assert.throws(() => validateCertificationObjectiveRegistry(rolloverDate), /INVALID_SOURCE_CHECKED_DATE/);
+  const badGuideVersion = clone(registry); badGuideVersion.guideVersion = "";
+  assert.throws(() => validateCertificationObjectiveRegistry(badGuideVersion), /INVALID_GUIDE_VERSION_STATE/);
+  const inventedSimulation = clone(registry); inventedSimulation.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "faithful_google_standard_exam_simulation";
+  assert.throws(() => validateCertificationObjectiveRegistry(inventedSimulation), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+  const unsupportedExclusion = clone(gcp); unsupportedExclusion.objectiveExclusions = [{ objectiveId: "gcp-ace-standard-1.1", reasonCode: "provider_scope_removed", evidenceSourceRefs: ["google-ace-standard-exam-guide"], evidenceBackedRationale: "Setting up cloud projects and accounts. is excluded because it is no longer a valid provider scope despite this deliberately generic explanation." }];
+  assert.throws(() => validateCurriculum(unsupportedExclusion, brief, registry), /INVALID_OBJECTIVE_EXCLUSION/);
 });

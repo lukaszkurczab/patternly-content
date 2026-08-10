@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ROOT, catalogueFingerprint, loadCurricula } from "./curricula.mjs";
+import { loadCertificationObjectiveRegistries } from "./certification-objective-registries.mjs";
 import { buildExistingContentInventories } from "./curriculum-inventory.mjs";
 
 const output = join(ROOT, "evidence", "curriculum", "2026.08.09");
@@ -37,6 +38,8 @@ async function releaseFingerprints() {
 
 export async function auditCurricula() {
   const curricula = await loadCurricula();
+  const certificationRegistries = await loadCertificationObjectiveRegistries({ root: ROOT });
+  const certificationStageStatus = (curriculum) => certificationRegistries.has(curriculum.trackId) ? "CERT-CORR-01_exact_registry_complete_direct_mechanism_docs_unresolved_volume_unverified_authoring_blocked_pending_CERT-CORR-02_to_CERT-CORR-04" : `registry_pending_CERT-CORR-01-${curriculum.trackId}_authoring_blocked`;
   const catalogue = catalogueFingerprint(curricula);
   const trackVolumes = volumes(curricula);
   const inventories = await buildExistingContentInventories({ outputDirectory: output });
@@ -49,34 +52,34 @@ export async function auditCurricula() {
   const modeFeasibility = curricula.map((curriculum) => ({
     trackId: curriculum.trackId,
     familyId: curriculum.familyId,
-    coverageFeasibilitySemantics: curriculum.familyId === "coding_interview" ? "planned capacity backed by the active Coding source and interaction contract" : curriculum.familyId === "certification" ? "structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04" : "planned design capacity remains blocked by the missing interaction contract",
+    coverageFeasibilitySemantics: curriculum.familyId === "coding_interview" ? "planned capacity backed by the active Coding source and interaction contract" : curriculum.familyId === "certification" ? certificationStageStatus(curriculum) : "planned design capacity remains blocked by the missing interaction contract",
     runtimeAdmissionStatus: curriculum.familyId === "coding_interview" ? "active_source_contract_supported" : curriculum.familyId === "certification" ? "not_admitted_requires_track_and_taxonomy_contract" : "blocked_by_interaction_contract",
-    nodePools: curriculum.nodes.map((node) => ({ nodeId: node.nodeId, eligiblePlannedVariantCapacity: nodeTotal(node), authoredItemCount: node.existingVerifiedItemCount ?? 0, status: curriculum.familyId === "certification" ? "volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04" : curriculum.familyId === "design_interview" ? "blocked_by_contract" : "planned_coverage_sufficient" })),
-    modePools: curriculum.modePoolPlans.map((pool) => curriculum.familyId === "certification" ? { ...pool, declaredStatus: pool.status, status: "volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04" } : pool),
-    simulationOrCasePools: curriculum.simulationOrCasePoolPlans.map((pool) => curriculum.familyId === "certification" ? { ...pool, declaredStatus: pool.status, status: "volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04" } : pool)
+    nodePools: curriculum.nodes.map((node) => ({ nodeId: node.nodeId, eligiblePlannedVariantCapacity: nodeTotal(node), authoredItemCount: node.existingVerifiedItemCount ?? 0, status: curriculum.familyId === "certification" ? certificationStageStatus(curriculum) : curriculum.familyId === "design_interview" ? "blocked_by_contract" : "planned_coverage_sufficient" })),
+    modePools: curriculum.modePoolPlans.map((pool) => curriculum.familyId === "certification" ? { ...pool, declaredStatus: pool.status, status: certificationStageStatus(curriculum) } : pool),
+    simulationOrCasePools: curriculum.simulationOrCasePoolPlans.map((pool) => curriculum.familyId === "certification" ? { ...pool, declaredStatus: pool.status, status: certificationStageStatus(curriculum) } : pool)
   }));
   const certificationGraphReconciliation = curricula.filter((curriculum) => curriculum.familyId === "certification").map((curriculum) => ({
     trackId: curriculum.trackId,
     prerequisiteEdgeCount: curriculum.nodes.reduce((sum, node) => sum + node.prerequisiteNodeIds.length, 0),
     relationshipEdgeCount: curriculum.crossNodeRelationships.length,
-    status: "reconciled_structure_provisional_volume_unverified_authoring_blocked_pending_CERT-CORR-01_to_CERT-CORR-04"
+    status: certificationStageStatus(curriculum)
   }));
   const defects = {
     auditVersion: "2026.08.09-correction-pass",
     catalogueFingerprint: catalogue,
     status: "certification_structure_provisional",
-    completionBoundary: "Certification structure is provisional, its volume is unverified, and authoring is blocked pending CERT-CORR-01 through CERT-CORR-04. Coding remains an accepted baseline; Design remains outside this correction and blocked by its interaction contract.",
+    completionBoundary: "One of six certification tracks has completed CERT-CORR-01 exact-registry work (GCP); its direct mechanism documentation remains unresolved. Five registries remain pending their named CERT-CORR-01 track stages. All certification volumes are unverified and authoring is blocked; CERT-CORR-02 through CERT-CORR-04 remain pending. Coding remains an accepted baseline; Design remains blocked by its interaction contract.",
     auditDimensions: [
       { dimension: "node_boundaries_and_learning_blocks", status: "passed", evidence: "Every node owns two or more family-appropriate blocks; target ownership and track totals reconcile." },
       { dimension: "prerequisites_and_order", status: "certification_reconciled_structure_provisional", evidence: "Certification relationships exactly reconcile each declared prerequisite edge, with valid endpoints, canonical IDs, forward direction, and pair-specific reasons; later certification correction stages remain required." },
       { dimension: "overlap_and_ownership", status: "certification_provisional", evidence: "Coding ownership is accepted. Certification ownership and overlap remain provisional pending exact objective registry and slot-plan correction stages." },
       { dimension: "misconceptions_and_transfer", status: "passed", evidence: "Every target declares a competing decision or misconception plus decisive and transfer boundaries." },
       { dimension: "variant_distinctness_and_filler", status: "certification_unverified", evidence: "Certification variant accounting is provisional and cannot establish authored-item distinctness before CERT-CORR-02 through CERT-CORR-04." },
-      { dimension: "session_pool_and_modes", status: "certification_unverified", evidence: "Certification declared pools are reported only as raw planning values and are blocked pending CERT-CORR-01 through CERT-CORR-04; Design remains blocked_by_contract." },
+      { dimension: "session_pool_and_modes", status: "certification_unverified", evidence: "GCP completed exact-registry work but its mechanism documentation and later CERT-CORR-02 through CERT-CORR-04 remain blocked; the other five tracks remain registry_pending in CERT-CORR-01. Design remains blocked_by_contract." },
       { dimension: "free_premium_packages", status: "passed", evidence: "Exactly one brief-owned Free node exists per track and every node is an immutable whole-node package boundary." },
-      { dimension: "source_and_provenance", status: "certification_registry_pending_CERT-CORR-01", evidence: "Certification exact official objective registry and source mapping remain pending CERT-CORR-01." },
+      { dimension: "source_and_provenance", status: "one_of_six_exact_registries_complete", evidence: "GCP has a verified exact registry and unresolved direct mechanism documentation; the remaining five exact registries remain pending their individual CERT-CORR-01 stages." },
       { dimension: "cross_family_reuse", status: "certification_provisional", evidence: "Coding and Design contracts retain their current meaning; Certification aggregate SIG/DEC/BND/XFR planning is not accepted pending later correction stages." },
-      { dimension: "authoring_cost", status: "certification_volume_unverified", evidence: "Certification volume and its authoring gap are not accepted in this stage; authoring remains blocked pending CERT-CORR-01 through CERT-CORR-04." }
+      { dimension: "authoring_cost", status: "certification_volume_unverified", evidence: "Certification volume and its authoring gap are not accepted: GCP awaits direct mechanism documentation and CERT-CORR-02 through CERT-CORR-04, while the other five tracks await their named CERT-CORR-01 stages." }
     ],
     defects: [
       { defectId: "CURR-001", severity: "high", auditDimension: "coding_sanity_regression", evidence: "Cross-track materialization could have reopened the accepted Coding baseline.", whyItMatters: "Coding has verified node, target, and source-item commitments.", requiredCorrection: "Audit reachability only; do not redesign nodes or counts without a material defect.", resolution: "resolved", correctionEvidence: `PASS: 26 nodes, 3,404 target, ${inventories.codingInventory.itemCount} aligned existing items. The minimal correction makes recognition, selection, and boundary explicit block operations, requires direct atom ownership, and maps every existing item to node, block, and primary atom without inventing an item-level operation.` },
@@ -89,7 +92,7 @@ export async function auditCurricula() {
   };
   const overlapAudit = { catalogueFingerprint: catalogue, status: "no_unowned_overlap_or_family_overfit", representativeContractChecks: [
     { familyId: "coding_interview", representativeTracks: ["coding-interview-dsa-problem-solving"], result: "accepted 26-node baseline; block-operation ownership and item-to-atom mapping validated" },
-    { familyId: "certification", representativeTracks: ["aws-certified-solutions-architect-associate", "google-cloud-associate-cloud-engineer", "microsoft-azure-ai-fundamentals-ai-901"], controlTracks: ["hashicorp-terraform-associate-004", "kubernetes-cloud-native-associate-kcna", "microsoft-azure-administrator-associate-az-104"], result: "relationship graph reconciled; objective ownership, overlap, and aggregate operation counts remain provisional pending CERT-CORR-01 through CERT-CORR-04" },
+    { familyId: "certification", representativeTracks: ["aws-certified-solutions-architect-associate", "google-cloud-associate-cloud-engineer", "microsoft-azure-ai-fundamentals-ai-901"], controlTracks: ["hashicorp-terraform-associate-004", "kubernetes-cloud-native-associate-kcna", "microsoft-azure-administrator-associate-az-104"], result: "relationship graph reconciled; GCP exact objective ownership is complete, its later slot-plan work remains provisional, and the remaining five registries await their named CERT-CORR-01 stages" },
     { familyId: "design_interview", representativeTracks: ["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"], result: "distinct design-decision blocks and S/D/F/T[/I] counts validated; every mode remains blocked_by_contract" }
   ], familyNeutralGates: ["direct atom ownership", "acyclic ordered prerequisites", "whole-node package ownership", "node floor without uniform target-count signature", "mode-scoped eligible capacity", "source ID resolution"], reviewedPairs: [
     { pair: ["backend-system-design-interview", "frontend-system-design-interview"], boundary: "Backend owns service/data/reliability; Frontend owns client state/rendering/accessibility." },
@@ -97,7 +100,13 @@ export async function auditCurricula() {
     { pair: ["coding-interview-dsa-problem-solving", "backend-system-design-interview"], boundary: "Coding owns algorithmic implementation planning; design owns architectural decision communication." },
     { pair: ["certification tracks"], boundary: "Provider-specific objective and transfer context prevent shared active item ownership." }
   ] };
-  const sourceAudit = { catalogueFingerprint: catalogue, certifications: curricula.filter((entry) => entry.familyId === "certification").map((entry) => ({ trackId: entry.trackId, sources: entry.sourceBasis, status: "exact_objective_registry_pending_CERT-CORR-01", simulationClaim: "No faithful provider exam-experience claim is active while the exact objective registry is pending." })) };
+  const objectiveCoverage = { catalogueFingerprint: catalogue, certifications: curricula.filter((entry) => entry.familyId === "certification").map((entry) => {
+    const registry = certificationRegistries.get(entry.trackId);
+    if (!registry) return { trackId: entry.trackId, registryStatus: "registry_pending", authoringStatus: "authoring_blocked", exactObjectiveCoverage: "not_available_without_registry" };
+    const entities = entry.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.coverageTargets.flatMap((target) => target.officialObjectiveRefs)));
+    return { trackId: entry.trackId, registryStatus: "exact_current_registry_verified", authoringStatus: "blocked_pending_direct_first_party_mechanism_documentation", objectives: { covered: new Set(entities).size, total: registry.objectives.length, exclusions: entry.objectiveExclusions.length }, entityMappings: { nodes: entry.nodes.length, blocks: entry.nodes.flatMap((node) => node.learningBlocks).length, atoms: entry.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.skillOrDecisionAtoms)).length, targets: entry.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.coverageTargets)).length }, unresolvedGuideGaps: ["enterprise identity/setup and Cloud Asset Inventory/Gemini/WIF", "Agent Runtime, accelerators, notebooks and developer environments", "newer data/storage products, Database Center and CMEK", "AI-assisted tooling, networking, and operations mechanisms"] };
+  }) };
+  const sourceAudit = { catalogueFingerprint: catalogue, certifications: curricula.filter((entry) => entry.familyId === "certification").map((entry) => { const registry = certificationRegistries.get(entry.trackId); return registry ? { trackId: entry.trackId, sources: registry.sources, status: "exact_objective_registry_verified_source_contract_verified_mechanism_docs_unresolved", simulationClaim: "Patternly practice simulation only; no provider-faithful claim is active while provider behavior remains undocumented.", guideVersion: registry.guideVersion } : { trackId: entry.trackId, sources: entry.sourceBasis, status: "registry_pending_authoring_blocked", simulationClaim: "No faithful provider exam-experience claim is active while the exact objective registry is pending." }; }) };
   const authoringHandoff = {
     curriculumVersion: "2026.08.09",
     catalogueFingerprint: catalogue,
@@ -107,7 +116,7 @@ export async function auditCurricula() {
       trackId: curriculum.trackId,
       nodeId: node.nodeId,
       blockId: block.blockId,
-      executionStatus: curriculum.familyId === "coding_interview" ? "requires_coverage_binding_and_coherent_content_version" : curriculum.familyId === "design_interview" ? "blocked_by_interaction_contract" : "blocked_pending_CERT-CORR-01_to_CERT-CORR-04_not_an_authoring_batch",
+      executionStatus: curriculum.familyId === "coding_interview" ? "requires_coverage_binding_and_coherent_content_version" : curriculum.familyId === "design_interview" ? "blocked_by_interaction_contract" : `${certificationStageStatus(curriculum)}_not_an_authoring_batch`,
       sourcePaths: curriculum.familyId === "coding_interview" ? [...new Set(inventories.codingInventory.items.filter((item) => item.primaryCurriculumBlockId === block.blockId).map((item) => item.sourcePath))].sort() : [],
       coverageTargetIds: block.coverageTargets.map((target) => target.coverageTargetId),
       targetItemCount: block.authoringItemCount ?? block.targetItemCount,
@@ -127,12 +136,13 @@ export async function auditCurricula() {
   await write("mode-feasibility.json", { catalogueFingerprint: catalogue, tracks: modeFeasibility });
   await write("overlap-audit.json", overlapAudit);
   await write("source-audit.json", sourceAudit);
+  await write("objective-coverage-audit.json", objectiveCoverage);
   await write("volume-audit.json", { catalogueFingerprint: catalogue, tracks: trackVolumes, familyTotals });
   await write("authoring-handoff.json", authoringHandoff);
   await write("immutable-release-fingerprints.json", { checkedAt: "2026-08-09", releases: await releaseFingerprints() });
   await write("defects.json", defects);
   await write("graph-reconciliation.json", { catalogueFingerprint: catalogue, certifications: certificationGraphReconciliation });
-  return { curricula, catalogue, trackVolumes, modeFeasibility, defects, inventories, authoringHandoff, certificationGraphReconciliation };
+  return { curricula, catalogue, trackVolumes, modeFeasibility, defects, inventories, authoringHandoff, certificationGraphReconciliation, objectiveCoverage };
 }
 
 if (process.argv[1]?.endsWith("audit-curricula.mjs")) {

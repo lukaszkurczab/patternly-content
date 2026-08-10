@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { TARGET_TRACK_FAMILIES, loadCanonicalTrackBriefs } from "../product/track-briefs.mjs";
+import { isCalendarDate, loadCertificationObjectiveRegistries } from "./certification-objective-registries.mjs";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const CURRICULA_DIRECTORY = join(ROOT, "config", "curricula");
@@ -28,6 +29,62 @@ const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)
 const status = new Set(["planned_coverage_sufficient", "planned_coverage_insufficient", "blocked_by_contract", "blocked_by_source", "not_applicable"]);
 
 function assertUnique(values, label) { if (new Set(values).size !== values.length) fail("DUPLICATE_CURRICULUM_ID", `${label} must be unique.`); }
+const sameRefs = (left, right) => JSON.stringify([...new Set(left)].sort()) === JSON.stringify([...new Set(right)].sort());
+function assertCertificationObjectiveBindings(curriculum, registry) {
+  if (curriculum.familyId !== "certification" || !registry) return;
+  if (curriculum.officialObjectiveRegistryRef !== registry.__registryPath) fail("MISSING_CERTIFICATION_OBJECTIVE_REGISTRY", `${curriculum.trackId} must name its exact repo-relative objective registry.`);
+  const objectiveIds = new Set(registry.objectives.map((objective) => objective.objectiveId));
+  const sharedPrefix = registry.objectives[0].objectiveId.replace(/\d+(?:\.\d+)?$/, "");
+  const assertRefs = (refs, label) => {
+    if (!Array.isArray(refs) || !refs.length) fail("UNKNOWN_CERTIFICATION_OBJECTIVE", `${label} requires one or more exact objective refs.`);
+    for (const ref of refs) {
+      if (ref.startsWith("section-")) fail("REMOVED_CERTIFICATION_OBJECTIVE", `${label} references removed historical objective ${ref}.`);
+      if (!ref.startsWith(sharedPrefix)) fail("CERTIFICATION_OBJECTIVE_TRACK_MISMATCH", `${label} references objective ${ref} from another track.`);
+      if (!objectiveIds.has(ref)) fail("UNKNOWN_CERTIFICATION_OBJECTIVE", `${label} references unknown objective ${ref}.`);
+    }
+  };
+  const covered = new Set();
+  for (const node of curriculum.nodes) {
+    const nodeRefs = [];
+    for (const block of node.learningBlocks) {
+      const blockRefs = [];
+      for (const atom of block.skillOrDecisionAtoms) assertRefs(atom.officialObjectiveRefs, `${curriculum.trackId}/${atom.atomId}`);
+      for (const target of block.coverageTargets) {
+        assertRefs(target.officialObjectiveRefs, `${curriculum.trackId}/${target.coverageTargetId}`);
+        const atomRefs = target.directSkillOrDecisionAtomIds.flatMap((atomId) => block.skillOrDecisionAtoms.find((atom) => atom.atomId === atomId).officialObjectiveRefs);
+        if (!sameRefs(target.officialObjectiveRefs, atomRefs)) fail("OBJECTIVE_BINDING_DERIVATION_MISMATCH", `${target.coverageTargetId} must equal its direct atom union.`);
+        const requirements = target.sourceRequirements;
+        const official = requirements?.requirements?.find((requirement) => requirement.requirementType === "official_exam_objective");
+        const product = requirements?.requirements?.find((requirement) => requirement.requirementType === "direct_first_party_product_documentation");
+        const sourceById = new Map(curriculum.sourceBasis.map((source) => [source.sourceId, source]));
+        const productRefs = product?.directFirstPartySourceRefs;
+        if (!sameRefs(official?.objectiveRefs ?? [], target.officialObjectiveRefs) || official?.resolvedAtCurriculumStage !== true || !product || product.mustResolveBefore !== "authoring" || !Array.isArray(product.testedMechanismOrProductProperties) || !product.testedMechanismOrProductProperties.length || !Array.isArray(productRefs) || new Set(productRefs).size !== productRefs.length) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} has an invalid direct first-party source requirement.`);
+        if (product.resolvedAtCurriculumStage === false) { if (requirements.authoringGate !== "blocked_until_all_requirements_resolve" || productRefs.length) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} must remain blocked with no unresolved product-source refs.`); }
+        else if (product.resolvedAtCurriculumStage === true) {
+          if (requirements.authoringGate !== "resolved_for_authoring" || !productRefs.length) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} cannot claim authoring readiness without direct product sources.`);
+          const coveredMechanisms = new Set();
+          for (const sourceId of productRefs) {
+            const source = sourceById.get(sourceId); let parsed;
+            try { parsed = new URL(source?.url); } catch { fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} has an unresolved direct product source.`); }
+            if (source.sourceKind !== "direct_first_party_product_documentation" || parsed.protocol !== "https:" || !registry.firstPartyDocumentationHosts.includes(parsed.hostname) || !isCalendarDate(source.checkedDate) || !source.version?.trim() || !source.volatility?.trim() || !source.title?.trim() || !Array.isArray(source.mechanismOrProductProperties)) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} has an invalid direct product source.`);
+            source.mechanismOrProductProperties.forEach((property) => coveredMechanisms.add(property));
+          }
+          if (product.testedMechanismOrProductProperties.some((property) => !coveredMechanisms.has(property))) fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} lacks direct documentation for every tested mechanism.`);
+        } else fail("MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE", `${target.coverageTargetId} has an invalid direct-product resolution state.`);
+        if (target.interactionContractStatus === "existing_supported" && /faithful.*(provider|exam)|provider.*faithful/i.test(JSON.stringify(target))) fail("UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED", `${target.coverageTargetId} cannot claim a provider-faithful simulation.`);
+        target.officialObjectiveRefs.forEach((ref) => { covered.add(ref); blockRefs.push(ref); });
+      }
+      if (!sameRefs(block.officialObjectiveRefs, blockRefs)) fail("OBJECTIVE_BINDING_DERIVATION_MISMATCH", `${block.blockId} must equal its target union.`);
+      nodeRefs.push(...blockRefs);
+    }
+    if (!sameRefs(node.officialObjectiveRefs, nodeRefs)) fail("OBJECTIVE_BINDING_DERIVATION_MISMATCH", `${node.nodeId} must equal its block union.`);
+  }
+  const exclusions = curriculum.objectiveExclusions ?? [];
+  const sourceIds = new Set(registry.sources.map((source) => source.sourceId)); const exclusionReasons = new Set(["provider_scope_removed", "provider_scope_not_assessable", "duplicate_provider_objective"]);
+  for (const exclusion of exclusions) { const objective = registry.objectives.find((candidate) => candidate.objectiveId === exclusion.objectiveId); if (!objective || !exclusionReasons.has(exclusion.reasonCode) || !Array.isArray(exclusion.evidenceSourceRefs) || !exclusion.evidenceSourceRefs.length || exclusion.evidenceSourceRefs.some((sourceId) => !sourceIds.has(sourceId)) || typeof exclusion.evidenceBackedRationale !== "string" || exclusion.evidenceBackedRationale.length < 80 || (!exclusion.evidenceBackedRationale.includes(objective.providerLabel) && !exclusion.evidenceBackedRationale.includes(objective.providerObjectiveNumber)) || exclusion.evidenceSourceRefs.some((sourceId) => !exclusion.evidenceBackedRationale.includes(sourceId))) fail("INVALID_OBJECTIVE_EXCLUSION", `${curriculum.trackId} has an invalid objective exclusion.`); }
+  for (const objectiveId of objectiveIds) if (!covered.has(objectiveId) && !exclusions.some((exclusion) => exclusion.objectiveId === objectiveId)) fail("UNCOVERED_CERTIFICATION_OBJECTIVE", `${curriculum.trackId} does not cover ${objectiveId}.`);
+  if (curriculum.simulationOrCasePoolPlans.some((pool) => pool.simulationClaim !== "patternly_practice_not_provider_faithful")) fail("UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED", `${curriculum.trackId} may offer only a Patternly practice simulation while provider behavior remains undocumented.`);
+}
 function nodeCount(node) { return node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0); }
 function assertVolumeAccounting(value, targetItemCount, label) {
   const existing = value.existingVerifiedItemCount ?? 0;
@@ -138,7 +195,7 @@ function simulationModePlan(pool, curriculum) {
   return candidates[0];
 }
 
-export function validateCurriculum(curriculum, brief) {
+export function validateCurriculum(curriculum, brief, registry) {
   assertKeys(curriculum, requiredTrack, "curriculum");
   if (curriculum.schemaVersion !== "patternly-track-curriculum-v1" || curriculum.curriculumVersion !== CURRICULUM_VERSION) fail("INVALID_CURRICULUM_VERSION", `${curriculum.trackId} has a noncanonical curriculum version.`);
   if (curriculum.trackId !== brief.trackId || curriculum.familyId !== brief.internalFamily || curriculum.freeNodeId !== brief.freeNodeId) fail("CURRICULUM_BRIEF_MISMATCH", `${curriculum.trackId} differs from its canonical track brief.`);
@@ -161,7 +218,7 @@ export function validateCurriculum(curriculum, brief) {
     if (node.freeOrPremiumRole === "free" && node.nodeId !== curriculum.freeNodeId) fail("FREE_NODE_OUTSIDE_BRIEF", `${curriculum.trackId}/${node.nodeId} is not the brief free node.`);
     if (node.freeOrPremiumRole === "premium" && node.nodeId === curriculum.freeNodeId) fail("FREE_NODE_ROLE_MISMATCH", `${curriculum.trackId}/${node.nodeId} must be free.`);
     if (node.prerequisiteNodeIds.some((id) => !order.has(id) || order.get(id) >= order.get(node.nodeId))) fail("INVALID_PREREQUISITE_ORDER", `${curriculum.trackId}/${node.nodeId} prerequisite must be an earlier canonical node.`);
-    if (curriculum.familyId === "certification" && (!node.officialObjectiveRefs.length || node.officialObjectiveRefs.some((ref) => !/^(task-|section-|objective-|skills-measured-|kubernetes-fundamentals|container-orchestration|cloud-native-application-delivery|cloud-native-architecture|concepts-and-capabilities|implement-foundry-solutions|identities-and-governance|implement-and-manage-storage|deploy-and-manage-compute-resources|configure-and-manage-virtual-networking|monitor-and-maintain-azure-resources)/.test(ref)))) fail("MISSING_OFFICIAL_OBJECTIVE_SOURCE", `${curriculum.trackId}/${node.nodeId} has no real provider objective keys.`);
+    if (curriculum.familyId === "certification" && registry && !node.officialObjectiveRefs?.length) fail("MISSING_OFFICIAL_OBJECTIVE_SOURCE", `${curriculum.trackId}/${node.nodeId} has no exact provider objective keys.`);
     if (!Array.isArray(node.learningBlocks) || node.learningBlocks.length < 2 || new Set(node.learningBlockRefs).size !== node.learningBlocks.length) fail("INCOMPLETE_NODE_BLOCKS", `${curriculum.trackId}/${node.nodeId} lacks coherent block ownership.`);
     for (const block of node.learningBlocks) {
       assertKeys(block, requiredBlock, `block ${block.blockId}`); blockIds.push(block.blockId);
@@ -240,14 +297,15 @@ export function validateCurriculum(curriculum, brief) {
     if (required < modePlan.requiredUniqueItems) fail("MODE_POOL_INSUFFICIENT", `${label} does not satisfy ${modePlan.modeId}.requiredUniqueItems.`);
     if (required > eligibleVariantCount(nodes, scope, modePlan.modeId)) fail("MODE_POOL_INSUFFICIENT", `${label} exceeds eligible planned variants in its declared scope.`);
   }
+  assertCertificationObjectiveBindings(curriculum, registry);
   return curriculum;
 }
 
 export async function loadCurricula({ root = ROOT } = {}) {
-  const briefs = await loadCanonicalTrackBriefs({ root }); const directory = join(root, "config", "curricula"); const names = (await readdir(directory)).filter((name) => name.endsWith(".json")).sort();
+  const briefs = await loadCanonicalTrackBriefs({ root }); const registries = await loadCertificationObjectiveRegistries({ root }); const directory = join(root, "config", "curricula"); const names = (await readdir(directory)).filter((name) => name.endsWith(".json")).sort();
   if (names.length !== Object.keys(TARGET_TRACK_FAMILIES).length) fail("CURRICULUM_CATALOGUE_DENSITY", "Curriculum directory must contain exactly the ten release tracks.");
   const curricula = [];
-  for (const name of names) { const curriculum = await readJson(join(directory, name)); if (name !== `${curriculum.trackId}.json`) fail("CURRICULUM_FILENAME_MISMATCH", `${name} must match track ID.`); const brief = briefs.find((entry) => entry.trackId === curriculum.trackId); if (!brief) fail("UNKNOWN_CURRICULUM_TRACK", `${curriculum.trackId} lacks a canonical brief.`); curricula.push(validateCurriculum(curriculum, brief)); }
+  for (const name of names) { const curriculum = await readJson(join(directory, name)); if (name !== `${curriculum.trackId}.json`) fail("CURRICULUM_FILENAME_MISMATCH", `${name} must match track ID.`); const brief = briefs.find((entry) => entry.trackId === curriculum.trackId); if (!brief) fail("UNKNOWN_CURRICULUM_TRACK", `${curriculum.trackId} lacks a canonical brief.`); curricula.push(validateCurriculum(curriculum, brief, registries.get(curriculum.trackId))); }
   const ids = curricula.map((curriculum) => curriculum.trackId); assertUnique(ids, "track IDs"); if (Object.keys(TARGET_TRACK_FAMILIES).some((id) => !ids.includes(id))) fail("CURRICULUM_TRACK_SET_MISMATCH", "Curricula must represent the exact ten-track catalogue.");
   return Object.freeze(curricula);
 }

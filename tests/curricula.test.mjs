@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -570,6 +571,56 @@ test("AI-901 exact objective registry governs seven current objectives, source g
   assert.throws(() => validateCertificationObjectiveRegistry(faithfulClaim), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
   const simulatedClaim = clone(ai901); simulatedClaim.simulationOrCasePoolPlans[0].simulationClaim = "provider_faithful_ai901_simulation";
   assert.throws(() => validateCurriculum(simulatedClaim, brief, registry), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+});
+
+test("AWS SAA-C03 exact registry binds every AWS atom and remains authoring-blocked", () => {
+  const aws = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
+  const brief = briefs.find((entry) => entry.trackId === aws.trackId);
+  const registry = certificationRegistries.get(aws.trackId);
+  const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+  const blocks = aws.nodes.flatMap((node) => node.learningBlocks);
+  const atoms = aws.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.skillOrDecisionAtoms.map((atom) => [node.nodeId, block.blockId, atom.atomId, atom.officialObjectiveRefs])));
+  assert.equal(registry.sources.length, 7);
+  assert.equal(registry.domains.length, 4);
+  assert.equal(registry.objectives.length, 14);
+  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 189);
+  assert.equal(registry.objectives.find((objective) => objective.objectiveId === "aws-saa-c03-2.2").scopeStatements.filter((scope) => scope.scopeKind === "knowledge").length, 12);
+  assert.equal(registry.objectives.find((objective) => objective.objectiveId === "aws-saa-c03-2.2").scopeStatements.filter((scope) => scope.scopeKind === "skill").length, 8);
+  assert.deepEqual(registry.officialSourceHosts, ["docs.aws.amazon.com", "aws.amazon.com"]);
+  assert.deepEqual(registry.removedObjectiveIds, ["task-1.1", "task-1.2", "task-1.3", "task-2.1", "task-2.2", "task-3.1", "task-3.2", "task-3.3", "task-3.4", "task-3.5", "task-4.1", "task-4.2", "task-4.3", "task-4.4"]);
+  assert.equal(aws.nodes.length, 11); assert.equal(blocks.length, 39); assert.equal(atoms.length, 76);
+  assert.equal(hash(atoms), "ad44f171136c8de5965b8b56a4eac6f279863a6788ffae5bf262b4f1bc4bd80f");
+  assert.equal(hash(blocks.map((block) => [block.blockId, block.officialObjectiveRefs])), "263e6423121a863cb4e9cc160e50a885bae8c8f6eb81a700bb62e1d48c5ac94a");
+  assert.equal(hash(aws.nodes.map((node) => [node.nodeId, node.officialObjectiveRefs])), "25e76a6c1e15db498335dcc462940c382ad07c1aea51b7a9c9237cf7b4c3c83b");
+  assert.equal(aws.targetItemCount, 2496); assert.equal(aws.existingVerifiedItemCount, 0); assert.equal(aws.authoringItemCount, 2496);
+  assert.deepEqual(aws.objectiveExclusions, []);
+  assert.ok(aws.nodes.every((node) => node.learningBlocks.every((block) => block.coverageTargets.every((target) => target.sourceRequirements.authoringGate === "blocked_until_all_requirements_resolve" && target.sourceRequirements.requirements[0].resolvedAtCurriculumStage === true && target.sourceRequirements.requirements[1].resolvedAtCurriculumStage === false && target.sourceRequirements.requirements[1].directFirstPartySourceRefs.length === 0 && target.sourceRequirements.requirements[1].testedMechanismOrProductProperties[0] === target.primarySkillOrDecisionAtomId))));
+  assert.equal(aws.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems, 65);
+  assert.equal(aws.simulationOrCasePoolPlans[0].uniqueItemCount, 65);
+  assert.equal(aws.simulationOrCasePoolPlans[0].simulationClaim, "patternly_practice_not_provider_faithful");
+  assert.doesNotThrow(() => validateCurriculum(aws, brief, registry));
+  const crossTrack = clone(aws); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-1.1"];
+  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
+  const removed = clone(aws); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["task-1.1"];
+  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
+  const misspelled = clone(aws); misspelled.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["aws-saa-c03-4.5"];
+  assert.throws(() => validateCurriculum(misspelled, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
+  const uncovered = clone(aws); const replaced = (refs) => [...new Set(refs.map((ref) => ref === "aws-saa-c03-4.4" ? "aws-saa-c03-4.3" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaced(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaced(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaced(atom.officialObjectiveRefs); for (const target of block.coverageTargets) { target.officialObjectiveRefs = replaced(target.officialObjectiveRefs); target.sourceRequirements.requirements[0].objectiveRefs = replaced(target.sourceRequirements.requirements[0].objectiveRefs); } } }
+  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
+  const fakeMechanism = clone(aws); fakeMechanism.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].directFirstPartySourceRefs = ["aws-saa-c03-exam-guide"];
+  assert.throws(() => validateCurriculum(fakeMechanism, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const prematureReady = clone(aws); const target = prematureReady.nodes[0].learningBlocks[0].coverageTargets[0]; prematureReady.sourceBasis.push({ sourceId: "wrong-host-doc", sourceKind: "direct_first_party_product_documentation", url: "https://example.invalid/aws", title: "Not AWS documentation", guideVersion: "not_documented", version: "current", volatility: "high", checkedDate: "2026-08-10", mechanismOrProductProperties: [target.primarySkillOrDecisionAtomId] }); target.sourceRequirements.authoringGate = "resolved_for_authoring"; target.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; target.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["wrong-host-doc"];
+  assert.throws(() => validateCurriculum(prematureReady, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
+  const badHost = clone(registry); badHost.sources[0].url = "https://example.invalid/aws-saa-c03";
+  assert.throws(() => validateCertificationObjectiveRegistry(badHost), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
+  const badProfileAuthority = clone(registry); badProfileAuthority.examProfile.answerChanges = { status: "documented", value: { canChange: true }, sourceRefs: ["aws-saa-c03-exam-guide"], checkedDate: "2026-08-10" };
+  assert.throws(() => validateCertificationObjectiveRegistry(badProfileAuthority), /INVALID_EXAM_PROFILE_PROVENANCE/);
+  const badProfile = clone(registry); badProfile.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "faithful_aws_saa_c03_exam_simulation";
+  assert.throws(() => validateCertificationObjectiveRegistry(badProfile), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
+  const fifty = clone(aws); fifty.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems = 50; fifty.simulationOrCasePoolPlans[0].uniqueItemCount = 50;
+  assert.throws(() => validateCurriculum(fifty, brief, registry), /MODE_POOL_INSUFFICIENT/);
+  const faithfulClaim = clone(aws); faithfulClaim.simulationOrCasePoolPlans[0].simulationClaim = "faithful_aws_saa_c03_exam_simulation";
+  assert.throws(() => validateCurriculum(faithfulClaim, brief, registry), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
 });
 
 test("KCNA exact competency registry governs current domains, source gates, and 60-item practice simulation", () => {

@@ -1,12 +1,12 @@
 # Curriculum coverage specification
 
-Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `3692d8f666d311e46483f712a0609ab2d1879781a3139f044d7b4e149dab1a61`.
+Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `7c4415dfd31feadace1b59949e63a819f3f7435e80500e4585a89178e1ee10f8`.
 
 ## Release tracks
 
 | Track | Family | Before nodes/target | After nodes/target | Blocks | Verified existing | New authoring | Free | Premium | Mode state |
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| aws-certified-solutions-architect-associate | certification | 4/480 | 11/2496 | 39 | 0 | 2496 | 171 | 2325 | registry_pending_authoring_blocked |
+| aws-certified-solutions-architect-associate | certification | 4/480 | 11/2496 | 39 | 0 | 2496 | 171 | 2325 | exact_objectives_verified_volume_unverified_authoring_blocked_pending_mechanism_docs_and_CERT-CORR-02_to_CERT-CORR-04 |
 | backend-system-design-interview | design_interview | 5/600 | 8/1154 | 35 | 0 | 1154 | 121 | 1033 | blocked_by_contract |
 | coding-interview-dsa-problem-solving | coding_interview | 26/3404 | 26/3404 | 78 | 2375 | 1029 | 158 | 3246 | active_contract_and_planned_coverage |
 | frontend-system-design-interview | design_interview | 5/600 | 9/1460 | 45 | 0 | 1460 | 120 | 1340 | blocked_by_contract |
@@ -183,7 +183,7 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `3692
 
 ## Certification graph reconciliation
 
-- aws-certified-solutions-architect-associate: 12/12 prerequisite edges reconciled; registry_pending_CERT-CORR-01-aws-certified-solutions-architect-associate_authoring_blocked.
+- aws-certified-solutions-architect-associate: 12/12 prerequisite edges reconciled; CERT-CORR-01_exact_registry_complete_direct_mechanism_docs_unresolved_volume_unverified_authoring_blocked_pending_CERT-CORR-02_to_CERT-CORR-04.
 - google-cloud-associate-cloud-engineer: 19/19 prerequisite edges reconciled; CERT-CORR-01_exact_registry_complete_direct_mechanism_docs_unresolved_volume_unverified_authoring_blocked_pending_CERT-CORR-02_to_CERT-CORR-04.
 - hashicorp-terraform-associate-004: 10/10 prerequisite edges reconciled; CERT-CORR-01_exact_registry_complete_direct_mechanism_docs_unresolved_volume_unverified_authoring_blocked_pending_CERT-CORR-02_to_CERT-CORR-04.
 - kubernetes-cloud-native-associate-kcna: 14/14 prerequisite edges reconciled; CERT-CORR-01_exact_registry_complete_direct_mechanism_docs_unresolved_volume_unverified_authoring_blocked_pending_CERT-CORR-02_to_CERT-CORR-04.
@@ -192,7 +192,7 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `3692
 
 ## Certification objective registry
 
-- aws-certified-solutions-architect-associate: registry_pending; authoring_blocked.
+- aws-certified-solutions-architect-associate: exact current registry verified; 14/14 objectives covered, 0 exclusions; mappings 11/39/76/76; direct first-party mechanism documentation remains unresolved, volume unverified, and authoring blocked. New-guide gaps remain later slot/content work: direct first-party mechanism documentation for every target; objective-level volume and slot distinctness validation in CERT-CORR-02 through CERT-CORR-04.
 - google-cloud-associate-cloud-engineer: exact current registry verified; 12/12 objectives covered, 0 exclusions; mappings 10/36/66/66; direct first-party mechanism documentation remains unresolved, volume unverified, and authoring blocked. New-guide gaps remain later slot/content work: direct first-party mechanism documentation for every target; objective-level volume and slot distinctness validation in CERT-CORR-02 through CERT-CORR-04.
 - hashicorp-terraform-associate-004: exact current registry verified; 37/37 objectives covered, 0 exclusions; mappings 9/32/55/55; direct first-party mechanism documentation remains unresolved, volume unverified, and authoring blocked. New-guide gaps remain later slot/content work: direct first-party mechanism documentation for every target; objective-level volume and slot distinctness validation in CERT-CORR-02 through CERT-CORR-04.
 - kubernetes-cloud-native-associate-kcna: exact current registry verified; 13/13 objectives covered, 0 exclusions; mappings 10/31/46/46; direct first-party mechanism documentation remains unresolved, volume unverified, and authoring blocked. New-guide gaps remain later slot/content work: direct first-party mechanism documentation for every target; objective-level volume and slot distinctness validation in CERT-CORR-02 through CERT-CORR-04.
@@ -201,7 +201,7 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `3692
 
 ## Contract gaps
 
-5 of 6 certification tracks completed CERT-CORR-01 exact-registry work (google-cloud-associate-cloud-engineer, hashicorp-terraform-associate-004, kubernetes-cloud-native-associate-kcna, microsoft-azure-administrator-associate-az-104, microsoft-azure-ai-fundamentals-ai-901), but direct first-party mechanism documentation is unresolved; their volumes remain unverified and authoring is blocked pending CERT-CORR-02_to_CERT-CORR-04. 1 certification tracks remain registry_pending in their named CERT-CORR-01 stages (aws-certified-solutions-architect-associate). All certification rows and counts are planning values, not an accepted backlog or feasibility claim. Design Interview remains blocked by its application-owned selection/scoring interaction contract. Coding remains an accepted baseline with its active source pipeline and existing pre-authoring gates.
+6 of 6 certification tracks completed CERT-CORR-01 exact-registry work (aws-certified-solutions-architect-associate, google-cloud-associate-cloud-engineer, hashicorp-terraform-associate-004, kubernetes-cloud-native-associate-kcna, microsoft-azure-administrator-associate-az-104, microsoft-azure-ai-fundamentals-ai-901), but direct first-party mechanism documentation is unresolved; their volumes remain unverified and authoring is blocked pending CERT-CORR-02_to_CERT-CORR-04. 0 certification tracks remain registry_pending in their named CERT-CORR-01 stages (none). All certification rows and counts are planning values, not an accepted backlog or feasibility claim. Design Interview remains blocked by its application-owned selection/scoring interaction contract. Coding remains an accepted baseline with its active source pipeline and existing pre-authoring gates.
 
 ## Audit
 
@@ -212,13 +212,13 @@ Second-pass audit: certification_structure_provisional. Resolved defects: CURR-0
 - overlap_and_ownership: certification_provisional — Coding ownership is accepted. Certification ownership and overlap remain provisional pending exact objective registry and slot-plan correction stages.
 - misconceptions_and_transfer: passed — Every target declares a competing decision or misconception plus decisive and transfer boundaries.
 - variant_distinctness_and_filler: certification_unverified — Certification variant accounting is provisional and cannot establish authored-item distinctness before CERT-CORR-02 through CERT-CORR-04.
-- session_pool_and_modes: certification_unverified — 5 of 6 certification tracks completed exact-registry work but their mechanism documentation and later CERT-CORR-02 through CERT-CORR-04 remain blocked; 1 tracks remain registry_pending in CERT-CORR-01. Design remains blocked_by_contract.
+- session_pool_and_modes: certification_unverified — 6 of 6 certification tracks completed exact-registry work but their mechanism documentation and later CERT-CORR-02 through CERT-CORR-04 remain blocked; 0 tracks remain registry_pending in CERT-CORR-01. Design remains blocked_by_contract.
 - free_premium_packages: passed — Exactly one brief-owned Free node exists per track and every node is an immutable whole-node package boundary.
-- source_and_provenance: 5_of_6_exact_registries_complete — google-cloud-associate-cloud-engineer, hashicorp-terraform-associate-004, kubernetes-cloud-native-associate-kcna, microsoft-azure-administrator-associate-az-104, microsoft-azure-ai-fundamentals-ai-901 have verified exact registries and unresolved direct mechanism documentation; the remaining 1 exact registries remain pending their individual CERT-CORR-01 stages.
+- source_and_provenance: 6_of_6_exact_registries_complete — aws-certified-solutions-architect-associate, google-cloud-associate-cloud-engineer, hashicorp-terraform-associate-004, kubernetes-cloud-native-associate-kcna, microsoft-azure-administrator-associate-az-104, microsoft-azure-ai-fundamentals-ai-901 have verified exact registries and unresolved direct mechanism documentation; the remaining 0 exact registries remain pending their individual CERT-CORR-01 stages.
 - cross_family_reuse: certification_provisional — Coding and Design contracts retain their current meaning; Certification aggregate SIG/DEC/BND/XFR planning is not accepted pending later correction stages.
-- authoring_cost: certification_volume_unverified — Certification volume and its authoring gap are not accepted: google-cloud-associate-cloud-engineer, hashicorp-terraform-associate-004, kubernetes-cloud-native-associate-kcna, microsoft-azure-administrator-associate-az-104, microsoft-azure-ai-fundamentals-ai-901 await direct mechanism documentation and CERT-CORR-02 through CERT-CORR-04, while 1 tracks await their named CERT-CORR-01 stages.
+- authoring_cost: certification_volume_unverified — Certification volume and its authoring gap are not accepted: aws-certified-solutions-architect-associate, google-cloud-associate-cloud-engineer, hashicorp-terraform-associate-004, kubernetes-cloud-native-associate-kcna, microsoft-azure-administrator-associate-az-104, microsoft-azure-ai-fundamentals-ai-901 await direct mechanism documentation and CERT-CORR-02 through CERT-CORR-04, while 0 tracks await their named CERT-CORR-01 stages.
 
-Completion boundary: 5 of 6 certification tracks have completed CERT-CORR-01 exact-registry work (google-cloud-associate-cloud-engineer, hashicorp-terraform-associate-004, kubernetes-cloud-native-associate-kcna, microsoft-azure-administrator-associate-az-104, microsoft-azure-ai-fundamentals-ai-901); their direct mechanism documentation remains unresolved. 1 registries remain pending their named CERT-CORR-01 track stages (aws-certified-solutions-architect-associate). All certification volumes are unverified and authoring is blocked; CERT-CORR-02 through CERT-CORR-04 remain pending. Coding remains an accepted baseline; Design remains blocked by its interaction contract.
+Completion boundary: 6 of 6 certification tracks have completed CERT-CORR-01 exact-registry work (aws-certified-solutions-architect-associate, google-cloud-associate-cloud-engineer, hashicorp-terraform-associate-004, kubernetes-cloud-native-associate-kcna, microsoft-azure-administrator-associate-az-104, microsoft-azure-ai-fundamentals-ai-901); their direct mechanism documentation remains unresolved. 0 registries remain pending their named CERT-CORR-01 track stages (). All certification volumes are unverified and authoring is blocked; CERT-CORR-02 through CERT-CORR-04 remain pending. Coding remains an accepted baseline; Design remains blocked by its interaction contract.
 
 ## First safe authoring batch
 

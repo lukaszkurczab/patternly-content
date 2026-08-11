@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 86 direct slots, 27 authoring-feasible slots, 59 deferred slots, and 237 blocked", () => {
+test("Design central provenance reconciles 95 direct slots, 27 authoring-feasible slots, 68 deferred slots, and 228 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [27, 112, 86, 86]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [28, 115, 92, 95]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 86);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 237);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 95);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 228);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 59);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 26, "frontend-system-design-interview": 35, "object-oriented-design-interview": 25 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 68);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 40, "object-oriented-design-interview": 27 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -53,12 +53,39 @@ test("UML transition evidence cannot broaden an explicit-trigger rule to complet
   ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
 });
 
+test("round-four deferred bindings retain their exact source closure and choice-only non-promotion", () => {
+  const expected = {
+    "design-binding:backend:aggregate-invariant-service-owner": { anchorIds: ["ddd-ref-aggregates"], claimIds: ["ddd-aggregate-root-invariant-transaction-boundary"] },
+    "design-binding:backend:reject-sync-shared-aggregate-owner": { anchorIds: ["ddd-ref-aggregates"], claimIds: ["ddd-aggregate-root-invariant-transaction-boundary"] },
+    "design-binding:frontend:lcp-budget-p75-segmented": { anchorIds: ["web-vitals-core-metrics-targets-and-segmentation-2026-08-10"], claimIds: ["web-vitals-lcp-good-target", "web-vitals-p75-mobile-desktop-segmentation"] },
+    "design-binding:frontend:inp-budget-p75-segmented": { anchorIds: ["web-vitals-core-metrics-targets-and-segmentation-2026-08-10"], claimIds: ["web-vitals-inp-good-target", "web-vitals-p75-mobile-desktop-segmentation"] },
+    "design-binding:frontend:cls-budget-p75-segmented": { anchorIds: ["web-vitals-core-metrics-targets-and-segmentation-2026-08-10"], claimIds: ["web-vitals-cls-good-target", "web-vitals-p75-mobile-desktop-segmentation"] },
+    "design-binding:frontend:web-vitals-budget-segmentation": { anchorIds: ["web-vitals-core-metrics-targets-and-segmentation-2026-08-10"], claimIds: ["web-vitals-p75-mobile-desktop-segmentation"] },
+    "design-binding:frontend:lab-field-performance-decision": { anchorIds: ["web-vitals-lab-not-substitute-for-field-2026-08-10"], claimIds: ["web-vitals-lab-is-not-field-substitute"] },
+    "design-binding:ood:stable-behavior-contract": { anchorIds: ["rdd1991-client-server-information-hiding-contract"], claimIds: ["rdd-client-contract-hides-server-internals"] },
+    "design-binding:ood:command-query-observational-boundary": { anchorIds: ["ddd-ref-side-effect-free-functions"], claimIds: ["ddd-command-query-observable-side-effect-boundary"] }
+  };
+  for (const [bindingId, closure] of Object.entries(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    assert.ok(binding, bindingId);
+    assert.deepEqual({ anchorIds: binding.anchorIds, claimIds: binding.claimIds }, closure);
+    const curriculum = curricula.find((entry) => binding.slotId.startsWith(`${entry.trackId}:`));
+    const slot = curriculum.slots.find((entry) => entry.slotId === binding.slotId);
+    assert.deepEqual(slot.sourceRequirements, { resolutionState: "resolved_exact_direct", sourceBindingId: bindingId });
+    assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+    assert.deepEqual(slot.deliveryInteraction, { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" });
+  }
+  const tampered = structuredClone(curricula.find((entry) => entry.trackId === "object-oriented-design-interview"));
+  tampered.slots.find((slot) => slot.sourceRequirements.sourceBindingId === "design-binding:ood:command-query-observational-boundary").deliveryInteraction.selectionMode = "multiple";
+  assert.throws(() => validate(tampered), /INVALID_DESIGN_RESOLVED_SLOT/);
+});
+
 test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 source-binding slots", () => {
   validateDesignInterviewFamilyConfig(family);
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [18, 25, 16]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 30, 18]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },

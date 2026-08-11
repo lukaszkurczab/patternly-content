@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -182,7 +182,8 @@ test("validator rejects missing boundaries, stale GCP identities, unsupported in
 test("certification relationship graphs exactly reconcile prerequisite edges", () => {
   const gcp = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
   const brief = briefs.find((entry) => entry.trackId === gcp.trackId);
-  assert.doesNotThrow(() => validateCurriculum(gcp, brief));
+  const registry = certificationRegistries.get(gcp.trackId);
+  assert.doesNotThrow(() => validateCurriculum(gcp, brief, registry));
   delete gcp.crossNodeRelationships[0].reason;
   assert.throws(() => validateCurriculum(gcp, brief), /MISSING_CERTIFICATION_RELATIONSHIP_FIELD/);
   const missingAnchor = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
@@ -305,7 +306,7 @@ test("validator rejects systematic non-Coding quota signatures without rejecting
   oneLocalPair.existingVerifiedItemCount = 0;
   oneLocalPair.targetItemCount = oneLocalPair.nodes.flatMap((node) => node.learningBlocks).reduce((sum, block) => sum + block.targetItemCount, 0);
   oneLocalPair.authoringItemCount = oneLocalPair.targetItemCount;
-  assert.doesNotThrow(() => validateCurriculum(oneLocalPair, awsBrief));
+  assert.doesNotThrow(() => validateCurriculum(oneLocalPair, awsBrief, certificationRegistries.get(oneLocalPair.trackId)));
 });
 
 test("mode feasibility counts only legal scoped target variants and validates simulation uniqueness", () => {
@@ -695,4 +696,38 @@ test("registry schema and validation constrain official exam source hosts indepe
   assert.deepEqual(gcp.officialSourceHosts, ["cloud.google.com", "services.google.com", "support.google.com"]);
   const badHost = clone(gcp); badHost.officialSourceHosts = ["cloud.google.com/"];
   assert.throws(() => validateCertificationObjectiveRegistry(badHost), /INVALID_OFFICIAL_SOURCE_HOST/);
+});
+
+test("canonical certification registries cannot redefine their provider or trusted host roots", () => {
+  for (const registry of certificationRegistries.values()) assert.doesNotThrow(() => validateCertificationObjectiveRegistry(clone(registry)));
+  const gcp = certificationRegistries.get("google-cloud-associate-cloud-engineer");
+  const coMutatedTrustRoots = clone(gcp);
+  coMutatedTrustRoots.officialSourceHosts = ["example.invalid"];
+  coMutatedTrustRoots.firstPartyDocumentationHosts = ["example.invalid"];
+  coMutatedTrustRoots.sources.forEach((source) => { source.url = `https://example.invalid/${source.sourceId}`; });
+  assert.throws(() => validateCertificationObjectiveRegistry(coMutatedTrustRoots), /UNTRUSTED_CERTIFICATION_REGISTRY_ROOT/);
+  const providerMutation = clone(gcp); providerMutation.provider = "Example Cloud";
+  assert.throws(() => validateCertificationObjectiveRegistry(providerMutation), /UNTRUSTED_CERTIFICATION_REGISTRY_ROOT/);
+  const directDocumentationMutation = clone(gcp); directDocumentationMutation.firstPartyDocumentationHosts = ["example.invalid"];
+  assert.throws(() => validateCertificationObjectiveRegistry(directDocumentationMutation), /UNTRUSTED_CERTIFICATION_REGISTRY_ROOT/);
+});
+
+test("certification registry catalogue and curriculum binding fail closed", async () => {
+  const aws = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
+  const awsBrief = briefs.find((entry) => entry.trackId === aws.trackId);
+  assert.throws(() => validateCurriculum(aws, awsBrief, undefined), /MISSING_CERTIFICATION_OBJECTIVE_REGISTRY/);
+  const renamedRegistry = clone(certificationRegistries.get(aws.trackId)); renamedRegistry.trackId = "renamed-aws-registry";
+  assert.throws(() => validateCertificationObjectiveRegistry(renamedRegistry), /UNTRUSTED_CERTIFICATION_REGISTRY_ROOT/);
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "patternly-certification-registry-set-"));
+  try {
+    await cp("config", join(temporaryRoot, "config"), { recursive: true });
+    await rm(join(temporaryRoot, "config", "certification-objective-registries", "aws-certified-solutions-architect-associate.json"));
+    await assert.rejects(() => loadCertificationObjectiveRegistries({ root: temporaryRoot }), /CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH/);
+    await rm(join(temporaryRoot, "config"), { recursive: true, force: true });
+    await cp("config", join(temporaryRoot, "config"), { recursive: true });
+    await writeFile(join(temporaryRoot, "config", "certification-objective-registries", "unexpected-registry.json"), "{}\n");
+    await assert.rejects(() => loadCertificationObjectiveRegistries({ root: temporaryRoot }), /CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH/);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
 });

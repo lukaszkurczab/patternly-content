@@ -10,6 +10,20 @@ const sourceRefsResolve = (refs, sourceIds) => Array.isArray(refs) && refs.lengt
 const httpsUrl = (value) => { try { return new URL(value).protocol === "https:"; } catch { return false; } };
 const profileAuthorityCapability = Object.freeze({ itemCountOrRange: "item_count", scoredUnscoredDistinction: "scored_unscored_distinction", duration: "duration", responseFormats: "response_formats", navigation: "navigation", answerChanges: "answer_changes", flagging: "flagging", navigator: "navigator", sectionRules: "section_rules", timeoutBehavior: "timeout_behavior", delivery: "delivery" });
 const sha256 = (value) => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+const canonicalCertificationRegistryTrustAnchors = Object.freeze({
+  "aws-certified-solutions-architect-associate": Object.freeze({ provider: "Amazon Web Services", officialSourceHosts: Object.freeze(["docs.aws.amazon.com", "aws.amazon.com"]), firstPartyDocumentationHosts: Object.freeze(["docs.aws.amazon.com", "aws.amazon.com"]) }),
+  "google-cloud-associate-cloud-engineer": Object.freeze({ provider: "Google Cloud", officialSourceHosts: Object.freeze(["cloud.google.com", "services.google.com", "support.google.com"]), firstPartyDocumentationHosts: Object.freeze(["cloud.google.com", "docs.cloud.google.com"]) }),
+  "hashicorp-terraform-associate-004": Object.freeze({ provider: "HashiCorp", officialSourceHosts: Object.freeze(["developer.hashicorp.com"]), firstPartyDocumentationHosts: Object.freeze(["developer.hashicorp.com", "www.hashicorp.com"]) }),
+  "kubernetes-cloud-native-associate-kcna": Object.freeze({ provider: "Linux Foundation / Cloud Native Computing Foundation", officialSourceHosts: Object.freeze(["training.linuxfoundation.org", "docs.linuxfoundation.org", "raw.githubusercontent.com"]), firstPartyDocumentationHosts: Object.freeze(["kubernetes.io", "www.cncf.io"]) }),
+  "microsoft-azure-administrator-associate-az-104": Object.freeze({ provider: "Microsoft", officialSourceHosts: Object.freeze(["learn.microsoft.com"]), firstPartyDocumentationHosts: Object.freeze(["learn.microsoft.com"]) }),
+  "microsoft-azure-ai-fundamentals-ai-901": Object.freeze({ provider: "Microsoft", officialSourceHosts: Object.freeze(["learn.microsoft.com"]), firstPartyDocumentationHosts: Object.freeze(["learn.microsoft.com"]) })
+});
+export const CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS = Object.freeze(Object.keys(canonicalCertificationRegistryTrustAnchors));
+function assertCanonicalCertificationRegistryTrustAnchor(registry) {
+  const anchor = canonicalCertificationRegistryTrustAnchors[registry.trackId];
+  if (!anchor) fail("UNTRUSTED_CERTIFICATION_REGISTRY_ROOT", `${registry.trackId} is not a canonical certification registry track.`);
+  if (registry.provider !== anchor.provider || JSON.stringify(registry.officialSourceHosts) !== JSON.stringify(anchor.officialSourceHosts) || JSON.stringify(registry.firstPartyDocumentationHosts) !== JSON.stringify(anchor.firstPartyDocumentationHosts)) fail("UNTRUSTED_CERTIFICATION_REGISTRY_ROOT", `${registry.trackId} may not redefine its provider identity or trusted source hosts.`);
+}
 function validateRawGithubIdentity(source, parsed, trackId) {
   if (parsed.hostname !== "raw.githubusercontent.com") return;
   const identity = source.urlIdentity; const digest = source.contentDigest;
@@ -29,6 +43,7 @@ export function validateCertificationObjectiveRegistry(registry, filename = `${r
   const validateHosts = (hosts, code, label) => Array.isArray(hosts) && hosts.length && hosts.every((host) => text(host) && !host.includes(":") && !host.includes("/") && host === host.toLowerCase()) && new Set(hosts).size === hosts.length || fail(code, `${registry.trackId} must declare unique clean ${label} hosts.`);
   validateHosts(registry.officialSourceHosts, "INVALID_OFFICIAL_SOURCE_HOST", "official source");
   validateHosts(registry.firstPartyDocumentationHosts, "INVALID_FIRST_PARTY_DOCUMENTATION_HOST", "provider-owned documentation");
+  assertCanonicalCertificationRegistryTrustAnchor(registry);
   if (registry.guideVersion !== "not_documented" && !registry.guideVersion?.trim()) fail("INVALID_GUIDE_VERSION_STATE", `${registry.trackId}.guideVersion must be explicit or not_documented.`);
   if (!Array.isArray(registry.sources) || !registry.sources.length || !Array.isArray(registry.domains) || !registry.domains.length || !Array.isArray(registry.objectives) || !registry.objectives.length) fail("INVALID_CERTIFICATION_OBJECTIVE_REGISTRY", `${registry.trackId} requires non-empty sources, domains, and objectives.`);
   unique(registry.sources.map((source) => source.sourceId), `${registry.trackId} source IDs`); unique(registry.domains.map((domain) => domain.domainId), `${registry.trackId} domain IDs`); unique(registry.objectives.map((objective) => objective.objectiveId), `${registry.trackId} objective IDs`);
@@ -70,7 +85,10 @@ export async function loadCertificationObjectiveRegistries({ root }) {
   const directory = join(root, "config", "certification-objective-registries");
   let names = [];
   try { names = (await readdir(directory)).filter((name) => name.endsWith(".json")).sort(); } catch (error) { if (error.code !== "ENOENT") throw error; }
+  const expectedNames = new Set(CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS.map((trackId) => `${trackId}.json`));
+  if (names.length !== expectedNames.size || names.some((name) => !expectedNames.has(name))) fail("CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH", "Certification objective registries must contain exactly the six canonical registry files.");
   const registries = new Map();
   for (const name of names) { const registry = validateCertificationObjectiveRegistry(await readJson(join(directory, name)), name); if (registries.has(registry.trackId)) fail("DUPLICATE_CERTIFICATION_OBJECTIVE_REGISTRY", `${registry.trackId} has multiple registries.`); Object.defineProperty(registry, "__registryPath", { value: `config/certification-objective-registries/${name}` }); registries.set(registry.trackId, registry); }
+  if (registries.size !== expectedNames.size || CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS.some((trackId) => !registries.has(trackId))) fail("CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH", "Certification objective registries must resolve every canonical registry track.");
   return registries;
 }

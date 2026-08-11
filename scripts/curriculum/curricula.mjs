@@ -43,7 +43,8 @@ function normalizedSourceUrl(url) {
   return `${parsed.protocol.toLowerCase()}//${parsed.host.toLowerCase()}${path}`;
 }
 function assertCertificationObjectiveBindings(curriculum, registry) {
-  if (curriculum.familyId !== "certification" || !registry) return;
+  if (curriculum.familyId !== "certification") return;
+  if (!registry) fail("MISSING_CERTIFICATION_OBJECTIVE_REGISTRY", `${curriculum.trackId} requires its exact certification objective registry.`);
   if (curriculum.officialObjectiveRegistryRef !== registry.__registryPath) fail("MISSING_CERTIFICATION_OBJECTIVE_REGISTRY", `${curriculum.trackId} must name its exact repo-relative objective registry.`);
   const objectiveIds = new Set(registry.objectives.map((objective) => objective.objectiveId));
   const officialSourceIds = new Set(registry.sources.map((source) => source.sourceId));

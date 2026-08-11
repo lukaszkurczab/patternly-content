@@ -22,6 +22,27 @@ const stable = (value) => Array.isArray(value) ? value.map(stable) : value && ty
 const sourcePropertyIds = (slot) => slot.sourceRequirements.directFirstPartyDocumentation.flatMap((requirement) => requirement.testedProperties).sort();
 export const fingerprintInput = (slot) => stable({ ownershipPath: { trackId: slot.trackId, nodeId: slot.nodeId, blockId: slot.blockId, coverageTargetId: slot.coverageTargetId }, atom: slot.directSkillOrDecisionAtomId, operation: slot.learningOperation, changedEvidence: [...slot.materialEvidenceOrConstraintChanged].sort(), expectedOutcome: slot.expectedOutcome, decisiveBoundary: slot.decisiveBoundary, surface: slot.intendedSurface, testedProperties: sourcePropertyIds(slot) });
 export const dedupeFingerprint = (slot) => createHash("sha256").update(JSON.stringify(fingerprintInput(slot))).digest("hex");
+// Stage03 trust roots need a representation-independent identity for planned
+// (not learner-facing) slots.  These helpers deliberately exclude the mutable
+// dedupe/artifact fingerprints and normalize only set-like planning fields.
+const normalizedText = (value) => typeof value === "string" ? value.normalize("NFKC").replace(/\s+/gu, " ").trim() : value;
+const normalizedPlanning = (value) => Array.isArray(value)
+  ? value.map(normalizedPlanning)
+  : value && typeof value === "object"
+    ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, normalizedPlanning(value[key])]))
+    : normalizedText(value);
+const sorted = (values) => [...values].sort();
+export const plannedSlotDirectSourceBindingInput = (slot) => normalizedPlanning(slot.sourceRequirements.directFirstPartyDocumentation.map((requirement) => ({
+  testedProperties: sorted(requirement.testedProperties), sourceRefs: sorted(requirement.sourceRefs), resolutionState: requirement.resolutionState
+})).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right))));
+export const plannedSlotDirectSourceBindingSha256 = (slot) => createHash("sha256").update(JSON.stringify(plannedSlotDirectSourceBindingInput(slot))).digest("hex");
+export const plannedSlotSemanticIdentityInput = (slot) => normalizedPlanning({
+  identity: { trackId: slot.trackId, currentNodeId: slot.currentNodeId ?? slot.nodeId, candidateNodeId: slot.nodeId, blockId: slot.blockId, coverageTargetId: slot.coverageTargetId, atomId: slot.directSkillOrDecisionAtomId, slotId: slot.slotId },
+  diagnosticContract: { learningOperation: slot.learningOperation, questionIntent: slot.questionIntent, materialEvidenceOrConstraintChanged: sorted(slot.materialEvidenceOrConstraintChanged), expectedOutcome: slot.expectedOutcome, errorModelOrFailureMode: slot.errorModelOrFailureMode, decisiveBoundary: slot.decisiveBoundary, transferBoundary: slot.transferBoundary, intendedSurface: slot.intendedSurface, difficultyIntent: slot.difficultyIntent },
+  deliveryAndOverlap: { eligibleModes: sorted(slot.eligibleModes), deliveryInteraction: slot.deliveryInteraction, overlapExclusions: sorted(slot.overlapExclusions), maintenanceRisk: slot.maintenanceRisk, neighborDistinctness: [...slot.neighborDistinctness].sort((left, right) => left.neighborSlotId.localeCompare(right.neighborSlotId)) },
+  provenance: { officialObjectiveRefs: sorted(slot.officialObjectiveRefs), officialObjective: slot.sourceRequirements.officialObjective, directSourceBinding: plannedSlotDirectSourceBindingInput(slot), unresolvedRequirements: slot.sourceRequirements.unresolvedRequirements }
+});
+export const plannedSlotSemanticIdentitySha256 = (slot) => createHash("sha256").update(JSON.stringify(plannedSlotSemanticIdentityInput(slot))).digest("hex");
 const readJson = async (path) => JSON.parse(await readFile(path, "utf8"));
 export async function loadCandidateSourceAnchors(root = process.cwd()) { const path = join(root, "schemas/curriculum/certification-planned-slot-source-anchors.json"); const bytes = await readFile(path, "utf8"); if (createHash("sha256").update(bytes).digest("hex") !== candidateSourceAnchorSha256) fail("CERTIFICATION_PLANNED_SLOT_SOURCE_ANCHOR_DIGEST_MISMATCH", "Candidate source anchors differ from the executable CERT-CORR-02 trust anchor."); return new Map(JSON.parse(bytes).anchors.map((source) => [source.sourceId, source])); }
 const planDirectory = (root) => join(root, "evidence", "certification", "planned-item-slots");

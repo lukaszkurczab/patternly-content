@@ -40,7 +40,7 @@ async function files(root) {
   const nested = await Promise.all(entries.sort((a, b) => compare(a.name, b.name)).map((entry) => entry.isDirectory() ? files(join(root, entry.name)) : [join(root, entry.name)]));
   return nested.flat();
 }
-async function discoverSourceBatches(root, trackId) {
+export async function discoverSourceBatches(root, trackId) {
   const base = join(root, "manual", "source", trackId);
   const paths = (await files(base)).filter((path) => path.endsWith(".json")).sort((a, b) => compare(relative(base, a), relative(base, b)));
   if (!paths.length) throw new PublishingFailure("EMPTY_INGRESS", `No manual source JSON exists for ${trackId}.`);

@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 
 import { TARGET_TRACK_FAMILIES, loadCanonicalTrackBriefs } from "../product/track-briefs.mjs";
 import { isCalendarDate, loadCertificationObjectiveRegistries } from "./certification-objective-registries.mjs";
+import { validateCertificationCurriculum } from "./certification-curricula.mjs";
+import { validateCertificationPromotion } from "./certification-promotion.mjs";
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const CURRICULA_DIRECTORY = join(ROOT, "config", "curricula");
@@ -331,8 +333,9 @@ export async function loadCurricula({ root = ROOT } = {}) {
   const briefs = await loadCanonicalTrackBriefs({ root }); const registries = await loadCertificationObjectiveRegistries({ root }); const directory = join(root, "config", "curricula"); const names = (await readdir(directory)).filter((name) => name.endsWith(".json")).sort();
   if (names.length !== Object.keys(TARGET_TRACK_FAMILIES).length) fail("CURRICULUM_CATALOGUE_DENSITY", "Curriculum directory must contain exactly the ten release tracks.");
   const curricula = [];
-  for (const name of names) { const curriculum = await readJson(join(directory, name)); if (name !== `${curriculum.trackId}.json`) fail("CURRICULUM_FILENAME_MISMATCH", `${name} must match track ID.`); const brief = briefs.find((entry) => entry.trackId === curriculum.trackId); if (!brief) fail("UNKNOWN_CURRICULUM_TRACK", `${curriculum.trackId} lacks a canonical brief.`); curricula.push(validateCurriculum(curriculum, brief, registries.get(curriculum.trackId))); }
+  for (const name of names) { const curriculum = await readJson(join(directory, name)); if (name !== `${curriculum.trackId}.json`) fail("CURRICULUM_FILENAME_MISMATCH", `${name} must match track ID.`); const brief = briefs.find((entry) => entry.trackId === curriculum.trackId); if (!brief) fail("UNKNOWN_CURRICULUM_TRACK", `${curriculum.trackId} lacks a canonical brief.`); curricula.push(curriculum.schemaVersion === "patternly-certification-curriculum-v1" ? validateCertificationCurriculum(curriculum, { brief, registry: registries.get(curriculum.trackId) }) : validateCurriculum(curriculum, brief, registries.get(curriculum.trackId))); }
   const ids = curricula.map((curriculum) => curriculum.trackId); assertUnique(ids, "track IDs"); if (Object.keys(TARGET_TRACK_FAMILIES).some((id) => !ids.includes(id))) fail("CURRICULUM_TRACK_SET_MISMATCH", "Curricula must represent the exact ten-track catalogue.");
+  validateCertificationPromotion(curricula, registries);
   return Object.freeze(curricula);
 }
 

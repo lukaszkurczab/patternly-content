@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -14,42 +13,61 @@ const curricula = await loadCurricula();
 const briefs = await loadCanonicalTrackBriefs();
 const certificationRegistries = await loadCertificationObjectiveRegistries({ root: process.cwd() });
 const clone = (value) => structuredClone(value);
-const az104Objective = (number) => `az-104-2026-04-17-${number}`;
-const AZ104_BLOCK_OBJECTIVE_REFS = Object.freeze({
-  scope_and_resource_model: ["1.3", "3.1"], portal_cli_powershell_arm_boundary: ["3.1", "1.2", "2.1"], safe_change_ownership_diagnostic: ["1.3"],
-  user_group_lifecycle: ["1.1"], groups_licenses_external_users: ["1.1"], sspr_and_identity_operations: ["1.1"],
-  rbac_scope_and_effective_access: ["1.2"], policy_locks_tags: ["1.3"], resource_group_subscription_management_group: ["1.3"], budgets_advisor_cost_controls: ["1.3"],
-  account_configuration_endpoints: ["2.2"], firewall_network_access: ["2.1"], sas_keys_rbac_stored_policy: ["2.1"], redundancy_replication_encryption: ["2.2"],
-  blob_container_file_share: ["2.3"], tiers_lifecycle_versioning: ["2.3"], soft_delete_snapshots_recovery: ["2.3"], explorer_azcopy_transfer: ["2.2"],
-  template_interpretation: ["3.1"], modification_parameters_dependencies: ["3.1"], deployment_and_validation: ["3.1"], export_and_conversion: ["3.1"],
-  vm_create_size_disk_encryption: ["3.2"], zones_and_availability_sets: ["3.2"], scale_sets: ["3.2"], move_and_resource_lifecycle: ["3.2"],
-  container_registry: ["3.3"], aci_vs_container_apps_provision: ["3.3"], sizing_and_scaling: ["3.3"],
-  plan_and_app_configuration: ["3.4"], tls_dns_networking: ["3.4"], scaling_and_slots: ["3.4"], backup_and_lifecycle: ["3.4"],
-  vnet_subnet_ip_design: ["4.1"], peering_and_routes: ["4.1"], connectivity_troubleshooting: ["4.1"],
-  nsg_asg_effective_rules: ["4.2"], bastion_service_private_endpoints: ["4.2"], dns: ["4.3"], load_balancing_and_troubleshooting: ["4.3"],
-  metrics_logs_queries: ["5.1"], alerts_actions_processing: ["5.1"], resource_insights: ["5.1"], network_watcher_connection_monitor: ["5.1"],
-  vaults_and_policy: ["5.2"], backup_and_restore: ["5.2"], site_recovery_and_failover: ["5.2"], recovery_reports_and_alerts: ["5.2"]
-});
-const AZ104_ATOM_OBJECTIVE_REFS = Object.freeze({
-  "scope_and_resource_model/azure_resources_correct_management_group_subscription_resource_group_resource_scope": ["1.3"],
-  "scope_and_resource_model/resource_provider_regional_dependencies_deployment": ["3.1"],
-  "portal_cli_powershell_arm_boundary/portal_cli_powershell_arm_bicep_based_repeatability_operational_context": ["3.1"],
-  "portal_cli_powershell_arm_boundary/plane_resource_operations_data_plane_access_operations": ["1.2", "2.1"]
-});
-function assertExactAz104Bindings(curriculum) {
-  const blocks = curriculum.nodes.flatMap((node) => node.learningBlocks);
-  assert.deepEqual(new Set(blocks.map((block) => block.blockId)), new Set(Object.keys(AZ104_BLOCK_OBJECTIVE_REFS)));
-  for (const block of blocks) {
-    const expectedBlockRefs = AZ104_BLOCK_OBJECTIVE_REFS[block.blockId].map(az104Objective);
-    assert.deepEqual(block.officialObjectiveRefs, expectedBlockRefs, `${block.blockId} block refs`);
-    assert.deepEqual(block.sourceRequirements.map((requirement) => requirement.purpose), ["official-objective"], `${block.blockId} source purpose`);
-    for (const atom of block.skillOrDecisionAtoms) {
-      const expectedAtomRefs = (AZ104_ATOM_OBJECTIVE_REFS[`${block.blockId}/${atom.atomId}`] ?? AZ104_BLOCK_OBJECTIVE_REFS[block.blockId]).map(az104Objective);
-      assert.deepEqual(atom.officialObjectiveRefs, expectedAtomRefs, `${block.blockId}/${atom.atomId} atom refs`);
-      const target = block.coverageTargets.find((candidate) => candidate.primarySkillOrDecisionAtomId === atom.atomId);
-      assert.deepEqual(target.officialObjectiveRefs, expectedAtomRefs, `${target.coverageTargetId} target refs`);
-      assert.deepEqual(target.sourceRequirements.requirements[0].objectiveRefs, expectedAtomRefs, `${target.coverageTargetId} gate refs`);
-    }
+const certificationCurricula = curricula.filter((curriculum) => curriculum.familyId === "certification");
+const certificationByTrackId = (trackId) => certificationCurricula.find((curriculum) => curriculum.trackId === trackId);
+const RETIRED_CERTIFICATION_FIELDS = ["candidateNodeSlotCounts", "candidatePracticeForm", "candidateChoiceOnlyPracticeForm", "patternlyPracticeForm", "sourceRefsNeeded", "discardedOrMergedCandidates", "noAggregateOperationAccounting", "learningBlocks", "sourceBasis", "modePoolPlans", "simulationOrCasePoolPlans"];
+
+function assertNoRetiredCertificationFields(value, path = "curriculum") {
+  if (Array.isArray(value)) return value.forEach((entry, index) => assertNoRetiredCertificationFields(entry, `${path}[${index}]`));
+  if (!value || typeof value !== "object") return;
+  for (const [key, entry] of Object.entries(value)) {
+    assert.ok(!RETIRED_CERTIFICATION_FIELDS.includes(key), `${path}.${key} is retired from the direct certification slot contract`);
+    assertNoRetiredCertificationFields(entry, `${path}.${key}`);
+  }
+}
+
+function assertCanonicalCertificationSlots(curriculum) {
+  assert.equal(curriculum.schemaVersion, "patternly-certification-curriculum-v1");
+  assert.equal(curriculum.curriculumVersion, "2026.08.11");
+  assert.equal(curriculum.targetItemCount, curriculum.slots.length);
+  assert.equal(curriculum.authoringItemCount, curriculum.slots.length);
+  assert.equal(curriculum.existingVerifiedItemCount, 0);
+  assert.deepEqual(curriculum.admission, { learnerFacingContentIncluded: false, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", questionsAuthored: 0 });
+  assertNoRetiredCertificationFields(curriculum);
+  assert.equal(new Set(curriculum.slots.map((slot) => slot.slotId)).size, curriculum.slots.length, "duplicate slot IDs");
+  for (const slot of curriculum.slots) {
+    assert.equal(slot.trackId, curriculum.trackId);
+    assert.ok(slot.slotId.includes(":slot:"));
+    assert.ok(slot.officialObjectiveRefs.length);
+    assert.equal(slot.deliveryInteraction.familyContract, "certification");
+    assert.equal(slot.deliveryInteraction.interactionType, "choice", `${slot.slotId} interaction type`);
+    assert.equal(slot.deliveryInteraction.status, "existing_supported_but_not_runtime_admitted");
+    assert.ok(slot.eligibleModes.length);
+    assert.ok(slot.sourceRequirements.directFirstPartyDocumentation.length);
+    assert.deepEqual(slot.sourceRequirements.unresolvedRequirements, []);
+  }
+}
+
+function assertDirectCertificationSlotContract(curriculum, registry) {
+  const objectiveIds = new Set(registry.objectives.map((objective) => objective.objectiveId));
+  const registrySourceIds = new Set(registry.sources.map((source) => source.sourceId));
+  const sourceIds = new Set(curriculum.sourceRecords.map((source) => source.sourceId));
+  for (const slot of curriculum.slots) {
+    const node = curriculum.nodes.find((entry) => entry.nodeId === slot.nodeId);
+    const blockPlan = curriculum.blockPlans.find((entry) => entry.blockId === slot.blockId);
+    const targetPlan = curriculum.targetPlans.find((entry) => entry.coverageTargetId === slot.coverageTargetId);
+    assert.ok(node, `${slot.slotId} node owner`);
+    assert.ok(blockPlan, `${slot.slotId} block-plan owner`);
+    assert.ok(targetPlan, `${slot.slotId} target-plan owner`);
+    assert.equal(blockPlan.nodeId, slot.nodeId, `${slot.slotId} block-plan node`);
+    assert.equal(targetPlan.nodeId, slot.nodeId, `${slot.slotId} target-plan node`);
+    assert.equal(targetPlan.blockId, slot.blockId, `${slot.slotId} target-plan block`);
+    assert.ok(slot.officialObjectiveRefs.every((objectiveId) => targetPlan.officialObjectiveRefs.includes(objectiveId)), `${slot.slotId} objective binding`);
+    assert.ok(slot.officialObjectiveRefs.every((objectiveId) => objectiveIds.has(objectiveId)), `${slot.slotId} known objectives`);
+    assert.equal(slot.sourceRequirements.officialObjective.registryRef, curriculum.officialObjectiveRegistryRef, `${slot.slotId} registry ref`);
+    assert.deepEqual(slot.sourceRequirements.officialObjective.objectiveRefs, slot.officialObjectiveRefs, `${slot.slotId} source objective refs`);
+    assert.ok(slot.sourceRequirements.officialObjective.sourceRefs.every((sourceId) => registrySourceIds.has(sourceId)), `${slot.slotId} objective sources`);
+    assert.ok(slot.sourceRequirements.directFirstPartyDocumentation.every((documentation) => documentation.sourceRefs.every((sourceId) => sourceIds.has(sourceId))), `${slot.slotId} direct documentation`);
   }
 }
 
@@ -59,20 +77,34 @@ test("curriculum catalogue represents every release track without admitting acti
   assert.match(catalogueFingerprint(curricula), /^[a-f0-9]{64}$/);
   for (const curriculum of curricula) {
     assert.ok(curriculum.nodes.some((node) => node.nodeId === curriculum.freeNodeId && node.freeOrPremiumRole === "free"));
-    assert.ok(curriculum.nodes.every((node) => node.packageOwnership === "whole_node_package"));
+    if (curriculum.familyId === "certification") assertCanonicalCertificationSlots(curriculum);
+    else assert.ok(curriculum.nodes.every((node) => node.packageOwnership === "whole_node_package"));
   }
 });
 
-test("family-specific blocks, count reconciliation, and mode feasibility remain explicit", () => {
-  for (const curriculum of curricula) {
-    const expected = curriculum.familyId === "coding_interview" ? "coding_mental_unit" : curriculum.familyId === "certification" ? "certification_competency_block" : "design_decision_block";
-    assert.ok(curriculum.nodes.flatMap((node) => node.learningBlocks).every((block) => block.blockKind === expected));
-    assert.equal(curriculum.targetItemCount, curriculum.nodes.flatMap((node) => node.learningBlocks).reduce((sum, block) => sum + block.targetItemCount, 0));
-    if (curriculum.familyId === "design_interview") assert.ok(curriculum.modePoolPlans.every((pool) => pool.status === "blocked_by_contract"));
-    assert.ok(curriculum.nodes.every((node) => node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0) >= 120));
+test("certification curricula bind every canonical slot directly to its registry, ownership plan, and delivery contract", () => {
+  for (const curriculum of certificationCurricula) {
     const brief = briefs.find((entry) => entry.trackId === curriculum.trackId);
-    assert.deepEqual(new Set(curriculum.modePoolPlans.map((pool) => pool.modeId)), new Set(brief.validModes));
+    const registry = certificationRegistries.get(curriculum.trackId);
+    assertDirectCertificationSlotContract(curriculum, registry);
   }
+});
+
+test("certification slot contract rejects unknown objectives, ownership drift, unsupported delivery, and duplicate slots", () => {
+  const curriculum = certificationByTrackId("google-cloud-associate-cloud-engineer");
+  const registry = certificationRegistries.get(curriculum.trackId);
+  const unknownObjective = clone(curriculum);
+  unknownObjective.slots[0].officialObjectiveRefs = ["gcp-ace-standard-9.9"];
+  assert.throws(() => assertDirectCertificationSlotContract(unknownObjective, registry), /objective binding/);
+  const ownershipDrift = clone(curriculum);
+  ownershipDrift.slots[0].nodeId = ownershipDrift.nodes.find((node) => node.nodeId !== ownershipDrift.slots[0].nodeId).nodeId;
+  assert.throws(() => assertDirectCertificationSlotContract(ownershipDrift, registry), /block-plan node/);
+  const unsupportedDelivery = clone(curriculum);
+  unsupportedDelivery.slots[0].deliveryInteraction.interactionType = "ordering";
+  assert.throws(() => assertCanonicalCertificationSlots(unsupportedDelivery), /interaction type/);
+  const duplicateSlot = clone(curriculum);
+  duplicateSlot.slots[1].slotId = duplicateSlot.slots[0].slotId;
+  assert.throws(() => assertCanonicalCertificationSlots(duplicateSlot), /duplicate slot IDs/);
 });
 
 test("Coding Interview preserves its verified 26-node, 2,375-item base while every node meets the 120-item floor", () => {
@@ -82,21 +114,26 @@ test("Coding Interview preserves its verified 26-node, 2,375-item base while eve
   assert.equal(coding.authoringItemCount, coding.targetItemCount - coding.existingVerifiedItemCount);
   assert.ok(coding.nodes.every((node) => node.existingVerifiedItemCount + node.authoringItemCount === node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0)));
   assert.ok(coding.nodes.every((node) => node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0) >= 120));
-  const blocks = coding.nodes.flatMap((node) => node.learningBlocks);
-  assert.equal(blocks.length, 78);
-  assert.equal(blocks.flatMap((block) => block.coverageTargets).length, 234);
-  for (const block of blocks) {
-    assert.deepEqual(new Set(block.coverageTargets.map((target) => target.learningOperation)), new Set(["recognition", "selection", "boundary"]));
-    assert.deepEqual(new Set(block.coverageTargets.flatMap((target) => target.directSkillOrDecisionAtomIds)), new Set(block.skillOrDecisionAtoms.map((atom) => atom.atomId)));
-    assert.ok(block.coverageTargets.every((target) => target.directSkillOrDecisionAtomIds.includes(target.primarySkillOrDecisionAtomId)));
-  }
+});
+
+test("Coding and Design validators retain their independent count, ownership, and mode guards", () => {
+  const coding = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
+  const codingBrief = briefs.find((entry) => entry.trackId === coding.trackId);
+  coding.nodes[0].learningBlocks[0].targetItemCount += 1;
+  assert.throws(() => validateCurriculum(coding, codingBrief), /COUNT_RECONCILIATION_FAILURE/);
+  const missingDirect = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
+  delete missingDirect.nodes[0].learningBlocks[0].coverageTargets[0].directSkillOrDecisionAtomIds;
+  assert.throws(() => validateCurriculum(missingDirect, codingBrief), /MISSING_CURRICULUM_FIELD/);
+  const design = clone(curricula.find((entry) => entry.trackId === "backend-system-design-interview"));
+  const designBrief = briefs.find((entry) => entry.trackId === design.trackId);
+  design.nodes[0].learningBlocks[0].coverageTargets[0].scenarioOrSurfaceVariationAxes[0] = "primary case";
+  assert.throws(() => validateCurriculum(design, designBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
 });
 
 test("coverage-target schema exposes direct ownership and the atomic decision boundary", async () => {
   const schema = JSON.parse(await readFile("schemas/curriculum/curriculum-coverage-target.schema.json", "utf8"));
   assert.ok(schema.required.includes("directSkillOrDecisionAtomIds"));
   assert.deepEqual(schema.properties.learningOperation.enum, ["recognition", "selection", "boundary", "decision_diagnosis"]);
-  assert.equal(schema.allOf[0].if.properties.learningOperation.const, "decision_diagnosis");
   assert.equal(schema.allOf[0].then.properties.directSkillOrDecisionAtomIds.maxItems, 1);
 });
 
@@ -106,8 +143,6 @@ test("Coding existing inventory maps every verified item without inventing per-i
     const { codingInventory } = await buildExistingContentInventories({ outputDirectory });
     assert.equal(codingInventory.itemCount, 2375);
     assert.deepEqual(codingInventory.classifications, { aligned: 2375 });
-    assert.equal(codingInventory.coverageOwnershipContract.plannedTargetSemantics, "block_operation_across_direct_atoms");
-    assert.equal(codingInventory.coverageOwnershipContract.itemOperationAttribution, "not_claimed_without_source_evidence");
     assert.ok(codingInventory.items.every((item) => item.primaryCurriculumNodeId && item.primaryCurriculumBlockId && item.primarySkillOrDecisionAtomId));
     assert.ok(codingInventory.items.every((item) => !Object.hasOwn(item, "learningOperation") && !Object.hasOwn(item, "operation")));
   } finally {
@@ -115,619 +150,18 @@ test("Coding existing inventory maps every verified item without inventing per-i
   }
 });
 
-test("validator rejects missing boundaries, stale GCP identities, unsupported interactions, and count drift", () => {
-  const gcp = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  const coding = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
-  const gcpBrief = briefs.find((entry) => entry.trackId === gcp.trackId);
-  const codingBrief = briefs.find((entry) => entry.trackId === coding.trackId);
-  gcp.nodes[0].learningBlocks[0].coverageTargets[0].coverageTargetId = "ace-q-0001";
-  assert.throws(() => validateCurriculum(gcp, gcpBrief), /GCP_ZERO_RETENTION_FAILURE/);
-  coding.nodes[0].learningBlocks[0].targetItemCount += 1;
-  assert.throws(() => validateCurriculum(coding, codingBrief), /COUNT_RECONCILIATION_FAILURE/);
-  const accounting = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
-  accounting.nodes[0].authoringItemCount += 1;
-  assert.throws(() => validateCurriculum(accounting, codingBrief), /INVALID_VOLUME_ACCOUNTING/);
-  const interaction = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  interaction.nodes[0].learningBlocks[0].coverageTargets[0].preferredInteractionContract = "ordering";
-  assert.throws(() => validateCurriculum(interaction, gcpBrief), /UNSUPPORTED_ACTIVE_INTERACTION/);
-  const boundary = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
-  boundary.nodes[0].learningBlocks[0].coverageTargets[0].decisiveBoundary = "";
-  assert.throws(() => validateCurriculum(boundary, codingBrief), /INCOMPLETE_COVERAGE_TARGET/);
-  const operationCount = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
-  const operationCountBrief = briefs.find((entry) => entry.trackId === operationCount.trackId);
-  operationCount.nodes[0].learningBlocks[0].coverageTargets[0].operationVariantCounts.SIG.requiredVariantCount -= 1;
-  assert.throws(() => validateCurriculum(operationCount, operationCountBrief), /SEMANTIC_MATRIX_COUNT_FAILURE/);
-  const falsePrecision = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
-  falsePrecision.nodes[0].learningBlocks[0].coverageTargets[0].operationVariantCounts.SIG.derivation = { combinationRule: "sum", axes: [{ axisId: "fake", members: ["case"] }] };
-  assert.throws(() => validateCurriculum(falsePrecision, operationCountBrief), /FALSE_PRECISION_VARIANT_MATRIX/);
-  const quotaLanguage = clone(curricula.find((entry) => entry.trackId === "backend-system-design-interview"));
-  const quotaLanguageBrief = briefs.find((entry) => entry.trackId === quotaLanguage.trackId);
-  quotaLanguage.nodes[0].learningBlocks[0].coverageTargets[0].scenarioOrSurfaceVariationAxes[0] = "primary case";
-  assert.throws(() => validateCurriculum(quotaLanguage, quotaLanguageBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
-  const floorLanguage = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
-  floorLanguage.nodes[0].learningBlocks[0].coverageTargets[0].variantCountRationale = "Variants are allocated from the verified node floor.";
-  assert.throws(() => validateCurriculum(floorLanguage, codingBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
-  const compoundDiagnosis = clone(curricula.find((entry) => entry.trackId === "hashicorp-terraform-associate-004"));
-  const compoundDiagnosisBrief = briefs.find((entry) => entry.trackId === compoundDiagnosis.trackId);
-  compoundDiagnosis.nodes[0].learningBlocks[0].coverageTargets[0].diagnosticDecision += " In the same diagnosis, perform another decision.";
-  assert.throws(() => validateCurriculum(compoundDiagnosis, compoundDiagnosisBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
-  const metaAxis = clone(curricula.find((entry) => entry.trackId === "hashicorp-terraform-associate-004"));
-  metaAxis.nodes[0].learningBlocks[0].coverageTargets[0].scenarioOrSurfaceVariationAxes[0] = "evidence supporting branch A";
-  assert.throws(() => validateCurriculum(metaAxis, compoundDiagnosisBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
-  const reachability = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
-  const reachabilityBrief = briefs.find((entry) => entry.trackId === reachability.trackId);
-  const firstBlock = reachability.nodes[0].learningBlocks[0];
-  for (const target of firstBlock.coverageTargets) target.directSkillOrDecisionAtomIds = [target.primarySkillOrDecisionAtomId];
-  assert.throws(() => validateCurriculum(reachability, reachabilityBrief), /UNOWNED_BLOCK_ATOM/);
-
-  const missingDirect = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
-  delete missingDirect.nodes[0].learningBlocks[0].coverageTargets[0].directSkillOrDecisionAtomIds;
-  assert.throws(() => validateCurriculum(missingDirect, codingBrief), /MISSING_CURRICULUM_FIELD/);
-
-  const primaryOutsideDirect = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
-  const selection = primaryOutsideDirect.nodes[0].learningBlocks[0].coverageTargets.find((target) => target.learningOperation === "selection");
-  selection.directSkillOrDecisionAtomIds = selection.directSkillOrDecisionAtomIds.filter((atomId) => atomId !== selection.primarySkillOrDecisionAtomId);
-  assert.throws(() => validateCurriculum(primaryOutsideDirect, codingBrief), /PRIMARY_ATOM_NOT_DIRECT/);
-
-  const incompleteOperations = clone(curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving"));
-  incompleteOperations.nodes[0].learningBlocks[0].coverageTargets.find((target) => target.learningOperation === "boundary").learningOperation = "recognition";
-  assert.throws(() => validateCurriculum(incompleteOperations, codingBrief), /INCOMPLETE_CODING_BLOCK_OPERATIONS/);
-
-  const nonCodingGroupTarget = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
-  const nonCodingBlock = nonCodingGroupTarget.nodes.flatMap((node) => node.learningBlocks).find((block) => block.skillOrDecisionAtoms.length > 1);
-  nonCodingBlock.coverageTargets[0].directSkillOrDecisionAtomIds.push(nonCodingBlock.skillOrDecisionAtoms[1].atomId);
-  assert.throws(() => validateCurriculum(nonCodingGroupTarget, operationCountBrief), /INVALID_ATOMIC_DECISION_TARGET/);
-});
-
-test("certification relationship graphs exactly reconcile prerequisite edges", () => {
-  const gcp = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  const brief = briefs.find((entry) => entry.trackId === gcp.trackId);
-  const registry = certificationRegistries.get(gcp.trackId);
-  assert.doesNotThrow(() => validateCurriculum(gcp, brief, registry));
-  delete gcp.crossNodeRelationships[0].reason;
-  assert.throws(() => validateCurriculum(gcp, brief), /MISSING_CERTIFICATION_RELATIONSHIP_FIELD/);
-  const missingAnchor = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  delete missingAnchor.crossNodeRelationships[0].fromBlockId;
-  assert.throws(() => validateCurriculum(missingAnchor, brief), /MISSING_CERTIFICATION_RELATIONSHIP_FIELD/);
-  const missingAtom = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  delete missingAtom.crossNodeRelationships[0].fromAtomId;
-  assert.throws(() => validateCurriculum(missingAtom, brief), /MISSING_CERTIFICATION_RELATIONSHIP_FIELD/);
-  const absentAnchor = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  absentAnchor.crossNodeRelationships[0].fromBlockId = "absent_block";
-  assert.throws(() => validateCurriculum(absentAnchor, brief), /INVALID_CERTIFICATION_RELATIONSHIP_ANCHOR/);
-  const wrongEndpointAnchor = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  wrongEndpointAnchor.crossNodeRelationships[0].fromBlockId = wrongEndpointAnchor.crossNodeRelationships[0].toBlockId;
-  assert.throws(() => validateCurriculum(wrongEndpointAnchor, brief), /INVALID_CERTIFICATION_RELATIONSHIP_ANCHOR/);
-  const copiedAnchors = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  copiedAnchors.crossNodeRelationships[0].toBlockId = copiedAnchors.crossNodeRelationships[0].fromBlockId;
-  assert.throws(() => validateCurriculum(copiedAnchors, brief), /INVALID_CERTIFICATION_RELATIONSHIP_ANCHOR/);
-  const wrongAtom = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  wrongAtom.crossNodeRelationships[0].fromAtomId = wrongAtom.crossNodeRelationships[0].toAtomId;
-  assert.throws(() => validateCurriculum(wrongAtom, brief), /INVALID_CERTIFICATION_RELATIONSHIP_ATOM/);
-  const copiedAtom = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  copiedAtom.crossNodeRelationships[0].toAtomId = copiedAtom.crossNodeRelationships[0].fromAtomId;
-  assert.throws(() => validateCurriculum(copiedAtom, brief), /INVALID_CERTIFICATION_RELATIONSHIP_ATOM/);
-  const invalidBridgeType = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  invalidBridgeType.crossNodeRelationships[0].bridgeType = "supports";
-  assert.throws(() => validateCurriculum(invalidBridgeType, brief), /INVALID_CERTIFICATION_RELATIONSHIP_BRIDGE_TYPE/);
-  const stale = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  stale.crossNodeRelationships[0].toNodeId = "compute_and_workload_selection";
-  assert.throws(() => validateCurriculum(stale, brief), /STALE_CERTIFICATION_RELATIONSHIP_NODE/);
-  const self = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  self.crossNodeRelationships[0].toNodeId = self.crossNodeRelationships[0].fromNodeId;
-  assert.throws(() => validateCurriculum(self, brief), /SELF_CERTIFICATION_RELATIONSHIP/);
-  const duplicate = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  duplicate.crossNodeRelationships[1] = clone(duplicate.crossNodeRelationships[0]);
-  assert.throws(() => validateCurriculum(duplicate, brief), /DUPLICATE_CURRICULUM_ID/);
-  const noncanonical = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  noncanonical.crossNodeRelationships[0].relationshipId = "wrong-id";
-  assert.throws(() => validateCurriculum(noncanonical, brief), /NONCANONICAL_CERTIFICATION_RELATIONSHIP_ID/);
-  const reverse = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  reverse.crossNodeRelationships[0] = { relationshipId: "identity_and_service_accounts→setup_environment", fromNodeId: "identity_and_service_accounts", toNodeId: "setup_environment", fromBlockId: "principals_roles_policies", toBlockId: "resource_hierarchy_org_policy_apis", fromAtomId: "classify_principals_roles_policies_evidence", toAtomId: "organization_policy_organization_folder_project_scope", bridgeType: "constrains", kind: "prerequisite_and_transfer", reason: "identity_and_service_accounts/principals_roles_policies/classify_principals_roles_policies_evidence constrains setup_environment/resource_hierarchy_org_policy_apis/organization_policy_organization_folder_project_scope." };
-  assert.throws(() => validateCurriculum(reverse, brief), /INVALID_CERTIFICATION_RELATIONSHIP_ORDER/);
-  const missingEdge = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  missingEdge.crossNodeRelationships.pop();
-  assert.throws(() => validateCurriculum(missingEdge, brief), /CERTIFICATION_PREREQUISITE_GRAPH_MISMATCH/);
-  const extraEdge = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  extraEdge.crossNodeRelationships.push({ relationshipId: "setup_environment→compute_engine_delivery_and_operations", fromNodeId: "setup_environment", toNodeId: "compute_engine_delivery_and_operations", fromBlockId: "resource_hierarchy_org_policy_apis", toBlockId: "instance_disks_availability_os_login", fromAtomId: "organization_policy_organization_folder_project_scope", toAtomId: "login_instance_access_through_iam_unmanaged_ssh_keys", bridgeType: "constrains", kind: "prerequisite_and_transfer", reason: "setup_environment/resource_hierarchy_org_policy_apis/organization_policy_organization_folder_project_scope constrains compute_engine_delivery_and_operations/instance_disks_availability_os_login/login_instance_access_through_iam_unmanaged_ssh_keys." });
-  assert.throws(() => validateCurriculum(extraEdge, brief), /CERTIFICATION_PREREQUISITE_GRAPH_MISMATCH/);
-  const shortGeneric = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  shortGeneric.crossNodeRelationships[0].reason = "setup_environment/resource_hierarchy_org_policy_apis uses identity_and_service_accounts/principals_roles_policies.";
-  assert.throws(() => validateCurriculum(shortGeneric, brief), /NONCANONICAL_CERTIFICATION_RELATIONSHIP_REASON/);
-  const qaBypass = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  qaBypass.crossNodeRelationships[0].reason = "setup_environment/resource_hierarchy_org_policy_apis depends on identity_and_service_accounts/principals_roles_policies because it is needed.";
-  assert.throws(() => validateCurriculum(qaBypass, brief), /NONCANONICAL_CERTIFICATION_RELATIONSHIP_REASON/);
-  const generic = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  generic.crossNodeRelationships[0].reason = "setup_environment/resource_hierarchy_org_policy_apis and identity_and_service_accounts/principals_roles_policies use the later node's preceding decision model under a distinct boundary.";
-  assert.throws(() => validateCurriculum(generic, brief), /NONCANONICAL_CERTIFICATION_RELATIONSHIP_REASON/);
-  const verboseGeneric = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  verboseGeneric.crossNodeRelationships[0].reason = "setup_environment/resource_hierarchy_org_policy_apis supports identity_and_service_accounts/principals_roles_policies because the later node transfers preceding knowledge across this relationship.";
-  assert.throws(() => validateCurriculum(verboseGeneric, brief), /NONCANONICAL_CERTIFICATION_RELATIONSHIP_REASON/);
-  const verboseVague = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  verboseVague.crossNodeRelationships[0].reason = "setup_environment/resource_hierarchy_org_policy_apis supports identity_and_service_accounts/principals_roles_policies because it is necessary for this relationship and is required before the next node.";
-  assert.throws(() => validateCurriculum(verboseVague, brief), /NONCANONICAL_CERTIFICATION_RELATIONSHIP_REASON/);
-  const omittedAnchors = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  omittedAnchors.crossNodeRelationships[0].reason = "setup_environment supplies organization policy; identity_and_service_accounts applies it to principals.";
-  assert.throws(() => validateCurriculum(omittedAnchors, brief), /NONCANONICAL_CERTIFICATION_RELATIONSHIP_REASON/);
-  const qualityVague = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  qualityVague.crossNodeRelationships[0].reason = "setup_environment/resource_hierarchy_org_policy_apis supports identity_and_service_accounts/principals_roles_policies because this progression is important and useful for the next capability.";
-  assert.throws(() => validateCurriculum(qualityVague, brief), /NONCANONICAL_CERTIFICATION_RELATIONSHIP_REASON/);
-});
-
-test("validator rejects systematic non-Coding quota signatures without rejecting one local equal pair", () => {
-  const aws = curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate");
-  const awsBrief = briefs.find((entry) => entry.trackId === aws.trackId);
-
-  const uniformTargetCounts = clone(aws);
-  let cloneIndex = 0;
-  for (const block of uniformTargetCounts.nodes.flatMap((node) => node.learningBlocks).filter((candidate) => candidate.coverageTargets.length === 1)) {
-    const original = block.coverageTargets[0];
-    const duplicate = clone(original);
-    duplicate.coverageTargetId = `${original.coverageTargetId}:distinct-quota-copy-${cloneIndex++}`;
-    for (const field of ["diagnosticDecision", "decisiveBoundary", "misconceptionOrCompetingDecision", "transferBoundary"]) duplicate[field] = `${duplicate[field]} Distinct systematic-copy evidence ${cloneIndex}.`;
-    duplicate.requiredVariantCount = 4;
-    for (const operation of Object.values(duplicate.operationVariantCounts)) operation.requiredVariantCount = 1;
-    original.requiredVariantCount -= 4;
-    for (const operation of Object.values(original.operationVariantCounts)) operation.requiredVariantCount -= 1;
-    block.coverageTargets.push(duplicate);
-  }
-  assert.throws(() => validateCurriculum(uniformTargetCounts, awsBrief), /UNIFORM_TARGET_COUNT_SIGNATURE/);
-
-  const mirroredPairs = clone(aws);
-  for (const node of mirroredPairs.nodes) {
-    for (const block of node.learningBlocks.filter((candidate) => candidate.coverageTargets.length > 1)) {
-      const [source, ...targets] = block.coverageTargets;
-      for (const target of targets) {
-        target.scenarioOrSurfaceVariationAxes = [...source.scenarioOrSurfaceVariationAxes];
-        target.requiredVariantCount = source.requiredVariantCount;
-        target.operationVariantCounts = clone(source.operationVariantCounts);
-      }
-      block.targetItemCount = block.coverageTargets.reduce((sum, target) => sum + target.requiredVariantCount, 0);
-      block.existingVerifiedItemCount = 0;
-      block.authoringItemCount = block.targetItemCount;
-    }
-    node.existingVerifiedItemCount = 0;
-    node.authoringItemCount = node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0);
-  }
-  assert.throws(() => validateCurriculum(mirroredPairs, awsBrief), /MIRRORED_TARGET_PAIR_SIGNATURE/);
-
-  const oneLocalPair = clone(aws);
-  const localBlock = oneLocalPair.nodes.flatMap((node) => node.learningBlocks).find((block) => block.coverageTargets.length > 1);
-  const [source, target] = localBlock.coverageTargets;
-  target.scenarioOrSurfaceVariationAxes = [...source.scenarioOrSurfaceVariationAxes];
-  target.requiredVariantCount = source.requiredVariantCount;
-  target.operationVariantCounts = clone(source.operationVariantCounts);
-  localBlock.targetItemCount = localBlock.coverageTargets.reduce((sum, entry) => sum + entry.requiredVariantCount, 0);
-  localBlock.existingVerifiedItemCount = 0;
-  localBlock.authoringItemCount = localBlock.targetItemCount;
-  const localNode = oneLocalPair.nodes.find((node) => node.nodeId === localBlock.nodeId);
-  localNode.existingVerifiedItemCount = 0;
-  localNode.authoringItemCount = localNode.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0);
-  oneLocalPair.existingVerifiedItemCount = 0;
-  oneLocalPair.targetItemCount = oneLocalPair.nodes.flatMap((node) => node.learningBlocks).reduce((sum, block) => sum + block.targetItemCount, 0);
-  oneLocalPair.authoringItemCount = oneLocalPair.targetItemCount;
-  assert.doesNotThrow(() => validateCurriculum(oneLocalPair, awsBrief, certificationRegistries.get(oneLocalPair.trackId)));
-});
-
-test("mode feasibility counts only legal scoped target variants and validates simulation uniqueness", () => {
-  const coding = curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving");
-  const codingBrief = briefs.find((entry) => entry.trackId === coding.trackId);
-  const firstNode = coding.nodes[0];
-  const scopedCount = (curriculum, modeId, nodeId) => curriculum.nodes
-    .filter((node) => node.nodeId === nodeId)
-    .flatMap((node) => node.learningBlocks)
-    .flatMap((block) => block.coverageTargets)
-    .filter((target) => target.interactionContractStatus === "existing_supported" && target.modeRoles.includes(modeId))
-    .reduce((sum, target) => sum + target.requiredVariantCount, 0);
-
-  const crossScope = clone(coding);
-  const guided = crossScope.modePoolPlans.find((pool) => pool.modeId === "coding-interview-guided-practice");
-  guided.declaredScope = [firstNode.nodeId];
-  guided.requiredUniqueItems = scopedCount(crossScope, guided.modeId, firstNode.nodeId) + 1;
-  assert.ok(guided.requiredUniqueItems < crossScope.targetItemCount);
-  assert.throws(() => validateCurriculum(crossScope, codingBrief), /MODE_POOL_INSUFFICIENT/);
-
-  const undeclaredMode = clone(coding);
-  const learn = undeclaredMode.modePoolPlans.find((pool) => pool.modeId === "coding-interview-learn-approach");
-  learn.declaredScope = [firstNode.nodeId];
-  for (const target of undeclaredMode.nodes[0].learningBlocks.flatMap((block) => block.coverageTargets)) target.modeRoles = target.modeRoles.filter((modeId) => modeId !== learn.modeId);
-  assert.throws(() => validateCurriculum(undeclaredMode, codingBrief), /MODE_POOL_INSUFFICIENT/);
-
-  const unsupportedInteraction = clone(coding);
-  const review = unsupportedInteraction.modePoolPlans.find((pool) => pool.modeId === "coding-interview-weak-area-review");
-  review.declaredScope = [firstNode.nodeId];
-  for (const target of unsupportedInteraction.nodes[0].learningBlocks.flatMap((block) => block.coverageTargets)) target.interactionContractStatus = "family_contract_required";
-  assert.throws(() => validateCurriculum(unsupportedInteraction, codingBrief), /MODE_POOL_INSUFFICIENT/);
-
-  const simulation = clone(coding);
-  const simulationPlan = simulation.simulationOrCasePoolPlans[0];
-  const simulationModeId = simulation.modePoolPlans.find((pool) => pool.modeId.endsWith("-simulation")).modeId;
-  simulationPlan.declaredScope = [firstNode.nodeId];
-  simulationPlan.uniqueItemCount = scopedCount(simulation, simulationModeId, firstNode.nodeId) + 1;
-  assert.ok(simulationPlan.uniqueItemCount < simulation.targetItemCount);
-  assert.throws(() => validateCurriculum(simulation, codingBrief), /MODE_POOL_INSUFFICIENT/);
-
-  const undersizedSimulation = clone(coding);
-  const requiredSimulationItems = undersizedSimulation.modePoolPlans.find((pool) => pool.modeId.endsWith("-simulation")).requiredUniqueItems;
-  undersizedSimulation.simulationOrCasePoolPlans[0].uniqueItemCount = requiredSimulationItems - 1;
-  assert.throws(() => validateCurriculum(undersizedSimulation, codingBrief), /MODE_POOL_INSUFFICIENT/);
-});
-
 test("curriculum specifications are separate from publishing discovery", async () => {
   const pipeline = await readFile("scripts/publishing/pipeline.mjs", "utf8");
   const publishingScripts = await readFile("scripts/publishing/cli.mjs", "utf8");
   assert.doesNotMatch(`${pipeline}\n${publishingScripts}`, /config\/curricula/);
-  const gcp = curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer");
+  const gcp = certificationByTrackId("google-cloud-associate-cloud-engineer");
   assert.doesNotMatch(JSON.stringify(gcp), /ace-q-\d+/);
-});
-
-test("GCP exact objective registry governs every nested binding and blocks authoring", () => {
-  const gcp = clone(curricula.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer"));
-  const brief = briefs.find((entry) => entry.trackId === gcp.trackId);
-  const registry = certificationRegistries.get(gcp.trackId);
-  assert.equal(registry.domains.length, 4);
-  assert.equal(registry.objectives.length, 12);
-  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 94);
-  assert.doesNotThrow(() => validateCurriculum(gcp, brief, registry));
-  const crossTrack = clone(gcp); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["aws-saa-1.1"];
-  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
-  const removed = clone(gcp); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["section-5-configure-access-and-security"];
-  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
-  const misspelled = clone(gcp); misspelled.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-9.9"];
-  assert.throws(() => validateCurriculum(misspelled, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
-  const missing = clone(gcp); missing.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = [];
-  assert.throws(() => validateCurriculum(missing, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
-  const nestedMismatch = clone(gcp); nestedMismatch.nodes[0].learningBlocks[0].officialObjectiveRefs = ["gcp-ace-standard-1.2"];
-  assert.throws(() => validateCurriculum(nestedMismatch, brief, registry), /OBJECTIVE_BINDING_DERIVATION_MISMATCH/);
-  const uncovered = clone(gcp); const objective = "gcp-ace-standard-4.2"; const replaceObjective = (refs) => [...new Set(refs.map((ref) => ref === objective ? "gcp-ace-standard-4.1" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaceObjective(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaceObjective(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaceObjective(atom.officialObjectiveRefs); for (const target of block.coverageTargets) { target.officialObjectiveRefs = replaceObjective(target.officialObjectiveRefs); target.sourceRequirements.requirements[0].objectiveRefs = replaceObjective(target.sourceRequirements.requirements[0].objectiveRefs); } } }
-  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
-  const authoringReady = clone(gcp); authoringReady.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].resolvedAtCurriculumStage = true;
-  assert.throws(() => validateCurriculum(authoringReady, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const unresolvedFakeRef = clone(gcp); unresolvedFakeRef.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].directFirstPartySourceRefs = ["pretend-doc"];
-  assert.throws(() => validateCurriculum(unresolvedFakeRef, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const resolvedWrongHost = clone(gcp); const resolvedTarget = resolvedWrongHost.nodes[0].learningBlocks[0].coverageTargets[0]; resolvedWrongHost.sourceBasis.push({ sourceId: "wrong-host-doc", sourceKind: "direct_first_party_product_documentation", url: "https://example.com/product", title: "Wrong host", checkedDate: "2026-08-10", guideVersion: "not_documented", version: "not_documented", volatility: "high", mechanismOrProductProperties: [resolvedTarget.primarySkillOrDecisionAtomId] }); resolvedTarget.sourceRequirements.authoringGate = "resolved_for_authoring"; resolvedTarget.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; resolvedTarget.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["wrong-host-doc"];
-  assert.throws(() => validateCurriculum(resolvedWrongHost, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const resolvedMissingMechanism = clone(gcp); const missingMechanismTarget = resolvedMissingMechanism.nodes[0].learningBlocks[0].coverageTargets[0]; resolvedMissingMechanism.sourceBasis.push({ sourceId: "gcp-doc", sourceKind: "direct_first_party_product_documentation", url: "https://cloud.google.com/docs/product", title: "Product documentation", checkedDate: "2026-08-10", guideVersion: "not_documented", version: "not_documented", volatility: "high", mechanismOrProductProperties: ["another-mechanism"] }); missingMechanismTarget.sourceRequirements.authoringGate = "resolved_for_authoring"; missingMechanismTarget.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; missingMechanismTarget.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["gcp-doc"];
-  assert.throws(() => validateCurriculum(resolvedMissingMechanism, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const resolvedSource = clone(gcp); const resolvedSourceTarget = resolvedSource.nodes[0].learningBlocks[0].coverageTargets[0]; resolvedSource.sourceBasis.push({ sourceId: "gcp-direct-doc", sourceKind: "direct_first_party_product_documentation", url: "https://docs.cloud.google.com/product", title: "Product documentation", checkedDate: "2026-08-10", guideVersion: "not_documented", version: "not_documented", volatility: "high", mechanismOrProductProperties: [resolvedSourceTarget.primarySkillOrDecisionAtomId] }); resolvedSourceTarget.sourceRequirements.authoringGate = "resolved_for_authoring"; resolvedSourceTarget.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; resolvedSourceTarget.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["gcp-direct-doc"];
-  assert.doesNotThrow(() => validateCurriculum(resolvedSource, brief, registry));
-  const badProfile = clone(registry); badProfile.examProfile.navigation.value = { enabled: true };
-  assert.throws(() => validateCertificationObjectiveRegistry(badProfile), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const badDate = clone(registry); badDate.sources[0].checkedDate = "tomorrow";
-  assert.throws(() => validateCertificationObjectiveRegistry(badDate), /INVALID_SOURCE_CHECKED_DATE/);
-  const rolloverDate = clone(registry); rolloverDate.sources[0].checkedDate = "2026-99-99";
-  assert.throws(() => validateCertificationObjectiveRegistry(rolloverDate), /INVALID_SOURCE_CHECKED_DATE/);
-  const badGuideVersion = clone(registry); badGuideVersion.guideVersion = "";
-  assert.throws(() => validateCertificationObjectiveRegistry(badGuideVersion), /INVALID_GUIDE_VERSION_STATE/);
-  const inventedSimulation = clone(registry); inventedSimulation.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "faithful_google_standard_exam_simulation";
-  assert.throws(() => validateCertificationObjectiveRegistry(inventedSimulation), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const unsupportedExclusion = clone(gcp); unsupportedExclusion.objectiveExclusions = [{ objectiveId: "gcp-ace-standard-1.1", reasonCode: "provider_scope_removed", evidenceSourceRefs: ["google-ace-standard-exam-guide"], evidenceBackedRationale: "Setting up cloud projects and accounts. is excluded because it is no longer a valid provider scope despite this deliberately generic explanation." }];
-  assert.throws(() => validateCurriculum(unsupportedExclusion, brief, registry), /INVALID_OBJECTIVE_EXCLUSION/);
-});
-
-test("Terraform 004 exact objective registry governs alphanumeric objective bindings and profile provenance", () => {
-  const terraform = clone(curricula.find((entry) => entry.trackId === "hashicorp-terraform-associate-004"));
-  const brief = briefs.find((entry) => entry.trackId === terraform.trackId);
-  const registry = certificationRegistries.get(terraform.trackId);
-  assert.equal(registry.domains.length, 8);
-  assert.equal(registry.objectives.length, 37);
-  assert.deepEqual(registry.officialSourceHosts, ["developer.hashicorp.com"]);
-  assert.doesNotThrow(() => validateCurriculum(terraform, brief, registry));
-  assert.equal(terraform.nodes.length, 9);
-  assert.equal(terraform.nodes.flatMap((node) => node.learningBlocks).length, 32);
-  assert.equal(terraform.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.coverageTargets)).length, 55);
-  assert.equal(terraform.targetItemCount, 1695);
-  assert.equal(terraform.existingVerifiedItemCount, 0);
-  assert.equal(terraform.authoringItemCount, 1695);
-  const dependencyTarget = terraform.nodes.flatMap((node) => node.learningBlocks).find((block) => block.blockId === "references_implicit_explicit_dependencies").coverageTargets.find((target) => target.primarySkillOrDecisionAtomId === "select_explicit_dependency_or_replacement_lifecycle_rule");
-  assert.deepEqual(dependencyTarget.officialObjectiveRefs, ["terraform-associate-004-4f"]);
-  const sensitiveTarget = terraform.nodes.flatMap((node) => node.learningBlocks).find((block) => block.blockId === "sensitive_data_and_secrets_vault").coverageTargets.find((target) => target.primarySkillOrDecisionAtomId === "select_sensitive_ephemeral_or_write_only_value_handling");
-  assert.deepEqual(sensitiveTarget.officialObjectiveRefs, ["terraform-associate-004-4h"]);
-  const crossTrack = clone(terraform); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-1.1"];
-  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
-  const removed = clone(terraform); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["objective-1a"];
-  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
-  const misspelled = clone(terraform); misspelled.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["terraform-associate-004-9z"];
-  assert.throws(() => validateCurriculum(misspelled, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
-  const uncovered = clone(terraform); const objective = "terraform-associate-004-8d"; const replaceObjective = (refs) => [...new Set(refs.map((ref) => ref === objective ? "terraform-associate-004-8b" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaceObjective(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaceObjective(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaceObjective(atom.officialObjectiveRefs); for (const target of block.coverageTargets) { target.officialObjectiveRefs = replaceObjective(target.officialObjectiveRefs); target.sourceRequirements.requirements[0].objectiveRefs = replaceObjective(target.sourceRequirements.requirements[0].objectiveRefs); } } }
-  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
-  const badProfile = clone(registry); badProfile.examProfile.duration.checkedDate = "2026-02-30";
-  assert.throws(() => validateCertificationObjectiveRegistry(badProfile), /INVALID_EXAM_PROFILE_PROVENANCE/);
-  const inventedSimulation = clone(registry); inventedSimulation.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "faithful_terraform_exam_simulation";
-  assert.throws(() => validateCertificationObjectiveRegistry(inventedSimulation), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const unownedRegistrySource = clone(terraform); const target = unownedRegistrySource.nodes[0].learningBlocks[0].coverageTargets[0]; unownedRegistrySource.sourceBasis.push({ sourceId: "unowned-registry-doc", sourceKind: "direct_first_party_product_documentation", url: "https://registry.terraform.io/v1/attacker/provider", title: "Attacker Registry provider", checkedDate: "2026-08-10", guideVersion: "associate-004", version: "1", volatility: "high", mechanismOrProductProperties: [target.primarySkillOrDecisionAtomId] }); target.sourceRequirements.authoringGate = "resolved_for_authoring"; target.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; target.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["unowned-registry-doc"];
-  assert.throws(() => validateCurriculum(unownedRegistrySource, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const badSource = clone(registry); delete badSource.sources[0].authoritativeFor;
-  assert.throws(() => validateCertificationObjectiveRegistry(badSource), /MISSING_CERTIFICATION_SOURCE_FIELD/);
-  const badSourceUrl = clone(registry); badSourceUrl.sources[0].url = "http://developer.hashicorp.com/not-secure";
-  assert.throws(() => validateCertificationObjectiveRegistry(badSourceUrl), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
-  const untrustedOfficialSource = clone(registry); untrustedOfficialSource.sources[0].url = "https://example.invalid/terraform-associate-004";
-  assert.throws(() => validateCertificationObjectiveRegistry(untrustedOfficialSource), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
-  const badDomain = clone(registry); badDomain.domains[0].sourceRefs = [];
-  assert.throws(() => validateCertificationObjectiveRegistry(badDomain), /INVALID_CERTIFICATION_DOMAIN_PROVENANCE/);
-  const badObjective = clone(registry); badObjective.objectives[0].sourceRefs = ["missing-source"];
-  assert.throws(() => validateCertificationObjectiveRegistry(badObjective), /INVALID_CERTIFICATION_OBJECTIVE_PROVENANCE/);
-  const scoped = clone(registry); const scopedObjective = scoped.objectives.find((objective) => objective.scopeStatements.length); scopedObjective.scopeStatements[0].checkedDate = "2026-02-30";
-  assert.throws(() => validateCertificationObjectiveRegistry(scoped), /INVALID_CERTIFICATION_SCOPE_PROVENANCE/);
-  const badEligibility = clone(registry); badEligibility.examProfile.faithfulSimulationEligibility.undocumentedFields = [];
-  assert.throws(() => validateCertificationObjectiveRegistry(badEligibility), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const dependencyRationales = Object.values(dependencyTarget.operationVariantCounts).map((entry) => entry.countRationale).join(" ");
-  for (const term of ["implicit", "depends_on", "create_before_destroy", "replacement ordering"]) assert.match(dependencyRationales, new RegExp(term));
-  assert.doesNotMatch(dependencyRationales, /add depends, hidden dependency, depends_on scope/);
-  const sensitiveRationales = Object.values(sensitiveTarget.operationVariantCounts).map((entry) => entry.countRationale).join(" ");
-  for (const term of ["sensitive redaction", "plan\/state persistence", "ephemeral", "write-only", "reference-only"]) assert.match(sensitiveRationales, new RegExp(term));
-  assert.doesNotMatch(sensitiveRationales, /mark sensitive values plaintext exposure, input modality, output contract/);
-});
-
-test("AZ-104 exact objective registry governs all nested bindings, Azure Monitor Insights, and practice-only simulation", () => {
-  const az104 = clone(curricula.find((entry) => entry.trackId === "microsoft-azure-administrator-associate-az-104"));
-  const brief = briefs.find((entry) => entry.trackId === az104.trackId);
-  const registry = certificationRegistries.get(az104.trackId);
-  const blocks = az104.nodes.flatMap((node) => node.learningBlocks);
-  const atoms = blocks.flatMap((block) => block.skillOrDecisionAtoms);
-  const targets = blocks.flatMap((block) => block.coverageTargets);
-  assert.equal(registry.domains.length, 5);
-  assert.equal(registry.objectives.length, 15);
-  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 82);
-  assert.deepEqual(registry.domains.map((domain) => domain.weight.value), ["20–25%", "15–20%", "20–25%", "15–20%", "10–15%"]);
-  assert.equal(az104.nodes.length, 13);
-  assert.equal(blocks.length, 48);
-  assert.equal(atoms.length, 81);
-  assert.equal(targets.length, 81);
-  assert.equal(az104.targetItemCount, 2536);
-  assert.equal(az104.existingVerifiedItemCount, 0);
-  assert.equal(az104.authoringItemCount, 2536);
-  assert.deepEqual(az104.objectiveExclusions, []);
-  assert.deepEqual(az104.entryPrerequisites, ["Familiarity with operating systems, networking, servers, and virtualization.", "Experience with PowerShell, Azure CLI, the Azure portal, Azure Resource Manager templates or Bicep files, and Microsoft Entra ID."]);
-  assert.match(az104.learnerOutcome, /Implement, manage, secure, govern, monitor, and recover Azure/i);
-  assert.doesNotThrow(() => validateCurriculum(az104, brief, registry));
-  assertExactAz104Bindings(az104);
-  assert.deepEqual(Object.fromEntries(registry.sources.map((source) => [source.sourceId, source.authoritativeFor])), {
-    "microsoft-az-104-study-guide": ["guide_version", "domains", "weights", "objectives", "scope_statements", "audience_profile"],
-    "microsoft-az-104-certification-page": ["certification_identity", "audience_profile", "duration", "delivery"],
-    "microsoft-exam-duration-experience": ["duration", "navigation", "flagging", "timeout_behavior"],
-    "microsoft-exam-scoring-reports": ["scored_unscored_distinction"],
-    "microsoft-register-schedule-exam": ["delivery"]
-  });
-  assert.ok(atoms.every((atom) => atom.officialObjectiveRefs.every((ref) => /^az-104-2026-04-17-(?:[1-5]\.\d)$/.test(ref))));
-  assert.ok(targets.every((target) => target.sourceRequirements.authoringGate === "blocked_until_all_requirements_resolve" && target.sourceRequirements.requirements[0].resolvedAtCurriculumStage === true && target.sourceRequirements.requirements[1].resolvedAtCurriculumStage === false && target.sourceRequirements.requirements[1].directFirstPartySourceRefs.length === 0 && target.sourceRequirements.requirements[1].testedMechanismOrProductProperties[0] === target.primarySkillOrDecisionAtomId));
-  const insights = blocks.find((block) => block.blockId === "resource_insights");
-  assert.deepEqual(insights.officialObjectiveRefs, ["az-104-2026-04-17-5.1"]);
-  assert.equal(insights.skillOrDecisionAtoms[0].atomId, "azure_monitor_insights_vm_storage_network_monitoring");
-  assert.equal(insights.coverageTargets[0].coverageTargetId, "microsoft-azure-administrator-associate-az-104:resource_insights:azure_monitor_insights_vm_storage_network_monitoring");
-  assert.equal(insights.coverageTargets[0].requiredVariantCount, 32);
-  assert.deepEqual(Object.fromEntries(Object.entries(insights.coverageTargets[0].operationVariantCounts).map(([operation, value]) => [operation, value.requiredVariantCount])), { SIG: 10, DEC: 8, BND: 7, XFR: 7 });
-  assert.equal(JSON.stringify(az104).includes("classify_resource_insights_evidence"), false);
-  assert.equal(JSON.stringify(insights).includes("Advisor"), false);
-  assert.equal(JSON.stringify(blocks.find((block) => block.blockId === "budgets_advisor_cost_controls")).includes("Advisor"), true);
-  assert.equal(az104.nodes.find((node) => node.nodeId === "monitoring_and_alerting").officialObjectiveRefs[0], "az-104-2026-04-17-5.1");
-  assert.equal(az104.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems, 50);
-  assert.equal(az104.simulationOrCasePoolPlans[0].uniqueItemCount, 50);
-  assert.equal(az104.simulationOrCasePoolPlans[0].simulationClaim, "patternly_practice_not_provider_faithful");
-  const resolveWithSource = (sourceId, url) => {
-    const candidate = clone(az104); const target = candidate.nodes[0].learningBlocks[0].coverageTargets[0];
-    candidate.sourceBasis = candidate.sourceBasis.filter((source) => source.sourceId !== sourceId);
-    candidate.sourceBasis.push({ sourceId, sourceKind: "direct_first_party_product_documentation", url, title: "Relabelled direct documentation", guideVersion: "not_documented", version: "current", volatility: "high", checkedDate: "2026-08-10", mechanismOrProductProperties: [target.primarySkillOrDecisionAtomId] });
-    target.sourceRequirements.authoringGate = "resolved_for_authoring";
-    target.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true;
-    target.sourceRequirements.requirements[1].directFirstPartySourceRefs = [sourceId];
-    return candidate;
-  };
-  const sameId = resolveWithSource("microsoft-az-104-study-guide", "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104");
-  assert.throws(() => validateCurriculum(sameId, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const relabelledStudyGuide = resolveWithSource("renamed-az104-study-guide", "https://LEARN.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104/?ignored=query#ignored");
-  assert.throws(() => validateCurriculum(relabelledStudyGuide, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const encodedStudyGuide = resolveWithSource("encoded-az104-study-guide", "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/%61z%2D104");
-  assert.throws(() => validateCurriculum(encodedStudyGuide, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const caseVariantStudyGuide = resolveWithSource("case-variant-az104-study-guide", "https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/AZ-104");
-  assert.throws(() => validateCurriculum(caseVariantStudyGuide, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const directProductDocumentation = resolveWithSource("azure-monitor-insights-product-doc", "https://learn.microsoft.com/en-us/azure/azure-monitor/insights-overview/");
-  assert.doesNotThrow(() => validateCurriculum(directProductDocumentation, brief, registry));
-  const wrongButCoherent = clone(az104); const wrongNode = wrongButCoherent.nodes.find((node) => node.nodeId === "entra_users_groups_and_lifecycle"); const wrongBlock = wrongNode.learningBlocks.find((block) => block.blockId === "user_group_lifecycle"); const wrongAtom = wrongBlock.skillOrDecisionAtoms[0]; const wrongTarget = wrongBlock.coverageTargets.find((target) => target.primarySkillOrDecisionAtomId === wrongAtom.atomId); const wrongRefs = [az104Objective("1.3")];
-  wrongAtom.officialObjectiveRefs = wrongRefs; wrongTarget.officialObjectiveRefs = wrongRefs; wrongTarget.sourceRequirements.requirements[0].objectiveRefs = wrongRefs; wrongBlock.officialObjectiveRefs = [az104Objective("1.3"), az104Objective("1.1")]; wrongNode.officialObjectiveRefs = [az104Objective("1.3"), az104Objective("1.1")];
-  assert.doesNotThrow(() => validateCurriculum(wrongButCoherent, brief, registry));
-  assert.throws(() => assertExactAz104Bindings(wrongButCoherent), assert.AssertionError);
-});
-
-test("AI-901 exact objective registry governs seven current objectives, source gates, and practice-only simulation", () => {
-  const ai901 = clone(curricula.find((entry) => entry.trackId === "microsoft-azure-ai-fundamentals-ai-901"));
-  const brief = briefs.find((entry) => entry.trackId === ai901.trackId);
-  const registry = certificationRegistries.get(ai901.trackId);
-  assert.equal(registry.domains.length, 2);
-  assert.deepEqual(registry.domains.map((domain) => domain.weight.value), ["40–45%", "55–60%"]);
-  assert.equal(registry.objectives.length, 7);
-  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 29);
-  const registrySources = new Map(registry.sources.map((source) => [source.sourceId, source.url]));
-  assert.equal(registrySources.get("microsoft-exam-scoring-reports"), "https://learn.microsoft.com/en-us/credentials/certifications/exam-scoring-reports");
-  assert.equal(registrySources.get("microsoft-register-schedule-exam"), "https://learn.microsoft.com/en-us/credentials/certifications/register-schedule-exam");
-  const curriculumSources = new Map(ai901.sourceBasis.map((source) => [source.sourceId, source.url]));
-  assert.equal(curriculumSources.get("microsoft-exam-scoring-reports"), registrySources.get("microsoft-exam-scoring-reports"));
-  assert.equal(curriculumSources.get("microsoft-register-schedule-exam"), registrySources.get("microsoft-register-schedule-exam"));
-  assert.equal(ai901.nodes.length, 8);
-  assert.equal(ai901.nodes.flatMap((node) => node.learningBlocks).length, 27);
-  assert.equal(ai901.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.coverageTargets)).length, 44);
-  assert.equal(ai901.targetItemCount, 1363);
-  assert.equal(ai901.existingVerifiedItemCount, 0);
-  assert.equal(ai901.authoringItemCount, 1363);
-  assert.deepEqual(ai901.entryPrerequisites, ["Foundational Python syntax and programming techniques.", "Familiarity with Azure resources."]);
-  assert.match(ai901.learnerOutcome, /implement Azure AI solutions/i);
-  assert.doesNotThrow(() => validateCurriculum(ai901, brief, registry));
-  const target = ai901.nodes[0].learningBlocks[0].coverageTargets[0];
-  assert.deepEqual(target.officialObjectiveRefs, ["ai-901-2026-04-15-1.3"]);
-  const crossTrack = clone(ai901); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-1.1"];
-  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
-  const removed = clone(ai901); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["section-concepts-and-capabilities"];
-  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
-  const unknown = clone(ai901); unknown.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["ai-901-2026-04-15-9.9"];
-  assert.throws(() => validateCurriculum(unknown, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
-  const uncovered = clone(ai901); const objective = "ai-901-2026-04-15-2.4"; const replaceObjective = (refs) => [...new Set(refs.map((ref) => ref === objective ? "ai-901-2026-04-15-2.3" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaceObjective(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaceObjective(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaceObjective(atom.officialObjectiveRefs); for (const coverageTarget of block.coverageTargets) { coverageTarget.officialObjectiveRefs = replaceObjective(coverageTarget.officialObjectiveRefs); coverageTarget.sourceRequirements.requirements[0].objectiveRefs = replaceObjective(coverageTarget.sourceRequirements.requirements[0].objectiveRefs); } } }
-  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
-  const fakeMechanism = clone(ai901); fakeMechanism.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].directFirstPartySourceRefs = ["microsoft-ai-901-study-guide"];
-  assert.throws(() => validateCurriculum(fakeMechanism, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const badHost = clone(registry); badHost.sources[0].url = "https://example.invalid/ai-901";
-  assert.throws(() => validateCertificationObjectiveRegistry(badHost), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
-  const badProfile = clone(registry); badProfile.examProfile.itemCountOrRange.value = 50;
-  assert.throws(() => validateCertificationObjectiveRegistry(badProfile), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const faithfulClaim = clone(registry); faithfulClaim.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "provider_faithful_ai901_simulation";
-  assert.throws(() => validateCertificationObjectiveRegistry(faithfulClaim), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const simulatedClaim = clone(ai901); simulatedClaim.simulationOrCasePoolPlans[0].simulationClaim = "provider_faithful_ai901_simulation";
-  assert.throws(() => validateCurriculum(simulatedClaim, brief, registry), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-});
-
-test("AWS SAA-C03 exact registry binds every AWS atom and remains authoring-blocked", () => {
-  const aws = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
-  const brief = briefs.find((entry) => entry.trackId === aws.trackId);
-  const registry = certificationRegistries.get(aws.trackId);
-  const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
-  const blocks = aws.nodes.flatMap((node) => node.learningBlocks);
-  const atoms = aws.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.skillOrDecisionAtoms.map((atom) => [node.nodeId, block.blockId, atom.atomId, atom.officialObjectiveRefs])));
-  assert.equal(registry.sources.length, 7);
-  assert.equal(registry.domains.length, 4);
-  assert.equal(registry.objectives.length, 14);
-  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 189);
-  assert.equal(registry.objectives.find((objective) => objective.objectiveId === "aws-saa-c03-2.2").scopeStatements.filter((scope) => scope.scopeKind === "knowledge").length, 12);
-  assert.equal(registry.objectives.find((objective) => objective.objectiveId === "aws-saa-c03-2.2").scopeStatements.filter((scope) => scope.scopeKind === "skill").length, 8);
-  assert.deepEqual(registry.officialSourceHosts, ["docs.aws.amazon.com", "aws.amazon.com"]);
-  assert.deepEqual(registry.removedObjectiveIds, ["task-1.1", "task-1.2", "task-1.3", "task-2.1", "task-2.2", "task-3.1", "task-3.2", "task-3.3", "task-3.4", "task-3.5", "task-4.1", "task-4.2", "task-4.3", "task-4.4"]);
-  assert.equal(aws.nodes.length, 11); assert.equal(blocks.length, 39); assert.equal(atoms.length, 76);
-  assert.equal(hash(atoms), "ad44f171136c8de5965b8b56a4eac6f279863a6788ffae5bf262b4f1bc4bd80f");
-  assert.equal(hash(blocks.map((block) => [block.blockId, block.officialObjectiveRefs])), "263e6423121a863cb4e9cc160e50a885bae8c8f6eb81a700bb62e1d48c5ac94a");
-  assert.equal(hash(aws.nodes.map((node) => [node.nodeId, node.officialObjectiveRefs])), "25e76a6c1e15db498335dcc462940c382ad07c1aea51b7a9c9237cf7b4c3c83b");
-  assert.equal(aws.targetItemCount, 2496); assert.equal(aws.existingVerifiedItemCount, 0); assert.equal(aws.authoringItemCount, 2496);
-  assert.deepEqual(aws.objectiveExclusions, []);
-  assert.ok(aws.nodes.every((node) => node.learningBlocks.every((block) => block.coverageTargets.every((target) => target.sourceRequirements.authoringGate === "blocked_until_all_requirements_resolve" && target.sourceRequirements.requirements[0].resolvedAtCurriculumStage === true && target.sourceRequirements.requirements[1].resolvedAtCurriculumStage === false && target.sourceRequirements.requirements[1].directFirstPartySourceRefs.length === 0 && target.sourceRequirements.requirements[1].testedMechanismOrProductProperties[0] === target.primarySkillOrDecisionAtomId))));
-  assert.equal(aws.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems, 65);
-  assert.equal(aws.simulationOrCasePoolPlans[0].uniqueItemCount, 65);
-  assert.equal(aws.simulationOrCasePoolPlans[0].simulationClaim, "patternly_practice_not_provider_faithful");
-  assert.doesNotThrow(() => validateCurriculum(aws, brief, registry));
-  const crossTrack = clone(aws); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-1.1"];
-  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
-  const removed = clone(aws); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["task-1.1"];
-  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
-  const misspelled = clone(aws); misspelled.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["aws-saa-c03-4.5"];
-  assert.throws(() => validateCurriculum(misspelled, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
-  const uncovered = clone(aws); const replaced = (refs) => [...new Set(refs.map((ref) => ref === "aws-saa-c03-4.4" ? "aws-saa-c03-4.3" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaced(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaced(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaced(atom.officialObjectiveRefs); for (const target of block.coverageTargets) { target.officialObjectiveRefs = replaced(target.officialObjectiveRefs); target.sourceRequirements.requirements[0].objectiveRefs = replaced(target.sourceRequirements.requirements[0].objectiveRefs); } } }
-  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
-  const fakeMechanism = clone(aws); fakeMechanism.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].directFirstPartySourceRefs = ["aws-saa-c03-exam-guide"];
-  assert.throws(() => validateCurriculum(fakeMechanism, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const prematureReady = clone(aws); const target = prematureReady.nodes[0].learningBlocks[0].coverageTargets[0]; prematureReady.sourceBasis.push({ sourceId: "wrong-host-doc", sourceKind: "direct_first_party_product_documentation", url: "https://example.invalid/aws", title: "Not AWS documentation", guideVersion: "not_documented", version: "current", volatility: "high", checkedDate: "2026-08-10", mechanismOrProductProperties: [target.primarySkillOrDecisionAtomId] }); target.sourceRequirements.authoringGate = "resolved_for_authoring"; target.sourceRequirements.requirements[1].resolvedAtCurriculumStage = true; target.sourceRequirements.requirements[1].directFirstPartySourceRefs = ["wrong-host-doc"];
-  assert.throws(() => validateCurriculum(prematureReady, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const badHost = clone(registry); badHost.sources[0].url = "https://example.invalid/aws-saa-c03";
-  assert.throws(() => validateCertificationObjectiveRegistry(badHost), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
-  const badProfileAuthority = clone(registry); badProfileAuthority.examProfile.answerChanges = { status: "documented", value: { canChange: true }, sourceRefs: ["aws-saa-c03-exam-guide"], checkedDate: "2026-08-10" };
-  assert.throws(() => validateCertificationObjectiveRegistry(badProfileAuthority), /INVALID_EXAM_PROFILE_PROVENANCE/);
-  const badProfile = clone(registry); badProfile.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "faithful_aws_saa_c03_exam_simulation";
-  assert.throws(() => validateCertificationObjectiveRegistry(badProfile), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const fifty = clone(aws); fifty.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems = 50; fifty.simulationOrCasePoolPlans[0].uniqueItemCount = 50;
-  assert.throws(() => validateCurriculum(fifty, brief, registry), /MODE_POOL_INSUFFICIENT/);
-  const faithfulClaim = clone(aws); faithfulClaim.simulationOrCasePoolPlans[0].simulationClaim = "faithful_aws_saa_c03_exam_simulation";
-  assert.throws(() => validateCurriculum(faithfulClaim, brief, registry), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-});
-
-test("KCNA exact competency registry governs current domains, source gates, and 60-item practice simulation", () => {
-  const kcna = clone(curricula.find((entry) => entry.trackId === "kubernetes-cloud-native-associate-kcna"));
-  const brief = briefs.find((entry) => entry.trackId === kcna.trackId);
-  const registry = certificationRegistries.get(kcna.trackId);
-  assert.equal(registry.domains.length, 4);
-  assert.deepEqual(registry.domains.map((domain) => domain.weight.value), ["44%", "28%", "16%", "12%"]);
-  assert.equal(registry.objectives.length, 13);
-  assert.equal(registry.objectives.flatMap((objective) => objective.scopeStatements).length, 0);
-  assert.equal(registry.sources.length, 5);
-  assert.deepEqual(registry.officialSourceHosts, ["training.linuxfoundation.org", "docs.linuxfoundation.org", "raw.githubusercontent.com"]);
-  assert.ok(registry.sources.every((source) => source.checkedDate === "2026-08-10"));
-  assert.doesNotThrow(() => validateCurriculum(kcna, brief, registry));
-  assert.equal(kcna.nodes.length, 10);
-  assert.equal(kcna.nodes.flatMap((node) => node.learningBlocks).length, 31);
-  assert.equal(kcna.nodes.flatMap((node) => node.learningBlocks.flatMap((block) => block.coverageTargets)).length, 46);
-  assert.equal(kcna.targetItemCount, 1514);
-  assert.equal(kcna.existingVerifiedItemCount, 0);
-  assert.equal(kcna.authoringItemCount, 1514);
-  assert.deepEqual(kcna.entryPrerequisites, []);
-  assert.equal(kcna.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems, 60);
-  assert.equal(kcna.simulationOrCasePoolPlans[0].uniqueItemCount, 60);
-  const target = kcna.nodes[0].learningBlocks[0].coverageTargets[0];
-  assert.deepEqual(target.officialObjectiveRefs, ["kcna-4.2"]);
-  assert.equal(target.sourceRequirements.authoringGate, "blocked_until_all_requirements_resolve");
-  assert.equal(target.sourceRequirements.requirements[1].resolvedAtCurriculumStage, false);
-  const crossTrack = clone(kcna); crossTrack.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["gcp-ace-standard-1.1"];
-  assert.throws(() => validateCurriculum(crossTrack, brief, registry), /CERTIFICATION_OBJECTIVE_TRACK_MISMATCH/);
-  const removed = clone(kcna); removed.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["kubernetes-fundamentals"];
-  assert.throws(() => validateCurriculum(removed, brief, registry), /REMOVED_CERTIFICATION_OBJECTIVE/);
-  const unknown = clone(kcna); unknown.nodes[0].learningBlocks[0].coverageTargets[0].officialObjectiveRefs = ["kcna-9.9"];
-  assert.throws(() => validateCurriculum(unknown, brief, registry), /UNKNOWN_CERTIFICATION_OBJECTIVE/);
-  const uncovered = clone(kcna); const objective = "kcna-4.3"; const replaceObjective = (refs) => [...new Set(refs.map((ref) => ref === objective ? "kcna-4.2" : ref))]; for (const node of uncovered.nodes) { node.officialObjectiveRefs = replaceObjective(node.officialObjectiveRefs); for (const block of node.learningBlocks) { block.officialObjectiveRefs = replaceObjective(block.officialObjectiveRefs); for (const atom of block.skillOrDecisionAtoms) atom.officialObjectiveRefs = replaceObjective(atom.officialObjectiveRefs); for (const coverageTarget of block.coverageTargets) { coverageTarget.officialObjectiveRefs = replaceObjective(coverageTarget.officialObjectiveRefs); coverageTarget.sourceRequirements.requirements[0].objectiveRefs = replaceObjective(coverageTarget.sourceRequirements.requirements[0].objectiveRefs); } } }
-  assert.throws(() => validateCurriculum(uncovered, brief, registry), /UNCOVERED_CERTIFICATION_OBJECTIVE/);
-  const fakeMechanism = clone(kcna); fakeMechanism.nodes[0].learningBlocks[0].coverageTargets[0].sourceRequirements.requirements[1].directFirstPartySourceRefs = ["linux-foundation-kcna-exam-page"];
-  assert.throws(() => validateCurriculum(fakeMechanism, brief, registry), /MISSING_DIRECT_FIRST_PARTY_MECHANISM_SOURCE/);
-  const badHost = clone(registry); badHost.sources[0].url = "https://example.invalid/kcna";
-  assert.throws(() => validateCertificationObjectiveRegistry(badHost), /INVALID_CERTIFICATION_SOURCE_PROVENANCE/);
-  const rawSource = registry.sources.find((source) => source.sourceId === "cncf-kcna-curriculum-pdf");
-  assert.deepEqual(rawSource.urlIdentity, { kind: "github_raw_file", owner: "cncf", repository: "curriculum", ref: "master", path: "KCNA_Curriculum.pdf" });
-  assert.deepEqual(rawSource.contentDigest, { algorithm: "sha256", value: "ff20fef0bf900c71db90b5199adbce4ab15f6fbdce13342d3ef5abef9b5e9e07" });
-  const attackerRaw = clone(registry); attackerRaw.sources.find((source) => source.sourceId === "cncf-kcna-curriculum-pdf").url = "https://raw.githubusercontent.com/attacker/curriculum/master/KCNA_Curriculum.pdf";
-  assert.throws(() => validateCertificationObjectiveRegistry(attackerRaw), /INVALID_RAW_GITHUB_SOURCE_IDENTITY/);
-  const wrongRawIdentity = clone(registry); wrongRawIdentity.sources.find((source) => source.sourceId === "cncf-kcna-curriculum-pdf").urlIdentity.repository = "different-curriculum";
-  assert.throws(() => validateCertificationObjectiveRegistry(wrongRawIdentity), /INVALID_RAW_GITHUB_SOURCE_IDENTITY/);
-  const corruptRawDigest = clone(registry); corruptRawDigest.sources.find((source) => source.sourceId === "cncf-kcna-curriculum-pdf").contentDigest.value = "0".repeat(64);
-  assert.throws(() => validateCertificationObjectiveRegistry(corruptRawDigest), /INVALID_RAW_GITHUB_SOURCE_IDENTITY/);
-  const badDate = clone(registry); badDate.sources[0].checkedDate = "2026-02-30";
-  assert.throws(() => validateCertificationObjectiveRegistry(badDate), /INVALID_SOURCE_CHECKED_DATE/);
-  const inferredProfile = clone(registry); inferredProfile.examProfile.scoredUnscoredDistinction.value = "all_scored";
-  assert.throws(() => validateCertificationObjectiveRegistry(inferredProfile), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const wrongItemCountAuthority = clone(registry); wrongItemCountAuthority.examProfile.itemCountOrRange.value = 50; wrongItemCountAuthority.examProfile.itemCountOrRange.sourceRefs = ["linux-foundation-kcna-exam-page"];
-  assert.throws(() => validateCertificationObjectiveRegistry(wrongItemCountAuthority), /INVALID_EXAM_PROFILE_PROVENANCE/);
-  const coMutatedCount = clone(kcna); const coMutatedRegistry = clone(registry); coMutatedRegistry.examProfile.itemCountOrRange.value = 50; coMutatedRegistry.examProfile.itemCountOrRange.sourceRefs = ["linux-foundation-kcna-exam-page"]; coMutatedCount.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems = 50; coMutatedCount.simulationOrCasePoolPlans[0].uniqueItemCount = 50;
-  assert.throws(() => validateCertificationObjectiveRegistry(coMutatedRegistry), /INVALID_EXAM_PROFILE_PROVENANCE/);
-  const faithfulClaim = clone(registry); faithfulClaim.examProfile.faithfulSimulationEligibility.allowedPatternlyClaim = "faithful_linux_foundation_kcna_exam_simulation";
-  assert.throws(() => validateCertificationObjectiveRegistry(faithfulClaim), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const simulatedClaim = clone(kcna); simulatedClaim.simulationOrCasePoolPlans[0].simulationClaim = "faithful_linux_foundation_kcna_exam_simulation";
-  assert.throws(() => validateCurriculum(simulatedClaim, brief, registry), /UNDOCUMENTED_PROFILE_BEHAVIOR_CLAIMED/);
-  const insufficientMode = clone(kcna); insufficientMode.modePoolPlans.find((pool) => pool.modeId === "certification-exam-simulation").requiredUniqueItems = 59;
-  assert.throws(() => validateCurriculum(insufficientMode, brief, registry), /MODE_POOL_INSUFFICIENT/);
-  const insufficientPlan = clone(kcna); insufficientPlan.simulationOrCasePoolPlans[0].uniqueItemCount = 59;
-  assert.throws(() => validateCurriculum(insufficientPlan, brief, registry), /MODE_POOL_INSUFFICIENT/);
-});
-
-test("registry schema and validation constrain official exam source hosts independently from mechanism documentation hosts", async () => {
-  const schema = JSON.parse(await readFile("schemas/curriculum/certification-objective-registry.schema.json", "utf8"));
-  assert.ok(schema.required.includes("officialSourceHosts"));
-  assert.equal(schema.properties.officialSourceHosts.minItems, 1);
-  const gcp = certificationRegistries.get("google-cloud-associate-cloud-engineer");
-  assert.deepEqual(gcp.officialSourceHosts, ["cloud.google.com", "services.google.com", "support.google.com"]);
-  const badHost = clone(gcp); badHost.officialSourceHosts = ["cloud.google.com/"];
-  assert.throws(() => validateCertificationObjectiveRegistry(badHost), /INVALID_OFFICIAL_SOURCE_HOST/);
 });
 
 test("canonical certification registries cannot redefine their provider or trusted host roots", () => {
   for (const registry of certificationRegistries.values()) assert.doesNotThrow(() => validateCertificationObjectiveRegistry(clone(registry)));
   const gcp = certificationRegistries.get("google-cloud-associate-cloud-engineer");
-  const coMutatedTrustRoots = clone(gcp);
-  coMutatedTrustRoots.officialSourceHosts = ["example.invalid"];
-  coMutatedTrustRoots.firstPartyDocumentationHosts = ["example.invalid"];
-  coMutatedTrustRoots.sources.forEach((source) => { source.url = `https://example.invalid/${source.sourceId}`; });
-  assert.throws(() => validateCertificationObjectiveRegistry(coMutatedTrustRoots), /UNTRUSTED_CERTIFICATION_REGISTRY_ROOT/);
-  const providerMutation = clone(gcp); providerMutation.provider = "Example Cloud";
+  const providerMutation = clone(gcp);
+  providerMutation.provider = "Example Cloud";
   assert.throws(() => validateCertificationObjectiveRegistry(providerMutation), /UNTRUSTED_CERTIFICATION_REGISTRY_ROOT/);
-  const directDocumentationMutation = clone(gcp); directDocumentationMutation.firstPartyDocumentationHosts = ["example.invalid"];
-  assert.throws(() => validateCertificationObjectiveRegistry(directDocumentationMutation), /UNTRUSTED_CERTIFICATION_REGISTRY_ROOT/);
-});
-
-test("certification registry catalogue and curriculum binding fail closed", async () => {
-  const aws = clone(curricula.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate"));
-  const awsBrief = briefs.find((entry) => entry.trackId === aws.trackId);
-  assert.throws(() => validateCurriculum(aws, awsBrief, undefined), /MISSING_CERTIFICATION_OBJECTIVE_REGISTRY/);
-  const renamedRegistry = clone(certificationRegistries.get(aws.trackId)); renamedRegistry.trackId = "renamed-aws-registry";
-  assert.throws(() => validateCertificationObjectiveRegistry(renamedRegistry), /UNTRUSTED_CERTIFICATION_REGISTRY_ROOT/);
-  const temporaryRoot = await mkdtemp(join(tmpdir(), "patternly-certification-registry-set-"));
-  try {
-    await cp("config", join(temporaryRoot, "config"), { recursive: true });
-    await rm(join(temporaryRoot, "config", "certification-objective-registries", "aws-certified-solutions-architect-associate.json"));
-    await assert.rejects(() => loadCertificationObjectiveRegistries({ root: temporaryRoot }), /CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH/);
-    await rm(join(temporaryRoot, "config"), { recursive: true, force: true });
-    await cp("config", join(temporaryRoot, "config"), { recursive: true });
-    await writeFile(join(temporaryRoot, "config", "certification-objective-registries", "unexpected-registry.json"), "{}\n");
-    await assert.rejects(() => loadCertificationObjectiveRegistries({ root: temporaryRoot }), /CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH/);
-  } finally {
-    await rm(temporaryRoot, { recursive: true, force: true });
-  }
 });

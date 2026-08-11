@@ -1,0 +1,255 @@
+# Curriculum coverage specification
+
+Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `00016f34a9536cd326d189f11c720e91f52f64bf56a9271f7c8857c2627834f3`.
+
+## Release tracks
+
+| Track | Family | Nodes | Blocks | Targets | Slots/target | Existing | Authoring | Free | Premium | State |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| aws-certified-solutions-architect-associate | certification | 3 | 39 | 76 | 446 | 0 | 446 | 134 | 312 | direct slots; authoring not admitted |
+| backend-system-design-interview | design_interview | 8 | 35 | — | 1154 | 0 | 1154 | 121 | 1033 | current family contract |
+| coding-interview-dsa-problem-solving | coding_interview | 26 | 78 | — | 3404 | 2375 | 1029 | 158 | 3246 | current family contract |
+| frontend-system-design-interview | design_interview | 9 | 45 | — | 1460 | 0 | 1460 | 120 | 1340 | current family contract |
+| google-cloud-associate-cloud-engineer | certification | 2 | 36 | 66 | 361 | 0 | 361 | 124 | 237 | direct slots; authoring not admitted |
+| hashicorp-terraform-associate-004 | certification | 2 | 32 | 55 | 285 | 0 | 285 | 127 | 158 | direct slots; authoring not admitted |
+| kubernetes-cloud-native-associate-kcna | certification | 2 | 31 | 46 | 257 | 0 | 257 | 128 | 129 | direct slots; authoring not admitted |
+| microsoft-azure-administrator-associate-az-104 | certification | 2 | 48 | 81 | 324 | 0 | 324 | 153 | 171 | direct slots; authoring not admitted |
+| microsoft-azure-ai-fundamentals-ai-901 | certification | 2 | 27 | 44 | 258 | 0 | 258 | 138 | 120 | direct slots; authoring not admitted |
+| object-oriented-design-interview | design_interview | 7 | 34 | — | 1101 | 0 | 1101 | 122 | 979 | current family contract |
+
+## Certification direct-slot reconciliation
+
+- aws-certified-solutions-architect-associate: 446 slots, 76 targets, 39 blocks, 3 nodes, 71 sources; Free/Premium 134/312; direct_canonical_slots_verified_authoring_not_admitted.
+- google-cloud-associate-cloud-engineer: 361 slots, 66 targets, 36 blocks, 2 nodes, 113 sources; Free/Premium 124/237; direct_canonical_slots_verified_authoring_not_admitted.
+- hashicorp-terraform-associate-004: 285 slots, 55 targets, 32 blocks, 2 nodes, 60 sources; Free/Premium 127/158; direct_canonical_slots_verified_authoring_not_admitted.
+- kubernetes-cloud-native-associate-kcna: 257 slots, 46 targets, 31 blocks, 2 nodes, 62 sources; Free/Premium 128/129; direct_canonical_slots_verified_authoring_not_admitted.
+- microsoft-azure-administrator-associate-az-104: 324 slots, 81 targets, 48 blocks, 2 nodes, 114 sources; Free/Premium 153/171; direct_canonical_slots_verified_authoring_not_admitted.
+- microsoft-azure-ai-fundamentals-ai-901: 258 slots, 44 targets, 27 blocks, 2 nodes, 33 sources; Free/Premium 138/120; direct_canonical_slots_verified_authoring_not_admitted.
+
+## Authoring boundary
+
+All Certification batches are future work: no questions were authored and runtime, package, publishing, and learner admission remain unavailable. Before authoring, establish the real track/taxonomy/source/release contract; bind each question to a canonical slot and coherent content version; then complete feedback, factual review, editorial approval, and immutable publication evidence.
+
+## First safe future batch
+
+- `microsoft-azure-administrator-associate-az-104:azure-administration-scope-and-control-surfaces`: 13 exact slots in `portal_cli_powershell_arm_boundary`, `scope_and_resource_model`; planned_not_authorable_until_track_taxonomy_source_release_contract. One Azure administration reviewer verifies resource hierarchy and provider/region/API boundaries together with the supported management surface and control-plane/data-plane distinctions against the seven named Microsoft sources.
+
+## Atomic authoring backlog
+
+- `google-cloud-associate-cloud-engineer:artifact_access_and_cluster_ops:1`: 11 slots; blocks `artifact_access_and_cluster_ops`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:backup_restore_and_cost:1`: 11 slots; blocks `backup_restore_and_cost`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:billing_budgets_exports:1`: 10 slots; blocks `billing_budgets_exports`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:cloud_storage_security_lifecycle:1`: 11 slots; blocks `cloud_storage_security_lifecycle`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:cluster_mode_topology:1`: 10 slots; blocks `cluster_mode_topology`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:compute_execution_model_selection:1`: 11 slots; blocks `compute_execution_model_selection`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:data_and_storage_selection:1`: 15 slots; blocks `data_and_storage_selection`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:declarative_resource_implementation:1`: 9 slots; blocks `declarative_resource_implementation`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:deployment_events_eventarc:1`: 9 slots; blocks `deployment_events_eventarc`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:diagnostics_status_incident_evidence:1`: 5 slots; blocks `diagnostics_status_incident_evidence`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:dns_nat_ip_operations:1`: 12 slots; blocks `dns_nat_ip_operations`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:impersonation_short_lived_credentials_custom_roles:1`: 11 slots; blocks `impersonation_short_lived_credentials_custom_roles`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:ingress_egress_firewall_policy:1`: 12 slots; blocks `ingress_egress_firewall_policy`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:instance_disks_availability_os_login:1`: 11 slots; blocks `instance_disks_availability_os_login`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:inventory_images_snapshots:1`: 9 slots; blocks `inventory_images_snapshots`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:kubernetes_app_resources:1`: 12 slots; blocks `kubernetes_app_resources`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:location_network_tier_load_balancing:1`: 13 slots; blocks `location_network_tier_load_balancing`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:logging_routing_analytics_audit:1`: 12 slots; blocks `logging_routing_analytics_audit`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:metrics_alerts_custom_metrics:1`: 7 slots; blocks `metrics_alerts_custom_metrics`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:node_pools_scaling:1`: 11 slots; blocks `node_pools_scaling`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:ops_agent_and_managed_prometheus:1`: 12 slots; blocks `ops_agent_and_managed_prometheus`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:plan_apply_drift_transfer:1`: 9 slots; blocks `plan_apply_drift_transfer`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:principals_roles_policies:1`: 5 slots; blocks `principals_roles_policies`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:product_deploy_and_load:1`: 13 slots; blocks `product_deploy_and_load`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:query_and_job_operations:1`: 12 slots; blocks `query_and_job_operations`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:quotas_and_operations_bootstrap:1`: 9 slots; blocks `quotas_and_operations_bootstrap`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:resource_hierarchy_org_policy_apis:1`: 9 slots; blocks `resource_hierarchy_org_policy_apis`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:revisions_versions_traffic:1`: 9 slots; blocks `revisions_versions_traffic`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:run_functions_execution_boundary:1`: 11 slots; blocks `run_functions_execution_boundary`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:scaling_and_instance_controls:1`: 7 slots; blocks `scaling_and_instance_controls`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:service_account_lifecycle_attachment:1`: 10 slots; blocks `service_account_lifecycle_attachment`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:templates_migs_autoscaling:1`: 11 slots; blocks `templates_migs_autoscaling`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:tool_and_source_of_truth_boundary:1`: 2 slots; blocks `tool_and_source_of_truth_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:vm_manager_and_admin_boundary:1`: 6 slots; blocks `vm_manager_and_admin_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:vpc_subnet_shared_vpc:1`: 11 slots; blocks `vpc_subnet_shared_vpc`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `google-cloud-associate-cloud-engineer:vpn_peering_external_connectivity:1`: 13 slots; blocks `vpn_peering_external_connectivity`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:iac_value_and_multi_cloud:1`: 9 slots; blocks `iac_value_and_multi_cloud`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:declarative_intent_and_provider_boundary:1`: 10 slots; blocks `declarative_intent_and_provider_boundary`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:state_purpose_and_change_cycle:1`: 10 slots; blocks `state_purpose_and_change_cycle`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:provider_requirements_sources_addresses:1`: 5 slots; blocks `provider_requirements_sources_addresses`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:configurations_aliases_multiple_providers:1`: 10 slots; blocks `configurations_aliases_multiple_providers`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:init_plugins_lockfile:1`: 11 slots; blocks `init_plugins_lockfile`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:version_upgrade_boundary:1`: 5 slots; blocks `version_upgrade_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:resource_vs_data:1`: 10 slots; blocks `resource_vs_data`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:variables_outputs_locals_scope:1`: 10 slots; blocks `variables_outputs_locals_scope`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:types_expressions_functions:1`: 12 slots; blocks `types_expressions_functions`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:references_implicit_explicit_dependencies:1`: 10 slots; blocks `references_implicit_explicit_dependencies`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:custom_conditions_checks:1`: 9 slots; blocks `custom_conditions_checks`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:sensitive_data_and_secrets_vault:1`: 11 slots; blocks `sensitive_data_and_secrets_vault`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:fmt_validate_static_runtime_boundary:1`: 5 slots; blocks `fmt_validate_static_runtime_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:workflow_command_boundaries:1`: 6 slots; blocks `workflow_command_boundaries`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:plan_graph_and_change_interpretation:1`: 12 slots; blocks `plan_graph_and_change_interpretation`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:apply_destroy_saved_plan_safety:1`: 11 slots; blocks `apply_destroy_saved_plan_safety`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:automation_approval_and_failure_boundary:1`: 10 slots; blocks `automation_approval_and_failure_boundary`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:module_sources_and_versions:1`: 10 slots; blocks `module_sources_and_versions`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:module_input_output_scope:1`: 9 slots; blocks `module_input_output_scope`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:composition_and_reuse:1`: 10 slots; blocks `composition_and_reuse`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:local_remote_backend:1`: 10 slots; blocks `local_remote_backend`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:locking_and_collaboration:1`: 5 slots; blocks `locking_and_collaboration`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:state_address_and_inspection:1`: 5 slots; blocks `state_address_and_inspection`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:drift_refresh_moved_removed:1`: 11 slots; blocks `drift_refresh_moved_removed`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:import_cli_and_config_generation:1`: 10 slots; blocks `import_cli_and_config_generation`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:state_cli_safe_operations:1`: 10 slots; blocks `state_cli_safe_operations`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:verbose_logging_and_diagnosis:1`: 5 slots; blocks `verbose_logging_and_diagnosis`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:workspaces_projects_variables:1`: 6 slots; blocks `workspaces_projects_variables`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:remote_runs_vcs_cli:1`: 10 slots; blocks `remote_runs_vcs_cli`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:teams_dynamic_credentials:1`: 6 slots; blocks `teams_dynamic_credentials`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `hashicorp-terraform-associate-004:policy_registry_drift_health:1`: 12 slots; blocks `policy_registry_drift_health`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:workload_taxonomy_gen_agentic_text_speech_vision_extraction:1`: 14 slots; blocks `workload_taxonomy_gen_agentic_text_speech_vision_extraction`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:modality_input_output_technique:1`: 6 slots; blocks `modality_input_output_technique`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:capability_and_overclaim_boundary:1`: 7 slots; blocks `capability_and_overclaim_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:fairness_and_inclusiveness:1`: 6 slots; blocks `fairness_and_inclusiveness`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:reliability_and_safety:1`: 11 slots; blocks `reliability_and_safety`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:privacy_and_security:1`: 12 slots; blocks `privacy_and_security`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:transparency_and_accountability:1`: 11 slots; blocks `transparency_and_accountability`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:generative_model_mechanics:1`: 11 slots; blocks `generative_model_mechanics`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:model_capability_selection:1`: 12 slots; blocks `model_capability_selection`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:deployment_options_and_configuration:1`: 13 slots; blocks `deployment_options_and_configuration`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:system_user_prompt_design:1`: 5 slots; blocks `system_user_prompt_design`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:model_deploy_and_portal_interaction:1`: 8 slots; blocks `model_deploy_and_portal_interaction`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:prompt_failure_grounding_safety_boundary:1`: 13 slots; blocks `prompt_failure_grounding_safety_boundary`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:lightweight_chat_client_sdk:1`: 9 slots; blocks `lightweight_chat_client_sdk`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:agent_use_case_tools_boundary:1`: 6 slots; blocks `agent_use_case_tools_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:create_test_single_agent_portal:1`: 12 slots; blocks `create_test_single_agent_portal`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:agent_client_state_auth_execution:1`: 12 slots; blocks `agent_client_state_auth_execution`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:text_analysis_app:1`: 14 slots; blocks `text_analysis_app`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:spoken_prompt_multimodal_response:1`: 12 slots; blocks `spoken_prompt_multimodal_response`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:speech_tool_application:1`: 7 slots; blocks `speech_tool_application`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:visual_input_interpretation:1`: 12 slots; blocks `visual_input_interpretation`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:image_generation:1`: 6 slots; blocks `image_generation`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:vision_client_application:1`: 12 slots; blocks `vision_client_application`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:documents_and_forms:1`: 7 slots; blocks `documents_and_forms`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:image_extraction:1`: 6 slots; blocks `image_extraction`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:audio_video_extraction:1`: 7 slots; blocks `audio_video_extraction`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-ai-fundamentals-ai-901:extraction_client_schema_and_validation:1`: 7 slots; blocks `extraction_client_schema_and_validation`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:ecosystem_principles_community:1`: 7 slots; blocks `ecosystem_principles_community`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:containers_images_runtime:1`: 10 slots; blocks `containers_images_runtime`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:kubernetes_declarative_positioning:1`: 5 slots; blocks `kubernetes_declarative_positioning`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:components_and_roles:1`: 6 slots; blocks `components_and_roles`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:api_objects_namespaces_labels:1`: 11 slots; blocks `api_objects_namespaces_labels`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:reconciliation_and_controllers:1`: 10 slots; blocks `reconciliation_and_controllers`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:pods_and_workload_controllers:1`: 11 slots; blocks `pods_and_workload_controllers`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:scheduling_resources_placement:1`: 13 slots; blocks `scheduling_resources_placement`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:config_secrets_probes:1`: 12 slots; blocks `config_secrets_probes`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:kubectl_context_namespace:1`: 5 slots; blocks `kubectl_context_namespace`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:cluster_lifecycle_admin:1`: 10 slots; blocks `cluster_lifecycle_admin`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:node_control_plane_admin_boundary:1`: 4 slots; blocks `node_control_plane_admin_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:services_and_discovery:1`: 6 slots; blocks `services_and_discovery`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:traffic_ingress_and_policy:1`: 12 slots; blocks `traffic_ingress_and_policy`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:dns_and_connectivity_diagnosis:1`: 6 slots; blocks `dns_and_connectivity_diagnosis`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:volumes_pv_pvc_storageclass:1`: 7 slots; blocks `volumes_pv_pvc_storageclass`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:access_reclaim_persistence:1`: 11 slots; blocks `access_reclaim_persistence`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:stateful_workload_boundary:1`: 6 slots; blocks `stateful_workload_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:authn_authz_rbac_serviceaccounts:1`: 7 slots; blocks `authn_authz_rbac_serviceaccounts`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:pod_container_workload_security:1`: 6 slots; blocks `pod_container_workload_security`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:network_secret_supply_chain_boundary:1`: 14 slots; blocks `network_secret_supply_chain_boundary`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:events_logs_status_evidence:1`: 7 slots; blocks `events_logs_status_evidence`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:scheduling_workload_failures:1`: 7 slots; blocks `scheduling_workload_failures`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:network_storage_failures:1`: 7 slots; blocks `network_storage_failures`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:remediation_and_validation:1`: 5 slots; blocks `remediation_and_validation`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:manifests_packages_gitops:1`: 12 slots; blocks `manifests_packages_gitops`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:rollout_rollback_versioning:1`: 13 slots; blocks `rollout_rollback_versioning`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:cicd_and_delivery_debugging:1`: 6 slots; blocks `cicd_and_delivery_debugging`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:metrics_logs_traces:1`: 5 slots; blocks `metrics_logs_traces`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:sli_alert_symptom_reasoning:1`: 11 slots; blocks `sli_alert_symptom_reasoning`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `kubernetes-cloud-native-associate-kcna:observability_tool_and_signal_boundary:1`: 5 slots; blocks `observability_tool_and_signal_boundary`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:azure-administration-scope-and-control-surfaces`: 13 slots; blocks `portal_cli_powershell_arm_boundary`, `scope_and_resource_model`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:safe_change_ownership_diagnostic:1`: 6 slots; blocks `safe_change_ownership_diagnostic`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:user_group_lifecycle:1`: 7 slots; blocks `user_group_lifecycle`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:groups_licenses_external_users:1`: 10 slots; blocks `groups_licenses_external_users`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:sspr_and_identity_operations:1`: 8 slots; blocks `sspr_and_identity_operations`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:rbac_scope_and_effective_access:1`: 10 slots; blocks `rbac_scope_and_effective_access`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:policy_locks_tags:1`: 13 slots; blocks `policy_locks_tags`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:resource_group_subscription_management_group:1`: 7 slots; blocks `resource_group_subscription_management_group`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:budgets_advisor_cost_controls:1`: 4 slots; blocks `budgets_advisor_cost_controls`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:account_configuration_endpoints:1`: 8 slots; blocks `account_configuration_endpoints`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:firewall_network_access:1`: 4 slots; blocks `firewall_network_access`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:sas_keys_rbac_stored_policy:1`: 8 slots; blocks `sas_keys_rbac_stored_policy`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:redundancy_replication_encryption:1`: 9 slots; blocks `redundancy_replication_encryption`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:blob_container_file_share:1`: 8 slots; blocks `blob_container_file_share`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:tiers_lifecycle_versioning:1`: 5 slots; blocks `tiers_lifecycle_versioning`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:soft_delete_snapshots_recovery:1`: 4 slots; blocks `soft_delete_snapshots_recovery`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:explorer_azcopy_transfer:1`: 7 slots; blocks `explorer_azcopy_transfer`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:template_interpretation:1`: 8 slots; blocks `template_interpretation`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:modification_parameters_dependencies:1`: 4 slots; blocks `modification_parameters_dependencies`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:deployment_and_validation:1`: 4 slots; blocks `deployment_and_validation`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:export_and_conversion:1`: 6 slots; blocks `export_and_conversion`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:vm_create_size_disk_encryption:1`: 14 slots; blocks `vm_create_size_disk_encryption`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:zones_and_availability_sets:1`: 7 slots; blocks `zones_and_availability_sets`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:scale_sets:1`: 9 slots; blocks `scale_sets`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:move_and_resource_lifecycle:1`: 3 slots; blocks `move_and_resource_lifecycle`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:container_registry:1`: 8 slots; blocks `container_registry`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:aci_vs_container_apps_provision:1`: 8 slots; blocks `aci_vs_container_apps_provision`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:sizing_and_scaling:1`: 7 slots; blocks `sizing_and_scaling`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:plan_and_app_configuration:1`: 9 slots; blocks `plan_and_app_configuration`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:tls_dns_networking:1`: 8 slots; blocks `tls_dns_networking`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:scaling_and_slots:1`: 5 slots; blocks `scaling_and_slots`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:backup_and_lifecycle:1`: 3 slots; blocks `backup_and_lifecycle`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:vnet_subnet_ip_design:1`: 7 slots; blocks `vnet_subnet_ip_design`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:peering_and_routes:1`: 8 slots; blocks `peering_and_routes`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:connectivity_troubleshooting:1`: 5 slots; blocks `connectivity_troubleshooting`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:nsg_asg_effective_rules:1`: 5 slots; blocks `nsg_asg_effective_rules`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:bastion_service_private_endpoints:1`: 8 slots; blocks `bastion_service_private_endpoints`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:dns:1`: 4 slots; blocks `dns`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:load_balancing_and_troubleshooting:1`: 8 slots; blocks `load_balancing_and_troubleshooting`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:metrics_logs_queries:1`: 9 slots; blocks `metrics_logs_queries`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:alerts_actions_processing:1`: 5 slots; blocks `alerts_actions_processing`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:resource_insights:1`: 3 slots; blocks `resource_insights`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:network_watcher_connection_monitor:1`: 5 slots; blocks `network_watcher_connection_monitor`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:vaults_and_policy:1`: 9 slots; blocks `vaults_and_policy`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:backup_and_restore:1`: 5 slots; blocks `backup_and_restore`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:site_recovery_and_failover:1`: 5 slots; blocks `site_recovery_and_failover`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `microsoft-azure-administrator-associate-az-104:recovery_reports_and_alerts:1`: 4 slots; blocks `recovery_reports_and_alerts`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:requirements_and_constraints:1`: 6 slots; blocks `requirements_and_constraints`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:shared_responsibility_and_scope:1`: 11 slots; blocks `shared_responsibility_and_scope`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:architecture_review:1`: 12 slots; blocks `architecture_review`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:principal_and_federation:1`: 11 slots; blocks `principal_and_federation`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:policy_evaluation_and_scope:1`: 12 slots; blocks `policy_evaluation_and_scope`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:organizations_cross_account_controls:1`: 12 slots; blocks `organizations_cross_account_controls`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:segmentation_routing_endpoints:1`: 11 slots; blocks `segmentation_routing_endpoints`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:edge_and_application_threat_controls:1`: 12 slots; blocks `edge_and_application_threat_controls`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:secrets_credentials_secure_access:1`: 12 slots; blocks `secrets_credentials_secure_access`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:classification_access_governance:1`: 12 slots; blocks `classification_access_governance`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:encryption_keys_certificates:1`: 11 slots; blocks `encryption_keys_certificates`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:retention_backup_replication:1`: 12 slots; blocks `retention_backup_replication`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:decomposition_sync_async:1`: 10 slots; blocks `decomposition_sync_async`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:queues_events_workflows:1`: 12 slots; blocks `queues_events_workflows`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:compute_container_serverless_boundary:1`: 13 slots; blocks `compute_container_serverless_boundary`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:independent_scaling_caching_edge:1`: 12 slots; blocks `independent_scaling_caching_edge`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:failure_domains_and_spof:1`: 6 slots; blocks `failure_domains_and_spof`; semantic_exception; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:ha_failover_replication:1`: 11 slots; blocks `ha_failover_replication`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:rpo_rto_and_dr_strategy:1`: 11 slots; blocks `rpo_rto_and_dr_strategy`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:quotas_visibility_and_legacy_constraints:1`: 10 slots; blocks `quotas_visibility_and_legacy_constraints`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:object_file_block_hybrid_selection:1`: 11 slots; blocks `object_file_block_hybrid_selection`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:storage_scaling_configuration:1`: 12 slots; blocks `storage_scaling_configuration`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:compute_service_and_sizing:1`: 12 slots; blocks `compute_service_and_sizing`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:elasticity_metrics_and_conditions:1`: 12 slots; blocks `elasticity_metrics_and_conditions`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:data_model_engine_selection:1`: 13 slots; blocks `data_model_engine_selection`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:access_pattern_capacity_replication:1`: 12 slots; blocks `access_pattern_capacity_replication`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:cache_proxy_connection_boundary:1`: 12 slots; blocks `cache_proxy_connection_boundary`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:topology_placement_load_balancing:1`: 12 slots; blocks `topology_placement_load_balancing`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:connectivity_and_edge:1`: 12 slots; blocks `connectivity_and_edge`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:ingestion_transfer_stream_batch:1`: 12 slots; blocks `ingestion_transfer_stream_batch`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:transformation_analytics_pipeline:1`: 12 slots; blocks `transformation_analytics_pipeline`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:access_lifecycle_tiering:1`: 13 slots; blocks `access_lifecycle_tiering`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:backup_archive_migration:1`: 11 slots; blocks `backup_archive_migration`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:database_cost_model:1`: 12 slots; blocks `database_cost_model`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:cost_visibility_and_allocation:1`: 12 slots; blocks `cost_visibility_and_allocation`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:purchasing_utilization_sizing:1`: 12 slots; blocks `purchasing_utilization_sizing`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:compute_architecture_availability_cost:1`: 11 slots; blocks `compute_architecture_availability_cost`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:transfer_routing_nat_connectivity:1`: 12 slots; blocks `transfer_routing_nat_connectivity`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+- `aws-certified-solutions-architect-associate:cdn_throttling_bandwidth:1`: 12 slots; blocks `cdn_throttling_bandwidth`; normal_coherent_slot_group; planned_not_authorable_until_track_taxonomy_source_release_contract.
+
+## Audit
+
+Audit: certification_direct_slots_reconciled_authoring_not_admitted. Certification planning is complete as a direct canonical 1,931-slot backlog. Learner questions, runtime/package admission, publishing, feedback, factual/editorial approval, content versioning, and immutable publication evidence remain later gated work.
+

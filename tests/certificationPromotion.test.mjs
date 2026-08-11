@@ -1,0 +1,41 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+import { loadCertificationObjectiveRegistries } from "../scripts/curriculum/certification-objective-registries.mjs";
+import { buildCertificationAuthoringBacklog, firstSafeSlotIds, validateCertificationPromotion } from "../scripts/curriculum/certification-promotion.mjs";
+
+const root = process.cwd();
+const trackIds = ["google-cloud-associate-cloud-engineer", "hashicorp-terraform-associate-004", "microsoft-azure-ai-fundamentals-ai-901", "kubernetes-cloud-native-associate-kcna", "microsoft-azure-administrator-associate-az-104", "aws-certified-solutions-architect-associate"];
+const curricula = await Promise.all(trackIds.map(async (trackId) => JSON.parse(await readFile(`config/curricula/${trackId}.json`, "utf8"))));
+const registries = await loadCertificationObjectiveRegistries({ root });
+const valid = (mutate) => { const copy = structuredClone(curricula); mutate(copy); return validateCertificationPromotion(copy, registries); };
+const recomputeContentFingerprint = (curriculum) => { const { promotionProvenance, contentFingerprint, ...payload } = curriculum; curriculum.contentFingerprint = createHash("sha256").update(JSON.stringify(payload)).digest("hex"); };
+
+test("Stage04 promotion validates the exact six direct certification configs and partitions every slot", () => {
+  const result = validateCertificationPromotion(curricula, registries);
+  assert.equal(result.trackCount, 6);
+  assert.equal(result.slotCount, 1931);
+  assert.deepEqual(result.firstSafeBatch.slotIds, firstSafeSlotIds);
+  assert.equal(result.authoringBatches.flatMap((batch) => batch.slotIds).length, 1931);
+});
+
+test("Stage04 promotion rejects a duplicate semantic identity across tracks", () => {
+  assert.throws(() => valid((copy) => { copy[1].slots[0].dedupeFingerprint = copy[0].slots[0].dedupeFingerprint; }), /CERTIFICATION_PROMOTION_DUPLICATE_SEMANTIC_IDENTITY/);
+});
+
+test("Stage04 promotion rejects runtime admission and a malformed first-batch slot", () => {
+  assert.throws(() => valid((copy) => { copy[0].admission.runtimeAdmission = "admitted"; }), /CERTIFICATION_PROMOTION_NON_RUNTIME_ACCOUNTING/);
+  const copy = structuredClone(curricula); copy[4].slots = copy[4].slots.filter((slot) => slot.slotId !== firstSafeSlotIds[0]);
+  assert.throws(() => buildCertificationAuthoringBacklog(copy), /CERTIFICATION_PROMOTION_FIRST_BATCH_MISSING/);
+});
+
+test("Stage04 promotion rejects retired aggregate declarations after a valid fingerprint recomputation", () => {
+  for (const field of ["requiredVariantCount", "operationVariantCounts", "candidateNodes", "boundaryRelationshipRemap", "derivedCounts"]) {
+    const copy = structuredClone(curricula);
+    copy[1][field] = field === "operationVariantCounts" ? { diagnosis: 1 } : field === "candidateNodes" ? ["terraform_configuration_foundations"] : { retained: false };
+    recomputeContentFingerprint(copy[1]);
+    assert.throws(() => validateCertificationPromotion(copy, registries), /CERTIFICATION_PROMOTION_RETIRED_DECLARATION/);
+  }
+});

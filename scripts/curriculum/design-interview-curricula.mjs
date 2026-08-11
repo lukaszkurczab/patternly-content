@@ -12,13 +12,13 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "f09e684cc50294f2144aeecd1e70e1d76cc906f5703f5c43df69695334894773";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "c3b4d690f1aee439627f8acf5d90a4e70b1e1e249ce3e7e0d55c5f0027602650";
+const DESIGN_TRUST_ROOT_SHA256 = "3c267b38803e349adfb2ab90d7dad4fa1add74884ba7d719040e0222e22a371f";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "2f1f37469e26ee6a1db05f9c172e454820d8d84c92858bf6f182911702431446";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
-  "backend-system-design-interview": 8,
-  "frontend-system-design-interview": 18,
-  "object-oriented-design-interview": 9
+  "backend-system-design-interview": 18,
+  "frontend-system-design-interview": 26,
+  "object-oriented-design-interview": 17
 });
 const EXPECTED_BATCH_SIZE_BY_TRACK = Object.freeze({
   "backend-system-design-interview": 8,
@@ -62,7 +62,7 @@ function assertRegistry(value = registry) {
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 9 || value.anchorRecords.length !== 38 || value.claims.length !== 37 || value.slotBindings.length !== 35) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen expanded totals");
+  if (value.sourceRecords.length !== 21 || value.anchorRecords.length !== 76 || value.claims.length !== 61 || value.slotBindings.length !== 61) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen round-two totals");
   return value;
 }
 export function validateDesignInterviewFamilyConfig(value = family) {
@@ -70,10 +70,9 @@ export function validateDesignInterviewFamilyConfig(value = family) {
   if (!ownKeys(value, ["schemaVersion", "familyId", "sourceRegistryRef", "supportedInteractions", "choicePolicyId", "choiceResultSemantics", "authoringHandoffs", "modes", "selectionRules", "sessionFeasibility"]) || value.schemaVersion !== "design-interview-family-config-v1" || value.familyId !== "design_interview" || value.sourceRegistryRef !== "config/design-interview-source-registry.json" || JSON.stringify(value.supportedInteractions) !== JSON.stringify(["choice"]) || value.choicePolicyId !== "design-single-choice-diagnostic-v1" || value.choiceResultSemantics !== "exact_selected_set_with_partial_v1") fail("INVALID_DESIGN_FAMILY_CONTRACT", "root policy");
   const verified = assertRegistry(); const bindings = new Map(verified.slotBindings.map((binding) => [binding.bindingId, binding]));
   const invalidBatch = !Array.isArray(value.authoringHandoffs) || value.authoringHandoffs.length !== TRACK_IDS.length || value.authoringHandoffs.some((batch) => {
-    const frontend = batch.trackId === "frontend-system-design-interview";
     const keys = ["trackId", "batchId", "scope", "plannedItemCount", "slotBindings", "deferredResolvedSlotBindings", "humanReviewRequired", "sourceChecksRequired", "questionsAuthored", "runtimeAdmission"];
-    if (frontend) keys.push("deferredResolvedReason", "deferredResolvedReviewBoundary");
-    if (!ownKeys(batch, keys) || !TRACK_IDS.includes(batch.trackId) || batch.scope !== "authoring_feasibility_only" || batch.plannedItemCount !== EXPECTED_BATCH_SIZE_BY_TRACK[batch.trackId] || batch.humanReviewRequired !== true || batch.sourceChecksRequired !== true || batch.questionsAuthored !== 0 || batch.runtimeAdmission !== "not_admitted" || !Array.isArray(batch.slotBindings) || !Array.isArray(batch.deferredResolvedSlotBindings) || batch.slotBindings.length !== batch.plannedItemCount || new Set(batch.slotBindings.map(batchPairKey)).size !== batch.slotBindings.length || new Set(batch.slotBindings.map((entry) => entry.bindingId)).size !== batch.slotBindings.length || new Set(batch.slotBindings.map((entry) => entry.slotId)).size !== batch.slotBindings.length || (frontend ? (!batch.deferredResolvedSlotBindings.length || !batch.deferredResolvedReason.trim() || !batch.deferredResolvedReviewBoundary.trim()) : batch.deferredResolvedSlotBindings.length !== 0)) return true;
+    keys.push("deferredResolvedReason", "deferredResolvedReviewBoundary");
+    if (!ownKeys(batch, keys) || !TRACK_IDS.includes(batch.trackId) || batch.scope !== "authoring_feasibility_only" || batch.plannedItemCount !== EXPECTED_BATCH_SIZE_BY_TRACK[batch.trackId] || batch.humanReviewRequired !== true || batch.sourceChecksRequired !== true || batch.questionsAuthored !== 0 || batch.runtimeAdmission !== "not_admitted" || !Array.isArray(batch.slotBindings) || !Array.isArray(batch.deferredResolvedSlotBindings) || batch.slotBindings.length !== batch.plannedItemCount || !batch.deferredResolvedSlotBindings.length || typeof batch.deferredResolvedReason !== "string" || !batch.deferredResolvedReason.trim() || typeof batch.deferredResolvedReviewBoundary !== "string" || !batch.deferredResolvedReviewBoundary.trim() || new Set(batch.slotBindings.map(batchPairKey)).size !== batch.slotBindings.length || new Set(batch.slotBindings.map((entry) => entry.bindingId)).size !== batch.slotBindings.length || new Set(batch.slotBindings.map((entry) => entry.slotId)).size !== batch.slotBindings.length) return true;
     const batchPairs = new Set(batch.slotBindings.map(batchPairKey)); const deferredPairs = new Set(batch.deferredResolvedSlotBindings.map(batchPairKey));
     if (new Set(batch.deferredResolvedSlotBindings.map((entry) => entry.bindingId)).size !== batch.deferredResolvedSlotBindings.length || new Set(batch.deferredResolvedSlotBindings.map((entry) => entry.slotId)).size !== batch.deferredResolvedSlotBindings.length || [...batchPairs].some((entry) => deferredPairs.has(entry))) return true;
     const expectedPairs = new Set(verified.slotBindings.filter((binding) => binding.slotId.startsWith(`${batch.trackId}:`)).map(batchPairKey));

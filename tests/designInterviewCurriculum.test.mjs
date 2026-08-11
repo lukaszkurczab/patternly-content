@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { loadCurricula } from "../scripts/curriculum/curricula.mjs";
 import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
 import { validateDesignInterviewCurriculum, validateDesignInterviewFamilyConfig, validateDesignInterviewSourceRegistry } from "../scripts/curriculum/design-interview-curricula.mjs";
+import { designVolumes } from "../scripts/curriculum/audit-curricula.mjs";
 import registry from "../config/design-interview-source-registry.json" with { type: "json" };
 import family from "../config/families/design_interview.json" with { type: "json" };
 
@@ -14,13 +15,21 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles the frozen 35 direct slots with 288 blocked", () => {
+test("Design central provenance reconciles 61 direct slots, 27 authoring-feasible slots, 34 deferred slots, and 262 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [9, 38, 37, 35]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [21, 76, 61, 61]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 35);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 288);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 8, "frontend-system-design-interview": 18, "object-oriented-design-interview": 9 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 61);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 262);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 34);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 18, "frontend-system-design-interview": 26, "object-oriented-design-interview": 17 });
+  const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
+  const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
+  const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
+  assert.equal(privilegedComputation.sourceRequirements.resolutionState, "blocked_unresolved");
+  assert.ok(!registry.slotBindings.some((binding) => binding.slotId === privilegedComputation.slotId));
+  assert.deepEqual(leastPrivilegedResult.sourceRequirements, { resolutionState: "resolved_exact_direct", sourceBindingId: "design-binding:frontend:least-privileged-client-result" });
   for (const curriculum of curricula) { assert.ok(!Object.hasOwn(curriculum, "sourceRecords")); assert.ok(!Object.hasOwn(curriculum, "sourcePolicy")); validate(curriculum); }
 });
 
@@ -42,8 +51,8 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.equal(frontend.deferredResolvedSlotBindings.length, 8);
-  assert.ok(frontend.deferredResolvedReason.length && frontend.deferredResolvedReviewBoundary.length);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [10, 16, 8]);
+  assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },
     (x) => { x.authoringHandoffs[0].plannedItemCount = 9; },
@@ -51,9 +60,28 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
     (x) => { x.authoringHandoffs[2].runtimeAdmission = "admitted"; },
     (x) => { x.modes[0].firstBatchEligibleItemCapacityAfterAuthoringByTrack["object-oriented-design-interview"] = 10; },
     (x) => { x.authoringHandoffs[1].slotBindings.pop(); },
+    (x) => { x.authoringHandoffs[0].deferredResolvedReviewBoundary = ""; },
+    (x) => { x.authoringHandoffs[1].deferredResolvedSlotBindings.pop(); },
     (x) => { [x.authoringHandoffs[1].slotBindings[0].slotId, x.authoringHandoffs[1].deferredResolvedSlotBindings[0].slotId] = [x.authoringHandoffs[1].deferredResolvedSlotBindings[0].slotId, x.authoringHandoffs[1].slotBindings[0].slotId]; },
     (x) => { x.authoringHandoffs[1].slotBindings[0] = structuredClone(x.authoringHandoffs[1].deferredResolvedSlotBindings[0]); }
   ]) assert.throws(() => { const copy = structuredClone(family); mutate(copy); assert.notEqual(rehashFamily(copy), rehashFamily(family)); validateDesignInterviewFamilyConfig(copy); }, /INVALID_DESIGN_FAMILY_CONTRACT/);
+});
+
+test("Design audit reconciles each pinned authoring batch to its owning nodes", () => {
+  const expectedByTrack = {
+    "backend-system-design-interview": { reliability_and_failure_containment: 8 },
+    "frontend-system-design-interview": { frontend_architecture_foundations: 1, accessible_interaction_design: 8, evolution_testing_and_case_synthesis: 1 },
+    "object-oriented-design-interview": { object_modeling_foundations: 3, responsibilities_and_collaborations: 1, invariants_and_lifecycle: 1, identity_persistence_and_external_boundaries: 4 }
+  };
+
+  for (const curriculum of curricula) {
+    const volume = designVolumes(curriculum);
+    const authoringByNode = Object.fromEntries(volume.nodes.map((node) => [node.nodeId, node.authoringItemCount]));
+    const nonZeroAuthoringByNode = Object.fromEntries(Object.entries(authoringByNode).filter(([, count]) => count > 0));
+    assert.deepEqual(nonZeroAuthoringByNode, expectedByTrack[curriculum.trackId]);
+    assert.equal(Object.values(authoringByNode).reduce((sum, count) => sum + count, 0), volume.authoringItemCount);
+    assert.ok(Object.entries(authoringByNode).filter(([nodeId]) => !Object.hasOwn(expectedByTrack[curriculum.trackId], nodeId)).every(([, count]) => count === 0));
+  }
 });
 
 test("admission, cross-track binding, and interaction contract remain non-runtime and exact", () => {
@@ -70,6 +98,11 @@ test("admission, cross-track binding, and interaction contract remain non-runtim
   const deferred = frontend.slots.find((slot) => slot.sourceRequirements.sourceBindingId === "design-binding:frontend:visible-label-name");
   deferred.authoringStatus = "authoring_admitted";
   assert.throws(() => validate(frontend), /INVALID_DESIGN_RESOLVED_SLOT/);
+  const backend = structuredClone(curricula.find((curriculum) => curriculum.trackId === "backend-system-design-interview"));
+  const deferredBackend = backend.slots.find((slot) => slot.authoringStatus === "provenance_resolved_authoring_deferred");
+  deferredBackend.deliveryInteraction.status = "authoring_admitted_runtime_not_admitted";
+  deferredBackend.authoringStatus = "authoring_admitted";
+  assert.throws(() => validate(backend), /INVALID_DESIGN_RESOLVED_SLOT/);
 });
 
 test("blocked slots cannot become hidden choice paths or local provenance inventories", () => {

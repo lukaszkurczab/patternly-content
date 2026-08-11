@@ -8,6 +8,7 @@ import { catalogueFingerprint, loadCurricula, validateCurriculum } from "../scri
 import { loadCertificationObjectiveRegistries, validateCertificationObjectiveRegistry } from "../scripts/curriculum/certification-objective-registries.mjs";
 import { buildExistingContentInventories } from "../scripts/curriculum/curriculum-inventory.mjs";
 import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
+import { validateDesignInterviewCurriculum } from "../scripts/curriculum/design-interview-curricula.mjs";
 
 const curricula = await loadCurricula();
 const briefs = await loadCanonicalTrackBriefs();
@@ -126,8 +127,8 @@ test("Coding and Design validators retain their independent count, ownership, an
   assert.throws(() => validateCurriculum(missingDirect, codingBrief), /MISSING_CURRICULUM_FIELD/);
   const design = clone(curricula.find((entry) => entry.trackId === "backend-system-design-interview"));
   const designBrief = briefs.find((entry) => entry.trackId === design.trackId);
-  design.nodes[0].learningBlocks[0].coverageTargets[0].scenarioOrSurfaceVariationAxes[0] = "primary case";
-  assert.throws(() => validateCurriculum(design, designBrief), /QUOTA_DRIVEN_CURRICULUM_ARTIFACT/);
+  design.targetPlans[0].requiredVariantCount = 1;
+  assert.throws(() => validateDesignInterviewCurriculum(design, { brief: designBrief }), /INVALID_DESIGN_SCHEMA|RETIRED_DESIGN_DECLARATION_SURFACE/);
 });
 
 test("coverage-target schema exposes direct ownership and the atomic decision boundary", async () => {

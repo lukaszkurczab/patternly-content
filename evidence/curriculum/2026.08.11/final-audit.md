@@ -1,21 +1,21 @@
 # Curriculum coverage specification
 
-Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `00016f34a9536cd326d189f11c720e91f52f64bf56a9271f7c8857c2627834f3`.
+Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `eb77afd62f4106a18aa4e4411e14ec9a13de2eebfa89e9c9c1084de109e60b66`.
 
 ## Release tracks
 
 | Track | Family | Nodes | Blocks | Targets | Slots/target | Existing | Authoring | Free | Premium | State |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | aws-certified-solutions-architect-associate | certification | 3 | 39 | 76 | 446 | 0 | 446 | 134 | 312 | direct slots; authoring not admitted |
-| backend-system-design-interview | design_interview | 8 | 35 | — | 1154 | 0 | 1154 | 121 | 1033 | current family contract |
+| backend-system-design-interview | design_interview | 8 | 35 | — | 74 | 0 | 74 | 8 | 66 | current family contract |
 | coding-interview-dsa-problem-solving | coding_interview | 26 | 78 | — | 3404 | 2375 | 1029 | 158 | 3246 | current family contract |
-| frontend-system-design-interview | design_interview | 9 | 45 | — | 1460 | 0 | 1460 | 120 | 1340 | current family contract |
+| frontend-system-design-interview | design_interview | 9 | 45 | — | 181 | 0 | 181 | 15 | 166 | current family contract |
 | google-cloud-associate-cloud-engineer | certification | 2 | 36 | 66 | 361 | 0 | 361 | 124 | 237 | direct slots; authoring not admitted |
 | hashicorp-terraform-associate-004 | certification | 2 | 32 | 55 | 285 | 0 | 285 | 127 | 158 | direct slots; authoring not admitted |
 | kubernetes-cloud-native-associate-kcna | certification | 2 | 31 | 46 | 257 | 0 | 257 | 128 | 129 | direct slots; authoring not admitted |
 | microsoft-azure-administrator-associate-az-104 | certification | 2 | 48 | 81 | 324 | 0 | 324 | 153 | 171 | direct slots; authoring not admitted |
 | microsoft-azure-ai-fundamentals-ai-901 | certification | 2 | 27 | 44 | 258 | 0 | 258 | 138 | 120 | direct slots; authoring not admitted |
-| object-oriented-design-interview | design_interview | 7 | 34 | — | 1101 | 0 | 1101 | 122 | 979 | current family contract |
+| object-oriented-design-interview | design_interview | 7 | 34 | — | 68 | 0 | 68 | 8 | 60 | current family contract |
 
 ## Certification direct-slot reconciliation
 
@@ -25,6 +25,12 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `0001
 - kubernetes-cloud-native-associate-kcna: 257 slots, 46 targets, 31 blocks, 2 nodes, 62 sources; Free/Premium 128/129; direct_canonical_slots_verified_authoring_not_admitted.
 - microsoft-azure-administrator-associate-az-104: 324 slots, 81 targets, 48 blocks, 2 nodes, 114 sources; Free/Premium 153/171; direct_canonical_slots_verified_authoring_not_admitted.
 - microsoft-azure-ai-fundamentals-ai-901: 258 slots, 44 targets, 27 blocks, 2 nodes, 33 sources; Free/Premium 138/120; direct_canonical_slots_verified_authoring_not_admitted.
+
+## Design direct-slot provenance, mode, graph, and admission
+
+- backend-system-design-interview: 74 slots; exact/direct verified sources 0; inventory slot sources 0; editorial-method slot sources 0; modes not_runtime_admitted; graph edges 14 (14 atom-anchored); runtime not_admitted, publishing not_admitted.
+- frontend-system-design-interview: 181 slots; exact/direct verified sources 0; inventory slot sources 0; editorial-method slot sources 1; modes not_runtime_admitted; graph edges 16 (0 atom-anchored); runtime not_admitted, publishing not_admitted.
+- object-oriented-design-interview: 68 slots; exact/direct verified sources 0; inventory slot sources 5; editorial-method slot sources 0; modes not_runtime_admitted; graph edges 10 (10 atom-anchored); runtime not_admitted, publishing not_admitted.
 
 ## Authoring boundary
 

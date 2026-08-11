@@ -127,8 +127,8 @@ test("Coding and Design validators retain their independent count, ownership, an
   assert.throws(() => validateCurriculum(missingDirect, codingBrief), /MISSING_CURRICULUM_FIELD/);
   const design = clone(curricula.find((entry) => entry.trackId === "backend-system-design-interview"));
   const designBrief = briefs.find((entry) => entry.trackId === design.trackId);
-  design.targetPlans[0].requiredVariantCount = 1;
-  assert.throws(() => validateDesignInterviewCurriculum(design, { brief: designBrief }), /INVALID_DESIGN_SCHEMA|RETIRED_DESIGN_DECLARATION_SURFACE/);
+  design.slots[0].sourceRequirements.sourceBindingId = "injected-binding";
+  assert.throws(() => validateDesignInterviewCurriculum(design, { brief: designBrief }), /INVALID_DESIGN_BLOCKED_SLOT/);
 });
 
 test("coverage-target schema exposes direct ownership and the atomic decision boundary", async () => {

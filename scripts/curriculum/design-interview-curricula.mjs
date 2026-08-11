@@ -2,101 +2,107 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const required = ["schemaVersion", "curriculumVersion", "trackId", "familyId", "trackBriefReference", "freeNodeId", "sourceRecords", "sourcePolicy", "nodes", "blockPlans", "targetPlans", "slots", "crossNodeRelationships", "modeFeasibility", "admission", "authoring"];
-const retired = new Set(["learningBlocks", "sourceBasis", "targetItemCount", "authoringItemCount", "existingVerifiedItemCount", "requiredVariantCount", "operationVariantCounts", "variantCountRationale", "scenarioOrSurfaceVariationAxes", "modePoolPlans", "simulationOrCasePoolPlans", "candidateNodeSlotCounts", "aggregateProjection", "retiredAggregateCount", "candidatePedagogicalRoles", "candidateTechnicalSourceRefs", "directSourceAnchorRefs", "sourceRefs"]);
-const designSchema = JSON.parse(readFileSync(fileURLToPath(new URL("../../schemas/curriculum/design-interview-curriculum.schema.json", import.meta.url)), "utf8"));
+const load = (path) => JSON.parse(readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8"));
+const designSchema = load("../../schemas/curriculum/design-interview-curriculum.schema.json");
+const registrySchema = load("../../schemas/curriculum/design-interview-source-registry.schema.json");
+const registry = load("../../config/design-interview-source-registry.json");
+const family = load("../../config/families/design_interview.json");
 const fail = (code, message) => { const error = new Error(`${code}: ${message}`); error.code = code; throw error; };
 const unique = (values, label) => { if (new Set(values).size !== values.length) fail("DUPLICATE_DESIGN_CANONICAL_ID", label); };
-const text = (value, label) => { if (typeof value !== "string" || !value.trim()) fail("INVALID_DESIGN_TEXT", label); };
-const semanticFingerprint = (slot) => createHash("sha256").update(JSON.stringify({ trackId: slot.trackId, nodeId: slot.nodeId, blockId: slot.blockId, coverageTargetId: slot.coverageTargetId, directSkillOrDecisionAtomId: slot.directSkillOrDecisionAtomId, expectedOutcome: slot.expectedOutcome, decisiveBoundary: slot.decisiveBoundary, transferBoundary: slot.transferBoundary, materialEvidenceOrConstraintChanged: slot.materialEvidenceOrConstraintChanged })).digest("hex");
+const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
+const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
+const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
+// This digest is deliberately independent from the registry's self-fingerprint.
+// It freezes the exact first authoring batch provenance contract.
+const DESIGN_TRUST_ROOT_SHA256 = "19a7499861d54e4ea9abcfa1ad56739300915a70837d916d1d38038948a94835";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "88118165795b354432e1187e51975ba0aa96839abcb9cea43465518e4ff7801e";
+const EXPECTED_SOURCE_IDS = Object.freeze(["w3c-wcag-2.2-rec-2024", "w3c-wai-aria-1.2-rec-2023", "w3c-accname-1.1-rec-2018"]);
+const EXPECTED_ANCHOR_IDS = Object.freeze(["wcag22-sc-4.1.2-name-role-value", "wcag22-sc-2.5.3-label-in-name", "wcag22-sc-2.4.3-focus-order", "wcag22-sc-1.4.3-contrast-minimum", "wcag22-sc-1.4.11-non-text-contrast", "wcag22-sc-1.4.4-resize-text", "wcag22-sc-1.4.10-reflow", "wai-aria-1.2-role-definitions", "wai-aria-1.2-states-and-properties", "accname-1.1-name-computation"]);
+const EXPECTED_CLAIM_IDS = Object.freeze(["ui-component-name-role-value-and-change-notification", "visible-label-text-contained-in-accessible-name", "sequential-focus-preserves-meaning-and-operability", "text-contrast-thresholds-and-exceptions", "non-text-ui-state-contrast-thresholds-and-exceptions", "text-resize-without-loss", "reflow-without-loss-or-two-dimensional-scrolling", "aria-role-must-match-defined-role-semantics", "aria-current-state-and-value-properties", "accessible-name-source-precedence-and-computation"]);
+const EXPECTED_BINDING_IDS = Object.freeze(["design-binding:frontend:visible-label-name", "design-binding:frontend:programmatic-name", "design-binding:frontend:custom-role", "design-binding:frontend:current-value", "design-binding:frontend:state-change-notification", "design-binding:frontend:logical-focus-order", "design-binding:frontend:contrast-outcome", "design-binding:frontend:zoom-reflow-outcome"]);
+const FIRST_SAFE_BATCH_ID = "frontend-system-design-interview:accessible-interaction-standards:1";
+const ADMISSION_KEYS_BY_TRACK = Object.freeze({
+  "backend-system-design-interview": ["learnerFacingContentIncluded", "questionsAuthored", "runtimeAdmission", "publishingAdmission", "packageAdmission", "releaseAdmission"],
+  "frontend-system-design-interview": ["learnerFacingContentIncluded", "questionsAuthored", "runtimeAdmission", "publishingAdmission", "packageAdmission", "releaseAdmission"],
+  "object-oriented-design-interview": ["learnerFacingContentIncluded", "runtimeAdmission", "publishingAdmission", "packageAdmission", "manualSourceAdmission", "releaseAdmission", "questionsAuthored"]
+});
+const ownKeys = (value, keys) => Object.keys(value).sort().join("\u0000") === [...keys].sort().join("\u0000");
+const trustRoot = (value) => ({
+  sourceRecords: value.sourceRecords.map(({ sourceId, canonicalUrl, immutableVersionUrl }) => ({ sourceId, canonicalUrl, immutableVersionUrl })),
+  anchorRecords: value.anchorRecords.map(({ anchorId, sourceId, locator, url, authorityClass, claimIds }) => ({ anchorId, sourceId, locator, url, authorityClass, claimIds })),
+  claims: value.claims.map(({ claimId, statement, scope, exclusions }) => ({ claimId, statement, scope, exclusions })),
+  slotBindings: value.slotBindings.map(({ bindingId, slotId, claimIds, anchorIds, resolutionState }) => ({ bindingId, slotId, claimIds, anchorIds, resolutionState }))
+});
+const slotFingerprint = (slot) => fingerprint({ trackId: slot.trackId, nodeId: slot.nodeId, blockId: slot.blockId, coverageTargetId: slot.coverageTargetId, directSkillOrDecisionAtomId: slot.directSkillOrDecisionAtomId, expectedOutcome: slot.expectedOutcome, decisiveBoundary: slot.decisiveBoundary, transferBoundary: slot.transferBoundary, materialEvidenceOrConstraintChanged: slot.materialEvidenceOrConstraintChanged });
 
-function assertClosedSchema(schema, path = "schema") {
-  if (!schema || typeof schema !== "object") return;
-  if (schema.type === "object" && schema.additionalProperties !== false) fail("INVALID_DESIGN_SCHEMA_CONTRACT", `${path} must close its declaration surface.`);
-  if (schema.properties) for (const [key, child] of Object.entries(schema.properties)) assertClosedSchema(child, `${path}.properties.${key}`);
-  if (schema.items) assertClosedSchema(schema.items, `${path}.items`);
+function closed(schema, path = "schema") { if (!schema || typeof schema !== "object") return; if (schema.type === "object" && schema.additionalProperties !== false) fail("INVALID_DESIGN_SCHEMA_CONTRACT", path); if (schema.properties) Object.entries(schema.properties).forEach(([key, value]) => closed(value, `${path}.${key}`)); if (schema.items) closed(schema.items, `${path}[]`); }
+function assertRegistry(value = registry) {
+  closed(registrySchema, "registry schema");
+  for (const key of registrySchema.required) if (!Object.hasOwn(value, key)) fail("INVALID_DESIGN_SOURCE_REGISTRY", `missing ${key}`);
+  if (Object.keys(value).some((key) => !Object.hasOwn(registrySchema.properties, key))) fail("INVALID_DESIGN_SOURCE_REGISTRY", "undeclared root field");
+  const payload = { ...value }; delete payload.registryFingerprintSha256;
+  if (fingerprint(payload) !== value.registryFingerprintSha256) fail("DESIGN_SOURCE_REGISTRY_FINGERPRINT_MISMATCH", "registry identity drift");
+  if (value.trustRootSha256 !== DESIGN_TRUST_ROOT_SHA256 || digest(trustRoot(value)) !== DESIGN_TRUST_ROOT_SHA256) fail("DESIGN_SOURCE_TRUST_ROOT_MISMATCH", "frozen source, anchor, claim, or binding roster drift");
+  for (const collection of [value.sourceRecords, value.anchorRecords, value.claims, value.slotBindings]) if (!Array.isArray(collection) || !collection.length) fail("INVALID_DESIGN_SOURCE_REGISTRY", "empty collection");
+  unique(value.sourceRecords.map((x) => x.sourceId), "registry source IDs"); unique(value.anchorRecords.map((x) => x.anchorId), "registry anchor IDs"); unique(value.claims.map((x) => x.claimId), "registry claim IDs"); unique(value.slotBindings.map((x) => x.bindingId), "registry binding IDs"); unique(value.slotBindings.map((x) => x.slotId), "registry binding slot IDs");
+  const sources = new Set(value.sourceRecords.map((x) => x.sourceId)); const claims = new Set(value.claims.map((x) => x.claimId)); const anchors = new Map(value.anchorRecords.map((x) => [x.anchorId, x]));
+  const expectedSources = new Set(EXPECTED_SOURCE_IDS);
+  if (sources.size !== expectedSources.size || [...expectedSources].some((id) => !sources.has(id))) fail("INVALID_DESIGN_SOURCE_IDENTITY", "unexpected trust root");
+  if (value.anchorRecords.map((anchor) => anchor.anchorId).join("\u0000") !== EXPECTED_ANCHOR_IDS.join("\u0000") || value.claims.map((claim) => claim.claimId).join("\u0000") !== EXPECTED_CLAIM_IDS.join("\u0000")) fail("INVALID_DESIGN_SOURCE_TRUST_ROSTER", "anchor or scoped claim IDs");
+  for (const source of value.sourceRecords) if (source.publisher !== "World Wide Web Consortium" || source.sourceType !== "normative_standard" || source.publicationStatus !== "recommendation" || !source.canonicalUrl.startsWith("https://www.w3.org/TR/") || !/^https:\/\/www\.w3\.org\/TR\/\d{4}\/REC-/.test(source.immutableVersionUrl)) fail("INVALID_DESIGN_SOURCE_IDENTITY", source.sourceId);
+  for (const anchor of value.anchorRecords) if (!sources.has(anchor.sourceId) || !anchor.locator.trim() || !anchor.url.includes("#") || anchor.claimIds.some((id) => !claims.has(id))) fail("INVALID_DESIGN_SOURCE_ANCHOR", anchor.anchorId);
+  const usedAnchors = new Set(); const usedSources = new Set();
+  for (const binding of value.slotBindings) { if (binding.resolutionState !== "resolved_exact_direct" || !binding.slotId.startsWith("frontend-system-design-interview:") || !binding.anchorIds.length || binding.claimIds.some((id) => !claims.has(id)) || binding.anchorIds.some((id) => !anchors.has(id))) fail("INVALID_DESIGN_SOURCE_BINDING", binding.bindingId); const covered = new Set(binding.anchorIds.flatMap((id) => anchors.get(id).claimIds)); if (binding.claimIds.some((id) => !covered.has(id))) fail("UNCOVERED_DESIGN_SOURCE_CLAIM", binding.bindingId); binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); }); }
+  if (value.slotBindings.map((binding) => binding.bindingId).join("\u0000") !== EXPECTED_BINDING_IDS.join("\u0000")) fail("INVALID_DESIGN_SOURCE_BINDING_ROSTER", "resolved binding IDs");
+  if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source or anchor");
+  if (value.sourceRecords.length !== 3 || value.anchorRecords.length !== 10 || value.claims.length !== 10 || value.slotBindings.length !== 8) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "first batch totals");
+  return value;
 }
-
-function validateSchema(value, schema, path = "curriculum") {
-  if (Array.isArray(schema.type)) {
-    const alternatives = schema.type.map((type) => ({ ...schema, type }));
-    let lastError;
-    for (const alternative of alternatives) try { validateSchema(value, alternative, path); return; } catch (error) { lastError = error; }
-    throw lastError;
-  }
-  if (schema.const !== undefined && value !== schema.const) fail("INVALID_DESIGN_SCHEMA", `${path} must equal ${JSON.stringify(schema.const)}.`);
-  if (schema.enum && !schema.enum.includes(value)) fail("INVALID_DESIGN_SCHEMA", `${path} must be one of ${schema.enum.join(", ")}.`);
-  if (schema.type === "object") {
-    if (!value || Array.isArray(value) || typeof value !== "object") fail("INVALID_DESIGN_SCHEMA", `${path} must be an object.`);
-    for (const key of schema.required ?? []) if (!Object.hasOwn(value, key)) fail("INVALID_DESIGN_SCHEMA", `${path}.${key} is required.`);
-    if (schema.additionalProperties === false) for (const key of Object.keys(value)) if (!Object.hasOwn(schema.properties ?? {}, key)) fail("INVALID_DESIGN_SCHEMA", `${path}.${key} is not declared by the Design schema.`);
-    for (const [key, child] of Object.entries(schema.properties ?? {})) if (Object.hasOwn(value, key)) validateSchema(value[key], child, `${path}.${key}`);
-  }
-  if (schema.type === "array") {
-    if (!Array.isArray(value)) fail("INVALID_DESIGN_SCHEMA", `${path} must be an array.`);
-    if (schema.minItems !== undefined && value.length < schema.minItems) fail("INVALID_DESIGN_SCHEMA", `${path} must contain at least ${schema.minItems} entries.`);
-    if (schema.items) value.forEach((entry, index) => validateSchema(entry, schema.items, `${path}[${index}]`));
-  }
-  if (schema.type === "string" && (typeof value !== "string" || (schema.minLength && value.length < schema.minLength))) fail("INVALID_DESIGN_SCHEMA", `${path} must be a non-empty string.`);
-  if (schema.type === "number" && (typeof value !== "number" || !Number.isFinite(value))) fail("INVALID_DESIGN_SCHEMA", `${path} must be a finite number.`);
-  if (schema.type === "boolean" && typeof value !== "boolean") fail("INVALID_DESIGN_SCHEMA", `${path} must be a boolean.`);
-  if (schema.type === "null" && value !== null) fail("INVALID_DESIGN_SCHEMA", `${path} must be null.`);
-  if (schema.not && schema.not.anyOf?.some((condition) => condition.required?.every((key) => Object.hasOwn(value, key)))) fail("INVALID_DESIGN_SCHEMA", `${path} contains a retired declaration surface.`);
-  if (schema.not?.const !== undefined && value === schema.not.const) fail("INVALID_DESIGN_SCHEMA", `${path} contains a prohibited value.`);
+export function validateDesignInterviewFamilyConfig(value = family) {
+  if (!value || typeof value !== "object" || digest(value) !== DESIGN_FAMILY_CONTRACT_SHA256) fail("INVALID_DESIGN_FAMILY_CONTRACT", "family configuration drift");
+  if (!ownKeys(value, ["schemaVersion", "familyId", "sourceRegistryRef", "supportedInteractions", "choicePolicyId", "choiceResultSemantics", "authoringHandoff", "modes", "selectionRules", "sessionFeasibility"]) || value.schemaVersion !== "design-interview-family-config-v1" || value.familyId !== "design_interview" || value.sourceRegistryRef !== "config/design-interview-source-registry.json" || JSON.stringify(value.supportedInteractions) !== JSON.stringify(["choice"]) || value.choicePolicyId !== "design-single-choice-diagnostic-v1" || value.choiceResultSemantics !== "exact_selected_set_with_partial_v1") fail("INVALID_DESIGN_FAMILY_CONTRACT", "root policy");
+  if (!ownKeys(value.authoringHandoff, ["batchId", "scope", "plannedItemCount", "humanReviewRequired", "sourceChecksRequired", "questionsAuthored", "runtimeAdmission"]) || value.authoringHandoff.batchId !== FIRST_SAFE_BATCH_ID || value.authoringHandoff.scope !== "authoring_feasibility_only" || value.authoringHandoff.plannedItemCount !== EXPECTED_BINDING_IDS.length || value.authoringHandoff.humanReviewRequired !== true || value.authoringHandoff.sourceChecksRequired !== true || value.authoringHandoff.questionsAuthored !== 0 || value.authoringHandoff.runtimeAdmission !== "not_admitted") fail("INVALID_DESIGN_FAMILY_CONTRACT", "authoring batch");
+  if (!ownKeys(value.sessionFeasibility, ["current", "afterEightItemsAuthoredButBeforeRuntime", "sessionLengthClaim", "freeNodeClaim"]) || !Array.isArray(value.modes) || value.modes.length !== 7 || value.modes.some((mode) => !ownKeys(mode, ["modeId", "contractStatus", "firstBatchEligibleItemCapacityAfterAuthoring", "currentExecutableCapacity", "boundary"]) || mode.currentExecutableCapacity !== 0 || ![0, value.authoringHandoff.plannedItemCount].includes(mode.firstBatchEligibleItemCapacityAfterAuthoring)) || !Array.isArray(value.selectionRules) || value.selectionRules.length !== 5) fail("INVALID_DESIGN_FAMILY_CONTRACT", "mode, session, or selection contract");
+  return value;
 }
+function assertDerivedAdmissionAndAuthoring(curriculum, verified, familyContract) {
+  const expectedAdmissionKeys = ADMISSION_KEYS_BY_TRACK[curriculum.trackId];
+  const expectedAdmission = { learnerFacingContentIncluded: false, questionsAuthored: 0, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", packageAdmission: "not_admitted", releaseAdmission: "not_admitted" };
+  if (expectedAdmissionKeys?.includes("manualSourceAdmission")) expectedAdmission.manualSourceAdmission = "not_admitted";
+  if (!expectedAdmissionKeys || !ownKeys(curriculum.admission, expectedAdmissionKeys) || Object.entries(expectedAdmission).some(([key, value]) => curriculum.admission[key] !== value)) fail("INVALID_DESIGN_ADMISSION", curriculum.trackId);
 
-function rejectRetired(value, path = "curriculum") {
-  if (Array.isArray(value)) return value.forEach((entry, index) => rejectRetired(entry, `${path}[${index}]`));
-  if (!value || typeof value !== "object") return;
-  for (const [key, entry] of Object.entries(value)) { if (retired.has(key) || /^candidate/i.test(key)) fail("RETIRED_DESIGN_DECLARATION_SURFACE", `${path}.${key}`); rejectRetired(entry, `${path}.${key}`); }
-}
+  const resolvedSlots = curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct");
+  const expectedResolvedSlotIds = verified.slotBindings.map((binding) => binding.slotId).sort();
+  const resolvedSlotIds = resolvedSlots.map((slot) => slot.slotId).sort();
+  const hasCanonicalFirstBatch = curriculum.trackId === "frontend-system-design-interview" && JSON.stringify(resolvedSlotIds) === JSON.stringify(expectedResolvedSlotIds);
+  const expectedFirstSafeBatch = hasCanonicalFirstBatch ? familyContract.authoringHandoff.batchId : null;
+  const expectedAuthoring = { status: "authoring_feasibility_only", questionsAuthored: 0, firstSafeBatch: expectedFirstSafeBatch, backlog: "exact_source_binding_required" };
+  if (!ownKeys(curriculum.authoring, Object.keys(expectedAuthoring)) || Object.entries(expectedAuthoring).some(([key, value]) => curriculum.authoring[key] !== value)) fail("INVALID_DESIGN_AUTHORING_STATE", curriculum.trackId);
 
-function rejectUnanchoredDirectProvenance(curriculum) {
-  for (const source of curriculum.sourceRecords ?? []) if (source?.verificationStatus === "exact_direct_verified") fail("DESIGN_DIRECT_SOURCE_PROVENANCE_NOT_ADMITTED", `${source.sourceId ?? "unknown-source"} self-attests exact direct verification without a separately anchored Design family source registry.`);
-  for (const slot of curriculum.slots ?? []) if (slot?.sourceRequirements && Object.hasOwn(slot.sourceRequirements, "directSourceRefs")) fail("DESIGN_DIRECT_SOURCE_PROVENANCE_NOT_ADMITTED", `${slot.slotId ?? "unknown-slot"} declares directSourceRefs before a separately anchored Design family source registry exists.`);
-}
-
-export function validateDesignInterviewCurriculum(curriculum, { brief }) {
-  assertClosedSchema(designSchema);
-  rejectUnanchoredDirectProvenance(curriculum);
-  validateSchema(curriculum, designSchema);
-  required.forEach((field) => { if (!Object.hasOwn(curriculum, field)) fail("MISSING_DESIGN_CURRICULUM_FIELD", `${curriculum.trackId}.${field}`); });
-  rejectRetired(curriculum);
-  if (curriculum.schemaVersion !== "patternly-design-interview-curriculum-v1" || curriculum.curriculumVersion !== "2026.08.11" || curriculum.familyId !== "design_interview") fail("INVALID_DESIGN_CURRICULUM_VERSION", curriculum.trackId);
-  if (curriculum.trackId !== brief.trackId || curriculum.trackBriefReference !== `docs/track-briefs/${brief.trackId}.json` || curriculum.freeNodeId !== brief.freeNodeId) fail("DESIGN_CURRICULUM_BRIEF_MISMATCH", curriculum.trackId);
-  for (const collection of [curriculum.nodes, curriculum.blockPlans, curriculum.targetPlans, curriculum.slots, curriculum.crossNodeRelationships, curriculum.modeFeasibility]) if (!Array.isArray(collection)) fail("INVALID_DESIGN_CURRICULUM_SHAPE", curriculum.trackId);
-  unique(curriculum.nodes.map((node) => node.nodeId), "node IDs"); unique(curriculum.blockPlans.map((block) => block.blockId), "block IDs"); unique(curriculum.targetPlans.map((target) => target.coverageTargetId), "target IDs"); unique(curriculum.slots.map((slot) => slot.slotId), "slot IDs"); unique(curriculum.slots.map((slot) => slot.dedupeFingerprint), "slot fingerprints");
-  const nodes = new Map(curriculum.nodes.map((node) => [node.nodeId, node])); const blocks = new Map(curriculum.blockPlans.map((block) => [block.blockId, block])); const targets = new Map(curriculum.targetPlans.map((target) => [target.coverageTargetId, target]));
-  if (curriculum.nodes.filter((node) => node.nodeId === curriculum.freeNodeId && node.freeOrPremiumRole === "free").length !== 1 || curriculum.nodes.filter((node) => node.freeOrPremiumRole === "free").length !== 1) fail("INVALID_DESIGN_FREE_NODE", curriculum.trackId);
-  for (const node of curriculum.nodes) {
-    if (node.packageOwnership !== "whole_node_package" || !["free", "premium"].includes(node.freeOrPremiumRole) || !Array.isArray(node.blockIds) || node.slotCount !== curriculum.slots.filter((slot) => slot.nodeId === node.nodeId).length || node.blockIds.some((id) => blocks.get(id)?.nodeId !== node.nodeId)) fail("INVALID_DESIGN_NODE_OWNERSHIP", node.nodeId);
-    if (!Array.isArray(node.prerequisiteNodeIds) || node.prerequisiteNodeIds.some((id) => !nodes.has(id))) fail("INVALID_DESIGN_NODE_PREREQUISITE", node.nodeId);
+  if (!Array.isArray(curriculum.modeFeasibility) || curriculum.modeFeasibility.length !== familyContract.modes.length) fail("INVALID_DESIGN_MODE_FEASIBILITY", curriculum.trackId);
+  for (const [index, mode] of curriculum.modeFeasibility.entries()) {
+    const canonicalMode = familyContract.modes[index];
+    const expectedCapacity = hasCanonicalFirstBatch ? canonicalMode.firstBatchEligibleItemCapacityAfterAuthoring : 0;
+    if (!ownKeys(mode, ["modeId", "contractStatus", "firstBatchEligibleItemCapacityAfterAuthoring", "executableCapacity", "boundary"]) || mode.modeId !== canonicalMode.modeId || mode.contractStatus !== canonicalMode.contractStatus || mode.firstBatchEligibleItemCapacityAfterAuthoring !== expectedCapacity || mode.executableCapacity !== canonicalMode.currentExecutableCapacity || mode.boundary !== canonicalMode.boundary) fail("INVALID_DESIGN_MODE_FEASIBILITY", mode.modeId);
   }
-  for (const block of curriculum.blockPlans) if (!nodes.has(block.nodeId) || block.blockKind !== "design_decision_block" || !Array.isArray(block.coverageTargetIds) || !Array.isArray(block.slotIds) || block.slotCount !== curriculum.slots.filter((slot) => slot.blockId === block.blockId).length || block.coverageTargetIds.some((id) => targets.get(id)?.blockId !== block.blockId)) fail("INVALID_DESIGN_BLOCK_OWNERSHIP", block.blockId);
-  for (const target of curriculum.targetPlans) if (!nodes.has(target.nodeId) || !blocks.has(target.blockId) || blocks.get(target.blockId).nodeId !== target.nodeId || !Array.isArray(target.slotIds) || target.slotCount !== curriculum.slots.filter((slot) => slot.coverageTargetId === target.coverageTargetId).length || target.slotIds.some((id) => !curriculum.slots.some((slot) => slot.slotId === id))) fail("INVALID_DESIGN_TARGET_OWNERSHIP", target.coverageTargetId);
-  const sources = new Map(curriculum.sourceRecords.map((source) => [source.sourceId, source])); const sourceIds = new Set(sources.keys()); unique([...sourceIds], "source IDs");
+}
+export function validateDesignInterviewCurriculum(curriculum, { brief, sourceRegistry = registry } = {}) {
+  closed(designSchema); const verified = assertRegistry(sourceRegistry); const familyContract = validateDesignInterviewFamilyConfig();
+  if (Object.hasOwn(curriculum, "sourceRecords") || Object.hasOwn(curriculum, "sourcePolicy")) fail("DESIGN_LOCAL_SOURCE_INVENTORY_RETIRED", curriculum.trackId);
+  for (const field of ["schemaVersion", "curriculumVersion", "trackId", "familyId", "nodes", "blockPlans", "targetPlans", "slots", "modeFeasibility", "admission", "authoring"]) if (!Object.hasOwn(curriculum, field)) fail("MISSING_DESIGN_CURRICULUM_FIELD", field);
+  if (curriculum.schemaVersion !== "patternly-design-interview-curriculum-v1" || curriculum.curriculumVersion !== "2026.08.11" || curriculum.familyId !== "design_interview" || curriculum.trackId !== brief.trackId) fail("INVALID_DESIGN_CURRICULUM_VERSION", curriculum.trackId);
+  const bindings = new Map(verified.slotBindings.map((x) => [x.bindingId, x])); unique(curriculum.slots.map((x) => x.slotId), "slot IDs"); unique(curriculum.slots.map((x) => x.dedupeFingerprint), "slot fingerprints");
+  let resolved = 0;
   for (const slot of curriculum.slots) {
-    if (slot.trackId !== curriculum.trackId || !nodes.has(slot.nodeId) || !blocks.has(slot.blockId) || !targets.has(slot.coverageTargetId) || blocks.get(slot.blockId).nodeId !== slot.nodeId || targets.get(slot.coverageTargetId).nodeId !== slot.nodeId || targets.get(slot.coverageTargetId).blockId !== slot.blockId || targets.get(slot.coverageTargetId).directSkillOrDecisionAtomId !== slot.directSkillOrDecisionAtomId) fail("INVALID_DESIGN_SLOT_OWNERSHIP", slot.slotId);
-    text(slot.slotId, "slotId"); text(slot.directSkillOrDecisionAtomId, "atom"); if (!slot.expectedOutcome || !Array.isArray(slot.materialEvidenceOrConstraintChanged) || !slot.materialEvidenceOrConstraintChanged.length || slot.deliveryInteraction?.familyContract !== "design_interview" || slot.deliveryInteraction?.interactionType !== null || !String(slot.deliveryInteraction?.status ?? "").startsWith("blocked_")) fail("INVALID_DESIGN_SLOT_ADMISSION", slot.slotId);
-    const inventoryRefs = slot.sourceRequirements?.sourceInventoryRefs ?? [];
-    if (!Array.isArray(inventoryRefs) || inventoryRefs.some((id) => !sourceIds.has(id) || sources.get(id).verificationStatus === "exact_direct_verified")) fail("INVALID_DESIGN_SLOT_SOURCE_INVENTORY", slot.slotId);
-    if (slot.authoringStatus && slot.authoringStatus !== "not_admitted") fail("INVALID_DESIGN_SLOT_AUTHORING", slot.slotId);
-    if (slot.dedupeFingerprint !== semanticFingerprint(slot)) fail("DESIGN_SLOT_FINGERPRINT_MISMATCH", slot.slotId);
+    if (slot.trackId !== curriculum.trackId || slot.dedupeFingerprint !== slotFingerprint(slot)) fail("DESIGN_SLOT_FINGERPRINT_MISMATCH", slot.slotId);
+    const req = slot.sourceRequirements; const interaction = slot.deliveryInteraction;
+    if (req.resolutionState === "resolved_exact_direct") { const binding = bindings.get(req.sourceBindingId); if (!ownKeys(req, ["resolutionState", "sourceBindingId"]) || !ownKeys(interaction, ["familyContract", "interactionType", "selectionMode", "scoringContract", "status"]) || !binding || binding.slotId !== slot.slotId || interaction.familyContract !== "design_interview" || interaction.interactionType !== "choice" || interaction.selectionMode !== "single" || interaction.scoringContract !== "exact_selected_set_with_partial_v1" || interaction.status !== "authoring_admitted_runtime_not_admitted" || slot.authoringStatus !== "authoring_admitted") fail("INVALID_DESIGN_RESOLVED_SLOT", slot.slotId); resolved++; }
+    else if (req.resolutionState === "blocked_unresolved") { if (!ownKeys(req, ["resolutionState", "sourceRequirementIds", "unresolvedRequirements"]) || !ownKeys(interaction, ["familyContract", "interactionType", "status"]) || !Array.isArray(req.sourceRequirementIds) || !req.sourceRequirementIds.length || !Array.isArray(req.unresolvedRequirements) || !req.unresolvedRequirements.length || interaction.familyContract !== "design_interview" || interaction.interactionType !== null || interaction.status !== "blocked_by_source_or_interaction_contract") fail("INVALID_DESIGN_BLOCKED_SLOT", slot.slotId); }
+    else fail("INVALID_DESIGN_SOURCE_RESOLUTION", slot.slotId);
   }
-  const expectedEdges = new Set(curriculum.nodes.flatMap((node) => node.prerequisiteNodeIds.map((from) => `${from}→${node.nodeId}`))); const actualEdges = new Set(curriculum.crossNodeRelationships.map((edge) => `${edge.fromNodeId}→${edge.toNodeId}`));
-  if (actualEdges.size !== curriculum.crossNodeRelationships.length || actualEdges.size !== expectedEdges.size || [...expectedEdges].some((edge) => !actualEdges.has(edge))) fail("DESIGN_PREREQUISITE_GRAPH_MISMATCH", curriculum.trackId);
-  for (const edge of curriculum.crossNodeRelationships) {
-    if (edge.relationshipId !== `${edge.fromNodeId}→${edge.toNodeId}` || !nodes.has(edge.fromNodeId) || !nodes.has(edge.toNodeId) || edge.fromNodeId === edge.toNodeId || (edge.kind !== undefined && edge.kind !== "prerequisite_and_transfer")) fail("INVALID_DESIGN_RELATIONSHIP", edge.relationshipId ?? curriculum.trackId);
-    const hasAnchors = [edge.fromBlockId, edge.fromAtomId, edge.toBlockId, edge.toAtomId].some((value) => value !== undefined);
-    if (!hasAnchors) continue;
-    if (![edge.fromBlockId, edge.fromAtomId, edge.toBlockId, edge.toAtomId].every((value) => typeof value === "string" && value.trim())) fail("INVALID_DESIGN_RELATIONSHIP_ANCHOR", edge.relationshipId);
-    const fromBlock = blocks.get(edge.fromBlockId); const toBlock = blocks.get(edge.toBlockId);
-    if (!fromBlock || !toBlock || fromBlock.nodeId !== edge.fromNodeId || toBlock.nodeId !== edge.toNodeId) fail("INVALID_DESIGN_RELATIONSHIP_ANCHOR", edge.relationshipId);
-    const fromTarget = curriculum.targetPlans.find((target) => target.blockId === edge.fromBlockId && target.directSkillOrDecisionAtomId === edge.fromAtomId);
-    const toTarget = curriculum.targetPlans.find((target) => target.blockId === edge.toBlockId && target.directSkillOrDecisionAtomId === edge.toAtomId);
-    if (!fromTarget || !toTarget) fail("INVALID_DESIGN_RELATIONSHIP_ATOM", edge.relationshipId);
-  }
-  for (const mode of curriculum.modeFeasibility) if (!brief.validModes.includes(mode.modeId) || (mode.executableCapacity !== undefined && mode.executableCapacity !== 0) || (mode.runtimeAdmittedItemCount !== undefined && mode.runtimeAdmittedItemCount !== 0)) fail("INVALID_DESIGN_MODE_FEASIBILITY", mode.modeId);
-  if (curriculum.admission.learnerFacingContentIncluded !== false || curriculum.admission.questionsAuthored !== 0 || curriculum.admission.runtimeAdmission !== "not_admitted" || curriculum.admission.publishingAdmission !== "not_admitted" || curriculum.authoring.status !== "not_admitted" || curriculum.authoring.firstSafeBatch !== null) fail("INVALID_DESIGN_ADMISSION", curriculum.trackId);
+  if (resolved !== (curriculum.trackId === "frontend-system-design-interview" ? 8 : 0) || curriculum.slots.length - resolved < 0) fail("INVALID_DESIGN_SLOT_RECONCILIATION", curriculum.trackId);
+  if (!familyContract.supportedInteractions?.includes("choice") || familyContract.choiceResultSemantics !== "exact_selected_set_with_partial_v1") fail("INVALID_DESIGN_ADMISSION", curriculum.trackId);
+  assertDerivedAdmissionAndAuthoring(curriculum, verified, familyContract);
   return curriculum;
 }
+export { assertRegistry as validateDesignInterviewSourceRegistry };

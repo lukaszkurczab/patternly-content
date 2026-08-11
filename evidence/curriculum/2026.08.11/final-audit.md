@@ -1,21 +1,21 @@
 # Curriculum coverage specification
 
-Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `eb77afd62f4106a18aa4e4411e14ec9a13de2eebfa89e9c9c1084de109e60b66`.
+Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `74fcb44776cf1812ea8acb846883fcd60a70bf774ba82a6fb65bed2a88a9ac1b`.
 
 ## Release tracks
 
 | Track | Family | Nodes | Blocks | Targets | Slots/target | Existing | Authoring | Free | Premium | State |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | aws-certified-solutions-architect-associate | certification | 3 | 39 | 76 | 446 | 0 | 446 | 134 | 312 | direct slots; authoring not admitted |
-| backend-system-design-interview | design_interview | 8 | 35 | — | 74 | 0 | 74 | 8 | 66 | current family contract |
+| backend-system-design-interview | design_interview | 8 | 35 | — | 74 | 0 | 0 | 8 | 66 | current family contract |
 | coding-interview-dsa-problem-solving | coding_interview | 26 | 78 | — | 3404 | 2375 | 1029 | 158 | 3246 | current family contract |
-| frontend-system-design-interview | design_interview | 9 | 45 | — | 181 | 0 | 181 | 15 | 166 | current family contract |
+| frontend-system-design-interview | design_interview | 9 | 45 | — | 181 | 0 | 8 | 15 | 166 | current family contract |
 | google-cloud-associate-cloud-engineer | certification | 2 | 36 | 66 | 361 | 0 | 361 | 124 | 237 | direct slots; authoring not admitted |
 | hashicorp-terraform-associate-004 | certification | 2 | 32 | 55 | 285 | 0 | 285 | 127 | 158 | direct slots; authoring not admitted |
 | kubernetes-cloud-native-associate-kcna | certification | 2 | 31 | 46 | 257 | 0 | 257 | 128 | 129 | direct slots; authoring not admitted |
 | microsoft-azure-administrator-associate-az-104 | certification | 2 | 48 | 81 | 324 | 0 | 324 | 153 | 171 | direct slots; authoring not admitted |
 | microsoft-azure-ai-fundamentals-ai-901 | certification | 2 | 27 | 44 | 258 | 0 | 258 | 138 | 120 | direct slots; authoring not admitted |
-| object-oriented-design-interview | design_interview | 7 | 34 | — | 68 | 0 | 68 | 8 | 60 | current family contract |
+| object-oriented-design-interview | design_interview | 7 | 34 | — | 68 | 0 | 0 | 8 | 60 | current family contract |
 
 ## Certification direct-slot reconciliation
 
@@ -28,9 +28,9 @@ Machine-readable source: `config/curricula/*.json`. Catalogue fingerprint: `eb77
 
 ## Design direct-slot provenance, mode, graph, and admission
 
-- backend-system-design-interview: 74 slots; exact/direct verified sources 0; inventory slot sources 0; editorial-method slot sources 0; modes not_runtime_admitted; graph edges 14 (14 atom-anchored); runtime not_admitted, publishing not_admitted.
-- frontend-system-design-interview: 181 slots; exact/direct verified sources 0; inventory slot sources 0; editorial-method slot sources 1; modes not_runtime_admitted; graph edges 16 (0 atom-anchored); runtime not_admitted, publishing not_admitted.
-- object-oriented-design-interview: 68 slots; exact/direct verified sources 0; inventory slot sources 5; editorial-method slot sources 0; modes not_runtime_admitted; graph edges 10 (10 atom-anchored); runtime not_admitted, publishing not_admitted.
+- backend-system-design-interview: 74 slots; direct provenance 0; blocked unresolved 74; modes not_runtime_admitted; graph edges 14 (14 atom-anchored); runtime not_admitted.
+- frontend-system-design-interview: 181 slots; direct provenance 8; blocked unresolved 173; modes not_runtime_admitted; graph edges 16 (0 atom-anchored); runtime not_admitted.
+- object-oriented-design-interview: 68 slots; direct provenance 0; blocked unresolved 68; modes not_runtime_admitted; graph edges 10 (10 atom-anchored); runtime not_admitted.
 
 ## Authoring boundary
 
@@ -39,6 +39,7 @@ All Certification batches are future work: no questions were authored and runtim
 ## First safe future batch
 
 - `microsoft-azure-administrator-associate-az-104:azure-administration-scope-and-control-surfaces`: 13 exact slots in `portal_cli_powershell_arm_boundary`, `scope_and_resource_model`; planned_not_authorable_until_track_taxonomy_source_release_contract. One Azure administration reviewer verifies resource hierarchy and provider/region/API boundaries together with the supported management surface and control-plane/data-plane distinctions against the seven named Microsoft sources.
+- `frontend-system-design-interview:accessible-interaction-standards:1`: 8 slots with direct provenance (8/315 blocked unresolved); post_source_contract_authoring_feasibility_only. Runtime, session, package, and release remain unavailable.
 
 ## Atomic authoring backlog
 

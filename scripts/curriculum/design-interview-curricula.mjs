@@ -12,13 +12,13 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "3c267b38803e349adfb2ab90d7dad4fa1add74884ba7d719040e0222e22a371f";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "2f1f37469e26ee6a1db05f9c172e454820d8d84c92858bf6f182911702431446";
+const DESIGN_TRUST_ROOT_SHA256 = "d11017ebecface668f73531e3f28eadba329ce5ae388ca1b6d49941e60c79c7e";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "59ef56e884ed0acf0084e401ac3075bd697222273b80d0bec9a397c9dfa912c0";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
-  "backend-system-design-interview": 18,
-  "frontend-system-design-interview": 26,
-  "object-oriented-design-interview": 17
+  "backend-system-design-interview": 26,
+  "frontend-system-design-interview": 35,
+  "object-oriented-design-interview": 25
 });
 const EXPECTED_BATCH_SIZE_BY_TRACK = Object.freeze({
   "backend-system-design-interview": 8,
@@ -62,7 +62,7 @@ function assertRegistry(value = registry) {
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 21 || value.anchorRecords.length !== 76 || value.claims.length !== 61 || value.slotBindings.length !== 61) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen round-two totals");
+  if (value.sourceRecords.length !== 27 || value.anchorRecords.length !== 112 || value.claims.length !== 86 || value.slotBindings.length !== 86) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen round-three totals");
   return value;
 }
 export function validateDesignInterviewFamilyConfig(value = family) {

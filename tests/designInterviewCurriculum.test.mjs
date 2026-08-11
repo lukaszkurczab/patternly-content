@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 61 direct slots, 27 authoring-feasible slots, 34 deferred slots, and 262 blocked", () => {
+test("Design central provenance reconciles 86 direct slots, 27 authoring-feasible slots, 59 deferred slots, and 237 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [21, 76, 61, 61]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [27, 112, 86, 86]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 61);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 262);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 86);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 237);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 34);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 18, "frontend-system-design-interview": 26, "object-oriented-design-interview": 17 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 59);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 26, "frontend-system-design-interview": 35, "object-oriented-design-interview": 25 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -35,14 +35,21 @@ test("Design central provenance reconciles 61 direct slots, 27 authoring-feasibl
 
 test("registry trust root rejects rehashed source, roster, anchor, claim, and binding swaps across publishers", () => {
   for (const mutate of [
-    (x) => { x.sourceRecords.find((source) => source.sourceId.startsWith("aws-")).immutableVersionUrl = "https://example.test/aws"; },
+    (x) => { x.sourceRecords.find((source) => source.sourceId === "apache-kafka-4.2-docs-956020b").immutableVersionUrl = "https://example.test/kafka"; },
     (x) => { x.sourceRecords.find((source) => source.sourceId === "eric-evans-ddd-reference-2015").checkedDate = "2026-08-12"; },
-    (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "grpc-deadlines-2025-deadline-propagation").locator = "other section"; },
+    (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "rfc9111-s4.3-cache-validation").locator = "other section"; },
     (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "ddd-ref-entities").claimIds[0] = "ddd-value-object-no-identity-immutable"; },
     (x) => { x.claims.find((claim) => claim.claimId === "http-retry-semantics-are-explicit").exclusions[0] = "drift"; },
-    (x) => { x.slotBindings.find((binding) => binding.bindingId === "design-binding:ood:entity-value-separation").anchorIds.reverse(); },
+    (x) => { x.slotBindings.find((binding) => binding.bindingId === "design-binding:ood:behavioral-subtyping-caller-contract").anchorIds.reverse(); },
     (x) => { x.slotBindings.find((binding) => binding.bindingId === "design-binding:frontend:non-pointer-input-behavior").slotId = "frontend-system-design-interview:forged"; },
     (x) => { x.slotBindings.pop(); }
+  ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+});
+
+test("UML transition evidence cannot broaden an explicit-trigger rule to completion transitions", () => {
+  for (const mutate of [
+    (x) => { x.claims.find((claim) => claim.claimId === "uml-event-transition-state-invariant").statement = "Every enabled UML Transition requires a matching Event Trigger."; },
+    (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "uml-2.5.1-transition-guards-and-enablement").locator = "enablement requires an active source, matching trigger, and a true guard for every transition"; }
   ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
 });
 
@@ -51,7 +58,7 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [10, 16, 8]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [18, 25, 16]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },
@@ -62,6 +69,8 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
     (x) => { x.authoringHandoffs[1].slotBindings.pop(); },
     (x) => { x.authoringHandoffs[0].deferredResolvedReviewBoundary = ""; },
     (x) => { x.authoringHandoffs[1].deferredResolvedSlotBindings.pop(); },
+    (x) => { x.authoringHandoffs[0].deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:backend:kafka-keyed-partition-order").slotId = "backend-system-design-interview:forged"; },
+    (x) => { x.authoringHandoffs[2].deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:ood:behavioral-subtyping-caller-contract").bindingId = "design-binding:ood:forged"; },
     (x) => { [x.authoringHandoffs[1].slotBindings[0].slotId, x.authoringHandoffs[1].deferredResolvedSlotBindings[0].slotId] = [x.authoringHandoffs[1].deferredResolvedSlotBindings[0].slotId, x.authoringHandoffs[1].slotBindings[0].slotId]; },
     (x) => { x.authoringHandoffs[1].slotBindings[0] = structuredClone(x.authoringHandoffs[1].deferredResolvedSlotBindings[0]); }
   ]) assert.throws(() => { const copy = structuredClone(family); mutate(copy); assert.notEqual(rehashFamily(copy), rehashFamily(family)); validateDesignInterviewFamilyConfig(copy); }, /INVALID_DESIGN_FAMILY_CONTRACT/);

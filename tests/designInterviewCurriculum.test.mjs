@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 121 direct slots, 27 authoring-feasible slots, 94 deferred slots, and 202 blocked", () => {
+test("Design central provenance reconciles 124 direct slots, 27 authoring-feasible slots, 97 deferred slots, and 199 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [37, 144, 113, 121]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [37, 146, 115, 124]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 121);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 202);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 124);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 199);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 94);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 37, "frontend-system-design-interview": 52, "object-oriented-design-interview": 32 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 97);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 38, "frontend-system-design-interview": 53, "object-oriented-design-interview": 33 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -313,7 +313,7 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [29, 42, 23]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [30, 43, 24]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },
@@ -443,7 +443,7 @@ test("round-eleven AWS, WHATWG, and ASVS closures retain their exact scope, anch
     "design-binding:frontend:sensitive-data-persistent-browser-storage": ["asvs500-v14.3.3-browser-storage-sensitive-data"],
     "design-binding:frontend:protected-state-trusted-service-validation": ["asvs500-v2.2.1-v2.2.2-trusted-service-input-validation"]
   };
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [37, 144, 113, 121]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [37, 146, 115, 124]);
   for (const [bindingId, anchorIds] of Object.entries(expected)) {
     const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
     assert.deepEqual(binding.anchorIds, anchorIds);
@@ -471,5 +471,62 @@ test("round-eleven AWS, WHATWG, and ASVS closures retain their exact scope, anch
   const promoted = structuredClone(family);
   const frontend = promoted.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview");
   frontend.slotBindings.push(frontend.deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:frontend:native-disabled-state-contract"));
+  assert.throws(() => validateDesignInterviewFamilyConfig(promoted), /INVALID_DESIGN_FAMILY_CONTRACT/);
+});
+
+test("round-twelve quality-attribute priority remains a single AWS deferred-only closure", () => {
+  const bindingId = "design-binding:backend:quality-attribute-degradation-priority";
+  const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+  assert.deepEqual({ claimIds: binding.claimIds, anchorIds: binding.anchorIds }, { claimIds: ["quality-attribute-priority-chosen-when-requirements-conflict"], anchorIds: ["aws-wa-2025-rel05-bp01-slo-conflict-priority"] });
+  const claim = registry.claims.find((entry) => entry.claimId === binding.claimIds[0]);
+  assert.ok(claim.exclusions.some((entry) => entry.includes("universal priority order")));
+  assert.ok(claim.exclusions.some((entry) => entry.includes("numeric SLO")));
+  const backend = curricula.find((entry) => entry.trackId === "backend-system-design-interview");
+  const slot = backend.slots.find((entry) => entry.slotId === binding.slotId);
+  assert.deepEqual(slot.sourceRequirements, { resolutionState: "resolved_exact_direct", sourceBindingId: bindingId });
+  assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+  assert.deepEqual(slot.deliveryInteraction, { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" });
+  const handoff = family.authoringHandoffs.find((entry) => entry.trackId === backend.trackId);
+  assert.ok(handoff.deferredResolvedSlotBindings.some((entry) => entry.bindingId === bindingId));
+  assert.ok(!handoff.slotBindings.some((entry) => entry.bindingId === bindingId));
+  const mutated = structuredClone(registry); mutated.claims.find((entry) => entry.claimId === claim.claimId).exclusions[0] = "Availability is always preferred."; rehashRegistry(mutated);
+  assert.throws(() => validateDesignInterviewSourceRegistry(mutated), /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+});
+
+test("round-twelve Frontend GDPR and OOD UML-plus-Evans closures remain exact and deferred-only", () => {
+  const expected = {
+    "design-binding:frontend:telemetry-purpose-data-minimisation": {
+      trackId: "frontend-system-design-interview",
+      anchorIds: ["gdpr2016-art5-1-b-c-purpose-and-data-minimisation", "gdpr2016-art25-1-data-protection-by-design"],
+      claimIds: ["personal-telemetry-purpose-limited-and-data-minimized"]
+    },
+    "design-binding:ood:use-case-command-query-observable-outcome": {
+      trackId: "object-oriented-design-interview",
+      anchorIds: ["uml-2.5.1-use-case-offered-behavior-observable-outcome", "ddd-ref-side-effect-free-functions"],
+      claimIds: ["uml-use-case-observable-outcome-plus-ddd-command-query-extraction"]
+    }
+  };
+  for (const [bindingId, closure] of Object.entries(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    assert.deepEqual({ anchorIds: binding.anchorIds, claimIds: binding.claimIds }, { anchorIds: closure.anchorIds, claimIds: closure.claimIds });
+    const curriculum = curricula.find((entry) => entry.trackId === closure.trackId);
+    const slot = curriculum.slots.find((entry) => entry.slotId === binding.slotId);
+    assert.deepEqual(slot.sourceRequirements, { resolutionState: "resolved_exact_direct", sourceBindingId: bindingId });
+    assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+    assert.deepEqual(slot.deliveryInteraction, { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" });
+    const handoff = family.authoringHandoffs.find((entry) => entry.trackId === closure.trackId);
+    assert.ok(handoff.deferredResolvedSlotBindings.some((entry) => entry.bindingId === bindingId));
+    assert.ok(!handoff.slotBindings.some((entry) => entry.bindingId === bindingId));
+  }
+  const gdpr = registry.sourceRecords.find((entry) => entry.sourceId === "eu-gdpr-regulation-2016-679-oj");
+  assert.equal(gdpr.publicationStatus, "official_journal_primary_law");
+  const uml = registry.anchorRecords.find((entry) => entry.anchorId === "uml-2.5.1-use-case-offered-behavior-observable-outcome");
+  assert.equal(uml.sourceId, "omg-uml-2.5.1-2017");
+  assert.equal(uml.authorityClass, "normative");
+  const oodClaim = registry.claims.find((entry) => entry.claimId === "uml-use-case-observable-outcome-plus-ddd-command-query-extraction");
+  assert.ok(oodClaim.exclusions.some((entry) => entry.includes("domain vocabulary")));
+  assert.ok(oodClaim.exclusions.some((entry) => entry.includes("business-rule-versus-UI/persistence")));
+  const promoted = structuredClone(family);
+  promoted.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview").slotBindings.push(promoted.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview").deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:frontend:telemetry-purpose-data-minimisation"));
   assert.throws(() => validateDesignInterviewFamilyConfig(promoted), /INVALID_DESIGN_FAMILY_CONTRACT/);
 });

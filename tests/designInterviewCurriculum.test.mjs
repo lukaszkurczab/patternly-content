@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 105 direct slots, 27 authoring-feasible slots, 78 deferred slots, and 218 blocked", () => {
+test("Design central provenance reconciles 106 direct slots, 27 authoring-feasible slots, 79 deferred slots, and 217 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [30, 120, 97, 105]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [31, 121, 98, 106]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 105);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 218);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 106);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 217);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 78);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 45, "object-oriented-design-interview": 32 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 79);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 46, "object-oriented-design-interview": 32 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -120,6 +120,52 @@ test("round-seven Navigator.onLine and C.10 bindings retain their exact, deferre
   const frontend = rosterSwap.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview");
   frontend.slotBindings.push(frontend.deferredResolvedSlotBindings.pop());
   assert.throws(() => validateDesignInterviewFamilyConfig(rosterSwap), /INVALID_DESIGN_FAMILY_CONTRACT/);
+});
+
+test("round-eight AbortSignal retains its exact deferred-only boundary and cannot promote the unrelated OOD slot", () => {
+  const expected = {
+    "design-binding:frontend:abort-signal-propagation": {
+      anchorIds: ["whatwg-dom-8a5f57c6-abort-signal-api-integration"],
+      claimIds: ["abort-signal-propagates-cancellable-web-operation"],
+      exclusions: [
+        "Does not claim that every client operation, transport, or server request is cancellable.",
+        "Does not claim that abort reverses a side effect already committed by a remote system.",
+        "Does not prescribe whether a partial result remains useful or visible after cancellation.",
+        "Does not define product-specific cancel affordances or request-generation policy."
+      ]
+    }
+  };
+  for (const [bindingId, closure] of Object.entries(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    assert.deepEqual({ anchorIds: binding.anchorIds, claimIds: binding.claimIds }, { anchorIds: closure.anchorIds, claimIds: closure.claimIds });
+    const claim = registry.claims.find((entry) => entry.claimId === binding.claimIds[0]);
+    assert.deepEqual(claim.exclusions, closure.exclusions);
+    const curriculum = curricula.find((entry) => binding.slotId.startsWith(`${entry.trackId}:`));
+    const slot = curriculum.slots.find((entry) => entry.slotId === binding.slotId);
+    assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+    assert.deepEqual(slot.deliveryInteraction, { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" });
+    const handoff = family.authoringHandoffs.find((entry) => entry.trackId === curriculum.trackId);
+    assert.ok(handoff.deferredResolvedSlotBindings.some((entry) => entry.bindingId === bindingId && entry.slotId === binding.slotId));
+    assert.ok(!handoff.slotBindings.some((entry) => entry.bindingId === bindingId));
+  }
+  for (const mutate of [
+    (x) => { x.sourceRecords.find((source) => source.sourceId === "whatwg-dom-standard-8a5f57c6").immutableVersionUrl = "https://dom.spec.whatwg.org/"; },
+    (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "whatwg-dom-8a5f57c6-abort-signal-api-integration").locator = "every request aborts remotely"; },
+    (x) => { x.claims.find((claim) => claim.claimId === "abort-signal-propagates-cancellable-web-operation").exclusions[1] = "Abort undoes remote committed effects."; }
+  ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+  const rosterSwap = structuredClone(family);
+  const frontend = rosterSwap.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview");
+  frontend.slotBindings.push(frontend.deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:frontend:abort-signal-propagation"));
+  assert.throws(() => validateDesignInterviewFamilyConfig(rosterSwap), /INVALID_DESIGN_FAMILY_CONTRACT/);
+  const ood = structuredClone(curricula.find((entry) => entry.trackId === "object-oriented-design-interview"));
+  const illegalTransition = ood.slots.find((slot) => slot.slotId.includes("return_a_domain_failure_for_an_illegal_transition_without_partial_mutation"));
+  assert.deepEqual(illegalTransition.sourceRequirements, { resolutionState: "blocked_unresolved", sourceRequirementIds: ["exact_authoritative_source_required"], unresolvedRequirements: ["Verify every bound source title, accessible content, exact supported claim, version, volatility, and checked date before authoring."] });
+  assert.deepEqual(illegalTransition.deliveryInteraction, { familyContract: "design_interview", interactionType: null, status: "blocked_by_source_or_interaction_contract" });
+  assert.ok(!registry.slotBindings.some((binding) => binding.slotId === illegalTransition.slotId));
+  illegalTransition.sourceRequirements = { resolutionState: "resolved_exact_direct", sourceBindingId: "design-binding:ood:illegal-transition-failure-valid-state" };
+  illegalTransition.authoringStatus = "provenance_resolved_authoring_deferred";
+  illegalTransition.deliveryInteraction = { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" };
+  assert.throws(() => validate(ood), /INVALID_DESIGN_RESOLVED_SLOT/);
 });
 
 test("round-five admission rejects an unpinned live Backend source and deferred-roster swaps", () => {
@@ -226,7 +272,7 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 35, 23]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 36, 23]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },

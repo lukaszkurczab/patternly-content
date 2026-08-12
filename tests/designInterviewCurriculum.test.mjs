@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 95 direct slots, 27 authoring-feasible slots, 68 deferred slots, and 228 blocked", () => {
+test("Design central provenance reconciles 101 direct slots, 27 authoring-feasible slots, 74 deferred slots, and 222 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [28, 115, 92, 95]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [28, 116, 93, 101]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 95);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 228);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 101);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 222);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 68);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 40, "object-oriented-design-interview": 27 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 74);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 43, "object-oriented-design-interview": 30 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -44,6 +44,71 @@ test("registry trust root rejects rehashed source, roster, anchor, claim, and bi
     (x) => { x.slotBindings.find((binding) => binding.bindingId === "design-binding:frontend:non-pointer-input-behavior").slotId = "frontend-system-design-interview:forged"; },
     (x) => { x.slotBindings.pop(); }
   ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+});
+
+test("round-five admission rejects an unpinned live Backend source and deferred-roster swaps", () => {
+  const liveBackendSource = {
+    sourceId: "aws-live-unpinned-round5-refusal",
+    publisher: "Amazon Web Services",
+    sourceType: "vendor_documentation",
+    title: "Live documentation is not an immutable source record",
+    canonicalUrl: "https://docs.aws.amazon.com/",
+    immutableVersionUrl: "https://docs.aws.amazon.com/",
+    versionContext: "live and unpinned",
+    publicationStatus: "live_documentation",
+    checkedDate: "2026-08-12",
+    volatility: "high"
+  };
+  const injected = structuredClone(registry); injected.sourceRecords.push(liveBackendSource); rehashRegistry(injected);
+  assert.throws(() => validateDesignInterviewSourceRegistry(injected), /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+
+  const swapped = structuredClone(family);
+  const backend = swapped.authoringHandoffs.find((batch) => batch.trackId === "backend-system-design-interview");
+  const frontend = swapped.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
+  const frontendLastIndex = frontend.deferredResolvedSlotBindings.length - 1;
+  const firstBackendDeferred = backend.deferredResolvedSlotBindings[0];
+  backend.deferredResolvedSlotBindings[0] = frontend.deferredResolvedSlotBindings[frontendLastIndex];
+  frontend.deferredResolvedSlotBindings[frontendLastIndex] = firstBackendDeferred;
+  assert.throws(() => validateDesignInterviewFamilyConfig(swapped), /INVALID_DESIGN_FAMILY_CONTRACT/);
+});
+
+test("round-five Frontend and OOD deferred bindings retain exact immutable-source closure", () => {
+  const expected = {
+    "design-binding:frontend:native-keyboard-contract": { anchorIds: ["wcag22-sc-2.1.1-keyboard", "wai-aria-1.2-host-language-semantics"], claimIds: ["all-functionality-keyboard-operable", "equivalent-native-host-semantics-preferred"] },
+    "design-binding:frontend:dynamic-accessible-name-stability": { anchorIds: ["wcag22-sc-4.1.2-name-role-value", "accname-1.1-name-computation"], claimIds: ["ui-component-name-role-value-and-change-notification", "accessible-name-source-precedence-and-computation"] },
+    "design-binding:frontend:screen-reader-task-path": { anchorIds: ["wai-aria-1.2-testing-practices"], claimIds: ["interactive-accessibility-not-proven-by-static-checks", "test-device-independent-and-accessibility-api-interaction"] },
+    "design-binding:ood:adapter-external-protocol-boundary": { anchorIds: ["ddd-ref-anticorruption-layer"], claimIds: ["ddd-anticorruption-isolate-and-translate-models"] },
+    "design-binding:ood:entity-stable-identity-equality": { anchorIds: ["ddd-ref-entities"], claimIds: ["ddd-entity-identity-lifecycle"] },
+    "design-binding:ood:independent-business-change-axis": { anchorIds: ["ddd-ref-conceptual-contours"], claimIds: ["ddd-change-stability-conceptual-contours"] }
+  };
+  for (const [bindingId, closure] of Object.entries(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    assert.deepEqual({ anchorIds: binding.anchorIds, claimIds: binding.claimIds }, closure);
+    const curriculum = curricula.find((entry) => binding.slotId.startsWith(`${entry.trackId}:`));
+    const slot = curriculum.slots.find((entry) => entry.slotId === binding.slotId);
+    assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+    assert.deepEqual(slot.deliveryInteraction, { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" });
+  }
+  const featureEnvy = curricula.find((curriculum) => curriculum.trackId === "object-oriented-design-interview").slots.find((slot) => slot.slotId.includes("move_feature_envious_behavior"));
+  assert.deepEqual(featureEnvy.sourceRequirements, { resolutionState: "blocked_unresolved", sourceRequirementIds: ["exact_authoritative_source_required"], unresolvedRequirements: ["Verify every bound source title, accessible content, exact supported claim, version, volatility, and checked date before authoring."] });
+  assert.deepEqual(featureEnvy.deliveryInteraction, { familyContract: "design_interview", interactionType: null, status: "blocked_by_source_or_interaction_contract" });
+  assert.ok(!registry.slotBindings.some((binding) => binding.slotId === featureEnvy.slotId));
+  const forgedFeatureEnvy = structuredClone(curricula.find((curriculum) => curriculum.trackId === "object-oriented-design-interview"));
+  const forgedSlot = forgedFeatureEnvy.slots.find((slot) => slot.slotId === featureEnvy.slotId);
+  forgedSlot.sourceRequirements = { resolutionState: "resolved_exact_direct", sourceBindingId: "design-binding:ood:feature-behavior-with-knowledge-owner" };
+  forgedSlot.authoringStatus = "provenance_resolved_authoring_deferred";
+  forgedSlot.deliveryInteraction = { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" };
+  assert.throws(() => validate(forgedFeatureEnvy), /INVALID_DESIGN_RESOLVED_SLOT/);
+  const counterexample = curricula.find((curriculum) => curriculum.trackId === "object-oriented-design-interview").slots.find((slot) => slot.slotId.includes("use_a_counterexample"));
+  assert.equal(counterexample.sourceRequirements.resolutionState, "blocked_unresolved");
+  assert.deepEqual(counterexample.deliveryInteraction, { familyContract: "design_interview", interactionType: null, status: "blocked_by_source_or_interaction_contract" });
+  assert.ok(!registry.slotBindings.some((binding) => binding.slotId === counterexample.slotId));
+  const forgedCounterexample = structuredClone(curricula.find((curriculum) => curriculum.trackId === "object-oriented-design-interview"));
+  const forgedCounterexampleSlot = forgedCounterexample.slots.find((slot) => slot.slotId === counterexample.slotId);
+  forgedCounterexampleSlot.sourceRequirements = { resolutionState: "resolved_exact_direct", sourceBindingId: "design-binding:ood:scenario-exposes-missing-state-or-responsibility" };
+  forgedCounterexampleSlot.authoringStatus = "provenance_resolved_authoring_deferred";
+  forgedCounterexampleSlot.deliveryInteraction = { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" };
+  assert.throws(() => validate(forgedCounterexample), /INVALID_DESIGN_RESOLVED_SLOT/);
 });
 
 test("UML transition evidence cannot broaden an explicit-trigger rule to completion transitions", () => {
@@ -85,7 +150,7 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 30, 18]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 33, 21]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },

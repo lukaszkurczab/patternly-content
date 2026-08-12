@@ -17,7 +17,7 @@ const rehashFamily = (value) => createHash("sha256").update(canonical(value)).di
 
 test("Design central provenance reconciles 106 direct slots, 27 authoring-feasible slots, 79 deferred slots, and 217 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [31, 121, 98, 106]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [31, 122, 99, 106]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 106);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 217);
@@ -120,6 +120,47 @@ test("round-seven Navigator.onLine and C.10 bindings retain their exact, deferre
   const frontend = rosterSwap.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview");
   frontend.slotBindings.push(frontend.deferredResolvedSlotBindings.pop());
   assert.throws(() => validateDesignInterviewFamilyConfig(rosterSwap), /INVALID_DESIGN_FAMILY_CONTRACT/);
+});
+
+test("round-nine C.9 augments only the existing RDD deferred binding without broadening its authority", () => {
+  const bindingId = "design-binding:ood:rdd-client-internal-state-hiding";
+  const anchor = registry.anchorRecords.find((entry) => entry.anchorId === "cpp-core-33bcd01-c9-minimize-member-exposure");
+  const claim = registry.claims.find((entry) => entry.claimId === "cpp-member-exposure-impedes-encapsulation-and-invariant-enforcement");
+  const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+  assert.deepEqual(anchor, {
+    anchorId: "cpp-core-33bcd01-c9-minimize-member-exposure",
+    sourceId: "isocpp-core-guidelines-33bcd01",
+    locator: "C.9, anchor rc-private, source lines 4577-4666",
+    url: "https://github.com/isocpp/CppCoreGuidelines/blob/33bcd015997f0d8e0fa0202eb66254a16f59ad8f/CppCoreGuidelines.md#rc-private",
+    authorityClass: "informative",
+    claimIds: ["cpp-member-exposure-impedes-encapsulation-and-invariant-enforcement"]
+  });
+  assert.deepEqual(claim.exclusions, [
+    "Does not require every data member to be private; independently variable data can intentionally be exposed.",
+    "Does not define a collaborator message’s required input, result, or failure outcome.",
+    "Does not generalize C++ access specifiers into a distributed-service or authorization boundary.",
+    "Does not prescribe getters, setters, a framework, or one object decomposition."
+  ]);
+  assert.deepEqual({ anchorIds: binding.anchorIds, claimIds: binding.claimIds }, {
+    anchorIds: ["rdd1991-client-server-information-hiding-contract", "cpp-core-33bcd01-c9-minimize-member-exposure"],
+    claimIds: ["rdd-client-contract-hides-server-internals", "cpp-member-exposure-impedes-encapsulation-and-invariant-enforcement"]
+  });
+  const ood = curricula.find((curriculum) => curriculum.trackId === "object-oriented-design-interview");
+  const slot = ood.slots.find((entry) => entry.sourceRequirements.sourceBindingId === bindingId);
+  assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+  assert.equal(slot.deliveryInteraction.status, "provenance_resolved_authoring_deferred_runtime_not_admitted");
+  assert.ok(!family.authoringHandoffs.find((batch) => batch.trackId === ood.trackId).slotBindings.some((entry) => entry.bindingId === bindingId));
+  for (const mutate of [
+    (x) => { x.anchorRecords.find((entry) => entry.anchorId === anchor.anchorId).locator = "C.9 requires private data universally"; },
+    (x) => { x.claims.find((entry) => entry.claimId === claim.claimId).exclusions[1] = "Defines collaborator message failure outcomes."; },
+    (x) => { x.claims.find((entry) => entry.claimId === claim.claimId).exclusions[2] = "Defines distributed authorization boundaries."; }
+  ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+  const promoted = structuredClone(family);
+  const batch = promoted.authoringHandoffs.find((entry) => entry.trackId === ood.trackId);
+  const deferredIndex = batch.deferredResolvedSlotBindings.findIndex((entry) => entry.bindingId === bindingId);
+  batch.slotBindings.push(batch.deferredResolvedSlotBindings.splice(deferredIndex, 1)[0]);
+  batch.plannedItemCount = 10;
+  assert.throws(() => validateDesignInterviewFamilyConfig(promoted), /INVALID_DESIGN_FAMILY_CONTRACT/);
 });
 
 test("round-eight AbortSignal retains its exact deferred-only boundary and cannot promote the unrelated OOD slot", () => {

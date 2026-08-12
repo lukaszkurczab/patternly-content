@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 103 direct slots, 27 authoring-feasible slots, 76 deferred slots, and 220 blocked", () => {
+test("Design central provenance reconciles 105 direct slots, 27 authoring-feasible slots, 78 deferred slots, and 218 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [29, 118, 95, 103]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [30, 120, 97, 105]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 103);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 220);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 105);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 218);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 76);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 44, "object-oriented-design-interview": 31 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 78);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 45, "object-oriented-design-interview": 32 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -62,6 +62,64 @@ test("round-six bindings retain their limited source authority and exact anchors
     (x) => { x.claims.find((claim) => claim.claimId === "modal-dialog-close-focus-returns-to-invoker-with-workflow-exceptions").statement = "When a dialog closes, assistive technologies return focus to its invoker."; },
     (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "cpp-core-33bcd01-c120-hierarchy-only").url = "https://github.com/isocpp/CppCoreGuidelines/blob/33bcd015997f0d8e0fa0202eb66254a16f59ad8f/CppCoreGuidelines.md#c20-avoid-conventional-default-operations"; }
   ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+});
+
+test("round-seven Navigator.onLine and C.10 bindings retain their exact, deferred-only boundaries", () => {
+  const expected = {
+    "design-binding:frontend:navigator-online-reachability-hint": {
+      anchorIds: ["whatwg-html-ac0389a3-navigator-online-unreliable"],
+      claimIds: ["navigator-online-is-unreliable-reachability-hint"],
+      exclusions: [
+        "Does not prove reachability of a particular origin, service, DNS name, or endpoint.",
+        "Does not prove that any queued or newly issued request was delivered.",
+        "Does not prescribe reconnect, retry, acknowledgement, or queue-visibility policy."
+      ]
+    },
+    "design-binding:ood:concrete-type-until-hierarchy-justified": {
+      anchorIds: ["cpp-core-33bcd01-c10-prefer-concrete-types"],
+      claimIds: ["cpp-concrete-type-preferred-until-hierarchy-justified"],
+      exclusions: [
+        "Does not prove that a concept has no independent change axis; that remains case evidence.",
+        "Does not require a concrete type when runtime polymorphism or another hierarchy use case is established.",
+        "Does not prescribe an inheritance, composition, Strategy, or DI implementation."
+      ]
+    }
+  };
+  for (const [bindingId, closure] of Object.entries(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    assert.deepEqual({ anchorIds: binding.anchorIds, claimIds: binding.claimIds }, { anchorIds: closure.anchorIds, claimIds: closure.claimIds });
+    const claim = registry.claims.find((entry) => entry.claimId === binding.claimIds[0]);
+    assert.deepEqual(claim.exclusions, closure.exclusions);
+    const curriculum = curricula.find((entry) => binding.slotId.startsWith(`${entry.trackId}:`));
+    const slot = curriculum.slots.find((entry) => entry.slotId === binding.slotId);
+    assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+    assert.deepEqual(slot.deliveryInteraction, { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" });
+    const handoff = family.authoringHandoffs.find((entry) => entry.trackId === curriculum.trackId);
+    assert.ok(handoff.deferredResolvedSlotBindings.some((entry) => entry.bindingId === bindingId && entry.slotId === binding.slotId));
+    assert.ok(!handoff.slotBindings.some((entry) => entry.bindingId === bindingId));
+  }
+  for (const mutate of [
+    (x) => { x.sourceRecords.find((source) => source.sourceId === "whatwg-html-standard-ac0389a3").immutableVersionUrl = "https://html.spec.whatwg.org/multipage/system-state.html"; },
+    (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "whatwg-html-ac0389a3-navigator-online-unreliable").locator = "Navigator.onLine proves endpoint delivery"; },
+    (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "cpp-core-33bcd01-c10-prefer-concrete-types").url = "https://github.com/isocpp/CppCoreGuidelines/blob/33bcd015997f0d8e0fa0202eb66254a16f59ad8f/CppCoreGuidelines.md#c120"; },
+    (x) => { x.claims.find((claim) => claim.claimId === "navigator-online-is-unreliable-reachability-hint").statement = "Navigator.onLine proves queued requests were delivered."; },
+    (x) => { x.claims.find((claim) => claim.claimId === "cpp-concrete-type-preferred-until-hierarchy-justified").exclusions[2] = "Requires Strategy for all variation."; }
+  ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+  for (const bindingId of Object.keys(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    const curriculum = structuredClone(curricula.find((entry) => binding.slotId.startsWith(`${entry.trackId}:`)));
+    const slot = curriculum.slots.find((entry) => entry.slotId === binding.slotId);
+    slot.deliveryInteraction.selectionMode = "multiple";
+    assert.throws(() => validate(curriculum), /INVALID_DESIGN_RESOLVED_SLOT/);
+    slot.deliveryInteraction.selectionMode = "single";
+    slot.deliveryInteraction.status = "authoring_admitted_runtime_not_admitted";
+    slot.authoringStatus = "authoring_admitted";
+    assert.throws(() => validate(curriculum), /INVALID_DESIGN_RESOLVED_SLOT/);
+  }
+  const rosterSwap = structuredClone(family);
+  const frontend = rosterSwap.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview");
+  frontend.slotBindings.push(frontend.deferredResolvedSlotBindings.pop());
+  assert.throws(() => validateDesignInterviewFamilyConfig(rosterSwap), /INVALID_DESIGN_FAMILY_CONTRACT/);
 });
 
 test("round-five admission rejects an unpinned live Backend source and deferred-roster swaps", () => {
@@ -168,7 +226,7 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 34, 22]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 35, 23]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },

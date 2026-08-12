@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 101 direct slots, 27 authoring-feasible slots, 74 deferred slots, and 222 blocked", () => {
+test("Design central provenance reconciles 103 direct slots, 27 authoring-feasible slots, 76 deferred slots, and 220 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [28, 116, 93, 101]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [29, 118, 95, 103]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 101);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 222);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 103);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 220);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 74);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 43, "object-oriented-design-interview": 30 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 76);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 28, "frontend-system-design-interview": 44, "object-oriented-design-interview": 31 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -43,6 +43,24 @@ test("registry trust root rejects rehashed source, roster, anchor, claim, and bi
     (x) => { x.slotBindings.find((binding) => binding.bindingId === "design-binding:ood:behavioral-subtyping-caller-contract").anchorIds.reverse(); },
     (x) => { x.slotBindings.find((binding) => binding.bindingId === "design-binding:frontend:non-pointer-input-behavior").slotId = "frontend-system-design-interview:forged"; },
     (x) => { x.slotBindings.pop(); }
+  ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+});
+
+test("round-six bindings retain their limited source authority and exact anchors", () => {
+  const dialogSource = registry.sourceRecords.find((source) => source.sourceId === "w3c-wai-aria-authoring-practices-1.2-note-2021");
+  const dialogAnchor = registry.anchorRecords.find((anchor) => anchor.anchorId === "wai-aria-practices-1.2-dialog-modal-return-focus");
+  const dialogClaim = registry.claims.find((claim) => claim.claimId === "modal-dialog-close-focus-returns-to-invoker-with-workflow-exceptions");
+  assert.equal(dialogSource.publicationStatus, "group_note");
+  assert.equal(dialogAnchor.authorityClass, "informative");
+  assert.match(dialogClaim.scope, /informative Group Note guidance, not a normative W3C Recommendation or general assistive-technology behavior claim/);
+  assert.ok(dialogClaim.exclusions.includes("does not claim general assistive-technology behavior or platform conformance"));
+  assert.deepEqual(registry.slotBindings.find((binding) => binding.bindingId === "design-binding:frontend:modal-dialog-return-focus").anchorIds, ["wai-aria-practices-1.2-dialog-modal-return-focus"]);
+  assert.deepEqual(registry.slotBindings.find((binding) => binding.bindingId === "design-binding:ood:composition-over-unrelated-inheritance").anchorIds, ["cpp-core-33bcd01-c120-hierarchy-only"]);
+  for (const mutate of [
+    (x) => { x.sourceRecords.find((source) => source.sourceId === "w3c-wai-aria-authoring-practices-1.2-note-2021").publicationStatus = "recommendation"; },
+    (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "wai-aria-practices-1.2-dialog-modal-return-focus").authorityClass = "normative"; },
+    (x) => { x.claims.find((claim) => claim.claimId === "modal-dialog-close-focus-returns-to-invoker-with-workflow-exceptions").statement = "When a dialog closes, assistive technologies return focus to its invoker."; },
+    (x) => { x.anchorRecords.find((anchor) => anchor.anchorId === "cpp-core-33bcd01-c120-hierarchy-only").url = "https://github.com/isocpp/CppCoreGuidelines/blob/33bcd015997f0d8e0fa0202eb66254a16f59ad8f/CppCoreGuidelines.md#c20-avoid-conventional-default-operations"; }
   ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
 });
 
@@ -150,7 +168,7 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 33, 21]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [20, 34, 22]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },

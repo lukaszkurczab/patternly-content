@@ -12,12 +12,12 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "c9cff14d819250ff097d92bf0d03ec8927f142329286ef88b86e155d7f5f798c";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "6705b2127752cd28993eb7dea1ace4dfc64d461dac35b3344d86fc2c54ffe75f";
+const DESIGN_TRUST_ROOT_SHA256 = "6430cc07a9ef1bab1616b715245834883c77a828d8bc27c5264913a2f5c09303";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "8201e22e72413d8dc8a4773224d460d0efe23d552b72edd0ae4ac3bf93396b7a";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
-  "backend-system-design-interview": 28,
-  "frontend-system-design-interview": 46,
+  "backend-system-design-interview": 35,
+  "frontend-system-design-interview": 48,
   "object-oriented-design-interview": 32
 });
 const EXPECTED_BATCH_SIZE_BY_TRACK = Object.freeze({
@@ -52,7 +52,7 @@ function assertRegistry(value = registry) {
   for (const collection of [value.sourceRecords, value.anchorRecords, value.claims, value.slotBindings]) if (!Array.isArray(collection) || !collection.length) fail("INVALID_DESIGN_SOURCE_REGISTRY", "empty collection");
   unique(value.sourceRecords.map((x) => x.sourceId), "registry source IDs"); unique(value.anchorRecords.map((x) => x.anchorId), "registry anchor IDs"); unique(value.claims.map((x) => x.claimId), "registry claim IDs"); unique(value.slotBindings.map((x) => x.bindingId), "registry binding IDs"); unique(value.slotBindings.map((x) => x.slotId), "registry binding slot IDs");
   const sources = new Set(value.sourceRecords.map((x) => x.sourceId)); const claims = new Set(value.claims.map((x) => x.claimId)); const anchors = new Map(value.anchorRecords.map((x) => [x.anchorId, x]));
-  for (const source of value.sourceRecords) if (!source.publisher.trim() || !source.sourceType.trim() || !source.title.trim() || !source.canonicalUrl.startsWith("https://") || !source.immutableVersionUrl.startsWith("https://") || !source.versionContext.trim() || !source.publicationStatus.trim() || !source.checkedDate.trim() || !source.volatility.trim()) fail("INVALID_DESIGN_SOURCE_IDENTITY", source.sourceId);
+  for (const source of value.sourceRecords) if (!source.publisher.trim() || !source.sourceType.trim() || !source.title.trim() || !source.canonicalUrl.startsWith("https://") || !source.immutableVersionUrl.startsWith("https://") || !source.versionContext.trim() || (Object.hasOwn(source, "fileSha256") && !/^[a-f0-9]{64}$/.test(source.fileSha256)) || !source.publicationStatus.trim() || !source.checkedDate.trim() || !source.volatility.trim()) fail("INVALID_DESIGN_SOURCE_IDENTITY", source.sourceId);
   for (const anchor of value.anchorRecords) if (!sources.has(anchor.sourceId) || !anchor.locator.trim() || !anchor.url.startsWith("https://") || !["normative", "informative"].includes(anchor.authorityClass) || anchor.claimIds.some((id) => !claims.has(id))) fail("INVALID_DESIGN_SOURCE_ANCHOR", anchor.anchorId);
   const usedAnchors = new Set(); const usedSources = new Set();
   for (const binding of value.slotBindings) {
@@ -62,7 +62,7 @@ function assertRegistry(value = registry) {
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 31 || value.anchorRecords.length !== 122 || value.claims.length !== 99 || value.slotBindings.length !== 106) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen round-nine totals");
+  if (value.sourceRecords.length !== 37 || value.anchorRecords.length !== 134 || value.claims.length !== 108 || value.slotBindings.length !== 115) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "round-ten derived totals");
   return value;
 }
 export function validateDesignInterviewFamilyConfig(value = family) {

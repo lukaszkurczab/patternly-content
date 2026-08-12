@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 115 direct slots, 27 authoring-feasible slots, 88 deferred slots, and 208 blocked", () => {
+test("Design central provenance reconciles 121 direct slots, 27 authoring-feasible slots, 94 deferred slots, and 202 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [37, 134, 108, 115]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [37, 144, 113, 121]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 115);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 208);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 121);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 202);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 88);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 35, "frontend-system-design-interview": 48, "object-oriented-design-interview": 32 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 94);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 37, "frontend-system-design-interview": 52, "object-oriented-design-interview": 32 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -313,7 +313,7 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [27, 38, 23]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [29, 42, 23]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },
@@ -431,5 +431,45 @@ test("round-ten cookie chains stay conditional, defer-only, and reject draft inj
   const rehashedBinding = structuredClone(registry); rehashedBinding.slotBindings.find((entry) => entry.bindingId === "design-binding:frontend:cross-site-request-boundary").anchorIds.pop(); rehashRegistry(rehashedBinding);
   assert.throws(() => validateDesignInterviewSourceRegistry(rehashedBinding), /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
   const promoted = structuredClone(family); const handoff = promoted.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview"); handoff.slotBindings.push(handoff.deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:frontend:script-readable-token-exposure"));
+  assert.throws(() => validateDesignInterviewFamilyConfig(promoted), /INVALID_DESIGN_FAMILY_CONTRACT/);
+});
+
+test("round-eleven AWS, WHATWG, and ASVS closures retain their exact scope, anchors, counts, and deferred-only boundary", () => {
+  const expected = {
+    "design-binding:backend:measurable-behavior-rollout-abort": ["aws-wa-2025-ops06-bp04-success-rollback-criteria"],
+    "design-binding:backend:reject-negative-operational-value-optimization": ["aws-wa-2025-cost10-bp01-benefit-effort-review", "aws-wa-2025-cost11-bp01-operational-effort-cost"],
+    "design-binding:frontend:native-disabled-state-contract": ["whatwg-html-ac0389a3-native-disabled-focusability", "whatwg-html-ac0389a3-disabled-control-activation", "whatwg-html-ac0389a3-disabled-control-form-entry-exclusion"],
+    "design-binding:frontend:untrusted-content-dom-execution-boundary": ["asvs500-v3.2.2-safe-text-rendering", "asvs500-v1.1.2-v1.2.1-v1.2.3-contextual-output-encoding", "asvs500-v1.3.1-v1.3.2-untrusted-html-and-dynamic-execution"],
+    "design-binding:frontend:sensitive-data-persistent-browser-storage": ["asvs500-v14.3.3-browser-storage-sensitive-data"],
+    "design-binding:frontend:protected-state-trusted-service-validation": ["asvs500-v2.2.1-v2.2.2-trusted-service-input-validation"]
+  };
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [37, 144, 113, 121]);
+  for (const [bindingId, anchorIds] of Object.entries(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    assert.deepEqual(binding.anchorIds, anchorIds);
+    const slot = curricula.flatMap((curriculum) => curriculum.slots).find((entry) => entry.slotId === binding.slotId);
+    assert.deepEqual(slot.sourceRequirements, { resolutionState: "resolved_exact_direct", sourceBindingId: bindingId });
+    assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+    assert.deepEqual(slot.deliveryInteraction, { familyContract: "design_interview", interactionType: "choice", selectionMode: "single", scoringContract: "exact_selected_set_with_partial_v1", status: "provenance_resolved_authoring_deferred_runtime_not_admitted" });
+  }
+  const storage = registry.slotBindings.find((entry) => entry.bindingId === "design-binding:frontend:sensitive-data-persistent-browser-storage");
+  assert.ok(storage.slotId.includes("avoid_persistent_browser_storage_for_data_with_unacceptable_device_exposure"));
+  assert.ok(!storage.slotId.includes("minimize_telemetry"));
+  const rolloutClaim = registry.claims.find((entry) => entry.claimId === "behavior-rollout-uses-measurable-success-and-abort-criteria");
+  const costClaim = registry.claims.find((entry) => entry.claimId === "optimization-benefit-must-cover-operational-effort-and-risk");
+  const sinkClaim = registry.claims.find((entry) => entry.claimId === "untrusted-browser-content-kept-out-of-executable-dom-and-script-contexts");
+  const validationClaim = registry.claims.find((entry) => entry.claimId === "protected-state-input-validation-enforced-at-trusted-service");
+  assert.ok(rolloutClaim.exclusions.some((entry) => entry.includes("irreversible")));
+  assert.ok(costClaim.exclusions.some((entry) => entry.includes("monetary value")));
+  assert.ok(sinkClaim.exclusions.some((entry) => entry.includes("specific sanitizer")));
+  assert.ok(validationClaim.exclusions.some((entry) => entry.includes("authorization")));
+  for (const mutate of [
+    (x) => { x.anchorRecords.find((entry) => entry.anchorId === "aws-wa-2025-ops06-bp04-success-rollback-criteria").claimIds = []; },
+    (x) => { x.claims.find((entry) => entry.claimId === "native-disabled-controls-lose-focus-activation-and-form-entry-behavior").statement = "Every disabled component is inaccessible."; },
+    (x) => { x.claims.find((entry) => entry.claimId === "browser-storage-excludes-sensitive-data-except-session-tokens").scope = "Telemetry, browser storage, and all device recovery."; }
+  ]) assert.throws(() => { const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy); validateDesignInterviewSourceRegistry(copy); }, /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+  const promoted = structuredClone(family);
+  const frontend = promoted.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview");
+  frontend.slotBindings.push(frontend.deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:frontend:native-disabled-state-contract"));
   assert.throws(() => validateDesignInterviewFamilyConfig(promoted), /INVALID_DESIGN_FAMILY_CONTRACT/);
 });

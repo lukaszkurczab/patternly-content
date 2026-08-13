@@ -12,13 +12,13 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "89762fd6ddd68d11ec8ed6282424863f75b858b6e4635768524c95021efd98c5";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "82eceda2009bfc40aec2f874ab4b3b6583985c3f083286e23315505271e4fc10";
+const DESIGN_TRUST_ROOT_SHA256 = "050b04414f5365d00e7cf62916faf306c68378a92127ca00437d9d782be5c99b";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "b5f4da0369736a6a355e0b4a6f2e1dcdafd9e19ebc2ce2516bb118b33f673db8";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
   "backend-system-design-interview": 38,
-  "frontend-system-design-interview": 54,
-  "object-oriented-design-interview": 33
+  "frontend-system-design-interview": 56,
+  "object-oriented-design-interview": 35
 });
 const EXPECTED_BATCH_SIZE_BY_TRACK = Object.freeze({
   "backend-system-design-interview": 8,
@@ -62,7 +62,7 @@ function assertRegistry(value = registry) {
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 37 || value.anchorRecords.length !== 147 || value.claims.length !== 116 || value.slotBindings.length !== 125) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "round-thirteen derived totals");
+  if (value.sourceRecords.length !== 38 || value.anchorRecords.length !== 149 || value.claims.length !== 119 || value.slotBindings.length !== 129) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "round-fourteen derived totals");
   return value;
 }
 export function validateDesignInterviewFamilyConfig(value = family) {

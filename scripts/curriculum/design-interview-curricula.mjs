@@ -13,11 +13,11 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "84f7066f4a8ffe977b106d0a3989cc90e39849141903c50ddae19da9b59996a7";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "f7d0973033cb15c74b66f2f5ba45fab64d1a7326f5fd4cb608e43f457680d3df";
+const DESIGN_TRUST_ROOT_SHA256 = "0cb053158b1f4e48102445e6f6430346a8b5da49a31be36cb83a00aa571342e0";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "d3d329905823f2858ee06c82bdfb4947f275d3265722e78006662659e7d039a7";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
-  "backend-system-design-interview": 44,
+  "backend-system-design-interview": 46,
   "frontend-system-design-interview": 60,
   "object-oriented-design-interview": 39
 });
@@ -64,13 +64,15 @@ function assertNoCapturePathSymlinks(root, path, label) {
   }
 }
 const capturePath = (sha256) => `${captureRootRelative}/${sha256.slice(0, 2)}/${sha256}`;
-const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369"]);
+const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369", "microsoft-azure-postgresql-read-replicas-eae7640", "microsoft-azure-sql-read-scale-out-b356462"]);
 const licenseEvidenceUrlBySourceId = Object.freeze({
   "google-dataflow-autoscaling-metrics-2026-20260512-capture": "https://web.archive.org/web/20260512163401id_/https://docs.cloud.google.com/dataflow/docs/guides/autoscaling-metrics",
   "microsoft-architecture-center-multitenant-storage-data-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
   "react-docs-you-might-not-need-effect-b440d66": "https://github.com/reactjs/react.dev/blob/b440d6698f6e21d56a78b10f625bd23191183588/LICENSE-DOCS.md",
   "react-docs-use-effect-cffb6a7": "https://github.com/reactjs/react.dev/blob/cffb6a7b7d00fbe09df5b40d1731e1055bff0900/LICENSE-DOCS.md",
-  "hibernate-orm-7.1.35-entities-0a5c369": "https://github.com/hibernate/hibernate-orm/blob/0a5c3695d730f63459e14582aeb1b23075430883/LICENSE.txt"
+  "hibernate-orm-7.1.35-entities-0a5c369": "https://github.com/hibernate/hibernate-orm/blob/0a5c3695d730f63459e14582aeb1b23075430883/LICENSE.txt",
+  "microsoft-azure-postgresql-read-replicas-eae7640": "https://github.com/MicrosoftDocs/azure-databases-docs/blob/eae7640185e0a174a16e5a33cd16c1a76bc13d04/LICENSE",
+  "microsoft-azure-sql-read-scale-out-b356462": "https://github.com/MicrosoftDocs/sql-docs/blob/b356462c16cabe6450626f82dd769b521f002e70/LICENSE"
 });
 function captureFiles(root) {
   if (!existsSync(root)) fail("DEAD_DESIGN_SOURCE_CAPTURE_ARTIFACT", "capture root missing");
@@ -85,7 +87,7 @@ function assertCaptures(value, root = repositoryRoot) {
   const realRoot = realpathSync(captureRoot);
   const sources = new Map(value.sourceRecords.map((source) => [source.sourceId, source]));
   const paths = new Set(); const hashes = new Set(); const sourceIds = new Set();
-  if (!Array.isArray(value.sourceCaptures)) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "C16 capture roster");
+  if (!Array.isArray(value.sourceCaptures)) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "source capture roster");
   for (const capture of value.sourceCaptures) {
     if (!capture || capture.captureId !== `design-source-capture:${capture.sha256}` || !/^[a-f0-9]{64}$/.test(capture.sha256) || capture.repositoryPath !== capturePath(capture.sha256) || !Number.isSafeInteger(capture.byteLength) || capture.byteLength < 1 || !["text/html", "text/markdown", "text/asciidoc"].includes(capture.mediaType) || !["http_entity_after_transport_content_decoding", "git_blob_bytes"].includes(capture.byteRepresentation) || !Array.isArray(capture.transformations) || capture.transformations.length) fail("INVALID_DESIGN_SOURCE_CAPTURE", capture?.captureId ?? "record");
     if (hashes.has(capture.sha256) || paths.has(capture.repositoryPath)) fail("DUPLICATE_DESIGN_SOURCE_CAPTURE", capture.captureId); hashes.add(capture.sha256); paths.add(capture.repositoryPath);
@@ -101,8 +103,8 @@ function assertCaptures(value, root = repositoryRoot) {
     try { assertNoCapturePathSymlinks(root, licensePath, rights.licenseTextPath); } catch (error) { if (error.code === "DESIGN_SOURCE_CAPTURE_PATH_MISMATCH") fail("DESIGN_SOURCE_CAPTURE_RIGHTS_MISMATCH", capture.captureId); throw error; }
     if (!lstatSync(licensePath).isFile() || createHash("sha256").update(readFileSync(licensePath)).digest("hex") !== rights.licenseTextSha256) fail("DESIGN_SOURCE_CAPTURE_RIGHTS_MISMATCH", capture.captureId);
   }
-  if (value.sourceCaptures.length !== requiredCaptureSourceIds.length) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "C16 capture roster");
-  if (!sameSet(sourceIds, new Set(requiredCaptureSourceIds))) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "exact C16 capture sources");
+  if (value.sourceCaptures.length !== requiredCaptureSourceIds.length) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "source capture roster");
+  if (!sameSet(sourceIds, new Set(requiredCaptureSourceIds))) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "exact capture sources");
   const actual = new Set(captureFiles(captureRoot).map((path) => relative(root, path))); if (!sameSet(actual, paths)) fail("DEAD_DESIGN_SOURCE_CAPTURE_ARTIFACT", "orphan or missing artifact");
 }
 const slotFingerprint = (slot) => fingerprint({ trackId: slot.trackId, nodeId: slot.nodeId, blockId: slot.blockId, coverageTargetId: slot.coverageTargetId, directSkillOrDecisionAtomId: slot.directSkillOrDecisionAtomId, expectedOutcome: slot.expectedOutcome, decisiveBoundary: slot.decisiveBoundary, transferBoundary: slot.transferBoundary, materialEvidenceOrConstraintChanged: slot.materialEvidenceOrConstraintChanged });
@@ -131,7 +133,7 @@ function assertRegistry(value = registry, { repositoryRoot: root = repositoryRoo
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 49 || value.anchorRecords.length !== 171 || value.claims.length !== 133 || value.slotBindings.length !== 143) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "round-sixteen derived totals");
+  if (value.sourceRecords.length !== 51 || value.anchorRecords.length !== 174 || value.claims.length !== 135 || value.slotBindings.length !== 145) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen derived totals");
   assertCaptures(value, root);
   return value;
 }

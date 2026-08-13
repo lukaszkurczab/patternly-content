@@ -13,13 +13,13 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "f324c74809572f8e759012eaaa8971a216a47bb038ddceb05d03945a6106546c";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "e24b6061580053a47882630c64ef49e76c87e4028b988e8010d680aab89b9b75";
+const DESIGN_TRUST_ROOT_SHA256 = "dd091ae98422879bec028ef726a78480e0f3f6ae9ea478aea0bf0b995c5f2200";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "1196611503e17236aa70c7ab4e46609ab217ecb66548c55d6cccd34d6f8e03e3";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
-  "backend-system-design-interview": 49,
-  "frontend-system-design-interview": 60,
-  "object-oriented-design-interview": 41
+  "backend-system-design-interview": 55,
+  "frontend-system-design-interview": 64,
+  "object-oriented-design-interview": 47
 });
 const EXPECTED_BATCH_SIZE_BY_TRACK = Object.freeze({
   "backend-system-design-interview": 8,
@@ -64,8 +64,22 @@ function assertNoCapturePathSymlinks(root, path, label) {
   }
 }
 const capturePath = (sha256) => `${captureRootRelative}/${sha256.slice(0, 2)}/${sha256}`;
-const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369", "microsoft-azure-postgresql-read-replicas-eae7640", "microsoft-azure-sql-read-scale-out-b356462", "dotnet-adonet-optimistic-concurrency-bd03850", "microsoft-architecture-center-sharding-7b4bf264", "microsoft-azure-waf-reliability-targets-40aabbf", "microsoft-dotnet-domain-events-bd038508"]);
+const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369", "microsoft-azure-postgresql-read-replicas-eae7640", "microsoft-azure-sql-read-scale-out-b356462", "dotnet-adonet-optimistic-concurrency-bd03850", "microsoft-architecture-center-sharding-7b4bf264", "microsoft-azure-waf-reliability-targets-40aabbf", "microsoft-dotnet-domain-events-bd038508", "microsoft-waf-business-requirements-40aabbf", "microsoft-architecture-center-asynchronous-request-reply-09ba725e", "microsoft-architecture-center-transient-faults-09ba725e", "microsoft-architecture-center-event-driven-09ba725e", "microsoft-architecture-center-event-sourcing-09ba725e", "microsoft-cloud-adoption-framework-modernization-deployment-07736c4", "react-docs-sharing-state-between-components-b440d66", "react-docs-preserving-and-resetting-state-b440d66", "react-docs-responding-to-events-b440d66", "microsoft-dotnet-command-handler-bd038508", "microsoft-dotnet-infrastructure-persistence-bd038508", "microsoft-dotnet-domain-validation-bd038508", "microsoft-aspnet-explicit-dto-1a82bb83", "microsoft-architecture-center-sequential-convoy-7b4bf264"]);
 const licenseEvidenceUrlBySourceId = Object.freeze({
+  "microsoft-waf-business-requirements-40aabbf": "https://github.com/MicrosoftDocs/well-architected/blob/40aabbf5a416b750d1c11fc9b5c85666c95b119a/LICENSE",
+  "microsoft-architecture-center-asynchronous-request-reply-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
+  "microsoft-architecture-center-transient-faults-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
+  "microsoft-architecture-center-event-driven-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
+  "microsoft-architecture-center-event-sourcing-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
+  "microsoft-cloud-adoption-framework-modernization-deployment-07736c4": "https://github.com/MicrosoftDocs/cloud-adoption-framework/blob/07736c406bdd9738eb31839c7b654363fb40f354/LICENSE",
+  "react-docs-sharing-state-between-components-b440d66": "https://github.com/reactjs/react.dev/blob/b440d6698f6e21d56a78b10f625bd23191183588/LICENSE-DOCS.md",
+  "react-docs-preserving-and-resetting-state-b440d66": "https://github.com/reactjs/react.dev/blob/b440d6698f6e21d56a78b10f625bd23191183588/LICENSE-DOCS.md",
+  "react-docs-responding-to-events-b440d66": "https://github.com/reactjs/react.dev/blob/b440d6698f6e21d56a78b10f625bd23191183588/LICENSE-DOCS.md",
+  "microsoft-dotnet-command-handler-bd038508": "https://github.com/dotnet/docs/blob/bd038508933775b801ebfe58540634f4024bfdf0/LICENSE",
+  "microsoft-dotnet-infrastructure-persistence-bd038508": "https://github.com/dotnet/docs/blob/bd038508933775b801ebfe58540634f4024bfdf0/LICENSE",
+  "microsoft-dotnet-domain-validation-bd038508": "https://github.com/dotnet/docs/blob/bd038508933775b801ebfe58540634f4024bfdf0/LICENSE",
+  "microsoft-aspnet-explicit-dto-1a82bb83": "https://github.com/dotnet/AspNetDocs/blob/1a82bb83264875c1891a558e5bc5c836b6c97f5b/LICENSE",
+  "microsoft-architecture-center-sequential-convoy-7b4bf264": "https://github.com/MicrosoftDocs/architecture-center/blob/7b4bf26469bc45810c64406ad3cebdae4f60fb6b/README.md#legal-notices",
   "google-dataflow-autoscaling-metrics-2026-20260512-capture": "https://web.archive.org/web/20260512163401id_/https://docs.cloud.google.com/dataflow/docs/guides/autoscaling-metrics",
   "microsoft-architecture-center-multitenant-storage-data-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
   "react-docs-you-might-not-need-effect-b440d66": "https://github.com/reactjs/react.dev/blob/b440d6698f6e21d56a78b10f625bd23191183588/LICENSE-DOCS.md",
@@ -137,7 +151,7 @@ function assertRegistry(value = registry, { repositoryRoot: root = repositoryRoo
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 54 || value.sourceCaptures.length !== 11 || value.anchorRecords.length !== 184 || value.claims.length !== 140 || value.slotBindings.length !== 150) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen derived totals");
+  if (value.sourceRecords.length !== 68 || value.sourceCaptures.length !== 25 || value.anchorRecords.length !== 213 || value.claims.length !== 156 || value.slotBindings.length !== 166) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen derived totals");
   assertCaptures(value, root);
   return value;
 }

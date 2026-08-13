@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 137 direct slots, 27 authoring-feasible slots, 110 deferred slots, and 186 blocked", () => {
+test("Design central provenance reconciles 143 direct slots, 27 authoring-feasible slots, 116 deferred slots, and 180 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [44, 163, 127, 137]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [49, 171, 133, 143]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 137);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 186);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 143);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 180);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 110);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 42, "frontend-system-design-interview": 57, "object-oriented-design-interview": 38 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 116);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 44, "frontend-system-design-interview": 60, "object-oriented-design-interview": 39 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -344,11 +344,11 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [34, 47, 29]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [36, 50, 30]);
   assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedReason), [
-    "These 34 Backend bindings are provenance-resolved but outside the pinned eight-slot Backend authoring-feasibility batch.",
-    "These 47 Frontend bindings are provenance-resolved but outside the pinned ten-slot Frontend authoring-feasibility batch.",
-    "These 29 OOD bindings are provenance-resolved but outside the pinned nine-slot OOD authoring-feasibility batch."
+    "These 36 Backend bindings are provenance-resolved but outside the pinned eight-slot Backend authoring-feasibility batch.",
+    "These 50 Frontend bindings are provenance-resolved but outside the pinned ten-slot Frontend authoring-feasibility batch.",
+    "These 30 OOD bindings are provenance-resolved but outside the pinned nine-slot OOD authoring-feasibility batch."
   ]);
   assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
@@ -486,7 +486,7 @@ test("round-eleven AWS, WHATWG, and ASVS closures retain their exact scope, anch
     "design-binding:frontend:sensitive-data-persistent-browser-storage": ["asvs500-v14.3.3-browser-storage-sensitive-data"],
     "design-binding:frontend:protected-state-trusted-service-validation": ["asvs500-v2.2.1-v2.2.2-trusted-service-input-validation"]
   };
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [44, 163, 127, 137]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [49, 171, 133, 143]);
   for (const [bindingId, anchorIds] of Object.entries(expected)) {
     const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
     assert.deepEqual(binding.anchorIds, anchorIds);
@@ -629,4 +629,40 @@ test("round-fifteen materializes only its eight supplied closures and rejects so
   const frontend = promoted.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview");
   frontend.slotBindings.push(frontend.deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:frontend:bearer-token-lifecycle-exposure-boundary"));
   assert.throws(() => validateDesignInterviewFamilyConfig(promoted), /INVALID_DESIGN_FAMILY_CONTRACT/);
+});
+
+
+test("round-sixteen exact closures stay deferred and reject authoring promotion", () => {
+  const expected = {
+    "design-binding:backend:dataflow-saturation-signal-backlog-growth": ["google-dataflow-backlog-onset-saturation-autoscaling"],
+    "design-binding:backend:classified-tenant-storage-query-boundary": ["aws-wa-2025-sec07-bp02-classification-isolation-boundary", "ms-multitenant-storage-dedicated-database-isolation", "ms-multitenant-storage-rls-tenant-query-context"],
+    "design-binding:frontend:react-derived-display-from-current-state": ["react-no-effect-derived-state-post-commit-staleness"],
+    "design-binding:frontend:react-remove-post-commit-derived-state-duplication": ["react-no-effect-derived-state-post-commit-staleness"],
+    "design-binding:frontend:react-current-request-instance-visible-result": ["react-use-effect-ignore-obsolete-fetch-response"],
+    "design-binding:ood:pre-persistence-entity-identity-collection-stability": ["hibernate-7.1.35-entity-equality-stable-hash-boundary", "hibernate-7.1.35-natural-key-equality-example"]
+  };
+  for (const [bindingId, anchorIds] of Object.entries(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    assert.deepEqual(binding.anchorIds, anchorIds);
+    const slot = curricula.flatMap((curriculum) => curriculum.slots).find((entry) => entry.slotId === binding.slotId);
+    assert.deepEqual(slot.sourceRequirements, { resolutionState: "resolved_exact_direct", sourceBindingId: bindingId });
+    assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+    const handoff = family.authoringHandoffs.find((entry) => entry.trackId === slot.trackId);
+    assert.ok(handoff.deferredResolvedSlotBindings.some((entry) => entry.bindingId === bindingId && entry.slotId === binding.slotId));
+    assert.ok(!handoff.slotBindings.some((entry) => entry.bindingId === bindingId));
+  }
+  const promoted = structuredClone(family);
+  const backend = promoted.authoringHandoffs.find((entry) => entry.trackId === "backend-system-design-interview");
+  const index = backend.deferredResolvedSlotBindings.findIndex((entry) => entry.bindingId === "design-binding:backend:dataflow-saturation-signal-backlog-growth");
+  backend.slotBindings.push(backend.deferredResolvedSlotBindings.splice(index, 1)[0]);
+  assert.throws(() => validateDesignInterviewFamilyConfig(promoted), /INVALID_DESIGN_FAMILY_CONTRACT/);
+  for (const mutate of [
+    (value) => { value.sourceRecords.find((entry) => entry.sourceId === "hibernate-orm-7.1.35-entities-0a5c369").immutableVersionUrl = "https://docs.hibernate.org/orm/7.1/introduction/html_single/Hibernate_Introduction.html#equals-and-hash"; },
+    (value) => { value.claims.find((entry) => entry.claimId === "react-current-request-instance-owns-visible-fetch-result").exclusions[1] = "Applies to non-idempotent mutations."; }
+  ]) {
+    const tampered = structuredClone(registry);
+    mutate(tampered);
+    rehashRegistry(tampered);
+    assert.throws(() => validateDesignInterviewSourceRegistry(tampered), /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+  }
 });

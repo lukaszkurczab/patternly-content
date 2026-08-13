@@ -12,21 +12,28 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "050b04414f5365d00e7cf62916faf306c68378a92127ca00437d9d782be5c99b";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "b5f4da0369736a6a355e0b4a6f2e1dcdafd9e19ebc2ce2516bb118b33f673db8";
+const DESIGN_TRUST_ROOT_SHA256 = "e5f766c5d418e781b1d5c3f35173ce74faa012a468430aa6edfc4fd080d7f97c";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "a298b5137a085b3a6ed961bc7f92932f4ee2db283eaa61211bd4882f7aaaf447";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
-  "backend-system-design-interview": 38,
-  "frontend-system-design-interview": 56,
-  "object-oriented-design-interview": 35
+  "backend-system-design-interview": 42,
+  "frontend-system-design-interview": 57,
+  "object-oriented-design-interview": 38
 });
 const EXPECTED_BATCH_SIZE_BY_TRACK = Object.freeze({
   "backend-system-design-interview": 8,
   "frontend-system-design-interview": 10,
   "object-oriented-design-interview": 9
 });
+const TRACK_LABEL_BY_ID = Object.freeze({
+  "backend-system-design-interview": "Backend",
+  "frontend-system-design-interview": "Frontend",
+  "object-oriented-design-interview": "OOD"
+});
+const NUMBER_WORD_BY_VALUE = Object.freeze({ 8: "eight", 9: "nine", 10: "ten" });
 const batchPairKey = ({ bindingId, slotId }) => `${bindingId}\u0000${slotId}`;
 const sameSet = (left, right) => left.size === right.size && [...left].every((value) => right.has(value));
+const deferredResolvedReason = (trackId, resolvedCount, admittedCount) => `These ${resolvedCount - admittedCount} ${TRACK_LABEL_BY_ID[trackId]} bindings are provenance-resolved but outside the pinned ${NUMBER_WORD_BY_VALUE[admittedCount]}-slot ${TRACK_LABEL_BY_ID[trackId]} authoring-feasibility batch.`;
 const ADMISSION_KEYS_BY_TRACK = Object.freeze({
   "backend-system-design-interview": ["learnerFacingContentIncluded", "questionsAuthored", "runtimeAdmission", "publishingAdmission", "packageAdmission", "releaseAdmission"],
   "frontend-system-design-interview": ["learnerFacingContentIncluded", "questionsAuthored", "runtimeAdmission", "publishingAdmission", "packageAdmission", "releaseAdmission"],
@@ -62,17 +69,18 @@ function assertRegistry(value = registry) {
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 38 || value.anchorRecords.length !== 149 || value.claims.length !== 119 || value.slotBindings.length !== 129) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "round-fourteen derived totals");
+  if (value.sourceRecords.length !== 44 || value.anchorRecords.length !== 163 || value.claims.length !== 127 || value.slotBindings.length !== 137) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "round-fifteen derived totals");
   return value;
 }
 export function validateDesignInterviewFamilyConfig(value = family) {
-  if (!value || typeof value !== "object" || digest(value) !== DESIGN_FAMILY_CONTRACT_SHA256) fail("INVALID_DESIGN_FAMILY_CONTRACT", "family configuration drift");
+  if (!value || typeof value !== "object") fail("INVALID_DESIGN_FAMILY_CONTRACT", "family configuration drift");
   if (!ownKeys(value, ["schemaVersion", "familyId", "sourceRegistryRef", "supportedInteractions", "choicePolicyId", "choiceResultSemantics", "authoringHandoffs", "modes", "selectionRules", "sessionFeasibility"]) || value.schemaVersion !== "design-interview-family-config-v1" || value.familyId !== "design_interview" || value.sourceRegistryRef !== "config/design-interview-source-registry.json" || JSON.stringify(value.supportedInteractions) !== JSON.stringify(["choice"]) || value.choicePolicyId !== "design-single-choice-diagnostic-v1" || value.choiceResultSemantics !== "exact_selected_set_with_partial_v1") fail("INVALID_DESIGN_FAMILY_CONTRACT", "root policy");
   const verified = assertRegistry(); const bindings = new Map(verified.slotBindings.map((binding) => [binding.bindingId, binding]));
   const invalidBatch = !Array.isArray(value.authoringHandoffs) || value.authoringHandoffs.length !== TRACK_IDS.length || value.authoringHandoffs.some((batch) => {
     const keys = ["trackId", "batchId", "scope", "plannedItemCount", "slotBindings", "deferredResolvedSlotBindings", "humanReviewRequired", "sourceChecksRequired", "questionsAuthored", "runtimeAdmission"];
     keys.push("deferredResolvedReason", "deferredResolvedReviewBoundary");
-    if (!ownKeys(batch, keys) || !TRACK_IDS.includes(batch.trackId) || batch.scope !== "authoring_feasibility_only" || batch.plannedItemCount !== EXPECTED_BATCH_SIZE_BY_TRACK[batch.trackId] || batch.humanReviewRequired !== true || batch.sourceChecksRequired !== true || batch.questionsAuthored !== 0 || batch.runtimeAdmission !== "not_admitted" || !Array.isArray(batch.slotBindings) || !Array.isArray(batch.deferredResolvedSlotBindings) || batch.slotBindings.length !== batch.plannedItemCount || !batch.deferredResolvedSlotBindings.length || typeof batch.deferredResolvedReason !== "string" || !batch.deferredResolvedReason.trim() || typeof batch.deferredResolvedReviewBoundary !== "string" || !batch.deferredResolvedReviewBoundary.trim() || new Set(batch.slotBindings.map(batchPairKey)).size !== batch.slotBindings.length || new Set(batch.slotBindings.map((entry) => entry.bindingId)).size !== batch.slotBindings.length || new Set(batch.slotBindings.map((entry) => entry.slotId)).size !== batch.slotBindings.length) return true;
+    const resolvedCount = verified.slotBindings.filter((binding) => binding.slotId.startsWith(`${batch.trackId}:`)).length;
+    if (!ownKeys(batch, keys) || !TRACK_IDS.includes(batch.trackId) || batch.scope !== "authoring_feasibility_only" || batch.plannedItemCount !== EXPECTED_BATCH_SIZE_BY_TRACK[batch.trackId] || batch.humanReviewRequired !== true || batch.sourceChecksRequired !== true || batch.questionsAuthored !== 0 || batch.runtimeAdmission !== "not_admitted" || !Array.isArray(batch.slotBindings) || !Array.isArray(batch.deferredResolvedSlotBindings) || batch.slotBindings.length !== batch.plannedItemCount || !batch.deferredResolvedSlotBindings.length || batch.deferredResolvedReason !== deferredResolvedReason(batch.trackId, resolvedCount, batch.slotBindings.length) || typeof batch.deferredResolvedReviewBoundary !== "string" || !batch.deferredResolvedReviewBoundary.trim() || new Set(batch.slotBindings.map(batchPairKey)).size !== batch.slotBindings.length || new Set(batch.slotBindings.map((entry) => entry.bindingId)).size !== batch.slotBindings.length || new Set(batch.slotBindings.map((entry) => entry.slotId)).size !== batch.slotBindings.length) return true;
     const batchPairs = new Set(batch.slotBindings.map(batchPairKey)); const deferredPairs = new Set(batch.deferredResolvedSlotBindings.map(batchPairKey));
     if (new Set(batch.deferredResolvedSlotBindings.map((entry) => entry.bindingId)).size !== batch.deferredResolvedSlotBindings.length || new Set(batch.deferredResolvedSlotBindings.map((entry) => entry.slotId)).size !== batch.deferredResolvedSlotBindings.length || [...batchPairs].some((entry) => deferredPairs.has(entry))) return true;
     const expectedPairs = new Set(verified.slotBindings.filter((binding) => binding.slotId.startsWith(`${batch.trackId}:`)).map(batchPairKey));
@@ -82,6 +90,7 @@ export function validateDesignInterviewFamilyConfig(value = family) {
   if (invalidBatch || new Set(value.authoringHandoffs.map((batch) => batch.trackId)).size !== TRACK_IDS.length) fail("INVALID_DESIGN_FAMILY_CONTRACT", "authoring batch roster");
   const invalidMode = !Array.isArray(value.modes) || value.modes.length !== 7 || value.modes.some((mode) => !ownKeys(mode, ["modeId", "contractStatus", "firstBatchEligibleItemCapacityAfterAuthoringByTrack", "currentExecutableCapacity", "boundary"]) || mode.currentExecutableCapacity !== 0 || !ownKeys(mode.firstBatchEligibleItemCapacityAfterAuthoringByTrack, TRACK_IDS) || TRACK_IDS.some((trackId) => ![0, EXPECTED_BATCH_SIZE_BY_TRACK[trackId]].includes(mode.firstBatchEligibleItemCapacityAfterAuthoringByTrack[trackId])));
   if (!ownKeys(value.sessionFeasibility, ["current", "afterAuthoringButBeforeRuntime", "sessionLengthClaim", "freeNodeClaim"]) || invalidMode || !Array.isArray(value.selectionRules) || value.selectionRules.length !== 5) fail("INVALID_DESIGN_FAMILY_CONTRACT", "mode, session, or selection contract");
+  if (digest(value) !== DESIGN_FAMILY_CONTRACT_SHA256) fail("INVALID_DESIGN_FAMILY_CONTRACT", "family configuration drift");
   return value;
 }
 function assertDerivedAdmissionAndAuthoring(curriculum, verified, familyContract) {

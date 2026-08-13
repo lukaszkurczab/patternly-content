@@ -15,15 +15,15 @@ const rehashRegistry = (value) => { const payload = { ...value }; delete payload
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
 
-test("Design central provenance reconciles 129 direct slots, 27 authoring-feasible slots, 102 deferred slots, and 194 blocked", () => {
+test("Design central provenance reconciles 137 direct slots, 27 authoring-feasible slots, 110 deferred slots, and 186 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [38, 149, 119, 129]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [44, 163, 127, 137]);
   assert.equal(curricula.reduce((sum, x) => sum + x.slots.length, 0), 323);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 129);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 194);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "resolved_exact_direct").length, 137);
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.sourceRequirements.resolutionState === "blocked_unresolved").length, 186);
   assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "authoring_admitted").length, 27);
-  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 102);
-  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 38, "frontend-system-design-interview": 56, "object-oriented-design-interview": 35 });
+  assert.equal(curricula.flatMap((x) => x.slots).filter((x) => x.authoringStatus === "provenance_resolved_authoring_deferred").length, 110);
+  assert.deepEqual(Object.fromEntries(curricula.map((curriculum) => [curriculum.trackId, curriculum.slots.filter((slot) => slot.sourceRequirements.resolutionState === "resolved_exact_direct").length])), { "backend-system-design-interview": 42, "frontend-system-design-interview": 57, "object-oriented-design-interview": 38 });
   const frontend = curricula.find((curriculum) => curriculum.trackId === "frontend-system-design-interview");
   const privilegedComputation = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:privileged-computation-boundary"));
   const leastPrivilegedResult = frontend.slots.find((slot) => slot.slotId.endsWith(":slot:least-privileged-client-result"));
@@ -344,8 +344,13 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
   assert.deepEqual(family.authoringHandoffs.map(({ trackId, plannedItemCount }) => [trackId, plannedItemCount]), [["backend-system-design-interview", 8], ["frontend-system-design-interview", 10], ["object-oriented-design-interview", 9]]);
   const frontend = family.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview");
   assert.equal(frontend.slotBindings.length, 10);
-  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [30, 46, 26]);
-  assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReason.length && batch.deferredResolvedReviewBoundary.length));
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedSlotBindings.length), [34, 47, 29]);
+  assert.deepEqual(family.authoringHandoffs.map((batch) => batch.deferredResolvedReason), [
+    "These 34 Backend bindings are provenance-resolved but outside the pinned eight-slot Backend authoring-feasibility batch.",
+    "These 47 Frontend bindings are provenance-resolved but outside the pinned ten-slot Frontend authoring-feasibility batch.",
+    "These 29 OOD bindings are provenance-resolved but outside the pinned nine-slot OOD authoring-feasibility batch."
+  ]);
+  assert.ok(family.authoringHandoffs.every((batch) => batch.deferredResolvedReviewBoundary.length));
   for (const mutate of [
     (x) => { x.supportedInteractions.push("ordering"); },
     (x) => { x.authoringHandoffs[0].plannedItemCount = 9; },
@@ -354,12 +359,19 @@ test("the pinned per-track authoring roster admits only the exact 8, 10, and 9 s
     (x) => { x.modes[0].firstBatchEligibleItemCapacityAfterAuthoringByTrack["object-oriented-design-interview"] = 10; },
     (x) => { x.authoringHandoffs[1].slotBindings.pop(); },
     (x) => { x.authoringHandoffs[0].deferredResolvedReviewBoundary = ""; },
+    (x) => { x.authoringHandoffs[1].deferredResolvedReason = "These 46 Frontend bindings are provenance-resolved but outside the pinned ten-slot Frontend authoring-feasibility batch."; },
     (x) => { x.authoringHandoffs[1].deferredResolvedSlotBindings.pop(); },
     (x) => { x.authoringHandoffs[0].deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:backend:kafka-keyed-partition-order").slotId = "backend-system-design-interview:forged"; },
     (x) => { x.authoringHandoffs[2].deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:ood:behavioral-subtyping-caller-contract").bindingId = "design-binding:ood:forged"; },
     (x) => { [x.authoringHandoffs[1].slotBindings[0].slotId, x.authoringHandoffs[1].deferredResolvedSlotBindings[0].slotId] = [x.authoringHandoffs[1].deferredResolvedSlotBindings[0].slotId, x.authoringHandoffs[1].slotBindings[0].slotId]; },
     (x) => { x.authoringHandoffs[1].slotBindings[0] = structuredClone(x.authoringHandoffs[1].deferredResolvedSlotBindings[0]); }
   ]) assert.throws(() => { const copy = structuredClone(family); mutate(copy); assert.notEqual(rehashFamily(copy), rehashFamily(family)); validateDesignInterviewFamilyConfig(copy); }, /INVALID_DESIGN_FAMILY_CONTRACT/);
+});
+
+test("a deferred-resolution handoff reason must state the derived deferred roster count", () => {
+  const stale = structuredClone(family);
+  stale.authoringHandoffs.find((batch) => batch.trackId === "frontend-system-design-interview").deferredResolvedReason = "These 46 Frontend bindings are provenance-resolved but outside the pinned ten-slot Frontend authoring-feasibility batch.";
+  assert.throws(() => validateDesignInterviewFamilyConfig(stale), /INVALID_DESIGN_FAMILY_CONTRACT: authoring batch roster/);
 });
 
 test("Design audit reconciles each pinned authoring batch to its owning nodes", () => {
@@ -474,7 +486,7 @@ test("round-eleven AWS, WHATWG, and ASVS closures retain their exact scope, anch
     "design-binding:frontend:sensitive-data-persistent-browser-storage": ["asvs500-v14.3.3-browser-storage-sensitive-data"],
     "design-binding:frontend:protected-state-trusted-service-validation": ["asvs500-v2.2.1-v2.2.2-trusted-service-input-validation"]
   };
-  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [38, 149, 119, 129]);
+  assert.deepEqual([registry.sourceRecords.length, registry.anchorRecords.length, registry.claims.length, registry.slotBindings.length], [44, 163, 127, 137]);
   for (const [bindingId, anchorIds] of Object.entries(expected)) {
     const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
     assert.deepEqual(binding.anchorIds, anchorIds);
@@ -587,4 +599,34 @@ test("round-thirteen RFC 9111 keeps the application-data-cache boundary exact an
   mutated.anchorRecords.find((entry) => entry.anchorId === "rfc9111-s6-application-and-other-caches").url = "https://www.rfc-editor.org/rfc/rfc9111.html#section-4";
   rehashRegistry(mutated);
   assert.throws(() => validateDesignInterviewSourceRegistry(mutated), /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+});
+
+test("round-fifteen materializes only its eight supplied closures and rejects source, anchor, and roster overreach", () => {
+  const expected = {
+    "design-binding:backend:critical-journey-latency-availability-freshness": ["google-sre-workbook-ch2-user-relevant-availability-latency-freshness", "google-sre-workbook-ch2-critical-user-journeys"],
+    "design-binding:backend:overload-admission-before-latency-amplification": ["google-sre-workbook-ch11-autoscaling-reaction-delay", "google-sre-book-ch22-queue-latency-early-rejection", "google-sre-book-ch22-load-shed-threshold-priority"],
+    "design-binding:backend:nist-verified-internal-principal-context": ["nist800204b-end-user-credential-validation-exchange", "nist800204b-trusted-jwt-principal-verification", "nist800204b-request-credential-audit-chain"],
+    "design-binding:backend:measured-resource-tier-reliability-cost": ["aws-wa-2025-cross-pillar-reliability-cost-tradeoff", "aws-wa-2025-cost06-measured-resource-rightsizing"],
+    "design-binding:frontend:bearer-token-lifecycle-exposure-boundary": ["rfc6750-s1.3-s2.1-s5.2-s5.3-bearer-token-exposure-boundary"],
+    "design-binding:ood:consumer-owned-collaborator-role-test-seam": ["mock-roles-2004-consumer-required-role-interface"],
+    "design-binding:ood:collaborator-unavailable-through-consumer-owned-seam": ["mock-roles-2004-consumer-required-role-interface", "mock-roles-2004-collaborator-unready-failure-path"],
+    "design-binding:ood:required-collaboration-message-without-incidental-order": ["mock-roles-2004-material-interaction-without-incidental-order"]
+  };
+  for (const [bindingId, anchorIds] of Object.entries(expected)) {
+    const binding = registry.slotBindings.find((entry) => entry.bindingId === bindingId);
+    assert.deepEqual(binding.anchorIds, anchorIds);
+    const curriculum = curricula.find((entry) => binding.slotId.startsWith(`${entry.trackId}:`));
+    const slot = curriculum.slots.find((entry) => entry.slotId === binding.slotId);
+    assert.equal(slot.authoringStatus, "provenance_resolved_authoring_deferred");
+    assert.equal(slot.deliveryInteraction.status, "provenance_resolved_authoring_deferred_runtime_not_admitted");
+    assert.ok(family.authoringHandoffs.find((entry) => entry.trackId === curriculum.trackId).deferredResolvedSlotBindings.some((entry) => entry.bindingId === bindingId));
+  }
+  const overreach = structuredClone(registry);
+  overreach.slotBindings.find((entry) => entry.bindingId === "design-binding:frontend:bearer-token-lifecycle-exposure-boundary").anchorIds.push("mock-roles-2004-material-interaction-without-incidental-order");
+  rehashRegistry(overreach);
+  assert.throws(() => validateDesignInterviewSourceRegistry(overreach), /DESIGN_SOURCE_TRUST_ROOT_MISMATCH/);
+  const promoted = structuredClone(family);
+  const frontend = promoted.authoringHandoffs.find((entry) => entry.trackId === "frontend-system-design-interview");
+  frontend.slotBindings.push(frontend.deferredResolvedSlotBindings.find((entry) => entry.bindingId === "design-binding:frontend:bearer-token-lifecycle-exposure-boundary"));
+  assert.throws(() => validateDesignInterviewFamilyConfig(promoted), /INVALID_DESIGN_FAMILY_CONTRACT/);
 });

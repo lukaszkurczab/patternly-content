@@ -13,13 +13,13 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "0cb053158b1f4e48102445e6f6430346a8b5da49a31be36cb83a00aa571342e0";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "d3d329905823f2858ee06c82bdfb4947f275d3265722e78006662659e7d039a7";
+const DESIGN_TRUST_ROOT_SHA256 = "f324c74809572f8e759012eaaa8971a216a47bb038ddceb05d03945a6106546c";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "e24b6061580053a47882630c64ef49e76c87e4028b988e8010d680aab89b9b75";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
-  "backend-system-design-interview": 46,
+  "backend-system-design-interview": 49,
   "frontend-system-design-interview": 60,
-  "object-oriented-design-interview": 39
+  "object-oriented-design-interview": 41
 });
 const EXPECTED_BATCH_SIZE_BY_TRACK = Object.freeze({
   "backend-system-design-interview": 8,
@@ -64,7 +64,7 @@ function assertNoCapturePathSymlinks(root, path, label) {
   }
 }
 const capturePath = (sha256) => `${captureRootRelative}/${sha256.slice(0, 2)}/${sha256}`;
-const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369", "microsoft-azure-postgresql-read-replicas-eae7640", "microsoft-azure-sql-read-scale-out-b356462"]);
+const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369", "microsoft-azure-postgresql-read-replicas-eae7640", "microsoft-azure-sql-read-scale-out-b356462", "dotnet-adonet-optimistic-concurrency-bd03850", "microsoft-architecture-center-sharding-7b4bf264", "microsoft-azure-waf-reliability-targets-40aabbf", "microsoft-dotnet-domain-events-bd038508"]);
 const licenseEvidenceUrlBySourceId = Object.freeze({
   "google-dataflow-autoscaling-metrics-2026-20260512-capture": "https://web.archive.org/web/20260512163401id_/https://docs.cloud.google.com/dataflow/docs/guides/autoscaling-metrics",
   "microsoft-architecture-center-multitenant-storage-data-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
@@ -72,7 +72,11 @@ const licenseEvidenceUrlBySourceId = Object.freeze({
   "react-docs-use-effect-cffb6a7": "https://github.com/reactjs/react.dev/blob/cffb6a7b7d00fbe09df5b40d1731e1055bff0900/LICENSE-DOCS.md",
   "hibernate-orm-7.1.35-entities-0a5c369": "https://github.com/hibernate/hibernate-orm/blob/0a5c3695d730f63459e14582aeb1b23075430883/LICENSE.txt",
   "microsoft-azure-postgresql-read-replicas-eae7640": "https://github.com/MicrosoftDocs/azure-databases-docs/blob/eae7640185e0a174a16e5a33cd16c1a76bc13d04/LICENSE",
-  "microsoft-azure-sql-read-scale-out-b356462": "https://github.com/MicrosoftDocs/sql-docs/blob/b356462c16cabe6450626f82dd769b521f002e70/LICENSE"
+  "microsoft-azure-sql-read-scale-out-b356462": "https://github.com/MicrosoftDocs/sql-docs/blob/b356462c16cabe6450626f82dd769b521f002e70/LICENSE",
+  "dotnet-adonet-optimistic-concurrency-bd03850": "https://github.com/dotnet/docs/blob/bd038508933775b801ebfe58540634f4024bfdf0/LICENSE",
+  "microsoft-architecture-center-sharding-7b4bf264": "https://github.com/MicrosoftDocs/architecture-center/blob/7b4bf26469bc45810c64406ad3cebdae4f60fb6b/README.md#legal-notices",
+  "microsoft-azure-waf-reliability-targets-40aabbf": "https://github.com/MicrosoftDocs/well-architected/blob/40aabbf5a416b750d1c11fc9b5c85666c95b119a/LICENSE",
+  "microsoft-dotnet-domain-events-bd038508": "https://github.com/dotnet/docs/blob/bd038508933775b801ebfe58540634f4024bfdf0/LICENSE"
 });
 function captureFiles(root) {
   if (!existsSync(root)) fail("DEAD_DESIGN_SOURCE_CAPTURE_ARTIFACT", "capture root missing");
@@ -133,7 +137,7 @@ function assertRegistry(value = registry, { repositoryRoot: root = repositoryRoo
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 51 || value.anchorRecords.length !== 174 || value.claims.length !== 135 || value.slotBindings.length !== 145) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen derived totals");
+  if (value.sourceRecords.length !== 54 || value.sourceCaptures.length !== 11 || value.anchorRecords.length !== 184 || value.claims.length !== 140 || value.slotBindings.length !== 150) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen derived totals");
   assertCaptures(value, root);
   return value;
 }

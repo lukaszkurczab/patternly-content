@@ -13,12 +13,12 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "65b9cffb27fec9fadb5171d9261f7211d010cad94ff139a5daf3da003bf95429";
-const DESIGN_FAMILY_CONTRACT_SHA256 = "b59902dee13d98b6ec3db1975fb50e1edf82d40bdf1adf856a0b99acbc54a887";
+const DESIGN_TRUST_ROOT_SHA256 = "21c9ac4946b0656aaca7ad3f8938741ac627b49b0a64dc2ba7a6202c5d2713e2";
+const DESIGN_FAMILY_CONTRACT_SHA256 = "15a1cc863b6f0c7a1e269ef2b6fe7821a3a3598523c0dc2641c4434c519c1e03";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
-  "backend-system-design-interview": 58,
-  "frontend-system-design-interview": 92,
+  "backend-system-design-interview": 66,
+  "frontend-system-design-interview": 111,
   "object-oriented-design-interview": 47
 });
 const EXPECTED_BATCH_SIZE_BY_TRACK = Object.freeze({
@@ -64,7 +64,7 @@ function assertNoCapturePathSymlinks(root, path, label) {
   }
 }
 const capturePath = (sha256) => `${captureRootRelative}/${sha256.slice(0, 2)}/${sha256}`;
-const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369", "microsoft-azure-postgresql-read-replicas-eae7640", "microsoft-azure-sql-read-scale-out-b356462", "dotnet-adonet-optimistic-concurrency-bd03850", "microsoft-architecture-center-sharding-7b4bf264", "microsoft-azure-waf-reliability-targets-40aabbf", "microsoft-dotnet-domain-events-bd038508", "microsoft-waf-business-requirements-40aabbf", "microsoft-architecture-center-asynchronous-request-reply-09ba725e", "microsoft-architecture-center-transient-faults-09ba725e", "microsoft-architecture-center-event-driven-09ba725e", "microsoft-architecture-center-event-sourcing-09ba725e", "microsoft-cloud-adoption-framework-modernization-deployment-07736c4", "react-docs-sharing-state-between-components-b440d66", "react-docs-preserving-and-resetting-state-b440d66", "react-docs-responding-to-events-b440d66", "microsoft-dotnet-command-handler-bd038508", "microsoft-dotnet-infrastructure-persistence-bd038508", "microsoft-dotnet-domain-validation-bd038508", "microsoft-aspnet-explicit-dto-1a82bb83", "microsoft-architecture-center-sequential-convoy-7b4bf264", "microsoft-architecture-center-throttling-09ba725e", "microsoft-architecture-center-scale-out-09ba725e", "microsoft-architecture-center-gateway-aggregation-09ba725e", "react-docs-render-to-pipeable-stream-b440d66", "google-web-vitals-readme-3c850823", "opentelemetry-tail-sampling-processor-9ab409ae", "microsoft-azure-monitor-metrics-overview-1930418e", "microsoft-architecture-center-saga-7b4bf264", "microsoft-waf-architecture-decision-record-40aabbf", "microsoft-waf-architecture-design-specification-40aabbf", "playwright-docs-best-practices-js-07730b7", "playwright-docs-intro-js-07730b7", "aspnetcore-docs-model-validation-c67a801", "aspnetcore-docs-blazor-pwa-c67a801", "aspnetcore-docs-resource-authorization-c67a801", "edge-developer-pwa-offline-dd024d8", "edge-developer-pwa-background-syncs-dd024d8", "edge-developer-pwa-best-practices-dd024d8", "react-docs-use-client-b440d66"]);
+const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369", "microsoft-azure-postgresql-read-replicas-eae7640", "microsoft-azure-sql-read-scale-out-b356462", "dotnet-adonet-optimistic-concurrency-bd03850", "microsoft-architecture-center-sharding-7b4bf264", "microsoft-azure-waf-reliability-targets-40aabbf", "microsoft-dotnet-domain-events-bd038508", "microsoft-waf-business-requirements-40aabbf", "microsoft-architecture-center-asynchronous-request-reply-09ba725e", "microsoft-architecture-center-transient-faults-09ba725e", "microsoft-architecture-center-event-driven-09ba725e", "microsoft-architecture-center-event-sourcing-09ba725e", "microsoft-cloud-adoption-framework-modernization-deployment-07736c4", "react-docs-sharing-state-between-components-b440d66", "react-docs-preserving-and-resetting-state-b440d66", "react-docs-responding-to-events-b440d66", "microsoft-dotnet-command-handler-bd038508", "microsoft-dotnet-infrastructure-persistence-bd038508", "microsoft-dotnet-domain-validation-bd038508", "microsoft-aspnet-explicit-dto-1a82bb83", "microsoft-architecture-center-sequential-convoy-7b4bf264", "microsoft-architecture-center-throttling-09ba725e", "microsoft-architecture-center-scale-out-09ba725e", "microsoft-architecture-center-gateway-aggregation-09ba725e", "react-docs-render-to-pipeable-stream-b440d66", "google-web-vitals-readme-3c850823", "opentelemetry-tail-sampling-processor-9ab409ae", "microsoft-azure-monitor-metrics-overview-1930418e", "microsoft-architecture-center-saga-7b4bf264", "microsoft-waf-architecture-decision-record-40aabbf", "microsoft-waf-architecture-design-specification-40aabbf", "playwright-docs-best-practices-js-07730b7", "playwright-docs-intro-js-07730b7", "aspnetcore-docs-model-validation-c67a801", "aspnetcore-docs-blazor-pwa-c67a801", "aspnetcore-docs-resource-authorization-c67a801", "edge-developer-pwa-offline-dd024d8", "edge-developer-pwa-background-syncs-dd024d8", "edge-developer-pwa-best-practices-dd024d8", "react-docs-use-client-b440d66", "microsoft-waf-capacity-planning-40aabbf", "microsoft-waf-performance-maturity-model-40aabbf", "microsoft-waf-ongoing-support-40aabbf", "microsoft-waf-design-diagrams-40aabbf", "microsoft-waf-throttling-5b3f666", "microsoft-cosmos-plan-manage-costs-8bcc7de", "microsoft-cosmos-modeling-data-8bcc7de", "microsoft-cosmos-query-metrics-performance-8bcc7de", "microsoft-cosmos-consistency-levels-8bcc7de", "edge-developer-accessibility-design-dd024d8", "react-docs-use-optimistic-383a1e9", "react-docs-reacting-to-input-state-383a1e9", "edge-developer-performance-overview-dd024d8", "aspnetcore-docs-blazor-security-c67a801"]);
 const licenseEvidenceUrlBySourceId = Object.freeze({
   "microsoft-waf-business-requirements-40aabbf": "https://github.com/MicrosoftDocs/well-architected/blob/40aabbf5a416b750d1c11fc9b5c85666c95b119a/LICENSE",
   "microsoft-architecture-center-asynchronous-request-reply-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
@@ -110,6 +110,20 @@ const licenseEvidenceUrlBySourceId = Object.freeze({
   ,"edge-developer-pwa-background-syncs-dd024d8": "https://github.com/MicrosoftDocs/edge-developer/blob/dd024d8785db4c803a128cdde599e9287ee6ab5a/LICENSE"
   ,"edge-developer-pwa-best-practices-dd024d8": "https://github.com/MicrosoftDocs/edge-developer/blob/dd024d8785db4c803a128cdde599e9287ee6ab5a/LICENSE"
   ,"react-docs-use-client-b440d66": "https://github.com/reactjs/react.dev/blob/b440d6698f6e21d56a78b10f625bd23191183588/LICENSE-DOCS.md"
+  ,"microsoft-waf-capacity-planning-40aabbf": "https://github.com/MicrosoftDocs/well-architected/blob/40aabbf5a416b750d1c11fc9b5c85666c95b119a/LICENSE"
+  ,"microsoft-waf-performance-maturity-model-40aabbf": "https://github.com/MicrosoftDocs/well-architected/blob/40aabbf5a416b750d1c11fc9b5c85666c95b119a/LICENSE"
+  ,"microsoft-waf-ongoing-support-40aabbf": "https://github.com/MicrosoftDocs/well-architected/blob/40aabbf5a416b750d1c11fc9b5c85666c95b119a/LICENSE"
+  ,"microsoft-waf-design-diagrams-40aabbf": "https://github.com/MicrosoftDocs/well-architected/blob/40aabbf5a416b750d1c11fc9b5c85666c95b119a/LICENSE"
+  ,"microsoft-waf-throttling-5b3f666": "https://github.com/MicrosoftDocs/well-architected/blob/5b3f666240413d8c0709c186cdf9f291ed8a2d70/LICENSE"
+  ,"microsoft-cosmos-plan-manage-costs-8bcc7de": "https://github.com/MicrosoftDocs/azure-databases-docs/blob/8bcc7deb2cf924cbeae1443fd2780ba701399631/LICENSE"
+  ,"microsoft-cosmos-modeling-data-8bcc7de": "https://github.com/MicrosoftDocs/azure-databases-docs/blob/8bcc7deb2cf924cbeae1443fd2780ba701399631/LICENSE"
+  ,"microsoft-cosmos-query-metrics-performance-8bcc7de": "https://github.com/MicrosoftDocs/azure-databases-docs/blob/8bcc7deb2cf924cbeae1443fd2780ba701399631/LICENSE"
+  ,"microsoft-cosmos-consistency-levels-8bcc7de": "https://github.com/MicrosoftDocs/azure-databases-docs/blob/8bcc7deb2cf924cbeae1443fd2780ba701399631/LICENSE"
+  ,"edge-developer-accessibility-design-dd024d8": "https://github.com/MicrosoftDocs/edge-developer/blob/dd024d8785db4c803a128cdde599e9287ee6ab5a/LICENSE"
+  ,"react-docs-use-optimistic-383a1e9": "https://github.com/reactjs/react.dev/blob/383a1e9239c8c084a16a19daa4fc2a7ad04e2a3a/LICENSE-DOCS.md"
+  ,"react-docs-reacting-to-input-state-383a1e9": "https://github.com/reactjs/react.dev/blob/383a1e9239c8c084a16a19daa4fc2a7ad04e2a3a/LICENSE-DOCS.md"
+  ,"edge-developer-performance-overview-dd024d8": "https://github.com/MicrosoftDocs/edge-developer/blob/dd024d8785db4c803a128cdde599e9287ee6ab5a/LICENSE-CODE"
+  ,"aspnetcore-docs-blazor-security-c67a801": "https://github.com/dotnet/AspNetCore.Docs/blob/c67a80103a1a74db20784debd919c7fdda96c510/LICENSE"
 });
 function captureFiles(root) {
   if (!existsSync(root)) fail("DEAD_DESIGN_SOURCE_CAPTURE_ARTIFACT", "capture root missing");
@@ -171,7 +185,7 @@ function assertRegistry(value = registry, { repositoryRoot: root = repositoryRoo
     binding.anchorIds.forEach((id) => { usedAnchors.add(id); usedSources.add(anchors.get(id).sourceId); });
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
-  if (value.sourceRecords.length !== 86 || value.sourceCaptures.length !== 44 || value.anchorRecords.length !== 250 || value.claims.length !== 181 || value.slotBindings.length !== 197) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen derived totals");
+  if (value.sourceRecords.length !== 100 || value.sourceCaptures.length !== 58 || value.anchorRecords.length !== 282 || value.claims.length !== 204 || value.slotBindings.length !== 224) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "frozen derived totals");
   assertCaptures(value, root);
   return value;
 }

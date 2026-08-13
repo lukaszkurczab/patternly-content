@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const load = (path) => JSON.parse(readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8"));
@@ -12,7 +13,7 @@ const unique = (values, label) => { if (new Set(values).size !== values.length) 
 const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const digest = (value) => createHash("sha256").update(canonical(value)).digest("hex");
-const DESIGN_TRUST_ROOT_SHA256 = "b12f07f61e7161b0eb44d08637fcc063a4d98fa0afe3c16f49d5aebdf3deebc0";
+const DESIGN_TRUST_ROOT_SHA256 = "84f7066f4a8ffe977b106d0a3989cc90e39849141903c50ddae19da9b59996a7";
 const DESIGN_FAMILY_CONTRACT_SHA256 = "f7d0973033cb15c74b66f2f5ba45fab64d1a7326f5fd4cb608e43f457680d3df";
 const TRACK_IDS = Object.freeze(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
 const EXPECTED_RESOLVED_BY_TRACK = Object.freeze({
@@ -42,19 +43,80 @@ const ADMISSION_KEYS_BY_TRACK = Object.freeze({
 const ownKeys = (value, keys) => Object.keys(value).sort().join("\u0000") === [...keys].sort().join("\u0000");
 const trustRoot = (value) => ({
   sourceRecords: value.sourceRecords,
+  sourceCaptures: value.sourceCaptures,
   anchorRecords: value.anchorRecords,
   claims: value.claims,
   slotBindings: value.slotBindings
 });
+const repositoryRoot = fileURLToPath(new URL("../../", import.meta.url));
+const captureRootRelative = "evidence/design-interview/source-captures/sha256";
+const licenseRootRelative = "evidence/design-interview/source-captures/licenses";
+const isInside = (root, path) => { const relation = relative(root, path); return relation === "" || (!relation.startsWith(`..${sep}`) && relation !== ".."); };
+function assertNoCapturePathSymlinks(root, path, label) {
+  if (!isInside(root, path)) fail("DESIGN_SOURCE_CAPTURE_PATH_MISMATCH", label);
+  let current = root;
+  for (const component of relative(root, path).split(sep)) {
+    if (!component) continue;
+    current = resolve(current, component);
+    let stat;
+    try { stat = lstatSync(current); } catch { fail("DESIGN_SOURCE_CAPTURE_PATH_MISMATCH", label); }
+    if (stat.isSymbolicLink()) fail("DESIGN_SOURCE_CAPTURE_PATH_MISMATCH", label);
+  }
+}
+const capturePath = (sha256) => `${captureRootRelative}/${sha256.slice(0, 2)}/${sha256}`;
+const requiredCaptureSourceIds = Object.freeze(["google-dataflow-autoscaling-metrics-2026-20260512-capture", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-you-might-not-need-effect-b440d66", "react-docs-use-effect-cffb6a7", "hibernate-orm-7.1.35-entities-0a5c369"]);
+const licenseEvidenceUrlBySourceId = Object.freeze({
+  "google-dataflow-autoscaling-metrics-2026-20260512-capture": "https://web.archive.org/web/20260512163401id_/https://docs.cloud.google.com/dataflow/docs/guides/autoscaling-metrics",
+  "microsoft-architecture-center-multitenant-storage-data-09ba725e": "https://github.com/MicrosoftDocs/architecture-center/blob/09ba725ecd84ed23faba2fb47ffcbdfca0a8b6ac/README.md#legal-notices",
+  "react-docs-you-might-not-need-effect-b440d66": "https://github.com/reactjs/react.dev/blob/b440d6698f6e21d56a78b10f625bd23191183588/LICENSE-DOCS.md",
+  "react-docs-use-effect-cffb6a7": "https://github.com/reactjs/react.dev/blob/cffb6a7b7d00fbe09df5b40d1731e1055bff0900/LICENSE-DOCS.md",
+  "hibernate-orm-7.1.35-entities-0a5c369": "https://github.com/hibernate/hibernate-orm/blob/0a5c3695d730f63459e14582aeb1b23075430883/LICENSE.txt"
+});
+function captureFiles(root) {
+  if (!existsSync(root)) fail("DEAD_DESIGN_SOURCE_CAPTURE_ARTIFACT", "capture root missing");
+  const files = [];
+  const walk = (dir) => { for (const name of readdirSync(dir)) { const path = resolve(dir, name); const stat = lstatSync(path); if (stat.isSymbolicLink()) fail("INVALID_DESIGN_SOURCE_CAPTURE", `symlink ${path}`); if (stat.isDirectory()) walk(path); else if (stat.isFile()) files.push(path); else fail("INVALID_DESIGN_SOURCE_CAPTURE", `non-regular artifact ${path}`); } };
+  walk(root); return files;
+}
+function assertCaptures(value, root = repositoryRoot) {
+  const captureRoot = resolve(root, captureRootRelative); const licenseRoot = resolve(root, licenseRootRelative);
+  assertNoCapturePathSymlinks(root, captureRoot, "capture root");
+  if (!lstatSync(captureRoot).isDirectory()) fail("DESIGN_SOURCE_CAPTURE_PATH_MISMATCH", "capture root");
+  const realRoot = realpathSync(captureRoot);
+  const sources = new Map(value.sourceRecords.map((source) => [source.sourceId, source]));
+  const paths = new Set(); const hashes = new Set(); const sourceIds = new Set();
+  if (!Array.isArray(value.sourceCaptures)) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "C16 capture roster");
+  for (const capture of value.sourceCaptures) {
+    if (!capture || capture.captureId !== `design-source-capture:${capture.sha256}` || !/^[a-f0-9]{64}$/.test(capture.sha256) || capture.repositoryPath !== capturePath(capture.sha256) || !Number.isSafeInteger(capture.byteLength) || capture.byteLength < 1 || !["text/html", "text/markdown", "text/asciidoc"].includes(capture.mediaType) || !["http_entity_after_transport_content_decoding", "git_blob_bytes"].includes(capture.byteRepresentation) || !Array.isArray(capture.transformations) || capture.transformations.length) fail("INVALID_DESIGN_SOURCE_CAPTURE", capture?.captureId ?? "record");
+    if (hashes.has(capture.sha256) || paths.has(capture.repositoryPath)) fail("DUPLICATE_DESIGN_SOURCE_CAPTURE", capture.captureId); hashes.add(capture.sha256); paths.add(capture.repositoryPath);
+    if (!Array.isArray(capture.sourceIds) || capture.sourceIds.length !== 1 || [...capture.sourceIds].sort().join("\u0000") !== capture.sourceIds.join("\u0000") || new Set(capture.sourceIds).size !== capture.sourceIds.length) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", capture.captureId);
+    for (const sourceId of capture.sourceIds) { const source = sources.get(sourceId); if (!source || source.fileSha256 !== capture.sha256 || sourceIds.has(sourceId)) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", sourceId); sourceIds.add(sourceId); }
+    const path = resolve(root, capture.repositoryPath); assertNoCapturePathSymlinks(root, path, capture.repositoryPath); if (!isInside(captureRoot, path) || !lstatSync(path).isFile() || !isInside(realRoot, realpathSync(path))) fail("DESIGN_SOURCE_CAPTURE_PATH_MISMATCH", capture.repositoryPath);
+    const bytes = readFileSync(path); if (bytes.length !== capture.byteLength) fail("DESIGN_SOURCE_CAPTURE_BYTE_LENGTH_MISMATCH", capture.captureId); if (createHash("sha256").update(bytes).digest("hex") !== capture.sha256) fail("DESIGN_SOURCE_CAPTURE_SHA256_MISMATCH", capture.captureId);
+    const source = sources.get(capture.sourceIds[0]); const retrieval = capture.retrieval; const isGit = capture.byteRepresentation === "git_blob_bytes";
+    const expectedImmutableVersionUrl = isGit ? `https://github.com/${retrieval?.repository}/blob/${retrieval?.commit}/${retrieval?.path}` : `https://web.archive.org/web/${retrieval?.captureTimestamp}id_/${retrieval?.originalUrl}`;
+    const expectedRetrievalUrl = isGit ? `https://raw.githubusercontent.com/${retrieval?.repository}/${retrieval?.commit}/${retrieval?.path}` : expectedImmutableVersionUrl;
+    if (!retrieval || retrieval.retrievalDate !== "2026-08-13" || (isGit ? retrieval.method !== "raw_git_blob_http_get" || !retrieval.repository || !/^[a-f0-9]{40}$/.test(retrieval.commit ?? "") || !retrieval.path || retrieval.originalUrl !== null || retrieval.captureTimestamp !== null || retrieval.cdxDigest !== null : retrieval.method !== "wayback_exact_capture_http_get" || !/^\d{14}$/.test(retrieval.captureTimestamp ?? "") || !/^[A-Z0-9]{32}$/.test(retrieval.cdxDigest ?? "") || retrieval.originalUrl !== source.canonicalUrl || retrieval.repository !== null || retrieval.commit !== null || retrieval.path !== null) || retrieval.retrievalUrl !== expectedRetrievalUrl || source.immutableVersionUrl !== expectedImmutableVersionUrl || (!isGit && !source.versionContext.includes(retrieval.cdxDigest))) fail("DESIGN_SOURCE_CAPTURE_RETRIEVAL_MISMATCH", capture.captureId);
+    const rights = capture.rights; const licensePath = resolve(root, rights?.licenseTextPath ?? ""); if (!rights || !["CC-BY-4.0", "Apache-2.0"].includes(rights.licenseId) || rights.licenseTextPath !== `${licenseRootRelative}/${rights.licenseId}.txt` || rights.licenseEvidenceUrl !== licenseEvidenceUrlBySourceId[source.sourceId] || !rights.creator?.trim() || !rights.title?.trim() || !rights.canonicalUrl?.startsWith("https://") || rights.canonicalUrl !== source.canonicalUrl || rights.modified !== false || !isInside(licenseRoot, licensePath)) fail("DESIGN_SOURCE_CAPTURE_RIGHTS_MISMATCH", capture.captureId);
+    try { assertNoCapturePathSymlinks(root, licensePath, rights.licenseTextPath); } catch (error) { if (error.code === "DESIGN_SOURCE_CAPTURE_PATH_MISMATCH") fail("DESIGN_SOURCE_CAPTURE_RIGHTS_MISMATCH", capture.captureId); throw error; }
+    if (!lstatSync(licensePath).isFile() || createHash("sha256").update(readFileSync(licensePath)).digest("hex") !== rights.licenseTextSha256) fail("DESIGN_SOURCE_CAPTURE_RIGHTS_MISMATCH", capture.captureId);
+  }
+  if (value.sourceCaptures.length !== requiredCaptureSourceIds.length) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "C16 capture roster");
+  if (!sameSet(sourceIds, new Set(requiredCaptureSourceIds))) fail("UNBOUND_DESIGN_SOURCE_CAPTURE", "exact C16 capture sources");
+  const actual = new Set(captureFiles(captureRoot).map((path) => relative(root, path))); if (!sameSet(actual, paths)) fail("DEAD_DESIGN_SOURCE_CAPTURE_ARTIFACT", "orphan or missing artifact");
+}
 const slotFingerprint = (slot) => fingerprint({ trackId: slot.trackId, nodeId: slot.nodeId, blockId: slot.blockId, coverageTargetId: slot.coverageTargetId, directSkillOrDecisionAtomId: slot.directSkillOrDecisionAtomId, expectedOutcome: slot.expectedOutcome, decisiveBoundary: slot.decisiveBoundary, transferBoundary: slot.transferBoundary, materialEvidenceOrConstraintChanged: slot.materialEvidenceOrConstraintChanged });
 
 function closed(schema, path = "schema") { if (!schema || typeof schema !== "object") return; if (schema.type === "object" && schema.additionalProperties !== false) fail("INVALID_DESIGN_SCHEMA_CONTRACT", path); if (schema.properties) Object.entries(schema.properties).forEach(([key, value]) => closed(value, `${path}.${key}`)); if (schema.items) closed(schema.items, `${path}[]`); }
-function assertRegistry(value = registry) {
+function assertRegistry(value = registry, { repositoryRoot: root = repositoryRoot } = {}) {
   closed(registrySchema, "registry schema");
   for (const key of registrySchema.required) if (!Object.hasOwn(value, key)) fail("INVALID_DESIGN_SOURCE_REGISTRY", `missing ${key}`);
   if (Object.keys(value).some((key) => !Object.hasOwn(registrySchema.properties, key))) fail("INVALID_DESIGN_SOURCE_REGISTRY", "undeclared root field");
   const payload = { ...value }; delete payload.registryFingerprintSha256;
   if (fingerprint(payload) !== value.registryFingerprintSha256) fail("DESIGN_SOURCE_REGISTRY_FINGERPRINT_MISMATCH", "registry identity drift");
+  if (value.schemaVersion !== "design-interview-source-registry-v2" || value.registryVersion !== "2026.08.13" || value.checkedDate !== "2026-08-13" || value.familyId !== "design_interview") fail("INVALID_DESIGN_SOURCE_REGISTRY", "v2 root identity");
+  const captureRecordsChanged = digest(value.sourceCaptures) !== digest(registry.sourceCaptures);
+  if (captureRecordsChanged) assertCaptures(value, root);
   if (value.trustRootSha256 !== DESIGN_TRUST_ROOT_SHA256 || digest(trustRoot(value)) !== DESIGN_TRUST_ROOT_SHA256) fail("DESIGN_SOURCE_TRUST_ROOT_MISMATCH", "frozen source, anchor, claim, or binding roster drift");
   for (const collection of [value.sourceRecords, value.anchorRecords, value.claims, value.slotBindings]) if (!Array.isArray(collection) || !collection.length) fail("INVALID_DESIGN_SOURCE_REGISTRY", "empty collection");
   unique(value.sourceRecords.map((x) => x.sourceId), "registry source IDs"); unique(value.anchorRecords.map((x) => x.anchorId), "registry anchor IDs"); unique(value.claims.map((x) => x.claimId), "registry claim IDs"); unique(value.slotBindings.map((x) => x.bindingId), "registry binding IDs"); unique(value.slotBindings.map((x) => x.slotId), "registry binding slot IDs");
@@ -70,6 +132,7 @@ function assertRegistry(value = registry) {
   }
   if (usedAnchors.size !== anchors.size || usedSources.size !== sources.size || value.claims.some((claim) => !value.anchorRecords.some((anchor) => anchor.claimIds.includes(claim.claimId)))) fail("DEAD_DESIGN_SOURCE_INVENTORY", "unbound source, anchor, or claim");
   if (value.sourceRecords.length !== 49 || value.anchorRecords.length !== 171 || value.claims.length !== 133 || value.slotBindings.length !== 143) fail("INVALID_DESIGN_SOURCE_REGISTRY_TOTAL", "round-sixteen derived totals");
+  assertCaptures(value, root);
   return value;
 }
 export function validateDesignInterviewFamilyConfig(value = family) {

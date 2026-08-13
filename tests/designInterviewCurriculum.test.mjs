@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
+import { cpSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { loadCurricula } from "../scripts/curriculum/curricula.mjs";
 import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
 import { validateDesignInterviewCurriculum, validateDesignInterviewFamilyConfig, validateDesignInterviewSourceRegistry } from "../scripts/curriculum/design-interview-curricula.mjs";
@@ -14,6 +18,57 @@ const validate = (value) => validateDesignInterviewCurriculum(value, { brief: br
 const rehashRegistry = (value) => { const payload = { ...value }; delete payload.registryFingerprintSha256; value.registryFingerprintSha256 = createHash("sha256").update(JSON.stringify(payload)).digest("hex"); };
 const canonical = (value) => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object" ? `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}` : JSON.stringify(value);
 const rehashFamily = (value) => createHash("sha256").update(canonical(value)).digest("hex");
+
+test("C16 source captures recompute offline and reject byte, capture, and artifact tampering", () => {
+  const root = mkdtempSync(join(tmpdir(), "patternly-design-captures-"));
+  try {
+    const capturesRoot = join(root, "evidence/design-interview/source-captures");
+    mkdirSync(dirname(capturesRoot), { recursive: true });
+    cpSync("evidence/design-interview/source-captures", capturesRoot, { recursive: true, dereference: false });
+    validateDesignInterviewSourceRegistry(registry, { repositoryRoot: root });
+    assert.deepEqual(registry.sourceCaptures.map((capture) => capture.sourceIds[0]).sort(), ["google-dataflow-autoscaling-metrics-2026-20260512-capture", "hibernate-orm-7.1.35-entities-0a5c369", "microsoft-architecture-center-multitenant-storage-data-09ba725e", "react-docs-use-effect-cffb6a7", "react-docs-you-might-not-need-effect-b440d66"]);
+    const tampered = registry.sourceCaptures[0]; const artifact = join(root, tampered.repositoryPath); const bytes = readFileSync(artifact); bytes[0] ^= 1; writeFileSync(artifact, bytes);
+    assert.throws(() => validateDesignInterviewSourceRegistry(registry, { repositoryRoot: root }), /DESIGN_SOURCE_CAPTURE_SHA256_MISMATCH/);
+    writeFileSync(artifact, readFileSync(tampered.repositoryPath));
+    const badLength = structuredClone(registry); badLength.sourceCaptures[0].byteLength--; rehashRegistry(badLength);
+    assert.throws(() => validateDesignInterviewSourceRegistry(badLength, { repositoryRoot: root }), /DESIGN_SOURCE_CAPTURE_BYTE_LENGTH_MISMATCH/);
+    writeFileSync(join(root, "evidence/design-interview/source-captures/sha256/74/orphan"), "orphan");
+    assert.throws(() => validateDesignInterviewSourceRegistry(registry, { repositoryRoot: root }), /DEAD_DESIGN_SOURCE_CAPTURE_ARTIFACT/);
+    const injected = structuredClone(registry); injected.sourceCaptures[0].sourceIds.push("w3c-wcag-2.2-rec-2024"); rehashRegistry(injected);
+    assert.throws(() => validateDesignInterviewSourceRegistry(injected, { repositoryRoot: root }), /UNBOUND_DESIGN_SOURCE_CAPTURE/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("C16 capture gates reject rehashed identity, membership, retrieval, rights, and path-component symlink attacks", () => {
+  for (const mutate of [
+    (value) => { value.schemaVersion = "design-interview-source-registry-v1"; },
+    (value) => { value.registryVersion = "2026.08.12"; },
+    (value) => { value.checkedDate = "2026-08-12"; }
+  ]) {
+    const copy = structuredClone(registry); mutate(copy); rehashRegistry(copy);
+    assert.throws(() => validateDesignInterviewSourceRegistry(copy), /INVALID_DESIGN_SOURCE_REGISTRY/);
+  }
+  const duplicateMembership = structuredClone(registry); duplicateMembership.sourceCaptures[0].sourceIds.push(duplicateMembership.sourceCaptures[0].sourceIds[0]); rehashRegistry(duplicateMembership);
+  assert.throws(() => validateDesignInterviewSourceRegistry(duplicateMembership), /UNBOUND_DESIGN_SOURCE_CAPTURE/);
+  const duplicateCapture = structuredClone(registry); duplicateCapture.sourceCaptures.push(structuredClone(duplicateCapture.sourceCaptures[0])); rehashRegistry(duplicateCapture);
+  assert.throws(() => validateDesignInterviewSourceRegistry(duplicateCapture), /DUPLICATE_DESIGN_SOURCE_CAPTURE/);
+  const wrongRetrieval = structuredClone(registry); wrongRetrieval.sourceCaptures[1].retrieval.retrievalUrl = "https://raw.githubusercontent.com/MicrosoftDocs/architecture-center/main/docs/guide/multitenant/approaches/storage-data.md"; rehashRegistry(wrongRetrieval);
+  assert.throws(() => validateDesignInterviewSourceRegistry(wrongRetrieval), /DESIGN_SOURCE_CAPTURE_RETRIEVAL_MISMATCH/);
+  const wrongRights = structuredClone(registry); wrongRights.sourceCaptures[0].rights.licenseEvidenceUrl = "https://example.test/license"; rehashRegistry(wrongRights);
+  assert.throws(() => validateDesignInterviewSourceRegistry(wrongRights), /DESIGN_SOURCE_CAPTURE_RIGHTS_MISMATCH/);
+  const root = mkdtempSync(join(tmpdir(), "patternly-design-capture-root-link-"));
+  try {
+    const captureRoot = join(root, "evidence/design-interview/source-captures"); mkdirSync(captureRoot, { recursive: true });
+    symlinkSync(join(process.cwd(), "evidence/design-interview/source-captures/sha256"), join(captureRoot, "sha256"), "dir");
+    assert.throws(() => validateDesignInterviewSourceRegistry(registry, { repositoryRoot: root }), /DESIGN_SOURCE_CAPTURE_PATH_MISMATCH/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+  const parentLinkRoot = mkdtempSync(join(tmpdir(), "patternly-design-capture-parent-link-"));
+  try {
+    const parent = join(parentLinkRoot, "evidence/design-interview"); mkdirSync(parent, { recursive: true });
+    symlinkSync(join(process.cwd(), "evidence/design-interview/source-captures"), join(parent, "source-captures"), "dir");
+    assert.throws(() => validateDesignInterviewSourceRegistry(registry, { repositoryRoot: parentLinkRoot }), /DESIGN_SOURCE_CAPTURE_PATH_MISMATCH/);
+  } finally { rmSync(parentLinkRoot, { recursive: true, force: true }); }
+});
 
 test("Design central provenance reconciles 143 direct slots, 27 authoring-feasible slots, 116 deferred slots, and 180 blocked", () => {
   validateDesignInterviewSourceRegistry(registry);

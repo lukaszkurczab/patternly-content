@@ -1,11 +1,12 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { buildManifest, canonicalJson, ROOT } from "./lib/model.mjs";
+import { dirname, join, resolve } from "node:path";
+import { buildManifest, ROOT } from "./lib/model.mjs";
 import { validateManifest } from "./lib/contracts.mjs";
 
 const write = process.argv.includes("--write");
 const regenerate = process.argv.includes("--regenerate");
-const result = await buildManifest(ROOT, { generatedAt: process.env.AUTHORING_AUDIT_DATE ?? new Date().toISOString().slice(0, 10) });
+const scaffoldRoot = resolve(process.env.AUTHORING_ROOT ?? ROOT);
+const result = await buildManifest(scaffoldRoot, { generatedAt: process.env.AUTHORING_AUDIT_DATE ?? new Date().toISOString().slice(0, 10) });
 validateManifest(result.manifest, result.model);
 
 function brief(track, block) {
@@ -28,7 +29,7 @@ if (!write) {
 for (const track of result.manifest.tracks) {
   const blocks = track.learningBlocks.filter((entry) => entry.plannedAuthoringBriefPath);
   if (!blocks.length) continue;
-  const trackRoot = join(ROOT, "manual", "source", track.trackId);
+  const trackRoot = join(scaffoldRoot, "manual", "source", track.trackId);
   await mkdir(trackRoot, { recursive: true });
   await writeFile(join(trackRoot, "README.md"), readme(track));
   const nodes = [...new Set(blocks.map((block) => block.nodeId))];
@@ -38,7 +39,7 @@ for (const track of result.manifest.tracks) {
     await writeFile(join(nodeRoot, "README.md"), `# ${track.trackId} / ${nodeId}\n\nLearning-block authoring briefs below this node are generated from the canonical scaffold manifest.\n`);
   }
   for (const block of blocks) {
-    const target = join(ROOT, block.plannedAuthoringBriefPath);
+    const target = join(scaffoldRoot, block.plannedAuthoringBriefPath);
     const content = brief(track, block);
     try {
       const existing = await readFile(target, "utf8");

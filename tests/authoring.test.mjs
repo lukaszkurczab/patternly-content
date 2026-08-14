@@ -1,10 +1,47 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
+import { dirname, join, relative } from "node:path";
+import { promisify } from "node:util";
 import test from "node:test";
 import { buildManifest, canonicalJson, ROOT, AuthoringFailure } from "../scripts/authoring/lib/model.mjs";
 import { validateAuthoringContracts, validateManualBatch } from "../scripts/authoring/lib/contracts.mjs";
 
 const fixed = { generatedAt: "2026-08-14", startingSha: "bde084111a66a1e08e94dcec9c9871c3af666ccb" };
+const runFile = promisify(execFile);
+
+async function copyFixture() {
+  const fixture = await mkdtemp(join(tmpdir(), "patternly-authoring-scaffold-"));
+  for (const sourcePath of ["config", "docs/track-briefs", "manual", "schemas"]) {
+    const targetPath = join(fixture, sourcePath);
+    await mkdir(dirname(targetPath), { recursive: true });
+    await cp(join(ROOT, sourcePath), targetPath, { recursive: true });
+  }
+  await runFile("git", ["init", "-q"], { cwd: fixture });
+  await runFile("git", ["-c", "user.name=Patternly fixture", "-c", "user.email=fixture@example.com", "commit", "--allow-empty", "-m", "fixture"], { cwd: fixture });
+  return fixture;
+}
+
+async function snapshotFiles(root, current = root, result = {}) {
+  for (const entry of (await readdir(current, { withFileTypes: true })).sort((left, right) => left.name.localeCompare(right.name))) {
+    if (entry.name === ".git") continue;
+    const path = join(current, entry.name);
+    if (entry.isDirectory()) await snapshotFiles(root, path, result);
+    else result[relative(root, path)] = createHash("sha256").update(await readFile(path)).digest("hex");
+  }
+  return result;
+}
+
+async function runScaffold(fixture, args = []) {
+  try {
+    const output = await runFile(process.execPath, [join(ROOT, "scripts/authoring/scaffold.mjs"), ...args], { cwd: ROOT, env: { ...process.env, AUTHORING_ROOT: fixture, AUTHORING_AUDIT_DATE: "2026-08-14" }, maxBuffer: 4 * 1024 * 1024 });
+    return { status: 0, stdout: output.stdout, stderr: output.stderr };
+  } catch (error) {
+    return { status: Number(error.code) || 1, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
+  }
+}
 
 function itemFor(track, slot, familyId) {
   const isCertification = familyId === "certification";
@@ -51,10 +88,17 @@ function batchFor(result, familyId) {
 test("authoring catalogue covers ten tracks and derives current counts", async () => {
   const result = await validateAuthoringContracts(ROOT);
   assert.equal(result.manifest.trackCount, 10);
-  assert.equal(result.manifest.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving").plannedFutureSourceFileCount, 213);
-  assert.equal(result.manifest.tracks.filter((track) => track.familyId === "certification").reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0), 1931);
-  assert.deepEqual(result.manifest.tracks.filter((track) => track.familyId === "design_interview").map((track) => track.authoringAdmittedItemCount).sort((a, b) => a - b), [8, 9, 10]);
-  assert.equal(result.manifest.tracks.filter((track) => track.familyId === "design_interview").reduce((sum, track) => sum + track.blockedItemCount, 0), 296);
+  for (const track of result.manifest.tracks) {
+    assert.equal(track.existingVerifiedItemCount + track.authoringAdmittedItemCount + track.blockedItemCount, track.plannedItemCount, track.trackId);
+    assert.equal(track.plannedItemCount - track.existingVerifiedItemCount, track.remainingItemCount, track.trackId);
+    assert.equal(track.learningBlocks.reduce((sum, block) => sum + block.plannedItemCount, 0), track.plannedItemCount, track.trackId);
+  }
+  const coding = result.manifest.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving");
+  assert.equal(coding.plannedFutureSourceFileCount, result.sourceHashes.filter((entry) => entry.path.startsWith("manual/source/coding-interview-dsa-problem-solving/")).length);
+  const certification = result.manifest.tracks.filter((track) => track.familyId === "certification");
+  assert.equal(certification.reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0), certification.reduce((sum, track) => sum + track.plannedItemCount, 0));
+  const design = result.manifest.tracks.filter((track) => track.familyId === "design_interview");
+  assert.equal(design.reduce((sum, track) => sum + track.authoringAdmittedItemCount + track.blockedItemCount, 0), design.reduce((sum, track) => sum + track.plannedItemCount, 0));
 });
 
 test("Certification and Design authoring batches validate their exact slot, source, feedback, and mode contracts", async () => {
@@ -98,4 +142,41 @@ test("planning is byte-deterministic and the runtime publisher has explicit fami
   assert.match(pipeline, /UNSUPPORTED_RUNTIME_FAMILY/);
   assert.match(pipeline, /design_interview/);
   assert.doesNotMatch(pipeline, /familyId === "coding_interview" \? "coding-interview-manual-source\.schema\.json" : "certification-manual-source\.schema\.json"/);
+});
+
+test("scaffold dry-run is read-only and isolated write mode is idempotent with drift protection", async () => {
+  const fixture = await copyFixture();
+  try {
+    const before = await snapshotFiles(fixture);
+    const dryRun = await runScaffold(fixture);
+    assert.equal(dryRun.status, 0, dryRun.stderr);
+    assert.match(dryRun.stdout, /DRY_RUN_NO_WRITES/);
+    assert.deepEqual(await snapshotFiles(fixture), before);
+
+    const firstWrite = await runScaffold(fixture, ["--write"]);
+    assert.equal(firstWrite.status, 0, firstWrite.stderr);
+    const afterFirstWrite = await snapshotFiles(fixture);
+    const created = Object.keys(afterFirstWrite).filter((path) => !Object.hasOwn(before, path));
+    assert.ok(created.length > 0);
+    assert.ok(created.every((path) => path.startsWith("manual/source/") && (path.endsWith("README.md") || path.endsWith(".authoring.md"))), created.join("\n"));
+    assert.equal(created.some((path) => path.endsWith(".json")), false);
+    assert.deepEqual(Object.keys(afterFirstWrite).filter((path) => path.startsWith("manual/source/") && path.endsWith(".json")), Object.keys(before).filter((path) => path.startsWith("manual/source/") && path.endsWith(".json")));
+
+    const secondWrite = await runScaffold(fixture, ["--write"]);
+    assert.equal(secondWrite.status, 0, secondWrite.stderr);
+    assert.deepEqual(await snapshotFiles(fixture), afterFirstWrite);
+
+    const briefPath = created.find((path) => path.endsWith(".authoring.md"));
+    assert.ok(briefPath);
+    await writeFile(join(fixture, briefPath), `${await readFile(join(fixture, briefPath), "utf8")}\nDRIFT\n`);
+    const drift = await runScaffold(fixture, ["--write"]);
+    assert.notEqual(drift.status, 0);
+    assert.match(`${drift.stdout}\n${drift.stderr}`, /AUTHORING_BRIEF_DRIFT/);
+
+    const regenerated = await runScaffold(fixture, ["--write", "--regenerate"]);
+    assert.equal(regenerated.status, 0, regenerated.stderr);
+    assert.deepEqual(await snapshotFiles(fixture), afterFirstWrite);
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
 });

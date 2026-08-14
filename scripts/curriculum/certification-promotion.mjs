@@ -119,7 +119,8 @@ export function buildCertificationAuthoringBacklog(curricula) {
     }
   }
   const ids = batches.flatMap((batch) => batch.slotIds);
-  if (ids.length !== 1931 || !sameSet([...ids].sort(), curricula.flatMap((curriculum) => curriculum.slots.map((slot) => slot.slotId)).sort())) fail("CERTIFICATION_PROMOTION_BACKLOG_PARTITION", "all canonical slots must appear once");
+  const canonicalSlotIds = curricula.flatMap((curriculum) => curriculum.slots.map((slot) => slot.slotId));
+  if (ids.length !== canonicalSlotIds.length || !sameSet([...ids].sort(), canonicalSlotIds.sort())) fail("CERTIFICATION_PROMOTION_BACKLOG_PARTITION", "all canonical slots must appear once");
   return batches;
 }
 

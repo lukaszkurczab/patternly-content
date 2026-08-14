@@ -53,6 +53,11 @@ function catalogueCurrent(manifest) {
 }
 
 function ownerQuickCheck(manifest, generatedOutputFingerprint) {
+  const certificationSlots = manifest.tracks.filter((track) => track.familyId === "certification").reduce((sum, track) => sum + track.plannedItemCount, 0);
+  const designTracks = manifest.tracks.filter((track) => track.familyId === "design_interview");
+  const designAdmitted = designTracks.reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0);
+  const designBlocked = designTracks.reduce((sum, track) => sum + track.blockedItemCount, 0);
+  const designRoster = designTracks.map((track) => `${track.trackId}=${track.authoringAdmittedItemCount}`).join(", ");
   const lines = [
     "# Patternly authoring gate quick check",
     "",
@@ -80,8 +85,8 @@ function ownerQuickCheck(manifest, generatedOutputFingerprint) {
     "",
     "## Feasibility and blocks",
     "",
-    "- Certification: all 1,931 current slots are exact-direct, choice-authoring admitted; runtime/publication remains not admitted and no global 50-question runtime assumption is introduced.",
-    "- Design Interview: only the canonical exact-direct 8/10/9 roster is authoring admitted. The remaining 296 slots are blocked/deferred by the current authoring roster, source evidence, or interaction contract; no case/simulation semantics are represented as choice content.",
+    `- Certification: all ${certificationSlots} current slots are exact-direct, choice-authoring admitted; runtime/publication remains not admitted and no global 50-question runtime assumption is introduced.`,
+    `- Design Interview: the canonical exact-direct roster is authoring admitted (${designRoster}; ${designAdmitted} slots total). The remaining ${designBlocked} slots are blocked/deferred by the current authoring roster, source evidence, or interaction contract; no case/simulation semantics are represented as choice content.`,
     "- Coding Interview: existing 213 source files and their 2,375 verified items are preserved; remaining authoring extends the existing canonical layout only after separate review.",
     "- Interaction anomaly: all admitted Certification and Design slots are choice; blocked Design case/simulation modes remain unavailable.",
     "",
@@ -133,6 +138,7 @@ function nextTask(manifest) {
 async function audit() {
   const result = await validateAuthoringContracts(ROOT);
   validateManifest(result.manifest, result.model);
+  const certificationSlotCount = result.manifest.tracks.filter((track) => track.familyId === "certification").reduce((sum, track) => sum + track.plannedItemCount, 0);
   const directory = outputDirectory(result.manifest);
   await mkdir(directory, { recursive: true });
   const facts = {
@@ -147,7 +153,7 @@ async function audit() {
       "The current families are coding_interview, certification, and design_interview.",
       "Only Coding Interview has real manual source JSON and an active config/tracks runtime registration.",
       "Certification and Design Interview are not runtime/publication admitted by this task.",
-      "Design authoring admission is the exact-direct 8/10/9 roster from the canonical family handoffs."
+      "Design authoring admission is the exact-direct roster derived from the canonical family handoffs."
     ],
     correctedAssumptions: [
       "The stale Coding Interview README claim that no question bank exists is false because 213 real source JSON files exist.",
@@ -155,7 +161,7 @@ async function audit() {
       "Design Interview source readiness is not productive case or simulation readiness."
     ],
     correctedCanonicalDefects: [
-      "Certification slots declared choice interaction without a selection model; all 1,931 current slots now explicitly declare single selection and have recomputed content fingerprints."
+      `Certification slots declared choice interaction without a selection model; all ${certificationSlotCount} current slots now explicitly declare single selection and have recomputed content fingerprints.`
     ],
     auditInputFingerprint: result.auditInputFingerprint,
     generatedOutputFingerprint: result.generatedOutputFingerprint,

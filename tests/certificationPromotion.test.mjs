@@ -15,10 +15,11 @@ const recomputeContentFingerprint = (curriculum) => { const { promotionProvenanc
 
 test("Stage04 promotion validates the exact six direct certification configs and partitions every slot", () => {
   const result = validateCertificationPromotion(curricula, registries);
+  const expectedSlotCount = curricula.reduce((sum, curriculum) => sum + curriculum.slots.length, 0);
   assert.equal(result.trackCount, 6);
-  assert.equal(result.slotCount, 1931);
+  assert.equal(result.slotCount, expectedSlotCount);
   assert.deepEqual(result.firstSafeBatch.slotIds, firstSafeSlotIds);
-  assert.equal(result.authoringBatches.flatMap((batch) => batch.slotIds).length, 1931);
+  assert.equal(result.authoringBatches.flatMap((batch) => batch.slotIds).length, expectedSlotCount);
 });
 
 test("Stage04 promotion rejects a duplicate semantic identity across tracks", () => {

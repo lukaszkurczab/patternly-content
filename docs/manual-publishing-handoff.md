@@ -1,10 +1,22 @@
 # Manual content publishing handoff
 
+## Authoring and publication boundaries
+
+Patternly has three authoring families: `coding_interview`, `certification`, and `design_interview`. Authoring readiness means that a slot has a canonical curriculum binding, interaction and feedback contract, exact provenance requirement, deterministic future source path, and human-review handoff. It does not mean human approval, runtime publication, package readiness, release admission, or production activation.
+
+Every new batch is manual and unapproved until a human technical/editorial review record exists. Structural validation never creates approval identities or activates content.
+
+The canonical authoring registry is under `config/authoring/`. It references curricula, briefs, family schemas, taxonomies, source registries, and mode/exam profiles without copying slot or count data. The current evidence and machine-readable plan are under `evidence/authoring/YYYY.MM.DD-<short-starting-sha>/`.
+
 ## Canonical manual ingress
 
-- Coding Interview batches: `manual/source/coding-interview-dsa-problem-solving/*.json`, conforming to `schemas/publishing/coding-interview-manual-source.schema.json`.
+- Coding Interview batches: `manual/source/coding-interview-dsa-problem-solving/**/*.json`, conforming to `schemas/publishing/coding-interview-manual-source.schema.json`. The existing layout and source bytes remain canonical.
+- Certification batches: `manual/source/<trackId>/<nodeId>/<learningBlockId>.json`, conforming to `schemas/publishing/certification-manual-source.schema.json`. One batch binds exactly one track, node, and learning block and contains the complete authoring-admitted slot set for that block.
+- Design Interview batches: `manual/source/<trackId>/<nodeId>/<learningBlockId>.json`, conforming to `schemas/publishing/design-interview-manual-source.schema.json`. Only exact-direct source-bound choice slots are admitted; blocked case and simulation semantics remain absent.
 
 Test fixtures, generated artifacts, and releases are never discovery roots. Moving existing question files is `MANUAL ONLY`; no pipeline command migrates, copies, or reads them.
+
+The scaffold command never creates source JSON. `npm run authoring:scaffold` is a dry run; `npm run authoring:scaffold -- --write` creates only track/node directories, README files, and generated `.authoring.md` sidecars. A second write is idempotent, and drift is a hard stop unless `--regenerate` is explicit. Empty, placeholder, or synthetic learner-source JSON is forbidden.
 
 ## Technical evidence contract
 
@@ -16,11 +28,21 @@ An Coding Interview batch carries its batch ID, version identity, batch taxonomy
 
 Every Coding Interview item has one primary skill atom, de-duplicated secondary skill atoms, learning stage, explicit interaction and scoring contract, authored Reason/Details, and external source overrides when a claim is version- or policy-dependent. Optional `constraints` is a non-empty list of strings and optional `difficulty` is a non-empty string; both compile directly to the application item contract. The publisher resolves the full taxonomy and provenance on every published item. It never infers either from a file name, path, item ID, or prompt.
 
-The checked-in Coding Interview taxonomy has deliberately not been expanded with invented mental-unit, family, variant, archetype, skill-atom, or heuristic mappings. Before real source is added, a human owner must provide the complete versioned taxonomy manifest required by the source contract; this is `MANUAL ONLY` and is not replaced with inferred mappings.
+The checked-in Coding Interview taxonomy and 213 source batches are canonical and schema-validated. Any new batch must provide the complete versioned taxonomy manifest required by the source contract; this remains `MANUAL ONLY` and is never replaced with inferred mappings.
 
 The only Coding Interview mode IDs are `coding-interview-learn-approach`, `coding-interview-guided-practice`, `coding-interview-recognize-patterns`, `coding-interview-contrast-practice`, `coding-interview-weak-area-review`, `coding-interview-independent-practice`, and `coding-interview-simulation`. The six practice blueprints and the fixed-40 simulation blueprint are owned only by `config/tracks/coding-interview-dsa-problem-solving.json`; source batches do not own mode blueprints. Recognition sets, contrast sets, interleaved scopes, compatibility sets, simulation pools, and simulation profiles remain explicit source structures. A declared mode is content-ready only when its track blueprint meets its `minimumActualLength`; bank-wide item count is not evidence. Interview Simulation uses one declared pool/profile and deterministic `sha256-ranked-constraints-v1` selection of exactly 40 unique items without replacement.
 
 ## Commands and hard stops
+
+```text
+npm run authoring:validate
+npm run authoring:plan
+npm run authoring:audit
+npm run authoring:scaffold
+npm run authoring:scaffold -- --write
+```
+
+These authoring commands do not approve, activate, build, or publish any track. Certification and Design Interview currently have no runtime registrations and no immutable artifact build. The existing runtime publisher remains explicit: Coding Interview and its existing Certification/GCP compiler are separate from the authoring contracts; Design Interview never falls through to Certification validation.
 
 ```text
 npm test

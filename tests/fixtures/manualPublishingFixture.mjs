@@ -12,6 +12,27 @@ async function copyPublishingSchemas(root) {
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, value);
   }
+  // The certification publisher tests exercise the historical GCP runtime compiler
+  // in an isolated fixture repository. Production manual/source certification
+  // ingress is the v2 authoring contract; this fixture keeps its runtime-only v1
+  // envelope explicit and out of the production repository.
+  await writeFile(join(root, "schemas", "publishing", "certification-manual-source.schema.json"), `${JSON.stringify({
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "certification-runtime-fixture-source-v1",
+    type: "object",
+    additionalProperties: false,
+    required: ["schemaVersion", "batchId", "trackId", "familyId", "contentVersion", "taxonomyVersion", "declaredModes", "items"],
+    properties: {
+      schemaVersion: { const: "certification-manual-source-v1" },
+      batchId: { type: "string", minLength: 1 },
+      trackId: { type: "string", minLength: 1 },
+      familyId: { const: "certification" },
+      contentVersion: { type: "string", minLength: 1 },
+      taxonomyVersion: { type: "string", minLength: 1 },
+      declaredModes: { type: "array", minItems: 1 },
+      items: { type: "array", minItems: 1 }
+    }
+  }, null, 2)}\n`);
 }
 async function copyAlgorithmsFeedbackAssets(root) {
   for (const name of ["feedback-assets.json", "complexity-linear-vs-nested.svg"]) {

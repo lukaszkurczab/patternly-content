@@ -113,8 +113,8 @@ test("authoring catalogue covers ten tracks and derives current counts", async (
   const coding = result.manifest.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving");
   assert.equal(coding.plannedFutureSourceFileCount, result.sourceHashes.filter((entry) => entry.path.startsWith("manual/source/coding-interview-dsa-problem-solving/")).length);
   const certification = result.manifest.tracks.filter((track) => track.familyId === "certification");
-  assert.equal(certification.reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0), 0);
-  assert.equal(certification.reduce((sum, track) => sum + track.blockedItemCount, 0), certification.reduce((sum, track) => sum + track.plannedItemCount, 0));
+  assert.equal(certification.reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0), 752);
+  assert.equal(certification.reduce((sum, track) => sum + track.blockedItemCount, 0), certification.reduce((sum, track) => sum + track.plannedItemCount, 0) - 752);
   const design = result.manifest.tracks.filter((track) => track.familyId === "design_interview");
   assert.equal(design.reduce((sum, track) => sum + track.authoringAdmittedItemCount + track.blockedItemCount, 0), design.reduce((sum, track) => sum + track.plannedItemCount, 0));
 });
@@ -161,8 +161,10 @@ test("path validation and version identity reject drift from the canonical block
 test("strict source provenance blocks generic Certification evidence and preserves direct Design admission", async () => {
   const result = await buildManifest(ROOT, fixed);
   const certification = result.manifest.tracks.filter((track) => track.familyId === "certification");
-  assert.equal(certification.reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0), 0);
-  assert.ok(certification.every((track) => track.slots.every((slot) => slot.sourceStatus === "blocked" && slot.sourceBinding === null)));
+  const ai901 = certification.find((track) => track.trackId === "microsoft-azure-ai-fundamentals-ai-901");
+  assert.equal(ai901.authoringAdmittedItemCount, 752);
+  assert.ok(ai901.slots.every((slot) => slot.authoringAdmitted && slot.sourceStatus === "exact_direct" && slot.sourceBinding));
+  assert.ok(certification.filter((track) => track !== ai901).every((track) => track.slots.every((slot) => slot.sourceStatus === "blocked" && slot.sourceBinding === null)));
   const design = batchFor(result, "design_interview");
   const altered = structuredClone(design); altered.items[0].sourceBinding.anchorIds = ["indirect-anchor"];
   await assert.rejects(() => validateManualBatch(ROOT, altered, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "SOURCE_BINDING_MISMATCH");
@@ -172,7 +174,9 @@ test("manifest priority is semantic and selects one explicit first real batch", 
   const result = await buildManifest(ROOT, fixed);
   assert.equal(result.manifest.gateResult, "READY_FOR_FIRST_REAL_BOUNDED_AUTHORING_BATCH");
   const first = result.manifest.firstRealAuthoringBatch;
-  assert.equal(first.trackId, "frontend-system-design-interview");
+  assert.equal(first.trackId, "microsoft-azure-ai-fundamentals-ai-901");
+  assert.equal(first.learningBlockId, "AI901-N01-B01");
+  assert.equal(first.authoringAdmittedItemCount, 12);
   assert.equal(first.priorityTier, "T1");
   assert.equal(first.slotIds.length, first.authoringAdmittedItemCount);
   const admitted = result.manifest.tracks.flatMap((track) => track.learningBlocks.filter((block) => block.authoringAdmittedItemCount > 0));

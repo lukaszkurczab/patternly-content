@@ -374,7 +374,7 @@ export async function buildTrackPlan(root, track, model) {
 
 export async function buildManifest(root = ROOT, options = {}) {
   const generatedAt = options.generatedAt ?? process.env.AUTHORING_AUDIT_DATE ?? new Date().toISOString().slice(0, 10);
-  const startingSha = options.startingSha ?? await gitSha(root);
+  const startingSha = options.startingSha ?? process.env.AUTHORING_STARTING_SHA ?? await gitSha(root);
   const repositorySha = await gitSha(root);
   const model = await loadAuthoringModel(root);
   const tracks = [];

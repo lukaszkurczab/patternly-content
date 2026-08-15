@@ -307,14 +307,16 @@ export async function buildTrackPlan(root, track, model) {
     const remainingItemCount = Math.max(0, plannedItemCount - existingVerifiedItemCount);
     const admitted = slots.some((slot) => slot.authoringAdmitted);
     const action = track.familyId === "coding_interview" ? existingVerifiedItemCount && remainingItemCount ? "extend_existing_after_separate_review" : "preserve_existing" : admitted ? "create_authoring_brief" : "blocked_source";
+    const blockAuthoringAdmittedItemCount = track.familyId === "coding_interview" ? remainingItemCount : slots.reduce((sum, slot) => sum + slot.authoringAdmittedItemCount, 0);
+    const blockBlockedItemCount = track.familyId === "coding_interview" ? 0 : slots.reduce((sum, slot) => sum + slot.blockedItemCount, 0);
     const blockPlan = {
       nodeId: block.nodeId,
       learningBlockId: block.blockId,
       plannedItemCount,
       existingVerifiedItemCount,
       remainingItemCount,
-      authoringAdmittedItemCount: slots.reduce((sum, slot) => sum + slot.authoringAdmittedItemCount, 0),
-      blockedItemCount: slots.reduce((sum, slot) => sum + slot.blockedItemCount, 0),
+      authoringAdmittedItemCount: blockAuthoringAdmittedItemCount,
+      blockedItemCount: blockBlockedItemCount,
       plannedSourcePath: sourcePaths[0] ?? null,
       sourcePaths: sorted(sourcePaths),
       plannedAuthoringBriefPath: admitted && track.familyId !== "coding_interview" ? `manual/source/${track.trackId}/${block.nodeId}/${block.blockId}.authoring.md` : null,
@@ -353,8 +355,8 @@ export async function buildTrackPlan(root, track, model) {
     plannedLearningBlockCount: normalized.blocks.length,
     plannedFutureSourceFileCount: sourcePaths.length,
     existingSourceFileCount: codingIndex.paths.length,
-    sourceReadyBlockCount: learningBlocks.filter((block) => block.authoringAdmittedItemCount > 0).length,
-    freeNodeSourceReadyBlockCount: learningBlocks.filter((block) => block.authoringAdmittedItemCount > 0 && block.isFreeNode).length,
+    sourceReadyBlockCount: learningBlocks.filter((block) => track.familyId === "coding_interview" ? block.sourcePaths.length > 0 : block.authoringAdmittedItemCount > 0).length,
+    freeNodeSourceReadyBlockCount: learningBlocks.filter((block) => track.familyId === "coding_interview" ? block.isFreeNode && block.sourcePaths.length > 0 : block.authoringAdmittedItemCount > 0 && block.isFreeNode).length,
     authoringReadiness: blockedItemCount > 0 ? "READY_FOR_AUTHORING_WITH_EXPLICIT_BLOCKS" : "READY_FOR_AUTHORING",
     runtimePublicationReadiness,
     interactionDistribution,

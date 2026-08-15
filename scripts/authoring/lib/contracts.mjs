@@ -152,7 +152,10 @@ export function validateManifest(manifest, model) {
     }
     const sourcePaths = [...new Set(track.learningBlocks.flatMap((block) => block.sourcePaths ?? []))].sort(compare);
     if (track.plannedFutureSourceFileCount !== sourcePaths.length) throw new AuthoringFailure("PATH_MAPPING", `${track.trackId} future source file count does not equal its mapped source paths.`);
-    if (track.sourceReadyBlockCount !== track.learningBlocks.filter((block) => block.authoringAdmittedItemCount > 0).length || track.freeNodeSourceReadyBlockCount !== track.learningBlocks.filter((block) => block.authoringAdmittedItemCount > 0 && block.isFreeNode).length) throw new AuthoringFailure("PRIORITY_MAPPING", `${track.trackId} source-ready block counts drift from its blocks.`);
+    if (track.authoringAdmittedItemCount !== track.learningBlocks.reduce((sum, block) => sum + block.authoringAdmittedItemCount, 0) || track.blockedItemCount !== track.learningBlocks.reduce((sum, block) => sum + block.blockedItemCount, 0)) throw new AuthoringFailure("COUNT_RECONCILIATION", `${track.trackId} block counts do not reconcile to its track authoring counts.`);
+    const expectedSourceReadyBlocks = canonicalTrack.familyId === "coding_interview" ? track.learningBlocks.filter((block) => (block.sourcePaths?.length ?? 0) > 0).length : track.learningBlocks.filter((block) => block.authoringAdmittedItemCount > 0).length;
+    const expectedFreeNodeSourceReadyBlocks = canonicalTrack.familyId === "coding_interview" ? track.learningBlocks.filter((block) => block.isFreeNode && (block.sourcePaths?.length ?? 0) > 0).length : track.learningBlocks.filter((block) => block.authoringAdmittedItemCount > 0 && block.isFreeNode).length;
+    if (track.sourceReadyBlockCount !== expectedSourceReadyBlocks || track.freeNodeSourceReadyBlockCount !== expectedFreeNodeSourceReadyBlocks) throw new AuthoringFailure("PRIORITY_MAPPING", `${track.trackId} source-ready block counts drift from its blocks.`);
     const blockPaths = [];
     for (const block of track.learningBlocks) {
       if (!/^T[0-6]$/.test(block.priorityTier) || !Array.isArray(block.priorityReasons) || !block.priorityReasons.length) throw new AuthoringFailure("PRIORITY_MAPPING", `${track.trackId}/${block.learningBlockId} lacks a semantic priority tier.`);

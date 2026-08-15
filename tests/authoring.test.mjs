@@ -107,6 +107,8 @@ test("authoring catalogue covers ten tracks and derives current counts", async (
     assert.equal(track.existingVerifiedItemCount + track.authoringAdmittedItemCount + track.blockedItemCount, track.plannedItemCount, track.trackId);
     assert.equal(track.plannedItemCount - track.existingVerifiedItemCount, track.remainingItemCount, track.trackId);
     assert.equal(track.learningBlocks.reduce((sum, block) => sum + block.plannedItemCount, 0), track.plannedItemCount, track.trackId);
+    assert.equal(track.learningBlocks.reduce((sum, block) => sum + block.authoringAdmittedItemCount, 0), track.authoringAdmittedItemCount, track.trackId);
+    assert.equal(track.learningBlocks.reduce((sum, block) => sum + block.blockedItemCount, 0), track.blockedItemCount, track.trackId);
   }
   const coding = result.manifest.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving");
   assert.equal(coding.plannedFutureSourceFileCount, result.sourceHashes.filter((entry) => entry.path.startsWith("manual/source/coding-interview-dsa-problem-solving/")).length);

@@ -3,11 +3,17 @@
 This authoring brief is generated from the canonical scaffold manifest. It is a planning handoff, not learner-facing content and not an approval record.
 
 - Family: design_interview
+- Taxonomy version: 2026.08.11
+- Authoring content version: frontend-system-design-interview-authoring-v2026.08.11
+- Priority: T1 — free_node_source_ready
+- Authoring sequence: 79
+- Free-node surface: yes
+- Release-surface role: free
 - Planned item count: 4
 - Authoring-admitted slots: 1
 - Blocked slots: 3
 - Future source path: manual/source/frontend-system-design-interview/frontend_architecture_foundations/device_browser_network_and_accessibility_constraints.json
-- Interaction allocation: choice
+- Interaction allocation: choice/single
 - Mode contribution: none
 
 ## Slot handoff

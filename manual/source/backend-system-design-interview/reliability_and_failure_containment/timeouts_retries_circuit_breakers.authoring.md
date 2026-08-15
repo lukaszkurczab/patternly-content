@@ -3,11 +3,17 @@
 This authoring brief is generated from the canonical scaffold manifest. It is a planning handoff, not learner-facing content and not an approval record.
 
 - Family: design_interview
+- Taxonomy version: 2026.08.11
+- Authoring content version: backend-system-design-interview-authoring-v2026.08.11
+- Priority: T2 — explicit_initial_authoring_handoff
+- Authoring sequence: 83
+- Free-node surface: no
+- Release-surface role: premium
 - Planned item count: 3
 - Authoring-admitted slots: 3
 - Blocked slots: 0
 - Future source path: manual/source/backend-system-design-interview/reliability_and_failure_containment/timeouts_retries_circuit_breakers.json
-- Interaction allocation: choice
+- Interaction allocation: choice/single
 - Mode contribution: none
 
 ## Slot handoff

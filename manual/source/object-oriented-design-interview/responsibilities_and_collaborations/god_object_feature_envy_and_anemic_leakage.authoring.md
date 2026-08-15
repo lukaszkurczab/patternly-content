@@ -3,11 +3,17 @@
 This authoring brief is generated from the canonical scaffold manifest. It is a planning handoff, not learner-facing content and not an approval record.
 
 - Family: design_interview
+- Taxonomy version: 2026.08.11
+- Authoring content version: object-oriented-design-interview-authoring-v2026.08.11
+- Priority: T2 — explicit_initial_authoring_handoff
+- Authoring sequence: 91
+- Free-node surface: no
+- Release-surface role: premium
 - Planned item count: 3
 - Authoring-admitted slots: 1
 - Blocked slots: 2
 - Future source path: manual/source/object-oriented-design-interview/responsibilities_and_collaborations/god_object_feature_envy_and_anemic_leakage.json
-- Interaction allocation: choice
+- Interaction allocation: choice/single
 - Mode contribution: none
 
 ## Slot handoff

@@ -3,11 +3,17 @@
 This authoring brief is generated from the canonical scaffold manifest. It is a planning handoff, not learner-facing content and not an approval record.
 
 - Family: design_interview
+- Taxonomy version: 2026.08.11
+- Authoring content version: object-oriented-design-interview-authoring-v2026.08.11
+- Priority: T2 — explicit_initial_authoring_handoff
+- Authoring sequence: 93
+- Free-node surface: no
+- Release-surface role: premium
 - Planned item count: 2
 - Authoring-admitted slots: 2
 - Blocked slots: 0
 - Future source path: manual/source/object-oriented-design-interview/identity_persistence_and_external_boundaries/persistence_mapping_and_repository_boundary.json
-- Interaction allocation: choice
+- Interaction allocation: choice/single
 - Mode contribution: none
 
 ## Slot handoff

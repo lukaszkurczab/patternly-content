@@ -1,10 +1,10 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { buildManifest, canonicalJson, compare, gitSha, ROOT, sha256 } from "./lib/model.mjs";
+import { buildManifest, canonicalJson, compare, gitSha, repoFiles, ROOT, sha256 } from "./lib/model.mjs";
 import { validateAuthoringContracts, validateManifest } from "./lib/contracts.mjs";
 
 function outputDirectory(manifest) {
-  return join(ROOT, "evidence", "authoring", `${manifest.generatedAt.replaceAll("-", ".")}-${manifest.startingSha.slice(0, 8)}`);
+  return join(ROOT, "evidence", "authoring", `${manifest.generatedAt.replaceAll("-", ".")}-${manifest.repositorySha.slice(0, 8)}`);
 }
 
 function dryRun(manifest) {
@@ -44,6 +44,10 @@ function catalogueCurrent(manifest) {
       plannedLearningBlockCount: track.plannedLearningBlockCount,
       plannedFutureSourceFileCount: track.plannedFutureSourceFileCount,
       existingSourceFileCount: track.existingSourceFileCount,
+      sourceReadyBlockCount: track.sourceReadyBlockCount,
+      freeNodeSourceReadyBlockCount: track.freeNodeSourceReadyBlockCount,
+      taxonomyVersion: track.taxonomyVersion,
+      contentVersion: track.contentVersion,
       interactionDistribution: track.interactionDistribution,
       modeContribution: track.modeContribution,
       nodes: track.nodes,
@@ -63,9 +67,10 @@ function ownerQuickCheck(manifest, generatedOutputFingerprint) {
     "",
     "## Gate",
     "",
-    `**READY_FOR_SCAFFOLDING_WITH_EXPLICIT_BLOCKS** — all ten current curricula are deterministically mapped; blocked slots are explicit and receive no writable source path.`,
+    `**${manifest.gateResult}** — all ten current curricula are deterministically mapped; blocked slots are explicit and receive no writable source path.`,
     "",
     `Starting SHA: \`${manifest.startingSha}\``,
+    `Audited repository SHA: \`${manifest.repositorySha}\``,
     `Input fingerprint: \`${manifest.auditInputFingerprint}\``,
     `Generated-output fingerprint: \`${generatedOutputFingerprint}\``,
     "",
@@ -85,9 +90,9 @@ function ownerQuickCheck(manifest, generatedOutputFingerprint) {
     "",
     "## Feasibility and blocks",
     "",
-    `- Certification: all ${certificationSlots} current slots are exact-direct, choice-authoring admitted; runtime/publication remains not admitted and no global 50-question runtime assumption is introduced.`,
+    `- Certification: ${certificationSlots} slots are planned; ${manifest.tracks.filter((track) => track.familyId === "certification").reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0)} are exact-direct authoring admitted and ${manifest.tracks.filter((track) => track.familyId === "certification").reduce((sum, track) => sum + track.blockedItemCount, 0)} are blocked until literal exact-direct source anchors exist; runtime/publication remains not admitted.`,
     `- Design Interview: the canonical exact-direct roster is authoring admitted (${designRoster}; ${designAdmitted} slots total). The remaining ${designBlocked} slots are blocked/deferred by the current authoring roster, source evidence, or interaction contract; no case/simulation semantics are represented as choice content.`,
-    "- Coding Interview: existing 213 source files and their 2,375 verified items are preserved; remaining authoring extends the existing canonical layout only after separate review.",
+    `- Coding Interview: existing ${manifest.tracks.find((track) => track.familyId === "coding_interview").existingSourceFileCount} source files and their ${manifest.tracks.find((track) => track.familyId === "coding_interview").existingVerifiedItemCount} verified items are preserved; remaining authoring extends the existing canonical layout only after separate review.`,
     "- Interaction anomaly: all admitted Certification and Design slots are choice; blocked Design case/simulation modes remain unavailable.",
     "",
     "## Material changes",
@@ -110,27 +115,35 @@ function ownerQuickCheck(manifest, generatedOutputFingerprint) {
     "npm run authoring:validate && npm run authoring:plan && npm run authoring:scaffold -- --write",
     "```",
     "",
+    "First real batch: `" + manifest.firstRealAuthoringBatch.path + "` (" + manifest.firstRealAuthoringBatch.slotIds.length + " item" + (manifest.firstRealAuthoringBatch.slotIds.length === 1 ? "" : "s") + ").",
     "No empty JSON is created by scaffolding."
   ];
   return `${lines.join("\n")}\n`;
 }
 
 function nextTask(manifest) {
+  const first = manifest.firstRealAuthoringBatch;
   return [
-    "# Next task: materialize authoring briefs",
+    "# Next task: author the first bounded real batch",
     "",
     "Work from a clean current `master` and do not repeat the curriculum analysis.",
     "",
     "1. Run `npm ci`.",
     `2. Run \`npm run authoring:validate\`. If the input fingerprint differs from \`${manifest.auditInputFingerprint}\`, regenerate the plan and review the changed evidence before continuing.`,
     "3. Run `npm run authoring:plan`.",
-    "4. Run `npm run authoring:scaffold -- --write`. This creates only track/node directories, README files, and `.authoring.md` briefs. It must not create empty JSON, approval records, artifacts, or releases.",
-    "5. Verify a second scaffold run is idempotent and commit the generated folder/README/brief structure.",
-    "6. Report the first bounded real authoring batches in this deterministic order: existing Coding source preservation; source-ready Certification blocks by canonical track/node/block order; then Design Interview blocks by the current exact-direct roster and canonical track/node/block order.",
+    "4. Run `npm run authoring:scaffold -- --write` only if the planning briefs need materialization; it creates no JSON, approval, artifact, or release files.",
+    "5. Author exactly one complete batch at the path below, using its `.authoring.md` brief, canonical slot bindings, family schema, and exact human-review handoff:",
+    "   - path: `" + first.path + "`",
+    "   - track/family: `" + first.trackId + "` / `" + first.familyId + "`",
+    "   - node/block: `" + first.nodeId + "` / `" + first.learningBlockId + "`",
+    "   - slot IDs: " + first.slotIds.map((slotId) => "`" + slotId + "`").join(", "),
+    "   - taxonomy version: `" + first.taxonomyVersion + "`",
+    "   - authoring content version: `" + first.contentVersion + "`",
+    "6. Before approval, run `npm run authoring:validate` and record factual, technical, and editorial human review. Do not activate, publish, or add release artifacts in that task.",
     "",
     "Learner-item creation belongs to the following bounded batch task unless the owner explicitly includes it.",
     "",
-    "Expected gate: `READY_FOR_SCAFFOLDING_WITH_EXPLICIT_BLOCKS`.",
+    "Expected gate: `READY_FOR_FIRST_REAL_BOUNDED_AUTHORING_BATCH`.",
     ""
   ].join("\n");
 }
@@ -141,11 +154,13 @@ async function audit() {
   const certificationSlotCount = result.manifest.tracks.filter((track) => track.familyId === "certification").reduce((sum, track) => sum + track.plannedItemCount, 0);
   const directory = outputDirectory(result.manifest);
   await mkdir(directory, { recursive: true });
+  const ingressFiles = await repoFiles(ROOT, ["manual/source"]);
   const facts = {
     schemaVersion: "patternly-authoring-repository-facts-v1",
-    taskId: "AUTHORING-GATE-01",
+    taskId: "AUTHORING-GATE-01B",
     branch: "master",
     startingSha: result.manifest.startingSha,
+    auditedRepositorySha: result.manifest.repositorySha,
     remote: "https://github.com/lukaszkurczab/patternly-content.git",
     canonicalCatalogue: result.manifest.trackIds,
     confirmedFacts: [
@@ -153,23 +168,36 @@ async function audit() {
       "The current families are coding_interview, certification, and design_interview.",
       "Only Coding Interview has real manual source JSON and an active config/tracks runtime registration.",
       "Certification and Design Interview are not runtime/publication admitted by this task.",
-      "Design authoring admission is the exact-direct roster derived from the canonical family handoffs."
+      "Design authoring admission is the exact-direct roster derived from the canonical family handoffs.",
+      "Certification authoring admission requires literal resolved_exact_direct documentation with non-empty sourceRefs and anchorPropertyRefs; generic resolved status and sourceRef-as-anchor fallback are rejected."
     ],
     correctedAssumptions: [
       "The stale Coding Interview README claim that no question bank exists is false because 213 real source JSON files exist.",
       "Certification authoring readiness is not runtime or release readiness.",
       "Design Interview source readiness is not productive case or simulation readiness."
     ],
-    correctedCanonicalDefects: [
-      `Certification slots declared choice interaction without a selection model; all ${certificationSlotCount} current slots now explicitly declare single selection and have recomputed content fingerprints.`
-    ],
+    correctedCanonicalDefects: [`Certification slots declared choice interaction without a selection model; all ${certificationSlotCount} current slots now explicitly declare single selection and have recomputed content fingerprints.`],
     auditInputFingerprint: result.auditInputFingerprint,
     generatedOutputFingerprint: result.generatedOutputFingerprint,
     sourceJsonCount: result.sourceHashes.length,
     sourceHashFingerprint: sha256(canonicalJson(result.sourceHashes)),
+    scaffoldInventory: {
+      learnerJsonCount: ingressFiles.filter((path) => path.endsWith(".json")).length,
+      codingLearnerJsonCount: ingressFiles.filter((path) => path.startsWith("manual/source/coding-interview-dsa-problem-solving/") && path.endsWith(".json")).length,
+      certificationLearnerJsonCount: ingressFiles.filter((path) => path.endsWith(".json") && result.manifest.tracks.filter((track) => track.familyId === "certification").some((track) => path.startsWith(`manual/source/${track.trackId}/`))).length,
+      designLearnerJsonCount: ingressFiles.filter((path) => path.endsWith(".json") && result.manifest.tracks.filter((track) => track.familyId === "design_interview").some((track) => path.startsWith(`manual/source/${track.trackId}/`))).length,
+      authoringBriefCount: ingressFiles.filter((path) => path.endsWith(".authoring.md")).length,
+      readmeCount: ingressFiles.filter((path) => path.endsWith("README.md")).length,
+      approvalFileCount: (await repoFiles(ROOT, ["manual/approvals"])).length,
+      artifactFileCount: (await repoFiles(ROOT, ["artifacts"])).length,
+      releaseFileCount: (await repoFiles(ROOT, ["releases"])).length,
+      newApprovalFileCount: 0,
+      newArtifactFileCount: 0,
+      newReleaseFileCount: 0
+    },
     toolVersions: { manifest: "patternly-authoring-scaffold-manifest-v1", certificationSchema: "certification-manual-source-v2", designSchema: "design-interview-manual-source-v1" }
   };
-  const readiness = { schemaVersion: "patternly-authoring-readiness-v1", taskId: "AUTHORING-GATE-01", startingSha: result.manifest.startingSha, auditInputFingerprint: result.auditInputFingerprint, gateResult: result.manifest.gateResult, tracks: result.manifest.tracks };
+  const readiness = { schemaVersion: "patternly-authoring-readiness-v1", taskId: "AUTHORING-GATE-01B", startingSha: result.manifest.startingSha, auditInputFingerprint: result.auditInputFingerprint, gateResult: result.manifest.gateResult, tracks: result.manifest.tracks };
   const defects = { schemaVersion: "patternly-curriculum-defects-v1", startingSha: result.manifest.startingSha, auditInputFingerprint: result.auditInputFingerprint, defects: [] };
   const files = new Map([
     ["repository-facts.json", facts],
@@ -177,7 +205,9 @@ async function audit() {
     ["curriculum-defects.json", defects],
     ["authoring-readiness.json", readiness],
     ["scaffold-manifest.json", result.manifest],
-    ["source-hashes.json", { schemaVersion: "patternly-source-hashes-v1", startingSha: result.manifest.startingSha, sourceJsonCount: result.sourceHashes.length, sourceHashFingerprint: sha256(canonicalJson(result.sourceHashes)), files: result.sourceHashes }]
+    ["first-real-authoring-batch.json", result.manifest.firstRealAuthoringBatch],
+    ["scaffold-inventory.json", facts.scaffoldInventory],
+    ["source-hashes.json", { schemaVersion: "patternly-source-hashes-v1", startingSha: result.manifest.startingSha, auditedRepositorySha: result.manifest.repositorySha, sourceJsonCount: result.sourceHashes.length, sourceHashFingerprint: sha256(canonicalJson(result.sourceHashes)), files: result.sourceHashes }]
   ]);
   for (const [name, value] of files) await writeFile(join(directory, name), canonicalJson(value));
   await writeFile(join(directory, "scaffold-dry-run.txt"), dryRun(result.manifest));

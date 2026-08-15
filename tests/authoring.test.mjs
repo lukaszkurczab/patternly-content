@@ -9,7 +9,7 @@ import test from "node:test";
 import { buildManifest, canonicalJson, ROOT, AuthoringFailure } from "../scripts/authoring/lib/model.mjs";
 import { validateAuthoringContracts, validateManualBatch } from "../scripts/authoring/lib/contracts.mjs";
 
-const fixed = { generatedAt: "2026-08-14", startingSha: "bde084111a66a1e08e94dcec9c9871c3af666ccb" };
+const fixed = { generatedAt: "2026-08-15", startingSha: "7cfb71fc7f7ad0a061a9533f09ad5549ba8114c5" };
 const runFile = promisify(execFile);
 
 async function copyFixture() {
@@ -19,6 +19,8 @@ async function copyFixture() {
     await mkdir(dirname(targetPath), { recursive: true });
     await cp(join(ROOT, sourcePath), targetPath, { recursive: true });
   }
+  const sourceEntries = await readdir(join(fixture, "manual", "source"), { withFileTypes: true });
+  for (const entry of sourceEntries.filter((entry) => entry.isDirectory() && entry.name !== "coding-interview-dsa-problem-solving")) await rm(join(fixture, "manual", "source", entry.name), { recursive: true, force: true });
   await runFile("git", ["init", "-q"], { cwd: fixture });
   await runFile("git", ["-c", "user.name=Patternly fixture", "-c", "user.email=fixture@example.com", "commit", "--allow-empty", "-m", "fixture"], { cwd: fixture });
   return fixture;
@@ -75,14 +77,27 @@ function batchFor(result, familyId) {
     batchId: "fixture-authoring-batch",
     trackId: track.trackId,
     familyId,
-    contentVersion: `${track.trackId}-authoring-v1`,
-    taxonomyVersion: canonicalTrack.curriculumVersion,
+    contentVersion: track.contentVersion,
+    taxonomyVersion: track.taxonomyVersion,
     nodeId: firstSlot.nodeId,
     learningBlockId: firstSlot.learningBlockId,
     slotIds: slots.map((slot) => slot.slotId),
     items,
     authoringProvenance: { authoringMethod: "manual", approvalStatus: "unapproved", author: "fixture-author", createdAt: "2026-08-14", contentBatchId: "fixture-authoring-batch" }
   };
+}
+
+function certificationFixtureResult(result) {
+  const fixture = structuredClone(result);
+  const track = fixture.manifest.tracks.find((entry) => entry.familyId === "certification");
+  const slot = track.slots[0];
+  const block = track.learningBlocks.find((entry) => entry.learningBlockId === slot.learningBlockId && entry.nodeId === slot.nodeId);
+  const path = `manual/source/${track.trackId}/${slot.nodeId}/${slot.learningBlockId}.json`;
+  const sourceBinding = { bindingId: "fixture-certification-binding", claimIds: ["fixture-claim"], anchorIds: ["fixture-anchor"], sourceRefs: ["fixture-source"] };
+  Object.assign(slot, { authoringAdmitted: true, authoringAdmittedItemCount: 1, blockedItemCount: 0, sourceStatus: "exact_direct", sourceBinding, plannedSourcePath: path, writableSourcePaths: [path] });
+  Object.assign(block, { authoringAdmittedItemCount: 1, blockedItemCount: block.blockedItemCount - 1, plannedSourcePath: path, sourcePaths: [path], plannedAuthoringBriefPath: `manual/source/${track.trackId}/${slot.nodeId}/${slot.learningBlockId}.authoring.md` });
+  Object.assign(track, { authoringAdmittedItemCount: 1, blockedItemCount: track.blockedItemCount - 1, plannedFutureSourceFileCount: 1, sourceReadyBlockCount: 1 });
+  return fixture;
 }
 
 test("authoring catalogue covers ten tracks and derives current counts", async () => {
@@ -96,30 +111,72 @@ test("authoring catalogue covers ten tracks and derives current counts", async (
   const coding = result.manifest.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving");
   assert.equal(coding.plannedFutureSourceFileCount, result.sourceHashes.filter((entry) => entry.path.startsWith("manual/source/coding-interview-dsa-problem-solving/")).length);
   const certification = result.manifest.tracks.filter((track) => track.familyId === "certification");
-  assert.equal(certification.reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0), certification.reduce((sum, track) => sum + track.plannedItemCount, 0));
+  assert.equal(certification.reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0), 0);
+  assert.equal(certification.reduce((sum, track) => sum + track.blockedItemCount, 0), certification.reduce((sum, track) => sum + track.plannedItemCount, 0));
   const design = result.manifest.tracks.filter((track) => track.familyId === "design_interview");
   assert.equal(design.reduce((sum, track) => sum + track.authoringAdmittedItemCount + track.blockedItemCount, 0), design.reduce((sum, track) => sum + track.plannedItemCount, 0));
 });
 
 test("Certification and Design authoring batches validate their exact slot, source, feedback, and mode contracts", async () => {
   const result = await buildManifest(ROOT, fixed);
-  await assert.doesNotReject(() => validateManualBatch(ROOT, batchFor(result, "certification"), { manifestResult: result }));
+  const certification = certificationFixtureResult(result);
+  const certificationBatch = batchFor(certification, "certification");
+  await assert.doesNotReject(() => validateManualBatch(ROOT, certificationBatch, { manifestResult: certification, actualPath: `manual/source/${certificationBatch.trackId}/${certificationBatch.nodeId}/${certificationBatch.learningBlockId}.json` }));
   await assert.doesNotReject(() => validateManualBatch(ROOT, batchFor(result, "design_interview"), { manifestResult: result }));
 });
 
 test("authoring validator rejects incomplete feedback, mode expansion, and indirect source binding", async () => {
   const result = await buildManifest(ROOT, fixed);
-  const base = batchFor(result, "certification");
+  const certification = certificationFixtureResult(result);
+  const base = batchFor(certification, "certification");
   const missingWrong = structuredClone(base); delete missingWrong.items[0].feedback.wrongOptionExplanationsByOptionId.wrong;
-  await assert.rejects(() => validateManualBatch(ROOT, missingWrong, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "INCOMPLETE_FEEDBACK");
+  await assert.rejects(() => validateManualBatch(ROOT, missingWrong, { manifestResult: certification }), (error) => error instanceof AuthoringFailure && error.code === "INCOMPLETE_FEEDBACK");
   const expandedMode = structuredClone(base); expandedMode.items[0].modeEligibility.push("invented-mode");
-  await assert.rejects(() => validateManualBatch(ROOT, expandedMode, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "MODE_DRIFT");
+  await assert.rejects(() => validateManualBatch(ROOT, expandedMode, { manifestResult: certification }), (error) => error instanceof AuthoringFailure && error.code === "MODE_DRIFT");
   const indirect = structuredClone(base); indirect.items[0].sourceBinding.bindingId = "inferred-from-url";
-  await assert.rejects(() => validateManualBatch(ROOT, indirect, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "SOURCE_BINDING_MISMATCH");
+  await assert.rejects(() => validateManualBatch(ROOT, indirect, { manifestResult: certification }), (error) => error instanceof AuthoringFailure && error.code === "SOURCE_BINDING_MISMATCH");
   const unknownAnswer = structuredClone(base); unknownAnswer.items[0].interaction.acceptedOptionIds = ["missing"];
-  await assert.rejects(() => validateManualBatch(ROOT, unknownAnswer, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "UNKNOWN_ANSWER_ID");
+  await assert.rejects(() => validateManualBatch(ROOT, unknownAnswer, { manifestResult: certification }), (error) => error instanceof AuthoringFailure && error.code === "UNKNOWN_ANSWER_ID");
   const missingReason = structuredClone(base); delete missingReason.items[0].feedback.Reason;
-  await assert.rejects(() => validateManualBatch(ROOT, missingReason, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "INVALID_SCHEMA");
+  await assert.rejects(() => validateManualBatch(ROOT, missingReason, { manifestResult: certification }), (error) => error instanceof AuthoringFailure && error.code === "INVALID_SCHEMA");
+});
+
+test("path validation and version identity reject drift from the canonical block owner", async () => {
+  const result = await buildManifest(ROOT, fixed);
+  const batch = batchFor(result, "design_interview");
+  const track = result.manifest.tracks.find((entry) => entry.trackId === batch.trackId);
+  const expectedPath = `manual/source/${batch.trackId}/${batch.nodeId}/${batch.learningBlockId}.json`;
+  await assert.doesNotReject(() => validateManualBatch(ROOT, batch, { manifestResult: result, actualPath: expectedPath }));
+  await assert.rejects(() => validateManualBatch(ROOT, batch, { manifestResult: result, actualPath: `${expectedPath}.wrong` }), (error) => error instanceof AuthoringFailure && error.code === "PATH_MISMATCH");
+  const wrongContent = structuredClone(batch); wrongContent.contentVersion = "wrong-content-version";
+  await assert.rejects(() => validateManualBatch(ROOT, wrongContent, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "VERSION_IDENTITY");
+  const wrongTaxonomy = structuredClone(batch); wrongTaxonomy.taxonomyVersion = "wrong-taxonomy-version";
+  await assert.rejects(() => validateManualBatch(ROOT, wrongTaxonomy, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "VERSION_IDENTITY");
+  assert.equal(batch.contentVersion, track.contentVersion);
+  assert.equal(batch.taxonomyVersion, track.taxonomyVersion);
+});
+
+test("strict source provenance blocks generic Certification evidence and preserves direct Design admission", async () => {
+  const result = await buildManifest(ROOT, fixed);
+  const certification = result.manifest.tracks.filter((track) => track.familyId === "certification");
+  assert.equal(certification.reduce((sum, track) => sum + track.authoringAdmittedItemCount, 0), 0);
+  assert.ok(certification.every((track) => track.slots.every((slot) => slot.sourceStatus === "blocked" && slot.sourceBinding === null)));
+  const design = batchFor(result, "design_interview");
+  const altered = structuredClone(design); altered.items[0].sourceBinding.anchorIds = ["indirect-anchor"];
+  await assert.rejects(() => validateManualBatch(ROOT, altered, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "SOURCE_BINDING_MISMATCH");
+});
+
+test("manifest priority is semantic and selects one explicit first real batch", async () => {
+  const result = await buildManifest(ROOT, fixed);
+  assert.equal(result.manifest.gateResult, "READY_FOR_FIRST_REAL_BOUNDED_AUTHORING_BATCH");
+  const first = result.manifest.firstRealAuthoringBatch;
+  assert.equal(first.trackId, "frontend-system-design-interview");
+  assert.equal(first.priorityTier, "T1");
+  assert.equal(first.slotIds.length, first.authoringAdmittedItemCount);
+  const admitted = result.manifest.tracks.flatMap((track) => track.learningBlocks.filter((block) => block.authoringAdmittedItemCount > 0));
+  assert.equal(new Set(admitted.map((block) => block.authoringSequence)).size, admitted.length);
+  assert.ok(admitted.every((block) => /^T[0-5]$/.test(block.priorityTier)));
+  assert.ok(result.manifest.tracks.flatMap((track) => track.learningBlocks).filter((block) => block.priorityTier === "T6").every((block) => block.authoringSequence === null));
 });
 
 test("Design rejects productive case payloads and blocked slots instead of falling through to Certification", async () => {
@@ -130,7 +187,7 @@ test("Design rejects productive case payloads and blocked slots instead of falli
   const designTrack = result.manifest.tracks.find((track) => track.familyId === "design_interview");
   const blocked = designTrack.slots.find((slot) => !slot.authoringAdmitted);
   const blockedBatch = structuredClone(batch); blockedBatch.slotIds = [blocked.slotId]; blockedBatch.learningBlockId = blocked.learningBlockId; blockedBatch.nodeId = blocked.nodeId; blockedBatch.items[0].slotId = blocked.slotId; blockedBatch.items[0].learningBlockId = blocked.learningBlockId; blockedBatch.items[0].nodeId = blocked.nodeId;
-  await assert.rejects(() => validateManualBatch(ROOT, blockedBatch, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "INCOMPLETE_BATCH");
+  await assert.rejects(() => validateManualBatch(ROOT, blockedBatch, { manifestResult: result }), (error) => error instanceof AuthoringFailure && error.code === "BLOCKED_SOURCE_PATH");
 });
 
 test("planning is byte-deterministic and the runtime publisher has explicit family boundaries", async () => {
@@ -144,7 +201,7 @@ test("planning is byte-deterministic and the runtime publisher has explicit fami
   assert.doesNotMatch(pipeline, /familyId === "coding_interview" \? "coding-interview-manual-source\.schema\.json" : "certification-manual-source\.schema\.json"/);
 });
 
-test("scaffold dry-run is read-only and isolated write mode is idempotent with drift protection", async () => {
+test("scaffold invariants: dry-run is read-only and isolated write mode is idempotent with drift protection", async () => {
   const fixture = await copyFixture();
   try {
     const before = await snapshotFiles(fixture);
@@ -176,6 +233,20 @@ test("scaffold dry-run is read-only and isolated write mode is idempotent with d
     const regenerated = await runScaffold(fixture, ["--write", "--regenerate"]);
     assert.equal(regenerated.status, 0, regenerated.stderr);
     assert.deepEqual(await snapshotFiles(fixture), afterFirstWrite);
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
+});
+
+test("source discovery rejects malformed and unrecognized JSON instead of silently ignoring it", async () => {
+  const fixture = await copyFixture();
+  try {
+    const invalidPath = join(fixture, "manual", "source", "unrecognized.json");
+    await writeFile(invalidPath, "{ malformed");
+    await assert.rejects(() => validateAuthoringContracts(fixture), (error) => error instanceof AuthoringFailure && error.code === "INVALID_SOURCE_JSON");
+    await rm(invalidPath);
+    await writeFile(invalidPath, JSON.stringify({ schemaVersion: "unknown", batchId: "unknown" }));
+    await assert.rejects(() => validateAuthoringContracts(fixture), (error) => error instanceof AuthoringFailure && error.code === "UNKNOWN_FAMILY");
   } finally {
     await rm(fixture, { recursive: true, force: true });
   }

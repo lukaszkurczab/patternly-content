@@ -3,11 +3,17 @@
 This authoring brief is generated from the canonical scaffold manifest. It is a planning handoff, not learner-facing content and not an approval record.
 
 - Family: design_interview
+- Taxonomy version: 2026.08.11
+- Authoring content version: frontend-system-design-interview-authoring-v2026.08.11
+- Priority: T2 — explicit_initial_authoring_handoff
+- Authoring sequence: 87
+- Free-node surface: no
+- Release-surface role: premium
 - Planned item count: 3
 - Authoring-admitted slots: 1
 - Blocked slots: 2
 - Future source path: manual/source/frontend-system-design-interview/accessible_interaction_design/contrast_reflow_zoom_and_responsive_access.json
-- Interaction allocation: choice
+- Interaction allocation: choice/single
 - Mode contribution: none
 
 ## Slot handoff

@@ -4,19 +4,27 @@ import { competencies, nodes, units } from "./frontend-bank-manifest.mjs";
 import { isRichInteractionPreference, validateRichInteraction } from "./frontend-interactions.mjs";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
-const BANK_ROOT = join(ROOT, "manual/source/frontend-system-design-interview/candidate-bank");
+const SOURCE_ROOT = join(ROOT, "manual/source/frontend-system-design-interview");
+const ARTIFACT_ROOT = join(ROOT, "evidence/design-interview/frontend-system-design-interview");
 const fail = (message) => { throw new Error(`FRONTEND_BANK_VALIDATION_FAILED: ${message}`); };
 const text = (value, label) => { if (typeof value !== "string" || !value.trim()) fail(`${label} is empty`); };
 const exact = (left, right) => JSON.stringify(left) === JSON.stringify(right);
 
-async function readJson(file) { try { return JSON.parse(await readFile(join(BANK_ROOT, file), "utf8")); } catch (error) { fail(`${file}: ${error.message}`); } }
+async function readJson(file) { try { return JSON.parse(await readFile(join(ARTIFACT_ROOT, file), "utf8")); } catch (error) { fail(`${file}: ${error.message}`); } }
+async function readSourceJson(nodeId, learningBlockId) { try { return JSON.parse(await readFile(join(SOURCE_ROOT, nodeId, `${learningBlockId}.json`), "utf8")); } catch (error) { fail(`${nodeId}/${learningBlockId}.json: ${error.message}`); } }
 
 async function main() {
   const [blueprint, registry, ledger, coverage, intentMatrix, familyEvidence] = await Promise.all([
     readJson("blueprint.json"), readJson("source-registry.json"), readJson("completion-ledger.json"), readJson("coverage-matrix.json"), readJson("item-intent-matrix.json"), readJson("family-admission-evidence.json")
   ]);
-  const entries = (await readdir(BANK_ROOT)).filter((file) => file.endsWith(".content.json")).sort();
-  if (entries.length !== nodes.length) fail(`expected ${nodes.length} node content files, found ${entries.length}`);
+  const entries = [];
+  for (const node of nodes) {
+    const nodeFiles = (await readdir(join(SOURCE_ROOT, node.nodeId))).filter((file) => file.endsWith(".json")).sort();
+    entries.push(...nodeFiles.map((file) => ({ nodeId: node.nodeId, learningBlockId: file.slice(0, -5), file })));
+  }
+  const expectedEntries = units.map((unit) => ({ nodeId: unit.nodeId, learningBlockId: unit.unitId, file: `${unit.unitId}.json` })).sort((left, right) => `${left.nodeId}/${left.file}`.localeCompare(`${right.nodeId}/${right.file}`));
+  const actualEntries = entries.sort((left, right) => `${left.nodeId}/${left.file}`.localeCompare(`${right.nodeId}/${right.file}`));
+  if (JSON.stringify(actualEntries) !== JSON.stringify(expectedEntries)) fail("learning-block source file inventory does not match manifest");
   const nodeById = new Map(nodes.map((node) => [node.nodeId, node]));
   const unitById = new Map(units.map((unit) => [unit.unitId, unit]));
   const competencyIds = new Set(competencies.map((competency) => competency.competencyId));
@@ -33,11 +41,13 @@ async function main() {
   let richInteractionItems = 0;
   let choiceProxyItems = 0;
   let triviaLikeItems = 0;
-  for (const file of entries) {
-    const batch = await readJson(file);
+  for (const entry of entries) {
+    const file = `${entry.nodeId}/${entry.file}`;
+    const batch = await readSourceJson(entry.nodeId, entry.learningBlockId);
     const node = nodeById.get(batch.nodeId);
     if (!node) fail(`${file} references unknown node ${batch.nodeId}`);
     if (batch.schemaVersion !== "frontend-system-design-interview-candidate-source-v1" || batch.candidateStatus !== "generated_and_mechanically_validated_pending_human_review" || batch.activationState !== "inactive_candidate" || batch.familyId !== "system_design" || batch.runtimeAdmission !== "not_admitted" || batch.publishingAdmission !== "not_admitted") fail(`${file} has invalid inactive candidate envelope`);
+    if (batch.learningBlockId !== entry.learningBlockId || JSON.stringify(batch.mentalUnitIds) !== JSON.stringify([entry.learningBlockId])) fail(`${file} has invalid learning-block identity`);
     if (!Array.isArray(batch.items) || !batch.items.length) fail(`${file} has no items`);
     for (const item of batch.items) {
       if (itemIds.has(item.itemId)) fail(`duplicate item ID ${item.itemId}`);

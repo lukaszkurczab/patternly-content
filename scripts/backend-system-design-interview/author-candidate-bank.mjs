@@ -3,8 +3,8 @@ import { join } from "node:path";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const TRACK_ROOT = join(ROOT, "manual/source/backend-system-design-interview");
-const BANK_ROOT = join(TRACK_ROOT, "candidate-bank");
-const BLUEPRINT_PATH = join(BANK_ROOT, "blueprint.json");
+const ARTIFACT_ROOT = join(ROOT, "evidence/design-interview/backend-system-design-interview");
+const BLUEPRINT_PATH = join(ARTIFACT_ROOT, "blueprint.json");
 const CREATED_AT = "2026-08-15T00:00:00.000Z";
 const CONTENT_VERSION = "backend-system-design-interview-candidate-v2026.08.15";
 const TAXONOMY_VERSION = "backend-system-design-interview-workbook-v2026.08.15";
@@ -316,14 +316,14 @@ function buildItem({ unit, node, profile, domain, caseProfile, index, count, sou
     runtimeCompatibility,
     qualityFlags: { semanticDuplicate: false, filler: false, productMemorization: false, fakePrecision: false, vendorTrivia: false },
     sourceBinding: { bindingId: `besd-binding:${unit.unitId}:${unit.sourceKeys.join("+")}`, claimIds: unit.sourceKeys.map((key) => `${key.toLowerCase()}-${unit.unitId.toLowerCase()}-claim`), anchorIds: unit.sourceKeys.map((key) => `${key.toLowerCase()}-${unit.unitId.toLowerCase()}-anchor`), sourceRefs: unit.sourceKeys.map((key) => sourceMap.get(key).url) },
-    authoringProvenance: { authoringMethod: "manual", approvalStatus: "unapproved", author: AUTHOR, createdAt: CREATED_AT, contentBatchId: `besd-${node.nodeId}-candidate-v1` }
+    authoringProvenance: { authoringMethod: "manual", approvalStatus: "unapproved", author: AUTHOR, createdAt: CREATED_AT, contentBatchId: `besd-${unit.unitId.toLowerCase()}-candidate-v1` }
   };
 }
 
 let sourceMap;
 
 async function main() {
-  await mkdir(BANK_ROOT, { recursive: true });
+  await mkdir(ARTIFACT_ROOT, { recursive: true });
   const blueprint = JSON.parse(await readFile(BLUEPRINT_PATH, "utf8"));
   sourceMap = new Map(blueprint.sources.map((source) => [source.key, source]));
   const nodeMap = new Map(blueprint.nodes.map((node) => [node.order, node]));
@@ -359,12 +359,13 @@ async function main() {
   const duplicateCount = uniquenessKeys.length - new Set(uniquenessKeys).size;
   if (duplicateCount) throw new Error(`BESD authoring produced ${duplicateCount} duplicate semantic intent keys`);
 
-  const nodeFiles = [];
-  for (const node of blueprint.nodes) {
-    const nodeUnits = unitsByNode.get(node.order);
-    const items = nodeUnits.flatMap((unit) => allItems.filter((item) => item.mentalUnitId === unit.unitId));
-    const contentBatchId = `besd-${node.nodeId}-candidate-v1`;
-    await writeJson(join(BANK_ROOT, `${node.nodeId}.content.json`), {
+  const sourceFiles = [];
+  for (const unit of blueprint.units) {
+    const node = nodeMap.get(unit.nodeOrder);
+    const items = allItems.filter((item) => item.mentalUnitId === unit.unitId);
+    const contentBatchId = `besd-${unit.unitId.toLowerCase()}-candidate-v1`;
+    await mkdir(join(TRACK_ROOT, node.nodeId), { recursive: true });
+    await writeJson(join(TRACK_ROOT, node.nodeId, `${unit.unitId}.json`), {
       schemaVersion: "backend-system-design-interview-candidate-source-v1",
       candidateStatus: "candidate_content_mechanically_validated_pending_human_review",
       activationState: "inactive_candidate",
@@ -376,13 +377,18 @@ async function main() {
       taxonomyVersion: TAXONOMY_VERSION,
       nodeId: node.nodeId,
       nodeTitle: node.title,
-      mentalUnitIds: nodeUnits.map((unit) => unit.unitId),
+      learningBlockId: unit.unitId,
+      mentalUnitIds: [unit.unitId],
       competencyIds: node.competencyIds,
       items,
       authoringProvenance: { authoringMethod: "manual", approvalStatus: "unapproved", author: AUTHOR, createdAt: CREATED_AT, contentBatchId }
     });
-    nodeFiles.push({ nodeId: node.nodeId, questionCount: items.length, mentalUnitCount: nodeUnits.length });
+    sourceFiles.push({ nodeId: node.nodeId, learningBlockId: unit.unitId, path: `manual/source/backend-system-design-interview/${node.nodeId}/${unit.unitId}.json`, questionCount: items.length });
   }
+  const nodeFiles = blueprint.nodes.map((node) => {
+    const files = sourceFiles.filter((file) => file.nodeId === node.nodeId);
+    return { nodeId: node.nodeId, questionCount: files.reduce((sum, file) => sum + file.questionCount, 0), mentalUnitCount: files.length, sourceFileCount: files.length };
+  });
 
   const unitSpecsWithIds = blueprint.units.map((unit) => ({ ...unit, questionPlan: `SATURATED — ${itemCounts.get(unit.unitId)} authored cases after coverage-gap and duplicate audit`, finalCount: itemCounts.get(unit.unitId), status: "MECHANICALLY_VALIDATED", spec: unitSpecs.get(unit.unitId) }));
   const competencies = blueprint.competencies.map((competency) => {
@@ -391,11 +397,11 @@ async function main() {
     return { ...competency, primaryNode: competency.primaryNodeId, primaryMentalUnitOwner: ownedUnits.map((unit) => unit.unitId), authoredItemCoverage: itemCoverage.length, retrievalDiversity: [...new Set(itemCoverage.map((item) => item.authoringIntent.scenarioArchetype))].length, transferCoverage: itemCoverage.filter((item) => item.authoringIntent.scenarioArchetype === "transfer").length > 0 ? "PRESENT" : "NOT_REQUIRED" };
   });
 
-  const enrichedBlueprint = { ...blueprint, baseline: { ...blueprint.baseline, exactGlobalTotal: allItems.length, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted" }, nodes: blueprint.nodes.map((node) => ({ ...node, questionCount: nodeFiles.find((file) => file.nodeId === node.nodeId).questionCount, exceedsFloor: nodeFiles.find((file) => file.nodeId === node.nodeId).questionCount > node.floor })), units: unitSpecsWithIds, competencies, sourceRegistryPath: "manual/source/backend-system-design-interview/candidate-bank/source-registry.json" };
+  const enrichedBlueprint = { ...blueprint, baseline: { ...blueprint.baseline, exactGlobalTotal: allItems.length, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted" }, nodes: blueprint.nodes.map((node) => ({ ...node, questionCount: nodeFiles.find((file) => file.nodeId === node.nodeId).questionCount, exceedsFloor: nodeFiles.find((file) => file.nodeId === node.nodeId).questionCount > node.floor })), units: unitSpecsWithIds, competencies, sourceRegistryPath: "evidence/design-interview/backend-system-design-interview/source-registry.json" };
   await writeJson(BLUEPRINT_PATH, enrichedBlueprint);
 
   const refreshedSources = blueprint.sources.map((source) => ({ ...source, checkedAt: "2026-08-15", status: "refreshed_primary_source" }));
-  await writeJson(join(BANK_ROOT, "source-registry.json"), {
+  await writeJson(join(ARTIFACT_ROOT, "source-registry.json"), {
     schemaVersion: "backend-system-design-interview-source-registry-v1",
     trackId: blueprint.trackId,
     frameworkStatus: "source_grounded_synthesized_interview_framework_not_official_employer_syllabus",
@@ -414,11 +420,11 @@ async function main() {
     claimsAndAnchors: sourceClaims
   });
 
-  await writeJson(join(BANK_ROOT, "coverage-matrix.json"), { schemaVersion: "backend-system-design-interview-coverage-matrix-v1", trackId: blueprint.trackId, generatedAt: CREATED_AT, dimensions: ["applicability", "mechanism", "architecture_decision", "capacity", "data_path", "write_path", "read_path", "failure", "overload", "recovery", "consistency", "security", "operations", "cost", "migration", "transfer"], units: blueprint.units.map((unit) => ({ unitId: unit.unitId, nodeId: nodeMap.get(unit.nodeOrder).nodeId, requiredDimensions: unitSpecs.get(unit.unitId).coverageMatrix, itemIds: unitSpecs.get(unit.unitId).itemIntentMatrix.itemIds, coverageGapAudit: unitSpecs.get(unit.unitId).gapAudit, saturationAudit: unitSpecs.get(unit.unitId).saturationAudit })) });
-  await writeJson(join(BANK_ROOT, "item-intent-matrix.json"), { schemaVersion: "backend-system-design-interview-item-intent-matrix-v1", trackId: blueprint.trackId, generatedAt: CREATED_AT, itemCount: allItems.length, items: allItems.map((item) => ({ itemId: item.itemId, nodeId: item.nodeId, ...item.authoringIntent })) });
+  await writeJson(join(ARTIFACT_ROOT, "coverage-matrix.json"), { schemaVersion: "backend-system-design-interview-coverage-matrix-v1", trackId: blueprint.trackId, generatedAt: CREATED_AT, dimensions: ["applicability", "mechanism", "architecture_decision", "capacity", "data_path", "write_path", "read_path", "failure", "overload", "recovery", "consistency", "security", "operations", "cost", "migration", "transfer"], units: blueprint.units.map((unit) => ({ unitId: unit.unitId, nodeId: nodeMap.get(unit.nodeOrder).nodeId, requiredDimensions: unitSpecs.get(unit.unitId).coverageMatrix, itemIds: unitSpecs.get(unit.unitId).itemIntentMatrix.itemIds, coverageGapAudit: unitSpecs.get(unit.unitId).gapAudit, saturationAudit: unitSpecs.get(unit.unitId).saturationAudit })) });
+  await writeJson(join(ARTIFACT_ROOT, "item-intent-matrix.json"), { schemaVersion: "backend-system-design-interview-item-intent-matrix-v1", trackId: blueprint.trackId, generatedAt: CREATED_AT, itemCount: allItems.length, items: allItems.map((item) => ({ itemId: item.itemId, nodeId: item.nodeId, ...item.authoringIntent })) });
 
   const competencyCoverage = Object.fromEntries(blueprint.competencies.map((competency) => [competency.competencyId, allItems.filter((item) => item.primaryCompetencyId === competency.competencyId || item.secondaryCompetencyIds.includes(competency.competencyId)).length]));
-  await writeJson(join(BANK_ROOT, "completion-ledger.json"), {
+  await writeJson(join(ARTIFACT_ROOT, "completion-ledger.json"), {
     schemaVersion: "backend-system-design-interview-completion-ledger-v1",
     trackId: blueprint.trackId,
     controllerState: "CONTINUE_UNTIL_ALL_MECHANICALLY_VALIDATED",
@@ -430,11 +436,11 @@ async function main() {
   });
 
   const richItems = allItems.filter((item) => item.runtimeCompatibility !== "choice_single_current_schema");
-  await writeJson(join(BANK_ROOT, "family-admission-evidence.json"), { schemaVersion: "backend-system-design-interview-family-admission-evidence-v1", trackId: blueprint.trackId, status: "candidate_content_only", runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending", currentRuntimeCompatibleItemPercentage: Number(((allItems.length - richItems.length) / allItems.length * 100).toFixed(1)), itemInteractionInventory: { totalItems: allItems.length, choiceSingleCurrentSchema: allItems.length - richItems.length, choiceProxyRequiresRicherInteractionEvidence: richItems.length }, mentalUnits: blueprint.units.map((unit) => ({ mentalUnitId: unit.unitId, preferredInteraction: unitSpecs.get(unit.unitId).preferredInteraction, currentContentSchemaCanExpress: true, currentSharedRuntimeConceptuallySupports: false, newInteractionRequired: true, scoringRequirement: "choice proxy is mechanically complete; direct diagram/sequence/data-flow/capacity interactions need a separate admission decision" })), requirements: { architectureDiagram: "useful for decomposition, topology, and ownership comparisons", sequenceAndDataFlow: "useful for request, async, workflow, and recovery paths", failureTopology: "useful for blast radius, failover, and dependency isolation", capacityCalculation: "useful where order-of-magnitude estimates change a decision", topologyComparison: "useful for partition, replication, region, tenancy, and delivery choices" } });
+  await writeJson(join(ARTIFACT_ROOT, "family-admission-evidence.json"), { schemaVersion: "backend-system-design-interview-family-admission-evidence-v1", trackId: blueprint.trackId, status: "candidate_content_only", runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending", currentRuntimeCompatibleItemPercentage: Number(((allItems.length - richItems.length) / allItems.length * 100).toFixed(1)), itemInteractionInventory: { totalItems: allItems.length, choiceSingleCurrentSchema: allItems.length - richItems.length, choiceProxyRequiresRicherInteractionEvidence: richItems.length }, mentalUnits: blueprint.units.map((unit) => ({ mentalUnitId: unit.unitId, preferredInteraction: unitSpecs.get(unit.unitId).preferredInteraction, currentContentSchemaCanExpress: true, currentSharedRuntimeConceptuallySupports: false, newInteractionRequired: true, scoringRequirement: "choice proxy is mechanically complete; direct diagram/sequence/data-flow/capacity interactions need a separate admission decision" })), requirements: { architectureDiagram: "useful for decomposition, topology, and ownership comparisons", sequenceAndDataFlow: "useful for request, async, workflow, and recovery paths", failureTopology: "useful for blast radius, failover, and dependency isolation", capacityCalculation: "useful where order-of-magnitude estimates change a decision", topologyComparison: "useful for partition, replication, region, tenancy, and delivery choices" } });
 
-  await writeFile(join(BANK_ROOT, "README.md"), `# Backend System Design Interview candidate bank\n\nThis directory is the complete source-grounded candidate bank for the 2026-08-15 workbook blueprint. It is a content authoring artifact, not a runtime or publishing package.\n\n- ${blueprint.nodes.length} canonical nodes\n- ${blueprint.units.length} final mental units\n- ${blueprint.competencies.length} synthesized competencies\n- ${allItems.length} independently authored candidate items\n- every node exceeds 120 items\n- every item has a complete choice contract, authored feedback, distractor explanations, and source provenance\n- all items are mechanically validated and remain unapproved\n- runtime admission: **not_admitted**\n- publishing admission: **not_admitted**\n- human technical/editorial review: **pending**\n\nThe taxonomy is a Patternly source-grounded synthesized interview framework, not an official employer syllabus. Richer interaction needs are recorded in family-admission-evidence.json; no shared runtime, renderer, navigation, persistence, or family implementation is changed here.\n`);
-  await writeFile(join(TRACK_ROOT, "README.md"), `# backend-system-design-interview\n\nThe canonical candidate bank lives in candidate-bank/. It contains the full 10-node, 89-unit, 40-competency source-grounded bank derived from the 2026-08-15 workbook. The earlier design-interview scaffold remains referenced by existing curriculum admission configuration; it is not the canonical candidate bank.\n\n- Candidate bank: mechanically validated, unapproved, inactive\n- Runtime admission: **not_admitted**\n- Publishing admission: **not_admitted**\n- Human review: **pending**\n- Workbook blueprint: patternly_backend-system-design-interview_2026-08-15.xlsx\n`);
-  console.log(JSON.stringify({ status: "PASS", bankRoot: BANK_ROOT, nodes: nodeFiles, mentalUnits: blueprint.units.length, competencies: blueprint.competencies.length, questionCount: allItems.length, semanticIntentDuplicates: duplicateCount, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending" }, null, 2));
+  await writeFile(join(ARTIFACT_ROOT, "README.md"), `# Backend System Design Interview source audit\n\nThe learner source is organized as manual/source/backend-system-design-interview/[node]/[learningBlockId].json. This directory contains authoring and admission evidence.\n\n- ${blueprint.nodes.length} canonical nodes\n- ${blueprint.units.length} final learning blocks\n- ${blueprint.competencies.length} synthesized competencies\n- ${allItems.length} independently authored items\n- Runtime admission: **not_admitted**\n- Publishing admission: **not_admitted**\n- Human technical/editorial review: **pending**\n`);
+  await writeFile(join(TRACK_ROOT, "README.md"), `# backend-system-design-interview\n\nSource content is organized as manual/source/backend-system-design-interview/[node]/[learningBlockId].json. The source remains unapproved and inactive until the design-interview admission and human review gates are complete.\n\n- 10 canonical nodes\n- 89 learning blocks\n- Runtime admission: **not_admitted**\n- Publishing admission: **not_admitted**\n- Human review: **pending**\n- Audit evidence: evidence/design-interview/backend-system-design-interview/\n`);
+  console.log(JSON.stringify({ sourceRoot: TRACK_ROOT, artifactRoot: ARTIFACT_ROOT, nodes: nodeFiles, sourceFiles, mentalUnits: blueprint.units.length, competencies: blueprint.competencies.length, questionCount: allItems.length, semanticIntentDuplicates: duplicateCount, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending" }, null, 2));
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) await main();

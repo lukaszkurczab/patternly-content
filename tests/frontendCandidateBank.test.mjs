@@ -4,8 +4,8 @@ import { main } from "../scripts/frontend/validate-candidate-bank.mjs";
 import { scoreFrontendInteraction } from "../scripts/frontend/frontend-interactions.mjs";
 import { readFile } from "node:fs/promises";
 
-const BANK_ROOT = new URL("../manual/source/frontend-system-design-interview/candidate-bank/", import.meta.url);
-async function readNode(nodeId) { return JSON.parse(await readFile(new URL(`${nodeId}.content.json`, BANK_ROOT), "utf8")); }
+const SOURCE_ROOT = new URL("../manual/source/frontend-system-design-interview/", import.meta.url);
+async function readBlock(nodeId, learningBlockId) { return JSON.parse(await readFile(new URL(`${nodeId}/${learningBlockId}.json`, SOURCE_ROOT), "utf8")); }
 
 test("Frontend System Design candidate bank satisfies the workbook contract", async () => {
   const result = await main();
@@ -25,8 +25,8 @@ test("Frontend System Design candidate bank satisfies the workbook contract", as
 
 test("Frontend rich interactions have executable ordering and decision-matrix scoring", async () => {
   const [browser, cache] = await Promise.all([
-    readNode("browser_runtime_rendering_pipeline_and_execution_models"),
-    readNode("api_integration_data_fetching_client_caching_and_consistency")
+    readBlock("browser_runtime_rendering_pipeline_and_execution_models", "FESD-N02-B01"),
+    readBlock("api_integration_data_fetching_client_caching_and_consistency", "FESD-N04-B03")
   ]);
   const ordering = browser.items.find((item) => item.interaction.type === "ordering");
   const matrix = cache.items.find((item) => item.interaction.type === "decision_matrix");

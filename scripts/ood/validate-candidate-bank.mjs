@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { nodes, units, sourceRecords } from "./author-candidate-bank.mjs";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
-const BANK_ROOT = join(ROOT, "manual/source/object-oriented-design-interview/candidate-bank");
+const SOURCE_ROOT = join(ROOT, "manual/source/object-oriented-design-interview");
+const ARTIFACT_ROOT = join(ROOT, "evidence/design-interview/object-oriented-design-interview");
 const SOURCE_KEYS = new Set(sourceRecords.map((source) => source.key));
 const SOURCE_URLS = new Set(sourceRecords.map((source) => source.url));
 const RICH_INTERACTIONS = new Set(["interpret_class_diagram", "interpret_sequence", "interpret_state_machine", "predict_object_lifecycle", "concurrency_failure_diagnosis", "code_or_design_snippet", "order_interaction"]);
@@ -51,9 +52,14 @@ function validateItem(item, unitById, nodeId) {
 }
 
 async function main() {
-  const expectedFiles = new Set(nodes.map((node) => `${node.nodeId}.content.json`));
-  const files = (await readdir(BANK_ROOT)).filter((file) => file.endsWith(".content.json")).sort();
-  if (JSON.stringify(files) !== JSON.stringify([...expectedFiles].sort())) fail(`expected exactly 9 node content files, got ${files.length}`);
+  const files = [];
+  for (const node of nodes) {
+    const nodeFiles = (await readdir(join(SOURCE_ROOT, node.nodeId))).filter((file) => file.endsWith(".json")).sort();
+    files.push(...nodeFiles.map((file) => ({ nodeId: node.nodeId, learningBlockId: file.slice(0, -5), file })));
+  }
+  const expectedFiles = units.map((unit) => ({ nodeId: nodes.find((node) => node.order === unit.nodeOrder).nodeId, learningBlockId: unit.unitId, file: `${unit.unitId}.json` })).sort((left, right) => `${left.nodeId}/${left.file}`.localeCompare(`${right.nodeId}/${right.file}`));
+  const actualFiles = files.sort((left, right) => `${left.nodeId}/${left.file}`.localeCompare(`${right.nodeId}/${right.file}`));
+  if (JSON.stringify(actualFiles) !== JSON.stringify(expectedFiles)) fail(`learning-block source file inventory does not match manifest`);
   const unitById = new Map(units.map((unit) => [unit.unitId, unit]));
   const itemIds = [];
   const intentKeys = [];
@@ -61,12 +67,13 @@ async function main() {
   const coverageByUnit = new Map();
   const nodeCounts = new Map();
   let richCount = 0;
-  for (const node of nodes) {
-    const path = join(BANK_ROOT, `${node.nodeId}.content.json`);
+  for (const entry of files) {
+    const node = nodes.find((candidate) => candidate.nodeId === entry.nodeId);
+    const path = join(SOURCE_ROOT, entry.nodeId, entry.file);
     const batch = JSON.parse(await readFile(path, "utf8"));
     if (batch.schemaVersion !== "object-oriented-design-interview-candidate-source-v1" || batch.candidateStatus !== "generated_and_mechanically_validated_pending_human_review" || batch.activationState !== "inactive_candidate") fail(`${node.nodeId} envelope is not an inactive candidate envelope`);
     if (batch.trackId !== "object-oriented-design-interview" || batch.familyId !== "object_oriented_design" || batch.runtimeAdmission !== "not_admitted" || batch.publishingAdmission !== "not_admitted") fail(`${node.nodeId} admission boundary drifted`);
-    if (batch.nodeId !== node.nodeId || batch.mentalUnitIds.length !== node.unitCount) fail(`${node.nodeId} node/unit identity is incorrect`);
+    if (batch.nodeId !== node.nodeId || batch.learningBlockId !== entry.learningBlockId || JSON.stringify(batch.mentalUnitIds) !== JSON.stringify([entry.learningBlockId])) fail(`${node.nodeId}/${entry.learningBlockId} node/block identity is incorrect`);
     unique(batch.items.map((item) => item.itemId), `${node.nodeId} item IDs`);
     for (const item of batch.items) {
       validateItem(item, unitById, node.nodeId);
@@ -78,22 +85,22 @@ async function main() {
       coverageByUnit.set(item.mentalUnitId, coverage);
       if (RICH_INTERACTIONS.has(item.preferredInteraction)) richCount += 1;
     }
-    nodeCounts.set(node.nodeId, batch.items.length);
-    if (batch.items.length <= 120) fail(`${node.nodeId} has ${batch.items.length}; every node must exceed 120`);
+    nodeCounts.set(node.nodeId, (nodeCounts.get(node.nodeId) ?? 0) + batch.items.length);
   }
+  for (const node of nodes) if ((nodeCounts.get(node.nodeId) ?? 0) <= 120) fail(`${node.nodeId} has ${nodeCounts.get(node.nodeId) ?? 0}; every node must exceed 120`);
   unique(itemIds, "global item IDs");
   unique(intentKeys, "semantic intent keys");
   if (itemIds.length !== 1413) fail(`expected 1413 candidate items, got ${itemIds.length}`);
   if (unitCounts.size !== 79 || [...unitById.keys()].some((id) => !unitCounts.has(id))) fail(`all 79 mental units must have authored items`);
-  const coverageMatrix = JSON.parse(await readFile(join(BANK_ROOT, "coverage-matrix.json"), "utf8"));
+  const coverageMatrix = JSON.parse(await readFile(join(ARTIFACT_ROOT, "coverage-matrix.json"), "utf8"));
   for (const unit of coverageMatrix.units) {
     const present = coverageByUnit.get(unit.unitId) ?? new Set();
     for (const dimension of unit.requiredDimensions.map((entry) => entry.dimension)) if (!present.has(dimension)) fail(`${unit.unitId} is missing required coverage dimension ${dimension}`);
     if (unit.coverageGapAudit?.status !== "PASS" || unit.saturationAudit?.status !== "PASS" || unit.saturationAudit?.unrepresentedCaseTypes?.length) fail(`${unit.unitId} coverage/saturation audit is not PASS`);
   }
-  const ledger = JSON.parse(await readFile(join(BANK_ROOT, "completion-ledger.json"), "utf8"));
+  const ledger = JSON.parse(await readFile(join(ARTIFACT_ROOT, "completion-ledger.json"), "utf8"));
   if (ledger.globalAudit.knownSemanticDuplicates !== 0 || ledger.globalAudit.knownFillerItems !== 0 || ledger.globalAudit.structuralFailures !== 0) fail("completion ledger reports a failed global audit");
-  const familyEvidence = JSON.parse(await readFile(join(BANK_ROOT, "family-admission-evidence.json"), "utf8"));
+  const familyEvidence = JSON.parse(await readFile(join(ARTIFACT_ROOT, "family-admission-evidence.json"), "utf8"));
   if (familyEvidence.runtimeAdmission !== "not_admitted" || familyEvidence.publishingAdmission !== "not_admitted" || familyEvidence.humanReview !== "pending") fail("family-admission evidence crosses the review boundary");
   console.log(JSON.stringify({ status: "PASS", nodes: Object.fromEntries(nodeCounts), mentalUnits: unitCounts.size, questions: itemIds.length, semanticDuplicates: 0, richerInteractionItems: richCount, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending" }, null, 2));
 }

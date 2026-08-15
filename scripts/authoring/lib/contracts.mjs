@@ -24,7 +24,7 @@ function expectedTaxonomy(slot, familyId) {
   return { nodeId: slot.nodeId, learningBlockId: slot.learningBlockId, skillAtomId: slot.raw.directSkillOrDecisionAtomId };
 }
 
-function checkFeedback(item, slot) {
+function checkFeedback(item, slot, trackId) {
   const feedback = item.feedback;
   if (GENERIC_FEEDBACK.has(feedback.Reason.trim().toLocaleLowerCase())) throw new AuthoringFailure("INVALID_FEEDBACK", `${item.itemId} uses generic Reason feedback.`);
   const optionIds = item.interaction.options.map((option) => option.optionId);
@@ -36,6 +36,7 @@ function checkFeedback(item, slot) {
   const expectedOmitted = item.interaction.selectionMode === "multiple" ? accepted : [];
   if (!exact(omitted, expectedOmitted) || omitted.some((id) => !text(feedback.omittedCorrectElementExplanationsByOptionId[id], `${item.itemId} omitted-correct feedback ${id}`))) throw new AuthoringFailure("INCOMPLETE_FEEDBACK", `${item.itemId} omitted-correct feedback does not match the selection model.`);
   for (const key of ["mechanismOrProperty", "scenarioApplication", "errorCorrection", "boundaryOrTradeoff"]) text(feedback.Details[key], `${item.itemId} Details.${key}`);
+  if (trackId === "aws-certified-solutions-architect-associate" || trackId === "google-cloud-associate-cloud-engineer") text(feedback.Details.url, `${item.itemId} Details.url`);
   if (slot.transferBoundary && !text(feedback.Details.transfer, `${item.itemId} Details.transfer`)) throw new AuthoringFailure("INCOMPLETE_DETAILS", `${item.itemId} must author transfer feedback for its transfer boundary.`);
 }
 
@@ -114,8 +115,9 @@ export async function validateManualBatch(root, batch, { manifestResult, actualP
     if (canonical(item.taxonomy) !== canonical(expectedTaxonomy(track.normalized.slots.find((entry) => entry.slotId === item.slotId), track.familyId))) throw new AuthoringFailure("INVALID_TAXONOMY", `${item.itemId} taxonomy does not equal its canonical slot taxonomy.`);
     checkInteraction(item, family, slot);
     if (!exact(item.modeEligibility, slot.modeEligibility)) throw new AuthoringFailure("MODE_DRIFT", `${item.itemId} mode eligibility differs from the canonical slot contract.`);
-    checkFeedback(item, track.normalized.slots.find((entry) => entry.slotId === item.slotId));
+    checkFeedback(item, track.normalized.slots.find((entry) => entry.slotId === item.slotId), batch.trackId);
     checkSourceBinding(item, slot, track.familyId);
+    if (batch.trackId === "aws-certified-solutions-architect-associate" && !item.sourceBinding.sourceRefs.includes(item.feedback.Details.url)) throw new AuthoringFailure("FEEDBACK_SOURCE_MISMATCH", `${item.itemId} Details.url must match one of its bound source references.`);
     checkProvenance(item.authoringProvenance, batch.batchId, `${item.itemId}.authoringProvenance`);
   }
   if (new Set(batch.items.map((item) => item.slotId)).size !== expectedSlots.length) throw new AuthoringFailure("INCOMPLETE_BATCH", `${batch.batchId} must represent each declared slot exactly once.`);
@@ -193,14 +195,15 @@ export async function validateAuthoringContracts(root) {
   const paths = (await repoFiles(root, ["manual/source"])).filter((path) => path.endsWith(".json"));
   const codingSchema = await readJson(root, "schemas/publishing/coding-interview-manual-source.schema.json");
   const codingRoot = "manual/source/coding-interview-dsa-problem-solving/";
-  const unadmittedCandidateRoots = new Set([
-    "manual/source/object-oriented-design-interview/candidate-bank/",
-    "manual/source/frontend-system-design-interview/candidate-bank/"
+  const unadmittedDesignSourceTracks = new Set([
+    "backend-system-design-interview",
+    "frontend-system-design-interview",
+    "object-oriented-design-interview"
   ]);
   for (const path of paths) {
-    if ([...unadmittedCandidateRoots].some((candidateRoot) => path.startsWith(candidateRoot))) continue;
     let batch;
     try { batch = JSON.parse(await readFile(join(root, path), "utf8")); } catch (error) { throw new AuthoringFailure("INVALID_SOURCE_JSON", `${path} is not valid JSON: ${error.message}`); }
+    if (unadmittedDesignSourceTracks.has(batch.trackId) && batch.activationState === "inactive_candidate" && batch.runtimeAdmission === "not_admitted" && batch.publishingAdmission === "not_admitted" && batch.authoringProvenance?.approvalStatus === "unapproved") continue;
     if (path.startsWith(codingRoot)) {
       if (batch.familyId !== "coding_interview") throw new AuthoringFailure("FAMILY_PATH_MISMATCH", `${path} is under the Coding source root but does not declare coding_interview.`);
       await validateSchema(batch, codingSchema, path);

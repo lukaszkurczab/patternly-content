@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
 const TRACK_ROOT = join(ROOT, "manual/source/object-oriented-design-interview");
-const BANK_ROOT = join(TRACK_ROOT, "candidate-bank");
+const ARTIFACT_ROOT = join(ROOT, "evidence/design-interview/object-oriented-design-interview");
 const CREATED_AT = "2026-08-15T00:00:00.000Z";
 const CONTENT_VERSION = "object-oriented-design-interview-candidate-v2026.08.15";
 const TAXONOMY_VERSION = "object-oriented-design-interview-workbook-v2026.08.15";
@@ -445,7 +445,7 @@ function nodeCount(node) {
 }
 
 async function main() {
-  await mkdir(BANK_ROOT, { recursive: true });
+  await mkdir(ARTIFACT_ROOT, { recursive: true });
   const unitSpecs = new Map();
   const allItems = [];
   const sourceClaims = [];
@@ -462,11 +462,11 @@ async function main() {
   }
   const duplicateIntentKeys = allItems.length - new Set(allItems.map((item) => item.authoringIntent.semanticUniquenessKey)).size;
   if (duplicateIntentKeys) throw new Error(`semantic intent keys are not unique: ${duplicateIntentKeys}`);
-  const nodeFiles = [];
-  for (const node of nodes) {
-    const nodeUnits = units.filter((unit) => unit.nodeOrder === node.order);
-    const items = nodeUnits.flatMap((unit) => unitSpecs.get(unit.unitId).itemIds.map((itemId) => allItems.find((item) => item.itemId === itemId)));
-    const contentBatchId = `ood-${node.nodeId}-candidate-v1`;
+  const sourceFiles = [];
+  for (const unit of units) {
+    const node = nodes.find((candidate) => candidate.order === unit.nodeOrder);
+    const items = unitSpecs.get(unit.unitId).itemIds.map((itemId) => allItems.find((item) => item.itemId === itemId));
+    const contentBatchId = `ood-${unit.unitId.toLowerCase()}-candidate-v1`;
     const batch = {
       schemaVersion: "object-oriented-design-interview-candidate-source-v1",
       candidateStatus: "generated_and_mechanically_validated_pending_human_review",
@@ -479,15 +479,18 @@ async function main() {
       taxonomyVersion: TAXONOMY_VERSION,
       nodeId: node.nodeId,
       nodeTitle: node.title,
-      mentalUnitIds: nodeUnits.map((unit) => unit.unitId),
+      learningBlockId: unit.unitId,
+      mentalUnitIds: [unit.unitId],
       competencyIds: node.competencyIds,
       items,
       authoringProvenance: { authoringMethod: "manual", approvalStatus: "unapproved", author: AUTHOR, createdAt: CREATED_AT, contentBatchId }
     };
-    const path = join(BANK_ROOT, `${node.nodeId}.content.json`);
+    await mkdir(join(TRACK_ROOT, node.nodeId), { recursive: true });
+    const path = join(TRACK_ROOT, node.nodeId, `${unit.unitId}.json`);
     await writeFile(path, `${JSON.stringify(batch, null, 2)}\n`);
-    nodeFiles.push({ nodeId: node.nodeId, path: `manual/source/object-oriented-design-interview/candidate-bank/${node.nodeId}.content.json`, questionCount: items.length, mentalUnitCount: nodeUnits.length });
+    sourceFiles.push({ nodeId: node.nodeId, learningBlockId: unit.unitId, path: `manual/source/object-oriented-design-interview/${node.nodeId}/${unit.unitId}.json`, questionCount: items.length });
   }
+  const nodeFiles = nodes.map((node) => { const files = sourceFiles.filter((file) => file.nodeId === node.nodeId); return { nodeId: node.nodeId, path: `manual/source/object-oriented-design-interview/${node.nodeId}`, questionCount: files.reduce((sum, file) => sum + file.questionCount, 0), mentalUnitCount: files.length }; });
   const blueprint = {
     schemaVersion: "object-oriented-design-interview-candidate-blueprint-v1",
     sourceWorkbook: "patternly_object-oriented-design-interview_2026-08-15.xlsx",
@@ -498,9 +501,9 @@ async function main() {
     baseline: { canonicalNodes: 9, finalMentalUnits: 79, synthesizedCompetencies: 36, hardQuantityRule: "every node >120", exactGlobalTotal: allItems.length, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted" },
     nodes,
     units: units.map((unit) => ({ ...unit, spec: unitSpecs.get(unit.unitId) })),
-    sourceRegistryPath: "manual/source/object-oriented-design-interview/candidate-bank/source-registry.json"
+    sourceRegistryPath: "evidence/design-interview/object-oriented-design-interview/source-registry.json"
   };
-  await writeFile(join(BANK_ROOT, "blueprint.json"), `${JSON.stringify(blueprint, null, 2)}\n`);
+  await writeFile(join(ARTIFACT_ROOT, "blueprint.json"), `${JSON.stringify(blueprint, null, 2)}\n`);
   const sourceRegistry = {
     schemaVersion: "object-oriented-design-interview-source-registry-v1",
     trackId: "object-oriented-design-interview",
@@ -519,7 +522,7 @@ async function main() {
     sourceRecords,
     claimsAndAnchors: sourceClaims
   };
-  await writeFile(join(BANK_ROOT, "source-registry.json"), `${JSON.stringify(sourceRegistry, null, 2)}\n`);
+  await writeFile(join(ARTIFACT_ROOT, "source-registry.json"), `${JSON.stringify(sourceRegistry, null, 2)}\n`);
   const coverageMatrix = {
     schemaVersion: "object-oriented-design-interview-coverage-matrix-v1",
     trackId: "object-oriented-design-interview",
@@ -527,7 +530,7 @@ async function main() {
     dimensions: ["responsibility", "requirement_interpretation", "valid_state", "invariant", "ownership", "lifecycle", "relationship", "collaboration", "dependency_direction", "api_interface_contract", "substitution", "extensibility", "failure_behavior", "persistence_boundary", "concurrency", "refactoring", "testing", "evolution", "performance_memory", "simplicity", "transfer"],
     units: units.map((unit) => ({ unitId: unit.unitId, nodeId: nodes.find((node) => node.order === unit.nodeOrder).nodeId, requiredDimensions: unitSpecs.get(unit.unitId).coverageMatrix, itemIds: unitSpecs.get(unit.unitId).itemIds, coverageGapAudit: unitSpecs.get(unit.unitId).gapAudit, saturationAudit: unitSpecs.get(unit.unitId).saturationAudit }))
   };
-  await writeFile(join(BANK_ROOT, "coverage-matrix.json"), `${JSON.stringify(coverageMatrix, null, 2)}\n`);
+  await writeFile(join(ARTIFACT_ROOT, "coverage-matrix.json"), `${JSON.stringify(coverageMatrix, null, 2)}\n`);
   const itemIntentMatrix = {
     schemaVersion: "object-oriented-design-interview-item-intent-matrix-v1",
     trackId: "object-oriented-design-interview",
@@ -535,7 +538,7 @@ async function main() {
     itemCount: allItems.length,
     items: allItems.map((item) => ({ itemId: item.itemId, ...item.authoringIntent }))
   };
-  await writeFile(join(BANK_ROOT, "item-intent-matrix.json"), `${JSON.stringify(itemIntentMatrix, null, 2)}\n`);
+  await writeFile(join(ARTIFACT_ROOT, "item-intent-matrix.json"), `${JSON.stringify(itemIntentMatrix, null, 2)}\n`);
   const nodeInventory = nodes.map((node) => {
     const nodeItems = allItems.filter((item) => item.nodeId === node.nodeId);
     const unitIds = [...new Set(nodeItems.map((item) => item.mentalUnitId))];
@@ -554,7 +557,7 @@ async function main() {
     globalAudit: { nodes: "9/9", nodesAbove120: "9/9", mentalUnits: "79/79", competencies: "36/36", materialCoverageGaps: 0, knownSemanticDuplicates: 0, knownFillerItems: 0, missingReason: 0, missingDetails: 0, missingWrongOptionExplanation: 0, missingProvenance: 0, structuralFailures: 0, fabricatedHumanApprovals: 0 },
     admission: { runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending" }
   };
-  await writeFile(join(BANK_ROOT, "completion-ledger.json"), `${JSON.stringify(ledger, null, 2)}\n`);
+  await writeFile(join(ARTIFACT_ROOT, "completion-ledger.json"), `${JSON.stringify(ledger, null, 2)}\n`);
   const richerItems = allItems.filter((item) => item.runtimeCompatibility !== "choice_single_current_schema");
   const familyEvidence = {
     schemaVersion: "object-oriented-design-interview-family-admission-evidence-v1",
@@ -568,11 +571,10 @@ async function main() {
     mentalUnitsNeedingRicherInteraction: units.filter((unit) => unitSpecs.get(unit.unitId).preferredInteraction.match(/diagram|sequence|state|lifecycle|concurrency|snippet|order/)).map((unit) => ({ mentalUnitId: unit.unitId, preferredInteraction: unitSpecs.get(unit.unitId).preferredInteraction, currentContentSchemaCanExpress: true, currentSharedRuntimeConceptuallySupports: false, newInteractionRequired: true })),
     requirements: { diagram: "class, sequence, state, and object-graph representations are required for selected units", objectGraph: "lifecycle and ownership units need graph-aware interpretation", codeTrace: "language-specific contract snippets are useful for equality, variance, lifetime, and concurrency", scoring: "current choice scoring is adequate for proxy items but not sufficient for direct diagram/trace interactions", review: "recommend a separate object_oriented_design family admission review after human technical/editorial review" }
   };
-  await writeFile(join(BANK_ROOT, "family-admission-evidence.json"), `${JSON.stringify(familyEvidence, null, 2)}\n`);
-  const README = `# Object-Oriented Design Interview candidate bank\n\nThis directory contains the complete source-grounded candidate bank derived from the 2026-08-15 workbook blueprint. It is an authoring artifact, not a runtime or publishing package.\n\n- 9 canonical nodes\n- 79 final mental units\n- 36 synthesized competencies\n- ${allItems.length} independently authored candidate items\n- every node exceeds 120 items\n- all items are unapproved and mechanically validated\n- runtime admission: **not_admitted**\n- publishing admission: **not_admitted**\n- human technical/editorial review: **pending**\n\nThe taxonomy is a Patternly source-grounded synthesized interview framework, not an official employer syllabus. Richer interaction needs are recorded in family-admission-evidence.json; no shared runtime, renderer, navigation, persistence, or family implementation is changed here.\n`;
-  await writeFile(join(BANK_ROOT, "README.md"), README);
-  await writeFile(join(TRACK_ROOT, "README.md"), `# object-oriented-design-interview\n\nThe canonical candidate bank lives in candidate-bank/. It is source-grounded, independently authored, mechanically validated, unapproved, and inactive until a separate family-admission and human-review workstream accepts it.\n\n- Runtime admission: **not_admitted**\n- Publishing admission: **not_admitted**\n- Human review: **pending**\n- Workbook blueprint: patternly_object-oriented-design-interview_2026-08-15.xlsx\n`);
-  console.log(JSON.stringify({ bankRoot: BANK_ROOT, nodeFiles, unitCount: units.length, questionCount: allItems.length, semanticIntentDuplicates: duplicateIntentKeys }, null, 2));
+  await writeFile(join(ARTIFACT_ROOT, "family-admission-evidence.json"), `${JSON.stringify(familyEvidence, null, 2)}\n`);
+  await writeFile(join(ARTIFACT_ROOT, "README.md"), `# Object-Oriented Design Interview source audit\n\nThe learner source is organized as manual/source/object-oriented-design-interview/[node]/[learningBlockId].json. This directory contains authoring and admission evidence.\n\n- 9 canonical nodes\n- 79 learning blocks\n- ${allItems.length} independently authored items\n- Runtime admission: **not_admitted**\n- Publishing admission: **not_admitted**\n- Human technical/editorial review: **pending**\n`);
+  await writeFile(join(TRACK_ROOT, "README.md"), `# object-oriented-design-interview\n\nSource content is organized as manual/source/object-oriented-design-interview/[node]/[learningBlockId].json. The source remains unapproved and inactive until the design-interview admission and human review gates are complete.\n\n- 9 canonical nodes\n- 79 learning blocks\n- Runtime admission: **not_admitted**\n- Publishing admission: **not_admitted**\n- Human review: **pending**\n- Audit evidence: evidence/design-interview/object-oriented-design-interview/\n`);
+  console.log(JSON.stringify({ sourceRoot: TRACK_ROOT, artifactRoot: ARTIFACT_ROOT, nodeFiles, sourceFiles, unitCount: units.length, questionCount: allItems.length, semanticIntentDuplicates: duplicateIntentKeys }, null, 2));
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) await main();

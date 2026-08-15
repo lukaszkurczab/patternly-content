@@ -2,11 +2,13 @@ import { readFile, readdir } from "node:fs/promises";
 import { join } from "node:path";
 
 const ROOT = new URL("../../", import.meta.url).pathname;
-const BANK_ROOT = join(ROOT, "manual/source/backend-system-design-interview/candidate-bank");
+const SOURCE_ROOT = join(ROOT, "manual/source/backend-system-design-interview");
+const ARTIFACT_ROOT = join(ROOT, "evidence/design-interview/backend-system-design-interview");
 const fail = (message) => { throw new Error(`BESD-CANDIDATE-VALIDATION: ${message}`); };
 const nonEmpty = (value, label) => { if (typeof value !== "string" || !value.trim()) fail(`${label} must be a non-empty string`); };
 const unique = (values, label) => { if (new Set(values).size !== values.length) fail(`${label} contains duplicates`); };
-const readJson = async (name) => JSON.parse(await readFile(join(BANK_ROOT, name), "utf8"));
+const readJson = async (name) => JSON.parse(await readFile(join(ARTIFACT_ROOT, name), "utf8"));
+const readSourceJson = async (nodeId, learningBlockId) => JSON.parse(await readFile(join(SOURCE_ROOT, nodeId, `${learningBlockId}.json`), "utf8"));
 const RICH_INTERACTIONS = new Set(["capacity_calculation", "sequence_or_data_flow", "topology_comparison", "trust_boundary_mapping", "operational_timeline", "data_model_and_access_path", "cache_consistency_topology"]);
 const REQUIRED_INTENT_KEYS = ["provisionalItemId", "primaryMentalUnitId", "primaryCompetencyId", "authoringFamily", "scenarioArchetype", "workloadProfile", "decisiveConstraint", "architectureState", "expectedDecision", "misconception", "failureMode", "source", "difficulty", "preferredInteraction", "coverageDimension", "runtimeCompatibilityClassification"];
 
@@ -54,9 +56,14 @@ async function main() {
   const sourceKeys = new Set(sourceRegistry.sourceRecords.map((source) => source.key));
   const sourceUrls = new Set(sourceRegistry.sourceRecords.map((source) => source.url));
   if (sourceRegistry.sourceBatches.length !== 89) fail(`expected 89 source batches, got ${sourceRegistry.sourceBatches.length}`);
-  const files = (await readdir(BANK_ROOT)).filter((file) => file.endsWith(".content.json")).sort();
-  const expectedFiles = blueprint.nodes.map((node) => `${node.nodeId}.content.json`).sort();
-  if (JSON.stringify(files) !== JSON.stringify(expectedFiles)) fail("node content file inventory does not match blueprint");
+  const files = [];
+  for (const node of blueprint.nodes) {
+    const nodeFiles = (await readdir(join(SOURCE_ROOT, node.nodeId))).filter((file) => file.endsWith(".json")).sort();
+    files.push(...nodeFiles.map((file) => ({ nodeId: node.nodeId, learningBlockId: file.slice(0, -5), file })));
+  }
+  const expectedFiles = blueprint.units.map((unit) => ({ nodeId: blueprint.nodes.find((node) => node.order === unit.nodeOrder).nodeId, learningBlockId: unit.unitId, file: `${unit.unitId}.json` })).sort((left, right) => `${left.nodeId}/${left.file}`.localeCompare(`${right.nodeId}/${right.file}`));
+  const actualFiles = files.sort((left, right) => `${left.nodeId}/${left.file}`.localeCompare(`${right.nodeId}/${right.file}`));
+  if (JSON.stringify(actualFiles) !== JSON.stringify(expectedFiles)) fail("learning-block source file inventory does not match blueprint");
   const unitById = new Map(blueprint.units.map((unit) => [unit.unitId, unit]));
   for (const unit of blueprint.units) {
     if (unit.status !== "MECHANICALLY_VALIDATED") fail(`${unit.unitId} is not mechanically validated`);
@@ -70,12 +77,13 @@ async function main() {
   const nodeCounts = new Map();
   const coverageByUnit = new Map();
   let richItems = 0;
-  for (const node of blueprint.nodes) {
-    const batch = await readJson(`${node.nodeId}.content.json`);
-    if (batch.schemaVersion !== "backend-system-design-interview-candidate-source-v1" || batch.candidateStatus !== "candidate_content_mechanically_validated_pending_human_review" || batch.activationState !== "inactive_candidate") fail(`${node.nodeId} envelope is not an inactive candidate envelope`);
-    if (batch.runtimeAdmission !== "not_admitted" || batch.publishingAdmission !== "not_admitted") fail(`${node.nodeId} admission boundary drifted`);
-    if (batch.nodeId !== node.nodeId || batch.mentalUnitIds.length !== node.unitCount) fail(`${node.nodeId} node/unit identity is incorrect`);
-    unique(batch.items.map((item) => item.itemId), `${node.nodeId} item IDs`);
+  for (const unit of blueprint.units) {
+    const node = blueprint.nodes.find((candidate) => candidate.order === unit.nodeOrder);
+    const batch = await readSourceJson(node.nodeId, unit.unitId);
+    if (batch.schemaVersion !== "backend-system-design-interview-candidate-source-v1" || batch.candidateStatus !== "candidate_content_mechanically_validated_pending_human_review" || batch.activationState !== "inactive_candidate") fail(`${node.nodeId}/${unit.unitId} envelope is not an inactive candidate envelope`);
+    if (batch.runtimeAdmission !== "not_admitted" || batch.publishingAdmission !== "not_admitted") fail(`${node.nodeId}/${unit.unitId} admission boundary drifted`);
+    if (batch.nodeId !== node.nodeId || batch.learningBlockId !== unit.unitId || JSON.stringify(batch.mentalUnitIds) !== JSON.stringify([unit.unitId])) fail(`${node.nodeId}/${unit.unitId} node/block identity is incorrect`);
+    unique(batch.items.map((item) => item.itemId), `${node.nodeId}/${unit.unitId} item IDs`);
     for (const item of batch.items) {
       validateItem(item, unitById, node.nodeId, sourceUrls, sourceKeys);
       itemIds.push(item.itemId);
@@ -86,9 +94,9 @@ async function main() {
       coverageByUnit.set(item.mentalUnitId, coverage);
       if (RICH_INTERACTIONS.has(item.preferredInteraction)) richItems += 1;
     }
-    nodeCounts.set(node.nodeId, batch.items.length);
-    if (batch.items.length <= 120) fail(`${node.nodeId} has ${batch.items.length}; every node must exceed 120`);
+    nodeCounts.set(node.nodeId, (nodeCounts.get(node.nodeId) ?? 0) + batch.items.length);
   }
+  for (const node of blueprint.nodes) if ((nodeCounts.get(node.nodeId) ?? 0) <= 120) fail(`${node.nodeId} has ${nodeCounts.get(node.nodeId) ?? 0}; every node must exceed 120`);
   for (const unit of blueprint.units) if (unitCounts.get(unit.unitId) !== unit.finalCount) fail(`${unit.unitId} finalCount does not match authored items`);
   unique(itemIds, "global item IDs");
   unique(intentKeys, "global semantic intent keys");

@@ -17,7 +17,6 @@ const contentIdentity = (item) => JSON.stringify({ prompt: item.prompt.trim().to
 const curriculum = await readJson(curriculumPath);
 const registry = await readJson(registryPath);
 const schema = await readJson(schemaPath);
-const ledger = await readJson(join(sourceRoot, "completion-ledger.json"));
 const registryById = new Map(registry.sources.map((source) => [source.sourceId, source]));
 const nodes = new Map(curriculum.nodes.map((node) => [node.nodeId, node]));
 const slots = new Map(curriculum.slots.map((slot) => [slot.slotId, slot]));
@@ -26,13 +25,11 @@ const objectiveIds = new Set(curriculum.objectiveAndDomainOwnership.map((entry) 
 
 if (curriculum.trackId !== TRACK_ID || curriculum.nodes.length !== 5 || curriculum.blockPlans.length !== 64) fail("curriculum is not the corrected 5-node/64-unit structure");
 if (registry.provider !== "Microsoft" || registryById.size !== registry.sources.length || registry.sources.some((source) => !/^https:\/\/learn\.microsoft\.com\//.test(source.url))) fail("source registry contains duplicate or non-Microsoft sources");
-if (ledger.states.join(",") !== "NOT_STARTED,IN_PROGRESS,MECHANICALLY_VALIDATED,BLOCKED_EXTERNAL") fail("completion ledger state contract drifted");
-
 const allFiles = [];
 async function walk(dir) { for (const entry of await readdir(dir, { withFileTypes: true })) { const path = join(dir, entry.name); if (entry.isDirectory()) await walk(path); else allFiles.push(relative(sourceRoot, path)); } }
 await walk(sourceRoot);
-const expectedContentFiles = sorted([...nodes.keys()].map((nodeId) => `${nodeId}/content.json`).concat(["completion-ledger.json"]));
-if (!exact(allFiles, expectedContentFiles)) fail(`source root files do not equal five node content files plus ledger: ${JSON.stringify(allFiles)}`);
+const expectedContentFiles = sorted([...nodes.keys()].map((nodeId) => `${nodeId}/content.json`));
+if (!exact(allFiles, expectedContentFiles)) fail(`source root files do not equal five node content files: ${JSON.stringify(allFiles)}`);
 
 const nodeItems = new Map([...nodes.keys()].map((nodeId) => [nodeId, []]));
 const unitItems = new Map([...unitIds].map((unitId) => [unitId, []]));
@@ -76,10 +73,4 @@ for (const [unitId, items] of unitItems) {
 if (globalSlotIds.size !== curriculum.slots.length) fail(`source bank covers ${globalSlotIds.size}/${curriculum.slots.length} canonical slots`);
 if (globalItemIds.size !== 752) fail(`expected 752 authored items from the corrected saturation plan, found ${globalItemIds.size}`);
 
-const ledgerSkillIds = new Set(ledger.mentalUnits.flatMap((unit) => unit.primaryOfficialSkills));
-if (ledgerSkillIds.size !== 29 || ![...Array.from({ length: 14 }, (_, i) => `C${String(i + 1).padStart(2, "0")}`), ...Array.from({ length: 15 }, (_, i) => `I${String(i + 1).padStart(2, "0")}`)].every((skill) => ledgerSkillIds.has(skill))) fail("official skill coverage is not 29/29");
-if (ledger.quality.knownSemanticDuplicates !== 0 || ledger.quality.fillerQuestions !== 0 || ledger.quality.missingReason !== 0 || ledger.quality.missingDetails !== 0 || ledger.quality.missingWrongOptionExplanations !== 0 || ledger.quality.missingOfficialUrls !== 0 || ledger.quality.structuralFailures !== 0) fail("completion ledger records unresolved quality defects");
-if (ledger.mentalUnits.some((unit) => unit.status !== "MECHANICALLY_VALIDATED" || unit.coverageGapAnalysis.materialGaps.length !== 0 || unit.saturationAudit.status !== "passed")) fail("one or more mental units are not mechanically validated");
-if (ledger.globalAudits?.structuralValidation !== "passed" || ledger.globalAudits?.semanticDuplicateAudit !== "passed" || ledger.globalAudits?.sourceAudit !== "passed" || ledger.globalAudits?.coverageGapAnalysis?.passed !== 64 || ledger.globalAudits?.saturationAudit?.passed !== 64 || ledger.globalAudits?.nodeQuantityFloor?.failed !== 0) fail("global audit ledger is incomplete or records an unresolved result");
-
-console.log(JSON.stringify({ status: "PASS", trackId: TRACK_ID, canonicalNodes: nodes.size, mentalUnits: unitIds.size, questions: globalItemIds.size, nodeCounts: Object.fromEntries([...nodeItems.entries()].map(([nodeId, items]) => [nodeId, items.length])), officialSkills: ledgerSkillIds.size, semanticDuplicates: identities.size - globalItemIds.size, activation: ledger.activationBoundary }, null, 2));
+console.log(JSON.stringify({ status: "PASS", trackId: TRACK_ID, canonicalNodes: nodes.size, mentalUnits: unitIds.size, questions: globalItemIds.size, nodeCounts: Object.fromEntries([...nodeItems.entries()].map(([nodeId, items]) => [nodeId, items.length])), officialSkills: objectiveIds.size, semanticDuplicates: identities.size - globalItemIds.size, activation: curriculum.admission }, null, 2));

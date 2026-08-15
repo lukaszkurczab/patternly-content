@@ -8,8 +8,8 @@ const text = (value, label) => { if (typeof value !== "string" || !value.trim())
 const exact = (left, right) => canonicalJson([...left].sort(compare)) === canonicalJson([...right].sort(compare));
 const unique = (values, label) => { if (new Set(values).size !== values.length) throw new AuthoringFailure("DUPLICATE_ID", `${label} contains duplicates.`); };
 
-async function schemaFor(root, familyId) {
-  const path = familyId === "certification" ? "schemas/publishing/certification-manual-source.schema.json" : familyId === "design_interview" ? "schemas/publishing/design-interview-manual-source.schema.json" : null;
+async function schemaFor(root, familyId, track) {
+  const path = familyId === "certification" ? (track?.registration?.familySourceSchemaPath ?? "schemas/publishing/certification-manual-source.schema.json") : familyId === "design_interview" ? "schemas/publishing/design-interview-manual-source.schema.json" : null;
   if (!path) throw new AuthoringFailure("UNSUPPORTED_AUTHORING_FAMILY", `No authoring source contract exists for ${familyId}.`);
   return { path, schema: await readJson(root, path) };
 }
@@ -68,8 +68,10 @@ function checkSourceBinding(item, slot, familyId) {
   if (familyId === "design_interview" && !binding.bindingId.startsWith("design-binding:")) throw new AuthoringFailure("SOURCE_BINDING_MISMATCH", `${item.itemId} Design source binding is not a direct registry binding.`);
 }
 
-function expectedBlockPath(trackId, nodeId, learningBlockId) {
-  return `manual/source/${trackId}/${nodeId}/${learningBlockId}.json`;
+function expectedSourcePath(track, nodeId, learningBlockId) {
+  return track.registration.sourceLayout === "node"
+    ? `manual/source/${track.trackId}/${nodeId}/content.json`
+    : `manual/source/${track.trackId}/${nodeId}/${learningBlockId}.json`;
 }
 
 export async function validateManualBatch(root, batch, { manifestResult, actualPath } = {}) {
@@ -81,27 +83,34 @@ export async function validateManualBatch(root, batch, { manifestResult, actualP
   if (!track) throw new AuthoringFailure("UNKNOWN_TRACK", `Manual batch references unknown track ${batch.trackId}.`);
   if (batch.familyId !== track.familyId) throw new AuthoringFailure("FAMILY_MISMATCH", `${batch.batchId} family does not match its track.`);
   if (track.familyId === "coding_interview") throw new AuthoringFailure("CODING_SOURCE_CONTRACT", "Coding Interview source must continue through its existing publisher contract.");
-  const { schema } = await schemaFor(root, track.familyId);
+  const nodeLayout = track.registration.sourceLayout === "node";
+  const { schema } = await schemaFor(root, track.familyId, track);
   await validateSchema(batch, schema, `${batch.trackId}/${batch.batchId}`);
   checkProvenance(batch.authoringProvenance, batch.batchId, `${batch.batchId}.authoringProvenance`);
   const trackManifest = manifest.tracks.find((entry) => entry.trackId === batch.trackId);
-  if (!trackManifest || batch.nodeId === undefined || batch.learningBlockId === undefined) throw new AuthoringFailure("INVALID_ENVELOPE", `${batch.batchId} lacks a canonical node/block binding.`);
-  const block = trackManifest.learningBlocks.find((entry) => entry.learningBlockId === batch.learningBlockId && entry.nodeId === batch.nodeId);
+  if (!trackManifest || batch.nodeId === undefined || (!nodeLayout && batch.learningBlockId === undefined)) throw new AuthoringFailure("INVALID_ENVELOPE", `${batch.batchId} lacks a canonical node/block binding.`);
+  const block = nodeLayout
+    ? trackManifest.learningBlocks.find((entry) => entry.nodeId === batch.nodeId)
+    : trackManifest.learningBlocks.find((entry) => entry.learningBlockId === batch.learningBlockId && entry.nodeId === batch.nodeId);
   if (!block) throw new AuthoringFailure("INVALID_REFERENCE", `${batch.batchId} references an unknown node/block.`);
   if (batch.taxonomyVersion !== trackManifest.taxonomyVersion || batch.contentVersion !== trackManifest.contentVersion) throw new AuthoringFailure("VERSION_IDENTITY", `${batch.batchId} taxonomy/content version does not equal the canonical track authoring identity.`);
-  const expectedPath = expectedBlockPath(batch.trackId, batch.nodeId, batch.learningBlockId);
+  const expectedPath = expectedSourcePath(track, batch.nodeId, batch.learningBlockId);
   if (actualPath && actualPath !== expectedPath) throw new AuthoringFailure("PATH_MISMATCH", `${actualPath} is not the exact canonical path ${expectedPath}.`);
   if (!block.authoringAdmittedItemCount || block.plannedSourcePath !== expectedPath) throw new AuthoringFailure("BLOCKED_SOURCE_PATH", `${batch.batchId} references a learning block without an authoring-admitted writable source path.`);
-  const expectedSlots = trackManifest.slots.filter((slot) => slot.learningBlockId === batch.learningBlockId && slot.authoringAdmitted).map((slot) => slot.slotId);
+  const expectedSlots = trackManifest.slots.filter((slot) => (nodeLayout ? slot.nodeId === batch.nodeId : slot.learningBlockId === batch.learningBlockId) && slot.authoringAdmitted).map((slot) => slot.slotId);
   if (!exact(batch.slotIds, expectedSlots)) throw new AuthoringFailure("INCOMPLETE_BATCH", `${batch.batchId} must declare exactly the authoring-admitted slots for its learning block.`);
   if (batch.items.length !== expectedSlots.length) throw new AuthoringFailure("INCOMPLETE_BATCH", `${batch.batchId} must contain one item per declared slot.`);
+  if (nodeLayout && !exact(batch.learningBlockIds, [...new Set(trackManifest.slots.filter((slot) => slot.nodeId === batch.nodeId && slot.authoringAdmitted).map((slot) => slot.learningBlockId))])) throw new AuthoringFailure("INCOMPLETE_BATCH", `${batch.batchId} must declare every authoring-admitted learning block owned by its node.`);
   unique(batch.slotIds, `${batch.batchId} slot IDs`); unique(batch.items.map((item) => item.itemId), `${batch.batchId} item IDs`);
   const slots = new Map(trackManifest.slots.map((slot) => [slot.slotId, slot]));
   const family = model.families.get(track.familyId);
   for (const item of batch.items) {
     const slot = slots.get(item.slotId);
     if (!slot || !batch.slotIds.includes(item.slotId)) throw new AuthoringFailure("INVALID_REFERENCE", `${item.itemId} references an unknown or undeclared slot.`);
-    if (item.nodeId !== batch.nodeId || item.learningBlockId !== batch.learningBlockId || item.nodeId !== slot.nodeId || item.learningBlockId !== slot.learningBlockId) throw new AuthoringFailure("CROSS_BLOCK_ITEM", `${item.itemId} crosses its batch node/block.`);
+    const crossesBatch = nodeLayout
+      ? item.nodeId !== batch.nodeId || item.learningBlockId !== slot.learningBlockId
+      : item.nodeId !== batch.nodeId || item.learningBlockId !== batch.learningBlockId;
+    if (crossesBatch || item.nodeId !== slot.nodeId || item.learningBlockId !== slot.learningBlockId) throw new AuthoringFailure("CROSS_BLOCK_ITEM", `${item.itemId} crosses its batch node/block.`);
     if (canonical(item.taxonomy) !== canonical(expectedTaxonomy(track.normalized.slots.find((entry) => entry.slotId === item.slotId), track.familyId))) throw new AuthoringFailure("INVALID_TAXONOMY", `${item.itemId} taxonomy does not equal its canonical slot taxonomy.`);
     checkInteraction(item, family, slot);
     if (!exact(item.modeEligibility, slot.modeEligibility)) throw new AuthoringFailure("MODE_DRIFT", `${item.itemId} mode eligibility differs from the canonical slot contract.`);
@@ -147,7 +156,7 @@ export function validateManifest(manifest, model) {
       if (!blockIds.has(slot.learningBlockId)) throw new AuthoringFailure("SLOT_COVERAGE", `${track.trackId}/${slot.slotId} references an unknown manifest block.`);
       if (slot.authoringAdmitted && !slot.plannedSourcePath) throw new AuthoringFailure("PATH_MAPPING", `${track.trackId}/${slot.slotId} is admitted without a planned source path.`);
       if (!slot.authoringAdmitted && (slot.writableSourcePaths?.length ?? 0) !== 0) throw new AuthoringFailure("PATH_MAPPING", `${track.trackId}/${slot.slotId} is blocked but has a writable source path.`);
-      if (canonicalTrack.familyId !== "coding_interview" && slot.plannedSourcePath !== (slot.authoringAdmitted ? expectedBlockPath(track.trackId, slot.nodeId, slot.learningBlockId) : null)) throw new AuthoringFailure("PATH_MAPPING", `${track.trackId}/${slot.slotId} does not have the exact stable learning-block path.`);
+      if (canonicalTrack.familyId !== "coding_interview" && slot.plannedSourcePath !== (slot.authoringAdmitted ? expectedSourcePath(canonicalTrack, slot.nodeId, slot.learningBlockId) : null)) throw new AuthoringFailure("PATH_MAPPING", `${track.trackId}/${slot.slotId} does not have the exact stable source path.`);
       if (slot.plannedSourcePath) paths.push(slot.plannedSourcePath);
     }
     const sourcePaths = [...new Set(track.learningBlocks.flatMap((block) => block.sourcePaths ?? []))].sort(compare);
@@ -160,13 +169,13 @@ export function validateManifest(manifest, model) {
     for (const block of track.learningBlocks) {
       if (!/^T[0-6]$/.test(block.priorityTier) || !Array.isArray(block.priorityReasons) || !block.priorityReasons.length) throw new AuthoringFailure("PRIORITY_MAPPING", `${track.trackId}/${block.learningBlockId} lacks a semantic priority tier.`);
       if (canonicalTrack.familyId !== "coding_interview") {
-        const expected = expectedBlockPath(track.trackId, block.nodeId, block.learningBlockId);
-        if (block.authoringAdmittedItemCount > 0 && (block.plannedSourcePath !== expected || sourcePaths.filter((path) => path === expected).length !== 1)) throw new AuthoringFailure("PATH_MAPPING", `${track.trackId}/${block.learningBlockId} does not own exactly one future source file.`);
+        const expected = expectedSourcePath(canonicalTrack, block.nodeId, block.learningBlockId);
+        if (block.authoringAdmittedItemCount > 0 && (block.plannedSourcePath !== expected || sourcePaths.filter((path) => path === expected).length !== 1)) throw new AuthoringFailure("PATH_MAPPING", `${track.trackId}/${block.learningBlockId} does not map to its node-owned source file.`);
         if (block.authoringAdmittedItemCount === 0 && (block.plannedSourcePath !== null || (block.sourcePaths?.length ?? 0) !== 0 || block.plannedAuthoringBriefPath !== null)) throw new AuthoringFailure("PATH_MAPPING", `${track.trackId}/${block.learningBlockId} is blocked but retains a writable identity.`);
       }
       if (block.sourcePaths?.length) blockPaths.push(...block.sourcePaths);
     }
-    allWritablePaths.push(...blockPaths);
+    allWritablePaths.push(...new Set(blockPaths));
     if (new Set(paths).size > sourcePaths.length && canonicalTrack.familyId !== "coding_interview") throw new AuthoringFailure("PATH_MAPPING", `${track.trackId} maps more future paths than its learning blocks.`);
   }
   if (new Set(allWritablePaths).size !== allWritablePaths.length) throw new AuthoringFailure("PATH_COLLISION", "A future source path is owned by more than one track/node/block.");

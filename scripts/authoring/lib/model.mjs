@@ -270,7 +270,11 @@ export async function buildTrackPlan(root, track, model) {
     }
     else sourceStatus = { admitted: true, status: "existing_contract", reason: null, binding: null };
     const block = normalized.blockById.get(slot.learningBlockId);
-    const sourcePath = track.familyId === "coding_interview" ? codingIndex.byBlock.get(block.blockId)?.sourcePaths?.[0] ?? null : `manual/source/${track.trackId}/${slot.nodeId}/${slot.learningBlockId}.json`;
+    const sourcePath = track.familyId === "coding_interview"
+      ? codingIndex.byBlock.get(block.blockId)?.sourcePaths?.[0] ?? null
+      : track.registration.sourceLayout === "node"
+        ? `manual/source/${track.trackId}/${slot.nodeId}/content.json`
+        : `manual/source/${track.trackId}/${slot.nodeId}/${slot.learningBlockId}.json`;
     const sourceWritable = track.familyId !== "coding_interview" && sourceStatus.admitted;
     const allowedModes = track.familyId === "design_interview" ? [...designChoiceModeIds(track.family)].filter((id) => (slot.eligibleModes ?? []).includes(id)).sort(compare) : [...(slot.eligibleModes ?? [])].sort(compare);
     return {
@@ -294,7 +298,7 @@ export async function buildTrackPlan(root, track, model) {
       plannedSourcePath: sourceWritable || track.familyId === "coding_interview" ? sourcePath : null,
       eventualSourcePath: sourcePath,
       writableSourcePaths: sourceWritable ? [sourcePath] : track.familyId === "coding_interview" ? (codingIndex.byBlock.get(block.blockId)?.sourcePaths ?? []) : [],
-      plannedAuthoringBriefPath: sourceWritable ? `manual/source/${track.trackId}/${slot.nodeId}/${slot.learningBlockId}.authoring.md` : null
+      plannedAuthoringBriefPath: sourceWritable && track.registration.sourceLayout !== "node" ? `manual/source/${track.trackId}/${slot.nodeId}/${slot.learningBlockId}.authoring.md` : null
     };
   });
   const initialBlocks = initialHandoffBlockIds(track, slotPlans);
@@ -319,7 +323,7 @@ export async function buildTrackPlan(root, track, model) {
       blockedItemCount: blockBlockedItemCount,
       plannedSourcePath: sourcePaths[0] ?? null,
       sourcePaths: sorted(sourcePaths),
-      plannedAuthoringBriefPath: admitted && track.familyId !== "coding_interview" ? `manual/source/${track.trackId}/${block.nodeId}/${block.blockId}.authoring.md` : null,
+      plannedAuthoringBriefPath: admitted && track.familyId !== "coding_interview" && track.registration.sourceLayout !== "node" ? `manual/source/${track.trackId}/${block.nodeId}/${block.blockId}.authoring.md` : null,
       action,
       blockingReasons: [...new Set(slots.flatMap((slot) => slot.blockingReasons))],
       slotIds: slots.map((slot) => slot.slotId)

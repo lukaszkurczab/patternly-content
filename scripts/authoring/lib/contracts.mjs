@@ -193,7 +193,9 @@ export async function validateAuthoringContracts(root) {
   const paths = (await repoFiles(root, ["manual/source"])).filter((path) => path.endsWith(".json"));
   const codingSchema = await readJson(root, "schemas/publishing/coding-interview-manual-source.schema.json");
   const codingRoot = "manual/source/coding-interview-dsa-problem-solving/";
+  const unadmittedCandidateRoots = new Set(["manual/source/object-oriented-design-interview/candidate-bank/"]);
   for (const path of paths) {
+    if ([...unadmittedCandidateRoots].some((candidateRoot) => path.startsWith(candidateRoot))) continue;
     let batch;
     try { batch = JSON.parse(await readFile(join(root, path), "utf8")); } catch (error) { throw new AuthoringFailure("INVALID_SOURCE_JSON", `${path} is not valid JSON: ${error.message}`); }
     if (path.startsWith(codingRoot)) {

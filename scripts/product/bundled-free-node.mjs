@@ -376,6 +376,12 @@ export function canonicalBundledFreeNodePath(record) {
   return join("artifacts", "bundled-free-nodes", record.manifest.trackId, record.manifest.packageVersion, "package.json");
 }
 
+function bundledFreeNodeMismatchSummary(actual, expected) {
+  const manifestFields = [...new Set([...Object.keys(actual.manifest ?? {}), ...Object.keys(expected.manifest ?? {})])]
+    .filter((field) => canonicalJson(actual.manifest?.[field]) !== canonicalJson(expected.manifest?.[field]));
+  return manifestFields.length ? ` Mismatched manifest fields: ${manifestFields.join(", ")}.` : " Payload or top-level schema fields differ.";
+}
+
 export async function validateBundledFreeNode({ root = ROOT, bundledFreeNodePath }) {
   const record = await readJson(resolve(root, bundledFreeNodePath));
   const schema = await readJson(join(root, "schemas/product/bundled-free-node.schema.json"));
@@ -383,7 +389,7 @@ export async function validateBundledFreeNode({ root = ROOT, bundledFreeNodePath
   if (bundledFreeNodePath !== canonicalBundledFreeNodePath(record)) fail("INVALID_PATH", "Bundled Free-node package path must match its immutable package identity.");
   await generateBundledFreeNode({ root, trackId: record.manifest.trackId });
   const expected = await generateBundledFreeNode({ root, trackId: record.manifest.trackId, profileSourceRepositoryCommit: record.manifest.provenance.profileSourceRepositoryCommit });
-  if (canonicalJson(record) !== canonicalJson(expected)) fail("BUNDLED_FREE_NODE_MISMATCH", "Bundled Free node does not exactly equal its pinned release, profile, brief, inventory, and package version inputs.");
+  if (canonicalJson(record) !== canonicalJson(expected)) fail("BUNDLED_FREE_NODE_MISMATCH", `Bundled Free node does not exactly equal its pinned release, profile, brief, inventory, and package version inputs.${bundledFreeNodeMismatchSummary(record, expected)}`);
   return record;
 }
 

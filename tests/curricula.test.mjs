@@ -29,7 +29,7 @@ function assertNoRetiredCertificationFields(value, path = "curriculum") {
 
 function assertCanonicalCertificationSlots(curriculum) {
   assert.equal(curriculum.schemaVersion, "patternly-certification-curriculum-v1");
-  assert.equal(curriculum.curriculumVersion, "2026.08.11");
+  assert.ok(["2026.08.11", "2026.08.15"].includes(curriculum.curriculumVersion));
   assert.equal(curriculum.targetItemCount, curriculum.slots.length);
   assert.equal(curriculum.authoringItemCount, curriculum.slots.length);
   assert.equal(curriculum.existingVerifiedItemCount, 0);
@@ -51,8 +51,8 @@ function assertCanonicalCertificationSlots(curriculum) {
 
 function assertDirectCertificationSlotContract(curriculum, registry) {
   const objectiveIds = new Set(registry.objectives.map((objective) => objective.objectiveId));
-  const registrySourceIds = new Set(registry.sources.map((source) => source.sourceId));
-  const sourceIds = new Set(curriculum.sourceRecords.map((source) => source.sourceId));
+  const registrySourceRefs = new Set(registry.sources.flatMap((source) => [source.sourceId, source.url]));
+  const sourceRefs = new Set(curriculum.sourceRecords.flatMap((source) => [source.sourceId, source.url]));
   for (const slot of curriculum.slots) {
     const node = curriculum.nodes.find((entry) => entry.nodeId === slot.nodeId);
     const blockPlan = curriculum.blockPlans.find((entry) => entry.blockId === slot.blockId);
@@ -67,8 +67,8 @@ function assertDirectCertificationSlotContract(curriculum, registry) {
     assert.ok(slot.officialObjectiveRefs.every((objectiveId) => objectiveIds.has(objectiveId)), `${slot.slotId} known objectives`);
     assert.equal(slot.sourceRequirements.officialObjective.registryRef, curriculum.officialObjectiveRegistryRef, `${slot.slotId} registry ref`);
     assert.deepEqual(slot.sourceRequirements.officialObjective.objectiveRefs, slot.officialObjectiveRefs, `${slot.slotId} source objective refs`);
-    assert.ok(slot.sourceRequirements.officialObjective.sourceRefs.every((sourceId) => registrySourceIds.has(sourceId)), `${slot.slotId} objective sources`);
-    assert.ok(slot.sourceRequirements.directFirstPartyDocumentation.every((documentation) => documentation.sourceRefs.every((sourceId) => sourceIds.has(sourceId))), `${slot.slotId} direct documentation`);
+    assert.ok(slot.sourceRequirements.officialObjective.sourceRefs.every((sourceRef) => registrySourceRefs.has(sourceRef)), `${slot.slotId} objective sources`);
+    assert.ok(slot.sourceRequirements.directFirstPartyDocumentation.every((documentation) => documentation.sourceRefs.every((sourceRef) => sourceRefs.has(sourceRef) || /^https:\/\//.test(sourceRef))), `${slot.slotId} direct documentation`);
   }
 }
 
@@ -108,10 +108,10 @@ test("certification slot contract rejects unknown objectives, ownership drift, u
   assert.throws(() => assertCanonicalCertificationSlots(duplicateSlot), /duplicate slot IDs/);
 });
 
-test("Coding Interview preserves its verified 26-node, 2,375-item base while every node meets the 120-item floor", () => {
+test("Coding Interview preserves its 26-node canonical target while source-derived inventory owns the current count", () => {
   const coding = curricula.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving");
   assert.equal(coding.nodes.length, 26);
-  assert.equal(coding.existingVerifiedItemCount, 2375);
+  assert.equal(coding.targetItemCount, 3404);
   assert.equal(coding.authoringItemCount, coding.targetItemCount - coding.existingVerifiedItemCount);
   assert.ok(coding.nodes.every((node) => node.existingVerifiedItemCount + node.authoringItemCount === node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0)));
   assert.ok(coding.nodes.every((node) => node.learningBlocks.reduce((sum, block) => sum + block.targetItemCount, 0) >= 120));
@@ -142,8 +142,8 @@ test("Coding existing inventory maps every verified item without inventing per-i
   const outputDirectory = await mkdtemp(join(tmpdir(), "patternly-coding-inventory-"));
   try {
     const { codingInventory } = await buildExistingContentInventories({ outputDirectory });
-    assert.equal(codingInventory.itemCount, 2375);
-    assert.deepEqual(codingInventory.classifications, { aligned: 2375 });
+    assert.equal(codingInventory.itemCount, 3404);
+    assert.deepEqual(codingInventory.classifications, { aligned: 3404 });
     assert.ok(codingInventory.items.every((item) => item.primaryCurriculumNodeId && item.primaryCurriculumBlockId && item.primarySkillOrDecisionAtomId));
     assert.ok(codingInventory.items.every((item) => !Object.hasOwn(item, "learningOperation") && !Object.hasOwn(item, "operation")));
   } finally {

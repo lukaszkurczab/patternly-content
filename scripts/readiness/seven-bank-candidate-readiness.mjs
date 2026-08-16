@@ -1,0 +1,69 @@
+import { createHash } from "node:crypto";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { join, relative } from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+
+const exec = promisify(execFile);
+const root = process.cwd();
+const outputPath = join(root, "evidence/readiness/seven-bank-candidate-readiness.json");
+const candidates = [
+  ["coding-interview-dsa-problem-solving", "coding_interview", "npm run validate:real:coding-interview"],
+  ["google-cloud-associate-cloud-engineer", "certification", "npm run audit:gcp:authoring"],
+  ["aws-certified-solutions-architect-associate", "certification", "npm run audit:aws-workbook-source"],
+  ["microsoft-azure-ai-fundamentals-ai-901", "certification", "npm run audit:ai901"],
+  ["backend-system-design-interview", "design_interview", "npm run validate:backend-system-design"],
+  ["frontend-system-design-interview", "design_interview", "npm run validate:frontend-bank"],
+  ["object-oriented-design-interview", "design_interview", "npm run validate:object-oriented-design"]
+];
+
+const canonical = (value) => {
+  if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+  return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
+};
+const hash = (value) => createHash("sha256").update(value).digest("hex");
+async function walk(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.sort((a, b) => a.name.localeCompare(b.name)).map((entry) => entry.isDirectory() ? walk(join(directory, entry.name)) : [join(directory, entry.name)]));
+  return nested.flat();
+}
+async function sourceSummary(trackId, familyId, validatorCommand) {
+  const sourceRoot = join(root, "manual/source", trackId);
+  const files = (await walk(sourceRoot)).filter((file) => file.endsWith(".json")).sort();
+  const batches = await Promise.all(files.map(async (file) => ({ file, value: JSON.parse(await readFile(file, "utf8")) })));
+  const items = batches.flatMap(({ value }) => value.items ?? []);
+  const nodeIds = [...new Set(batches.map(({ value }) => value.nodeId).filter(Boolean))].sort();
+  const blockIds = [...new Set(batches.map(({ value }) => value.learningBlockId).filter(Boolean))].sort();
+  const admissions = batches.map(({ value }) => ({ runtime: value.runtimeAdmission, publishing: value.publishingAdmission, approval: value.authoringProvenance?.approvalStatus }));
+  const inactive = admissions.every((entry) => entry.runtime === undefined || entry.runtime === "not_admitted") && admissions.every((entry) => entry.publishing === undefined || entry.publishing === "not_admitted");
+  const packageRoot = join(root, "artifacts/bundled-free-nodes", trackId);
+  let bundledPackage = null;
+  try { bundledPackage = (await walk(packageRoot)).filter((file) => file.endsWith("package.json")).map((file) => relative(root, file)).sort(); } catch { bundledPackage = []; }
+  return {
+    trackId,
+    familyId,
+    currentSourceRoot: relative(root, sourceRoot),
+    authoringRegistrationPath: `config/authoring/tracks/${trackId}.json`,
+    sourceFileCount: files.length,
+    canonicalItemCount: items.length,
+    nodeCount: nodeIds.length,
+    learningBlockCount: blockIds.length,
+    interactionInventory: Object.fromEntries([...items.reduce((counts, item) => counts.set(item.interaction?.type ?? "unknown", (counts.get(item.interaction?.type ?? "unknown") ?? 0) + 1), new Map()).entries()].sort(([a], [b]) => a.localeCompare(b))),
+    structuralValidation: { result: "required_in_ci", command: validatorCommand },
+    humanReview: admissions.some((entry) => entry.approval === "unapproved") ? "unapproved" : "pending",
+    runtimeAdmission: inactive ? "not_admitted" : "mixed_or_unknown",
+    publishingAdmission: inactive ? "not_admitted" : "mixed_or_unknown",
+    immutableArtifact: { presence: "not_verified_by_source-only-report", version: null },
+    bundledFreeNodePackage: { paths: bundledPackage, presence: bundledPackage.length ? "present" : "absent" },
+    blockers: ["human_review_required", "runtime_admission_not_granted", "publishing_admission_not_granted"]
+  };
+}
+
+const sourceCommit = (await exec("git", ["rev-parse", "HEAD"], { cwd: root })).stdout.trim();
+const banks = await Promise.all(candidates.map(([trackId, familyId, validator]) => sourceSummary(trackId, familyId, validator)));
+const report = { schemaVersion: "seven-bank-candidate-readiness-v1", sourceCommit, candidateTrackIds: banks.map((bank) => bank.trackId).sort(), banks: banks.sort((a, b) => a.trackId.localeCompare(b.trackId)) };
+const bytes = `${canonical(report)}\n`;
+await mkdir(join(root, "evidence/readiness"), { recursive: true });
+await writeFile(outputPath, bytes);
+console.log(JSON.stringify({ path: relative(root, outputPath), sha256: hash(bytes), banks: report.banks.length }, null, 2));

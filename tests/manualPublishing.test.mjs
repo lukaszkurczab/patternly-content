@@ -75,7 +75,9 @@ test("publisher accepts only exact application Coding Interview mode IDs", async
 test("Coding Interview build report proves readiness for all eight user modes without an eighth blueprint", async () => {
   const inspected = await inspectTrack({ trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT });
   assert.equal(inspected.source.modeStructures.userModeReadiness.length, 8);
-  assert.deepEqual(inspected.source.modeStructures.userModeReadiness.find((entry) => entry.userModeId === "coding-interview-custom-practice"), { userModeId: "coding-interview-custom-practice", blueprintModeId: "coding-interview-guided-practice", requestedLengths: [10, 20, 40], availableUniqueItemCount: 2375 });
+  const customPractice = inspected.source.modeStructures.userModeReadiness.find((entry) => entry.userModeId === "coding-interview-custom-practice");
+  assert.deepEqual({ ...customPractice, availableUniqueItemCount: undefined }, { userModeId: "coding-interview-custom-practice", blueprintModeId: "coding-interview-guided-practice", requestedLengths: [10, 20, 40], availableUniqueItemCount: undefined });
+  assert.equal(customPractice.availableUniqueItemCount, inspected.source.items.length);
   const path = await root({ coding_interview: algorithmsBatch(), technicalEvidence: false });
   try { const trackPath = join(path, "config/tracks/coding-interview-dsa-problem-solving.json"); const track = JSON.parse(await readFile(trackPath, "utf8")); track.modeConfiguration.userModeMappings = track.modeConfiguration.userModeMappings.filter((entry) => entry.userModeId !== "coding-interview-custom-practice"); await writeFile(trackPath, JSON.stringify(track)); await assert.rejects(() => inspectTrack({ root: path, trackId: "coding-interview-dsa-problem-solving", sourceRepositoryCommit: COMMIT }), fails("INVALID_TRACK_MODE_CONFIGURATION")); } finally { await rm(path, { recursive: true }); }
 });

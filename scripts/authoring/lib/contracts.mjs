@@ -195,15 +195,26 @@ export async function validateAuthoringContracts(root) {
   const paths = (await repoFiles(root, ["manual/source"])).filter((path) => path.endsWith(".json"));
   const codingSchema = await readJson(root, "schemas/publishing/coding-interview-manual-source.schema.json");
   const codingRoot = "manual/source/coding-interview-dsa-problem-solving/";
-  const unadmittedDesignSourceTracks = new Set([
-    "backend-system-design-interview",
-    "frontend-system-design-interview",
-    "object-oriented-design-interview"
+  const candidateSourceTracks = new Set([
+    "aws-certified-solutions-architect-associate",
+    "google-cloud-associate-cloud-engineer",
+    "microsoft-azure-ai-fundamentals-ai-901"
   ]);
+  const designCandidateSourceTracks = new Set(["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]);
   for (const path of paths) {
     let batch;
     try { batch = JSON.parse(await readFile(join(root, path), "utf8")); } catch (error) { throw new AuthoringFailure("INVALID_SOURCE_JSON", `${path} is not valid JSON: ${error.message}`); }
-    if (unadmittedDesignSourceTracks.has(batch.trackId) && batch.activationState === "inactive_candidate" && batch.runtimeAdmission === "not_admitted" && batch.publishingAdmission === "not_admitted" && batch.authoringProvenance?.approvalStatus === "unapproved") continue;
+    if (designCandidateSourceTracks.has(batch.trackId)) {
+      if (batch.activationState !== "inactive_candidate" || batch.runtimeAdmission !== "not_admitted" || batch.publishingAdmission !== "not_admitted" || batch.authoringProvenance?.approvalStatus !== "unapproved") throw new AuthoringFailure("CANDIDATE_ADMISSION_BOUNDARY", `${path} crosses the candidate admission boundary.`);
+      continue;
+    }
+    if (candidateSourceTracks.has(batch.trackId)) {
+      const track = model.curricula.get(batch.trackId);
+      if (!track || batch.familyId !== track.familyId) throw new AuthoringFailure("FAMILY_MISMATCH", `${path} does not match its registered candidate track.`);
+      const { schema } = await schemaFor(root, batch.familyId, track);
+      await validateSchema(batch, schema, path);
+      continue;
+    }
     if (path.startsWith(codingRoot)) {
       if (batch.familyId !== "coding_interview") throw new AuthoringFailure("FAMILY_PATH_MISMATCH", `${path} is under the Coding source root but does not declare coding_interview.`);
       await validateSchema(batch, codingSchema, path);

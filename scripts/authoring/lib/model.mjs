@@ -308,7 +308,10 @@ export async function buildTrackPlan(root, track, model) {
     const sourcePaths = track.familyId === "coding_interview" ? (codingIndex.byBlock.get(block.blockId)?.sourcePaths ?? []) : sorted([...new Set(slots.filter((slot) => slot.authoringAdmitted).map((slot) => slot.eventualSourcePath).filter(Boolean))]);
     const existingVerifiedItemCount = track.familyId === "coding_interview" ? codingIndex.byBlock.get(block.blockId)?.itemCount ?? 0 : 0;
     const plannedItemCount = slots.reduce((sum, slot) => sum + slot.plannedItemCount, 0);
-    const remainingItemCount = Math.max(0, plannedItemCount - existingVerifiedItemCount);
+    // Source-derived Coding inventory is complete at this baseline. The
+    // curriculum's former per-block volume plan cannot manufacture a remaining
+    // authoring backlog when source already contains the canonical items.
+    const remainingItemCount = track.familyId === "coding_interview" ? 0 : Math.max(0, plannedItemCount - existingVerifiedItemCount);
     const admitted = slots.some((slot) => slot.authoringAdmitted);
     const action = track.familyId === "coding_interview" ? existingVerifiedItemCount && remainingItemCount ? "extend_existing_after_separate_review" : "preserve_existing" : admitted ? "create_authoring_brief" : "blocked_source";
     const blockAuthoringAdmittedItemCount = track.familyId === "coding_interview" ? remainingItemCount : slots.reduce((sum, slot) => sum + slot.authoringAdmittedItemCount, 0);
@@ -332,8 +335,13 @@ export async function buildTrackPlan(root, track, model) {
     blockPlan.isInitialAuthoringBatch = initialBlocks.has(block.blockId) && blockPlan.authoringAdmittedItemCount > 0;
     byBlock.set(block.blockId, blockPlan);
   }
+  const learningBlocks = normalized.blocks.map((block) => byBlock.get(block.blockId));
   const plannedItemCount = track.familyId === "coding_interview" ? track.targetItemCount : normalized.slots.reduce((sum, slot) => sum + slot.plannedItemCount, 0);
-  const existingVerifiedItemCount = track.familyId === "coding_interview" ? track.existingVerifiedItemCount : 0;
+  // Manual source is the canonical Coding inventory. Curriculum declarations are
+  // planning inputs and must not make an already-present source batch invisible.
+  const existingVerifiedItemCount = track.familyId === "coding_interview"
+    ? learningBlocks.reduce((sum, block) => sum + block.existingVerifiedItemCount, 0)
+    : 0;
   const remainingItemCount = Math.max(0, plannedItemCount - existingVerifiedItemCount);
   const authoringAdmittedItemCount = track.familyId === "coding_interview" ? remainingItemCount : slotPlans.reduce((sum, slot) => sum + slot.authoringAdmittedItemCount, 0);
   const blockedItemCount = slotPlans.reduce((sum, slot) => sum + slot.blockedItemCount, 0);
@@ -343,7 +351,6 @@ export async function buildTrackPlan(root, track, model) {
   const runtimePublicationReadiness = track.familyId === "coding_interview" && sourcePaths.length > 0 && track.registration.examOrModeProfilePath.startsWith("config/tracks/") ? "admitted_for_existing_coding_pipeline" : "not_admitted";
   const taxonomyVersion = track.familyId === "coding_interview" ? null : track.curriculumVersion;
   const contentVersion = track.familyId === "coding_interview" ? null : track.registration.authoringVersion.contentVersion;
-  const learningBlocks = normalized.blocks.map((block) => byBlock.get(block.blockId));
   return {
     trackId: track.trackId,
     familyId: track.familyId,

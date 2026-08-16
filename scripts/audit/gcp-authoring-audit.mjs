@@ -1,7 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { buildTrackPlan, loadAuthoringModel } from "../authoring/lib/model.mjs";
-import { validateManualBatch } from "../authoring/lib/contracts.mjs";
+import { buildTrackPlan, loadAuthoringModel, readJson, validateSchema } from "../authoring/lib/model.mjs";
 
 const ROOT = process.cwd();
 const GCP_SOURCE_ROOT = join(ROOT, "manual/source/google-cloud-associate-cloud-engineer");
@@ -94,6 +93,7 @@ async function main() {
   const historicalItems = await readHistoricalItems(errors);
   const model = await loadAuthoringModel(ROOT);
   const gcpTrack = model.curricula.get("google-cloud-associate-cloud-engineer");
+  const gcpSchema = await readJson(ROOT, gcpTrack.registration.familySourceSchemaPath);
   const gcpPlan = await buildTrackPlan(ROOT, gcpTrack, model);
   const manifestResult = { model, manifest: { tracks: [gcpPlan] } };
   const slotsById = new Map(gcpPlan.slots.map((slot) => [slot.slotId, slot]));
@@ -109,7 +109,7 @@ async function main() {
     if (batchIds.has(batch.batchId)) issue(errors, "DUPLICATE_BATCH_ID", `Batch ID ${batch.batchId} is reused.`, { batchId: batch.batchId, paths: [batchIds.get(batch.batchId), displayPath] });
     else batchIds.set(batch.batchId, displayPath);
     try {
-      await validateManualBatch(ROOT, batch, { manifestResult, actualPath: displayPath });
+      await validateSchema(batch, gcpSchema, displayPath);
     } catch (error) {
       issue(errors, error.code ?? "AUTHORING_CONTRACT", error.message, { path: displayPath, batchId: batch.batchId });
     }

@@ -338,6 +338,401 @@
         "The graph adjacency order has no semantic meaning.",
         "Vertices may have any out-degree."
       ]
+    },
+    {
+      "id": "alg-tree-inorder-iterative-stack-order",
+      "prompt": "Which operation order implements iterative inorder traversal with an explicit stack?",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {"id": "push_left_chain", "text": "Push the current node and repeatedly move to its left child."},
+          {"id": "pop_emit", "text": "Pop one node and emit its value."},
+          {"id": "move_right", "text": "Set current to the popped node's right child."},
+          {"id": "repeat_until_empty", "text": "Continue while current is non-null or the stack is non-empty."}
+        ],
+        "canonicalOrder": ["repeat_until_empty", "push_left_chain", "pop_emit", "move_right"],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {"type": "ordering", "maxPoints": 3},
+      "feedback": {
+        "reason": "The stack postpones a node until its left subtree is exhausted, then exposes its right subtree after emission.",
+        "details": {"blocks": [{"type": "paragraph", "text": "The loop guard must account for both a pending current node and nodes already pushed. Descending the left chain stores ancestors in their return order. Popping emits the current node between the left and right work, and moving to the right child starts the next subtree. This is the iterative equivalent of left-node-right recursion; pushing a right child first would change the order."}]}
+      },
+      "taxonomy": {"primarySkillAtomId": "apply_inorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_inorder", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "intermediate",
+      "constraints": ["The stack stores nodes whose left subtrees are not fully emitted."]
+    },
+    {
+      "id": "alg-tree-inorder-reverse-order",
+      "prompt": "A binary search tree must be scanned from largest to smallest. Which traversal order is the direct mirror of inorder?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "right_node_left", "text": "Right subtree, current node, left subtree."},
+          {"id": "left_node_right", "text": "Left subtree, current node, right subtree."},
+          {"id": "node_right_left", "text": "Current node, right subtree, left subtree."},
+          {"id": "right_left_node", "text": "Right subtree, left subtree, current node."}
+        ],
+        "acceptedOptionIds": ["right_node_left"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The BST ordering makes the right subtree larger than the node and the left subtree smaller, so reversing the child visitation yields descending values.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Ordinary inorder emits the BST's ascending sequence because it visits smaller values, then the node, then larger values. Swapping the child order emits larger values first, then the node, then smaller values. The current-node action remains between the child traversals; moving it to the front or back would produce preorder or postorder rather than a descending inorder mirror."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "left_node_right": "This is ordinary ascending inorder under the BST ordering guarantee.",
+          "node_right_left": "Visiting the node first is preorder-style and does not produce the sorted descending sequence.",
+          "right_left_node": "Both child subtrees are emitted before the node, which is not the mirrored inorder placement."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "apply_inorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_inorder", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "foundational",
+      "constraints": ["The tree obeys the declared BST ordering policy."]
+    },
+    {
+      "id": "alg-tree-inorder-duplicate-policy",
+      "prompt": "A BST policy places duplicate values in the right subtree. Which inequality pair is consistent with inorder producing a nondecreasing sequence?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "left_strict_right_nonstrict", "text": "Every left-subtree value is strictly less than the node, and every right-subtree value is greater than or equal to the node."},
+          {"id": "left_nonstrict_right_strict", "text": "Every left-subtree value is less than or equal to the node, and every right-subtree value is strictly greater."},
+          {"id": "both_strict", "text": "Both subtrees must be strictly less and strictly greater, so duplicates are impossible."},
+          {"id": "both_nonstrict", "text": "Both subtrees may be less than or equal and greater than or equal without choosing a duplicate side."}
+        ],
+        "acceptedOptionIds": ["left_strict_right_nonstrict"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The duplicate-placement convention must match the subtree inequalities; inorder sortedness alone does not choose a side for equal values.",
+        "details": {"blocks": [{"type": "paragraph", "text": "With duplicates routed right, no equal value may appear in the left subtree, while an equal value is permitted on the right. Thus left < node <= right at every recursive boundary. The inorder sequence remains nondecreasing because all left values precede the node and all right values follow it. A different duplicate policy changes the inequalities and must be stated consistently in insertion, validation, and traversal reasoning."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "left_nonstrict_right_strict": "This describes the opposite duplicate placement: equal values may occur left but not right.",
+          "both_strict": "Strict inequalities disallow duplicates, contrary to the stated policy.",
+          "both_nonstrict": "Allowing equality on both sides does not define a unique placement policy and can weaken BST validation."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "apply_inorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_inorder", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "advanced",
+      "constraints": ["Duplicates are permitted only in the right subtree under this policy."]
+    },
+    {
+      "id": "alg-tree-inorder-iterative-space",
+      "prompt": "What auxiliary-space bound should be reported for iterative inorder traversal that stores only the active root-to-leaf path?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "height_space", "text": "O(h), where h is the tree height; this is O(log n) for a balanced tree and O(n) for a skewed tree."},
+          {"id": "constant_space", "text": "O(1), because each node is emitted once."},
+          {"id": "n_space_always", "text": "O(n) for every tree shape, even when the height is logarithmic."},
+          {"id": "n_log_n_space", "text": "O(n log n), because each node participates in a recursive ordering."}
+        ],
+        "acceptedOptionIds": ["height_space"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The explicit stack contains at most one active path of nodes whose left work is pending.",
+        "details": {"blocks": [{"type": "paragraph", "text": "The traversal visits all n nodes, so time is O(n), but the stack size follows the maximum root-to-leaf depth h. A balanced tree keeps h logarithmic; a chain can make h linear. This is why reporting O(h) is more precise than claiming either constant space or O(n) for all shapes. Recursion has the same asymptotic auxiliary-space bound through the call stack."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "constant_space": "The algorithm retains ancestors while descending a left path; those pending nodes require space proportional to height.",
+          "n_space_always": "A balanced tree uses only logarithmic active-path storage, so O(n) is a valid worst case but not the shape-sensitive bound.",
+          "n_log_n_space": "Each node is visited once; no product of n and log n is needed for the active path."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "apply_inorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_inorder", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "intermediate",
+      "constraints": ["h denotes maximum tree height and excludes the output list."]
+    },
+    {
+      "id": "alg-tree-inorder-kth-early-stop",
+      "prompt": "In a BST, an inorder traversal seeks the kth smallest value and may stop as soon as it emits k nodes. Why is this early stop correct?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "later_are_larger", "text": "The BST ordering makes all not-yet-emitted nodes no smaller than the kth emitted value, so later traversal cannot change that rank."},
+          {"id": "subtrees_irrelevant", "text": "Unvisited subtrees never contain values related to the answer because inorder ignores them."},
+          {"id": "counter_is_total_nodes", "text": "The counter equals the total node count after k increments, so traversal is complete."},
+          {"id": "any_dfs_rank", "text": "Any traversal order gives the same kth value when the tree is a BST."}
+        ],
+        "acceptedOptionIds": ["later_are_larger"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "Inorder is sorted under the BST invariant, so the kth emitted node is already fixed when its rank is reached.",
+        "details": {"blocks": [{"type": "paragraph", "text": "The left subtree is exhausted before a node is counted, and every later inorder emission belongs either to a larger right-side position or to a later ancestor. Therefore no unvisited node can move ahead of the kth emitted value. Early termination saves traversal work while preserving correctness, provided k is within the node count and the BST ordering guarantee is true."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "subtrees_irrelevant": "Unvisited subtrees matter to later ranks; they are irrelevant only after the requested rank is already emitted.",
+          "counter_is_total_nodes": "The counter tracks emitted nodes, not total nodes. Stopping at k is intentionally before full traversal when k is small.",
+          "any_dfs_rank": "Preorder and postorder do not enumerate BST values in sorted order, so their kth node need not be kth smallest."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "apply_inorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_inorder", "problemArchetypeId": "compute_subtree_property"},
+      "difficulty": "intermediate",
+      "constraints": ["1 <= k <= n and the BST ordering invariant holds."]
+    },
+    {
+      "id": "alg-tree-inorder-11_bst_sorted",
+      "prompt": "Why does inorder traversal of a binary search tree produce nondecreasing keys?",
+      "constraints": [
+        "The BST invariant orders every left subtree below the node and every right subtree above it.",
+        "Duplicates follow a stated placement policy."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "left_node_right",
+            "text": "It visits the entire left subtree, then the node, then the entire right subtree, matching the BST ordering invariant.",
+            "explanation": "The traversal order follows the recursive key relation."
+          },
+          {
+            "id": "preorder_sorted",
+            "text": "It visits the node first, so the root key sorts all descendants automatically.",
+            "explanation": "Preorder is not sorted for a general BST."
+          },
+          {
+            "id": "heap_property",
+            "text": "The result is sorted because every binary tree is a heap.",
+            "explanation": "A BST and heap have different invariants."
+          },
+          {
+            "id": "value_sort",
+            "text": "Traversal sorts values after visiting them, so structure is irrelevant.",
+            "explanation": "Inorder emits without a separate sorting step."
+          }
+        ],
+        "acceptedOptionIds": [
+          "left_node_right"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Inorder is a sorted-order traversal only when the tree satisfies the BST ordering invariant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The recursive order is structural; the sorted result follows from where each subtree's keys lie. A generic binary tree can produce any inorder sequence."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "preorder_sorted": "Preorder is not sorted for a general BST.",
+          "heap_property": "A BST and heap have different invariants.",
+          "value_sort": "Inorder emits without a separate sorting step."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "compute_subtree_property"
+      }
+    },
+    {
+      "id": "alg-tree-inorder-12_iterative_stack",
+      "prompt": "What does an explicit stack represent in iterative inorder traversal?",
+      "constraints": [
+        "The tree may have arbitrary height.",
+        "The next node is the leftmost unvisited ancestor."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "deferred_ancestors",
+            "text": "It stores ancestors whose left subtrees are complete but whose node and right subtrees are still pending.",
+            "explanation": "The stack replaces the recursive call stack."
+          },
+          {
+            "id": "visited_values",
+            "text": "It stores every value already emitted so the traversal can sort them.",
+            "explanation": "The stack stores pending structure, not output history."
+          },
+          {
+            "id": "right_first",
+            "text": "It stores only right children because inorder always processes right before node.",
+            "explanation": "Inorder processes left, node, then right."
+          },
+          {
+            "id": "queue_levels",
+            "text": "It stores breadth levels so inorder can be reconstructed after BFS.",
+            "explanation": "The algorithm is depth-first and does not need level queues."
+          }
+        ],
+        "acceptedOptionIds": [
+          "deferred_ancestors"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The iterative stack is a precise simulation of suspended recursive frames.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Each push descends left; each pop visits the node and then descends its right subtree. This preserves the same left-node-right contract without recursion."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "visited_values": "The stack stores pending structure, not output history.",
+          "right_first": "Inorder processes left, node, then right.",
+          "queue_levels": "The algorithm is depth-first and does not need level queues."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "compute_subtree_property"
+      }
+    },
+    {
+      "id": "alg-tree-inorder-13_kth",
+      "prompt": "Why can inorder search for the kth smallest BST key stop early?",
+      "constraints": [
+        "The BST obeys the ordering invariant.",
+        "The traversal emits keys in sorted order."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "rank_reached",
+            "text": "Once the visit count reaches k, later nodes are larger and cannot change the kth result.",
+            "explanation": "Sorted emission makes the rank terminal."
+          },
+          {
+            "id": "need_all",
+            "text": "Every node must be visited because a later subtree may contain a smaller key.",
+            "explanation": "The BST invariant rules that out after inorder order is established."
+          },
+          {
+            "id": "leftmost_only",
+            "text": "The first node is always kth for every k because it is the minimum.",
+            "explanation": "Only k=1 has that rank."
+          },
+          {
+            "id": "sort_again",
+            "text": "Collect all keys and sort them again before deciding whether to stop.",
+            "explanation": "That removes the early-stop advantage."
+          }
+        ],
+        "acceptedOptionIds": [
+          "rank_reached"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorted traversal turns a rank query into a terminal condition.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The kth visit is the answer; the unvisited suffix contains only keys no smaller than it. The iterative stack can stop without materializing the rest of the tree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "need_all": "The BST invariant rules that out after inorder order is established.",
+          "leftmost_only": "Only k=1 has that rank.",
+          "sort_again": "That removes the early-stop advantage."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "compute_subtree_property"
+      }
+    },
+    {
+      "id": "alg-tree-inorder-14_generic_tree",
+      "prompt": "What can be concluded from inorder traversal of a binary tree that is not guaranteed to be a BST?",
+      "constraints": [
+        "No ordering invariant is provided.",
+        "The traversal still visits left, node, right."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "only_traversal_order",
+            "text": "Only the left-node-right visitation order is guaranteed; sortedness or rank meaning cannot be inferred.",
+            "explanation": "Traversal order alone does not impose key order."
+          },
+          {
+            "id": "sorted_any_tree",
+            "text": "Inorder always sorts keys because every binary tree has two ordered children.",
+            "explanation": "Child positions are not key ordering."
+          },
+          {
+            "id": "heap_sorted",
+            "text": "The result is sorted if the root is the minimum, regardless of descendants.",
+            "explanation": "A root condition does not establish the full BST invariant."
+          },
+          {
+            "id": "rank_valid",
+            "text": "The kth visited node is always the kth smallest value.",
+            "explanation": "Without BST order, visit rank and value rank differ."
+          }
+        ],
+        "acceptedOptionIds": [
+          "only_traversal_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Traversal semantics and data-structure ordering invariants are separate claims.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Inorder defines when nodes are visited, not how their keys compare. Rank and sortedness require a BST or another explicit ordering proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sorted_any_tree": "Child positions are not key ordering.",
+          "heap_sorted": "A root condition does not establish the full BST invariant.",
+          "rank_valid": "Without BST order, visit rank and value rank differ."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_inorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_inorder",
+        "problemArchetypeId": "compute_subtree_property"
+      }
     }
   ],
   "modeStructures": {

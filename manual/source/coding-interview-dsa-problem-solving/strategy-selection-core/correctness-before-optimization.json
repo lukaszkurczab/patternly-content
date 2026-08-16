@@ -372,6 +372,314 @@
         "secondarySkillAtomIds": [],
         "learningStage": "strategy_selection"
       }
+    },
+    {
+      "id": "ssc-correctness-output-contract-first",
+      "prompt": "An optimization returns the correct numeric score but omits the required original indices and changes the tie policy. How should it be classified?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "incorrect_contract", "text": "It is not a valid replacement; matching one output field does not satisfy the complete output contract."},
+        {"id": "valid_score_equivalence", "text": "It is equivalent because the primary score is correct and indices are implementation details."},
+        {"id": "faster_wins", "text": "It should replace the reference because output formatting can be repaired later without affecting correctness."},
+        {"id": "tie_irrelevant", "text": "Tie behavior never matters when the score is optimal."}
+      ], "acceptedOptionIds": ["incorrect_contract"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Correctness is defined by the whole observable contract, including identity and tie behavior, not only one objective value.", "details": {"blocks": [{"type": "paragraph", "text": "Returning a score without the required witnesses cannot satisfy a function that promises indices. Likewise, changing tie policy changes observable behavior when ties are part of the contract. A fast core may be reusable only after it preserves or explicitly adapts every required output and side effect."}]}, "wrongOptionExplanationsByOptionId": {"valid_score_equivalence": "The omitted indices and altered ties are observable contract violations, not hidden implementation details.", "faster_wins": "A later repair is not evidence that the current implementation already returns the promised result.", "tie_irrelevant": "Tie semantics are relevant whenever callers or tests observe which equally optimal result is selected."}},
+      "taxonomy": {"primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-correctness-counterexample-before-tuning",
+      "prompt": "A linear-time candidate fails one valid edge case, while a quadratic reference passes the full test suite and fits the current maximum n. What is the responsible next step?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "fix_or_reject_linear", "text": "Fix the invariant or reject the linear candidate; retain the correct reference until an optimized replacement is proven."},
+        {"id": "hide_edge_case", "text": "Exclude the failing edge case because it is uncommon in production data."},
+        {"id": "keep_broken_for_scale", "text": "Keep the failing candidate because linear asymptotics matter more than one counterexample."},
+        {"id": "benchmark_both_only", "text": "Choose whichever benchmark is faster without investigating the wrong result."}
+      ], "acceptedOptionIds": ["fix_or_reject_linear"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "One valid counterexample disproves correctness, and the stated constraint does not yet require abandoning the correct reference.", "details": {"blocks": [{"type": "paragraph", "text": "The failing input is evidence against the candidate's invariant or boundary handling. First preserve a known-correct implementation, isolate the cause, and prove a repair against edge cases. Only if the repaired or alternate strategy meets the actual maximum constraints should performance change the selection."}]}, "wrongOptionExplanationsByOptionId": {"hide_edge_case": "Valid inputs cannot be removed from the contract to protect an implementation.", "keep_broken_for_scale": "Asymptotic speed does not compensate for returning a wrong answer on an allowed input.", "benchmark_both_only": "Performance comparison is meaningful only among semantically equivalent implementations."}},
+      "taxonomy": {"primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-correctness-resource-contract",
+      "prompt": "An algorithm is mathematically correct but needs O(n) extra memory, while the problem limit permits only O(1) auxiliary space. Which decision follows?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "ineligible_resource", "text": "It is ineligible under the stated contract; correctness includes resource bounds, so another valid strategy or a contract change is required."},
+        {"id": "correct_means_accepted", "text": "It is accepted because resource limits are performance suggestions rather than correctness conditions."},
+        {"id": "hide_memory", "text": "Count the auxiliary array as input storage because it contains copied input values."},
+        {"id": "claim_constant", "text": "Call the memory O(1) because the element type has fixed size."}
+      ], "acceptedOptionIds": ["ineligible_resource"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A solution must meet hard time, space, mutation, and output constraints together; mathematical result correctness alone is insufficient.", "details": {"blocks": [{"type": "paragraph", "text": "If the contract limits auxiliary space to constant, an input-sized index is a disqualifying resource violation even if every returned value is correct. The analysis must state what memory is counted and whether the platform permits in-place mutation, streaming, or a different representation. Renaming or reclassifying a copied array does not change its asymptotic size."}]}, "wrongOptionExplanationsByOptionId": {"correct_means_accepted": "Hard resource constraints are part of the problem contract and can make a mathematically correct method unusable.", "hide_memory": "Copied input-sized storage is auxiliary memory unless the contract explicitly grants it as workspace.", "claim_constant": "Fixed element size does not make the number of stored elements constant."}},
+      "taxonomy": {"primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-correctness-optimization-gates",
+      "prompt": "Select all gates that should pass before replacing a correct baseline with a faster implementation.",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "same_observable_contract", "text": "The optimized implementation preserves outputs, edge cases, tie rules, and permitted side effects."},
+        {"id": "invariant_or_oracle", "text": "Its invariant is explained and it agrees with an independent reference on targeted and randomized cases."},
+        {"id": "fits_constraints", "text": "Its time, space, numeric representation, and input-size behavior fit the stated limits."},
+        {"id": "faster_sample", "text": "It is faster on a few samples, even if the output contract and proof have not been checked."}
+      ], "acceptedOptionIds": ["same_observable_contract", "invariant_or_oracle", "fits_constraints"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Replacement requires semantic equivalence, a correctness argument or oracle evidence, and resource feasibility; benchmark wins are downstream of those gates.", "details": {"blocks": [{"type": "paragraph", "text": "The baseline is an executable oracle for bounded differential tests, while the optimized invariant explains why compressed state or skipped work remains safe. The replacement must also meet numeric, memory, mutation, and maximum-input constraints. Samples can support performance investigation but cannot waive failed correctness gates."}]}, "wrongOptionExplanationsByOptionId": {"faster_sample": "Sample speed is not evidence of correct behavior or feasibility at the maximum constraints."}, "omittedCorrectExplanationsByOptionId": {"same_observable_contract": "A faster function with different observable semantics is not a replacement.", "invariant_or_oracle": "Correctness must be supported by proof and/or independent comparison, especially when state updates change.", "fits_constraints": "A solution that exceeds a hard limit is not eligible even if it is mathematically correct."}},
+      "taxonomy": {"primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-correctness-11_invariant_first",
+      "prompt": "What should be established before optimizing a candidate algorithm's inner loop?",
+      "constraints": [
+        "The candidate has a claimed output contract.",
+        "The optimization may change state transitions."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "correctness_invariant",
+            "text": "State the invariant and prove that the optimized transition preserves it and the required output.",
+            "explanation": "Optimization is safe only relative to a correctness argument."
+          },
+          {
+            "id": "benchmark_first",
+            "text": "Benchmark the code before defining what it must compute.",
+            "explanation": "A fast implementation can optimize the wrong result."
+          },
+          {
+            "id": "micro_optimize",
+            "text": "Replace branches with arithmetic regardless of the state invariant.",
+            "explanation": "Removing branches can change boundary behavior."
+          },
+          {
+            "id": "ignore_edges",
+            "text": "Defer empty and boundary cases until after performance work is complete.",
+            "explanation": "Optimizations often expose exactly those cases."
+          }
+        ],
+        "acceptedOptionIds": [
+          "correctness_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A local speedup is meaningful only if it preserves the algorithm's semantic invariant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The invariant describes what the state means at every step. Any loop fusion, shortcut, or data-structure change must be checked against it before performance numbers are trusted."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "benchmark_first": "A fast implementation can optimize the wrong result.",
+          "micro_optimize": "Removing branches can change boundary behavior.",
+          "ignore_edges": "Optimizations often expose exactly those cases."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-correctness-12_counterexample",
+      "prompt": "A proposed optimization is faster but fails one legal input. What is the correct status?",
+      "constraints": [
+        "The input satisfies the public constraints.",
+        "The output differs from the required answer."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reject_optimization",
+            "text": "Reject or repair the optimization; one legal counterexample is sufficient to invalidate universal correctness.",
+            "explanation": "Performance cannot compensate for an incorrect result."
+          },
+          {
+            "id": "keep_if_fast",
+            "text": "Keep it because the speedup is larger than the cost of one failing case.",
+            "explanation": "A universal contract has no allowance for arbitrary legal failures."
+          },
+          {
+            "id": "mark_rare",
+            "text": "Label the input rare and leave the implementation unchanged.",
+            "explanation": "Metadata does not fix a correctness defect."
+          },
+          {
+            "id": "increase_tests",
+            "text": "The algorithm is correct until more failures are found.",
+            "explanation": "The first valid failure already disproves the claim."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_optimization"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Correctness is a gate, not a weighted score against runtime.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A legal counterexample means the optimized algorithm does not implement the stated function. Restore the invariant or choose a different optimization before comparing performance."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "keep_if_fast": "A universal contract has no allowance for arbitrary legal failures.",
+          "mark_rare": "Metadata does not fix a correctness defect.",
+          "increase_tests": "The first valid failure already disproves the claim."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-correctness-13_overflow_contract",
+      "prompt": "Why must numeric range analysis precede an asymptotic optimization that changes arithmetic order?",
+      "constraints": [
+        "The implementation uses finite-width integers.",
+        "Intermediate values may be larger than the final answer."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "intermediate_safety",
+            "text": "The reordered expression must preserve exact arithmetic without overflow; otherwise an asymptotically faster path can return incorrect values.",
+            "explanation": "Machine arithmetic is part of correctness."
+          },
+          {
+            "id": "final_only",
+            "text": "Check only whether the final mathematical answer fits; intermediate overflow cannot affect it.",
+            "explanation": "Overflow can occur before later cancellation or reduction."
+          },
+          {
+            "id": "big_o_proof",
+            "text": "Asymptotic notation guarantees that integer operations are exact.",
+            "explanation": "Big-O says nothing about numeric range."
+          },
+          {
+            "id": "cast_after",
+            "text": "Cast the final result to a wider type after narrow operations.",
+            "explanation": "Lost bits cannot be recovered after overflow."
+          }
+        ],
+        "acceptedOptionIds": [
+          "intermediate_safety"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Arithmetic order is a semantic decision under finite machine types.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A transformation valid over unbounded integers may be invalid in the implementation domain. Widen before risky operations or prove bounded intermediates as part of the optimization review."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "final_only": "Overflow can occur before later cancellation or reduction.",
+          "big_o_proof": "Big-O says nothing about numeric range.",
+          "cast_after": "Lost bits cannot be recovered after overflow."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-correctness-14_empty_contract",
+      "prompt": "What is the safest first question when optimizing a routine that currently handles nonempty inputs?",
+      "constraints": [
+        "The public contract may allow empty inputs.",
+        "The optimized loop assumes an initial element."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "define_empty_result",
+            "text": "Define and test the empty-input output before applying the optimization, so initialization and identity values remain correct.",
+            "explanation": "Empty cases expose missing state initialization."
+          },
+          {
+            "id": "reject_empty",
+            "text": "Assume the caller never supplies empty input because the existing loop starts at index zero.",
+            "explanation": "An unstated assumption is not a contract."
+          },
+          {
+            "id": "pad_empty",
+            "text": "Insert a synthetic zero element to make the loop uniform.",
+            "explanation": "Padding can change the mathematical result."
+          },
+          {
+            "id": "optimize_nonempty_only",
+            "text": "Optimize the common nonempty path and let the empty case fall through.",
+            "explanation": "A fall-through can become an exception or a wrong result."
+          }
+        ],
+        "acceptedOptionIds": [
+          "define_empty_result"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Boundary semantics must be explicit before loop initialization is changed.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "An identity value, empty collection, error, or unavailable state may be correct depending on the API. The optimization must preserve that decision rather than silently manufacturing an input."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "reject_empty": "An unstated assumption is not a contract.",
+          "pad_empty": "Padding can change the mathematical result.",
+          "optimize_nonempty_only": "A fall-through can become an exception or a wrong result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "prioritize_correctness_before_asymptotic_speed",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
     }
   ],
   "modeStructures": {

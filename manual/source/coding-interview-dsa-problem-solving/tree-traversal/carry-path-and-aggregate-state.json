@@ -415,6 +415,308 @@
         "Array concatenation copies every element.",
         "No output path snapshots are counted."
       ]
+    },
+    {
+      "id": "alg-tree-path-root-state-initialization",
+      "prompt": "A root-to-leaf path-sum helper receives a target and an accumulated sum. Which initial call preserves the root's contribution exactly once?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "start_zero", "text": "Call the root with accumulated sum 0, then add the current node value on entry."}, {"id": "start_root_and_add", "text": "Call with the root value and also add the root on entry, counting it twice."}, {"id": "start_one", "text": "Call with 1 because every root-to-leaf path has one root."}, {"id": "start_target", "text": "Call with the target because the target is the current path sum."}], "acceptedOptionIds": ["start_zero"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The carried state represents values already seen before the current node, so the root starts from the additive identity.", "details": {"blocks": [{"type": "paragraph", "text": "At the root, no node has been consumed yet. Initializing the accumulator to zero and adding each node on entry makes every path sum include each node exactly once. Passing the root value and adding again double-counts the root; using path length or the target confuses independent state fields with the aggregate."}]}, "wrongOptionExplanationsByOptionId": {"start_root_and_add": "The root value is added both before and during root processing.", "start_one": "One is a count identity, not the numeric sum of values already on the path.", "start_target": "The target is a comparison value and should not be inserted into the path aggregate."}},
+      "taxonomy": {"primarySkillAtomId": "carry_state_along_tree_path", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "path_accumulation", "problemArchetypeId": "root_to_leaf_path"},
+      "constraints": ["Node values may be negative and the target is not part of the sum."]
+    },
+    {
+      "id": "alg-tree-path-backtrack-pop-boundary",
+      "prompt": "A DFS enumerates root-to-leaf paths using one mutable path array. When must it remove the current node value before returning to the parent?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "pop_on_return", "text": "After processing the current node's descendants or recording its leaf path, pop its value before the call returns."}, {"id": "pop_before_children", "text": "Pop immediately after appending so children receive only the parent path."}, {"id": "never_pop", "text": "Never pop; later branches can share the full path automatically."}, {"id": "pop_only_root", "text": "Pop only the root because lower nodes are replaced by recursive calls."}], "acceptedOptionIds": ["pop_on_return"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Backtracking restores the mutable buffer to the parent prefix before exploring a sibling branch.", "details": {"blocks": [{"type": "paragraph", "text": "Append on entry makes the current path visible to descendants. After the subtree is complete, pop exactly that node so the buffer again represents the parent path; then the next sibling can append its own branch without inherited values from the previous sibling. Popping too early omits the node from valid paths, while never popping causes branch contamination and incorrect outputs."}]}, "wrongOptionExplanationsByOptionId": {"pop_before_children": "Children need the current node in their carried path, so removing it before descent loses a required prefix.", "never_pop": "A shared mutable buffer must be restored before sibling exploration.", "pop_only_root": "Every frame contributes one value and must undo its own append on return."}},
+      "taxonomy": {"primarySkillAtomId": "carry_state_along_tree_path", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "path_accumulation", "problemArchetypeId": "root_to_leaf_path"},
+      "difficulty": "intermediate",
+      "constraints": ["The same mutable buffer is reused for all root-to-leaf outputs."]
+    },
+    {
+      "id": "alg-tree-path-empty-tree-result",
+      "prompt": "A function returns all root-to-leaf paths and receives a null root. What result matches the contract that each returned path begins at an actual root and ends at an actual leaf?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "empty_paths", "text": "An empty collection of paths, because there is no root and therefore no leaf path."}, {"id": "empty_path", "text": "One empty path, treating the absent root as a zero-length root-to-leaf path."}, {"id": "null_node_path", "text": "A path containing a null marker as the root."}, {"id": "zero_path", "text": "A path containing zero as a synthetic root value."}], "acceptedOptionIds": ["empty_paths"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A valid path requires actual endpoint nodes, and an empty tree has neither a root nor a leaf.", "details": {"blocks": [{"type": "paragraph", "text": "The null-root base case returns no path. An empty path would be valid only if the API explicitly defined the empty tree as a zero-length path, which this contract does not. Null and zero are not node payloads and must not be invented as structural endpoints."}]}, "wrongOptionExplanationsByOptionId": {"empty_path": "The stated path contract requires an actual root and leaf, so an empty tree contributes no path.", "null_node_path": "A null reference is absence, not an actual node in the returned path.", "zero_path": "Zero may be a valid payload and cannot represent a missing root without an explicit serialization policy."}},
+      "taxonomy": {"primarySkillAtomId": "carry_state_along_tree_path", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "path_accumulation", "problemArchetypeId": "root_to_leaf_path"},
+      "constraints": ["Every output path contains only actual node values."]
+    },
+    {
+      "id": "alg-tree-path-running-sum-complexity",
+      "prompt": "A path-sum existence check carries one numeric sum per recursive frame, visits each tree node once, and does not copy path arrays. What time and auxiliary-space bounds apply?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "complexity", "checkedDimensions": ["time", "space"], "availableValuesByDimension": {"time": ["O(log n)", "O(n)", "O(n log n)", "O(n^2)"], "space": ["O(1)", "O(log n)", "O(h)", "O(n^2)"]}, "acceptedValuesByDimension": {"time": ["O(n)"], "space": ["O(h)"]}, "normalizedAliasesByDimension": {"time": {}, "space": {}}, "maxPoints": 2},
+      "scoringContract": {"type": "complexity", "maxPoints": 2},
+      "feedback": {"reason": "Each node is processed once and the carried scalar adds no per-depth collection beyond the live call path.", "details": {"blocks": [{"type": "paragraph", "text": "The recursion does constant work per node, so time is O(n). At most one active frame per root-to-leaf path stores the carried sum, giving O(h) auxiliary stack space, O(log n) for balanced trees and O(n) for a chain. This differs from copying a path array at every depth, which can make work and live storage quadratic on a chain."}]}},
+      "taxonomy": {"primarySkillAtomId": "carry_state_along_tree_path", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "path_accumulation", "problemArchetypeId": "root_to_leaf_path"},
+      "difficulty": "intermediate",
+      "constraints": ["The carried state is a scalar and no output path list is materialized."]
+    },
+    {
+      "id": "alg-tree-path-11_leaf_only",
+      "prompt": "For a root-to-leaf path sum, when should the carried sum be compared with the target?",
+      "constraints": [
+        "An internal node may have only one child.",
+        "A leaf is defined as having no children."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "at_leaf",
+            "text": "Compare at a true leaf, after adding the leaf value; an internal node is not a complete root-to-leaf path.",
+            "explanation": "Stopping at a node with one child can accept an unfinished path."
+          },
+          {
+            "id": "at_any_node",
+            "text": "Compare at every node because every prefix is a valid root-to-leaf path.",
+            "explanation": "Only leaves complete the requested path."
+          },
+          {
+            "id": "before_add",
+            "text": "Compare before adding the current node so the root is not counted twice.",
+            "explanation": "The current node belongs in the path sum."
+          },
+          {
+            "id": "at_null_child",
+            "text": "Compare only after reaching a null child, even if the parent is not a leaf.",
+            "explanation": "A null child of a unary node is not a leaf completion under the usual definition."
+          }
+        ],
+        "acceptedOptionIds": [
+          "at_leaf"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The output contract names root-to-leaf paths, so the terminal condition must be a leaf, not merely a missing one of two children.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Carry state includes every visited node. A node with one child still has a continuation; accepting at its null side would create a path that does not end at a leaf."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "at_any_node": "Only leaves complete the requested path.",
+          "before_add": "The current node belongs in the path sum.",
+          "at_null_child": "A null child of a unary node is not a leaf completion under the usual definition."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      }
+    },
+    {
+      "id": "alg-tree-path-12_copy_state",
+      "prompt": "Why can a recursive path aggregate pass the updated sum by value rather than undoing it after returning?",
+      "constraints": [
+        "The language or implementation passes the carried scalar by value.",
+        "Each recursive child receives the parent path state."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "branch_isolation",
+            "text": "Each child call receives its own scalar copy, so one branch's additions cannot leak into its sibling.",
+            "explanation": "Value semantics provide automatic branch isolation."
+          },
+          {
+            "id": "shared_mutation",
+            "text": "All recursive calls share one immutable sum, so updates are visible everywhere.",
+            "explanation": "Immutable or value-passed state is not shared mutable state."
+          },
+          {
+            "id": "no_current_value",
+            "text": "Pass the sum unchanged because only leaves contribute to a path.",
+            "explanation": "Every node on the path contributes."
+          },
+          {
+            "id": "sort_children",
+            "text": "Sort children before passing the sum so branch state remains consistent.",
+            "explanation": "Child order does not determine scalar isolation."
+          }
+        ],
+        "acceptedOptionIds": [
+          "branch_isolation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Path state must represent the current root-to-node prefix independently for each branch.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Passing `sum + node.value` creates a new value for each child call. If the implementation instead mutates a shared accumulator, explicit backtracking is needed before visiting the sibling."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shared_mutation": "Immutable or value-passed state is not shared mutable state.",
+          "no_current_value": "Every node on the path contributes.",
+          "sort_children": "Child order does not determine scalar isolation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      }
+    },
+    {
+      "id": "alg-tree-path-13_null_base",
+      "prompt": "What base result should a path-aggregate helper return for a null child when the parent combines child results?",
+      "constraints": [
+        "The parent may have one or two missing children.",
+        "The aggregate has a meaningful identity or invalid marker."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "contract_identity",
+            "text": "Return the aggregate identity or an explicit invalid marker according to whether a null child represents an empty contribution or an absent path.",
+            "explanation": "The correct base value depends on the parent operation and output contract."
+          },
+          {
+            "id": "zero_always",
+            "text": "Return zero for every aggregate, including maximum and existence queries.",
+            "explanation": "Zero can be a valid value and may incorrectly create a path."
+          },
+          {
+            "id": "negative_infinity_always",
+            "text": "Return negative infinity for every tree calculation.",
+            "explanation": "Different aggregates require different identities and valid-state semantics."
+          },
+          {
+            "id": "reuse_parent",
+            "text": "Return the parent value so missing children inherit a complete path.",
+            "explanation": "A null child is not a copy of its parent node."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contract_identity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Null handling is part of the recurrence and must match the algebra and path semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A sum of empty contributions may use zero, while a maximum path or existence query may need an invalid sentinel. Mixing these meanings can fabricate paths or discard legitimate zero-valued results."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_always": "Zero can be a valid value and may incorrectly create a path.",
+          "negative_infinity_always": "Different aggregates require different identities and valid-state semantics.",
+          "reuse_parent": "A null child is not a copy of its parent node."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      }
+    },
+    {
+      "id": "alg-tree-path-14_depth_state",
+      "prompt": "What extra state is needed when a tree path query asks for the maximum root-to-leaf sum subject to a depth limit?",
+      "constraints": [
+        "The path must not exceed a maximum depth.",
+        "The node value alone does not reveal current depth."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "carry_depth_and_sum",
+            "text": "Carry both current depth and aggregate sum, and reject or stop a branch when the depth limit is reached.",
+            "explanation": "The constraint depends on path position as well as value."
+          },
+          {
+            "id": "sum_only",
+            "text": "Carry only the sum because depth can be inferred from the sum.",
+            "explanation": "Different depths can have equal sums."
+          },
+          {
+            "id": "height_after",
+            "text": "Compute all paths first and filter by depth afterward without storing path depth.",
+            "explanation": "The required depth information is lost or incurs unnecessary work."
+          },
+          {
+            "id": "global_depth",
+            "text": "Use one global depth variable shared by all recursive branches.",
+            "explanation": "Different branches have different depths and need isolated state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "carry_depth_and_sum"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Path state should contain every dimension that the stopping rule and objective depend on.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The recursive contract is a tuple such as (sum, depth). Passing depth per branch avoids confusing a short high-value path with a longer path that reaches the limit."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sum_only": "Different depths can have equal sums.",
+          "height_after": "The required depth information is lost or incurs unnecessary work.",
+          "global_depth": "Different branches have different depths and need isolated state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "carry_state_along_tree_path",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "path_accumulation",
+        "problemArchetypeId": "root_to_leaf_path"
+      }
     }
   ],
   "modeStructures": {

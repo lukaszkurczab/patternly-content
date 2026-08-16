@@ -472,6 +472,308 @@
         "patternVariantId": "coordinate_transform",
         "problemArchetypeId": "normalize_coordinates"
       }
+    },
+    {
+      "id": "alg-mg-normalize-half-open-boundary",
+      "prompt": "Why is a half-open cyclic interval [0,m) often preferable to [0,m] for normalization?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "unique_representative", "text": "Each cyclic value has one representative; m is excluded because it is equivalent to 0."},
+        {"id": "include_endpoint", "text": "It includes both 0 and m so every turn has two canonical values."},
+        {"id": "avoid_modulo", "text": "It removes the need to handle a zero modulus."},
+        {"id": "floating_exact", "text": "It guarantees floating-point equality at the endpoint."}
+      ], "acceptedOptionIds": ["unique_representative"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The upper endpoint represents the same cyclic position as zero, so excluding it removes duplicate canonical representations.", "details": {"blocks": [{"type": "paragraph", "text": "For period m, values x and x+m are equivalent. [0,m) chooses exactly one of them, which simplifies comparisons and wrap logic. The modulus still needs m>0, and floating-point equality needs tolerance or a domain-specific comparison."}]}, "wrongOptionExplanationsByOptionId": {"include_endpoint": "Including both endpoints gives two representatives for one cyclic value.", "avoid_modulo": "The interval convention does not define behavior for m=0.", "floating_exact": "Endpoint representation does not remove rounding error."}},
+      "taxonomy": {"primarySkillAtomId": "normalize_cyclic_or_coordinate_value", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "coordinate_transform", "problemArchetypeId": "normalize_coordinates"}
+    },
+    {
+      "id": "alg-mg-normalize-negative-remainder",
+      "prompt": "A language computes -1 % 5 as -1, but normalize(x,5) must return [0,5). Which canonical formula is appropriate?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "double_mod", "text": "Use ((x % m) + m) % m for m>0, or an equivalent Euclidean-remainder helper."},
+        {"id": "raw_remainder", "text": "Return x % m directly because a remainder is always nonnegative by definition."},
+        {"id": "abs_remainder", "text": "Return abs(x % m), which always preserves the cyclic class."},
+        {"id": "add_once_no_mod", "text": "If x is negative, add m once and skip the final reduction."}
+      ], "acceptedOptionIds": ["double_mod"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The language's remainder sign convention may leave a negative residue; adding the period and reducing again maps it into the canonical interval.", "details": {"blocks": [{"type": "paragraph", "text": "For x=-1,m=5, raw remainder -1 becomes 4 after ((-1%5)+5)%5. Taking absolute value is not generally equivalent for other residues, and adding once without a final modulo fails when the raw value is already outside a single period."}]}, "wrongOptionExplanationsByOptionId": {"raw_remainder": "Some languages return a negative remainder for negative x.", "abs_remainder": "Absolute value can map residues inconsistently and is not the Euclidean remainder formula.", "add_once_no_mod": "Large positive or negative inputs can remain outside [0,m) after one addition."}},
+      "taxonomy": {"primarySkillAtomId": "normalize_cyclic_or_coordinate_value", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "coordinate_transform", "problemArchetypeId": "normalize_coordinates"}
+    },
+    {
+      "id": "alg-mg-normalize-shortest-delta-tie",
+      "prompt": "A shortest signed angular delta is normalized to [-180,180). What is the canonical result for an exact 180-degree difference under this convention?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "negative_180", "text": "-180 degrees, because the interval includes -180 and excludes +180."},
+        {"id": "positive_180", "text": "+180 degrees, because positive turns are preferred at the boundary."},
+        {"id": "zero", "text": "0 degrees, because opposite headings represent the same direction after normalization."},
+        {"id": "both_values", "text": "Return both -180 and +180 because normalization cannot choose a representative."}
+      ], "acceptedOptionIds": ["negative_180"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The half-open interval's endpoint convention resolves the otherwise symmetric shortest-turn tie.", "details": {"blocks": [{"type": "paragraph", "text": "Both signs describe a half-turn geometrically, but the canonical domain includes -180 and excludes +180. A different product convention could choose the opposite endpoint; the key is to define and apply one rule consistently."}]}, "wrongOptionExplanationsByOptionId": {"positive_180": "+180 is outside the stated half-open interval.", "zero": "Opposite headings differ by a half-turn, not zero.", "both_values": "A canonical normalization must select one representative."}},
+      "taxonomy": {"primarySkillAtomId": "normalize_cyclic_or_coordinate_value", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "coordinate_transform", "problemArchetypeId": "normalize_coordinates"}
+    },
+    {
+      "id": "alg-mg-angle-11-negative-mod",
+      "prompt": "In a language where remainder can be negative, how should x be normalized into [0,m) for positive m?",
+      "constraints": [
+        "m is positive.",
+        "x may be negative."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "double_mod",
+            "text": "Use ((x % m) + m) % m.",
+            "explanation": "The second reduction maps the adjusted value into the requested half-open interval."
+          },
+          {
+            "id": "single_mod",
+            "text": "Use x % m and assume the language always returns a nonnegative remainder.",
+            "explanation": "Some languages preserve the dividend sign."
+          },
+          {
+            "id": "absolute_mod",
+            "text": "Use abs(x) % m so the result is nonnegative.",
+            "explanation": "Absolute value changes the equivalence class for negative x."
+          },
+          {
+            "id": "add_once",
+            "text": "Use x % m + m without a second reduction.",
+            "explanation": "A nonnegative remainder plus m can be outside [0,m)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "double_mod"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Normalization must correct the language's remainder sign and then reduce again.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The mathematical modulo representative is unique in [0,m). The double-mod form works for negative and positive x when m>0; an arbitrary absolute value does not preserve congruence."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "single_mod": "Some languages preserve the dividend sign.",
+          "absolute_mod": "Absolute value changes the equivalence class for negative x.",
+          "add_once": "A nonnegative remainder plus m can be outside [0,m)."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-angle-12-half_open",
+      "prompt": "Why is the half-open interval [0,m) a useful normalization convention for cyclic values?",
+      "constraints": [
+        "m is a positive period.",
+        "Equivalent values differ by integer multiples of m."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "unique_representative",
+            "text": "Each equivalence class has exactly one representative, avoiding duplicate treatment of 0 and m.",
+            "explanation": "The upper endpoint is excluded precisely to ensure uniqueness."
+          },
+          {
+            "id": "includes_both_endpoints",
+            "text": "It includes both 0 and m so callers can choose whichever boundary is convenient.",
+            "explanation": "Including both would create two representatives for the same cycle position."
+          },
+          {
+            "id": "negative_only",
+            "text": "It is useful only for negative inputs; positive values need no convention.",
+            "explanation": "Canonical representation matters for every input."
+          },
+          {
+            "id": "distance_scale",
+            "text": "It rescales cyclic distances so all values have the same magnitude.",
+            "explanation": "Normalization chooses a representative; it does not rescale distances."
+          }
+        ],
+        "acceptedOptionIds": [
+          "unique_representative"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A canonical half-open interval gives one stable representative per period.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If both 0 and m were accepted, equality and lookup logic would need special duplicate handling. Excluding m keeps wrap boundaries unambiguous."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "includes_both_endpoints": "Including both would create two representatives for the same cycle position.",
+          "negative_only": "Canonical representation matters for every input.",
+          "distance_scale": "Normalization chooses a representative; it does not rescale distances."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-angle-13-shortest-delta",
+      "prompt": "For angles modulo 360, how should a raw difference be normalized to the shortest signed turn?",
+      "constraints": [
+        "The result should lie in a symmetric interval around zero.",
+        "A tie at 180 degrees has an explicit policy."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "centered_range",
+            "text": "Normalize into a range such as [−180,180), then apply the stated endpoint tie convention.",
+            "explanation": "A centered representative chooses the shortest signed direction."
+          },
+          {
+            "id": "zero_to_360",
+            "text": "Normalize into [0,360) and treat every positive value as the shortest turn.",
+            "explanation": "Values above 180 may be shorter in the negative direction."
+          },
+          {
+            "id": "absolute_difference",
+            "text": "Take the absolute raw difference and ignore direction.",
+            "explanation": "The problem asks for a signed turn."
+          },
+          {
+            "id": "divide_by_two",
+            "text": "Halve the normalized difference so clockwise and counterclockwise share a scale.",
+            "explanation": "Halving changes the angle rather than selecting its representative."
+          }
+        ],
+        "acceptedOptionIds": [
+          "centered_range"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Shortest cyclic displacement requires a centered representative and an explicit tie choice.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A raw difference of 350 degrees is a −10-degree turn, not a 350-degree turn. The boundary at 180 has two equally short directions, so the API must state which one is returned."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_to_360": "Values above 180 may be shorter in the negative direction.",
+          "absolute_difference": "The problem asks for a signed turn.",
+          "divide_by_two": "Halving changes the angle rather than selecting its representative."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
+    },
+    {
+      "id": "alg-mg-angle-14-wrap-interval",
+      "prompt": "An interval on a circle starts at 300 degrees and ends at 40 degrees in the forward direction. How should containment be tested?",
+      "constraints": [
+        "Angles are normalized to [0,360).",
+        "The interval may cross the zero boundary."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "or_wrap_condition",
+            "text": "Because start>end, accept angle>=start OR angle<=end, using the endpoint inclusivity contract.",
+            "explanation": "The circular interval is the union of the tail and head ranges."
+          },
+          {
+            "id": "and_wrap_condition",
+            "text": "Require angle>=start AND angle<=end even when the interval wraps.",
+            "explanation": "No angle can satisfy that ordinary linear interval for the wrapped interior."
+          },
+          {
+            "id": "swap_endpoints",
+            "text": "Swap start and end to make a linear interval without changing its meaning.",
+            "explanation": "Swapping changes the represented arc."
+          },
+          {
+            "id": "distance_only",
+            "text": "Use the absolute difference from start and ignore the end boundary.",
+            "explanation": "Containment depends on the entire arc and its endpoint policy."
+          }
+        ],
+        "acceptedOptionIds": [
+          "or_wrap_condition"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A wrapped circular interval is a disjunction in normalized linear coordinates.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The arc covers [300,360) union [0,40] under inclusive endpoints. The test must reflect the specified endpoint policy; ordinary `start <= x <= end` applies only when the interval does not wrap."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "and_wrap_condition": "No angle can satisfy that ordinary linear interval for the wrapped interior.",
+          "swap_endpoints": "Swapping changes the represented arc.",
+          "distance_only": "Containment depends on the entire arc and its endpoint policy."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "normalize_cyclic_or_coordinate_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "coordinate_transform",
+        "problemArchetypeId": "normalize_coordinates"
+      }
     }
   ],
   "modeStructures": {

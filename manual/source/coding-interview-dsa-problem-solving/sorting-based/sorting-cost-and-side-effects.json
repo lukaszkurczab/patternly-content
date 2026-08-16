@@ -554,6 +554,294 @@
         "patternVariantId": "grouping_after_sort",
         "problemArchetypeId": "group_equal_values"
       }
+    },
+    {
+      "id": "alg-sorting-cost-copy-for-nonmutation",
+      "prompt": "What is the direct tradeoff when preserving the input order by copying before sorting?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "extra_linear_space", "text": "The copy preserves the input but adds O(n) auxiliary space and O(n) copy work."},
+        {"id": "no_extra_cost", "text": "Copying is free because sorting already allocates memory."},
+        {"id": "quadratic_time", "text": "Copying alone changes the algorithm to O(n²)."},
+        {"id": "loses_values", "text": "Copying removes the values from the original array."}
+      ], "acceptedOptionIds": ["extra_linear_space"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Non-mutating sorting is a real memory and copy-time choice, even when it protects the caller's array.", "details": {"blocks": [{"type": "paragraph", "text": "The final space also includes the sorting implementation's own auxiliary behavior. State the contract explicitly: mutate in place when allowed, or copy when preserving input is required."}]}, "wrongOptionExplanationsByOptionId": {"no_extra_cost": "The copied elements occupy additional storage regardless of the sort's internals.", "quadratic_time": "A linear copy does not make the algorithm quadratic.", "loses_values": "The original remains intact; the copy receives the sorted arrangement."}},
+      "taxonomy": {"primarySkillAtomId": "account_for_sorting_cost_and_mutation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "sort_then_scan", "problemArchetypeId": "reveal_ordered_structure"}
+    },
+    {
+      "id": "alg-sorting-cost-repeated-query-amortization",
+      "prompt": "When can an O(n log n) sort be justified before a sequence of many queries over the same data?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "reuse_preprocessing", "text": "When the sorted order is reused enough that its preprocessing cost is amortized across the queries."},
+        {"id": "one_query_only", "text": "Always, because sorting is asymptotically optimal for every query."},
+        {"id": "updates_each_time", "text": "Especially when every query mutates the data and invalidates the sorted order."},
+        {"id": "no_scan_needed", "text": "Only when the output ignores all values."}
+      ], "acceptedOptionIds": ["reuse_preprocessing"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Preprocessing is valuable when multiple operations share the same ordered representation.", "details": {"blocks": [{"type": "paragraph", "text": "If updates are frequent, the sorted state may need rebuilding or a dynamic ordered structure. The decision combines query count, update pattern, and the cost of an unsorted alternative."}]}, "wrongOptionExplanationsByOptionId": {"one_query_only": "A direct linear solution may be cheaper for one query.", "updates_each_time": "Mutations can make the preprocessing stale and remove its amortization benefit.", "no_scan_needed": "Sorting cannot be justified by an output that does not use the data."}},
+      "taxonomy": {"primarySkillAtomId": "account_for_sorting_cost_and_mutation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "custom_key_sort", "problemArchetypeId": "process_by_priority_key"}
+    },
+    {
+      "id": "alg-sorting-cost-11_nlogn",
+      "prompt": "What is the standard comparison-sort cost for n items when no special key domain optimization applies?",
+      "constraints": [
+        "The comparator takes O(1) time.",
+        "The output requires a total order of all items."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "n_log_n",
+            "text": "O(n log n) comparisons and typically O(n log n) time under the constant-comparator model.",
+            "explanation": "Comparison sorting has the usual lower and upper bound in this model."
+          },
+          {
+            "id": "n",
+            "text": "Every comparison sort is O(n) because each item is read once.",
+            "explanation": "Ordering arbitrary items requires more than one pass in general."
+          },
+          {
+            "id": "n_squared_only",
+            "text": "Sorting is always O(n²) because nested comparisons are unavoidable.",
+            "explanation": "Efficient comparison sorts achieve O(n log n)."
+          },
+          {
+            "id": "log_n",
+            "text": "The whole output can be ordered in O(log n) because the comparator is constant time.",
+            "explanation": "Constant comparison cost does not remove the number of comparisons."
+          }
+        ],
+        "acceptedOptionIds": [
+          "n_log_n"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting cost is a strategy input and should be charged before a downstream linear scan.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The bound assumes comparison-based ordering and excludes unusual bounded-key methods. Comparator cost, stability, memory, and mutation policy may add further terms."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "n": "Ordering arbitrary items requires more than one pass in general.",
+          "n_squared_only": "Efficient comparison sorts achieve O(n log n).",
+          "log_n": "Constant comparison cost does not remove the number of comparisons."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sorting-cost-12_key_cost",
+      "prompt": "If computing a sort key costs O(c) per item, how should sorting complexity be expressed?",
+      "constraints": [
+        "The key is computed during comparison or materialized once.",
+        "c may depend on input size."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "charge_key_work",
+            "text": "Include key cost explicitly: materialize keys in O(nc) plus O(n log n) comparisons, or multiply comparison cost when keys are recomputed.",
+            "explanation": "A constant-time comparator assumption no longer holds automatically."
+          },
+          {
+            "id": "ignore_key",
+            "text": "Report only O(n log n) because key computation is part of sorting internals.",
+            "explanation": "Key work can dominate the sort."
+          },
+          {
+            "id": "n_c_log",
+            "text": "Always report O(nc log n), even when keys are materialized once.",
+            "explanation": "Materialization and comparison costs have different counts."
+          },
+          {
+            "id": "key_free",
+            "text": "Keys are free because they are derived from the input rather than stored.",
+            "explanation": "Derivation still consumes time."
+          }
+        ],
+        "acceptedOptionIds": [
+          "charge_key_work"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A cost model must distinguish one-time key materialization from repeated comparator evaluation.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Decorate-sort-undecorate can pay O(nc) once and then sort cached keys. Recomputing a costly key during O(n log n) comparisons can pay it many more times, so the implementation strategy matters."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "ignore_key": "Key work can dominate the sort.",
+          "n_c_log": "Materialization and comparison costs have different counts.",
+          "key_free": "Derivation still consumes time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sorting-cost-13_repeated_sort",
+      "prompt": "Why is sorting the same unchanged collection before every query usually a cost smell?",
+      "constraints": [
+        "The underlying collection is immutable between queries.",
+        "Each query uses the same ordering."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "preprocess_once",
+            "text": "Sort or index once, then reuse the ordered representation; repeated sorting adds Q times the preprocessing cost.",
+            "explanation": "Invariant work should be amortized over the workload."
+          },
+          {
+            "id": "fresh_sort_required",
+            "text": "Every query needs a fresh sort because sorted order cannot be reused.",
+            "explanation": "Unchanged data and ordering make the result reusable."
+          },
+          {
+            "id": "sort_free",
+            "text": "Sorting is not part of query time if it happens before the answer is computed.",
+            "explanation": "Build time is still workload cost."
+          },
+          {
+            "id": "cache_values_only",
+            "text": "Cache only the final value and ignore the sorted representation.",
+            "explanation": "A reusable ordered structure may support different queries."
+          }
+        ],
+        "acceptedOptionIds": [
+          "preprocess_once"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Repeated preprocessing should be charged against query volume and removed when its inputs and ordering are invariant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A sorted copy or index can be shared across queries, with memory and freshness costs stated. Sorting per query can turn a good O(n log n)+Q*query plan into Q*n log n."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "fresh_sort_required": "Unchanged data and ordering make the result reusable.",
+          "sort_free": "Build time is still workload cost.",
+          "cache_values_only": "A reusable ordered structure may support different queries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sorting-cost-14_partial_selection",
+      "prompt": "When only the k smallest items are required and k is much smaller than n, what alternative should be compared with full sorting?",
+      "constraints": [
+        "The output is limited to k items.",
+        "The input may be streamed or large."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bounded_selection",
+            "text": "Compare a size-k heap or selection algorithm, which can avoid ordering all n items and may use O(k) space.",
+            "explanation": "Full sorting solves a stronger problem than requested."
+          },
+          {
+            "id": "full_sort_only",
+            "text": "Full sorting is mandatory because any subset output must first be totally ordered.",
+            "explanation": "Selection can identify k extremes without sorting all values."
+          },
+          {
+            "id": "window",
+            "text": "Use a contiguous sliding window because k is a count.",
+            "explanation": "Top-k selection need not be contiguous."
+          },
+          {
+            "id": "sort_each_k",
+            "text": "Sort every group of k input items and concatenate them as the global k smallest.",
+            "explanation": "Local groups do not determine the global frontier."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bounded_selection"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Algorithm choice should match the output order and size, not solve a stronger total-order problem by default.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If the contract asks for the k items in sorted order, selection plus a final sort of k items may be appropriate. If it asks only for membership, a heap or linear selection can save time and memory."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "full_sort_only": "Selection can identify k extremes without sorting all values.",
+          "window": "Top-k selection need not be contiguous.",
+          "sort_each_k": "Local groups do not determine the global frontier."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "account_for_sorting_cost_and_mutation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
     }
   ],
   "modeStructures": {

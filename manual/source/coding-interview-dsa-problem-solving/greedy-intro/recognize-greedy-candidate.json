@@ -333,7 +333,576 @@
         "learningStage": "strategy_selection",
         "problemArchetypeId": "construct_optimal_sequence"
       }
-    }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-006",
+      "prompt": "A resource-allocation problem has a current feasible boundary b. After selecting candidate x, every future candidate that was feasible after a smaller boundary remains feasible after x. Which signal does this provide?",
+      "constraints": [
+        "The objective contribution of each selected candidate is identical.",
+        "The residual problem depends on the boundary, not on hidden details of the discarded prefix."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "residual_boundary_signal",
+            "text": "The monotone boundary is a greedy signal: a choice that leaves the earliest or smallest feasible boundary can dominate later choices under the equal-value objective."
+          },
+          {
+            "id": "any_boundary_is_optimal",
+            "text": "Every feasible boundary is equally good because the future can always be ignored."
+          },
+          {
+            "id": "sorting_is_proof",
+            "text": "The existence of a boundary proves that sorting the input is sufficient without comparing candidates."
+          },
+          {
+            "id": "boundary_requires_backtracking",
+            "text": "A monotone boundary rules out greedy because a boundary can only be explored by backtracking."
+          }
+        ],
+        "acceptedOptionIds": [
+          "residual_boundary_signal"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A dominating residual boundary is the mechanism that can make an irreversible local choice safe.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The key observation is not merely that a boundary exists, but that an earlier or smaller boundary leaves a superset of the future feasible region. With equal contribution per selected item, replacing a choice by one that leaves no less future room preserves the current count and cannot reduce the best possible suffix. That relation is a candidate exchange or dominance proof.\n\nThe author still needs to state which direction is better and prove that the candidate is feasible, but the signal is structurally meaningful. Sorting can expose the order but cannot replace the comparison argument. The transfer test is to ask whether one partial solution dominates another by the exact state that controls every future transition; if yes, discarding the dominated state may be safe."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "any_boundary_is_optimal": "Different boundaries can leave different future option sets. The dominance relation, not feasibility alone, gives the greedy signal.",
+          "sorting_is_proof": "Ordering is an implementation aid. The proof must connect the chosen order to the future feasible region and objective.",
+          "boundary_requires_backtracking": "A monotone boundary often enables a forward scan; backtracking is needed only when no safe discard rule has been proved."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "running_best_choice",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-007",
+      "prompt": "A candidate strategy chooses one item at a time. Two partial solutions reach the same position and have the same current score, but one leaves a strictly larger set of future feasible choices. What should pattern recognition infer?",
+      "constraints": [
+        "Future score depends only on which choices remain feasible from the position.",
+        "The two partial solutions have no other hidden state affecting transitions."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "dominated_state_discard",
+            "text": "The solution with fewer future choices is dominated and can be discarded, which is a strong greedy or state-compression signal."
+          },
+          {
+            "id": "retain_both_always",
+            "text": "Both states must be retained because any difference in future options makes greedy impossible."
+          },
+          {
+            "id": "current_score_only",
+            "text": "The states are interchangeable solely because their current scores match."
+          },
+          {
+            "id": "choose_shorter_history",
+            "text": "Keep the solution with fewer prior decisions regardless of its future feasible set."
+          }
+        ],
+        "acceptedOptionIds": [
+          "dominated_state_discard"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equal current score plus a superset of future feasible choices gives a dominance relation that safely removes one alternative under the stated state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If both partial solutions have the same visible position and current score, but every continuation available to the smaller set is also available to the larger set, the larger-feasible-set solution can simulate every future continuation of the other. It therefore cannot finish worse. This is the kind of dominance that justifies state compression or an irrevocable greedy preference.\n\nMatching current scores alone is insufficient when future options differ in the opposite direction. A shorter history has no intrinsic value unless the objective or transitions reward it. The transfer test is to compare partial solutions using both accumulated objective and the complete future-relevant state; only a proven componentwise dominance relation licenses discarding one."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "retain_both_always": "Different future sets do not automatically require both states. Here one future set contains the other and current scores tie, so one state dominates.",
+          "current_score_only": "The same current score can lead to different final scores when future choices differ. Future reachability is part of the comparison.",
+          "choose_shorter_history": "History length is not the objective and may have no relation to future value or feasibility."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "running_best_choice",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-008",
+      "prompt": "A problem asks for a minimum-cost feasible set. A proposed rule always chooses the currently cheapest item, but adding an item can unlock a discount on a later item and the discount depends on the chosen item type. What is the correct recognition result?",
+      "constraints": [
+        "The discount can outweigh the current price difference.",
+        "The future transition state is not summarized by the current total cost alone."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "history_warning",
+            "text": "The local price is not a sufficient greedy key; history-dependent discounts are a warning that competing states may need to be compared."
+          },
+          {
+            "id": "cheapest_always_safe",
+            "text": "The cheapest item is safe because all costs are nonnegative."
+          },
+          {
+            "id": "sort_by_price_only",
+            "text": "Sort item types by price and keep that order; future discounts cannot affect the first decision."
+          },
+          {
+            "id": "discount_is_postprocessing",
+            "text": "Ignore discounts during selection and apply them after the set is built."
+          }
+        ],
+        "acceptedOptionIds": [
+          "history_warning"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Nonnegative immediate costs do not make the cheapest choice safe when the choice changes future prices.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A greedy key must control the total consequence of a commitment, not only its immediate contribution. Here the item type changes the future discount, so two prefixes with the same current cost can have different optimal continuations. The cheaper prefix can be globally worse if it loses a valuable discount. That is a structural warning against treating current price as a sufficient key.\n\nThis observation does not by itself prove that dynamic programming is the final method, but it does mean a new dominance or exchange theorem is required before greedy selection is justified. The transfer test is to inspect whether the local choice changes future transition rules. If it does, retain or compare the relevant state unless a proof shows that one state dominates all alternatives."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "cheapest_always_safe": "Nonnegative costs prevent negative-cost anomalies but do not prevent a cheap choice from losing a larger future discount.",
+          "sort_by_price_only": "A static price order ignores the type-dependent transition state and therefore has no established safety property.",
+          "discount_is_postprocessing": "The discount affects which choices are optimal, so postponing it changes the selection problem rather than solving it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "running_best_choice",
+        "problemArchetypeId": "minimize_or_maximize_local_cost"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-009",
+      "prompt": "A candidate algorithm repeatedly selects the feasible interval with the earliest end. Which additional fact is needed to recognize the classic maximum-cardinality greedy structure rather than merely a plausible heuristic?",
+      "constraints": [
+        "Every selected interval contributes the same value.",
+        "The residual problem consists of intervals starting at or after the selected end."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "earliest_finish_exchange",
+            "text": "For any optimal schedule, the first interval can be replaced by the feasible earliest-finishing interval without reducing the number of remaining selectable intervals."
+          },
+          {
+            "id": "earliest_end_looks_small",
+            "text": "The rule is recognized as correct because the word “earliest” sounds conservative."
+          },
+          {
+            "id": "intervals_are_sorted",
+            "text": "Any sort by end time is sufficient; the order itself proves that the first item is safe."
+          },
+          {
+            "id": "shortest_interval",
+            "text": "The selected interval must also have the shortest duration among all intervals."
+          }
+        ],
+        "acceptedOptionIds": [
+          "earliest_finish_exchange"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The recognition signal is the exchange that preserves or enlarges the residual feasible set, not the superficial appearance of the sort key.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Let g be the feasible interval with the earliest end and let o be the first interval of an optimum. Since g.end is no later than o.end, every interval that follows o also follows g. Replacing o with g preserves one selected interval and leaves a residual instance with at least as many possibilities. Repeating the argument establishes the greedy structure.\n\nSorting by end time makes the candidate easy to find, but sorting is not the proof. The interval need not have the shortest duration; a short interval that ends later can leave less room. The transfer test is to identify the exact future boundary controlled by the local key and then state the one-for-one replacement that preserves the objective."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "earliest_end_looks_small": "Intuitive conservatism is not a universal argument. The safety comes from the residual-set containment proved by the exchange.",
+          "intervals_are_sorted": "A sorted order only supplies candidates in an order; it does not show that accepting the first is compatible with an optimum.",
+          "shortest_interval": "Earliest finish and shortest duration are different keys. Duration does not necessarily determine the future boundary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-010",
+      "prompt": "Two variants process the same intervals by earliest finish. Variant A maximizes the number of selected intervals. Variant B maximizes the sum of interval weights. What recognition warning is correct?",
+      "constraints": [
+        "Intervals are otherwise subject to the same non-overlap rule.",
+        "Weights are arbitrary and are not determined by interval length or finish time."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "weight_breaks_count_exchange",
+            "text": "The count-preserving earliest-finish exchange supports Variant A but does not automatically preserve total weight in Variant B."
+          },
+          {
+            "id": "same_proof_both",
+            "text": "The proof transfers unchanged because both variants use the same feasibility rule."
+          },
+          {
+            "id": "weights_make_end_more_decisive",
+            "text": "Arbitrary weights strengthen earliest finish because valuable intervals should always end sooner."
+          },
+          {
+            "id": "remove_all_weights",
+            "text": "Ignore weights while selecting and add them afterward; the selected count determines the weighted optimum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "weight_breaks_count_exchange"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The classic exchange preserves one selected interval, not an arbitrary weighted contribution.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For maximum cardinality, replacing an optimum's first interval with an earlier-finishing one keeps the number selected and leaves at least as much room for the suffix. In the weighted variant, the replacement can remove a high-weight interval and therefore lower the objective even though it leaves more room. Feasibility preservation alone is not objective preservation.\n\nThe weighted problem may still admit another algorithm or additional assumptions, but the unweighted greedy proof cannot be reused automatically. The transfer test is to name the exact quantity preserved by the exchange. If the proof says “one interval for one interval” while the new objective sums arbitrary weights, the strategy classification must be reopened."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_proof_both": "The feasibility part transfers, but the exchange no longer preserves the weighted objective. A new theorem is required.",
+          "weights_make_end_more_decisive": "Arbitrary weight is independent of finish time; an early finish can be low value while a later interval is highly valuable.",
+          "remove_all_weights": "Weights are the objective in Variant B. Ignoring them can select a schedule with fewer total points despite good cardinality."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-011_local_frontier",
+      "prompt": "Which signal suggests a problem may have a greedy candidate rather than requiring arbitrary backtracking?",
+      "constraints": [
+        "A local choice can be compared by a boundary or priority.",
+        "The choice appears to restrict future options."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "dominant_frontier",
+            "text": "A candidate appears to leave a frontier that dominates the alternatives while preserving the objective contribution.",
+            "explanation": "This is the shape an exchange proof would formalize."
+          },
+          {
+            "id": "any_local_best",
+            "text": "Any problem with a locally largest value is greedy by definition.",
+            "explanation": "Immediate value need not dominate future combinations."
+          },
+          {
+            "id": "small_input",
+            "text": "A small input automatically makes greedy correct.",
+            "explanation": "Input size affects cost, not the theorem."
+          },
+          {
+            "id": "sort_present",
+            "text": "The presence of a sort operation proves the problem is greedy.",
+            "explanation": "Sorting is used by many non-greedy algorithms."
+          }
+        ],
+        "acceptedOptionIds": [
+          "dominant_frontier"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Greedy recognition is a hypothesis about future-state dominance.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Look for a local choice that leaves a no-worse feasible frontier and an exchange that preserves value. Without those signals, backtracking, dynamic programming, or other strategies may be needed."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "any_local_best": "Immediate value need not dominate future combinations.",
+          "small_input": "Input size affects cost, not the theorem.",
+          "sort_present": "Sorting is used by many non-greedy algorithms."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-012_state_boundary",
+      "prompt": "Why is a compact boundary state an important greedy-recognition signal?",
+      "constraints": [
+        "Future feasibility depends on a small summary of prior choices.",
+        "The local choice can improve or preserve that summary."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "suffix_equivalence",
+            "text": "If two partial solutions have the same objective and one leaves a no-worse boundary, they can share the same future analysis.",
+            "explanation": "This creates the dominance relation behind an exchange proof."
+          },
+          {
+            "id": "all_history",
+            "text": "A compact state is irrelevant because greedy proofs must remember every prior choice.",
+            "explanation": "Sufficient-state compression is often what makes greedy possible."
+          },
+          {
+            "id": "boundary_value",
+            "text": "Any smaller numeric boundary is safe regardless of hidden constraints.",
+            "explanation": "The boundary must be sufficient and tied to the proof."
+          },
+          {
+            "id": "memory_only",
+            "text": "The signal concerns only implementation memory, not correctness.",
+            "explanation": "State sufficiency is a semantic property."
+          }
+        ],
+        "acceptedOptionIds": [
+          "suffix_equivalence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Greedy choices often work because future decisions see an equivalent or dominated boundary state.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For interval scheduling, an earlier end leaves a superset of feasible suffixes. The same shape appears in other problems, but the state must be proven sufficient rather than assumed."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "all_history": "Sufficient-state compression is often what makes greedy possible.",
+          "boundary_value": "The boundary must be sufficient and tied to the proof.",
+          "memory_only": "State sufficiency is a semantic property."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-013_exchange_needed",
+      "prompt": "What evidence is still missing after several examples support a greedy rule?",
+      "constraints": [
+        "The goal is a universal optimality claim.",
+        "Examples cover only selected inputs."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "exchange_or_counterexample",
+            "text": "Either prove an exchange or dominance property for arbitrary optimal solutions or find a legal counterexample; examples alone are not enough.",
+            "explanation": "Universal claims require quantified reasoning."
+          },
+          {
+            "id": "more_samples",
+            "text": "Generate more random examples until the success rate is high enough.",
+            "explanation": "Frequency cannot establish correctness."
+          },
+          {
+            "id": "faster_code",
+            "text": "Benchmark the implementation because speed validates the strategy.",
+            "explanation": "Performance is independent of optimality."
+          },
+          {
+            "id": "sort_examples",
+            "text": "Sort the passing examples so the pattern becomes a proof.",
+            "explanation": "Reordering examples does not quantify over all inputs."
+          }
+        ],
+        "acceptedOptionIds": [
+          "exchange_or_counterexample"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Recognition should lead directly to proof obligations, not to confidence from examples.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The next step is to identify what an arbitrary optimum can exchange with the proposed greedy choice and whether feasibility and objective are preserved. If that fails, the candidate is not established."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "more_samples": "Frequency cannot establish correctness.",
+          "faster_code": "Performance is independent of optimality.",
+          "sort_examples": "Reordering examples does not quantify over all inputs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-rgc-014_not_greedy",
+      "prompt": "Which signal is evidence against a simple greedy solution?",
+      "constraints": [
+        "A local choice can sacrifice multiple future combinations.",
+        "The objective rewards global combinations rather than one-step progress."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "future_tradeoff",
+            "text": "There is no apparent dominance relation and a local commitment can destroy incomparable future options; dynamic programming or search may be more appropriate.",
+            "explanation": "Greedy needs a safe way to collapse those alternatives."
+          },
+          {
+            "id": "sort_available",
+            "text": "Sorting is possible, so greedy must be correct.",
+            "explanation": "Sorting can be preprocessing for many approaches."
+          },
+          {
+            "id": "positive_values",
+            "text": "Positive values always make every optimization greedy.",
+            "explanation": "Positivity supports some window proofs, not arbitrary greedy choices."
+          },
+          {
+            "id": "one_choice",
+            "text": "The algorithm makes one choice at a time, which proves it is greedy-correct.",
+            "explanation": "Sequential choices can still be wrong without a proof."
+          }
+        ],
+        "acceptedOptionIds": [
+          "future_tradeoff"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A simple greedy rule is suspect when local choices create incomparable future states.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The absence of dominance is a reason to preserve alternatives, often through a state representation. It does not prove that no greedy theorem exists, but it rejects an unsupported simple rule."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sort_available": "Sorting can be preprocessing for many approaches.",
+          "positive_values": "Positivity supports some window proofs, not arbitrary greedy choices.",
+          "one_choice": "Sequential choices can still be wrong without a proof."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_greedy_choice_structure",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {"id":"alg-greedy-intro-015-additive-objective","prompt":"Which objective shape is often compatible with a greedy candidate when local gains can be compared independently?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"additive","text":"The objective is additive or admits a dominance comparison after each choice."},{"id":"opaque","text":"The objective depends on an unknown global interaction with no state summary."},{"id":"random","text":"The objective changes independently of every choice."},{"id":"syntax","text":"The objective is determined by variable names."}],"acceptedOptionIds":["additive"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Greedy candidates need a local comparison that remains meaningful globally.","details":{"blocks":[{"type":"paragraph","text":"An additive or dominance-friendly objective can support an invariant or exchange proof. The shape is only a signal; it is not by itself a proof."}]},"wrongOptionExplanationsByOptionId":{"opaque":"This option does not establish a safe local choice for the stated objective.","random":"This option does not establish a safe local choice for the stated objective.","syntax":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"identify_greedy_choice_structure","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"interval_greedy","problemArchetypeId":"choose_non_overlapping_set"}},
+    {"id":"alg-greedy-intro-016-irreversible","prompt":"Why are irreversible choices a warning sign when evaluating a greedy approach?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"future_loss","text":"A locally attractive choice may remove a globally valuable alternative that cannot be restored."},{"id":"always_safe","text":"Irreversibility guarantees the local choice is optimal."},{"id":"no_state","text":"Irreversible choices require no state tracking."},{"id":"sort_free","text":"Irreversibility makes sorting unnecessary in every problem."}],"acceptedOptionIds":["future_loss"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"The cost of a greedy commitment must be justified before alternatives disappear.","details":{"blocks":[{"type":"paragraph","text":"If a choice can block later combinations, look for an exchange argument or a counterexample. Without dominance, a stateful method may be required."}]},"wrongOptionExplanationsByOptionId":{"always_safe":"This option does not establish a safe local choice for the stated objective.","no_state":"This option does not establish a safe local choice for the stated objective.","sort_free":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"identify_greedy_choice_structure","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"interval_greedy","problemArchetypeId":"choose_non_overlapping_set"}},
+    {"id":"alg-greedy-intro-017-local-key","prompt":"What must a proposed local key explain before it is accepted as a greedy rule?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"dominance","text":"Why choosing the best key now leaves a residual problem no worse than alternatives."},{"id":"readability","text":"Why the key name is easy to understand."},{"id":"input_order","text":"Why the original order is preserved."},{"id":"constant_time","text":"Why comparing two keys is constant time."}],"acceptedOptionIds":["dominance"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"A local key is safe only when it dominates the alternatives under the objective.","details":{"blocks":[{"type":"paragraph","text":"The explanation must connect the key to future feasibility and value. Runtime and naming do not establish that relationship."}]},"wrongOptionExplanationsByOptionId":{"readability":"This option does not establish a safe local choice for the stated objective.","input_order":"This option does not establish a safe local choice for the stated objective.","constant_time":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"identify_greedy_choice_structure","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"interval_greedy","problemArchetypeId":"choose_non_overlapping_set"}},
+    {"id":"alg-greedy-intro-018-counterexample-search","prompt":"What is a useful first step when testing whether a greedy candidate is actually optimal?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"small_adversarial","text":"Search small legal instances where the local choice blocks a better combination."},{"id":"large_random_only","text":"Use only very large random inputs."},{"id":"skip_proof","text":"Assume optimality if samples pass."},{"id":"sort_again","text":"Sort by a second arbitrary key and stop."}],"acceptedOptionIds":["small_adversarial"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Small adversarial cases reveal unsafe commitments quickly.","details":{"blocks":[{"type":"paragraph","text":"Construct cases that separate the proposed local preference from the global objective. A found counterexample refutes the rule; passing tests still does not prove it."}]},"wrongOptionExplanationsByOptionId":{"large_random_only":"This option does not establish a safe local choice for the stated objective.","skip_proof":"This option does not establish a safe local choice for the stated objective.","sort_again":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"identify_greedy_choice_structure","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"interval_greedy","problemArchetypeId":"choose_non_overlapping_set"}}
   ],
   "modeStructures": {
     "recognitionSets": [],

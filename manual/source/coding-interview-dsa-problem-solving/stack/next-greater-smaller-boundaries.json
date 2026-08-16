@@ -474,6 +474,290 @@
         "learningStage": "pattern_mechanics",
         "patternVariantId": "next_greater_smaller"
       }
+    },
+    {
+      "id": "alg-stack-next-greater-pop-resolves",
+      "prompt": "When a current value causes indices to be popped from a monotonic stack, what answer is being resolved for each popped index?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "nearest_right_witness", "text": "The current value is the first qualifying greater or smaller value to the right under the scan direction."},
+        {"id": "nearest_left_witness", "text": "The current value is always the first qualifying value to the left."},
+        {"id": "global_extreme", "text": "The current value is proven to be the global maximum or minimum."},
+        {"id": "all_future_values", "text": "The current value resolves every future position at once."}
+      ], "acceptedOptionIds": ["nearest_right_witness"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The stack holds unresolved earlier indices; the first current value that breaks the invariant is their nearest qualifying witness.", "details": {"blocks": [{"type": "paragraph", "text": "After popping, the remaining top can provide a nearest qualifying boundary on the opposite side if the algorithm needs it. The stack does not claim a global extreme."}]}, "wrongOptionExplanationsByOptionId": {"nearest_left_witness": "For a left-to-right scan, the resolving current value lies to the right of the popped index.", "global_extreme": "Local qualification does not imply a global maximum or minimum.", "all_future_values": "Each future position is resolved only when its own qualifying value arrives."}},
+      "taxonomy": {"primarySkillAtomId": "resolve_nearest_greater_or_smaller", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "next_greater_smaller"}
+    },
+    {
+      "id": "alg-stack-next-greater-unresolved-sentinel",
+      "prompt": "After a complete next-greater scan, what should an index still on the stack receive if no qualifying value exists?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "contract_sentinel", "text": "The problem's explicit no-answer sentinel, such as -1 or n."},
+        {"id": "last_value", "text": "The last value scanned, even though it did not qualify."},
+        {"id": "zero_always", "text": "Zero, regardless of the output contract."},
+        {"id": "leave_garbage", "text": "Any uninitialized value because the stack only stores work state."}
+      ], "acceptedOptionIds": ["contract_sentinel"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Remaining entries have no qualifying witness in the scanned domain, so the result must explicitly encode absence.", "details": {"blocks": [{"type": "paragraph", "text": "Initialize answers to the contract's sentinel or assign it when flushing the stack. Never confuse an unresolved work item with a valid value."}]}, "wrongOptionExplanationsByOptionId": {"last_value": "The last scanned value may be smaller, equal, or otherwise invalid.", "zero_always": "Zero may be a valid answer and is not a universal absence marker.", "leave_garbage": "Uninitialized output is not a defined result."}},
+      "taxonomy": {"primarySkillAtomId": "resolve_nearest_greater_or_smaller", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "monotonic_increasing_stack"}
+    },
+    {
+      "id": "alg-stack-next-11_pop_condition",
+      "prompt": "When finding the next greater element to the right with a decreasing monotonic stack, when should indices be popped?",
+      "constraints": [
+        "The current value is the next candidate to the right.",
+        "The stack stores unresolved indices."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "current_greater",
+            "text": "Pop while the current value is greater than the value at the stack top; the current index resolves those popped indices.",
+            "explanation": "The first greater value encountered to the right is the current one."
+          },
+          {
+            "id": "current_smaller",
+            "text": "Pop while the current value is smaller because smaller values resolve greater queries.",
+            "explanation": "That condition is used for a different monotonic direction."
+          },
+          {
+            "id": "never_pop",
+            "text": "Keep all indices until the end and assign the same answer to them.",
+            "explanation": "Unresolved candidates need individual nearest witnesses."
+          },
+          {
+            "id": "pop_all",
+            "text": "Pop the entire stack whenever any current value arrives.",
+            "explanation": "Only values dominated by the current greater candidate resolve."
+          }
+        ],
+        "acceptedOptionIds": [
+          "current_greater"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The pop condition is the relation that makes the current element the nearest qualifying witness.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Each popped index has no earlier greater value between it and current because unresolved indices are processed in order. Remaining indices are still waiting for a future greater value."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "current_smaller": "That condition is used for a different monotonic direction.",
+          "never_pop": "Unresolved candidates need individual nearest witnesses.",
+          "pop_all": "Only values dominated by the current greater candidate resolve."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "resolve_nearest_greater_or_smaller",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_increasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-next-12_unresolved",
+      "prompt": "What value should unresolved indices receive after a complete next-greater scan when no greater element exists to their right?",
+      "constraints": [
+        "The output contract defines an unavailable answer.",
+        "A sentinel is distinct from legal values."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sentinel",
+            "text": "Assign the contract's unavailable sentinel, such as −1 or null, because no qualifying right-side witness exists.",
+            "explanation": "The stack contains exactly these unresolved cases."
+          },
+          {
+            "id": "current_value",
+            "text": "Use the index's own value because it is the nearest value available.",
+            "explanation": "The query asks for a strictly greater right-side value."
+          },
+          {
+            "id": "zero_always",
+            "text": "Return zero even when zero is a legal greater value.",
+            "explanation": "A fixed zero can collide with valid answers."
+          },
+          {
+            "id": "wrap_left",
+            "text": "Search from the left side after the scan even though the problem is non-circular.",
+            "explanation": "That changes the direction and output contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sentinel"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The remaining stack is the proof-backed set of indices with no qualifying successor.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Initialize outputs to the unavailable marker or assign it when popping the remaining stack. Do not manufacture a value that could be a valid answer."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "current_value": "The query asks for a strictly greater right-side value.",
+          "zero_always": "A fixed zero can collide with valid answers.",
+          "wrap_left": "That changes the direction and output contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "resolve_nearest_greater_or_smaller",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_increasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-next-13_equal_policy",
+      "prompt": "How should equal values be handled when the query asks for the next strictly greater element?",
+      "constraints": [
+        "Equal values do not satisfy strict greater-than.",
+        "The stack invariant must remain monotonic."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "retain_equal",
+            "text": "Do not pop an equal value under a strict `>` query; choose the stack policy that preserves the nearest unresolved equal boundary.",
+            "explanation": "Equality is not a witness for a strict comparison."
+          },
+          {
+            "id": "pop_equal",
+            "text": "Pop equal values because equal keys always count as greater or equal.",
+            "explanation": "Greater-than excludes equality."
+          },
+          {
+            "id": "assign_equal",
+            "text": "Assign the equal value as the answer and continue scanning.",
+            "explanation": "That changes strict greater to greater-or-equal."
+          },
+          {
+            "id": "delete_duplicates",
+            "text": "Remove all equal input values before scanning so the policy disappears.",
+            "explanation": "Deleting values changes the query instance."
+          }
+        ],
+        "acceptedOptionIds": [
+          "retain_equal"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Strictness belongs in the pop predicate and tie policy.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For next greater-or-equal, popping on `<=` may be correct; for next strictly greater, equality must not resolve the index. The exact stack monotonicity direction follows the requested relation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "pop_equal": "Greater-than excludes equality.",
+          "assign_equal": "That changes strict greater to greater-or-equal.",
+          "delete_duplicates": "Deleting values changes the query instance."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "resolve_nearest_greater_or_smaller",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_increasing_stack"
+      }
+    },
+    {
+      "id": "alg-stack-next-14_circular",
+      "prompt": "How can next-greater search be adapted when the array is circular?",
+      "constraints": [
+        "An element may see values after the physical end.",
+        "Each index should receive the nearest qualifying value in circular order."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "two_pass_modulo",
+            "text": "Process indices in reverse over two logical passes using i mod n, while assigning answers only for original indices.",
+            "explanation": "The second pass exposes the prefix as a wrapped suffix."
+          },
+          {
+            "id": "one_pass_end",
+            "text": "Stop at the physical end because no right-side values remain.",
+            "explanation": "That ignores the circular continuation."
+          },
+          {
+            "id": "duplicate_output",
+            "text": "Emit two answers per index, one for each pass.",
+            "explanation": "The two passes provide candidates for one output per original index."
+          },
+          {
+            "id": "sort_circular",
+            "text": "Sort the array so wrap-around order becomes ordinary order.",
+            "explanation": "Sorting changes circular adjacency."
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_pass_modulo"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A circular view can be linearized by revisiting the index domain while preserving original output positions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The stack still resolves nearest candidates, but the logical scan length is up to 2n. Keep index identity and avoid emitting duplicate results from the second pass."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "one_pass_end": "That ignores the circular continuation.",
+          "duplicate_output": "The two passes provide candidates for one output per original index.",
+          "sort_circular": "Sorting changes circular adjacency."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "resolve_nearest_greater_or_smaller",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "monotonic_increasing_stack"
+      }
     }
   ],
   "modeStructures": {

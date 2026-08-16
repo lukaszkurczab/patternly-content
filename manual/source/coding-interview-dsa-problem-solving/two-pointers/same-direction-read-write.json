@@ -686,6 +686,189 @@
         "Predicate evaluation is O(1).",
         "Only scalar variables are allocated."
       ]
+    },
+    {
+      "id": "alg-tp-rw-12-write-prefix",
+      "prompt": "What does the write pointer represent during in-place compaction?",
+      "constraints": [
+        "The stated pointer or interval contract applies.",
+        "Boundary cases remain legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix",
+            "text": "The next position for a retained item; all positions before it already satisfy the output predicate."
+          },
+          {
+            "id": "read",
+            "text": "It always equals the read pointer."
+          },
+          {
+            "id": "tail",
+            "text": "The last discarded item."
+          },
+          {
+            "id": "random",
+            "text": "An arbitrary free slot."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the relevant boundary or pointer invariant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The movement rule must be derived from the output contract and the current invariant. A plausible pointer update is not safe without that relation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "read": "They diverge when items are removed.",
+          "tail": "It marks the retained boundary.",
+          "random": "The invariant determines it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      }
+    },
+    {
+      "id": "alg-tp-rw-13-overwrite",
+      "prompt": "Why is it safe for write to overwrite an earlier position while read scans forward?",
+      "constraints": [
+        "The stated pointer or interval contract applies.",
+        "Boundary cases remain legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "write_before_read",
+            "text": "Write never advances beyond read, so every future unread input remains intact."
+          },
+          {
+            "id": "write_ahead",
+            "text": "Write can pass read if the prefix is shorter."
+          },
+          {
+            "id": "copy_all",
+            "text": "Copy the whole input first because in-place writes are always unsafe."
+          },
+          {
+            "id": "sort",
+            "text": "Sort before writing to protect reads."
+          }
+        ],
+        "acceptedOptionIds": [
+          "write_before_read"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the relevant boundary or pointer invariant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The movement rule must be derived from the output contract and the current invariant. A plausible pointer update is not safe without that relation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "write_ahead": "That would overwrite future input.",
+          "copy_all": "The invariant can make them safe.",
+          "sort": "Sorting changes the contract and is unnecessary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      }
+    },
+    {
+      "id": "alg-tp-rw-14-identity",
+      "prompt": "When does in-place compaction violate a node or record identity contract?",
+      "constraints": [
+        "The stated pointer or interval contract applies.",
+        "Boundary cases remain legal."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "identity",
+            "text": "If callers retain aliases or the output must preserve every original record identity and order, overwriting or dropping records needs explicit policy."
+          },
+          {
+            "id": "values",
+            "text": "Equal values make all records interchangeable."
+          },
+          {
+            "id": "always",
+            "text": "Compaction never changes identity because it only moves values."
+          },
+          {
+            "id": "sort",
+            "text": "Sorting records restores identity automatically."
+          }
+        ],
+        "acceptedOptionIds": [
+          "identity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the relevant boundary or pointer invariant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The movement rule must be derived from the output contract and the current invariant. A plausible pointer update is not safe without that relation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "values": "Distinct records can share values.",
+          "always": "Moving or copying records can change aliases.",
+          "sort": "Order and identity are separate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_read_write_pointer_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "same_direction_read_write",
+        "problemArchetypeId": "compact_sequence_in_place"
+      }
     }
   ],
   "modeStructures": {

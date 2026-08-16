@@ -450,6 +450,292 @@
         "patternVariantId": "state_compression",
         "problemArchetypeId": "choose_or_skip"
       }
+    },
+    {
+      "id": "alg-dpintro-compression-08-last-read-analysis",
+      "prompt": "Before compressing a full DP table, what dependency analysis is decisive?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "last_read_liveness", "text": "For each predecessor value, identify its last read and retain it until that read has occurred."},
+        {"id": "row_count_only", "text": "Use one row whenever the original table has more than one row."},
+        {"id": "output_size_only", "text": "Compress whenever the final output is one scalar, regardless of transitions."},
+        {"id": "overwrite_anytime", "text": "Overwrite old entries as soon as a newer value is available."}
+      ], "acceptedOptionIds": ["last_read_liveness"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Safe in-place reuse follows value liveness in the dependency graph, not table dimensions or output shape alone.", "details": {"blocks": [{"type": "paragraph", "text": "A predecessor can be overwritten only after its last consumer reads it. The analysis determines whether one row, two rows, a rolling window, or temporary variables are sufficient. A scalar final answer does not permit losing an intermediate dependency before it contributes."}]}, "wrongOptionExplanationsByOptionId": {"row_count_only": "A two-dimensional recurrence may read multiple prior rows or diagonals.", "output_size_only": "Output cardinality does not describe intermediate dependencies.", "overwrite_anytime": "Early overwrite can replace a required predecessor with a state from the wrong iteration."}},
+      "taxonomy": {"primarySkillAtomId": "compress_dp_state_safely", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {
+      "id": "alg-dpintro-compression-09-compression-vs-reconstruction",
+      "prompt": "A compressed DP preserves the optimum value but the product now requires one optimal decision sequence. Which design response is valid?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "add_recovery_information", "text": "Retain parent decisions, checkpoints, a reconstructable reference table, or another proven recovery mechanism."},
+        {"id": "claim_value_is_path", "text": "Treat the optimum scalar as the decision sequence because it uniquely identifies every choice."},
+        {"id": "recompute_randomly", "text": "Rerun the compressed recurrence with arbitrary tie choices and assume it recovers the original path."},
+        {"id": "ignore_output_addition", "text": "Keep the compressed implementation unchanged because reconstruction is not part of the recurrence value."}
+      ], "acceptedOptionIds": ["add_recovery_information"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Value preservation and witness preservation are separate contracts; compression can discard the predecessor information needed to reconstruct choices.", "details": {"blocks": [{"type": "paragraph", "text": "Parent pointers, decision bits, divide-and-conquer recovery, or checkpoints can restore a witness, but the added time and space must be analyzed. Equal optimum values may permit multiple paths, so arbitrary reruns are not a proof of deterministic or valid reconstruction."}]}, "wrongOptionExplanationsByOptionId": {"claim_value_is_path": "A scalar objective does not encode which branches produced it.", "recompute_randomly": "Without retained tie and predecessor information, a rerun may choose an inconsistent or unavailable path.", "ignore_output_addition": "The output contract changed, so the implementation must expose the requested witness somehow."}},
+      "taxonomy": {"primarySkillAtomId": "compress_dp_state_safely", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "sequence_alignment_intro"}
+    },
+    {
+      "id": "alg-dpintro-compression-10-invariant-before-memory",
+      "prompt": "Which statement best explains why a compressed DP needs a proof before it replaces a full-table reference?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "same_state_meaning", "text": "The compressed variables must represent the same recurrence values at every update point, with every required predecessor still available."},
+        {"id": "less_memory_correct", "text": "Using less memory automatically preserves the answer because no extra state can help correctness."},
+        {"id": "same_loop_count", "text": "Equal iteration counts prove that overwritten values were irrelevant."},
+        {"id": "reference_unneeded", "text": "A full-table reference is unnecessary once the compressed code runs on sample inputs."}
+      ], "acceptedOptionIds": ["same_state_meaning"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Compression changes storage aliasing and update order, so semantic equivalence must be established rather than inferred from memory savings.", "details": {"blocks": [{"type": "paragraph", "text": "The full table is a useful oracle for bounded differential tests. A dependency/liveness proof explains why each overwritten slot is no longer needed and why each surviving variable has the intended state meaning. Sample agreement and equal loop counts do not establish either property."}]}, "wrongOptionExplanationsByOptionId": {"less_memory_correct": "Overwriting a required predecessor can make a low-memory implementation wrong.", "same_loop_count": "The number of iterations says nothing about which values are read at each iteration.", "reference_unneeded": "Samples may miss overwrite and boundary defects that a reference comparison exposes."}},
+      "taxonomy": {"primarySkillAtomId": "compress_dp_state_safely", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "grid_path_dp"}
+    },
+    {
+      "id": "alg-dpintro-compression-11-live",
+      "prompt": "What is the first question when compressing a DP table?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "future_reads",
+            "text": "Which states will future transitions or reconstruction still read, and when is each last needed."
+          },
+          {
+            "id": "names",
+            "text": "Which labels look redundant without checking reads."
+          },
+          {
+            "id": "final",
+            "text": "Keep only the final answer."
+          },
+          {
+            "id": "oldest",
+            "text": "Overwrite the oldest entry first."
+          }
+        ],
+        "acceptedOptionIds": [
+          "future_reads"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "names": "Similar labels can have different lifetimes.",
+          "final": "Intermediates may be future dependencies.",
+          "oldest": "Age does not determine liveness."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-12-reconstruction",
+      "prompt": "Why can value compression break DP solution reconstruction?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "decisions",
+            "text": "Keep backpointers, decision bits, checkpoints, or a justified second pass."
+          },
+          {
+            "id": "value",
+            "text": "The final value uniquely identifies every choice."
+          },
+          {
+            "id": "free",
+            "text": "Recompute reconstruction without charging time."
+          },
+          {
+            "id": "ignore",
+            "text": "Return only the score even when the path is required."
+          }
+        ],
+        "acceptedOptionIds": [
+          "decisions"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "value": "Ties and overwrites can hide choices.",
+          "free": "A second pass is real work.",
+          "ignore": "That violates the output contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-13-alias",
+      "prompt": "What is the risk if two logical DP rows share one mutable array?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "distinct",
+            "text": "Use distinct buffers or a proven update order that never reads overwritten state."
+          },
+          {
+            "id": "always",
+            "text": "Rows can always share storage."
+          },
+          {
+            "id": "after",
+            "text": "Copy after the update."
+          },
+          {
+            "id": "sort",
+            "text": "Sort rows to remove aliasing."
+          }
+        ],
+        "acceptedOptionIds": [
+          "distinct"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always": "A transition may read an already updated value.",
+          "after": "Earlier reads need the old row.",
+          "sort": "Sorting does not change object identity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-compression-14-tradeoff",
+      "prompt": "What should a DP review report when compression saves memory but adds reconstruction time?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "tradeoff",
+            "text": "Report the smaller space together with the added reconstruction or checkpoint cost."
+          },
+          {
+            "id": "space",
+            "text": "Report only the smaller table."
+          },
+          {
+            "id": "free",
+            "text": "Assume recomputation is free."
+          },
+          {
+            "id": "reject",
+            "text": "Reject every tradeoff."
+          }
+        ],
+        "acceptedOptionIds": [
+          "tradeoff"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "space": "That hides a real resource change.",
+          "free": "A second pass consumes time.",
+          "reject": "Valid tradeoffs can fit the contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compress_dp_state_safely",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
     }
   ],
   "modeStructures": {
@@ -471,7 +757,14 @@
           "alg-dpintro-compression-04-prove-before-rewrite",
           "alg-dpintro-compression-05-reconstruction-information-loss",
           "alg-dpintro-compression-06-overwrite-old-value",
-          "alg-dpintro-compression-07-capacity-versus-reconstruction-transfer"
+          "alg-dpintro-compression-07-capacity-versus-reconstruction-transfer",
+          "alg-dpintro-compression-08-last-read-analysis",
+          "alg-dpintro-compression-09-compression-vs-reconstruction",
+          "alg-dpintro-compression-10-invariant-before-memory",
+          "alg-dpintro-compression-11-live",
+          "alg-dpintro-compression-12-reconstruction",
+          "alg-dpintro-compression-13-alias",
+          "alg-dpintro-compression-14-tradeoff"
         ],
         "relationMetadata": {
           "mechanismBoundary": "optimize_state_space"

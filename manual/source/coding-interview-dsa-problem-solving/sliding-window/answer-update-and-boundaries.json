@@ -395,6 +395,302 @@
         "learningStage": "pattern_mechanics",
         "patternVariantId": "at_most_k_window"
       }
+    },
+    {
+      "id": "alg-sw-answer-update-after-full-repair",
+      "prompt": "A variable window seeks the longest valid range. When right expands and the predicate becomes invalid, when should the candidate answer be updated?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "after_repair", "text": "After removing from the left until the window satisfies the predicate again; only then is its length a legal candidate."}, {"id": "before_repair", "text": "Before shrinking, because the invalid range is temporarily the longest."}, {"id": "never_update", "text": "Only the final window matters, so intermediate legal states can be ignored."}, {"id": "before_expand", "text": "Before adding right, because every previous answer already covers the new candidate."}], "acceptedOptionIds": ["after_repair"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Only legal windows may compete for a longest-valid answer.", "details": {"blocks": [{"type": "paragraph", "text": "An invalid expanded range is not an admissible answer, even if it is longer than prior legal ranges. Shrink until the invariant holds, then compare the repaired length with the best answer. Updating before repair stores a candidate that violates the problem constraint."}]}, "wrongOptionExplanationsByOptionId": {"before_repair": "The expanded range is invalid, so its length cannot be recorded as a legal answer.", "never_update": "A maximum may occur at an intermediate repaired state before later expansions.", "before_expand": "The new right element can create a new legal maximum after repair."}},
+      "taxonomy": {"primarySkillAtomId": "update_window_answer_at_legal_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "at_most_k_window", "problemArchetypeId": "longest_valid_window"},
+      "constraints": ["The answer itself must satisfy the window predicate."]
+    },
+    {
+      "id": "alg-sw-answer-shortest-empty-sentinel",
+      "prompt": "A shortest-valid-window routine returns the minimum length among legal windows. What result should it return when no legal window is ever found?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "explicit_unavailable", "text": "An explicit unavailable sentinel such as 0 or -1 according to the API contract, rather than a plausible positive length."}, {"id": "zero_always", "text": "Zero always means a valid empty window, regardless of the problem's nonempty-window requirement."}, {"id": "n", "text": "n, because the entire input is the fallback candidate."}, {"id": "infinity_public", "text": "Positive infinity, even if the public return type is an integer length."}], "acceptedOptionIds": ["explicit_unavailable"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An optimization over an empty feasible set needs an explicit absence representation compatible with the API.", "details": {"blocks": [{"type": "paragraph", "text": "Initialize the best length to an internal value that cannot be confused with a legal answer, then translate it to the documented unavailable result when no update occurred. Whether that result is 0, -1, or an option type depends on the contract and whether empty windows are legal."}]}, "wrongOptionExplanationsByOptionId": {"zero_always": "Zero is valid only if the contract explicitly allows an empty window or defines zero as absence.", "n": "The entire input may be invalid and cannot be invented as a fallback.", "infinity_public": "The sentinel must be representable by the public return type or converted before returning."}},
+      "taxonomy": {"primarySkillAtomId": "update_window_answer_at_legal_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "variable_size_positive_numbers", "problemArchetypeId": "shortest_threshold_window"},
+      "constraints": ["The API distinguishes no solution from a positive valid length."]
+    },
+    {
+      "id": "alg-sw-answer-fixed-window-emission",
+      "prompt": "A fixed-size window must emit every complete window's score, including scores smaller than the best seen so far. Which update rule is correct?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "emit_each_complete", "text": "Once the window has exactly k elements, emit or record its score on every right step after removing the leaving element."}, {"id": "emit_only_best", "text": "Emit only when the current score improves the global best."}, {"id": "emit_before_fill", "text": "Emit partial windows before they reach size k so no endpoint is skipped."}, {"id": "shrink_until_valid", "text": "Use a variable-window shrink loop even though every legal candidate has fixed size k."}], "acceptedOptionIds": ["emit_each_complete"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The output contract contains every complete fixed-size window, not only an optimization over their scores.", "details": {"blocks": [{"type": "paragraph", "text": "After the first k values, each next value creates one new complete window: add the entering contribution, remove the leaving contribution, then emit. A global maximum is a different contract, and partial prefixes are not legal exact-size windows."}]}, "wrongOptionExplanationsByOptionId": {"emit_only_best": "The contract requires all complete windows, including non-best scores.", "emit_before_fill": "Partial prefixes do not satisfy the exact-size constraint.", "shrink_until_valid": "Fixed size determines left movement; there is no variable validity repair here."}},
+      "taxonomy": {"primarySkillAtomId": "update_window_answer_at_legal_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "fixed_size_window", "problemArchetypeId": "fixed_length_aggregate"},
+      "constraints": ["Every output corresponds to exactly k consecutive elements."]
+    },
+    {
+      "id": "alg-sw-answer-count-after-repair",
+      "prompt": "For an at-most-K distinct window, after repair at right, why can the answer count add right - left + 1 even if the current window is not the longest seen?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "all_valid_suffixes", "text": "Every suffix starting at s in [left, right] remains at-most-K distinct, so the state represents that many valid ranges ending at right."}, {"id": "only_longest", "text": "The current window is always the global longest, so the formula is a disguised maximum update."}, {"id": "invalid_suffixes", "text": "Only [left, right] is valid; shorter suffixes can introduce more distinct values."}, {"id": "add_left", "text": "left counts valid ranges because it is the number of shrink operations."}], "acceptedOptionIds": ["all_valid_suffixes"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "At-most validity is hereditary under removing a prefix, so one repaired boundary counts all valid suffixes for that right endpoint.", "details": {"blocks": [{"type": "paragraph", "text": "Once [left, right] has at most K distinct values, removing elements from its left cannot create a new distinct value. Every start from left through right therefore yields a valid range ending at right, and their count is the window length. This is a counting identity, not a longest-window update."}]}, "wrongOptionExplanationsByOptionId": {"only_longest": "Counting valid suffixes is independent of which window is globally longest.", "invalid_suffixes": "Removing a prefix cannot increase distinct count under an at-most predicate.", "add_left": "The number of valid starts is right-left+1, not left."}},
+      "taxonomy": {"primarySkillAtomId": "update_window_answer_at_legal_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "at_most_k_window"},
+      "constraints": ["Validity is at-most-K distinct and hereditary under left removal."]
+    },
+    {
+      "id": "alg-sw-answer-11-update-after-shrink",
+      "prompt": "For a longest-valid-window problem, when should the candidate length update the best answer?",
+      "constraints": [
+        "The current window must satisfy the validity predicate.",
+        "The left boundary may move during repair."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "after_repair",
+            "text": "After shrinking has restored validity, record the current valid window length.",
+            "explanation": "A temporarily invalid window is not an eligible answer."
+          },
+          {
+            "id": "before_repair",
+            "text": "Record the expanded length before removing invalid elements.",
+            "explanation": "The recorded window may violate the contract."
+          },
+          {
+            "id": "every_left_move",
+            "text": "Record every left-pointer position even if the window remains invalid.",
+            "explanation": "Answer states must satisfy the predicate."
+          },
+          {
+            "id": "only_final",
+            "text": "Record only the final window after the entire scan ends.",
+            "explanation": "The optimum may occur earlier."
+          }
+        ],
+        "acceptedOptionIds": [
+          "after_repair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The answer update must observe the same legal state that the problem asks to optimize.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Expansion can temporarily violate the constraint, but the repaired window is the candidate. Updating only then keeps the answer invariant valid and preserves earlier optima through max/min aggregation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "before_repair": "The recorded window may violate the contract.",
+          "every_left_move": "Answer states must satisfy the predicate.",
+          "only_final": "The optimum may occur earlier."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window"
+      }
+    },
+    {
+      "id": "alg-sw-answer-12-shortest-valid",
+      "prompt": "For a shortest-valid-window objective, what must be done while a current window satisfies the predicate?",
+      "constraints": [
+        "Removing the leftmost item may eventually break validity.",
+        "The objective is minimum length."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shrink_and_record",
+            "text": "Record its length, then shrink from the left while validity remains true to search for the shortest valid suffix.",
+            "explanation": "Every valid left boundary is a candidate for the minimum."
+          },
+          {
+            "id": "expand_only",
+            "text": "Keep expanding because a larger valid window contains more evidence.",
+            "explanation": "Larger windows are worse for a minimum-length objective."
+          },
+          {
+            "id": "record_invalid",
+            "text": "Remove until invalid, then record the invalid length as the boundary optimum.",
+            "explanation": "Invalid windows cannot be answers."
+          },
+          {
+            "id": "reset_window",
+            "text": "Reset both pointers after the first valid window so no later state can overlap it.",
+            "explanation": "Overlapping candidate windows are essential to finding the minimum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shrink_and_record"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Minimum objectives need a legal-state update before each shrink that remains legal.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Once valid, every left boundary before the first invalid removal is a candidate. The algorithm records each and stops shrinking only when the predicate would fail, then expands again."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "expand_only": "Larger windows are worse for a minimum-length objective.",
+          "record_invalid": "Invalid windows cannot be answers.",
+          "reset_window": "Overlapping candidate windows are essential to finding the minimum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window"
+      }
+    },
+    {
+      "id": "alg-sw-answer-13-fixed-emission",
+      "prompt": "How many windows of length k should a fixed-size scan emit for an input of length n when 1<=k<=n?",
+      "constraints": [
+        "Every contiguous window must be reported exactly once.",
+        "The window advances one position at a time."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "n_minus_k_plus_one",
+            "text": "Emit n−k+1 windows, one for each possible start index from 0 through n−k.",
+            "explanation": "Those are exactly the valid fixed-length starts."
+          },
+          {
+            "id": "n_plus_k",
+            "text": "Emit n+k windows because each expansion and shrink creates a result.",
+            "explanation": "Internal pointer operations are not distinct windows."
+          },
+          {
+            "id": "n_div_k",
+            "text": "Emit floor(n/k) windows because windows must be disjoint.",
+            "explanation": "A sliding window enumerates overlapping windows."
+          },
+          {
+            "id": "n_only",
+            "text": "Emit n windows regardless of k.",
+            "explanation": "The number of starts depends on the requested length."
+          }
+        ],
+        "acceptedOptionIds": [
+          "n_minus_k_plus_one"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The fixed-size output contract is determined by the set of legal start positions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Overlapping windows are distinct outputs. There are n−k+1 starts, and a correct scan updates the outgoing and incoming state once per shift."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "n_plus_k": "Internal pointer operations are not distinct windows.",
+          "n_div_k": "A sliding window enumerates overlapping windows.",
+          "n_only": "The number of starts depends on the requested length."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window"
+      }
+    },
+    {
+      "id": "alg-sw-answer-14-empty-output",
+      "prompt": "What should a fixed-size window routine do when k is greater than the input length?",
+      "constraints": [
+        "No contiguous window of length k exists.",
+        "The API defines an explicit unavailable-result policy."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_or_unavailable",
+            "text": "Return the contract's empty or unavailable result without pretending that a shorter window is valid.",
+            "explanation": "The requested window length is not present."
+          },
+          {
+            "id": "use_whole_input",
+            "text": "Use the whole input as a substitute window of length n.",
+            "explanation": "That changes the requested length."
+          },
+          {
+            "id": "pad_values",
+            "text": "Pad the input with zeros so one window can be emitted.",
+            "explanation": "Padding invents data not in the input contract."
+          },
+          {
+            "id": "emit_negative",
+            "text": "Return n−k+1 as a negative number of windows.",
+            "explanation": "A count of outputs cannot be negative; the boundary needs an explicit policy."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_or_unavailable"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The no-window case is an output contract, not a reason to silently change k.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A fixed-size routine should expose absence explicitly—often an empty collection or an unavailable answer. Substitution or padding hides the mismatch between requested and available data."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "use_whole_input": "That changes the requested length.",
+          "pad_values": "Padding invents data not in the input contract.",
+          "emit_negative": "A count of outputs cannot be negative; the boundary needs an explicit policy."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "update_window_answer_at_legal_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window"
+      }
     }
   ],
   "modeStructures": {

@@ -437,6 +437,300 @@
         "secondarySkillAtomIds": [],
         "learningStage": "strategy_selection"
       }
+    },
+    {
+      "id": "ssc-extract-empty-and-duplicate-boundaries",
+      "prompt": "Select all edge-contract questions that must be recorded before choosing a strategy for an array query.",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "empty_input", "text": "Whether the input or requested range can be empty and what result that requires."},
+        {"id": "duplicates", "text": "Whether equal values or repeated indices are legal and whether outputs preserve multiplicity."},
+        {"id": "variable_names", "text": "Which names the implementation should use for left and right."},
+        {"id": "sample_order_only", "text": "The order in which the sample cases are printed."}
+      ], "acceptedOptionIds": ["empty_input", "duplicates"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Empty and duplicate semantics can change legal states, answer values, and whether a data structure may deduplicate.", "details": {"blocks": [{"type": "paragraph", "text": "A complete decision contract includes domains, boundaries, multiplicity, identity, mutation, output, and resource limits. Variable names and sample presentation do not constrain algorithm legality. If duplicates are distinct records, a set-based candidate may be invalid even when membership is correct."}]}, "wrongOptionExplanationsByOptionId": {"variable_names": "Names have no algorithmic or output semantics.", "sample_order_only": "Example ordering does not define the input domain or edge behavior."}, "omittedCorrectExplanationsByOptionId": {"empty_input": "Base and sentinel behavior depends on whether empty input/ranges are allowed.", "duplicates": "Deduplication and identity rules affect both state and returned witnesses."}},
+      "taxonomy": {"primarySkillAtomId": "extract_strategy_decision_signals", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-extract-mutation-and-memory-contract",
+      "prompt": "Select all decision signals that must be carried before choosing a strategy that sorts input in place to gain a simpler scan.",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "mutation_allowed", "text": "Whether modifying caller-owned input is permitted."},
+        {"id": "index_identity", "text": "Whether original positions must be returned or preserved."},
+        {"id": "memory_budget", "text": "Whether a sorted copy or index structure fits auxiliary-space limits."},
+        {"id": "sort_keyword", "text": "Whether the problem statement mentions order anywhere."}
+      ], "acceptedOptionIds": ["mutation_allowed", "index_identity", "memory_budget"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Sorting changes order and may require copied storage, so mutation, identity, and memory are direct eligibility signals.", "details": {"blocks": [{"type": "paragraph", "text": "An in-place sort can destroy original indices and violate input ownership. A copied sort preserves those semantics at O(n) extra space, which may or may not fit. The presence of the word order is not itself permission to mutate or a guarantee that sorting is useful."}]}, "wrongOptionExplanationsByOptionId": {"sort_keyword": "A keyword does not specify side effects, witness identity, or resource limits."}, "omittedCorrectExplanationsByOptionId": {"mutation_allowed": "The candidate's side effect is observable.", "index_identity": "Sorting values alone can lose which original positions produced a result.", "memory_budget": "A copy can change eligibility even when asymptotic time is attractive."}},
+      "taxonomy": {"primarySkillAtomId": "extract_strategy_decision_signals", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-extract-order-of-answers",
+      "prompt": "The task asks for all matching records in original input order. Which output-contract signal is decisive when comparing a hash-based candidate with a sorted candidate?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "stable_provenance", "text": "The strategy must preserve or reconstruct original positions/provenance; value-set membership alone is insufficient."},
+        {"id": "ascending_values", "text": "Sort values because original order is irrelevant once all matches are found."},
+        {"id": "deduplicate_records", "text": "Keep one record per value because matching records with equal values are equivalent."},
+        {"id": "any_order", "text": "Return any order because output order never affects correctness."}
+      ], "acceptedOptionIds": ["stable_provenance"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Output order is observable and must be preserved by state or reconstructed from original positions.", "details": {"blocks": [{"type": "paragraph", "text": "A hash set may answer membership but discards occurrence order and multiplicity. Sorting can still be a candidate if records carry original indices and the output is restored, but that adaptation is part of the strategy contract and cost."}]}, "wrongOptionExplanationsByOptionId": {"ascending_values": "Ascending output violates the stated original-order contract unless a restoration step is included.", "deduplicate_records": "Equal values can be distinct matching records with different positions.", "any_order": "The problem explicitly observes order."}},
+      "taxonomy": {"primarySkillAtomId": "extract_strategy_decision_signals", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-extract-11_mutation",
+      "prompt": "Which constraint can rule out an otherwise faster in-place algorithm?",
+      "constraints": [
+        "The caller may reuse the input after the call.",
+        "The output contract promises the input remains unchanged."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "nonmutation",
+            "text": "A nonmutation requirement rules out in-place rewiring or sorting unless the algorithm works on an explicit copy.",
+            "explanation": "Input ownership is a correctness constraint."
+          },
+          {
+            "id": "runtime_only",
+            "text": "Only time bounds can rule out an algorithm; mutation is an implementation detail.",
+            "explanation": "Mutation is observable behavior when the caller retains the input."
+          },
+          {
+            "id": "sorting_safe",
+            "text": "Sorting is always safe because the output values are unchanged.",
+            "explanation": "Order and aliases can be observable even when the value multiset matches."
+          },
+          {
+            "id": "copy_for_free",
+            "text": "Copy the input without charging memory or time to preserve all algorithms.",
+            "explanation": "Copies consume resources and may violate tighter contracts."
+          }
+        ],
+        "acceptedOptionIds": [
+          "nonmutation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Input mutation belongs in the output contract and can change the set of legal strategies.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "An in-place algorithm may be asymptotically attractive but invalid when callers expect the original order or aliases to remain. Make ownership and mutation explicit before choosing it."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "runtime_only": "Mutation is observable behavior when the caller retains the input.",
+          "sorting_safe": "Order and aliases can be observable even when the value multiset matches.",
+          "copy_for_free": "Copies consume resources and may violate tighter contracts."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-12_ordered_output",
+      "prompt": "Why must an output-order requirement be extracted before comparing a set-based strategy with a scan?",
+      "constraints": [
+        "The output contains multiple valid items.",
+        "The contract may require input order or sorted order."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "order_is_semantic",
+            "text": "Ordering is part of correctness; a set or heap result may need an additional ordering phase or may be invalid as returned.",
+            "explanation": "Same members in a different order can be a different output."
+          },
+          {
+            "id": "order_cosmetic",
+            "text": "Output order is never semantic because sets contain the same elements.",
+            "explanation": "The contract may explicitly require sequence order."
+          },
+          {
+            "id": "sort_always",
+            "text": "Sort every result regardless of the requested order.",
+            "explanation": "Unrequested sorting adds cost and can violate stability."
+          },
+          {
+            "id": "ignore_duplicates",
+            "text": "Remove duplicates before checking order because duplicates have no position.",
+            "explanation": "Multiplicity and position can both be part of the output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "order_is_semantic"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Output format is a strategy signal, not presentation detail.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A candidate algorithm must return exactly the required collection, multiplicity, and order. If it emits items in discovery order but the contract asks for input order, preserve indices or add a justified ordering step."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "order_cosmetic": "The contract may explicitly require sequence order.",
+          "sort_always": "Unrequested sorting adds cost and can violate stability.",
+          "ignore_duplicates": "Multiplicity and position can both be part of the output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-13_input_scale",
+      "prompt": "Which constraint most directly determines whether an O(n^2) pair scan is viable?",
+      "constraints": [
+        "n is the input size.",
+        "The output does not itself require quadratic enumeration."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "n_bound",
+            "text": "The maximum legal n and time budget determine whether O(n^2) fits; small constraints can make a simple scan appropriate.",
+            "explanation": "Algorithm choice follows the actual bound, not a slogan against quadratic work."
+          },
+          {
+            "id": "variable_names",
+            "text": "The names of the input variables determine whether a pair scan is acceptable.",
+            "explanation": "Names carry no complexity bound."
+          },
+          {
+            "id": "language_choice",
+            "text": "The programming language alone decides whether O(n^2) is valid.",
+            "explanation": "Language constants matter only after the asymptotic workload is bounded."
+          },
+          {
+            "id": "output_count_only",
+            "text": "Ignore n because the output contract is the only source of work.",
+            "explanation": "Reading and comparing inputs still costs time."
+          }
+        ],
+        "acceptedOptionIds": [
+          "n_bound"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Constraints translate the problem statement into an allowed cost envelope.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "An O(n^2) method can be the most robust choice for small n and an unacceptable timeout for large n. Extract upper bounds and required output volume before selecting patterns."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "variable_names": "Names carry no complexity bound.",
+          "language_choice": "Language constants matter only after the asymptotic workload is bounded.",
+          "output_count_only": "Reading and comparing inputs still costs time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-extract-14_numeric_domain",
+      "prompt": "Why does the numeric domain belong in the constraint extraction step?",
+      "constraints": [
+        "Values may be negative, large, fractional, or bounded integers.",
+        "Arithmetic and comparisons affect correctness."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "domain_changes_method",
+            "text": "The domain determines overflow risk, ordering assumptions, exactness, and whether transformations such as division or monotonic shrink are valid.",
+            "explanation": "Value semantics can change both algorithm and proof."
+          },
+          {
+            "id": "domain_irrelevant",
+            "text": "Only n matters; all numeric types support the same transformations.",
+            "explanation": "Finite widths and signed values create different behavior."
+          },
+          {
+            "id": "cast_everything",
+            "text": "Convert all values to floating point so one domain covers every case.",
+            "explanation": "Floating point can lose exactness and does not solve all range issues."
+          },
+          {
+            "id": "positive_assumed",
+            "text": "Assume values are positive unless a counterexample appears during testing.",
+            "explanation": "Monotonicity assumptions must come from the contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "domain_changes_method"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Numeric constraints can determine whether a candidate invariant is even true in the implementation domain.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Signed values can break sum monotonicity, large products can overflow, and fractional comparisons can lose precision. These are input and output contract facts, not afterthoughts."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "domain_irrelevant": "Finite widths and signed values create different behavior.",
+          "cast_everything": "Floating point can lose exactness and does not solve all range issues.",
+          "positive_assumed": "Monotonicity assumptions must come from the contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "extract_strategy_decision_signals",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
     }
   ],
   "modeStructures": {

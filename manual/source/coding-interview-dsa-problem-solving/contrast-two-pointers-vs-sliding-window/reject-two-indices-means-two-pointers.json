@@ -270,6 +270,411 @@
       "constraints": [
         "Do not infer unstated properties from conventional variable names."
       ]
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-05",
+      "prompt": "A binary-search implementation keeps low and high indices and discards half the remaining sorted range after each comparison. Why should it not be classified as the two-pointers family merely because two indices move?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "binary_search_invariant", "text": "The indices delimit a search interval and the invariant discards value ranges by a midpoint test; they do not represent a pair whose relation is being optimized."},
+          {"id": "two_indices_definition", "text": "It is two pointers because any two changing indices define that family."},
+          {"id": "linear_required", "text": "It is two pointers because binary search is always linear after the first comparison."},
+          {"id": "window_by_default", "text": "It is sliding window because low and high are contiguous indices."}
+        ],
+        "acceptedOptionIds": ["binary_search_invariant"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The same representation can support a different invariant and candidate semantics.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Binary search maintains a candidate value range and uses a monotonic predicate to discard one half. It does not compare two endpoints as a pair, maintain a contiguous data window, or use a read/write relation. Variable count and movement direction are therefore insufficient for family classification. The transfer rule is to identify what is being discarded and why; the invariant, not the names low and high, determines the pattern."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "two_indices_definition": "Two variables can delimit a search interval, a window, a merge, or unrelated positions; the family requires a movement invariant.",
+          "linear_required": "Binary search is logarithmic under its sorted/monotonic precondition, and complexity does not define two pointers.",
+          "window_by_default": "A contiguous index range is not automatically a maintained sliding-window candidate."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "intermediate",
+      "constraints": ["Classify by the maintained invariant, not by variable names."]
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-06",
+      "prompt": "Which evidence distinguishes a genuine sliding-window solution from a generic two-index scan?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "range_state_and_repair", "text": "The indices delimit one contiguous candidate, state summarizes that candidate, and expansion or shrinkage preserves a window-validity invariant."},
+          {"id": "two_names", "text": "The code declares exactly two integer variables named left and right."},
+          {"id": "linear_runtime", "text": "The code runs in O(n), regardless of what the indices represent."},
+          {"id": "any_contiguous_slice", "text": "The input contains a contiguous slice somewhere, even if the algorithm never maintains it as a candidate."}
+        ],
+        "acceptedOptionIds": ["range_state_and_repair"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "Sliding window is defined by range-owned state and a validity-preserving boundary update, not by the existence of two integers.",
+        "details": {"blocks": [{"type": "paragraph", "text": "The diagnostic question is whether the current candidate is the entire contiguous range between the boundaries. If so, the algorithm must maintain state for that range and update it when right expands or left evicts elements. A pair-search or binary-search loop may also use two indices without these operations. The transfer rule is to inspect the candidate identity and the repair rule together."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "two_names": "Names are arbitrary and do not reveal candidate membership or validity state.",
+          "linear_runtime": "Many linear scans are not sliding windows, while some window algorithms include other costs.",
+          "any_contiguous_slice": "A slice in the input is not a maintained candidate unless the algorithm owns and updates its range state."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "foundational",
+      "constraints": ["Use candidate membership and invariant as the classification test."]
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-07",
+      "prompt": "A compaction routine scans with read and write indices, copies an accepted element to nums[write], and advances write only after a keep decision. Which classification is most precise?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "same_direction_two_pointers", "text": "A same-direction two-pointers pattern: read explores input while write marks the next position in the retained prefix."},
+          {"id": "sliding_window", "text": "Sliding window, because the write index is a left boundary of a contiguous candidate."},
+          {"id": "binary_search", "text": "Binary search, because two indices identify a range of valid output positions."},
+          {"id": "not_a_pattern", "text": "No pattern applies because the indices do not move toward each other."}
+        ],
+        "acceptedOptionIds": ["same_direction_two_pointers"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The indices have distinct read/write roles and maintain a compacted-prefix invariant.",
+        "details": {"blocks": [{"type": "paragraph", "text": "read visits every input position, while write identifies where the next retained value belongs. The invariant is that the prefix before write already equals the filtered output. Neither index bounds a range whose aggregate state is repaired, and there is no midpoint elimination. Movement direction is not the defining criterion; the role relation and overwrite safety are."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "sliding_window": "The routine does not maintain statistics for a current contiguous range; it builds a retained prefix through read/write roles.",
+          "binary_search": "No sorted monotonic predicate or half-range elimination is present.",
+          "not_a_pattern": "Same-direction two pointers includes read/write compaction even though the indices never converge."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "intermediate",
+      "constraints": ["The write position advances only when the current value is retained."]
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-08",
+      "prompt": "A range-sum query receives immutable l and r and returns prefix[r + 1] - prefix[l]. Why is this not a moving two-pointers or sliding-window algorithm?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "static_query_indices", "text": "l and r describe query endpoints but do not move through candidates or maintain an evolving range invariant."},
+          {"id": "prefix_is_window", "text": "It is sliding window because prefix sums represent a contiguous interval."},
+          {"id": "two_pointers_by_subtraction", "text": "It is two pointers because the formula subtracts one index from another."},
+          {"id": "binary_search_range", "text": "It is binary search because the endpoints are ordered numerically."}
+        ],
+        "acceptedOptionIds": ["static_query_indices"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "A range described by two parameters is not automatically a dynamically maintained candidate.",
+        "details": {"blocks": [{"type": "paragraph", "text": "The query endpoints are supplied once and the prefix array answers the range in constant time. There is no endpoint movement, pair comparison, expansion, shrinkage, or eviction invariant. The contiguous mathematical range belongs to the query contract, not to a sliding-window process. The transfer rule is to distinguish a static interval description from an algorithm that evolves its candidate boundaries."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_is_window": "Prefix preprocessing can answer ranges without maintaining a live window or repairing a validity predicate.",
+          "two_pointers_by_subtraction": "Arithmetic involving two indices is not the same as a two-pointers movement invariant.",
+          "binary_search_range": "Ordered endpoints alone do not imply midpoint elimination or a monotonic search predicate."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "foundational",
+      "constraints": ["The query endpoints are fixed for this operation."]
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-09",
+      "prompt": "Select all statements that correctly reject the heuristic “two indices means two pointers.”",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {"id": "binary_search_counterexample", "text": "A binary-search range uses two bounds but classifies by monotonic half elimination."},
+          {"id": "static_query_counterexample", "text": "A fixed range query can use l and r without any moving-pointer invariant."},
+          {"id": "window_is_same", "text": "A window is always two pointers because all ranges with two endpoints belong to the same family."},
+          {"id": "read_write_is_two_pointers", "text": "A read/write compaction scan is a two-pointers pattern despite moving in the same direction."}
+        ],
+        "acceptedOptionIds": ["binary_search_counterexample", "static_query_counterexample", "read_write_is_two_pointers"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The classifier must separate representation from invariant and allow both “two pointers” and “neither” outcomes.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Binary search and fixed range queries demonstrate that two bounds can serve neither moving-pointer family. Read/write compaction demonstrates that a genuine two-pointers pattern need not converge or bound a window. A sliding window is distinct because its range-owned state and validity repair give it a different proof. The reliable test is what each index means, what candidate is maintained, and which movement is safe."}]},
+        "wrongOptionExplanationsByOptionId": {"window_is_same": "The statement repeats the heuristic instead of identifying the window-specific state and invariant."},
+        "omittedCorrectExplanationsByOptionId": {
+          "binary_search_counterexample": "It shows that two bounds can support a different logarithmic discard invariant.",
+          "static_query_counterexample": "It shows that two indices may be fixed parameters rather than moving pointers.",
+          "read_write_is_two_pointers": "It prevents the false requirement that two pointers must move toward each other."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "advanced",
+      "constraints": ["More than one statement is correct."]
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-10",
+      "prompt": "A reviewer sees an O(n) loop with two integer indices and no explanation of what is discarded. What is the safest next action?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "request_invariant", "text": "Request the candidate definition, maintained state, and movement invariant before assigning a family label."},
+          {"id": "label_two_pointers", "text": "Label it two pointers because the complexity and index count match the common template."},
+          {"id": "label_window", "text": "Label it sliding window because every pair of indices spans a range."},
+          {"id": "label_by_variable_names", "text": "Use the variable names to infer whether the method is two pointers or a window."}
+        ],
+        "acceptedOptionIds": ["request_invariant"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "Without a candidate and proof of safe movement, a family label is speculation.",
+        "details": {"blocks": [{"type": "paragraph", "text": "O(n) describes a cost bound, not a pattern family. Two indices can support a window, pair search, compaction, binary search, merge, or a static query. The reviewer should ask what the indices represent, which elements remain candidates after a move, and what invariant makes that discard safe. This diagnostic request is more precise than choosing a label from syntax."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "label_two_pointers": "Index count and linearity do not establish a two-pointers relation.",
+          "label_window": "Two endpoints do not establish that a live contiguous range and its state are maintained.",
+          "label_by_variable_names": "Names are implementation details and can be misleading or absent."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "intermediate",
+      "constraints": ["Do not infer an algorithmic invariant from syntax alone."]
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-11",
+      "prompt": "Which other algorithm can use two integer indices without being either pair-search two pointers or a sliding window?",
+      "constraints": [
+        "The contrasted algorithm family is defined by state semantics.",
+        "The output contract is fixed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "other_family",
+            "text": "In-place read/write compaction can use read and write indices while maintaining a retained prefix."
+          },
+          {
+            "id": "always_pair",
+            "text": "Two indices always mean pair search."
+          },
+          {
+            "id": "always_window",
+            "text": "Any left/right-like variables define a window."
+          },
+          {
+            "id": "binary",
+            "text": "Two indices always mean binary search."
+          }
+        ],
+        "acceptedOptionIds": [
+          "other_family"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, linear complexity, and endpoint names appear in both families. Classification depends on whether the candidate is an endpoint relation or a range-owned state and on which movement proof is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always_pair": "Representation does not define semantics.",
+          "always_window": "Read/write roles can differ.",
+          "binary": "Many algorithms use index pairs."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-12",
+      "prompt": "What question should a reviewer ask about a pointer move before naming the pattern?",
+      "constraints": [
+        "The contrasted algorithm family is defined by state semantics.",
+        "The output contract is fixed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "discard",
+            "text": "Which candidates become impossible or which range state is repaired after the move, and why is that safe?"
+          },
+          {
+            "id": "name",
+            "text": "What are the variable names?"
+          },
+          {
+            "id": "speed",
+            "text": "How fast is the loop?"
+          },
+          {
+            "id": "sort",
+            "text": "Was input sorted?"
+          }
+        ],
+        "acceptedOptionIds": [
+          "discard"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, linear complexity, and endpoint names appear in both families. Classification depends on whether the candidate is an endpoint relation or a range-owned state and on which movement proof is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "name": "Names can be misleading.",
+          "speed": "Complexity does not identify invariant.",
+          "sort": "Sortedness is only one possible precondition."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-13",
+      "prompt": "Why is O(n) complexity not enough to classify two-pointer versus sliding-window code?",
+      "constraints": [
+        "The contrasted algorithm family is defined by state semantics.",
+        "The output contract is fixed."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "cost_not_family",
+            "text": "Both can be linear, but one may eliminate endpoint candidates while the other maintains aggregate state for a contiguous range."
+          },
+          {
+            "id": "linear_proves",
+            "text": "Linear time proves two pointers."
+          },
+          {
+            "id": "linear_window",
+            "text": "Linear time proves a window."
+          },
+          {
+            "id": "sort",
+            "text": "Sorting determines the family."
+          }
+        ],
+        "acceptedOptionIds": [
+          "cost_not_family"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, linear complexity, and endpoint names appear in both families. Classification depends on whether the candidate is an endpoint relation or a range-owned state and on which movement proof is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "linear_proves": "It proves only a cost bound.",
+          "linear_window": "It proves only a cost bound.",
+          "sort": "Several families sort or do not sort."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-rtimtp-14",
+      "prompt": "What evidence is sufficient to assign a sliding-window label?",
+      "constraints": [
+        "The contrasted algorithm family is defined by state semantics.",
+        "The output contract is fixed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "window_evidence",
+            "text": "The candidate is a contiguous interval, state represents its contents, and boundary updates preserve or restore a validity/score invariant."
+          },
+          {
+            "id": "two_vars",
+            "text": "Two endpoint variables are enough."
+          },
+          {
+            "id": "while",
+            "text": "A while-loop is enough."
+          },
+          {
+            "id": "range_word",
+            "text": "The prompt says interval."
+          }
+        ],
+        "acceptedOptionIds": [
+          "window_evidence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, linear complexity, and endpoint names appear in both families. Classification depends on whether the candidate is an endpoint relation or a range-owned state and on which movement proof is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "two_vars": "Many non-window methods use them.",
+          "while": "Loop form is not the invariant.",
+          "range_word": "Words do not define implementation state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_two_indices_implies_two_pointers_heuristic",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
     }
   ],
   "modeStructures": {
@@ -289,7 +694,17 @@
           "alg-ctpsw-rtimtp-01",
           "alg-ctpsw-rtimtp-02",
           "alg-ctpsw-rtimtp-03",
-          "alg-ctpsw-rtimtp-04"
+          "alg-ctpsw-rtimtp-04",
+          "alg-ctpsw-rtimtp-05",
+          "alg-ctpsw-rtimtp-06",
+          "alg-ctpsw-rtimtp-07",
+          "alg-ctpsw-rtimtp-08",
+          "alg-ctpsw-rtimtp-09",
+          "alg-ctpsw-rtimtp-10",
+        "alg-ctpsw-rtimtp-11",
+        "alg-ctpsw-rtimtp-12",
+        "alg-ctpsw-rtimtp-13",
+        "alg-ctpsw-rtimtp-14"
         ]
       }
     ],

@@ -309,6 +309,292 @@
         "Only endpoint values and endpoint indices are tested.",
         "No interior aggregate is part of the requirement."
       ]
+    },
+    {
+      "id": "alg-ctpsw-prcr-06",
+      "prompt": "A task selects two positions whose values satisfy a relation, but the selected positions must be adjacent. Does adjacency alone make the candidate a sliding window?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "still_pair_relation", "text": "No. It remains a pair relation because only the two selected values and their adjacency relation are evaluated; no range-owned aggregate is maintained."}, {"id": "window_by_adjacency", "text": "Yes. Any adjacent positions define a sliding window."}, {"id": "two_indices_proof", "text": "No classification is possible because adjacent indices use only one gap."}, {"id": "sort_required", "text": "It becomes a window only after sorting the values."}], "acceptedOptionIds": ["still_pair_relation"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Adjacency describes the relation between selected positions; window semantics require ownership of the entire range and its state.", "details": {"blocks": [{"type": "paragraph", "text": "A window can have length two, but the classification comes from the candidate contract, not from geometric adjacency. If the algorithm compares only the two values or their index gap, it is a pair relation. If it maintains a sum, frequencies, maximum, or other property over all positions in a possibly larger interval, it is a window. The minimum candidate size does not erase the invariant distinction."}]}, "wrongOptionExplanationsByOptionId": {"window_by_adjacency": "Two adjacent positions form a possible window representation, but no range-owned state is present in the stated task.", "two_indices_proof": "A pair relation can be classified from what its endpoints mean even when their gap is one.", "sort_required": "Sorting is unrelated to whether the candidate owns the interior range."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "foundational",
+      "constraints": ["Only the two selected values and their adjacency are scored."]
+    },
+    {
+      "id": "alg-ctpsw-prcr-07",
+      "prompt": "An algorithm maintains a frequency map for all values between left and right and shrinks left until at most K distinct values remain. What fact rules out treating it as a simple endpoint pair?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "interior_state_material", "text": "The validity and future updates depend on every interior value, so [left, right] is a complete contiguous candidate with range-owned state."}, {"id": "endpoints_only", "text": "The pair model still applies because the final answer has two endpoints."}, {"id": "sorted_required", "text": "The map proves the input must be sorted before either pointer moves."}, {"id": "frequency_irrelevant", "text": "A frequency map never affects pattern classification."}], "acceptedOptionIds": ["interior_state_material"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The interior frequency state determines validity and must be updated when either boundary moves.", "details": {"blocks": [{"type": "paragraph", "text": "An endpoint pair ignores the values between its positions except as possible future endpoints. Here every value contributes to the distinct-count predicate, so removing a left value changes the candidate state and can restore validity. That expand-and-shrink invariant is sliding-window semantics, regardless of the fact that the answer is eventually reported as a pair of boundaries."}]}, "wrongOptionExplanationsByOptionId": {"endpoints_only": "The endpoints delimit the candidate, but the interior frequency map is semantically part of that candidate.", "sorted_required": "Frequency-window validity does not require sorted input; it requires a correctly updated range state.", "frequency_irrelevant": "The map is the evidence that interior elements affect validity and therefore determines the family."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "intermediate",
+      "constraints": ["The answer must be a contiguous subarray of the original sequence."]
+    },
+    {
+      "id": "alg-ctpsw-prcr-08",
+      "prompt": "A sorted pair-sum scan moves the smaller endpoint when the sum is too small. Why is that movement proof different from shrinking a sliding window after its validity predicate fails?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "eliminate_pair_vs_repair_range", "text": "Pair movement eliminates all remaining pairs using one endpoint, while window shrinking removes range members until the complete candidate becomes valid again."}, {"id": "same_proof", "text": "They are the same proof because both increment left."}, {"id": "window_never_rejects", "text": "A window never has an invalid state; it only expands."}, {"id": "sort_causes_shrink", "text": "Sortedness makes every shrink operation an endpoint-pair proof."}], "acceptedOptionIds": ["eliminate_pair_vs_repair_range"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The same pointer operation can serve different invariants: discard a set of pair candidates or repair the state of one range candidate.", "details": {"blocks": [{"type": "paragraph", "text": "For sorted pair sum, if left + right is too small, every pair using that left with a right endpoint no larger than the current right is also too small, so left can be discarded from the pair search. For a window, the current range can be invalid and left advances to remove its contribution; the proof concerns the range predicate and the next valid suffix. Direction alone does not identify the family."}]}, "wrongOptionExplanationsByOptionId": {"same_proof": "Both increment left but eliminate different candidate sets and maintain different invariants.", "window_never_rejects": "Variable windows commonly expand into invalid states and then shrink until the predicate holds.", "sort_causes_shrink": "Sortedness supplies pair elimination only when the pair relation and monotonic comparison support it."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "advanced",
+      "constraints": ["The pair input is sorted; the window predicate is maintained over the full range."]
+    },
+    {
+      "id": "alg-ctpsw-prcr-09",
+      "prompt": "Select all statements that correctly classify the candidate object in each situation.",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [{"id": "pair_endpoints", "text": "Two selected endpoint values must satisfy a relation, and interior values are irrelevant: pair-relation two pointers."}, {"id": "range_frequency", "text": "Every value between boundaries contributes to a distinct-count predicate: sliding window."}, {"id": "adjacent_pair_window", "text": "Any adjacent pair is automatically a sliding window, even when no interior state exists."}, {"id": "range_as_geometry_only", "text": "A pair whose endpoints enclose positions is always a range-owned candidate."}], "acceptedOptionIds": ["pair_endpoints", "range_frequency"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Candidate membership—not the notation [left, right]—determines whether the invariant is pair-based or range-based.", "details": {"blocks": [{"type": "paragraph", "text": "The pair case reasons about two selected positions and a relation between them. The frequency case owns the entire interval and maintains state for every element. A range-shaped notation can describe either; the classification follows which values affect validity, score, and safe movement. This is the core contrast the false heuristic misses."}]}, "wrongOptionExplanationsByOptionId": {"adjacent_pair_window": "Adjacency alone does not make a range aggregate; a length-two pair can remain an endpoint relation.", "range_as_geometry_only": "Geometric enclosure is not semantic candidate membership. Interior values must matter for window classification."}, "omittedCorrectExplanationsByOptionId": {"pair_endpoints": "It identifies the pair candidate and excludes irrelevant interior values.", "range_frequency": "It identifies range-owned state and validity repair."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "advanced",
+      "constraints": ["More than one statement is correct."]
+    },
+    {
+      "id": "alg-ctpsw-prcr-10",
+      "prompt": "A prompt mentions left and right but does not say whether interior elements affect the answer. What clarification is most important before selecting a pattern?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "ask_candidate_membership", "text": "Ask whether the candidate is only the two selected positions or the entire contiguous interval and its aggregate state."}, {"id": "count_indices", "text": "Count the indices and choose the family with the matching number of variables."}, {"id": "assume_window", "text": "Assume a window because every left/right pair spans an interval."}, {"id": "assume_pair", "text": "Assume two pointers because a window is only a special name for two pointers."}], "acceptedOptionIds": ["ask_candidate_membership"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The missing candidate contract is exactly the distinction between endpoint relation and range-owned state.", "details": {"blocks": [{"type": "paragraph", "text": "If only the endpoints are selected, movement must be justified by a pair relation such as sorted elimination. If every element between them contributes, the algorithm needs a window state and a validity update. Without this information, variable names and pointer count cannot determine the pattern. Asking the contract first prevents an implementation template from replacing problem analysis."}]}, "wrongOptionExplanationsByOptionId": {"count_indices": "Both families commonly use two indices, so count provides no classification.", "assume_window": "A span is not a window unless its interior is the maintained candidate.", "assume_pair": "A window is not merely a cosmetic label; its range-owned state creates different proof obligations."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "foundational",
+      "constraints": ["The output contract is intentionally incomplete until candidate membership is clarified."]
+    },
+    {
+      "id": "alg-ctpsw-prcr-11",
+      "prompt": "If only two selected endpoints contribute to the score, what candidate geometry is being searched?",
+      "constraints": [
+        "The contrasted algorithm family is defined by state semantics.",
+        "The output contract is fixed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "endpoint_pair",
+            "text": "A pair relation over endpoint candidates, not a window aggregate over every enclosed element."
+          },
+          {
+            "id": "window",
+            "text": "A running window because two endpoints are named."
+          },
+          {
+            "id": "frequency",
+            "text": "A frequency window because all pairs have counts."
+          },
+          {
+            "id": "tree",
+            "text": "A tree path because endpoints define a range."
+          }
+        ],
+        "acceptedOptionIds": [
+          "endpoint_pair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, linear complexity, and endpoint names appear in both families. Classification depends on whether the candidate is an endpoint relation or a range-owned state and on which movement proof is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "window": "Endpoint count does not determine state.",
+          "frequency": "No interior membership predicate was stated.",
+          "tree": "Array endpoint geometry is different."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-prcr-12",
+      "prompt": "If every element between left and right contributes to a sum or frequency constraint, what state is required?",
+      "constraints": [
+        "The contrasted algorithm family is defined by state semantics.",
+        "The output contract is fixed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "running_range",
+            "text": "Maintain the complete contiguous range state and update it when right enters or left leaves."
+          },
+          {
+            "id": "endpoints",
+            "text": "Track only endpoint values."
+          },
+          {
+            "id": "pair",
+            "text": "Compare endpoints and discard the middle."
+          },
+          {
+            "id": "sort",
+            "text": "Sort interior values before checking."
+          }
+        ],
+        "acceptedOptionIds": [
+          "running_range"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, linear complexity, and endpoint names appear in both families. Classification depends on whether the candidate is an endpoint relation or a range-owned state and on which movement proof is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "endpoints": "That loses interior contributions.",
+          "pair": "The middle is part of the predicate.",
+          "sort": "Sorting changes contiguity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-prcr-13",
+      "prompt": "Which proof belongs to sorted pair search but not automatically to a running window?",
+      "constraints": [
+        "The contrasted algorithm family is defined by state semantics.",
+        "The output contract is fixed."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "eliminate_pairs",
+            "text": "A too-small or too-large endpoint relation can eliminate an entire region of endpoint pairs."
+          },
+          {
+            "id": "repair",
+            "text": "Shrink until a window predicate is valid."
+          },
+          {
+            "id": "map",
+            "text": "Decrement a frequency when left moves."
+          },
+          {
+            "id": "emit",
+            "text": "Emit every contiguous range."
+          }
+        ],
+        "acceptedOptionIds": [
+          "eliminate_pairs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, linear complexity, and endpoint names appear in both families. Classification depends on whether the candidate is an endpoint relation or a range-owned state and on which movement proof is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "repair": "That is range-state repair.",
+          "map": "That is interior membership state.",
+          "emit": "Pair search need not enumerate ranges."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-prcr-14",
+      "prompt": "What output clarification determines whether pair search or a window scan is appropriate?",
+      "constraints": [
+        "The contrasted algorithm family is defined by state semantics.",
+        "The output contract is fixed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "membership",
+            "text": "Whether the answer is defined by two endpoints or by all elements in the contiguous range and its validity rule."
+          },
+          {
+            "id": "names",
+            "text": "Whether variables are named left and right."
+          },
+          {
+            "id": "complexity",
+            "text": "Which family has a shorter notation."
+          },
+          {
+            "id": "sort",
+            "text": "Whether input can be sorted regardless of original order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "membership"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, linear complexity, and endpoint names appear in both families. Classification depends on whether the candidate is an endpoint relation or a range-owned state and on which movement proof is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "names": "Names are insufficient.",
+          "complexity": "A fast wrong contract is still wrong.",
+          "sort": "Sorting may change ranges."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_pair_relation_from_contiguous_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
     }
   ],
   "modeStructures": {
@@ -329,7 +615,16 @@
           "alg-ctpsw-prcr-02",
           "alg-ctpsw-prcr-03",
           "alg-ctpsw-prcr-04",
-          "alg-ctpsw-prcr-05"
+          "alg-ctpsw-prcr-05",
+          "alg-ctpsw-prcr-06",
+          "alg-ctpsw-prcr-07",
+          "alg-ctpsw-prcr-08",
+          "alg-ctpsw-prcr-09",
+          "alg-ctpsw-prcr-10",
+        "alg-ctpsw-prcr-11",
+        "alg-ctpsw-prcr-12",
+        "alg-ctpsw-prcr-13",
+        "alg-ctpsw-prcr-14"
         ]
       }
     ],

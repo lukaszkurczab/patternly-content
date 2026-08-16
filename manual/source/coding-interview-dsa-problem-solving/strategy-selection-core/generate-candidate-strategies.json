@@ -421,6 +421,314 @@
         "secondarySkillAtomIds": [],
         "learningStage": "strategy_selection"
       }
+    },
+    {
+      "id": "ssc-generate-graph-reachability-candidates",
+      "prompt": "A directed graph must answer one reachability query from S to T. Which candidate set contains materially distinct approaches worth comparing?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "dfs_bfs_index", "text": "A DFS/BFS from S, a precomputed transitive-reachability index if many later queries are expected, and a bitset-based traversal when representation constraints support it."},
+        {"id": "rename_dfs", "text": "Recursive DFS, iterative DFS, DFS with a helper name, and DFS with a different loop variable."},
+        {"id": "sort_labels", "text": "Sort vertex labels, binary-search T, and compare labels without following edges."},
+        {"id": "one_universal", "text": "Only BFS is legal because every graph problem has one canonical traversal."}
+      ], "acceptedOptionIds": ["dfs_bfs_index"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Candidate generation should vary the information retained or the workload model, not merely rename the same traversal.", "details": {"blocks": [{"type": "paragraph", "text": "A direct traversal is the reference for one query. Repeated-query workloads may justify an index, and a bitset representation can change the constant factors and memory tradeoff when the graph is dense or the platform supports it. Sorting identifiers without edge traversal is not a reachability mechanism."}]}, "wrongOptionExplanationsByOptionId": {"rename_dfs": "Different syntax with the same state and proof is one mechanism, not four candidates.", "sort_labels": "Identifier order does not encode directed adjacency.", "one_universal": "Query volume, graph representation, and resource limits can change the strongest legal candidate."}},
+      "taxonomy": {"primarySkillAtomId": "generate_plausible_algorithmic_approaches", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-generate-exact-sum-candidates",
+      "prompt": "An array may contain negative values, and the task asks whether any subarray has sum exactly T. Which candidate set respects the missing monotonicity premise?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "prefix_hash_bruteforce_divide", "text": "A prefix-sum plus frequency map approach, a quadratic reference, and a divide-and-conquer or alternative index structure when its assumptions and costs are explicit."},
+        {"id": "shrink_only", "text": "Expand right and shrink left whenever the sum is not T, with no sign assumption."},
+        {"id": "sort_values", "text": "Sort values first and use two pointers even though subarray contiguity must be preserved."},
+        {"id": "guess_positive", "text": "Assume all values are positive because that makes a familiar window rule convenient."}
+      ], "acceptedOptionIds": ["prefix_hash_bruteforce_divide"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The candidate set must respect the stated signed domain and separate a correct baseline from strategies that need stronger assumptions.", "details": {"blocks": [{"type": "paragraph", "text": "Prefix sums turn a subarray sum into a relation between two prefix positions and do not require nonnegative values. A quadratic enumeration is still a useful reference, while other candidates may be carried only with explicit constraints. The familiar expand/shrink rule is not legal without a directional proof, and sorting values destroys original contiguity."}]}, "wrongOptionExplanationsByOptionId": {"shrink_only": "Signed values do not provide a safe direction when the current sum is below or above T.", "sort_values": "Sorting loses the original adjacency that defines a subarray.", "guess_positive": "Candidate generation cannot invent a sign premise absent from the input contract."}},
+      "taxonomy": {"primarySkillAtomId": "generate_plausible_algorithmic_approaches", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-generate-material-difference-test",
+      "prompt": "Which pair of proposals should be kept as two candidates rather than collapsed as cosmetic variants?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "scan_vs_hash_index", "text": "A direct scan that uses no retained state versus a hash index that changes preprocessing, memory, and per-query work."},
+        {"id": "same_map_names", "text": "The same hash-map lookup written with a for loop versus a while loop."},
+        {"id": "same_sort_order", "text": "The same sort-and-scan algorithm with renamed helper functions."},
+        {"id": "same_stack_copy", "text": "Two identical stack implementations in different files."}
+      ], "acceptedOptionIds": ["scan_vs_hash_index"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Material candidates differ in retained information, preprocessing, update model, discard rule, or resource profile—not in surface syntax.", "details": {"blocks": [{"type": "paragraph", "text": "A scan pays work per query and retains no index. A hash index pays setup and memory to change lookup cost, so query volume and collision assumptions can select between them. Loop style, helper names, and duplicate copies do not create a new algorithmic candidate and should not inflate the decision set."}]}, "wrongOptionExplanationsByOptionId": {"same_map_names": "The state, operations, and proof are unchanged; syntax is not a material mechanism boundary.", "same_sort_order": "Renaming helpers does not change preprocessing or query behavior.", "same_stack_copy": "Duplicate implementations are one candidate and add review noise rather than decision value."}},
+      "taxonomy": {"primarySkillAtomId": "generate_plausible_algorithmic_approaches", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-generate-assumption-annotations",
+      "prompt": "Select all annotations that make a generated candidate evaluable before final strategy selection.",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "preconditions", "text": "Record assumptions such as sortedness, nonnegative values, immutability, or bounded key domains."},
+        {"id": "state_and_proof", "text": "Describe retained state and the invariant or elimination rule that makes operations safe."},
+        {"id": "cost_model", "text": "Record setup, per-operation, total time, auxiliary space, and expected/worst-case guarantees where relevant."},
+        {"id": "winner_label_only", "text": "Label it best so later review does not need to compare alternatives."}
+      ], "acceptedOptionIds": ["preconditions", "state_and_proof", "cost_model" ]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Selection can compare only candidates whose legality, correctness mechanism, and resource model are explicit.", "details": {"blocks": [{"type": "paragraph", "text": "Preconditions expose when a candidate applies. State and proof explain why it returns the right answer. Cost annotations allow comparison under the actual workload and resource limits. Declaring a winner during generation hides unresolved questions and collapses the separation between candidate creation and evaluation."}]}, "wrongOptionExplanationsByOptionId": {"winner_label_only": "A label is a conclusion, not evidence; it does not expose assumptions, correctness, or cost."}, "omittedCorrectExplanationsByOptionId": {"preconditions": "Without them, a candidate may silently rely on unavailable input properties.", "state_and_proof": "Without the invariant, a fast-looking candidate cannot be checked for correctness.", "cost_model": "Without costs and guarantees, workload-aware selection is guesswork."}},
+      "taxonomy": {"primarySkillAtomId": "generate_plausible_algorithmic_approaches", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-generate-11_baseline",
+      "prompt": "Why create a simple baseline before generating optimized candidates?",
+      "constraints": [
+        "The baseline is easy to implement and reason about.",
+        "Later candidates must be compared for correctness."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "oracle_and_contract",
+            "text": "A baseline clarifies the output contract and provides a trusted oracle for differential tests on small inputs.",
+            "explanation": "It separates optimization claims from specification ambiguity."
+          },
+          {
+            "id": "baseline_is_final",
+            "text": "The baseline is always the production solution, so no other candidate is needed.",
+            "explanation": "A baseline can be correct but too slow at scale."
+          },
+          {
+            "id": "skip_proof",
+            "text": "A slow baseline removes the need to prove optimized candidates.",
+            "explanation": "Differential evidence does not replace reasoning over all inputs."
+          },
+          {
+            "id": "random_only",
+            "text": "Use only random tests because a baseline cannot handle adversarial boundaries.",
+            "explanation": "A baseline is especially useful for exhaustive small cases."
+          }
+        ],
+        "acceptedOptionIds": [
+          "oracle_and_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A baseline is a comparison instrument and specification oracle, not a placeholder final implementation.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A brute-force or direct method makes candidate outputs comparable on small exhaustive domains. It also exposes contract questions before optimization hides them inside a more complex state structure."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "baseline_is_final": "A baseline can be correct but too slow at scale.",
+          "skip_proof": "Differential evidence does not replace reasoning over all inputs.",
+          "random_only": "A baseline is especially useful for exhaustive small cases."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-generate-12_invariant_variants",
+      "prompt": "When generating alternatives, what makes two strategies materially different rather than cosmetic rewrites?",
+      "constraints": [
+        "Both candidates target the same output contract.",
+        "The review seeks meaningful tradeoffs."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "different_state_or_proof",
+            "text": "They use a different sufficient state, traversal geometry, or correctness argument that changes cost or applicable constraints.",
+            "explanation": "A variable rename or equivalent loop is not a new strategy."
+          },
+          {
+            "id": "different_names",
+            "text": "Changing variable names is enough to create a separate candidate.",
+            "explanation": "Names do not change behavior or tradeoffs."
+          },
+          {
+            "id": "different_language",
+            "text": "Rewriting the same algorithm in another language is a different algorithmic strategy.",
+            "explanation": "Implementation language is not the state model."
+          },
+          {
+            "id": "different_comments",
+            "text": "Adding comments creates a new candidate for comparison.",
+            "explanation": "Comments do not alter computation."
+          }
+        ],
+        "acceptedOptionIds": [
+          "different_state_or_proof"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Candidate generation should expose real decision branches, not inflate the option list with equivalent code.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Examples of material differences include scan versus index, hash state versus sort, recursion versus explicit stack, or online versus batch processing. Each branch should have a distinct applicability or cost profile."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "different_names": "Names do not change behavior or tradeoffs.",
+          "different_language": "Implementation language is not the state model.",
+          "different_comments": "Comments do not alter computation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-generate-13_constraint_transfer",
+      "prompt": "How should a candidate be generated for a new problem that resembles a known pattern but changes one key constraint?",
+      "constraints": [
+        "The known pattern relies on a specific invariant.",
+        "The new constraint may invalidate that invariant."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "retest_invariant",
+            "text": "Transfer the state idea only after checking which proof premise changed; generate a replacement candidate if the invariant no longer holds.",
+            "explanation": "Pattern recognition is a hypothesis, not automatic correctness."
+          },
+          {
+            "id": "copy_template",
+            "text": "Copy the known implementation unchanged because the problem statement looks similar.",
+            "explanation": "A changed constraint can change legality or monotonicity."
+          },
+          {
+            "id": "rename_pattern",
+            "text": "Rename the pattern to match the new problem and keep all transitions.",
+            "explanation": "Labels do not repair a broken proof."
+          },
+          {
+            "id": "ignore_constraint",
+            "text": "Defer the changed constraint until after performance comparison.",
+            "explanation": "An invalid candidate should not enter the performance race."
+          }
+        ],
+        "acceptedOptionIds": [
+          "retest_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Candidate generation is constrained by the proof assumptions of the pattern being transferred.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For example, a positive-sum window does not transfer unchanged to signed values. Identify the broken premise, then generate prefix, dynamic-programming, or other state that captures the new behavior."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "copy_template": "A changed constraint can change legality or monotonicity.",
+          "rename_pattern": "Labels do not repair a broken proof.",
+          "ignore_constraint": "An invalid candidate should not enter the performance race."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-generate-14_tradeoff_matrix",
+      "prompt": "What should a candidate-strategy matrix record for each proposed approach?",
+      "constraints": [
+        "Several approaches may be correct under different constraints.",
+        "The team must select one deliberately."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "contract_cost_risk",
+            "text": "Record applicability assumptions, time, auxiliary space, preprocessing or update cost, output behavior, and key correctness risks.",
+            "explanation": "A decision needs both cost and contract fit."
+          },
+          {
+            "id": "name_only",
+            "text": "Record only the pattern name so the shortest label wins.",
+            "explanation": "Names do not reveal constraints or costs."
+          },
+          {
+            "id": "benchmark_only",
+            "text": "Record one benchmark number and ignore worst-case behavior.",
+            "explanation": "One workload cannot represent the contract."
+          },
+          {
+            "id": "time_only",
+            "text": "Record time complexity only because space and output behavior are secondary.",
+            "explanation": "Memory and output constraints can reject a faster candidate."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contract_cost_risk"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A matrix makes the strategy decision auditable across correctness and resource dimensions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pattern can be valid or invalid depending on value domain, mutation, query volume, memory, and output order. Capturing those fields prevents an attractive asymptotic from hiding a contract violation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "name_only": "Names do not reveal constraints or costs.",
+          "benchmark_only": "One workload cannot represent the contract.",
+          "time_only": "Memory and output constraints can reject a faster candidate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "generate_plausible_algorithmic_approaches",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
     }
   ],
   "modeStructures": {

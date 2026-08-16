@@ -325,6 +325,316 @@
       "constraints": [
         "If no active entry remains after stale-root removal, the API returns its explicit unavailable result."
       ]
+    },
+    {
+      "id": "hpq-mistake-heapify-vs-insert",
+      "prompt": "A developer builds a heap by inserting n values one at a time and reports O(n) total construction time because each append is O(1). What is the precise correction?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "repeated_log_repairs", "text": "Each insertion may sift through logarithmic height, so repeated insertion is O(n log n); bottom-up heapify can be O(n) under the complete-tree layout."}, {"id": "all_inserts_constant", "text": "The report is correct because sift-up never changes asymptotic cost from the append."}, {"id": "heapify_n_log_n", "text": "Bottom-up heapify is always O(n log n), so it cannot improve construction."}, {"id": "sorting_required", "text": "A heap can be built only by sorting all values first."}], "acceptedOptionIds": ["repeated_log_repairs"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The append location is constant-time, but restoring the heap order can cost a logarithmic path on every insertion.", "details": {"blocks": [{"type": "paragraph", "text": "Repeated push performs up to O(log n) repair per value, yielding O(n log n) in the worst case. Bottom-up heapify starts from internal nodes and its aggregate downward work is O(n), because most nodes are near the leaves and have short repair paths. This distinction matters when choosing a construction method; it does not change the O(log n) cost of an individual later mutation."}]}, "wrongOptionExplanationsByOptionId": {"all_inserts_constant": "Only the append itself is constant; sift-up may cross the heap height.", "heapify_n_log_n": "Bottom-up heapify has a tighter aggregate bound than inserting every value independently.", "sorting_required": "The heap invariant can be established directly without producing a total sorted order."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_heap_state_mismatch", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["The heap uses the standard complete-tree array representation."]
+    },
+    {
+      "id": "hpq-mistake-comparator-direction",
+      "prompt": "A task must repeatedly remove the smallest available deadline, but the comparator makes a larger deadline rise to the root. What is the resulting defect?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "wrong_extreme", "text": "The data structure is a max-priority queue for the chosen key, so it returns the wrong candidate for the minimum-deadline contract."}, {"id": "same_priority", "text": "The comparator direction cannot affect correctness as long as the heap shape is complete."}, {"id": "only_ties_change", "text": "Only equal deadlines change order; unequal deadlines still expose the smaller one."}, {"id": "heap_is_unsorted", "text": "The structure is invalid because a heap must be globally sorted in array order."}], "acceptedOptionIds": ["wrong_extreme"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The heap root is determined by comparator orientation, so reversing the priority reverses the application-level choice.", "details": {"blocks": [{"type": "paragraph", "text": "A complete tree shape only determines parent and child positions. The comparator determines which key is allowed at the root and along repair paths. If the task asks for the smallest deadline but the comparator promotes larger deadlines, every non-tied extraction can violate the scheduling invariant. The backing array need not be globally sorted in either orientation; only the exposed extreme must match the contract."}]}, "wrongOptionExplanationsByOptionId": {"same_priority": "The root's priority is exactly what the comparator controls; shape alone does not select the required deadline.", "only_ties_change": "Unequal keys are reversed by the wrong comparator, so the defect affects ordinary extractions.", "heap_is_unsorted": "A heap is intentionally only partially ordered; global sorting is not the heap invariant."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_heap_state_mismatch", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "schedule_by_priority"},
+      "constraints": ["Deadlines are numeric and smaller means higher priority for this task."]
+    },
+    {
+      "id": "hpq-mistake-top-k-eviction-boundary",
+      "prompt": "A bounded heap for the k largest stream values inserts each value and removes the root whenever size exceeds k. Which heap orientation makes that eviction correct?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "min_heap", "text": "A min-heap, because the smallest retained value is the first candidate to evict when a better value arrives."}, {"id": "max_heap", "text": "A max-heap, because the largest value should be removed first to keep the set balanced."}, {"id": "either_orientation", "text": "Either orientation is equivalent as long as the heap has size k."}, {"id": "no_heap", "text": "No heap can enforce a top-k boundary online."}], "acceptedOptionIds": ["min_heap"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The retained set must evict its worst member for the target objective, which is the minimum among the current k largest values.", "details": {"blocks": [{"type": "paragraph", "text": "For k largest, every retained value should be at least as large as the root once the heap is full. A new value competes with the smallest retained member, so a min-heap exposes the eviction boundary in O(log k). A max-heap exposes the best member and would discard the strongest value on overflow, drifting toward the k smallest instead. The data structure orientation follows the eviction rule, not the phrase “largest values.”"}]}, "wrongOptionExplanationsByOptionId": {"max_heap": "Removing the maximum destroys the strongest retained candidate and does not preserve the k-largest frontier.", "either_orientation": "The root is the element evicted, so orientation directly changes which candidate survives.", "no_heap": "A bounded min-heap is a standard online solution; sorting or selection are alternatives, not necessities."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_heap_state_mismatch", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "top_k", "problemArchetypeId": "maintain_top_k"},
+      "constraints": ["The stream can contain more than k values and equal values occupy separate positions."]
+    },
+    {
+      "id": "hpq-mistake-priority-vs-arrival-order",
+      "prompt": "A priority queue is used to process jobs, but a reviewer assumes the job removed next is always the oldest submitted job. What should the audit verify?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "key_contract", "text": "Verify the comparator: a priority queue orders by its key, and FIFO age is guaranteed only if age is the key or a tie-breaker."}, {"id": "heap_is_fifo", "text": "Accept the assumption because every heap removes items in insertion order."}, {"id": "array_index_age", "text": "Use the backing-array index as age; lower array positions are always older."}, {"id": "sort_after_pop", "text": "The queue becomes FIFO automatically after each pop because repair restores insertion order."}], "acceptedOptionIds": ["key_contract"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Priority and arrival order are different ordering contracts unless the comparator explicitly combines them.", "details": {"blocks": [{"type": "paragraph", "text": "A heap guarantees that the root is extreme under its comparator, not that entries preserve insertion order. If jobs have equal priority, a stable tie-break can use submission sequence; if priorities differ, a newer high-priority job may precede an older low-priority job. Array positions change during sift operations and therefore do not encode age. The review must name the ordering contract the consumer expects."}]}, "wrongOptionExplanationsByOptionId": {"heap_is_fifo": "Heap mutation reorders entries by priority and does not preserve insertion order.", "array_index_age": "Sift operations move entries across array positions, so index is not a stable timestamp.", "sort_after_pop": "Repair restores heap order under the comparator, not FIFO order."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_heap_state_mismatch", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "schedule_by_priority"},
+      "constraints": ["Submission sequence is available only if the comparator stores it."]
+    },
+    {
+      "id": "hpq-mistake-heap-delete-arbitrary",
+      "prompt": "An implementation marks an arbitrary heap entry inactive but leaves it in place and later returns it through peek. Which state mismatch is present?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "lazy_delete_boundary", "text": "The physical heap and logical active set diverged; peek/pop must purge inactive roots or use an indexed deletion structure before answering."}, {"id": "mark_is_removal", "text": "Marking an entry is equivalent to removing it because the heap knows the flag automatically."}, {"id": "rebuild_every_operation", "text": "The only repair is to rebuild the entire heap after every insertion, even when no inactive root is exposed."}, {"id": "change_comparator", "text": "Reverse priority so inactive entries move away from the root without any validity check."}], "acceptedOptionIds": ["lazy_delete_boundary"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Logical deletion needs an explicit validity check at the answer boundary; heap order does not know application-level activity flags.", "details": {"blocks": [{"type": "paragraph", "text": "Lazy deletion is valid when inactive entries remain physically stored but are removed whenever they reach the root. If peek returns the root without purging, the API can expose a value that is no longer a legal candidate. An indexed heap can remove arbitrary entries directly, while periodic compaction can control stale storage growth. Changing comparator direction does not encode activity."}]}, "wrongOptionExplanationsByOptionId": {"mark_is_removal": "The heap compares keys, not external active flags, so an inactive entry remains physically eligible until checked.", "rebuild_every_operation": "Full rebuild is unnecessary when stale entries are not at the root and may destroy the intended complexity.", "change_comparator": "Priority orientation affects ordering but cannot distinguish active and inactive versions."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_heap_state_mismatch", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["Inactive entries can remain in the physical heap until they reach the root."]
+    },
+    {
+      "id": "hpq-mistake-11_stale_entry",
+      "prompt": "A heap stores `(priority,id)` pairs, but an item's priority changes externally. What defect can appear?",
+      "constraints": [
+        "The heap does not support decrease-key or explicit invalidation.",
+        "The old pair remains physically present."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "stale_root",
+            "text": "The heap may return a stale priority, so the algorithm needs lazy deletion with validation or a real update operation.",
+            "explanation": "Heap order is correct for stored records, not for external mutable truth."
+          },
+          {
+            "id": "heap_self_heals",
+            "text": "The heap automatically reads the item's new priority whenever it reaches the root.",
+            "explanation": "Stored keys do not change unless the heap is updated."
+          },
+          {
+            "id": "duplicate_safe",
+            "text": "Stale and current pairs are always equivalent because they share the same id.",
+            "explanation": "Their priorities can order them differently."
+          },
+          {
+            "id": "sort_once",
+            "text": "Sorting the heap array once repairs every future external priority change.",
+            "explanation": "Later mutations can invalidate the ordering again."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stale_root"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Priority queues order the keys they store; external mutation requires an explicit synchronization policy.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Lazy deletion commonly checks whether the popped record is still current and skips stale entries. Without that check, the returned extreme may be semantically wrong even if the heap invariant holds."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "heap_self_heals": "Stored keys do not change unless the heap is updated.",
+          "duplicate_safe": "Their priorities can order them differently.",
+          "sort_once": "Later mutations can invalidate the ordering again."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mistake-12_orientation",
+      "prompt": "A routine for keeping the k largest values uses a max-heap and removes its root whenever size exceeds k. What is the state mismatch?",
+      "constraints": [
+        "The heap is intended to retain the k largest values.",
+        "The root is the extreme removed on overflow."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "min_heap_needed",
+            "text": "Use a min-heap so the smallest retained value is the eviction threshold for the k-largest set.",
+            "explanation": "Removing the minimum preserves the largest frontier."
+          },
+          {
+            "id": "max_heap_correct",
+            "text": "A max-heap is required because the largest value should be removed first.",
+            "explanation": "Removing the largest discards a required result."
+          },
+          {
+            "id": "sort_each",
+            "text": "Keep the max-heap but sort the full input after every insertion.",
+            "explanation": "That does not fix the eviction direction and adds unnecessary work."
+          },
+          {
+            "id": "no_eviction",
+            "text": "Never evict; the heap can contain all values while still representing top k.",
+            "explanation": "Unbounded storage changes both state and output selection."
+          }
+        ],
+        "acceptedOptionIds": [
+          "min_heap_needed"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap orientation must match which frontier item is least safe to retain.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For k largest, the smallest of the retained values is the natural threshold and should be removed when a larger candidate arrives. The symmetric rule uses a max-heap for k smallest."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "max_heap_correct": "Removing the largest discards a required result.",
+          "sort_each": "That does not fix the eviction direction and adds unnecessary work.",
+          "no_eviction": "Unbounded storage changes both state and output selection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mistake-13_arbitrary_delete",
+      "prompt": "Why is removing an arbitrary non-root heap item not equivalent to popping the root?",
+      "constraints": [
+        "The target item may be at any heap index.",
+        "The heap invariant must hold after deletion."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "replace_and_reheapify",
+            "text": "Replace the target with the last entry, shrink the heap, then sift up or down as needed to restore both parent and child relations.",
+            "explanation": "An arbitrary deletion can violate either direction."
+          },
+          {
+            "id": "drop_slot",
+            "text": "Clear the slot and leave the remaining array unchanged.",
+            "explanation": "The gap and neighboring relations violate heap representation."
+          },
+          {
+            "id": "swap_root_only",
+            "text": "Swap the target with the root and pop the root without reheapifying.",
+            "explanation": "The target's old neighbors and root replacement can both be invalid."
+          },
+          {
+            "id": "sort_not_needed",
+            "text": "No repair is needed because heap order applies only to the root.",
+            "explanation": "The invariant applies along every parent-child edge."
+          }
+        ],
+        "acceptedOptionIds": [
+          "replace_and_reheapify"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap operations are defined by a global parent-child invariant, not only by root access.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "After replacement, compare the moved entry with its parent and children. One direction may suffice after careful implementation, but the repair must be proven for the target position."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "drop_slot": "The gap and neighboring relations violate heap representation.",
+          "swap_root_only": "The target's old neighbors and root replacement can both be invalid.",
+          "sort_not_needed": "The invariant applies along every parent-child edge."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mistake-14_tie_policy",
+      "prompt": "A priority queue returns records with equal priority in arbitrary order, but the output contract requires stable input order. What must change?",
+      "constraints": [
+        "Equal priorities are legal.",
+        "Output order among ties is observable."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "composite_key",
+            "text": "Include original sequence order as a secondary heap key or use a stable queue policy.",
+            "explanation": "The tie-break must be represented in the ordering contract."
+          },
+          {
+            "id": "priority_only",
+            "text": "Keep priority as the only key because equal items are interchangeable.",
+            "explanation": "The contract says their order is observable."
+          },
+          {
+            "id": "post_sort_values",
+            "text": "Sort returned values by payload after extraction regardless of original order.",
+            "explanation": "Payload order is not the required stable order."
+          },
+          {
+            "id": "random_ties",
+            "text": "Random tie order is acceptable because all priorities are equal.",
+            "explanation": "Arbitrary order violates stability."
+          }
+        ],
+        "acceptedOptionIds": [
+          "composite_key"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A heap can preserve stable ties only when stability is encoded in its comparison or surrounding policy.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Add a monotone insertion sequence to the key, or use a data structure with the required stable behavior. Equal priority alone does not imply equal output semantics."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "priority_only": "The contract says their order is observable.",
+          "post_sort_values": "Payload order is not the required stable order.",
+          "random_ties": "Arbitrary order violates stability."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_heap_state_mismatch",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
     }
   ],
   "modeStructures": {

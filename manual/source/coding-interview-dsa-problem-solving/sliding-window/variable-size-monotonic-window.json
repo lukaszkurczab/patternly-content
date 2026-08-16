@@ -403,6 +403,322 @@
         "patternVariantId": "variable_size_positive_numbers",
         "problemArchetypeId": "shortest_threshold_window"
       }
+    },
+    {
+      "id": "alg-sw-variable-invalid-after-expansion",
+      "prompt": "A longest-valid window receives a new right value and violates its predicate. What is the correct immediate response when left-removal is proven monotone?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "remove_until_valid", "text": "Remove outgoing left contributions and advance left while invalid, then score the restored-valid window."},
+        {"id": "record_invalid", "text": "Record the expanded range first because it is longer than every repaired range."},
+        {"id": "reset_all", "text": "Discard the entire window and restart at right+1 regardless of the predicate."},
+        {"id": "move_right_back", "text": "Move right backward until the previous window becomes valid."}
+      ], "acceptedOptionIds": ["remove_until_valid"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The monotonic proof makes left-shrink the safe repair and longest scoring occurs only after validity is restored.", "details": {"blocks": [{"type": "paragraph", "text": "Update state for the entering value, then repeatedly remove the oldest contribution while the predicate is violated. Once valid, the current interval is the longest candidate for this right endpoint because earlier starts were either retained or safely discarded. Recording before repair accepts an invalid range."}]}, "wrongOptionExplanationsByOptionId": {"record_invalid": "The answer contract requires a valid window.", "reset_all": "A proven shrink rule can preserve earlier valid starts and need not discard the whole range.", "move_right_back": "Right normally advances through input; repair removes from the left."}},
+      "taxonomy": {"primarySkillAtomId": "maintain_monotonic_shrink_rule", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "at_most_k_window", "problemArchetypeId": "longest_valid_window"}
+    },
+    {
+      "id": "alg-sw-variable-shortest-record-each-repair",
+      "prompt": "For a shortest window whose sum is at least T with positive values, when should the algorithm update the best length during shrinking?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "record_before_each_remove", "text": "Record the current valid length before each removal, then remove left and continue while the predicate remains true."},
+        {"id": "record_after_invalid", "text": "Record only after the removal makes the sum fall below T."},
+        {"id": "record_expanded_only", "text": "Record only immediately after right expands and never during repair."},
+        {"id": "record_longest", "text": "Keep the maximum length because every valid range is a candidate for the shortest objective."}
+      ], "acceptedOptionIds": ["record_before_each_remove"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "With positive values, each shrink can produce a shorter still-valid range, and the optimum may occur just before validity is lost.", "details": {"blocks": [{"type": "paragraph", "text": "When sum≥T, record the current length, remove the leftmost value, update state, and repeat. The first invalid state cannot be used, so recording only after invalidity misses the last valid candidate. The objective's direction changes answer-update timing even though the same shrink proof applies."}]}, "wrongOptionExplanationsByOptionId": {"record_after_invalid": "The range after removal may be invalid, and the preceding valid length may be the optimum.", "record_expanded_only": "A shorter valid suffix can emerge during repeated shrinkage.", "record_longest": "The task minimizes length, so retaining the maximum reverses the objective."}},
+      "taxonomy": {"primarySkillAtomId": "maintain_monotonic_shrink_rule", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "variable_size_positive_numbers", "problemArchetypeId": "shortest_threshold_window"}
+    },
+    {
+      "id": "alg-sw-variable-while-termination-proof",
+      "prompt": "Which fact supports linear total boundary movement in a one-pass variable window?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "each_boundary_forward", "text": "right advances at most n times and left also advances at most n times, never moving backward."},
+        {"id": "one_outer_loop", "text": "The code has one outer loop, so the inner while cannot add asymptotic work."},
+        {"id": "positive_values_only", "text": "Positive values alone prove O(n) even if left can move backward."},
+        {"id": "constant_window", "text": "Every variable window has constant length after the first expansion."}
+      ], "acceptedOptionIds": ["each_boundary_forward"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Amortized linearity follows from monotone, bounded movement of each boundary, not from loop nesting syntax.", "details": {"blocks": [{"type": "paragraph", "text": "Although the while loop can execute many times for one right endpoint, every removal advances left and each element leaves at most once. With n right advances and n left advances, total boundary updates are O(n). The validity proof is separate from this runtime proof."}]}, "wrongOptionExplanationsByOptionId": {"one_outer_loop": "A nested loop can be quadratic when the inner index repeatedly revisits positions.", "positive_values_only": "Positivity helps prove shrink legality, but O(n) also needs bounded monotone movement.", "constant_window": "Variable windows intentionally change length."}},
+      "taxonomy": {"primarySkillAtomId": "maintain_monotonic_shrink_rule", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "at_most_k_window", "problemArchetypeId": "longest_valid_window"}
+    },
+    {
+      "id": "alg-sw-variable-signed-boundary-review",
+      "prompt": "Select all facts that should trigger a review before transferring a positive-sum shortest-window proof to a new problem.",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "signed_values", "text": "The new input admits negative values."},
+        {"id": "different_predicate", "text": "The validity condition is not known to be monotone under removing the leftmost element."},
+        {"id": "same_positive_domain", "text": "The new problem retains positive values and the same threshold predicate."},
+        {"id": "same_boundary_names", "text": "The new code uses left and right variables with the same names."}
+      ], "acceptedOptionIds": ["signed_values", "different_predicate"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The proof depends on value signs and predicate behavior, not the surface shape of the loop.", "details": {"blocks": [{"type": "paragraph", "text": "A transfer is safe when the premises that make removal monotone and discarded starts irrelevant remain true. Negative values or a nonmonotone predicate invalidate that inference and require a different proof or method. Retaining the same positive domain and threshold supports transfer; names do not."}]}, "wrongOptionExplanationsByOptionId": {"same_positive_domain": "This preserves the key premise rather than blocking transfer.", "same_boundary_names": "Variable names carry no correctness theorem."}, "omittedCorrectExplanationsByOptionId": {"signed_values": "Removing an outgoing negative can increase the sum and future negatives can rescue old starts.", "different_predicate": "A while-loop condition is insufficient without a monotonic restoration argument."}},
+      "taxonomy": {"primarySkillAtomId": "maintain_monotonic_shrink_rule", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "variable_size_positive_numbers", "problemArchetypeId": "shortest_threshold_window"}
+    },
+    {
+      "id": "alg-sw-variable-11-positive-precondition",
+      "prompt": "Why is positivity a key precondition for the standard shortest-subarray-with-sum-at-least-target window?",
+      "constraints": [
+        "Every array value is strictly positive.",
+        "The target is fixed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sum_monotone",
+            "text": "Expanding never decreases the sum and shrinking never increases it, so the validity predicate changes monotonically.",
+            "explanation": "This justifies advancing each boundary once."
+          },
+          {
+            "id": "frequency_monotone",
+            "text": "Positive values make every frequency map monotone under both pointer moves.",
+            "explanation": "The proof concerns numeric sum, not frequencies."
+          },
+          {
+            "id": "sorting_free",
+            "text": "Positivity makes sorting unnecessary for all subarray objectives.",
+            "explanation": "It does not solve unrelated output geometries."
+          },
+          {
+            "id": "no_overflow",
+            "text": "Positive sums cannot overflow because they never decrease.",
+            "explanation": "Magnitude can still exceed the numeric type."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sum_monotone"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Positivity supplies the one-way relation between endpoint movement and sum validity.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "With positive values, expansion can only help reach the threshold and shrinking can only reduce the sum. This makes the inner shrink loop amortized linear; signed values remove that guarantee."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "frequency_monotone": "The proof concerns numeric sum, not frequencies.",
+          "sorting_free": "It does not solve unrelated output geometries.",
+          "no_overflow": "Magnitude can still exceed the numeric type."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-variable-12-shrink-while",
+      "prompt": "Why must a shortest-valid window shrink in a `while` loop rather than a single `if` after it first becomes valid?",
+      "constraints": [
+        "Several leftmost elements may be removable while validity remains true.",
+        "The objective is minimum length."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "remove_all_redundant",
+            "text": "Repeatedly remove the leftmost item and update the answer until the next removal would make the window invalid.",
+            "explanation": "The shortest valid suffix may require multiple removals."
+          },
+          {
+            "id": "one_removal_enough",
+            "text": "One removal always reaches the shortest valid window because the first valid state is minimal.",
+            "explanation": "The first valid window can contain multiple redundant positives."
+          },
+          {
+            "id": "expand_again",
+            "text": "Expand before removing anything so the next candidate is always longer.",
+            "explanation": "That moves away from the minimum objective."
+          },
+          {
+            "id": "reset_left",
+            "text": "Reset left to zero after validity so every prefix is checked again.",
+            "explanation": "Resetting destroys the monotone pointer proof."
+          }
+        ],
+        "acceptedOptionIds": [
+          "remove_all_redundant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The minimum may lie several positions inside the first valid window.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The algorithm records each valid length during the inner loop. It stops at the first invalid removal, where the last recorded boundary is the shortest valid suffix for that right endpoint."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "one_removal_enough": "The first valid window can contain multiple redundant positives.",
+          "expand_again": "That moves away from the minimum objective.",
+          "reset_left": "Resetting destroys the monotone pointer proof."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-variable-13-record-before-break",
+      "prompt": "At what point should a shortest-valid window update the global minimum during shrink?",
+      "constraints": [
+        "The current window is valid.",
+        "The next removal may make it invalid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "record_current",
+            "text": "Record the current valid length before removing its leftmost element, then test the next state.",
+            "explanation": "The current window is a legal candidate even if the next one is not."
+          },
+          {
+            "id": "record_after_invalid",
+            "text": "Remove first and record the length even when the new window is invalid.",
+            "explanation": "Invalid windows cannot be answers."
+          },
+          {
+            "id": "record_expansion_only",
+            "text": "Update only immediately after adding a rightmost element.",
+            "explanation": "The best window often appears after one or more left removals."
+          },
+          {
+            "id": "record_at_end",
+            "text": "Wait until the entire scan ends and keep only the final valid window.",
+            "explanation": "Earlier right endpoints may produce the global optimum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "record_current"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The answer update must happen while the predicate still holds.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A shrink step can cross the validity boundary. Recording before that step preserves the last legal candidate; recording afterward would either miss it or store an invalid range."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "record_after_invalid": "Invalid windows cannot be answers.",
+          "record_expansion_only": "The best window often appears after one or more left removals.",
+          "record_at_end": "Earlier right endpoints may produce the global optimum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-variable-14-amortized-pointers",
+      "prompt": "Why is the standard positive-sum variable window O(n) despite a nested shrink loop?",
+      "constraints": [
+        "The right pointer advances from left to right once.",
+        "The left pointer never moves backward."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "each_element_two_moves",
+            "text": "Each element enters the window once and leaves at most once, so total pointer advances are O(n).",
+            "explanation": "Nested syntax does not imply a multiplicative full scan."
+          },
+          {
+            "id": "inner_constant",
+            "text": "The shrink loop is constant time because it runs only once per input.",
+            "explanation": "It can run many times, but the total is amortized."
+          },
+          {
+            "id": "sorting_cost",
+            "text": "Sorting makes the nested loop linear after preprocessing.",
+            "explanation": "The standard algorithm need not sort, and sorting adds cost."
+          },
+          {
+            "id": "random_access",
+            "text": "Random access lets the algorithm skip every removed element without charging it.",
+            "explanation": "The proof charges each actual pointer movement once."
+          }
+        ],
+        "acceptedOptionIds": [
+          "each_element_two_moves"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Amortized analysis counts total monotone pointer movement rather than multiplying worst-case loop bounds blindly.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Across the complete scan, right advances n times and left advances at most n times. The work inside each update is constant, so the total is linear under the stated invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "inner_constant": "It can run many times, but the total is amortized.",
+          "sorting_cost": "The standard algorithm need not sort, and sorting adds cost.",
+          "random_access": "The proof charges each actual pointer movement once."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_monotonic_shrink_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
     }
   ],
   "modeStructures": {

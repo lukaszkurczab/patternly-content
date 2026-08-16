@@ -551,6 +551,294 @@
         "patternVariantId": "two_dimensional_prefix",
         "problemArchetypeId": "matrix_region_sum"
       }
+    },
+    {
+      "id": "alg-prefix-2d-boundary-matrix-size",
+      "prompt": "For an n by m grid, what dimensions make a 2D exclusive prefix matrix uniform for edge queries?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "n_plus_one_m_plus_one", "text": "(n+1) by (m+1), including zero row and zero column boundaries."},
+        {"id": "n_by_m", "text": "n by m, matching the number of grid cells exactly."},
+        {"id": "n_plus_two", "text": "(n+2) by (m+2), because each cell needs two padding rows."},
+        {"id": "square_max", "text": "max(n,m) by max(n,m), padding the shorter dimension."}
+      ], "acceptedOptionIds": ["n_plus_one_m_plus_one"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The extra row and column represent empty prefixes before row zero and column zero.", "details": {"blocks": [{"type": "paragraph", "text": "With exclusive boundaries, grid cell (r,c) contributes when building P[r+1][c+1]. The padding makes rectangles touching either outer edge use the same four-corner formula."}]}, "wrongOptionExplanationsByOptionId": {"n_by_m": "Without padding, edge rectangles require special-case indices or risk negative access.", "n_plus_two": "One empty boundary per axis is sufficient.", "square_max": "The representation should preserve both original dimensions, not force a square."}},
+      "taxonomy": {"primarySkillAtomId": "derive_matrix_region_from_prefixes", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_prefix", "problemArchetypeId": "matrix_region_sum"}
+    },
+    {
+      "id": "alg-prefix-2d-four-corner-query",
+      "prompt": "How many prefix-matrix corner values are needed to answer one axis-aligned rectangle sum with inclusion-exclusion?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "four", "text": "Four: the bottom-right total, two excluded strips, and the restored top-left overlap."},
+        {"id": "two", "text": "Two, because a rectangle has only two diagonal corners."},
+        {"id": "one", "text": "One, because the prefix already stores the requested rectangle exactly."},
+        {"id": "all_cells", "text": "One value per cell inside the query rectangle."}
+      ], "acceptedOptionIds": ["four"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Two subtractions remove the regions above and left of the target, and their overlap must be added back once.", "details": {"blocks": [{"type": "paragraph", "text": "This is the 2D analogue of a one-dimensional prefix difference, with inclusion-exclusion accounting for the overlap of the two removed prefixes."}]}, "wrongOptionExplanationsByOptionId": {"two": "The two excluded regions overlap, requiring a fourth correction term.", "one": "A global prefix contains the target plus outside regions.", "all_cells": "Scanning cells would lose the constant-time query benefit."}},
+      "taxonomy": {"primarySkillAtomId": "derive_matrix_region_from_prefixes", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_prefix", "problemArchetypeId": "matrix_region_sum"}
+    },
+    {
+      "id": "alg-prefix-2d-11_inclusion",
+      "prompt": "Which inclusion-exclusion formula gives the sum of rectangle [r1..r2]x[c1..c2] using a zero-padded 2D prefix P?",
+      "constraints": [
+        "P[i][j] sums rows and columns before i,j.",
+        "The rectangle indices are inclusive."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "four_terms",
+            "text": "Use P[r2+1][c2+1]−P[r1][c2+1]−P[r2+1][c1]+P[r1][c1].",
+            "explanation": "Subtract the top and left strips and add their overlap back."
+          },
+          {
+            "id": "three_terms",
+            "text": "Use total minus only the top strip and ignore the left strip.",
+            "explanation": "That leaves unrelated cells in the result."
+          },
+          {
+            "id": "subtract_overlap",
+            "text": "Subtract all four corner prefixes so the overlap is removed twice.",
+            "explanation": "The overlap must be added once after two subtractions."
+          },
+          {
+            "id": "one_term",
+            "text": "Use P[r2][c2] because the prefix already starts at the rectangle's top-left.",
+            "explanation": "A global prefix includes cells outside the query rectangle."
+          }
+        ],
+        "acceptedOptionIds": [
+          "four_terms"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Two-dimensional range sums require two subtractions and one overlap correction.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The padded indices eliminate negative-boundary branches. Inclusion-exclusion removes the area above and left of the rectangle, then restores the doubly removed top-left overlap."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "three_terms": "That leaves unrelated cells in the result.",
+          "subtract_overlap": "The overlap must be added once after two subtractions.",
+          "one_term": "A global prefix includes cells outside the query rectangle."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-12_padding",
+      "prompt": "Why does adding an extra zero row and column simplify 2D prefix construction?",
+      "constraints": [
+        "Queries may touch row 0 or column 0.",
+        "The prefix recurrence uses i−1 and j−1."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "uniform_boundaries",
+            "text": "Padded zeros make the recurrence and inclusion-exclusion uniform at the matrix boundaries without negative-index special cases.",
+            "explanation": "The empty prefix before the first row or column is represented explicitly."
+          },
+          {
+            "id": "double_area",
+            "text": "Padding doubles every real matrix cell so sums are larger but easier to compare.",
+            "explanation": "Padding adds only zero entries and changes no real sum."
+          },
+          {
+            "id": "avoid_columns",
+            "text": "The extra column stores the original first column so it need not be read.",
+            "explanation": "It represents an empty prefix, not a copy of data."
+          },
+          {
+            "id": "sort_matrix",
+            "text": "Padding sorts rows and columns before prefix construction.",
+            "explanation": "Prefix sums preserve input order and values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "uniform_boundaries"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A zero border is a representation choice that turns boundary cases into the same recurrence.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For P[i+1][j+1], include the current cell, top prefix, left prefix, and subtract the diagonal overlap. The extra border supplies valid zeros when i or j is zero."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "double_area": "Padding adds only zero entries and changes no real sum.",
+          "avoid_columns": "It represents an empty prefix, not a copy of data.",
+          "sort_matrix": "Prefix sums preserve input order and values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-13_coordinate_order",
+      "prompt": "What input validation is needed before computing a 2D prefix rectangle query?",
+      "constraints": [
+        "The query specifies two row bounds and two column bounds.",
+        "The output contract defines whether bounds are inclusive."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "normalize_bounds",
+            "text": "Normalize or reject r1>r2 and c1>c2 according to the contract, then apply the matching inclusive or half-open formula.",
+            "explanation": "Formula indices depend on both order and endpoint semantics."
+          },
+          {
+            "id": "swap_always",
+            "text": "Always swap reversed bounds because every rectangle query is unordered.",
+            "explanation": "Some contracts treat reversed ranges as invalid rather than normalize them."
+          },
+          {
+            "id": "ignore_endpoints",
+            "text": "Use the same formula for inclusive and exclusive bounds because prefixes are cumulative.",
+            "explanation": "Endpoint conventions change the indices."
+          },
+          {
+            "id": "sort_values",
+            "text": "Sort matrix values within the rectangle before summing.",
+            "explanation": "Sorting changes neither bounds semantics nor the required sum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "normalize_bounds"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Coordinate and endpoint semantics are part of the query contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A correct prefix formula cannot repair reversed or mismatched bounds. Validate or normalize explicitly, and translate inclusive ranges to padded prefix indices consistently."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "swap_always": "Some contracts treat reversed ranges as invalid rather than normalize them.",
+          "ignore_endpoints": "Endpoint conventions change the indices.",
+          "sort_values": "Sorting changes neither bounds semantics nor the required sum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
+    },
+    {
+      "id": "alg-prefix-2d-14_update_tradeoff",
+      "prompt": "A matrix receives point updates between rectangle-sum queries. Why is a static 2D prefix array no longer automatically optimal?",
+      "constraints": [
+        "Queries must reflect updates.",
+        "The matrix can be large."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "suffix_repair",
+            "text": "One point update changes a rectangular suffix of prefix values, so naive repair can be O(rows*cols); a dynamic structure may be needed.",
+            "explanation": "Static cumulative dependencies become mutable."
+          },
+          {
+            "id": "local_prefix",
+            "text": "Only one prefix cell changes because prefixes store local cells.",
+            "explanation": "Each later prefix includes the updated cell."
+          },
+          {
+            "id": "query_only",
+            "text": "Updates can be ignored until the final query because prefixes describe the original matrix.",
+            "explanation": "That returns stale sums."
+          },
+          {
+            "id": "rebuild_free",
+            "text": "Rebuild the full prefix matrix after every update without counting the rebuild.",
+            "explanation": "Rebuild cost is part of the workload."
+          }
+        ],
+        "acceptedOptionIds": [
+          "suffix_repair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Static 2D prefixes are excellent for immutable matrices but have wide update dependencies.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If updates are frequent, a 2D Fenwick tree or segment structure can trade memory and logarithmic factors for dynamic correctness. If updates are rare, rebuild cost may still be acceptable and should be stated."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "local_prefix": "Each later prefix includes the updated cell.",
+          "query_only": "That returns stale sums.",
+          "rebuild_free": "Rebuild cost is part of the workload."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_matrix_region_from_prefixes",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_prefix",
+        "problemArchetypeId": "matrix_region_sum"
+      }
     }
   ],
   "modeStructures": {

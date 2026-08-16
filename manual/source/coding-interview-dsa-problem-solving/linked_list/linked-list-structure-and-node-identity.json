@@ -633,6 +633,294 @@
       },
       "id": "alg-linked-list-node-identity-08-copy-versus-shared-tail-transfer",
       "difficulty": "advanced"
+    },
+    {
+      "id": "alg-linked-list-node-identity-09-shared-tail-observation",
+      "prompt": "Two list heads eventually reference the same node object S. What structural fact follows?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "intersect_at_identity", "text": "The lists share the suffix beginning at S; equal values alone would not establish this."},
+        {"id": "same_values_only", "text": "They intersect whenever any payload value is equal."},
+        {"id": "copy_suffix", "text": "S must be a copied node because two heads cannot point to one object."},
+        {"id": "cycle_guaranteed", "text": "A shared tail necessarily creates a cycle."}
+      ], "acceptedOptionIds": ["intersect_at_identity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Linked-list intersection is defined by reference identity and shared successor chain, not payload equality.", "details": {"blocks": [{"type": "paragraph", "text": "Once both heads reach S, following next from S yields the same nodes unless a later mutation changes the shared structure. Lists can share an acyclic suffix without forming a cycle. Distinct nodes with equal values remain separate."}]}, "wrongOptionExplanationsByOptionId": {"same_values_only": "Equal payloads do not imply equal node references.", "copy_suffix": "Multiple pointers may legitimately reference one allocated node.", "cycle_guaranteed": "A shared suffix may terminate at null."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_node_identity_from_node_value", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "merge_lists", "problemArchetypeId": "merge_ordered_lists"}
+    },
+    {
+      "id": "alg-linked-list-node-identity-10-value-copy-not-rewire",
+      "prompt": "A routine copies every value into newly allocated nodes instead of reusing original nodes. Which contract dimension changes?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "identity_and_aliasing", "text": "Node identity and aliasing change even if value traversal matches; this is invalid when existing identities or shared references must be preserved."},
+        {"id": "values_identical_contracts_same", "text": "No observable behavior can differ when values are identical."},
+        {"id": "only_runtime", "text": "Only time changes; references are not part of a linked-list contract."},
+        {"id": "cycle_created", "text": "Copying always creates a cycle because each new node has a successor."}
+      ], "acceptedOptionIds": ["identity_and_aliasing"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A linked structure's observable contract may include node references, shared tails, and in-place mutation—not only payload sequence.", "details": {"blocks": [{"type": "paragraph", "text": "If callers hold aliases to original nodes, replacing them breaks those aliases and can duplicate or sever shared topology. A value-equivalent copied list is acceptable only when the contract explicitly asks for a new value structure and does not preserve identity."}]}, "wrongOptionExplanationsByOptionId": {"values_identical_contracts_same": "Reference identity and aliasing can be observed by callers and later mutations.", "only_runtime": "Identity is often a correctness requirement in in-place or shared-list operations.", "cycle_created": "Allocation alone does not create a cycle; next assignments determine topology."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_node_identity_from_node_value", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "pointer_rewiring", "problemArchetypeId": "remove_or_rewire_node"}
+    },
+    {
+      "id": "alg-linked-list-node-identity-11-shared-tail-mutation",
+      "prompt": "Two input lists share a tail node. Why can mutating one list affect observations made through the other?",
+      "constraints": [
+        "The lists contain aliases to the same node object.",
+        "The operation rewires next links in place."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shared_reference_effect",
+            "text": "The shared node has one next field, so an in-place rewrite changes the topology observed from both aliases.",
+            "explanation": "One object cannot hold independent next links for two owners."
+          },
+          {
+            "id": "values_copy",
+            "text": "The effect occurs only because payload values are copied between lists.",
+            "explanation": "The issue is shared identity and links, not payload copying."
+          },
+          {
+            "id": "separate_next_fields",
+            "text": "Each list automatically gets its own next field after sharing a node.",
+            "explanation": "A node object has one next field regardless of how many aliases reference it."
+          },
+          {
+            "id": "sorting_isolation",
+            "text": "Sorting either list isolates the shared tail from later mutations.",
+            "explanation": "Sorting values does not clone or detach node identity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shared_reference_effect"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Shared topology makes in-place mutation observable through every alias to the same node.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A node identity is a single mutable object. If two heads reach it, changing its next pointer or payload can change both traversals. A correct API must state whether sharing is allowed and whether mutation is intended."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "values_copy": "The issue is shared identity and links, not payload copying.",
+          "separate_next_fields": "A node object has one next field regardless of how many aliases reference it.",
+          "sorting_isolation": "Sorting values does not clone or detach node identity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_node_identity_from_node_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-node-identity-12-equal-values",
+      "prompt": "Two distinct nodes both store value 7. Which statement is correct when a contract asks for the second node by identity?",
+      "constraints": [
+        "Payload values may repeat.",
+        "The caller can hold a reference to the target node."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reference_selects_target",
+            "text": "Use the node reference or a structural traversal position; value 7 alone cannot distinguish the two nodes.",
+            "explanation": "Identity and value are different equivalence relations."
+          },
+          {
+            "id": "first_value_match",
+            "text": "The first node with value 7 is the same target by definition.",
+            "explanation": "Repeated payloads make first-match selection ambiguous."
+          },
+          {
+            "id": "merge_duplicates",
+            "text": "Equal-valued nodes should be merged before selecting one.",
+            "explanation": "Merging changes node count and identity without authorization."
+          },
+          {
+            "id": "value_hash",
+            "text": "Hash the payload to recover the original node identity.",
+            "explanation": "A hash of a value does not encode object identity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reference_selects_target"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Repeated payloads are not a substitute for node identity.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A value-only algorithm can return the wrong object even when its payload output looks correct. Identity-sensitive contracts require references or a traversal rule that explicitly names the target occurrence."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "first_value_match": "Repeated payloads make first-match selection ambiguous.",
+          "merge_duplicates": "Merging changes node count and identity without authorization.",
+          "value_hash": "A hash of a value does not encode object identity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_node_identity_from_node_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-node-identity-13-clone-contract",
+      "prompt": "When is allocating a fresh linked list a valid implementation rather than an identity bug?",
+      "constraints": [
+        "The output contract specifies a value-equivalent copy.",
+        "No caller alias or shared topology must be preserved."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "copy_allowed_by_contract",
+            "text": "It is valid only when the API explicitly permits new identities and does not require in-place mutation or alias preservation.",
+            "explanation": "The contract determines whether identity is observable."
+          },
+          {
+            "id": "always_invalid",
+            "text": "Fresh nodes are never valid because linked lists must always reuse input nodes.",
+            "explanation": "Some APIs intentionally return independent copies."
+          },
+          {
+            "id": "values_define_all",
+            "text": "It is always valid whenever the payload sequence matches.",
+            "explanation": "Matching values are insufficient when identity or sharing is observable."
+          },
+          {
+            "id": "copy_for_speed",
+            "text": "Allocate new nodes whenever copying is faster, regardless of the public contract.",
+            "explanation": "Performance cannot override an identity requirement."
+          }
+        ],
+        "acceptedOptionIds": [
+          "copy_allowed_by_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Value-equivalent copying is a product decision, not an automatic optimization or defect.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If aliases, shared tails, or in-place mutation are part of the contract, cloning is wrong. If the API promises an independent value structure, cloning is the canonical implementation. The same payload sequence can satisfy one contract and violate another."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always_invalid": "Some APIs intentionally return independent copies.",
+          "values_define_all": "Matching values are insufficient when identity or sharing is observable.",
+          "copy_for_speed": "Performance cannot override an identity requirement."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_node_identity_from_node_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-node-identity-14-topology-invariant",
+      "prompt": "Which invariant should an identity-sensitive list operation preserve while rewiring links?",
+      "constraints": [
+        "The operation may change which nodes are reachable.",
+        "Existing node objects must remain the objects named by the contract."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reachable_identity_contract",
+            "text": "Every required node remains reachable exactly as the contract specifies, with aliases observing the intended new links.",
+            "explanation": "This combines reachability, multiplicity, and identity."
+          },
+          {
+            "id": "payload_multiset_only",
+            "text": "Preserve only the multiset of values; topology can change arbitrarily.",
+            "explanation": "Topology and identity are explicitly observable here."
+          },
+          {
+            "id": "allocate_replacements",
+            "text": "Replace every affected node so no old alias can observe the mutation.",
+            "explanation": "Replacing nodes violates the identity-sensitive contract."
+          },
+          {
+            "id": "ignore_shared_aliases",
+            "text": "Check only the returned head because external aliases are not part of list correctness.",
+            "explanation": "External aliases are part of the stated contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reachable_identity_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Identity-sensitive rewiring must preserve the specified object set and make topology changes explicit to aliases.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A structural invariant should name which nodes remain reachable, how many times they may appear, and what shared references observe. A value-only assertion or a replacement allocation can miss or create identity bugs."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "payload_multiset_only": "Topology and identity are explicitly observable here.",
+          "allocate_replacements": "Replacing nodes violates the identity-sensitive contract.",
+          "ignore_shared_aliases": "External aliases are part of the stated contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_node_identity_from_node_value",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
     }
   ],
   "modeStructures": {

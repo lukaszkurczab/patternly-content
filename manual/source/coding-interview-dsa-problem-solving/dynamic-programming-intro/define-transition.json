@@ -441,7 +441,53 @@
         "patternVariantId": "two_dimensional_dp",
         "problemArchetypeId": "grid_path_dp"
       }
-    }
+    },
+    {
+      "id": "alg-dpintro-transition-08-skip-take-partition",
+      "prompt": "A 0/1 choice state processes item i with capacity c. Which transition preserves the fact that item i is used at most once?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "skip_or_take_next", "text": "max(dp(i + 1, c), value[i] + dp(i + 1, c - weight[i])) when the item fits."},
+        {"id": "take_same_i", "text": "max(dp(i + 1, c), value[i] + dp(i, c - weight[i])) so the same item may be reused."},
+        {"id": "skip_only", "text": "dp(i + 1, c) because every take branch changes the state meaning."},
+        {"id": "sum_branches", "text": "Add skip and take values because both choices are included in one selected set."}
+      ], "acceptedOptionIds": ["skip_or_take_next"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Both branches advance past item i, so each item is decided once; the take branch additionally reduces capacity.", "details": {"blocks": [{"type": "paragraph", "text": "The skip branch leaves capacity unchanged and moves to i+1. The take branch is legal only when weight[i] fits and then also moves to i+1. Referencing dp(i, ...) in the take branch changes the problem to an unbounded-use recurrence; adding branches would count alternatives rather than maximize one choice."}]}, "wrongOptionExplanationsByOptionId": {"take_same_i": "Staying at i permits the same item to be selected repeatedly.", "skip_only": "The optimum may require taking item i, so omitting that branch changes the feasible set.", "sum_branches": "For optimization, choose the better alternative; summing counts or combines mutually exclusive choices incorrectly."}},
+      "taxonomy": {"primarySkillAtomId": "derive_dp_transition", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_dp", "problemArchetypeId": "choose_or_skip"}
+    },
+    {
+      "id": "alg-dpintro-transition-09-count-vs-optimize-operator",
+      "prompt": "Two transitions enumerate the same legal predecessor branches. Which aggregation operator matches a DP that counts all valid constructions?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "sum_counts", "text": "Add the predecessor counts, because distinct legal last choices produce disjoint construction sets."},
+        {"id": "max_counts", "text": "Take the maximum count, because every DP should optimize one branch."},
+        {"id": "min_counts", "text": "Take the minimum count, because the shortest construction is safest."},
+        {"id": "overwrite_last", "text": "Keep the last predecessor visited, because all transitions describe the same path."}
+      ], "acceptedOptionIds": ["sum_counts"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Counting combines disjoint alternatives, while min/max aggregation belongs to different objective contracts.", "details": {"blocks": [{"type": "paragraph", "text": "If a final move can come from two distinct predecessor states, every valid construction belongs to one branch and the sets do not overlap under the recurrence's choice decomposition. Their counts therefore add. Max chooses an optimum, min chooses a minimum, and overwriting loses branches."}]}, "wrongOptionExplanationsByOptionId": {"max_counts": "Maximization answers a best-value problem, not the number of alternatives.", "min_counts": "Minimization also selects one objective value and discards other valid constructions.", "overwrite_last": "Traversal order is not a semantic aggregation rule and omits earlier branches."}},
+      "taxonomy": {"primarySkillAtomId": "derive_dp_transition", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "one_dimensional_dp", "problemArchetypeId": "count_ways"}
+    },
+    {
+      "id": "alg-dpintro-transition-10-transition-boundary-check",
+      "prompt": "A transition reads dp(i + 1) and dp(i + 2) for a suffix state. What must be defined before using those branches at the end of the input?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "base_beyond_end", "text": "Base meanings for i = n and any branch beyond n, including whether it represents a valid completion or an impossible path."},
+        {"id": "ignore_boundary", "text": "Let the language return whatever memory follows the table because the recurrence is valid in the middle."},
+        {"id": "clamp_indices", "text": "Clamp every out-of-range index to n without checking whether the branch is legal."},
+        {"id": "reverse_answer", "text": "Reverse the final answer so invalid end branches cancel out."}
+      ], "acceptedOptionIds": ["base_beyond_end"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A recurrence is complete only when every referenced state has a declared semantic value at the boundaries.", "details": {"blocks": [{"type": "paragraph", "text": "The end-of-input base may be zero cost, one completion, infinity, or another value depending on the objective. A branch that skips beyond the end may be invalid or may represent a completed construction; the transition cannot decide this implicitly. Memory behavior and clamping are not substitutes for a base-case contract."}]}, "wrongOptionExplanationsByOptionId": {"ignore_boundary": "Out-of-range access is undefined or wrong even if interior states are correctly derived.", "clamp_indices": "Clamping can turn an illegal branch into a valid-looking repeated boundary state.", "reverse_answer": "A final arithmetic transformation cannot generally repair an incorrectly defined recurrence."}},
+      "taxonomy": {"primarySkillAtomId": "derive_dp_transition", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "one_dimensional_dp", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {"id":"alg-dpintro-transition-11-choose-skip-operator","prompt":"For a DP that chooses or skips an item while maximizing value, what operator usually combines the branches?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"max_branches","text":"max(skip result, take result) when both branches are legal."},{"id":"sum_branches","text":"Sum both branches, even though the solution chooses only one."},{"id":"min_always","text":"Take the minimum regardless of the optimization objective."},{"id":"ignore_skip","text":"Use only the take branch for every item."}],"acceptedOptionIds":["max_branches"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"The combination operator follows the objective and the mutually exclusive branch choices.","details":{"blocks":[{"type":"paragraph","text":"Counting problems may sum branches, minimum-cost problems may take min, and feasibility problems may use OR. Derive the operator from output semantics."}]},"wrongOptionExplanationsByOptionId":{"sum_branches":"Summing would count two alternatives as if both were selected.","min_always":"The objective here is maximization.","ignore_skip":"Skipping can be the optimal legal choice."}},"taxonomy":{"primarySkillAtomId":"derive_dp_transition","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"state_compression","problemArchetypeId":"choose_or_skip"}},
+    {"id":"alg-dpintro-transition-12-boundary-guard","prompt":"Why must a DP transition guard references such as dp[i-1] when i is at the first index?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"valid-state","text":"The first state may not have that predecessor, so the base case or boundary branch must define its result separately."},{"id":"negative-index-valid","text":"Negative indices always refer to the correct empty state automatically."},{"id":"skip-all","text":"Boundary checks are unnecessary if the table is large enough."},{"id":"sort-index","text":"Sorting indices prevents invalid predecessor reads."}],"acceptedOptionIds":["valid-state"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"A recurrence is defined over a valid state domain, and predecessor references must stay inside it or map to an explicit base.","details":{"blocks":[{"type":"paragraph","text":"Use a sentinel or initialize base entries before the loop. Do not rely on language-specific out-of-bounds behavior to represent a DP identity."}]},"wrongOptionExplanationsByOptionId":{"negative-index-valid":"Most languages either reject or give unrelated memory semantics.","skip-all":"A sufficiently large table does not make an index valid.","sort-index":"Index ordering does not repair an invalid reference."}},"taxonomy":{"primarySkillAtomId":"derive_dp_transition","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"one_dimensional_dp","problemArchetypeId":"optimize_prefix_or_suffix"}},
+    {"id":"alg-dpintro-transition-13-count-vs-optimize","prompt":"What changes in a DP transition when the problem asks for counts instead of an optimum?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"sum-ways","text":"Combine legal alternative branches by addition, often modulo the requested modulus."},{"id":"max-only","text":"Always take the maximum branch because DP means optimization."},{"id":"ignore-branches","text":"Keep one arbitrary branch to avoid double counting."},{"id":"min-cost","text":"Replace every count with a minimum cost."}],"acceptedOptionIds":["sum-ways"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Counts aggregate the number of alternatives; optimization selects one best alternative.","details":{"blocks":[{"type":"paragraph","text":"The state and legal branch set may be identical while the combine operator changes. Base cases and modulus behavior must also match the count contract."}]},"wrongOptionExplanationsByOptionId":{"max-only":"Maximum is appropriate only for a maximizing objective.","ignore-branches":"Discarding legal branches undercounts.","min-cost":"Cost minimization is a different output semantic."}},"taxonomy":{"primarySkillAtomId":"derive_dp_transition","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"one_dimensional_dp","problemArchetypeId":"count_ways"}},
+    {"id":"alg-dpintro-transition-14-state-owner","prompt":"What is a useful review question when a DP transition seems to use the wrong predecessor?","difficulty":"advanced","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"state-meaning","text":"What exactly does the destination state mean, and which prior states legally lead to it under that definition?"},{"id":"syntax-only","text":"Whether the loop syntax looks similar to another DP."},{"id":"table-size","text":"Whether allocating a larger table hides the mismatch."},{"id":"random-test","text":"Whether one random input happened to pass."}],"acceptedOptionIds":["state-meaning"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Transitions are derived from state semantics, not copied loop patterns.","details":{"blocks":[{"type":"paragraph","text":"Write the final decision or last action that produced the state, then enumerate all legal predecessor states. This catches direction and boundary defects before optimization."}]},"wrongOptionExplanationsByOptionId":{"syntax-only":"Similar syntax can encode different state meanings.","table-size":"More storage cannot fix an invalid recurrence.","random-test":"One passing example does not prove the transition."}},"taxonomy":{"primarySkillAtomId":"derive_dp_transition","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"tabulation","problemArchetypeId":"optimize_prefix_or_suffix"}}
   ],
   "modeStructures": {
     "recognitionSets": [],
@@ -462,7 +508,14 @@
           "alg-dpintro-transition-04-derive-before-schedule",
           "alg-dpintro-transition-05-in-place-transition-alias",
           "alg-dpintro-transition-06-impossible-branch-handling",
-          "alg-dpintro-transition-07-aggregation-transfer"
+          "alg-dpintro-transition-07-aggregation-transfer",
+          "alg-dpintro-transition-08-skip-take-partition",
+          "alg-dpintro-transition-09-count-vs-optimize-operator",
+          "alg-dpintro-transition-10-transition-boundary-check",
+          "alg-dpintro-transition-11-choose-skip-operator",
+          "alg-dpintro-transition-12-boundary-guard",
+          "alg-dpintro-transition-13-count-vs-optimize",
+          "alg-dpintro-transition-14-state-owner"
         ],
         "relationMetadata": {
           "mechanismBoundary": "define_transition"

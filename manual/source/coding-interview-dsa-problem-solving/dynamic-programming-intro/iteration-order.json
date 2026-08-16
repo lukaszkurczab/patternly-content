@@ -416,7 +416,53 @@
         "patternVariantId": "tabulation",
         "problemArchetypeId": "sequence_alignment_intro"
       }
-    }
+    },
+    {
+      "id": "alg-dpintro-order-08-topological-state-order",
+      "prompt": "A tabulation recurrence may read states at larger indices. Which general rule selects a safe loop order?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "dependencies_first", "text": "Compute every predecessor state before the consumer state that reads it; choose loop directions from the dependency graph."},
+        {"id": "always_forward", "text": "Always iterate indices from zero upward because bottom-up means forward order."},
+        {"id": "always_reverse", "text": "Always iterate from n downward because suffix DPs are more common."},
+        {"id": "random_order", "text": "Any order is safe when every state is eventually filled."}
+      ], "acceptedOptionIds": ["dependencies_first"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Bottom-up means dependency-respecting, not universally increasing or decreasing numeric indices.", "details": {"blocks": [{"type": "paragraph", "text": "For a suffix recurrence reading i+1, larger indices must be available first, so the loop runs downward. A prefix recurrence reading smaller indices runs upward. Multidimensional and compressed tables require the same topological reasoning, including preserving values before overwrite."}]}, "wrongOptionExplanationsByOptionId": {"always_forward": "Forward order is unsafe when the transition reads future indices.", "always_reverse": "Reverse order is unsafe for transitions that depend on earlier indices.", "random_order": "A consumer can observe an uninitialized or stale predecessor if dependencies are not scheduled first."}},
+      "taxonomy": {"primarySkillAtomId": "choose_dependency_safe_iteration_order", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "tabulation", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {
+      "id": "alg-dpintro-order-09-compressed-write-hazard",
+      "prompt": "A one-row DP needs old dp[c] later as a diagonal predecessor, while new dp[c - 1] is the current-row left predecessor. Which update discipline is required?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "save_before_overwrite", "text": "Save the old diagonal value before overwriting dp[c], then advance the saved value after the write."},
+        {"id": "overwrite_first", "text": "Overwrite dp[c] immediately and read the diagonal afterward from the same cell."},
+        {"id": "recompute_diagonal", "text": "Recompute the old diagonal from the current row after it has been overwritten."},
+        {"id": "clear_left", "text": "Clear dp[c - 1] so no stale value can influence the transition."}
+      ], "acceptedOptionIds": ["save_before_overwrite"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Compression reuses storage, so any value with a later dependency must be carried before the slot changes meaning.", "details": {"blocks": [{"type": "paragraph", "text": "At column c, old dp[c] represents the state from the previous row, while dp[c-1] has already become the current row's left value. A temporary diagonal variable preserves old dp[c] across the write; otherwise the recurrence reads a current-row value or loses the predecessor entirely."}]}, "wrongOptionExplanationsByOptionId": {"overwrite_first": "After overwrite, the old diagonal is no longer available in that slot.", "recompute_diagonal": "The old predecessor cannot generally be reconstructed from the overwritten current row.", "clear_left": "The current left value is a required dependency, not stale noise."}},
+      "taxonomy": {"primarySkillAtomId": "choose_dependency_safe_iteration_order", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "sequence_alignment_intro"}
+    },
+    {
+      "id": "alg-dpintro-order-10-formulation-not-syntax",
+      "prompt": "Two equivalent DPs use prefix states in one implementation and suffix states in another. What determines the correct tabulation direction?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "state_dependencies", "text": "The meaning of each state and the direction of its transition dependencies, not the label prefix or suffix alone."},
+        {"id": "always_prefix_forward", "text": "Prefix wording requires forward loops even when its transition reads a larger index."},
+        {"id": "always_suffix_reverse", "text": "Suffix wording requires reverse loops even when its transition reads smaller indices."},
+        {"id": "implementation_language", "text": "The programming language determines which table direction is semantically correct."}
+      ], "acceptedOptionIds": ["state_dependencies"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Iteration order follows the dependency graph induced by the state definition; terminology is only a clue.", "details": {"blocks": [{"type": "paragraph", "text": "A prefix formulation usually reads earlier positions and can be filled forward, while a suffix formulation usually reads later positions and is filled backward. But unusual transitions can reverse either expectation. State semantics must be written first, then dependencies inspected, then loops chosen."}]}, "wrongOptionExplanationsByOptionId": {"always_prefix_forward": "A prefix-named state can still depend on a later state in a particular recurrence.", "always_suffix_reverse": "A suffix-named state can be transformed or defined with earlier dependencies.", "implementation_language": "Language syntax does not change which predecessor values must already be computed."}},
+      "taxonomy": {"primarySkillAtomId": "choose_dependency_safe_iteration_order", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "tabulation", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {"id":"alg-dpintro-order-11-topological-dependency","prompt":"What principle determines a safe bottom-up DP iteration order?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"predecessors-first","text":"Every state is computed after all predecessor states used by its transition."},{"id":"lexical-order","text":"Any alphabetical order of state names is safe."},{"id":"largest-first","text":"Always compute the numerically largest index first."},{"id":"random-order","text":"Order never matters because table cells are independent."}],"acceptedOptionIds":["predecessors-first"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Tabulation materializes dependencies explicitly, so dependency order replaces recursive call ordering.","details":{"blocks":[{"type":"paragraph","text":"Draw the state dependency graph or inspect the recurrence. A valid topological schedule may be forward, reverse, row-major, column-major, or another direction."}]},"wrongOptionExplanationsByOptionId":{"lexical-order":"Names do not encode state dependencies.","largest-first":"Some recurrences require smaller predecessors first.","random-order":"Reading an uncomputed predecessor breaks correctness."}},"taxonomy":{"primarySkillAtomId":"choose_dependency_safe_iteration_order","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"tabulation","problemArchetypeId":"optimize_prefix_or_suffix"}},
+    {"id":"alg-dpintro-order-12-reverse-capacity","prompt":"Why do some 0/1 choice DPs iterate capacity downward?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"avoid-reuse","text":"Descending capacity prevents the current item from reading a state updated by that same item and being chosen twice."},{"id":"maximize-index","text":"It always makes every index larger before transition."},{"id":"sort-items","text":"It sorts items by capacity."},{"id":"count-all","text":"It ensures every branch is counted exactly once regardless of state meaning."}],"acceptedOptionIds":["avoid-reuse"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"In-place compression aliases old and new rows; reverse order preserves the previous-item dependency for 0/1 use.","details":{"blocks":[{"type":"paragraph","text":"Unbounded-choice DPs may intentionally iterate upward to allow reuse. The direction follows whether the transition may consume the same item more than once."}]},"wrongOptionExplanationsByOptionId":{"maximize-index":"Iteration direction is about dependency freshness, not index magnitude.","sort-items":"Capacity loops do not sort items.","count-all":"Different state semantics require different directions."}},"taxonomy":{"primarySkillAtomId":"choose_dependency_safe_iteration_order","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"state_compression","problemArchetypeId":"choose_or_skip"}},
+    {"id":"alg-dpintro-order-13-grid-parents","prompt":"For a grid DP whose transition reads from above and left, which fill order is dependency-safe?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"row_col_forward","text":"Rows top-to-bottom and columns left-to-right after initializing the origin and boundaries."},{"id":"bottom_right","text":"Rows bottom-to-top and columns right-to-left without reverse transitions."},{"id":"columns_random","text":"Any random cell order because above and left are eventually filled."},{"id":"diagonal_only","text":"Fill only one diagonal and infer every other cell."}],"acceptedOptionIds":["row_col_forward"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Each cell must read its top and left predecessors before it is computed.","details":{"blocks":[{"type":"paragraph","text":"Other orders can be correct if the recurrence is reformulated, but the loop direction and state dependencies must agree."}]},"wrongOptionExplanationsByOptionId":{"bottom_right":"It reads cells that have not been computed under the stated dependency direction.","columns_random":"Eventually filling a predecessor is not enough when it is read earlier.","diagonal_only":"A diagonal does not cover all grid states."}},"taxonomy":{"primarySkillAtomId":"choose_dependency_safe_iteration_order","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"state_compression","problemArchetypeId":"grid_path_dp"}},
+    {"id":"alg-dpintro-order-14-top-down-demand","prompt":"How does top-down memoization differ from bottom-up iteration order?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"demand-driven","text":"Recursive calls discover dependencies on demand, caching each state after its predecessors are solved."},{"id":"always-forward","text":"It must fill every table cell in increasing index order before returning."},{"id":"no-dependencies","text":"It ignores predecessor relationships because the cache stores answers."},{"id":"sort-first","text":"It sorts all states before the first recursive call."}],"acceptedOptionIds":["demand-driven"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Call structure supplies a dependency-safe order for reachable states in top-down DP.","details":{"blocks":[{"type":"paragraph","text":"The cache avoids repeated work, while the recursive call graph determines which predecessor is solved first. Unreachable states may never be visited."}]},"wrongOptionExplanationsByOptionId":{"always-forward":"That describes one bottom-up schedule, not demand-driven recursion.","no-dependencies":"Memoization does not remove transition dependencies.","sort-first":"State order is created by calls, not sorting."}},"taxonomy":{"primarySkillAtomId":"choose_dependency_safe_iteration_order","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"memoization","problemArchetypeId":"optimize_prefix_or_suffix"}}
   ],
   "modeStructures": {
     "recognitionSets": [],
@@ -437,7 +483,14 @@
           "alg-dpintro-order-04-capacity-direction-zero-one",
           "alg-dpintro-order-05-rolling-grid-left-up",
           "alg-dpintro-order-06-diagonal-dependency",
-          "alg-dpintro-order-07-reverse-formulation-transfer"
+          "alg-dpintro-order-07-reverse-formulation-transfer",
+          "alg-dpintro-order-08-topological-state-order",
+          "alg-dpintro-order-09-compressed-write-hazard",
+          "alg-dpintro-order-10-formulation-not-syntax",
+          "alg-dpintro-order-11-topological-dependency",
+          "alg-dpintro-order-12-reverse-capacity",
+          "alg-dpintro-order-13-grid-parents",
+          "alg-dpintro-order-14-top-down-demand"
         ],
         "relationMetadata": {
           "mechanismBoundary": "iteration_order"

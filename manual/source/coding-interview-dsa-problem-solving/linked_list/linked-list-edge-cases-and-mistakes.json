@@ -543,6 +543,294 @@
       },
       "id": "alg-linked-list-mistakes-08-distinguishing-aliasing-fixture",
       "difficulty": "advanced"
+    },
+    {
+      "id": "alg-linked-list-mistakes-09-null-termination-assertion",
+      "prompt": "A rewiring routine returns the expected values but a traversal sometimes loops forever. Which structural assertion should be added first?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "identity_bounded_visit", "text": "Track node identities during a bounded traversal and assert the intended termination or absence of repeated nodes."},
+        {"id": "value_only", "text": "Compare only value sequences because equal values prove the links are correct."},
+        {"id": "length_guess", "text": "Stop after an arbitrary number of steps and accept whatever suffix was reached."},
+        {"id": "sort_values", "text": "Sort node values before traversal to remove pointer cycles."}
+      ], "acceptedOptionIds": ["identity_bounded_visit"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Nontermination and aliasing are identity/topology defects that value-only assertions can miss.", "details": {"blocks": [{"type": "paragraph", "text": "A bounded identity walk can detect repeated nodes, missing expected identities, or failure to reach null. Value sequences can look correct when a node is duplicated or a cycle repeats equal payloads. Sorting values does not alter links."}]}, "wrongOptionExplanationsByOptionId": {"value_only": "Different topologies can produce the same payload sequence for a while.", "length_guess": "An arbitrary cutoff hides the defect rather than proving termination.", "sort_values": "Node links, not payload order, determine reachability."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_linked_list_rewiring_error", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "pointer_rewiring", "problemArchetypeId": "remove_or_rewire_node"}
+    },
+    {
+      "id": "alg-linked-list-mistakes-10-successor-lost-diagnostic",
+      "prompt": "After deleting a node, all later nodes disappear from the result. Which root cause should be investigated?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "overwrite_without_successor", "text": "The routine overwrote the victim or predecessor link before preserving the victim's successor, losing reachability to the remaining suffix."},
+        {"id": "duplicate_payload", "text": "The suffix disappeared because two values happened to be equal."},
+        {"id": "slow_pointer", "text": "The issue must be the absence of a fast pointer in a deletion routine."},
+        {"id": "sort_order", "text": "The nodes were not sorted before the link update."}
+      ], "acceptedOptionIds": ["overwrite_without_successor"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A singly linked deletion must preserve victim.next or otherwise retain the suffix before changing the only incoming link.", "details": {"blocks": [{"type": "paragraph", "text": "If prev.next is set to null or victim.next is overwritten before successor is saved, nodes after the victim become unreachable. A safe operation saves successor, rewires prev.next to it, and then handles victim cleanup or logging according to the ownership contract."}]}, "wrongOptionExplanationsByOptionId": {"duplicate_payload": "Payload equality does not sever structural links.", "slow_pointer": "Deletion correctness is about predecessor, victim, and successor links, not relative speed.", "sort_order": "Sortedness is irrelevant unless the problem explicitly requires it."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_linked_list_rewiring_error", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "pointer_rewiring", "problemArchetypeId": "remove_or_rewire_node"}
+    },
+    {
+      "id": "alg-linked-list-mistakes-11-empty-single-boundary",
+      "prompt": "Which minimal boundary set most directly tests a routine that rewires singly linked nodes?",
+      "constraints": [
+        "The routine may update head and successor links.",
+        "The output must preserve reachability."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_single_two_node",
+            "text": "Test empty, one-node, two-node, head target, tail target, and an interior target so each link boundary is exercised.",
+            "explanation": "These cases expose null predecessors, self-boundaries, and successor loss."
+          },
+          {
+            "id": "large_random_only",
+            "text": "Use only large random lists because small lists cannot reveal pointer bugs.",
+            "explanation": "Small boundary cases isolate exactly the dangerous transitions."
+          },
+          {
+            "id": "sorted_values_only",
+            "text": "Test only sorted payloads because rewiring depends on value order.",
+            "explanation": "Pointer correctness is structural and can fail on any payload order."
+          },
+          {
+            "id": "tail_only",
+            "text": "Test only deletion of the tail because every other case is equivalent.",
+            "explanation": "Head and interior rewires have different predecessor conditions."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_single_two_node"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Pointer bugs concentrate at null and short-list boundaries, so a compact structural fixture set gives higher diagnostic coverage than size alone.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Empty and one/two-node cases exercise missing predecessors, head replacement, and final successor null. Interior and tail cases then distinguish link loss from ordinary traversal. Payload sorting is not a substitute for topology coverage."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "large_random_only": "Small boundary cases isolate exactly the dangerous transitions.",
+          "sorted_values_only": "Pointer correctness is structural and can fail on any payload order.",
+          "tail_only": "Head and interior rewires have different predecessor conditions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-mistakes-12-cycle-vs-lost-link",
+      "prompt": "A traversal terminates earlier than expected after a mutation. Which observation distinguishes a lost link from an accidental cycle?",
+      "constraints": [
+        "The expected node identities are known.",
+        "The routine mutates next pointers in place."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reachability_and_repeat",
+            "text": "Record the first missing expected node and separately detect repeated node identity; absence indicates loss, repetition indicates a cycle.",
+            "explanation": "The two symptoms are different topology failures."
+          },
+          {
+            "id": "payload_count",
+            "text": "Compare only the number of payload values because topology is not observable.",
+            "explanation": "Equal values can hide both missing nodes and repeated nodes."
+          },
+          {
+            "id": "runtime_only",
+            "text": "Use timeout duration as the sole diagnosis.",
+            "explanation": "A timeout suggests a cycle but cannot locate or distinguish all defects."
+          },
+          {
+            "id": "sort_result",
+            "text": "Sort the output to decide whether links were rewired correctly.",
+            "explanation": "Sorting erases the traversal order needed for structural diagnosis."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reachability_and_repeat"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Reachability loss and repeated identity are distinct graph symptoms and should be instrumented separately.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A missing successor causes an expected node to become unreachable; a cycle causes traversal to revisit an identity. Recording node references and bounded traversal steps makes the defect visible even when payload values repeat."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "payload_count": "Equal values can hide both missing nodes and repeated nodes.",
+          "runtime_only": "A timeout suggests a cycle but cannot locate or distinguish all defects.",
+          "sort_result": "Sorting erases the traversal order needed for structural diagnosis."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-mistakes-13-alias-fixture",
+      "prompt": "Which fixture is necessary to catch an implementation that copies values but violates a node-identity contract?",
+      "constraints": [
+        "Callers may retain references to input nodes.",
+        "The output must reuse or preserve original identities."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "alias_observer",
+            "text": "Hold an alias to an input node, run the routine, then verify the alias observes the required node and link changes.",
+            "explanation": "An external alias exposes identity and in-place mutation behavior."
+          },
+          {
+            "id": "value_snapshot_only",
+            "text": "Compare only the output payload sequence.",
+            "explanation": "A value snapshot misses replaced nodes and broken aliases."
+          },
+          {
+            "id": "fresh_values",
+            "text": "Use unique payloads and skip reference checks because unique values identify nodes.",
+            "explanation": "Value uniqueness is not the same as reference preservation."
+          },
+          {
+            "id": "runtime_measurement",
+            "text": "Measure execution time to detect whether nodes were copied.",
+            "explanation": "Runtime does not establish the identity contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "alias_observer"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Identity requirements are observable through aliases, not through a value-only output comparison.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A test that keeps a reference to an input node can detect whether the routine rewired that node, replaced it, or severed its shared tail. This is a separate contract dimension from payload order."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "value_snapshot_only": "A value snapshot misses replaced nodes and broken aliases.",
+          "fresh_values": "Value uniqueness is not the same as reference preservation.",
+          "runtime_measurement": "Runtime does not establish the identity contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-mistakes-14-save-successor",
+      "prompt": "What operation order prevents a deletion routine from losing the suffix after the victim node?",
+      "constraints": [
+        "The victim has a successor.",
+        "The predecessor link is the only route to the suffix."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "save_then_rewire",
+            "text": "Save victim.next first, then set predecessor.next to the saved successor.",
+            "explanation": "The successor remains reachable while the incoming link changes."
+          },
+          {
+            "id": "null_then_read",
+            "text": "Set predecessor.next to null and read victim.next afterward.",
+            "explanation": "The suffix may be detached before it is preserved."
+          },
+          {
+            "id": "overwrite_victim",
+            "text": "Overwrite victim.next with predecessor before reading its successor.",
+            "explanation": "The original successor reference is destroyed."
+          },
+          {
+            "id": "copy_payload",
+            "text": "Copy the successor payload into the victim and ignore successor links.",
+            "explanation": "Payload copying does not preserve general topology or identity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "save_then_rewire"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The successor reference must be captured before any assignment can destroy the only path to it.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A safe deletion keeps the order `successor = victim.next; predecessor.next = successor`. The routine may then release or report the victim according to its ownership contract. Changing values is not an equivalent link operation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "null_then_read": "The suffix may be detached before it is preserved.",
+          "overwrite_victim": "The original successor reference is destroyed.",
+          "copy_payload": "Payload copying does not preserve general topology or identity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_linked_list_rewiring_error",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
     }
   ],
   "modeStructures": {

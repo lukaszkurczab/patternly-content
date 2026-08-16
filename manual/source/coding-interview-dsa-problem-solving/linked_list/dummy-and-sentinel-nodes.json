@@ -526,6 +526,294 @@
       },
       "id": "alg-linked-list-sentinel-08-useful-versus-irrelevant-transfer",
       "difficulty": "advanced"
+    },
+    {
+      "id": "alg-linked-list-sentinel-09-return-data-head",
+      "prompt": "After a sentinel-based list mutation, which pointer should be returned when the sentinel is implementation-only?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "dummy_next", "text": "Return dummy.next, the current head of the data-node chain."},
+        {"id": "dummy", "text": "Return dummy because it precedes every data node."},
+        {"id": "original_head", "text": "Always return the original head even if it was removed."},
+        {"id": "last_data", "text": "Return the last data node because it remains reachable from the sentinel."}
+      ], "acceptedOptionIds": ["dummy_next"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The sentinel simplifies links but is not part of the logical output chain.", "details": {"blocks": [{"type": "paragraph", "text": "Mutating dummy.next handles deletion or insertion at the original head uniformly. Returning dummy would expose an extra node and sentinel payload; returning original head fails when the first data node was removed. The current data head is always dummy.next."}]}, "wrongOptionExplanationsByOptionId": {"dummy": "The sentinel is scaffolding and must be excluded from the result.", "original_head": "The logical head may change after the operation.", "last_data": "The contract returns the full chain from its head, not the tail."}},
+      "taxonomy": {"primarySkillAtomId": "simplify_head_boundary_with_sentinel", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dummy_head", "problemArchetypeId": "remove_or_rewire_node"}
+    },
+    {
+      "id": "alg-linked-list-sentinel-10-sentinel-identity-check",
+      "prompt": "A sentinel and a data node have the same payload value. Which check reliably distinguishes the sentinel while traversing?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "reference_identity", "text": "Compare node references or track the traversal boundary; payload equality is not a structural identity test."},
+        {"id": "payload_value", "text": "Compare values because sentinel payloads are reserved by convention."},
+        {"id": "position_zero", "text": "Treat the first node encountered as the sentinel regardless of the head pointer."},
+        {"id": "next_null", "text": "Use whether next is null; the sentinel must be the only node with no successor."}
+      ], "acceptedOptionIds": ["reference_identity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A sentinel is a distinct node object, and its payload may legally equal a data payload.", "details": {"blocks": [{"type": "paragraph", "text": "Reference identity or an explicit pointer variable distinguishes dummy from data. Value-based checks can delete or skip a legitimate data node with the same payload; next-null and position assumptions are not stable structural contracts."}]}, "wrongOptionExplanationsByOptionId": {"payload_value": "Equal data values make payload tests ambiguous.", "position_zero": "The logical head may be a data node after dummy.next, and traversal can begin elsewhere.", "next_null": "Many data nodes, including the tail, may also have next=null."}},
+      "taxonomy": {"primarySkillAtomId": "simplify_head_boundary_with_sentinel", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dummy_head", "problemArchetypeId": "remove_or_rewire_node"}
+    },
+    {
+      "id": "alg-linked-list-sentinel-11-head-delete",
+      "prompt": "How does a dummy head simplify deleting the logical head of a singly linked list?",
+      "constraints": [
+        "The dummy is not part of the returned data sequence.",
+        "Deletion is expressed through predecessor.next."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "uniform_predecessor",
+            "text": "The dummy acts as the predecessor of the logical head, so head deletion uses the same link-rewire operation as any other deletion.",
+            "explanation": "The sentinel removes the special missing-predecessor case."
+          },
+          {
+            "id": "copy_head_value",
+            "text": "Copy the second node's value into the head and delete the tail instead.",
+            "explanation": "Value copying changes identity and does not implement general head deletion."
+          },
+          {
+            "id": "return_dummy",
+            "text": "Return the dummy because it is now the stable first data node.",
+            "explanation": "The dummy is scaffolding, not logical output."
+          },
+          {
+            "id": "skip_rewire",
+            "text": "No link update is needed because the dummy remains before the old head.",
+            "explanation": "The dummy.next link must be updated to bypass the deleted node."
+          }
+        ],
+        "acceptedOptionIds": [
+          "uniform_predecessor"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The sentinel supplies a valid predecessor pointer for the logical head.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "With dummy.next pointing to the logical head, deleting that node is `prev.next = victim.next` with prev equal to dummy. The caller receives dummy.next, not the scaffolding node."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "copy_head_value": "Value copying changes identity and does not implement general head deletion.",
+          "return_dummy": "The dummy is scaffolding, not logical output.",
+          "skip_rewire": "The dummy.next link must be updated to bypass the deleted node."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "simplify_head_boundary_with_sentinel",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dummy_head",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-sentinel-12-return-data-head",
+      "prompt": "After mutating a list through a dummy head, which pointer should a function normally return as the logical list head?",
+      "constraints": [
+        "The dummy remains allocated during the operation.",
+        "The caller expects only data nodes."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "dummy_next",
+            "text": "Return dummy.next, because it is the first logical data node after all head changes.",
+            "explanation": "The sentinel is an implementation boundary, not part of the result."
+          },
+          {
+            "id": "dummy_itself",
+            "text": "Return dummy so callers can consistently access the list through the sentinel.",
+            "explanation": "That changes the public representation unless the contract explicitly exposes a sentinel."
+          },
+          {
+            "id": "original_head",
+            "text": "Return the original head even if it was removed.",
+            "explanation": "The original head may no longer be reachable or valid."
+          },
+          {
+            "id": "tail",
+            "text": "Return the tail because it is unaffected by head mutations.",
+            "explanation": "The tail is not the logical head and may be null."
+          }
+        ],
+        "acceptedOptionIds": [
+          "dummy_next"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The returned pointer must match the output representation, which excludes the helper node.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A dummy makes mutations uniform, but returning it leaks internal scaffolding and shifts every caller-visible position. The logical result begins at dummy.next after the operation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "dummy_itself": "That changes the public representation unless the contract explicitly exposes a sentinel.",
+          "original_head": "The original head may no longer be reachable or valid.",
+          "tail": "The tail is not the logical head and may be null."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "simplify_head_boundary_with_sentinel",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dummy_head",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-sentinel-13-sentinel-not-data",
+      "prompt": "A list may contain any payload, including the value used to initialize a dummy. What rule prevents confusing the helper with data?",
+      "constraints": [
+        "Payload values are not unique.",
+        "The dummy is a distinct node object."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "structural_boundary",
+            "text": "Use the dummy reference or dummy.next boundary, never a payload comparison, to identify the helper.",
+            "explanation": "Reference and link position encode the sentinel contract."
+          },
+          {
+            "id": "reserved_value",
+            "text": "Treat the initialized payload as a reserved marker that data nodes cannot use.",
+            "explanation": "The stated contract permits data to use the same payload."
+          },
+          {
+            "id": "tail_marker",
+            "text": "Identify the dummy as the only node whose next pointer is null.",
+            "explanation": "A tail data node can also have next equal to null."
+          },
+          {
+            "id": "first_value",
+            "text": "Treat the first payload encountered as the dummy regardless of the starting pointer.",
+            "explanation": "Traversal may start at the logical head or an interior node."
+          }
+        ],
+        "acceptedOptionIds": [
+          "structural_boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sentinel is distinguished by object identity and structural position, not by a value convention that the input does not guarantee.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The helper is known by the variable that references it and by the dummy.next boundary. Value and tail assumptions are ambiguous in ordinary lists."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "reserved_value": "The stated contract permits data to use the same payload.",
+          "tail_marker": "A tail data node can also have next equal to null.",
+          "first_value": "Traversal may start at the logical head or an interior node."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "simplify_head_boundary_with_sentinel",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dummy_head",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
+    },
+    {
+      "id": "alg-linked-list-sentinel-14-multi-operation",
+      "prompt": "Why is a dummy head especially useful when a routine may insert or delete at the head repeatedly?",
+      "constraints": [
+        "Each operation must maintain the same linked-list invariant.",
+        "The logical head may change many times."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "stable_predecessor",
+            "text": "The same stable predecessor variable can own the logical head link across all operations, avoiding repeated head-case branches.",
+            "explanation": "The sentinel makes the boundary uniform across mutations."
+          },
+          {
+            "id": "constant_time_all",
+            "text": "The dummy makes every insertion and deletion O(1), even when finding a target requires traversal.",
+            "explanation": "It simplifies boundary handling but does not remove search cost."
+          },
+          {
+            "id": "identity_irrelevant",
+            "text": "The dummy proves that node identity never matters after insertion.",
+            "explanation": "Identity and aliasing contracts remain independent."
+          },
+          {
+            "id": "no_return_update",
+            "text": "The original head can always be returned because the dummy preserves it.",
+            "explanation": "The logical head can change and must be read from dummy.next."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stable_predecessor"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The sentinel centralizes the boundary invariant; it does not erase traversal or identity costs.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Repeated head mutations use the same predecessor.next rewrite as interior mutations. Searching for a target can remain linear, and the caller still needs the current dummy.next after the final operation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "constant_time_all": "It simplifies boundary handling but does not remove search cost.",
+          "identity_irrelevant": "Identity and aliasing contracts remain independent.",
+          "no_return_update": "The logical head can change and must be read from dummy.next."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "simplify_head_boundary_with_sentinel",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dummy_head",
+        "problemArchetypeId": "remove_or_rewire_node"
+      }
     }
   ],
   "modeStructures": {

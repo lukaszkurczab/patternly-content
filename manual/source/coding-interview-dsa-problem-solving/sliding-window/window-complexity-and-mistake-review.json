@@ -325,6 +325,559 @@
         "patternVariantId": "at_most_k_window",
         "problemArchetypeId": "contiguous_range_optimum"
       }
+    },
+    {
+      "id": "alg-sw-complexity-ordered-frequency-map",
+      "prompt": "A variable window moves each boundary forward at most n times, but stores frequencies in a balanced ordered map with O(log K) updates. What is the tightest stated time and auxiliary-space complexity?",
+      "constraints": [
+        "The map contains at most K active keys.",
+        "Each add, remove, and validity check performs O(log K) map work.",
+        "No full-window rescans occur."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(n)",
+            "O(n log K)",
+            "O(nK)",
+            "O(n^2)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(log K)",
+            "O(K)",
+            "O(n)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n log K)"
+          ],
+          "auxiliary_space": [
+            "O(K)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {},
+          "auxiliary_space": {}
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The linear number of boundary events is multiplied by the ordered-map update cost, while the active keys require O(K) storage.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "There are O(n) additions and removals in total, but each event costs O(log K) under the stated map contract. Thus the total time is O(n log K), not O(n). The map stores one entry per active key, so auxiliary space is O(K); tree height alone does not describe the total stored state."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-complexity-resetting-left-boundary",
+      "prompt": "A proposed longest-window loop resets left to 0 for every new right boundary and scans starts until it finds a valid range. What worst-case time complexity should the review report?",
+      "constraints": [
+        "The input can make Θ(n) starts invalid for Θ(n) different right boundaries.",
+        "The reset discards previous left-boundary progress.",
+        "Each start check takes O(1) time."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "quadratic_reset_cost",
+            "text": "O(n²), because the same candidate starts can be revisited for many right boundaries."
+          },
+          {
+            "id": "linear_amortized_despite_reset",
+            "text": "O(n), because any loop containing two boundaries is amortized automatically."
+          },
+          {
+            "id": "logarithmic_search",
+            "text": "O(log n), because each invalid start is rejected before the next one."
+          },
+          {
+            "id": "constant_reset",
+            "text": "O(1) per full input because resetting avoids maintaining state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "quadratic_reset_cost"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Amortization requires a boundary's progress to be retained; resetting left allows repeated work across right iterations.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The usual linear proof charges each left increment once because left never moves backward. Here that premise is false: the same early starts may be scanned again after every right expansion. With Θ(n) work for Θ(n) right positions, the total can be Θ(n²). The algorithm must preserve monotone progress or maintain a different state with a separately proved cost."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "linear_amortized_despite_reset": "Nested loops are amortized only when the inner boundary does not restart and its total movement is bounded globally.",
+          "logarithmic_search": "Rejecting starts sequentially does not halve the search domain; it can inspect a linear number of starts.",
+          "constant_reset": "Resetting creates repeated scans rather than removing their cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "contiguous_range_optimum"
+      }
+    },
+    {
+      "id": "alg-sw-complexity-preprocess-sort-then-scan",
+      "prompt": "A solution sorts n values in O(n log n) and then performs one O(n) sliding-style scan. What is the end-to-end time complexity?",
+      "constraints": [
+        "The sort is part of the solution and cannot be ignored.",
+        "The scan performs O(1) work per value after sorting.",
+        "No faster sorting or special input bound is provided."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sorting_dominates",
+            "text": "O(n log n), because O(n log n) + O(n) is O(n log n)."
+          },
+          {
+            "id": "scan_only",
+            "text": "O(n), because the final scan uses two monotone boundaries."
+          },
+          {
+            "id": "multiply_costs",
+            "text": "O(n² log n), because sorting and scanning are both part of the same algorithm."
+          },
+          {
+            "id": "sort_constant",
+            "text": "O(1), because preprocessing happens only once."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sorting_dominates"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The preprocessing cost is part of end-to-end time and dominates the subsequent linear scan.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The complete execution performs sorting and then scanning, so its cost is O(n log n) + O(n). Asymptotically the larger term dominates, giving O(n log n). Calling the result O(n) describes only the post-sort phase and hides a required operation. Costs are added for sequential phases; they are not multiplied merely because both phases occur."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "scan_only": "The scan is linear, but the required sort has already cost O(n log n).",
+          "multiply_costs": "Sequential phases add their costs; they do not multiply without nested execution.",
+          "sort_constant": "A one-time operation still scales with n and cannot be treated as constant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "contiguous_range_optimum"
+      }
+    },
+    {
+      "id": "alg-sw-complexity-emit-all-windows",
+      "prompt": "A fixed-size scan emits one O(1)-sized aggregate for each of n−k+1 windows using rolling state. What time complexity covers the full output-producing algorithm?",
+      "constraints": [
+        "The aggregate update and emission each take O(1) time.",
+        "The output buffer is excluded from auxiliary-space accounting.",
+        "1 ≤ k ≤ n."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(k)",
+            "O(n)",
+            "O(nk)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "n_minus_k_plus_one": "O(n)"
+          }
+        },
+        "maxPoints": 1
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 1
+      },
+      "feedback": {
+        "reason": "There are at most n legal windows and each rolling update plus emission is constant work.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The exact number of outputs is n−k+1, which is O(n) over the declared domain. Building the first state and processing each subsequent window take constant amortized work with rolling updates, so the total is O(n). Excluding output storage affects the space bound, not the time required to produce the outputs. Recomputing each block would add a factor of k and become O((n−k+1)k)."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-complexity-pointer-proof-boundary",
+      "prompt": "A review claims O(n) because both pointers move forward, but each validity check calls a helper that scans from left to right. What evidence is needed before accepting the linear bound?",
+      "constraints": [
+        "The helper may inspect multiple elements in the current window.",
+        "Pointer monotonicity is already established.",
+        "The claim concerns total executed operations, not only boundary moves."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bound_helper_total_work",
+            "text": "Bound the helper's aggregate work across all calls; pointer monotonicity alone is insufficient."
+          },
+          {
+            "id": "pointer_count_proves_all",
+            "text": "Accept O(n) immediately because the helper is inside a loop with monotone pointers."
+          },
+          {
+            "id": "ignore_helper",
+            "text": "Ignore helper cost because only explicit loop headers contribute to complexity."
+          },
+          {
+            "id": "use_window_length_once",
+            "text": "Count only the longest possible window once, regardless of how often the helper runs."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bound_helper_total_work"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A complexity proof must account for every executed operation, including repeated helper scans.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Monotone boundaries amortize work only when state maintenance is constant or has its own global bound. If a helper scans the current range on every right step, the same elements can be revisited many times and the total may be quadratic. The reviewer must derive a bound for the helper calls or replace them with incremental state before accepting O(n)."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "pointer_count_proves_all": "Pointer movement is only one component of total work and does not bound repeated interior scans.",
+          "ignore_helper": "Helper operations execute and must be included in the runtime bound.",
+          "use_window_length_once": "The helper may run for many right positions, so a single longest-window estimate is not a total-work proof."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "contiguous_range_optimum"
+      }
+    },
+    {
+      "id": "alg-sw-complexity-11-amortized",
+      "prompt": "Why is a window with a nested shrink loop often O(n), not O(n²)?",
+      "constraints": [
+        "The stated window contract applies.",
+        "The input boundary cases remain legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "amortized",
+            "text": "Right and left each move forward at most n times, so total pointer movement is O(n)."
+          },
+          {
+            "id": "inner_constant",
+            "text": "The inner loop runs only once."
+          },
+          {
+            "id": "sort",
+            "text": "Sorting makes the pointers linear."
+          },
+          {
+            "id": "quadratic",
+            "text": "Any nested loop is automatically quadratic."
+          }
+        ],
+        "acceptedOptionIds": [
+          "amortized"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the window invariant and output semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The boundary update order and stored aggregate must represent exactly the current contiguous window. Pointer movement is correct only when this invariant remains true."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "inner_constant": "It can run many times, but total movement is bounded.",
+          "sort": "Sorting is not the amortization proof.",
+          "quadratic": "Monotone movement is the exception."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "contiguous_range_optimum"
+      }
+    },
+    {
+      "id": "alg-sw-complexity-12-map-cost",
+      "prompt": "What assumption is needed when a frequency-map window is reported as O(n)?",
+      "constraints": [
+        "The stated window contract applies.",
+        "The input boundary cases remain legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "map_model",
+            "text": "Map operations are expected O(1) or bounded by the domain, and each pointer moves O(n) total."
+          },
+          {
+            "id": "free_map",
+            "text": "Map operations are free."
+          },
+          {
+            "id": "sort_map",
+            "text": "Sort the map after every update."
+          },
+          {
+            "id": "quadratic",
+            "text": "The shrink loop forces O(n²)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "map_model"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the window invariant and output semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The boundary update order and stored aggregate must represent exactly the current contiguous window. Pointer movement is correct only when this invariant remains true."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "free_map": "State maintenance is real work.",
+          "sort_map": "That adds unnecessary cost.",
+          "quadratic": "Left movement is amortized."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "contiguous_range_optimum"
+      }
+    },
+    {
+      "id": "alg-sw-complexity-13-fixed",
+      "prompt": "Why does a fixed-size rolling window take O(n) time despite overlapping outputs?",
+      "constraints": [
+        "The stated window contract applies.",
+        "The input boundary cases remain legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_shift",
+            "text": "Each shift performs constant outgoing/incoming work and there are n−k+1 shifts."
+          },
+          {
+            "id": "recompute",
+            "text": "Recompute all k values for every output."
+          },
+          {
+            "id": "disjoint",
+            "text": "Only disjoint windows are emitted."
+          },
+          {
+            "id": "sort",
+            "text": "Sort each window."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_shift"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the window invariant and output semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The boundary update order and stored aggregate must represent exactly the current contiguous window. Pointer movement is correct only when this invariant remains true."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "recompute": "That is O(nk), not rolling.",
+          "disjoint": "Sliding outputs may overlap.",
+          "sort": "Sorting is unrelated to rolling state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "contiguous_range_optimum"
+      }
+    },
+    {
+      "id": "alg-sw-complexity-14-reset",
+      "prompt": "Which complexity defect is indicated when a window resets both pointers after each invalid state?",
+      "constraints": [
+        "The stated window contract applies.",
+        "The input boundary cases remain legal."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "rescan",
+            "text": "The same prefix can be processed repeatedly, invalidating monotone amortization and causing quadratic work."
+          },
+          {
+            "id": "space",
+            "text": "The main defect is extra memory."
+          },
+          {
+            "id": "constant",
+            "text": "Resetting improves the bound to O(1)."
+          },
+          {
+            "id": "fixed",
+            "text": "Resetting makes every variable window fixed-size."
+          }
+        ],
+        "acceptedOptionIds": [
+          "rescan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the window invariant and output semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The boundary update order and stored aggregate must represent exactly the current contiguous window. Pointer movement is correct only when this invariant remains true."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "space": "Resetting primarily increases time.",
+          "constant": "It repeats work.",
+          "fixed": "It changes neither predicate nor contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "explain_linear_window_complexity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "contiguous_range_optimum"
+      }
     }
   ],
   "modeStructures": {

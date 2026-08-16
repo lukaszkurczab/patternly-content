@@ -347,7 +347,114 @@
         "secondarySkillAtomIds": [],
         "learningStage": "pattern_mechanics"
       }
-    }
+    },
+    {
+      "id": "alg-stack-ops-07-pop-empty-boundary",
+      "prompt": "A stack is empty and the caller invokes pop(). Which contract must be resolved before implementing the operation?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "explicit_empty_behavior", "text": "Define an explicit empty-stack result such as an error, option-like absence, or documented sentinel; do not read a nonexistent top."},
+          {"id": "return_stale_value", "text": "Return the last value ever popped because an empty stack has no current value."},
+          {"id": "wrap_to_bottom", "text": "Wrap around to the bottom entry so pop always succeeds."},
+          {"id": "push_default_silently", "text": "Insert a default value and pop it without exposing the state change."}
+        ],
+        "acceptedOptionIds": ["explicit_empty_behavior"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "Pop removes a current entry, and an empty stack has none; the API must make that unavailable state observable and defined.",
+        "details": {"blocks": [{"type": "paragraph", "text": "A safe stack primitive checks emptiness before reading or removing the top. The product may choose an exception, an option/result type, or another explicit contract, but returning stale data or mutating the stack to manufacture a value hides a caller error. The same boundary must be consistent for top() if it is exposed separately."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "return_stale_value": "A previously removed value is not a member of the current stack and cannot satisfy pop semantics.",
+          "wrap_to_bottom": "Stacks do not wrap; that would invent a new ordering contract and repeat an absent entry.",
+          "push_default_silently": "Silent mutation changes stack state and returns data that the caller never pushed."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "trace_stack_operation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics"},
+      "constraints": ["The caller has not pushed a value since the stack became empty."]
+    },
+    {
+      "id": "alg-stack-ops-08-mixed-trace-state",
+      "prompt": "Starting with an empty stack, execute push(A), push(B), pop(), push(C), top(). Which value is returned and what remains on the stack from bottom to top?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "c_stack_a_c", "text": "top() returns C and the stack is [A, C]."},
+          {"id": "b_stack_a_c", "text": "top() returns B and the stack is [A, C]."},
+          {"id": "c_stack_b_a", "text": "top() returns C and the stack is [B, A]."},
+          {"id": "a_stack_b_c", "text": "top() returns A and the stack is [B, C]."}
+        ],
+        "acceptedOptionIds": ["c_stack_a_c"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "B is removed by pop, leaving A; C is then pushed and becomes the current top.",
+        "details": {"blocks": [{"type": "ordered_list", "items": ["After push(A), push(B), the stack is [A, B].", "pop() removes B, leaving [A].", "push(C) produces [A, C].", "top() observes C without removing it."]}]},
+        "wrongOptionExplanationsByOptionId": {
+          "b_stack_a_c": "B was removed before C was pushed, so it cannot remain the top.",
+          "c_stack_b_a": "A was pushed before B, so after B is popped it remains below C; the order is not reversed in storage.",
+          "a_stack_b_c": "The newest entry C is the top, and A is below it."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "trace_stack_operation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics"}
+    },
+    {
+      "id": "alg-stack-ops-09-top-versus-pop",
+      "prompt": "A caller needs to inspect the current stack entry twice and remove it only after the second inspection. Which operation sequence preserves that contract?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {"id": "first_top", "text": "Call top() and inspect the current entry."},
+          {"id": "second_top", "text": "Call top() again without mutating the stack."},
+          {"id": "pop_after_inspection", "text": "Call pop() once after the second inspection."}
+        ],
+        "canonicalOrder": ["first_top", "second_top", "pop_after_inspection"],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {"type": "ordering", "maxPoints": 2},
+      "feedback": {
+        "reason": "Top is an observation, while pop is the single state-changing removal and must occur after both reads.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Calling pop for the first inspection would remove the entry too early, and calling pop twice would remove two entries. Separate top and pop operations make the read-versus-mutation boundary explicit. If the stack may be empty, each read/removal also needs the documented availability check."}]}
+      },
+      "taxonomy": {"primarySkillAtomId": "trace_stack_operation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics"}
+    },
+    {
+      "id": "alg-stack-ops-10-lifo-lifecycle",
+      "prompt": "Which statement correctly describes the lifecycle of entries in a stack during a sequence of pushes and pops?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "each_entry_once", "text": "Each pushed entry can be popped at most once before another push creates a new entry; removals follow reverse insertion order among pending entries."},
+          {"id": "oldest_first", "text": "The oldest pending entry is always popped first, regardless of later pushes."},
+          {"id": "peek_removes", "text": "Every top() call removes the entry after exposing it."},
+          {"id": "pop_reorders_all", "text": "A pop may arbitrarily reorder all remaining entries because stack order is not part of the contract."}
+        ],
+        "acceptedOptionIds": ["each_entry_once"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "LIFO gives each concrete entry one removal event and preserves the relative order of entries that remain pending.",
+        "details": {"blocks": [{"type": "paragraph", "text": "A push creates a distinct pending entry. Pop removes the most recently pushed entry that has not already been removed; the same entry cannot appear again without a new push. Top only observes, and a correct pop does not reorder the remaining entries. This lifecycle is the basis for stack traces and amortized one-pop-per-push arguments."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "oldest_first": "Oldest-first is FIFO queue behavior, not LIFO stack behavior.",
+          "peek_removes": "Top is non-mutating by the stated primitive contract; pop performs removal.",
+          "pop_reorders_all": "Pop removes the current top and leaves the remaining sequence in its prior relative order."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "trace_stack_operation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics"}
+    },
+    {"id":"alg-stack-ops-11-pop-empty-contract","prompt":"What should a stack pop operation do when the stack is empty?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"explicit-underflow","text":"Return or raise the contract's explicit underflow/unavailable state."},{"id":"invent_value","text":"Return an arbitrary value as if an element existed."},{"id":"push_zero","text":"Push zero automatically and pop it."},{"id":"read_bottom","text":"Read memory below the stack to find a hidden item."}],"acceptedOptionIds":["explicit-underflow"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Empty-stack behavior is a boundary condition, not a valid element operation.","details":{"blocks":[{"type":"paragraph","text":"Expose underflow explicitly through a sentinel, option, exception, or precondition. Silent invented values can corrupt a parser or undo history."}]},"wrongOptionExplanationsByOptionId":{"invent_value":"There is no stack element to return.","push_zero":"Automatic insertion changes stack state and hides the error.","read_bottom":"Out-of-bounds memory is not stack semantics."}},"taxonomy":{"primarySkillAtomId":"trace_stack_operation","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics"}},
+    {"id":"alg-stack-ops-12-peek-no-mutation","prompt":"What distinguishes peek from pop?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"read_keep","text":"Peek reads the top element without removing it."},{"id":"read_remove","text":"Peek always removes the top element and returns the next one."},{"id":"bottom_read","text":"Peek reads the bottom element regardless of stack order."},{"id":"push_top","text":"Peek pushes a duplicate top element."}],"acceptedOptionIds":["read_keep"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Peek observes the top invariant without changing the future LIFO sequence.","details":{"blocks":[{"type":"paragraph","text":"Use peek for a decision that may be followed by a conditional pop. Confusing the operations can skip unresolved state or alter undo history."}]},"wrongOptionExplanationsByOptionId":{"read_remove":"Removal is pop's side effect.","bottom_read":"The top, not bottom, is the stack observation point.","push_top":"Peek is read-only."}},"taxonomy":{"primarySkillAtomId":"trace_stack_operation","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics"}},
+    {"id":"alg-stack-ops-13-lifo-operation-cost","prompt":"Under a standard array-backed stack, what is the amortized cost of push and pop at the top?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"constant_amortized","text":"O(1) amortized per operation, with occasional resizing accounted for."},{"id":"linear_each","text":"O(n) for every push and pop because the whole stack shifts."},{"id":"logarithmic","text":"O(log n) because the top is searched by binary search."},{"id":"quadratic","text":"O(n²) because LIFO requires pair comparisons."}],"acceptedOptionIds":["constant_amortized"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Top operations touch one endpoint; dynamic-array resizing is amortized across pushes.","details":{"blocks":[{"type":"paragraph","text":"A linked stack also provides O(1) top operations. Costs change if an implementation inserts at the wrong end or copies all elements on each operation."}]},"wrongOptionExplanationsByOptionId":{"linear_each":"Top insertion/removal does not shift every item in a correct stack implementation.","logarithmic":"No search is needed to access the top.","quadratic":"LIFO ordering does not require pairwise comparisons."}},"taxonomy":{"primarySkillAtomId":"trace_stack_operation","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics"}},
+    {"id":"alg-stack-ops-14-top-after-pop","prompt":"After a nonempty stack pops its top item, which element becomes observable at the top?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"previous_below","text":"The item that was immediately below the removed top."},{"id":"old_bottom","text":"The oldest bottom item regardless of remaining order."},{"id":"random_remaining","text":"Any remaining item because stack order is lost after pop."},{"id":"new_push","text":"A newly created item is placed at the top."}],"acceptedOptionIds":["previous_below"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Removing the top exposes the next most recently pushed item.","details":{"blocks":[{"type":"paragraph","text":"This is the LIFO invariant: the sequence below the top remains in the same relative order after a pop."}]},"wrongOptionExplanationsByOptionId":{"old_bottom":"FIFO behavior exposes the oldest item, not a stack's next top.","random_remaining":"A stack has deterministic order.","new_push":"Pop removes; it does not create state."}},"taxonomy":{"primarySkillAtomId":"trace_stack_operation","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics"}}
   ],
   "modeStructures": {
     "recognitionSets": [],

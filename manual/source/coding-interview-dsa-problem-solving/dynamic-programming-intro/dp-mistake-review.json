@@ -449,7 +449,53 @@
         "patternVariantId": "two_dimensional_dp",
         "problemArchetypeId": "grid_path_dp"
       }
-    }
+    },
+    {
+      "id": "alg-dpintro-diagnose-08-sentinel-operator-defect",
+      "prompt": "A minimization DP initializes unreachable states to 0 and returns an implausibly cheap route through blocked cells. What defect owner should review first?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "base_or_sentinel", "text": "Base-case and impossible-state initialization: unavailable states must not compete as zero-cost candidates."},
+        {"id": "loop_language", "text": "Variable naming, because the loop may read the wrong symbolic names."},
+        {"id": "memo_cache_only", "text": "Memoization itself, even if every state is computed from the wrong initial values."},
+        {"id": "output_format", "text": "Output formatting, because the numeric minimum is already determined correctly."}
+      ], "acceptedOptionIds": ["base_or_sentinel"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A zero sentinel changes the recurrence's feasible set before transitions or caching can be evaluated.", "details": {"blocks": [{"type": "paragraph", "text": "The first review target is the meaning of unreachable states and the neutral element for minimization. A cache can faithfully reuse a wrong zero; changing memoization without fixing initialization preserves the defect. The symptom is a semantic base/transition boundary issue, not formatting."}]}, "wrongOptionExplanationsByOptionId": {"loop_language": "Names do not explain a false zero-cost route.", "memo_cache_only": "Caching incorrect base values reproduces the same wrong answer efficiently.", "output_format": "The numeric state is already wrong before it is rendered."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "tabulation", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {
+      "id": "alg-dpintro-diagnose-09-reconstruction-owner",
+      "prompt": "A DP returns the correct optimum value but cannot return the required chosen items because its compressed state stores no decisions. Which defect classification is precise?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "output_contract_loss", "text": "The value recurrence is correct, but state compression lost witness information required by the output contract."},
+        {"id": "wrong_objective", "text": "The numeric objective must be wrong because no path was reconstructed."},
+        {"id": "base_case_only", "text": "The issue is necessarily the empty-input base case."},
+        {"id": "time_complexity_only", "text": "Only runtime is affected; a missing witness is not a correctness defect."}
+      ], "acceptedOptionIds": ["output_contract_loss"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An algorithm can compute the scalar optimum correctly while failing a separate witness-output requirement.", "details": {"blocks": [{"type": "paragraph", "text": "Review should separate value correctness from reconstruction completeness. Parent pointers, retained decisions, checkpoints, or a recoverable reference computation can repair the output contract, but merely recomputing a scalar does not identify the selected items. The defect belongs to compression/reconstruction ownership."}]}, "wrongOptionExplanationsByOptionId": {"wrong_objective": "The stated value is correct; the missing part is the witness.", "base_case_only": "No evidence points to an empty-input boundary; the failure is information loss during compression.", "time_complexity_only": "Missing required output is a correctness/contract defect, not merely a performance concern."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "choose_or_skip"}
+    },
+    {
+      "id": "alg-dpintro-diagnose-10-transition-vs-state-owner",
+      "prompt": "A memo key includes index and capacity, but the transition uses dp(i, capacity - weight[i]) even when the item does not fit. Which review order is most useful?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "transition_legality", "text": "Review branch legality and transition preconditions first; the state dimensions may be sufficient while the recurrence admits an invalid take."},
+        {"id": "add_more_key_fields", "text": "Add every local variable to the memo key before checking whether the transition is legal."},
+        {"id": "switch_to_greedy", "text": "Replace DP with a greedy method because every transition bug proves DP is unsuitable."},
+        {"id": "ignore_if_cached", "text": "Ignore the branch because memoization will cache the invalid state consistently."}
+      ], "acceptedOptionIds": ["transition_legality"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The key can be complete while a branch still violates the problem's feasibility predicate.", "details": {"blocks": [{"type": "paragraph", "text": "State sufficiency and transition legality are separate review owners. If weight[i] exceeds capacity, the take branch must be excluded or marked impossible; adding arbitrary key fields does not repair it. Caching a wrong successor only makes the invalid recurrence faster."}]}, "wrongOptionExplanationsByOptionId": {"add_more_key_fields": "No memo key can make an illegal transition legal; first check the recurrence's guard.", "switch_to_greedy": "A local transition defect does not establish that the DP model is inappropriate.", "ignore_if_cached": "Consistency of a cached wrong state is not correctness."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_incomplete_dp_state_or_transition", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_dp", "problemArchetypeId": "choose_or_skip"}
+    },
+    {"id":"alg-dpintro-diagnose-11-missing-dimension","prompt":"A DP passes simple tests but fails when capacity changes; the table is keyed only by index. What is the likely defect?","difficulty":"advanced","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"state-incomplete","text":"The state omits a future-relevant capacity dimension, merging different subproblems."},{"id":"base-too-large","text":"The base case has too many dimensions."},{"id":"iteration-too-fast","text":"Any loop with a capacity is necessarily invalid."},{"id":"memory-too-much","text":"The table uses too much memory, which directly causes wrong values."}],"acceptedOptionIds":["state-incomplete"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Different remaining capacities expose different legal choices and need different DP results.","details":{"blocks":[{"type":"paragraph","text":"A small counterexample with the same index and two capacities can expose the collision. Add the missing dimension before attempting space compression."}]},"wrongOptionExplanationsByOptionId":{"base-too-large":"The problem is missing state, not excessive base coverage.","iteration-too-fast":"A capacity loop can be correct when it follows dependencies.","memory-too-much":"Space pressure is separate from semantic state completeness."}},"taxonomy":{"primarySkillAtomId":"diagnose_incomplete_dp_state_or_transition","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"two_dimensional_dp","problemArchetypeId":"choose_or_skip"}},
+    {"id":"alg-dpintro-diagnose-12-wrong-combine","prompt":"A counting DP returns a maximum instead of the number of constructions. Which defect is present?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"operator-mismatch","text":"The transition uses an optimization operator instead of summing legal alternatives."},{"id":"state-too-large","text":"The state contains too much information, so counts become maxima."},{"id":"sort-needed","text":"The table needs sorted indices before addition."},{"id":"no-overlap","text":"Counting and optimization always use the same operator."}],"acceptedOptionIds":["operator-mismatch"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"The recurrence's combine operator must match the output semantic.","details":{"blocks":[{"type":"paragraph","text":"A count aggregates all legal branches; a max selects one best branch. State and iteration order may be correct while the operator is wrong."}]},"wrongOptionExplanationsByOptionId":{"state-too-large":"State size does not determine whether branches are summed or optimized.","sort-needed":"DP addition does not require sorting indices.","no-overlap":"The operators encode different questions."}},"taxonomy":{"primarySkillAtomId":"diagnose_incomplete_dp_state_or_transition","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"memoization","problemArchetypeId":"count_ways"}},
+    {"id":"alg-dpintro-diagnose-13-compression-overwrite","prompt":"A rolling-array DP gives wrong values after in-place compression. What should be inspected first?","difficulty":"advanced","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"dependency-overwrite","text":"Whether the loop overwrites a predecessor before all transitions that need its old value have read it."},{"id":"table-name","text":"Whether the array variable has a descriptive name."},{"id":"sort-values","text":"Whether input values are sorted after compression."},{"id":"base-count","text":"Whether every state was initialized to one."}],"acceptedOptionIds":["dependency-overwrite"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Compression changes storage aliasing and can destroy a dependency before it is consumed.","details":{"blocks":[{"type":"paragraph","text":"Choose forward or reverse iteration from the transition direction, or retain two rows when one row cannot safely represent both old and new states."}]},"wrongOptionExplanationsByOptionId":{"table-name":"Names do not affect state dependencies.","sort-values":"Compression does not sort input.","base-count":"A universal one base is not correct for every DP."}},"taxonomy":{"primarySkillAtomId":"diagnose_incomplete_dp_state_or_transition","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"state_compression","problemArchetypeId":"choose_or_skip"}},
+    {"id":"alg-dpintro-diagnose-14-boundary-sentinel","prompt":"A DP fails only on impossible states because infinity plus a transition cost becomes a finite wrapped value. What is wrong?","difficulty":"advanced","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"sentinel-arithmetic","text":"The unreachable sentinel is being used in arithmetic without guarding it or choosing a safe representation."},{"id":"overlap-proof","text":"The recurrence has too many overlapping subproblems."},{"id":"sort-order","text":"The input must be sorted before adding costs."},{"id":"count-zero","text":"The issue is that count DP should start at zero."}],"acceptedOptionIds":["sentinel-arithmetic"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"An unreachable marker must remain distinguishable from every legal finite result through transitions.","details":{"blocks":[{"type":"paragraph","text":"Guard transitions from unreachable predecessors or use a wide sentinel with overflow-safe checks. Base values and arithmetic domain belong to the same correctness contract."}]},"wrongOptionExplanationsByOptionId":{"overlap-proof":"Overlap affects work, not sentinel arithmetic.","sort-order":"Cost transitions do not require sorted input.","count-zero":"This is an optimization-state sentinel defect, not a count identity choice."}},"taxonomy":{"primarySkillAtomId":"diagnose_incomplete_dp_state_or_transition","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"tabulation","problemArchetypeId":"optimize_prefix_or_suffix"}}
   ],
   "modeStructures": {
     "recognitionSets": [
@@ -502,7 +548,11 @@
           "alg-dpintro-reconstruct-01-value-versus-witness",
           "alg-dpintro-reconstruct-07-grid-parent-transfer",
           "alg-dpintro-diagnose-01-overlap-not-complete-proof",
-          "alg-dpintro-diagnose-07-diagnostic-ownership-transfer"
+          "alg-dpintro-diagnose-07-diagnostic-ownership-transfer",
+          "alg-dpintro-diagnose-11-missing-dimension",
+          "alg-dpintro-diagnose-12-wrong-combine",
+          "alg-dpintro-diagnose-13-compression-overwrite",
+          "alg-dpintro-diagnose-14-boundary-sentinel"
         ],
         "falseHeuristicIds": [
           "dp_state_is_always_only_the_index",
@@ -707,7 +757,10 @@
           "alg-dpintro-diagnose-04-direction-defect",
           "alg-dpintro-diagnose-05-compression-output-defect",
           "alg-dpintro-diagnose-06-smallest-failing-state",
-          "alg-dpintro-diagnose-07-diagnostic-ownership-transfer"
+          "alg-dpintro-diagnose-07-diagnostic-ownership-transfer",
+          "alg-dpintro-diagnose-08-sentinel-operator-defect",
+          "alg-dpintro-diagnose-09-reconstruction-owner",
+          "alg-dpintro-diagnose-10-transition-vs-state-owner"
         ],
         "legalLearningStages": [
           "pattern_mechanics"

@@ -442,7 +442,55 @@
         "patternVariantId": "two_dimensional_dp",
         "problemArchetypeId": "sequence_alignment_intro"
       }
-    }
+    },
+    {
+      "id": "alg-dpintro-state-08-future-relevant-constraint",
+      "prompt": "A recurrence chooses or skips items, and the legality of choosing the next item depends on how much capacity remains. Which state information must be retained?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "index_capacity", "text": "The current item position and remaining capacity, because both affect future legal choices."},
+        {"id": "index_only", "text": "Only the item position; capacity can be reconstructed from the final answer."},
+        {"id": "total_history", "text": "The entire list of previously chosen items, even when only their total capacity matters."},
+        {"id": "capacity_only", "text": "Only remaining capacity; item position is irrelevant to which choices remain."}
+      ], "acceptedOptionIds": ["index_capacity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A sufficient DP state preserves exactly the dimensions that can change future transitions: progress through items and remaining capacity.", "details": {"blocks": [{"type": "paragraph", "text": "Two calls with the same index but different capacities can admit different future selections, so they cannot share one answer. Storing the entire history is unnecessary when the recurrence depends only on the aggregate capacity, while capacity alone loses which items remain to process."}]}, "wrongOptionExplanationsByOptionId": {"index_only": "Different remaining capacities at one index produce different feasible suffix choices.", "total_history": "The full history is more detail than the future needs if capacity is the only carried constraint.", "capacity_only": "The available item suffix also changes with the current index."}},
+      "taxonomy": {"primarySkillAtomId": "define_sufficient_dp_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_dp", "problemArchetypeId": "choose_or_skip"}
+    },
+    {
+      "id": "alg-dpintro-state-09-merge-equivalent-futures",
+      "prompt": "Two recursive histories reach the same DP state, meaning they expose the same remaining suffix and future constraints. What does state sufficiency permit?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "reuse_one_answer", "text": "Reuse one computed answer for both histories because their future subproblem is identical."},
+        {"id": "keep_history_separate", "text": "Compute them separately because every path must have a distinct memo entry."},
+        {"id": "choose_first_path", "text": "Return the value from whichever history reached the state first without evaluating the recurrence."},
+        {"id": "drop_constraints", "text": "Discard the future constraints because memoization makes them redundant."}
+      ], "acceptedOptionIds": ["reuse_one_answer"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "State equivalence is precisely the condition that lets dynamic programming share a subproblem answer across histories.", "details": {"blocks": [{"type": "paragraph", "text": "Memoization is sound when the state definition captures every future-relevant fact. Histories that differ only in irrelevant past detail can merge; histories with different remaining inputs or constraints must remain distinct. Reuse means compute the recurrence once, not skip the recurrence or erase its constraints."}]}, "wrongOptionExplanationsByOptionId": {"keep_history_separate": "Separating equivalent states forfeits the repeated-subproblem benefit without improving correctness.", "choose_first_path": "The first arrival does not determine the optimal subproblem value; the recurrence still must be evaluated.", "drop_constraints": "Constraints are part of the state precisely because they affect future transitions."
+      }},
+      "taxonomy": {"primarySkillAtomId": "define_sufficient_dp_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "memoization", "problemArchetypeId": "choose_or_skip"}
+    },
+    {
+      "id": "alg-dpintro-state-10-compression-is-representation",
+      "prompt": "A two-dimensional recurrence is later implemented with two rolling rows. What must remain true for the compression to preserve the original DP meaning?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "dependency_window", "text": "The compressed storage retains every predecessor value the transition reads and updates rows in an order that does not overwrite a needed value."},
+        {"id": "same_big_o_only", "text": "Any O(n) memory representation is valid because the recurrence's time complexity is unchanged."},
+        {"id": "forget_previous_row", "text": "Discard the previous row before computing the current row to minimize memory."},
+        {"id": "change_state_definition", "text": "Change the recurrence's state meaning after coding because compression defines a new problem."}
+      ], "acceptedOptionIds": ["dependency_window"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Space compression is a representation optimization whose legality follows the recurrence's dependency graph and update order.", "details": {"blocks": [{"type": "paragraph", "text": "If every cell reads only the previous row and current-row left value, two rows can preserve those dependencies. Overwriting a value before its last read changes the recurrence, even when the asymptotic space looks attractive. Compression must implement the same state semantics, not redefine the answer."}]}, "wrongOptionExplanationsByOptionId": {"same_big_o_only": "Memory size alone does not show that required predecessor values remain available.", "forget_previous_row": "The current transition may still need values from that row.", "change_state_definition": "An optimization must preserve the original recurrence and output contract."
+      }},
+      "taxonomy": {"primarySkillAtomId": "define_sufficient_dp_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "grid_path_dp"}
+    },
+    {"id":"alg-dpintro-state-11-future-determines-sufficiency","prompt":"When is a DP state sufficient for a recursive subproblem?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"same-future-same-result","text":"Any two histories with the same state have the same legal future choices and result."},{"id":"same-depth","text":"States are equivalent whenever they occur at the same recursion depth."},{"id":"same-value","text":"Only the current value matters even if remaining capacity differs."},{"id":"store-history","text":"The state must include the entire history regardless of future relevance."}],"acceptedOptionIds":["same-future-same-result"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"State compression is valid when the omitted history cannot change the remaining problem.","details":{"blocks":[{"type":"paragraph","text":"This is the optimal-substructure boundary: equivalent future decisions share one DP result. Missing a future-relevant constraint creates incorrect memo reuse."}]},"wrongOptionExplanationsByOptionId":{"same-depth":"Different states at one depth can expose different futures.","same-value":"Capacity, index, or alignment context can still differ.","store-history":"Including irrelevant history prevents sharing without adding correctness."}},"taxonomy":{"primarySkillAtomId":"define_sufficient_dp_state","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"memoization","problemArchetypeId":"choose_or_skip"}},
+    {"id":"alg-dpintro-state-12-state-vs-answer","prompt":"What is the distinction between a DP state definition and the final answer?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"subproblem-meaning","text":"A state defines the answer to one precise subproblem; the final answer reads the state representing the original problem."},{"id":"same-always","text":"Every state must equal the final answer before transitions run."},{"id":"state-is-input","text":"A state is only the raw input value, never a derived subproblem result."},{"id":"answer-irrelevant","text":"The final answer need not correspond to any state."}],"acceptedOptionIds":["subproblem-meaning"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"A DP table stores many subproblem answers under one uniform semantic definition.","details":{"blocks":[{"type":"paragraph","text":"For example, dp[i] may mean the best result on a prefix ending at i, while the global answer may be max over all dp[i]. Do not conflate local and global semantics."}]},"wrongOptionExplanationsByOptionId":{"same-always":"Intermediate states differ by subproblem boundaries.","state-is-input":"A state is often an index, capacity, mask, or tuple that identifies a derived problem.","answer-irrelevant":"The root or selected aggregate state must map to the requested output."}},"taxonomy":{"primarySkillAtomId":"define_sufficient_dp_state","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"tabulation","problemArchetypeId":"optimize_prefix_or_suffix"}},
+    {"id":"alg-dpintro-state-13-constraint-dimension","prompt":"When a choice DP has an index and remaining capacity, why must capacity be part of the state?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"future-options-differ","text":"The same index with different remaining capacities allows different future choices and can have different optimal results."},{"id":"capacity-static","text":"Capacity never affects a future choice after the index is known."},{"id":"index-enough","text":"The item index automatically encodes all remaining capacity."},{"id":"avoid-table","text":"Adding capacity would prevent any DP table from being built."}],"acceptedOptionIds":["future-options-differ"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"A future-relevant constraint must be represented in the state key.","details":{"blocks":[{"type":"paragraph","text":"Omitting capacity merges subproblems that share an index but differ in legal choices. The resulting recurrence may be fast and consistently wrong."}]},"wrongOptionExplanationsByOptionId":{"capacity-static":"Remaining capacity changes which items can be chosen.","index-enough":"Index identifies position, not resource budget.","avoid-table":"Adding a dimension can increase space but is often necessary for correctness."}},"taxonomy":{"primarySkillAtomId":"define_sufficient_dp_state","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"two_dimensional_dp","problemArchetypeId":"choose_or_skip"}},
+    {"id":"alg-dpintro-state-14-compress-after-proof","prompt":"When is it safe to reduce a DP table to rolling rows or a few variables?","difficulty":"advanced","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"only-needed-dependencies","text":"When the transition needs only retained prior states and the compressed representation preserves their semantics and output data."},{"id":"always","text":"Whenever the full table uses more than constant memory."},{"id":"discard-first","text":"Discard old rows before proving no future transition reads them."},{"id":"output-ignored","text":"Compression is safe because reconstruction never matters."}],"acceptedOptionIds":["only-needed-dependencies"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Space compression is a representation change justified by the dependency graph, not by memory pressure alone.","details":{"blocks":[{"type":"paragraph","text":"Check dependency direction, overwrite order, and whether the output needs reconstruction or later states. Preserve any information required by the answer contract before discarding it."}]},"wrongOptionExplanationsByOptionId":{"always":"Some transitions or reconstruction paths need older rows.","discard-first":"Deleting before proving dependency safety loses required state.","output-ignored":"The output contract may still require witnesses or paths."}},"taxonomy":{"primarySkillAtomId":"define_sufficient_dp_state","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"state_compression","problemArchetypeId":"grid_path_dp"}}
   ],
   "modeStructures": {
     "recognitionSets": [],
@@ -463,7 +511,14 @@
           "alg-dpintro-state-04-state-before-loop-order",
           "alg-dpintro-state-05-compression-after-sufficiency",
           "alg-dpintro-state-06-drop-irrelevant-history",
-          "alg-dpintro-state-07-alignment-two-coordinates"
+          "alg-dpintro-state-07-alignment-two-coordinates",
+          "alg-dpintro-state-08-future-relevant-constraint",
+          "alg-dpintro-state-09-merge-equivalent-futures",
+          "alg-dpintro-state-10-compression-is-representation",
+          "alg-dpintro-state-11-future-determines-sufficiency",
+          "alg-dpintro-state-12-state-vs-answer",
+          "alg-dpintro-state-13-constraint-dimension",
+          "alg-dpintro-state-14-compress-after-proof"
         ],
         "relationMetadata": {
           "mechanismBoundary": "define_dp_state"

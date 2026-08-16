@@ -317,6 +317,292 @@
         "The revised input may contain equal values at nonadjacent positions.",
         "The revised answer must be a contiguous segment in original order."
       ]
+    },
+    {
+      "id": "alg-ctpsw-fsvws-06",
+      "prompt": "A task asks for the sum of every contiguous block of exactly m elements. Which state model is the direct fit?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "fixed_window_aggregate", "text": "A fixed-size window with one aggregate updated when the next element enters and the oldest leaves."}, {"id": "endpoint_pair", "text": "Endpoint-only pair state, because only left and right indices are visible."}, {"id": "variable_shrink", "text": "A variable window that shrinks whenever the sum exceeds a threshold, even though length must equal m."}, {"id": "sort_values", "text": "Sort values before each block so endpoints summarize the block sum."}], "acceptedOptionIds": ["fixed_window_aggregate"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The candidate is a contiguous range with invariant length, and every interior value contributes to its sum.", "details": {"blocks": [{"type": "paragraph", "text": "A fixed-size window advances one position at a time: add the entering value and subtract the leaving value. No validity-driven shrink is needed because the size contract is exact. Endpoint-only state would lose interior contributions, and sorting would change which original positions form each requested block. The two indices are boundaries of a range-owned aggregate."}]}, "wrongOptionExplanationsByOptionId": {"endpoint_pair": "The sum depends on all m values, not only on the two endpoint values.", "variable_shrink": "The contract fixes length exactly; shrinking on a sum predicate would produce the wrong candidate sizes.", "sort_values": "Blocks are defined by original contiguity, so reordering values changes the problem."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "foundational",
+      "constraints": ["m is fixed and every value in the original-order block contributes."]
+    },
+    {
+      "id": "alg-ctpsw-fsvws-07",
+      "prompt": "A variable-length window tracks the longest nonnegative-sum segment whose total is at most B. Which state change distinguishes it from a fixed-size scan?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "validity_driven_shrink", "text": "The left boundary moves by a predicate on the aggregate, so window length changes to restore validity after right expands."}, {"id": "fixed_length_only", "text": "The length is always m, so left moves exactly once per right step."}, {"id": "endpoint_compare", "text": "Only the values at left and right are compared; interior sum is not part of state."}, {"id": "sort_before_shrink", "text": "Sorting is required before any left-boundary movement."}], "acceptedOptionIds": ["validity_driven_shrink"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Variable windows are governed by validity and can shrink multiple positions, whereas fixed windows are governed by a prescribed size.", "details": {"blocks": [{"type": "paragraph", "text": "After adding a nonnegative value on the right, the total can exceed B. Removing values from the left cannot increase the sum, so repeated eviction restores the predicate and leaves the longest valid suffix for that right endpoint. The size is an output of the validity process rather than a constant. Endpoint comparison or sorting would omit the range-owned sum invariant."}]}, "wrongOptionExplanationsByOptionId": {"fixed_length_only": "The length changes with the budget predicate and may shrink by more than one position.", "endpoint_compare": "The full range sum determines validity, so interior values are material.", "sort_before_shrink": "Original-order contiguity and nonnegative monotonicity, not value sorting, justify the shrink rule."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "intermediate",
+      "constraints": ["All values are nonnegative and the result preserves original order."]
+    },
+    {
+      "id": "alg-ctpsw-fsvws-08",
+      "prompt": "Two algorithms use left and right indices. Algorithm A compares only a[left] and a[right] in a sorted array. Algorithm B maintains counts for every value from left through right. What does the state difference imply?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "different_families", "text": "A has endpoint-only two-pointer state; B has range-owned sliding-window state, even though the loop variables look identical."}, {"id": "same_by_names", "text": "They are the same pattern because both increment left or right."}, {"id": "both_windows", "text": "Both are windows because both intervals have two boundaries."}, {"id": "both_pairs", "text": "Both are pairs because a window's endpoints are the only selected positions."}], "acceptedOptionIds": ["different_families"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The maintained state reveals whether interior elements are semantically part of the candidate.", "details": {"blocks": [{"type": "paragraph", "text": "Algorithm A can justify movement from sorted endpoint relations and does not need to update state for the interior. Algorithm B must increment and decrement counts as boundaries move, because every range member affects validity. Identical variable names and movement syntax do not erase that proof distinction; state ownership is the stronger signal."}]}, "wrongOptionExplanationsByOptionId": {"same_by_names": "Names and pointer operations are shared representations, not a shared invariant.", "both_windows": "A's interior is not a maintained candidate, so it lacks window semantics.", "both_pairs": "B's frequency state proves that interior values affect its answer."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "foundational",
+      "constraints": ["Algorithm B's count map exactly matches the current interval."]
+    },
+    {
+      "id": "alg-ctpsw-fsvws-09",
+      "prompt": "Select all conditions that justify treating [left, right] as a sliding-window state rather than endpoint-only state.",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [{"id": "full_range_sum", "text": "The sum of every element in the interval affects validity or score."}, {"id": "frequency_map", "text": "A frequency map is updated when elements enter and leave the interval."}, {"id": "endpoint_relation", "text": "Only the two endpoint values are compared in a sorted array."}, {"id": "read_write_roles", "text": "One index marks the next output position while another scans input."}], "acceptedOptionIds": ["full_range_sum", "frequency_map"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Range-owned aggregate or membership state makes interior elements part of the candidate and requires boundary updates.", "details": {"blocks": [{"type": "paragraph", "text": "A full-range sum or frequency map must be updated when right expands and left evicts, which is the operational signature of a window. Endpoint relations and read/write compaction use different state: one compares selected positions, the other builds a retained prefix. Two indices alone cannot distinguish these cases."}]}, "wrongOptionExplanationsByOptionId": {"endpoint_relation": "Endpoint-only state is evidence for a pair relation, not a range-owned window.", "read_write_roles": "Read/write indices have distinct compaction roles and do not describe a live aggregate over the interval."}, "omittedCorrectExplanationsByOptionId": {"full_range_sum": "Interior contributions make the interval the complete candidate.", "frequency_map": "Boundary updates maintain state for every current range member."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "advanced",
+      "constraints": ["More than one condition is correct."]
+    },
+    {
+      "id": "alg-ctpsw-fsvws-10",
+      "prompt": "A fixed-size window and a variable-size window can use the same left/right variables. What should a reviewer compare first?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "boundary_update_contract", "text": "Whether left moves on a fixed schedule to preserve size or moves in response to a validity predicate and its state repair."}, {"id": "variable_names", "text": "Whether the variables are named left and right in both implementations."}, {"id": "sort_order", "text": "Whether the values are sorted, because every window requires sorted input."}, {"id": "loop_count", "text": "Whether both loops run in O(n), because equal complexity makes them identical."}], "acceptedOptionIds": ["boundary_update_contract"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The window subtype is defined by how the boundaries are constrained and repaired, not by names or asymptotic complexity.", "details": {"blocks": [{"type": "paragraph", "text": "In a fixed window, right advances and left follows to preserve a declared length. In a variable window, right may create an invalid state and left advances zero or more times until the predicate holds. Both can be O(n) and both can run on unsorted input. The boundary-update contract tells the reviewer which state invariant the code must preserve."}]}, "wrongOptionExplanationsByOptionId": {"variable_names": "Names do not show whether the range length or validity predicate controls movement.", "sort_order": "Window state is usually defined over original order and does not require sorted values.", "loop_count": "Equal O(n) bounds do not make fixed-size and validity-driven updates the same algorithm."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "intermediate",
+      "constraints": ["The reviewer is given only loop structure and must recover the update contract."]
+    },
+    {
+      "id": "alg-ctpsw-fsvws-11",
+      "prompt": "What does a fixed-size window's left pointer usually do after the first k elements are loaded?",
+      "constraints": [
+        "The contrast boundary must be identified from state semantics.",
+        "The output contract is fixed for this item."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scheduled_left",
+            "text": "Advance one position for each right shift so the range always contains exactly k elements."
+          },
+          {
+            "id": "repair",
+            "text": "Move only when a predicate fails."
+          },
+          {
+            "id": "pair_eliminate",
+            "text": "Move based on comparing the two endpoint values."
+          },
+          {
+            "id": "reset",
+            "text": "Return to zero after each output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scheduled_left"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted state invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, a loop, or linear complexity can appear in both patterns. The decisive evidence is what the retained state represents and which pointer movement the proof permits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "repair": "That describes variable validity repair.",
+          "pair_eliminate": "That is pair-search reasoning.",
+          "reset": "That repeats windows."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-fsvws-12",
+      "prompt": "What state distinguishes a variable window from a pair of endpoints?",
+      "constraints": [
+        "The contrast boundary must be identified from state semantics.",
+        "The output contract is fixed for this item."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "interior_state",
+            "text": "An aggregate, frequency map, or membership state representing all elements currently inside the contiguous range."
+          },
+          {
+            "id": "two_names",
+            "text": "The variables are called left and right."
+          },
+          {
+            "id": "sorted",
+            "text": "The input is sorted."
+          },
+          {
+            "id": "linear",
+            "text": "The loop is O(n)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "interior_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted state invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, a loop, or linear complexity can appear in both patterns. The decisive evidence is what the retained state represents and which pointer movement the proof permits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "two_names": "Names do not identify semantics.",
+          "sorted": "Windows can operate on original unsorted order.",
+          "linear": "Both fixed and variable windows can be linear."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-fsvws-13",
+      "prompt": "A window grows until a constraint fails, then shrinks zero or more times. Which classification fits?",
+      "constraints": [
+        "The contrast boundary must be identified from state semantics.",
+        "The output contract is fixed for this item."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "variable",
+            "text": "Variable-size window: validity controls how far left moves after expansion."
+          },
+          {
+            "id": "fixed",
+            "text": "Fixed-size window because both endpoints exist."
+          },
+          {
+            "id": "pair",
+            "text": "Two-pointer pair search because only two indices are named."
+          },
+          {
+            "id": "binary",
+            "text": "Binary search because a condition changes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "variable"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted state invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, a loop, or linear complexity can appear in both patterns. The decisive evidence is what the retained state represents and which pointer movement the proof permits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "fixed": "All intervals have endpoints.",
+          "pair": "Interior state and repair define a window.",
+          "binary": "No midpoint elimination is implied."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-fsvws-14",
+      "prompt": "What should happen when a fixed-size request k exceeds input length?",
+      "constraints": [
+        "The contrast boundary must be identified from state semantics.",
+        "The output contract is fixed for this item."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "unavailable",
+            "text": "Return the explicit empty/unavailable result; do not silently treat the whole shorter input as a valid k-window."
+          },
+          {
+            "id": "whole",
+            "text": "Use the whole input as a substitute."
+          },
+          {
+            "id": "pad",
+            "text": "Pad with zeros."
+          },
+          {
+            "id": "shrink",
+            "text": "Shrink k until a window exists."
+          }
+        ],
+        "acceptedOptionIds": [
+          "unavailable"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted state invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, a loop, or linear complexity can appear in both patterns. The decisive evidence is what the retained state represents and which pointer movement the proof permits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "whole": "That changes the contract.",
+          "pad": "Padding invents input.",
+          "shrink": "The requested size is part of the output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_fixed_pointer_state_from_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
     }
   ],
   "modeStructures": {
@@ -337,7 +623,16 @@
           "alg-ctpsw-fsvws-02",
           "alg-ctpsw-fsvws-03",
           "alg-ctpsw-fsvws-04",
-          "alg-ctpsw-fsvws-05"
+          "alg-ctpsw-fsvws-05",
+          "alg-ctpsw-fsvws-06",
+          "alg-ctpsw-fsvws-07",
+          "alg-ctpsw-fsvws-08",
+          "alg-ctpsw-fsvws-09",
+          "alg-ctpsw-fsvws-10",
+        "alg-ctpsw-fsvws-11",
+        "alg-ctpsw-fsvws-12",
+        "alg-ctpsw-fsvws-13",
+        "alg-ctpsw-fsvws-14"
         ]
       }
     ],

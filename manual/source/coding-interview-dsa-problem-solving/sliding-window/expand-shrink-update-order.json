@@ -386,6 +386,549 @@
         "patternVariantId": "frequency_constraint",
         "problemArchetypeId": "longest_valid_window"
       }
+    },
+    {
+      "id": "alg-sw-order-count-valid-endings",
+      "prompt": "A repaired at-most-K window must count every valid contiguous range ending at the current right boundary. Order the phases for one right-boundary step.",
+      "constraints": [
+        "After repair, every start from left through right forms a valid suffix.",
+        "The answer counts ranges rather than finding their maximum length.",
+        "The incoming value may make the pre-repair window invalid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "add_right_to_state",
+            "text": "Add the incoming value to the maintained state."
+          },
+          {
+            "id": "repair_until_valid",
+            "text": "Remove from the left while the constraint is violated."
+          },
+          {
+            "id": "add_valid_suffix_count",
+            "text": "Add right − left + 1 to the total count."
+          }
+        ],
+        "canonicalOrder": [
+          "add_right_to_state",
+          "repair_until_valid",
+          "add_valid_suffix_count"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "The suffix count is valid only after the current right boundary has been added and the left boundary has restored the constraint.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Before expansion, the state describes the previous endpoint. After expansion it may contain too many distinct values or another violation. Once repair finishes, each start in [left, right] produces a valid suffix ending at right, so the contribution is right−left+1. Counting before repair includes invalid starts; counting only one range loses the other valid suffixes."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-order-monotonic-deque-update",
+      "prompt": "A fixed-size window reports its maximum with a decreasing deque of indices. Order the update steps after a new value arrives at index right.",
+      "constraints": [
+        "Deque indices increase from front to back.",
+        "Deque values decrease from front to back.",
+        "Only indices inside the current length-k window may remain."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "expire_old_indices",
+            "text": "Remove deque-front indices that are left of the new window."
+          },
+          {
+            "id": "remove_dominated_back",
+            "text": "Remove back indices whose values are no greater than the incoming value."
+          },
+          {
+            "id": "append_incoming_index",
+            "text": "Append right to the deque."
+          },
+          {
+            "id": "read_front_max",
+            "text": "Use the deque front as the maximum for the complete window."
+          }
+        ],
+        "canonicalOrder": [
+          "expire_old_indices",
+          "remove_dominated_back",
+          "append_incoming_index",
+          "read_front_max"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "Expiration enforces window membership, dominance enforces value order, append adds the new candidate, and only then can the front represent the current maximum.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The deque stores indices rather than only values so expiration can be checked against the left boundary. An expired front cannot contribute. A smaller value behind the incoming value can never become the maximum before the incoming value leaves, so it is removed from the back. The incoming index is then appended, and the front is the maximum once the current window has reached length k."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-order-zero-shrink-answer",
+      "prompt": "A longest-valid window receives a new value and remains valid, so the repair loop removes nothing. What is the correct next action?",
+      "constraints": [
+        "The answer is maximum valid length.",
+        "The maintained state already includes the incoming value.",
+        "The validity loop has been checked and performs zero iterations."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "update_after_zero_repair",
+            "text": "Update the longest answer from right − left + 1; a zero-iteration repair still leaves a legal window."
+          },
+          {
+            "id": "skip_until_shrink",
+            "text": "Skip answer evaluation because a window is useful only after at least one left-boundary removal."
+          },
+          {
+            "id": "shrink_one_anyway",
+            "text": "Remove one leftmost value to force progress before evaluating."
+          },
+          {
+            "id": "evaluate_before_add",
+            "text": "Evaluate the old answer before the incoming value is included in state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "update_after_zero_repair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The repair phase is conditional; its purpose is to restore legality, not to force a boundary movement on every iteration.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "After the incoming value is added, the current range may already satisfy the constraint. In that case left remains the correct earliest start, and the full range ending at right is a legal candidate. Updating after a zero-iteration while loop is essential for monotone longest-window scans. Removing an arbitrary value would discard a valid prefix and could shorten the answer."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "skip_until_shrink": "A valid window does not need a repair event before it can improve the maximum.",
+          "shrink_one_anyway": "Forced removal discards a legal start without a violation-based reason.",
+          "evaluate_before_add": "The answer must include the new right-boundary value and use post-expansion state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-order-fixed-predicate-window",
+      "prompt": "A fixed-size window counts records satisfying predicate P. After the first complete window, order the state operations for each new incoming record.",
+      "constraints": [
+        "The count must describe exactly k records.",
+        "The maintained count stores the number of records satisfying P.",
+        "The outgoing record is still addressed by left at the start."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "add_incoming_predicate",
+            "text": "Add the incoming record's contribution to the count."
+          },
+          {
+            "id": "remove_outgoing_predicate",
+            "text": "Subtract the outgoing record's contribution."
+          },
+          {
+            "id": "advance_left_predicate",
+            "text": "Advance left beyond the removed record."
+          },
+          {
+            "id": "emit_complete_count",
+            "text": "Emit or evaluate the count for the restored length-k window."
+          }
+        ],
+        "canonicalOrder": [
+          "add_incoming_predicate",
+          "remove_outgoing_predicate",
+          "advance_left_predicate",
+          "emit_complete_count"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The count is a one-in/one-out aggregate, and the answer is evaluated only after state and boundaries again describe k records.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The incoming record contributes before the outgoing record is removed, creating a temporary k+1 state. Subtracting the outgoing predicate result while left still names it keeps the count addressable. Advancing left then restores the exact-length window, which is the first state eligible for output."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-order-shortest-after-invalid",
+      "prompt": "A positive-value shortest-threshold window is valid before removing its leftmost value, but becomes invalid immediately after that removal. When is the last candidate recorded?",
+      "constraints": [
+        "The objective is minimum nonempty length with sum at least T.",
+        "The window is valid before the removal.",
+        "The outgoing removal makes the sum fall below T."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "record_before_remove",
+            "text": "Record the current valid length before subtracting the outgoing value; the post-removal window is not a candidate."
+          },
+          {
+            "id": "record_after_invalid",
+            "text": "Record the shorter post-removal length because it is closer to the optimum even though its sum is below T."
+          },
+          {
+            "id": "record_before_expand_only",
+            "text": "Record only the window that existed before the current right value was added."
+          },
+          {
+            "id": "discard_last_candidate",
+            "text": "Discard the current candidate because the shrink loop ended without another valid window."
+          }
+        ],
+        "acceptedOptionIds": [
+          "record_before_remove"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The shortest valid candidate is witnessed immediately before the removal that breaks the threshold.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The shrinking loop records each valid window before it mutates the left boundary. The final valid state may be followed by an invalid state, but that does not erase the candidate already recorded. The post-removal range violates sum >= T and cannot enter the answer merely because it is shorter. This is why shortest-window answer updates occur before outgoing-state mutation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "record_after_invalid": "Length alone is insufficient; the candidate must still satisfy the threshold.",
+          "record_before_expand_only": "The current right-boundary value may create the shortest valid candidate and must be included.",
+          "discard_last_candidate": "The last valid state remains a legal answer even when the next shrink makes the state invalid."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-order-11-add-before-check",
+      "prompt": "In a positive-sum threshold window, when should the newly expanded right value enter the running sum?",
+      "constraints": [
+        "The stated window contract applies.",
+        "The input boundary cases remain legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "add_before_check",
+            "text": "Add it before checking whether the window reaches the threshold."
+          },
+          {
+            "id": "check_before_add",
+            "text": "Check the old sum first."
+          },
+          {
+            "id": "add_after_shrink",
+            "text": "Shrink before adding the new value."
+          },
+          {
+            "id": "reset",
+            "text": "Reset the sum whenever right advances."
+          }
+        ],
+        "acceptedOptionIds": [
+          "add_before_check"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the window invariant and output semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The boundary update order and stored aggregate must represent exactly the current contiguous window. Pointer movement is correct only when this invariant remains true."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "check_before_add": "That misses a window ending at right.",
+          "add_after_shrink": "The new value is part of the candidate.",
+          "reset": "That loses the current window."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-order-12-shrink-record",
+      "prompt": "For a shortest-valid-window objective, what order is correct after the sum becomes valid?",
+      "constraints": [
+        "The stated window contract applies.",
+        "The input boundary cases remain legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "record_shrink",
+            "text": "Record the valid length, then remove left values while validity remains true and record each new valid length."
+          },
+          {
+            "id": "shrink_only",
+            "text": "Shrink without recording until invalid."
+          },
+          {
+            "id": "record_invalid",
+            "text": "Remove once and record even if invalid."
+          },
+          {
+            "id": "expand",
+            "text": "Expand before considering removal."
+          }
+        ],
+        "acceptedOptionIds": [
+          "record_shrink"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the window invariant and output semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The boundary update order and stored aggregate must represent exactly the current contiguous window. Pointer movement is correct only when this invariant remains true."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shrink_only": "The last valid state is missed.",
+          "record_invalid": "Invalid windows are not answers.",
+          "expand": "That moves away from a shortest candidate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-order-13-left-progress",
+      "prompt": "What should a variable-window repair loop guarantee?",
+      "constraints": [
+        "The stated window contract applies.",
+        "The input boundary cases remain legal."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "left_forward",
+            "text": "Every repair advances left and updates outgoing state, so left never moves backward."
+          },
+          {
+            "id": "reset_left",
+            "text": "Reset left to zero after every violation."
+          },
+          {
+            "id": "right_only",
+            "text": "Keep left fixed and move right until validity returns."
+          },
+          {
+            "id": "random",
+            "text": "Move either boundary arbitrarily."
+          }
+        ],
+        "acceptedOptionIds": [
+          "left_forward"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the window invariant and output semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The boundary update order and stored aggregate must represent exactly the current contiguous window. Pointer movement is correct only when this invariant remains true."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "reset_left": "Repeated rescans can be quadratic.",
+          "right_only": "For positive sums, expansion cannot repair an oversized window.",
+          "random": "No invariant proves safety."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
+    },
+    {
+      "id": "alg-sw-order-14-empty-after-shrink",
+      "prompt": "What should a shortest-threshold routine do if shrinking removes the entire window and the target is still not met?",
+      "constraints": [
+        "The stated window contract applies.",
+        "The input boundary cases remain legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "continue_expand",
+            "text": "Leave the window empty, keep its sum identity, and continue expanding right."
+          },
+          {
+            "id": "negative",
+            "text": "Record length -1 as the best window."
+          },
+          {
+            "id": "reset",
+            "text": "Reset right to zero and restart."
+          },
+          {
+            "id": "pad",
+            "text": "Add a zero value to restore the threshold."
+          }
+        ],
+        "acceptedOptionIds": [
+          "continue_expand"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the window invariant and output semantics.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The boundary update order and stored aggregate must represent exactly the current contiguous window. Pointer movement is correct only when this invariant remains true."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "negative": "Output length cannot be negative.",
+          "reset": "That repeats earlier work.",
+          "pad": "Padding invents input."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "order_window_state_updates",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "variable_size_positive_numbers",
+        "problemArchetypeId": "shortest_threshold_window"
+      }
     }
   ],
   "modeStructures": {

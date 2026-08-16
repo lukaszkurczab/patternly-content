@@ -394,6 +394,314 @@
         "patternVariantId": "fixed_size_window",
         "problemArchetypeId": "fixed_length_aggregate"
       }
+    },
+    {
+      "id": "alg-sw-invalid-window-state-mismatch",
+      "prompt": "A variable window increments left while shrinking but does not remove the outgoing value from its frequency map. What failure signal is present?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "stale_state", "text": "The maintained state no longer represents the current [left,right] range, so the validity test is about a different window."},
+        {"id": "negative_values_only", "text": "The method is unsafe only when input values can be negative."},
+        {"id": "fixed_window_safe", "text": "The bug is harmless because every window has two boundaries."},
+        {"id": "sort_needed", "text": "The frequency map should be replaced with sorting after every shrink."}
+      ], "acceptedOptionIds": ["stale_state"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A window invariant includes synchronized boundaries and state updates for entering and leaving values.", "details": {"blocks": [{"type": "paragraph", "text": "When left advances, the old left value exits and its count must decrease or be deleted. Otherwise the algorithm may believe the range is still invalid after the responsible value has left, or may report a constraint violation for a value no longer present. The issue applies regardless of sign."}]}, "wrongOptionExplanationsByOptionId": {"negative_values_only": "Frequency-state synchronization is a correctness requirement even for strings or nonnegative values.", "fixed_window_safe": "Two boundaries do not automatically keep aggregate state aligned.", "sort_needed": "Sorting is unrelated to removing an outgoing frequency contribution."}},
+      "taxonomy": {"primarySkillAtomId": "detect_simple_window_failure_signal", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "frequency_constraint", "problemArchetypeId": "longest_valid_window"}
+    },
+    {
+      "id": "alg-sw-invalid-answer-before-repair",
+      "prompt": "A shortest-valid-window implementation records the current length immediately after expanding right, before shrinking an invalid range. What answer defect can follow?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "invalid_candidate", "text": "It can record a range that violates the predicate, so the answer is not guaranteed to be valid."},
+        {"id": "miss_longest_only", "text": "It can affect only longest-window tasks, never shortest-window tasks."},
+        {"id": "duplicate_state", "text": "It merely records the same valid range twice without changing correctness."},
+        {"id": "negative_sum", "text": "It is wrong only when values are negative."}
+      ], "acceptedOptionIds": ["invalid_candidate"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An answer update must respect the problem's validity predicate and the objective's timing boundary.", "details": {"blocks": [{"type": "paragraph", "text": "For a shortest valid range, expand, repair until valid, then record the repaired candidate—often recording each valid shrink for the shortest objective. Scoring before repair can accept excess distinct values, an over-budget sum, or another invalid state. Sign assumptions do not excuse recording a violated predicate."}]}, "wrongOptionExplanationsByOptionId": {"miss_longest_only": "Shortest objectives are equally sensitive to recording invalid ranges.", "duplicate_state": "The recorded range may contain the violation, not merely duplicate a valid answer.", "negative_sum": "The order is wrong even when the validity predicate is monotone."}},
+      "taxonomy": {"primarySkillAtomId": "detect_simple_window_failure_signal", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "variable_size_positive_numbers", "problemArchetypeId": "shortest_threshold_window"}
+    },
+    {
+      "id": "alg-sw-invalid-noncontiguous-confusion",
+      "prompt": "The proposed solution removes arbitrary old elements from a collection until a constraint holds, but the output must be a contiguous subarray. What structural signal invalidates it?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "breaks_contiguity", "text": "Arbitrary removals no longer represent one [left,right] interval, so the maintained candidate can violate the output shape."},
+        {"id": "too_many_indices", "text": "The solution uses too many indices; a window may use only one pointer."},
+        {"id": "hash_forbidden", "text": "Any auxiliary collection is forbidden in a window."},
+        {"id": "fixed_size_required", "text": "Every contiguous problem must have a fixed window length."}
+      ], "acceptedOptionIds": ["breaks_contiguity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A sliding window represents a contiguous interval, so its outgoing elements must be exactly the prefix left of the current boundary.", "details": {"blocks": [{"type": "paragraph", "text": "Removing arbitrary members creates a subsequence or set rather than a contiguous range. A valid window may maintain maps, counters, deques, or other state, and it may be fixed or variable size; the invariant is interval membership, not the number of pointers."}]}, "wrongOptionExplanationsByOptionId": {"too_many_indices": "Two boundaries are normal for a window and are not the defect.", "hash_forbidden": "Auxiliary state is often essential to maintain validity incrementally.", "fixed_size_required": "Variable-size windows are valid when their shrink predicate is justified."}},
+      "taxonomy": {"primarySkillAtomId": "detect_simple_window_failure_signal", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics"}
+    },
+    {
+      "id": "alg-sw-invalid-monotonicity-review",
+      "prompt": "Select all review signals that should block blindly applying a positive-value shortest-threshold window rule.",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "negative_values", "text": "Values may be negative, so removing the left value can increase the sum or future additions can rescue an earlier start."},
+        {"id": "nonmonotone_predicate", "text": "The validity predicate can become true, false, and true again as left advances with no proven monotonic repair."},
+        {"id": "fixed_size", "text": "The task is fixed-size and only asks for an aggregate of each exact-length block."},
+        {"id": "same_direction_names", "text": "The code uses variables named left and right."}
+      ], "acceptedOptionIds": ["negative_values", "nonmonotone_predicate"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The variable positive-threshold rule needs a monotone sum and a proof that discarded starts cannot become useful again.", "details": {"blocks": [{"type": "paragraph", "text": "Negative contributions and nonmonotone predicates remove the directional guarantee behind shrinkage. Fixed-size windows use a different, exact-length invariant and are not automatically blocked by negative values. Variable names supply no proof."}]}, "wrongOptionExplanationsByOptionId": {"fixed_size": "Fixed-size maintenance can remain valid with negative values because it adds one value and removes the value k positions old.", "same_direction_names": "Names do not determine the effect of boundary movement."}, "omittedCorrectExplanationsByOptionId": {"negative_values": "Signed values can invalidate both monotone repair and discarded-start dominance.", "nonmonotone_predicate": "Without a restoration theorem, repeated shrinkage is only a loop shape, not a safe algorithm."}},
+      "taxonomy": {"primarySkillAtomId": "detect_simple_window_failure_signal", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics"}
+    },
+    {
+      "id": "alg-sw-invalid-11-signed-sum",
+      "prompt": "Why can a variable-size sum window fail on arrays containing negative values even when the code shrinks while sum exceeds a target?",
+      "constraints": [
+        "The array may contain positive and negative values.",
+        "The objective relies on monotonicity of the window sum."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "monotonicity_breaks",
+            "text": "Adding an item can decrease the sum and removing one can increase it, so the usual expand-then-shrink proof no longer holds.",
+            "explanation": "Positive-number monotonicity is the missing precondition."
+          },
+          {
+            "id": "shrink_too_slow",
+            "text": "The code is correct; it only needs a faster left pointer.",
+            "explanation": "Speed does not restore a false monotonicity premise."
+          },
+          {
+            "id": "fixed_size_needed",
+            "text": "Negative values always imply the window must have fixed length.",
+            "explanation": "Other methods such as prefix sums may solve variable ranges."
+          },
+          {
+            "id": "frequency_only",
+            "text": "The sum predicate is irrelevant because windows are defined only by frequencies.",
+            "explanation": "The stated predicate is numeric and depends on values."
+          }
+        ],
+        "acceptedOptionIds": [
+          "monotonicity_breaks"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The classic threshold shrink rule depends on positive contributions making sum monotone under expansion and shrink.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "With signed values, a currently oversized window may become valid after expansion, and removing the leftmost value may increase the sum. A different state method or stronger predicate is required."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shrink_too_slow": "Speed does not restore a false monotonicity premise.",
+          "fixed_size_needed": "Other methods such as prefix sums may solve variable ranges.",
+          "frequency_only": "The stated predicate is numeric and depends on values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      }
+    },
+    {
+      "id": "alg-sw-invalid-12-noncontiguous",
+      "prompt": "Which signal indicates that a two-pointer window is solving the wrong problem because the required elements need not be contiguous?",
+      "constraints": [
+        "The output may select arbitrary indices.",
+        "Contiguity is not part of the objective."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "global_selection",
+            "text": "The task is a subset or pair selection problem over the whole input, so a contiguous window cannot represent all legal solutions.",
+            "explanation": "A window encodes one interval of indices."
+          },
+          {
+            "id": "move_faster",
+            "text": "Keep the window model and move both pointers faster to reach noncontiguous combinations.",
+            "explanation": "Pointer speed cannot represent a set with gaps."
+          },
+          {
+            "id": "sort_input",
+            "text": "Sort the input first so every arbitrary subset becomes contiguous.",
+            "explanation": "Sorting changes index relationships and still does not encode arbitrary choices."
+          },
+          {
+            "id": "longer_window",
+            "text": "Use the full array as one window because it contains every legal subset.",
+            "explanation": "Containing items is not equivalent to selecting a subset under the output contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "global_selection"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A window is a contiguous index interval; it cannot express arbitrary selections with gaps.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The first diagnostic is to translate the output contract into index geometry. If legal answers are noncontiguous, use a method whose state can represent chosen positions rather than adding pointer heuristics."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "move_faster": "Pointer speed cannot represent a set with gaps.",
+          "sort_input": "Sorting changes index relationships and still does not encode arbitrary choices.",
+          "longer_window": "Containing items is not equivalent to selecting a subset under the output contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      }
+    },
+    {
+      "id": "alg-sw-invalid-13-order-dependent",
+      "prompt": "A window predicate depends on insertion order but the algorithm treats it as a set property and repairs only counts. What defect is likely?",
+      "constraints": [
+        "The predicate is sensitive to relative order or positions.",
+        "The state stores only aggregate frequencies."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "insufficient_state",
+            "text": "The window state omits an order-sensitive fact, so equal counts can represent different validity outcomes.",
+            "explanation": "The summary is not sufficient for the predicate."
+          },
+          {
+            "id": "count_exact",
+            "text": "Counts are always sufficient because every window predicate is permutation-invariant.",
+            "explanation": "Order-sensitive predicates are a counterexample."
+          },
+          {
+            "id": "left_boundary_only",
+            "text": "Move the left pointer without adding any order state; the missing information will emerge automatically.",
+            "explanation": "Pointer movement cannot recover discarded order information."
+          },
+          {
+            "id": "sort_window",
+            "text": "Sort each window to make the aggregate counts reliable.",
+            "explanation": "Sorting changes the original order that the predicate observes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "insufficient_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sliding-window invariant is valid only when its stored summary is sufficient for the actual predicate.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Frequency maps capture permutation-invariant constraints such as distinct-count limits. If validity depends on order, adjacency, or last occurrence, those facts must be represented explicitly."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "count_exact": "Order-sensitive predicates are a counterexample.",
+          "left_boundary_only": "Pointer movement cannot recover discarded order information.",
+          "sort_window": "Sorting changes the original order that the predicate observes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      }
+    },
+    {
+      "id": "alg-sw-invalid-14-resetting-left",
+      "prompt": "Why is resetting the left pointer to zero after every invalid expansion a warning sign in a linear sliding-window algorithm?",
+      "constraints": [
+        "The input is scanned left to right.",
+        "The intended complexity is amortized linear."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "repeated_rescan",
+            "text": "Resetting can revisit a long prefix many times, so the pointer no longer moves monotonically and total work can become quadratic.",
+            "explanation": "Linear amortization requires each boundary to advance only forward."
+          },
+          {
+            "id": "always_required",
+            "text": "Resetting is required because every window must begin at index zero.",
+            "explanation": "Valid windows can begin at later indices."
+          },
+          {
+            "id": "fixed_window",
+            "text": "Resetting converts any variable window into a correct fixed-size scan.",
+            "explanation": "It changes neither the predicate nor the output contract correctly."
+          },
+          {
+            "id": "memory_leak",
+            "text": "Resetting primarily increases memory rather than runtime.",
+            "explanation": "The main defect is repeated work, not stored state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "repeated_rescan"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The linear sliding-window proof charges each pointer movement once; resets invalidate that amortization.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A reset can reprocess the same elements after each violation. Unless the problem has a separate proven restart structure, the left boundary should advance monotonically and preserve the invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always_required": "Valid windows can begin at later indices.",
+          "fixed_window": "It changes neither the predicate nor the output contract correctly.",
+          "memory_leak": "The main defect is repeated work, not stored state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "detect_simple_window_failure_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics"
+      }
     }
   ],
   "modeStructures": {

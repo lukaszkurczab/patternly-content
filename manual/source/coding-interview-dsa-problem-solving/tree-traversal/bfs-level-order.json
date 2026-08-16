@@ -398,6 +398,309 @@
         "Do not count the returned level lists or the input tree.",
         "Each node is enqueued exactly once."
       ]
+    },
+    {
+      "id": "alg-tree-bfs-level-delimiter-contract",
+      "prompt": "A BFS must return values grouped by depth using one queue. Which technique preserves level boundaries without relying on node values?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "snapshot_queue_size", "text": "Capture the queue size at the start of each level and process exactly that many nodes before starting the next output group."}, {"id": "value_sentinel", "text": "Insert a special value between levels, even when that value may be a real node payload."}, {"id": "stack_depth", "text": "Use recursion depth as a delimiter while the queue processes nodes in arbitrary order."}, {"id": "sort_values", "text": "Sort each level's values; value order defines depth boundaries."}], "acceptedOptionIds": ["snapshot_queue_size"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Queue length counts the exact current frontier and is independent of payload values.", "details": {"blocks": [{"type": "paragraph", "text": "At the beginning of a level, the queue contains exactly that level's nodes. Processing the captured count, enqueuing children for later, closes the current output group without confusing equal or sentinel-valued payloads. A payload marker requires an out-of-band value contract, while sorting destroys traversal order and recursion depth is not the queue's level boundary."}]}, "wrongOptionExplanationsByOptionId": {"value_sentinel": "A real node may contain the sentinel value, so payload equality cannot safely identify a boundary without an explicit tagged marker.", "stack_depth": "BFS's queue order, not recursive depth, determines which nodes belong to the current frontier.", "sort_values": "Level-order output is structural; sorting values cannot reveal which nodes share a depth."}},
+      "taxonomy": {"primarySkillAtomId": "process_tree_by_levels", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bfs_level_order", "problemArchetypeId": "level_order_processing"},
+      "difficulty": "intermediate",
+      "constraints": ["Node values may duplicate any ordinary numeric payload."]
+    },
+    {
+      "id": "alg-tree-bfs-reverse-level-output",
+      "prompt": "A level-order routine must return levels from the deepest level up to the root while still processing children in ordinary BFS order. Which postprocessing is valid?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "reverse_level_list", "text": "Collect levels in root-to-leaf BFS order, then reverse the outer list of levels; preserve each level's left-to-right order unless the contract says otherwise."}, {"id": "reverse_every_level", "text": "Reverse every inner level only; outer order remains root first."}, {"id": "stack_children_only", "text": "Use a stack for children so BFS automatically becomes deepest-first without recording levels."}, {"id": "sort_by_value", "text": "Sort all values descending because deeper nodes are always larger."}], "acceptedOptionIds": ["reverse_level_list"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "BFS naturally discovers depth in increasing order; reversing the completed outer level sequence changes only depth direction.", "details": {"blocks": [{"type": "paragraph", "text": "The queue still provides the structural traversal and preserves sibling order. Once each level is captured, reversing the list of level groups produces deepest-to-root order without changing values within a level. Replacing the queue with a stack changes traversal semantics, and value sorting has no relation to tree depth."}]}, "wrongOptionExplanationsByOptionId": {"reverse_every_level": "It changes sibling order but leaves the depth groups in root-first order.", "stack_children_only": "A stack produces depth-first behavior and does not preserve BFS level grouping by itself.", "sort_by_value": "Node values do not encode depth in a general tree."}},
+      "taxonomy": {"primarySkillAtomId": "process_tree_by_levels", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bfs_level_order", "problemArchetypeId": "level_order_processing"},
+      "difficulty": "intermediate",
+      "constraints": ["Sibling order is significant and must remain left-to-right."]
+    },
+    {
+      "id": "alg-tree-bfs-empty-frontier",
+      "prompt": "A level-order traversal receives a null root and returns a list of level lists. What result satisfies the structural output contract?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "empty_levels", "text": "An empty outer list, because no level contains a node."}, {"id": "one_empty_level", "text": "A list containing one empty level, because the root level exists structurally."}, {"id": "null_level", "text": "A list containing null as a synthetic root value."}, {"id": "error_required", "text": "An error, because BFS requires a non-null queue seed under every API contract."}], "acceptedOptionIds": ["empty_levels"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The output contains groups of actual nodes, and a null root creates no level with members.", "details": {"blocks": [{"type": "paragraph", "text": "The queue is initialized empty when the root is null, so the loop emits no level group and the outer result is empty. Adding an empty group or synthetic payload invents structure not present in the tree. A different API may choose a nullable result, but the question's list-of-levels contract makes the empty outer list the compositional identity."}]}, "wrongOptionExplanationsByOptionId": {"one_empty_level": "A level group represents nodes at a depth; an empty root does not create a populated level.", "null_level": "Null is an absent root, not a node value to emit.", "error_required": "The stated collection contract can represent an empty tree without an error."}},
+      "taxonomy": {"primarySkillAtomId": "process_tree_by_levels", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bfs_level_order", "problemArchetypeId": "level_order_processing"},
+      "constraints": ["The public result is a list of nonempty level groups."]
+    },
+    {
+      "id": "alg-tree-bfs-graph-identity-boundary",
+      "prompt": "A BFS helper originally assumes a tree but is reused on a graph with cycles and duplicate vertex values. What state must be added?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "visited_identity", "text": "Track visited vertex identity and mark it when enqueued, so cycles terminate and equal-valued distinct vertices remain separate."}, {"id": "visited_value", "text": "Track only values, because equal values always identify the same vertex."}, {"id": "no_state_fifo", "text": "FIFO order alone prevents a cycle from re-enqueuing the same vertex."}, {"id": "sort_neighbors", "text": "Sort neighbors to remove cycles and deduplicate references."}], "acceptedOptionIds": ["visited_identity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Graph reachability needs identity-based visitation independent of payload values.", "details": {"blocks": [{"type": "paragraph", "text": "Marking a vertex on enqueue prevents multiple copies from entering the frontier and guarantees that a cycle does not generate an infinite queue. Value-based marking can skip distinct vertices that share a payload. Sorting adjacency changes visit order but does not prevent revisiting an identity or terminate cycles."}]}, "wrongOptionExplanationsByOptionId": {"visited_value": "Payload equality is not vertex identity; distinct graph vertices can carry the same value.", "no_state_fifo": "FIFO controls order but does not stop an edge from enqueueing an already seen vertex.", "sort_neighbors": "Ordering neighbors cannot remove a cycle or prove that an identity was previously visited."}},
+      "taxonomy": {"primarySkillAtomId": "process_tree_by_levels", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bfs_level_order", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "advanced",
+      "constraints": ["The graph may contain cycles, shared vertices, and duplicate payload values."]
+    },
+    {
+      "id": "alg-tree-bfs-11-level_snapshot",
+      "prompt": "How should a BFS tree traversal isolate one depth level while using a queue?",
+      "constraints": [
+        "The queue contains nodes from one or more depths.",
+        "Each node enqueues its children."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "snapshot_size",
+            "text": "Capture the queue size at the start of the level and process exactly that many nodes before starting the next level.",
+            "explanation": "The snapshot separates current-depth nodes from newly enqueued children."
+          },
+          {
+            "id": "dynamic_size",
+            "text": "Process until the queue is empty after every pop, regardless of newly enqueued children.",
+            "explanation": "That consumes all remaining depths as one level."
+          },
+          {
+            "id": "stack_children",
+            "text": "Push children onto a stack so the queue automatically groups depths.",
+            "explanation": "A stack changes breadth-first order."
+          },
+          {
+            "id": "value_marker",
+            "text": "Use a payload sentinel and assume no data node can share that value.",
+            "explanation": "Payload values are not reliable depth markers."
+          }
+        ],
+        "acceptedOptionIds": [
+          "snapshot_size"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The level boundary is a queue-state fact captured before children are added.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "During one level, newly enqueued children belong to the next depth. A fixed iteration count preserves that separation without relying on payload sentinels or dynamic queue length."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "dynamic_size": "That consumes all remaining depths as one level.",
+          "stack_children": "A stack changes breadth-first order.",
+          "value_marker": "Payload values are not reliable depth markers."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-bfs-12-empty",
+      "prompt": "What should level-order traversal return for an empty tree?",
+      "constraints": [
+        "The root pointer is null.",
+        "The output represents levels or visited nodes."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_levels",
+            "text": "Return an empty level collection or the contract's empty traversal result without inventing a level.",
+            "explanation": "No root means there are no nodes or levels."
+          },
+          {
+            "id": "one_empty_level",
+            "text": "Return one empty level because the tree has a root boundary.",
+            "explanation": "A null root is not a data level unless the contract explicitly says so."
+          },
+          {
+            "id": "null_node_level",
+            "text": "Return a level containing a null node as if null were visited.",
+            "explanation": "Null child pointers are not tree nodes to emit."
+          },
+          {
+            "id": "error_always",
+            "text": "Throw an error for every empty tree regardless of the API contract.",
+            "explanation": "Empty input may be a valid result."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_levels"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Traversal output should represent actual tree nodes and honor the empty-input contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The queue begins empty when root is null. Returning an empty collection is the usual semantic result; error behavior must be explicit rather than assumed."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "one_empty_level": "A null root is not a data level unless the contract explicitly says so.",
+          "null_node_level": "Null child pointers are not tree nodes to emit.",
+          "error_always": "Empty input may be a valid result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-bfs-13_shortest_depth",
+      "prompt": "Why does BFS find the shallowest target node first in an unweighted tree?",
+      "constraints": [
+        "Every tree edge has equal unit cost.",
+        "Children are enqueued after their parent is dequeued."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "nondecreasing_depth",
+            "text": "The queue processes nodes in nondecreasing depth, so the first target is reached through a minimum-edge path.",
+            "explanation": "FIFO order preserves depth layers."
+          },
+          {
+            "id": "deep_first",
+            "text": "BFS explores the deepest branch first and therefore finds the target fastest.",
+            "explanation": "Depth-first behavior is the opposite."
+          },
+          {
+            "id": "value_order",
+            "text": "The smallest target value must be shallowest because values are sorted by BFS.",
+            "explanation": "BFS order is structural, not value-sorted."
+          },
+          {
+            "id": "random_paths",
+            "text": "Any first target is minimal because all tree paths have the same number of edges.",
+            "explanation": "Different depths can have different edge counts."
+          }
+        ],
+        "acceptedOptionIds": [
+          "nondecreasing_depth"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "FIFO traversal gives a shortest-edge guarantee in unweighted graphs and trees.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "All nodes at depth d are dequeued before nodes at depth d+1. The first target therefore has no target path with fewer edges under the unit-cost contract."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "deep_first": "Depth-first behavior is the opposite.",
+          "value_order": "BFS order is structural, not value-sorted.",
+          "random_paths": "Different depths can have different edge counts."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-bfs-14_queue_space",
+      "prompt": "What determines the auxiliary space of level-order traversal?",
+      "constraints": [
+        "The tree may be wider than it is deep.",
+        "The queue stores the current frontier."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "maximum_width",
+            "text": "The queue space is O(w), where w is the maximum number of nodes in a level or frontier, up to O(n).",
+            "explanation": "BFS stores breadth rather than only depth."
+          },
+          {
+            "id": "height_only",
+            "text": "The queue always uses O(h) space because traversal has height h.",
+            "explanation": "A wide level can contain far more than h nodes."
+          },
+          {
+            "id": "constant",
+            "text": "The queue is O(1) because each node is removed after it is visited.",
+            "explanation": "Many nodes can coexist in the queue."
+          },
+          {
+            "id": "n_squared",
+            "text": "The queue is O(n²) because every parent enqueues two children.",
+            "explanation": "Each node is enqueued at most once in a tree."
+          }
+        ],
+        "acceptedOptionIds": [
+          "maximum_width"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "BFS memory is governed by frontier width, not recursion depth.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A balanced tree can have a large middle level, while a skewed tree has a small frontier. Each node enters and leaves the queue once, but peak occupancy is the relevant space bound."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "height_only": "A wide level can contain far more than h nodes.",
+          "constant": "Many nodes can coexist in the queue.",
+          "n_squared": "Each node is enqueued at most once in a tree."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "process_tree_by_levels",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      }
     }
   ],
   "modeStructures": {

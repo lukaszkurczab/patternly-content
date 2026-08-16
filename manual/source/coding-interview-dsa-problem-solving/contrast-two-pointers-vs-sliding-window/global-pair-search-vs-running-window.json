@@ -313,6 +313,292 @@
         "The maintained extrema represent all elements currently in the segment.",
         "D is nonnegative."
       ]
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-06",
+      "prompt": "A problem asks for any two positions with difference at most D; all positions between them are irrelevant. Why is a running window aggregate not the default model?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "global_pair_candidate", "text": "The candidate is the selected pair, so movement should be justified by the relation between its endpoints rather than by state for the enclosed range."}, {"id": "window_by_span", "text": "Any numerical span between indices is a window whose interior must be tracked."}, {"id": "sum_required", "text": "A difference relation always requires maintaining the sum of all interior values."}, {"id": "sort_for_contiguity", "text": "Sort positions by value so the pair becomes a window automatically."}], "acceptedOptionIds": ["global_pair_candidate"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The output contract selects two positions and does not make the enclosed values part of the candidate state.", "details": {"blocks": [{"type": "paragraph", "text": "A window is not defined by geometric enclosure alone. It owns a contiguous range and maintains whatever aggregate or membership predicate the whole range requires. Here the only tested relation is between two selected values or positions, so interior values can be ignored. A pair-search proof should explain which endpoint moves and why, independently of any window sum or frequency state."}]}, "wrongOptionExplanationsByOptionId": {"window_by_span": "A span may be bounded by two indices without its interior being semantically selected.", "sum_required": "The problem defines a difference relation on endpoints, not an interior sum.", "sort_for_contiguity": "Sorting changes positions and does not make irrelevant interior values part of the answer."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_global_pair_search_from_running_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "foundational",
+      "constraints": ["Only the two chosen positions and their difference are evaluated."]
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-07",
+      "prompt": "A sequence asks for the longest contiguous segment with average at most A, and all values are nonnegative. Which extra state makes it a running-window problem rather than a global pair search?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "range_sum_and_length", "text": "Maintain the complete range sum and length; the average predicate depends on every element between left and right."}, {"id": "endpoint_average", "text": "Compare only the average of the two endpoint values."}, {"id": "pair_target", "text": "Select any two values whose sum is at most 2A; the interior does not matter."}, {"id": "sort_values", "text": "Sort values first so endpoint values represent the range average."}], "acceptedOptionIds": ["range_sum_and_length"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The predicate is a property of the full contiguous candidate, so its aggregate state must move with the boundaries.", "details": {"blocks": [{"type": "paragraph", "text": "The range average is sum divided by length, and either quantity changes when an interior value enters or leaves. The algorithm therefore owns the entire interval and updates its state as right expands and left shrinks. Endpoint comparisons or pair sums answer different questions and cannot establish the average of all enclosed values."}]}, "wrongOptionExplanationsByOptionId": {"endpoint_average": "The average of endpoints does not determine the average of the interior values.", "pair_target": "A pair sum ignores the values that contribute to the required contiguous segment average.", "sort_values": "Sorting destroys original adjacency and does not make endpoints summarize a range average."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_global_pair_search_from_running_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "intermediate",
+      "constraints": ["The answer must be a segment of the original sequence.", "Values are nonnegative."]
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-08",
+      "prompt": "Two implementations both update a variable called currentSum when right advances. What evidence distinguishes global pair search from a running window?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "candidate_and_eviction", "text": "Check whether currentSum represents every value in [left, right] and whether left evicts its contribution; if so, it is a window, not merely a pair scan."}, {"id": "sum_name_decides", "text": "The variable name currentSum proves the algorithm is a window."}, {"id": "right_only", "text": "Any update when right moves proves that interior values are irrelevant."}, {"id": "two_indices_decide", "text": "The number of indices is enough to classify both implementations."}], "acceptedOptionIds": ["candidate_and_eviction"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A variable's name or one update is not enough; candidate ownership and left-eviction semantics expose the invariant.", "details": {"blocks": [{"type": "paragraph", "text": "A pair algorithm might compute a local expression when a new endpoint is considered, while a window maintains an aggregate for every current member and subtracts values as left advances. The reviewer should ask what currentSum means at every iteration and whether it remains equal to the full range sum. This semantic equality, not the presence of a sum variable, distinguishes the patterns."}]}, "wrongOptionExplanationsByOptionId": {"sum_name_decides": "Names are arbitrary and may describe a temporary pair calculation rather than range-owned state.", "right_only": "A window must also remove left contributions; right updates alone do not define candidate membership.", "two_indices_decide": "Both global pair scans and windows commonly use two boundaries."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_global_pair_search_from_running_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "intermediate",
+      "constraints": ["The review must infer semantics from the update invariant, not variable names."]
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-09",
+      "prompt": "Select all statements that correctly contrast a global pair candidate with a running window candidate.",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [{"id": "pair_interior_irrelevant", "text": "A pair candidate can ignore values between its selected positions if the objective refers only to the pair."}, {"id": "window_interior_material", "text": "A window candidate must include the full interior state needed for its validity or score."}, {"id": "same_proof", "text": "Any movement of left or right uses the same discard proof in both patterns."}, {"id": "range_notation_enough", "text": "Writing [left, right] is sufficient to prove that the candidate is a window."}], "acceptedOptionIds": ["pair_interior_irrelevant", "window_interior_material"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Candidate membership and state ownership determine the proof obligations; shared notation does not.", "details": {"blocks": [{"type": "paragraph", "text": "Pair search reasons about two selected positions and uses a relation to discard impossible endpoint choices. A window reasons about one contiguous interval and repairs or extends its complete state. Both may be written with left and right, but the meanings of a pointer move differ. The transfer rule is to identify what remains a live candidate after each update."}]}, "wrongOptionExplanationsByOptionId": {"same_proof": "The same pointer direction can implement different invariants and eliminate different sets of candidates.", "range_notation_enough": "Notation describes boundaries, not whether interior values are semantically included."}, "omittedCorrectExplanationsByOptionId": {"pair_interior_irrelevant": "It identifies when an endpoint relation is sufficient.", "window_interior_material": "It identifies when range-owned state is required."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_global_pair_search_from_running_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "advanced",
+      "constraints": ["More than one statement is correct."]
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-10",
+      "prompt": "A prompt says “find the best interval [left, right]” but never says whether the objective uses only endpoints or all elements inside. What clarification has highest priority?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "define_interval_semantics", "text": "Define candidate membership and the state used to score or validate it: selected endpoints only versus the complete contiguous range."}, {"id": "assume_window", "text": "Assume a window because the word interval appears in the prompt."}, {"id": "assume_pair", "text": "Assume a pair because only two variables are named."}, {"id": "choose_by_complexity", "text": "Choose the pattern that has the expected time complexity before reading the objective."}], "acceptedOptionIds": ["define_interval_semantics"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The ambiguous output contract determines whether interior elements are candidates and therefore which invariant is legal.", "details": {"blocks": [{"type": "paragraph", "text": "If endpoints alone define the answer, a pair relation may support movement through ordered candidates. If every enclosed element contributes, the algorithm must maintain a range aggregate or membership state and use window updates. “Interval” and two variable names are insufficient. The contract should be clarified before implementation so that the proof and data structure match the intended candidate."}]}, "wrongOptionExplanationsByOptionId": {"assume_window": "A geometric interval may still represent only two selected endpoints; the interior contract is missing.", "assume_pair": "Two boundaries can own a full range state, so variable count does not select pair search.", "choose_by_complexity": "Both patterns can be linear, and complexity cannot compensate for an undefined objective."}},
+      "taxonomy": {"primarySkillAtomId": "distinguish_global_pair_search_from_running_window", "secondarySkillAtomIds": [], "learningStage": "contrast_practice"},
+      "difficulty": "foundational",
+      "constraints": ["The candidate's interior membership is intentionally unspecified until clarification."]
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-11",
+      "prompt": "A routine scores only the first and last selected indices by their endpoint relation. What candidate geometry is being searched?",
+      "constraints": [
+        "The contrast boundary must be identified from state semantics.",
+        "The output contract is fixed for this item."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "endpoint_pair",
+            "text": "A pair relation over endpoint candidates, not a window aggregate over every enclosed element."
+          },
+          {
+            "id": "window",
+            "text": "A running window because two endpoints are named."
+          },
+          {
+            "id": "frequency",
+            "text": "A frequency window because all pairs have counts."
+          },
+          {
+            "id": "tree",
+            "text": "A tree path because endpoints define a range."
+          }
+        ],
+        "acceptedOptionIds": [
+          "endpoint_pair"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted state invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, a loop, or linear complexity can appear in both patterns. The decisive evidence is what the retained state represents and which pointer movement the proof permits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "window": "Endpoint count does not determine state.",
+          "frequency": "No interior membership predicate was stated.",
+          "tree": "Array endpoint geometry is different."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_global_pair_search_from_running_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-12",
+      "prompt": "A routine expands a range whose interior count changes as boundaries move. What state is required?",
+      "constraints": [
+        "The contrast boundary must be identified from state semantics.",
+        "The output contract is fixed for this item."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "running_range",
+            "text": "Maintain the complete contiguous range state and update it when right enters or left leaves."
+          },
+          {
+            "id": "endpoints",
+            "text": "Track only the two endpoint values."
+          },
+          {
+            "id": "global_pair",
+            "text": "Compare left and right and discard the middle."
+          },
+          {
+            "id": "sort",
+            "text": "Sort interior values before each check."
+          }
+        ],
+        "acceptedOptionIds": [
+          "running_range"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted state invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, a loop, or linear complexity can appear in both patterns. The decisive evidence is what the retained state represents and which pointer movement the proof permits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "endpoints": "That loses interior contributions.",
+          "global_pair": "The middle is part of the output predicate.",
+          "sort": "Sorting changes contiguity and adds work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_global_pair_search_from_running_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-13",
+      "prompt": "Which movement proof belongs to a sorted pair search but not automatically to a running window?",
+      "constraints": [
+        "The contrast boundary must be identified from state semantics.",
+        "The output contract is fixed for this item."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "eliminate_pairs",
+            "text": "A too-small or too-large endpoint relation can eliminate an entire region of endpoint pairs."
+          },
+          {
+            "id": "repair_validity",
+            "text": "Shrink until a window predicate is valid."
+          },
+          {
+            "id": "map_update",
+            "text": "Decrement a frequency when left moves."
+          },
+          {
+            "id": "emit_each",
+            "text": "Emit every contiguous range."
+          }
+        ],
+        "acceptedOptionIds": [
+          "eliminate_pairs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted state invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, a loop, or linear complexity can appear in both patterns. The decisive evidence is what the retained state represents and which pointer movement the proof permits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "repair_validity": "That is window state repair.",
+          "map_update": "That is interior membership state.",
+          "emit_each": "Pair search need not enumerate ranges."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_global_pair_search_from_running_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-gpsrw-14",
+      "prompt": "What output clarification determines whether a pair scan or window scan is appropriate?",
+      "constraints": [
+        "The contrast boundary must be identified from state semantics.",
+        "The output contract is fixed for this item."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "candidate_membership",
+            "text": "Whether the answer is defined by two endpoints or by all elements in the contiguous range, including its update and validity rule."
+          },
+          {
+            "id": "variable_names",
+            "text": "Whether code names two variables left and right."
+          },
+          {
+            "id": "complexity",
+            "text": "Which pattern has the shorter asymptotic label."
+          },
+          {
+            "id": "sort",
+            "text": "Whether the input can be sorted regardless of original order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "candidate_membership"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option uses the contrasted state invariant rather than surface syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Two variables, a loop, or linear complexity can appear in both patterns. The decisive evidence is what the retained state represents and which pointer movement the proof permits."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "variable_names": "Names are insufficient.",
+          "complexity": "A fast wrong contract is still wrong.",
+          "sort": "Sorting may change range semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "distinguish_global_pair_search_from_running_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
     }
   ],
   "modeStructures": {
@@ -333,7 +619,16 @@
           "alg-ctpsw-gpsrw-02",
           "alg-ctpsw-gpsrw-03",
           "alg-ctpsw-gpsrw-04",
-          "alg-ctpsw-gpsrw-05"
+          "alg-ctpsw-gpsrw-05",
+          "alg-ctpsw-gpsrw-06",
+          "alg-ctpsw-gpsrw-07",
+          "alg-ctpsw-gpsrw-08",
+          "alg-ctpsw-gpsrw-09",
+          "alg-ctpsw-gpsrw-10",
+        "alg-ctpsw-gpsrw-11",
+        "alg-ctpsw-gpsrw-12",
+        "alg-ctpsw-gpsrw-13",
+        "alg-ctpsw-gpsrw-14"
         ]
       }
     ],

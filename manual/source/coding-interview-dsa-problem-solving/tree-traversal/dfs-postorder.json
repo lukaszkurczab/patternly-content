@@ -338,6 +338,316 @@
         "Do not count input-tree storage.",
         "The tree is maximally skewed."
       ]
+    },
+    {
+      "id": "alg-tree-postorder-iterative-two-stacks",
+      "prompt": "Which operation sequence is a correct two-stack implementation of postorder traversal?",
+      "interaction": {"type": "ordering", "elements": [{"id": "push_root_first", "text": "Push the root onto the first stack if it is non-null."}, {"id": "move_to_second", "text": "Pop from the first stack, push that node onto the second stack, then push its children onto the first stack."}, {"id": "pop_emit_second", "text": "Pop and emit nodes from the second stack."}], "canonicalOrder": ["push_root_first", "move_to_second", "pop_emit_second"], "scoringMethod": "adjacent_relations"},
+      "scoringContract": {"type": "ordering", "maxPoints": 2},
+      "feedback": {"reason": "The first stack explores parent-before-children, and the second reverses that sequence into left-right-parent postorder.", "details": {"blocks": [{"type": "paragraph", "text": "Moving a node to the second stack records it before its children are processed in the first stack. Draining the second stack reverses the root-first exploration so children appear before their parent. A single-stack version is possible with visited-state or marker frames, but it must preserve the same completion invariant."}]}},
+      "taxonomy": {"primarySkillAtomId": "apply_postorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "intermediate",
+      "constraints": ["The second stack is drained only after the first exploration stack is exhausted."]
+    },
+    {
+      "id": "alg-tree-postorder-null-identity",
+      "prompt": "A postorder helper computes the product of all values in a subtree. What base result should an empty subtree return?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "multiplicative_identity", "text": "1, the multiplicative identity, so a missing child does not change its parent's product."}, {"id": "zero_always", "text": "0, because an empty subtree contains no values to multiply."}, {"id": "null_product", "text": "A null result that the parent must interpret as either zero or one."}, {"id": "parent_value", "text": "The parent value, so the missing branch contributes the same factor."}], "acceptedOptionIds": ["multiplicative_identity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The empty result must be the identity of the combine operation used by the parent.", "details": {"blocks": [{"type": "paragraph", "text": "For a recurrence of leftProduct * node.value * rightProduct, an absent child should contribute no factor. One is the multiplicative identity, so a leaf returns its own value and a unary node retains its existing branch product. Zero would erase every parent with one missing child."}]}, "wrongOptionExplanationsByOptionId": {"zero_always": "Zero is absorbing, not the identity for an absent branch; it would incorrectly turn every unary node into zero.", "null_product": "A null marker is not a numeric identity and requires a separate branch outside the recurrence.", "parent_value": "A missing child contains no copy of the parent's value and must not duplicate data."}},
+      "taxonomy": {"primarySkillAtomId": "apply_postorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "compute_subtree_property"},
+      "difficulty": "foundational",
+      "constraints": ["Node values are non-null numeric factors."]
+    },
+    {
+      "id": "alg-tree-postorder-child-result-short-circuit",
+      "prompt": "A postorder validator returns a failure sentinel as soon as a child subtree is invalid. Why is it safe to skip the other child and the current-node combination in that case?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "failure_monotone", "text": "The parent result is already invalid under the contract, and no valid sibling result or parent computation can turn that sentinel back into a valid subtree."}, {"id": "children_irrelevant_always", "text": "Postorder never needs the right child because the left child determines every parent property."}, {"id": "failure_is_value", "text": "The sentinel is a normal aggregate value, so skipping work cannot affect correctness."}, {"id": "parent_first", "text": "The parent was already validated before recursion, so child failure has no effect."}], "acceptedOptionIds": ["failure_monotone"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A distinct invalid result propagates monotonically through the parent combine rule.", "details": {"blocks": [{"type": "paragraph", "text": "For a balance or validation helper, the return contract separates valid summaries from a failure sentinel. Once a child returns failure, the current subtree is necessarily invalid regardless of the sibling or current value. Returning immediately avoids useless traversal while preserving the final result. This shortcut is valid only when the sentinel cannot be mistaken for a valid aggregate."}]}, "wrongOptionExplanationsByOptionId": {"children_irrelevant_always": "The right child normally contributes to the parent property; it is skipped only after the failure contract fixes the result.", "failure_is_value": "The sentinel is semantically different from a valid aggregate and must not be combined as ordinary data.", "parent_first": "A parent-first check cannot determine a child-derived property before descendants return their summaries."}},
+      "taxonomy": {"primarySkillAtomId": "apply_postorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "validate_tree_property"},
+      "difficulty": "intermediate",
+      "constraints": ["The failure sentinel is outside the valid aggregate domain."]
+    },
+    {
+      "id": "alg-tree-postorder-iterative-space",
+      "prompt": "A recursive postorder aggregation computes each subtree once and keeps only active calls. What time and auxiliary-space bounds should be reported for a tree with n nodes and height h?",
+      "interaction": {"type": "complexity", "checkedDimensions": ["time", "auxiliary_space"], "availableValuesByDimension": {"time": ["O(log n)", "O(n)", "O(n log n)", "O(n^2)"], "auxiliary_space": ["O(1)", "O(log n)", "O(h)", "O(n^2)"]}, "acceptedValuesByDimension": {"time": ["O(n)"], "auxiliary_space": ["O(h)"]}, "normalizedAliasesByDimension": {"time": {}, "auxiliary_space": {}}, "maxPoints": 2},
+      "scoringContract": {"type": "complexity", "maxPoints": 2},
+      "feedback": {"reason": "Each node's child results are computed once, and the live call stack follows one root-to-leaf path.", "details": {"blocks": [{"type": "paragraph", "text": "A fused postorder helper performs constant work per node after its children return, giving O(n) time. The maximum number of active calls is the height h, so auxiliary stack space is O(h), logarithmic for a balanced tree and linear for a chain. Recomputing child summaries would change time even though the traversal family remains postorder."}]}},
+      "taxonomy": {"primarySkillAtomId": "apply_postorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_postorder", "problemArchetypeId": "compute_subtree_property"},
+      "difficulty": "intermediate",
+      "constraints": ["The helper does not materialize a separate output list."]
+    },
+    {
+      "id": "alg-tree-postorder-dag-visited-boundary",
+      "prompt": "A postorder routine was written for a proper tree but is called on a directed acyclic graph with shared children. What additional concern must be addressed?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "identity_and_memo", "text": "Use an identity-based visited or memoization policy, and define whether a shared node is aggregated once globally or once per incoming path."}, {"id": "values_are_enough", "text": "Unique node values remove the issue because equal references cannot occur in a DAG."}, {"id": "same_tree_code", "text": "No change; a DAG is a tree traversal with more children and needs no identity tracking."}, {"id": "sort_children", "text": "Sort every child list; ordering alone prevents repeated processing of shared nodes."}], "acceptedOptionIds": ["identity_and_memo"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Shared references break the tree assumption that each node has one parent and one traversal ownership path.", "details": {"blocks": [{"type": "paragraph", "text": "A tree postorder can process every child without remembering identities because each edge leads to a disjoint subtree. In a DAG, two parents may reach the same node, so naïve recursion can double-count it; cycles would also require cycle detection. The extension must state whether the computation is per edge/path or per unique node, then use identity-based memoization or visitation accordingly."}]}, "wrongOptionExplanationsByOptionId": {"values_are_enough": "Distinct values do not prevent the same object from being referenced by multiple parents.", "same_tree_code": "The one-parent/disjoint-subtree invariant is false for a DAG, so the tree routine can repeat work or miscount.", "sort_children": "Ordering changes sequence but does not prevent revisiting a shared object."}},
+      "taxonomy": {"primarySkillAtomId": "apply_postorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_postorder", "problemArchetypeId": "validate_tree_property"},
+      "difficulty": "advanced",
+      "constraints": ["The graph may contain shared child references but no cycles in this item."]
+    },
+    {
+      "id": "alg-tree-postorder-11_children_first",
+      "prompt": "Why is postorder the natural traversal for computing a node's height?",
+      "constraints": [
+        "A node's height depends on child heights.",
+        "Leaves have a defined base height."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "children_then_parent",
+            "text": "Compute both child heights first, then combine them as 1+max(leftHeight,rightHeight).",
+            "explanation": "The parent recurrence depends on completed child results."
+          },
+          {
+            "id": "parent_first",
+            "text": "Compute the parent height before visiting children because the parent defines the subtree.",
+            "explanation": "The required child values are not available yet."
+          },
+          {
+            "id": "bfs_only",
+            "text": "Only BFS can compute height because height is a level property.",
+            "explanation": "DFS postorder computes it with constant path state."
+          },
+          {
+            "id": "sort_children",
+            "text": "Sort child heights before taking the maximum.",
+            "explanation": "Sorting two scalar heights is unnecessary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "children_then_parent"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Postorder aligns traversal order with a bottom-up subtree recurrence.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A null child supplies the base height, and each parent combines already-computed child summaries. Preorder would need deferred work or an explicit second phase."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "parent_first": "The required child values are not available yet.",
+          "bfs_only": "DFS postorder computes it with constant path state.",
+          "sort_children": "Sorting two scalar heights is unnecessary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "validate_tree_property"
+      }
+    },
+    {
+      "id": "alg-tree-postorder-12_delete",
+      "prompt": "Why is postorder useful when deleting every node in a tree?",
+      "constraints": [
+        "A child must be released or detached before its parent.",
+        "The operation mutates ownership links."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "release_children_first",
+            "text": "Visit and detach/delete child subtrees before deleting the parent, so no required child reference is lost.",
+            "explanation": "Postorder respects dependency and ownership order."
+          },
+          {
+            "id": "delete_parent_first",
+            "text": "Delete the parent first because children can be found through the deleted node afterward.",
+            "explanation": "The parent link may be unavailable after deletion."
+          },
+          {
+            "id": "inorder_only",
+            "text": "Inorder is required because deletion must be sorted by key.",
+            "explanation": "Ownership order, not key order, determines the safe traversal."
+          },
+          {
+            "id": "queue_copy",
+            "text": "Copy the whole tree before deleting so traversal order no longer matters.",
+            "explanation": "Copying adds cost and may violate in-place ownership semantics."
+          }
+        ],
+        "acceptedOptionIds": [
+          "release_children_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Bottom-up traversal preserves access to descendants until their ownership work is complete.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A parent can be safely removed after its child references have been processed. The same dependency principle appears in freeing trees, computing summaries, and evaluating expression nodes."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "delete_parent_first": "The parent link may be unavailable after deletion.",
+          "inorder_only": "Ownership order, not key order, determines the safe traversal.",
+          "queue_copy": "Copying adds cost and may violate in-place ownership semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "validate_tree_property"
+      }
+    },
+    {
+      "id": "alg-tree-postorder-13_balance",
+      "prompt": "How can postorder validate height balance in one traversal?",
+      "constraints": [
+        "Balance requires left and right subtree heights.",
+        "An invalid subtree should make its parent invalid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "height_or_failure",
+            "text": "Return a height or an invalid sentinel from each child; the parent checks the height difference and propagates failure immediately.",
+            "explanation": "One summary carries both validity and height."
+          },
+          {
+            "id": "recompute_height",
+            "text": "Validate balance first, then recompute each subtree height from scratch at every parent.",
+            "explanation": "That can become quadratic."
+          },
+          {
+            "id": "depth_only",
+            "text": "Track only current depth because sibling subtree heights are irrelevant.",
+            "explanation": "Balance compares the two child heights."
+          },
+          {
+            "id": "bfs_width",
+            "text": "Use level width as a substitute for height difference.",
+            "explanation": "Width does not characterize subtree balance."
+          }
+        ],
+        "acceptedOptionIds": [
+          "height_or_failure"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Postorder can combine the needed child summaries and avoid repeated height traversals.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A sentinel such as -1 represents an invalid subtree. Otherwise return the height; the parent performs one O(1) balance check and passes the result upward."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "recompute_height": "That can become quadratic.",
+          "depth_only": "Balance compares the two child heights.",
+          "bfs_width": "Width does not characterize subtree balance."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "validate_tree_property"
+      }
+    },
+    {
+      "id": "alg-tree-postorder-14_expression",
+      "prompt": "Why does postorder evaluate a binary expression tree correctly?",
+      "constraints": [
+        "Each internal node is an operator.",
+        "The operator consumes the values of its children."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "operands_first",
+            "text": "Evaluate left and right operands before applying the parent operator.",
+            "explanation": "The parent expression depends on both child results."
+          },
+          {
+            "id": "operator_first",
+            "text": "Apply the operator before evaluating operands because operator precedence is stored at the parent.",
+            "explanation": "The operands' values are required first."
+          },
+          {
+            "id": "inorder_expression",
+            "text": "Inorder always computes the numeric result directly without parentheses.",
+            "explanation": "Inorder describes notation order, not evaluation dependency."
+          },
+          {
+            "id": "sort_operands",
+            "text": "Sort operand values before applying every operator.",
+            "explanation": "Operand order can be semantically significant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "operands_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Postorder follows the dependency graph of an expression: children produce values consumed by the parent.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The traversal is an evaluation order, not merely a display order. It naturally handles nested subexpressions and preserves noncommutative operand order."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "operator_first": "The operands' values are required first.",
+          "inorder_expression": "Inorder describes notation order, not evaluation dependency.",
+          "sort_operands": "Operand order can be semantically significant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_postorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_postorder",
+        "problemArchetypeId": "validate_tree_property"
+      }
     }
   ],
   "modeStructures": {

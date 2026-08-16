@@ -340,7 +340,446 @@
         "learningStage": "strategy_selection",
         "problemArchetypeId": "construct_optimal_sequence"
       }
-    }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-006",
+      "prompt": "In maximum-cardinality interval scheduling, no remaining interval starts at or after currentEnd. What is the correct local action?",
+      "constraints": [
+        "All remaining intervals have already been considered for the current residual instance.",
+        "The objective counts selected intervals.",
+        "No interval may overlap the selected schedule."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "terminate_no_candidate",
+            "text": "Terminate the selection step; there is no feasible candidate to append."
+          },
+          {
+            "id": "select_overlapping",
+            "text": "Select the interval with the smallest end even if its start is before currentEnd."
+          },
+          {
+            "id": "reset_boundary",
+            "text": "Reset currentEnd to zero and restart the greedy scan."
+          },
+          {
+            "id": "invent_empty_interval",
+            "text": "Insert a synthetic zero-length interval so the loop can continue."
+          }
+        ],
+        "acceptedOptionIds": [
+          "terminate_no_candidate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The candidate predicate is part of the local rule; when its feasible set is empty, no legal greedy action exists.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A greedy transition may end because the residual candidate set is empty. Selecting an overlapping interval violates feasibility, while resetting the boundary changes the already selected schedule. A synthetic interval is not part of the input and would alter the objective. The algorithm should return the current cardinality or the contract's explicit terminal result."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "select_overlapping": "Minimum end is compared only among feasible intervals; an overlapping interval cannot be selected.",
+          "reset_boundary": "The boundary summarizes the selected schedule and cannot be reset without discarding the feasibility contract.",
+          "invent_empty_interval": "Only input intervals are legal candidates, and synthetic choices can change both count and state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-007",
+      "prompt": "The current boundary is t, and an input interval is [t, t) under half-open endpoint semantics. What is the correct treatment in maximum-cardinality interval scheduling?",
+      "constraints": [
+        "Touching endpoints are compatible.",
+        "Zero-duration intervals are allowed by the input contract.",
+        "Each input interval is considered at most once."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "select_zero_duration",
+            "text": "It is feasible, may be selected, and leaves currentEnd equal to t."
+          },
+          {
+            "id": "reject_equal_start_end",
+            "text": "Reject it because every interval must consume positive time."
+          },
+          {
+            "id": "advance_end_one",
+            "text": "Select it and advance currentEnd to t + 1 to guarantee progress."
+          },
+          {
+            "id": "select_forever",
+            "text": "Select it repeatedly because it never advances the boundary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "select_zero_duration"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "For half-open intervals, start equal to currentEnd is feasible, and a zero-duration choice ends at the same boundary without inventing time.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The feasibility predicate is start >= currentEnd, so [t,t) qualifies when the boundary is t. Selecting it increases cardinality and sets currentEnd to its end, still t. The algorithm cannot select an input item repeatedly because each interval is processed once; lack of boundary movement does not imply repeated selection."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "reject_equal_start_end": "The contract permits zero-duration intervals and half-open touching semantics make the interval feasible.",
+          "advance_end_one": "Moving the boundary beyond the interval end invents a duration that is not present in the input.",
+          "select_forever": "An input interval is consumed once; loop progress comes from the input cursor."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-008",
+      "prompt": "Intervals are presented sorted by start time, but the objective is maximum cardinality and several feasible intervals are available. Which implementation rule is correct?",
+      "constraints": [
+        "The input order is nondecreasing by start.",
+        "Feasibility is start >= currentEnd.",
+        "The selection key is interval end."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "filter_then_min_end",
+            "text": "Filter by feasibility and choose the feasible interval with minimum end, even if it is not first in the input order."
+          },
+          {
+            "id": "first_feasible_start",
+            "text": "Choose the first feasible interval because start order is the input order."
+          },
+          {
+            "id": "minimum_start_only",
+            "text": "Choose the feasible interval with minimum start and ignore end values."
+          },
+          {
+            "id": "sort_by_duration_only",
+            "text": "Choose the shortest feasible interval because it uses the least duration."
+          }
+        ],
+        "acceptedOptionIds": [
+          "filter_then_min_end"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Input order is not the greedy comparison key; feasibility must be established first and the residual boundary is minimized by end time.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Sorting by start makes candidate discovery convenient but does not make the first feasible interval optimal. Among intervals that begin after currentEnd, the one with the smallest end leaves the largest feasible suffix for future choices. A correct implementation may sort by end once or maintain an equivalent minimum-end selection; it must not substitute input order for the proven key."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "first_feasible_start": "The first feasible start may have a later end and block more future intervals.",
+          "minimum_start_only": "All considered candidates are already feasible; start no longer determines the residual frontier.",
+          "sort_by_duration_only": "Duration is not equivalent to end time when starts differ and does not provide the exchange guarantee."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-009",
+      "prompt": "Two feasible intervals have the same minimum end time, but the product objective also minimizes total idle time between selected intervals. Is arbitrary tie-breaking still safe?",
+      "constraints": [
+        "The primary objective remains maximum cardinality.",
+        "The secondary objective minimizes idle time.",
+        "The two intervals have different start times and equal end times."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "secondary_breaks_equivalence",
+            "text": "No. Equal end time preserves the cardinality frontier, but the secondary objective can make start time material and requires an explicit tie rule or proof."
+          },
+          {
+            "id": "arbitrary_always_safe",
+            "text": "Yes. Equal end time makes all consequences identical for every objective."
+          },
+          {
+            "id": "choose_latest_always",
+            "text": "Always choose the latest start because later starts minimize idle time in every continuation."
+          },
+          {
+            "id": "greedy_impossible",
+            "text": "Any secondary objective proves that no greedy rule can be used."
+          }
+        ],
+        "acceptedOptionIds": [
+          "secondary_breaks_equivalence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Tie equivalence is relative to the complete objective contract; adding a secondary score can distinguish choices that were interchangeable for cardinality alone.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For cardinality alone, equal end means equal future feasibility and equal primary contribution. A secondary idle-time objective can depend on the selected start, so that exchange no longer preserves the full answer contract. The local rule must state a tie key justified for both objectives, or preserve alternatives and use a different method."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_always_safe": "Equal end preserves the primary frontier but not necessarily a secondary metric that observes start times.",
+          "choose_latest_always": "Latest start is a hypothesis; it needs a proof for the exact idle-time definition and future interactions.",
+          "greedy_impossible": "Some multi-objective problems still admit greedy rules, but the complete rule and proof must cover all objectives."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-010",
+      "prompt": "A proposed local rule says only ‘choose the smallest end.’ Which missing condition must be added before the rule can be applied to an already selected interval schedule?",
+      "constraints": [
+        "currentEnd is the end of the last selected interval.",
+        "The schedule must remain pairwise non-overlapping.",
+        "The rule is intended to maximize cardinality."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "feasible_start_filter",
+            "text": "Restrict candidates to intervals with start >= currentEnd before minimizing end."
+          },
+          {
+            "id": "smallest_duration",
+            "text": "Replace end with duration so the rule is independent of currentEnd."
+          },
+          {
+            "id": "latest_start_filter",
+            "text": "Restrict candidates to intervals with the latest start, then choose the smallest end."
+          },
+          {
+            "id": "ignore_selected_schedule",
+            "text": "Ignore currentEnd because the end key alone determines future compatibility."
+          }
+        ],
+        "acceptedOptionIds": [
+          "feasible_start_filter"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The minimum-end comparison is meaningful only over candidates that can legally follow the selected schedule.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The local rule has two stages: candidate eligibility and local optimization. An interval ending early but starting before currentEnd overlaps the schedule and cannot be selected. After filtering by start >= currentEnd, minimizing end produces the frontier used by the cardinality exchange argument. Omitting the feasibility predicate turns a correct greedy key into an illegal action."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "smallest_duration": "Duration does not identify the earliest future boundary and may select a later-ending interval.",
+          "latest_start_filter": "Latest start is not the proven feasibility predicate or optimization key.",
+          "ignore_selected_schedule": "Future compatibility is defined relative to currentEnd; ignoring it permits overlap."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_local_optimization_rule",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-dlc-011",
+      "prompt": "A greedy rule compares two feasible intervals by end time. What must be true about the state after choosing the earlier-ending interval for the comparison to be meaningful?",
+      "constraints": [
+        "The objective is to maximize the number of pairwise non-overlapping intervals.",
+        "Both candidates are compatible with the intervals already selected."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "same_prefix_and_boundary", "text": "It must keep the same feasible prefix and leave an end boundary no later than the alternative."},
+          {"id": "higher_duration", "text": "It must have the longer duration so the choice uses the available time fully."},
+          {"id": "latest_start", "text": "It must start latest, regardless of its ending boundary."},
+          {"id": "more_future_items_visible", "text": "It must expose more raw candidates, even if some overlap the selected prefix."}
+        ],
+        "acceptedOptionIds": ["same_prefix_and_boundary"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The local comparison is a dominance claim about the future boundary, not about duration or the number of raw candidates.",
+        "details": {"blocks": [{"type": "paragraph", "text": "If the earlier-ending interval is feasible and leaves the same selected prefix, every interval that could follow the alternative can also be tested after the earlier boundary. That is the state relation needed for a safe local rule. Duration, latest start, and raw candidate count do not establish this relation."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "higher_duration": "Duration can be long or short without determining the end boundary that controls future compatibility.",
+          "latest_start": "A latest start may still finish later and does not dominate the suffix.",
+          "more_future_items_visible": "Overlapping candidates are not feasible continuations, so raw visibility is not the relevant state measure."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "define_local_optimization_rule", "secondarySkillAtomIds": [], "learningStage": "strategy_selection", "patternVariantId": "interval_greedy", "problemArchetypeId": "choose_non_overlapping_set"}
+    },
+    {
+      "id": "alg-greedy-intro-dlc-012",
+      "prompt": "For maximum-cardinality interval scheduling, two feasible candidates finish at the same time. Which local decision is justified?",
+      "constraints": [
+        "The candidates have identical end boundaries.",
+        "Future feasibility depends only on the end of the last selected interval."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "either_tie", "text": "Either candidate is safe for the boundary argument because both leave the same future end boundary."},
+          {"id": "shorter_duration", "text": "The shorter duration is mandatory even though the end boundaries are equal."},
+          {"id": "latest_start", "text": "The later start is always required to protect the next choice."},
+          {"id": "reject_tie", "text": "Both must be rejected because a greedy rule cannot handle equal keys."}
+        ],
+        "acceptedOptionIds": ["either_tie"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "Equal end boundaries induce the same suffix feasibility under the stated state contract.",
+        "details": {"blocks": [{"type": "paragraph", "text": "The exchange proof needs the selected prefix and the boundary available to future intervals. When those boundaries are equal, replacing one candidate by the other does not reduce the set of legal continuations. A secondary tie-break may preserve provenance, but it is not required for cardinality optimality."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "shorter_duration": "Duration is not the state boundary used by this proof once both ends are equal.",
+          "latest_start": "A later start is not necessary when the future boundary is already identical.",
+          "reject_tie": "Equal keys can be handled by choosing either representative; rejecting both changes the optimization problem."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "define_local_optimization_rule", "secondarySkillAtomIds": [], "learningStage": "strategy_selection", "patternVariantId": "interval_greedy", "problemArchetypeId": "choose_non_overlapping_set"}
+    },
+    {
+      "id": "alg-greedy-intro-dlc-013",
+      "prompt": "A problem changes from maximizing the number of selected intervals to maximizing their total weights. Which part of the local-rule definition must be revisited first?",
+      "constraints": [
+        "Intervals remain pairwise non-overlapping.",
+        "Each interval now contributes a potentially different positive weight."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "objective_and_exchange", "text": "Recheck the objective-preserving exchange; earliest finish alone is no longer justified by cardinality."},
+          {"id": "keep_key_only", "text": "Keep earliest finish because feasibility is unchanged, so the proof is unchanged."},
+          {"id": "sort_by_weight_only", "text": "Sort by weight and accept the heaviest feasible interval without further proof."},
+          {"id": "ignore_weights", "text": "Ignore weights until the final answer because they do not affect overlap."
+          }
+        ],
+        "acceptedOptionIds": ["objective_and_exchange"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The safe-choice proof is tied to the objective being preserved by the exchange, not only to geometric feasibility.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Earliest finish is safe for maximizing count because an exchanged interval contributes the same one unit and leaves at least as much room. With weights, replacing a high-weight interval by an earlier-ending low-weight interval can lose objective value. The rule and proof therefore need a new weighted analysis."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "keep_key_only": "Unchanged feasibility does not imply an unchanged objective-preserving exchange.",
+          "sort_by_weight_only": "Weight order can discard compatible combinations and requires a separate correctness argument.",
+          "ignore_weights": "Weights are the objective; overlap is only the feasibility constraint."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "define_local_optimization_rule", "secondarySkillAtomIds": [], "learningStage": "strategy_selection", "patternVariantId": "interval_greedy", "problemArchetypeId": "choose_non_overlapping_set"}
+    },
+    {
+      "id": "alg-greedy-intro-dlc-014",
+      "prompt": "After a greedy interval is selected, which update is part of the canonical local rule before the next candidate is considered?",
+      "constraints": [
+        "Selected intervals must not overlap.",
+        "Candidates are processed in nondecreasing end order."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "advance_boundary", "text": "Set the current boundary to the selected interval's end and admit only candidates starting at or after it."},
+          {"id": "advance_start", "text": "Set the boundary to the selected interval's start so the next interval can begin earlier."},
+          {"id": "reset_boundary", "text": "Reset the boundary after every choice because each candidate is evaluated independently."},
+          {"id": "keep_previous", "text": "Keep the previous boundary and rely on sorting to prevent overlaps automatically."}
+        ],
+        "acceptedOptionIds": ["advance_boundary"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "The selected end is the sufficient boundary state for future interval feasibility.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Once an interval is accepted, every later accepted interval must start no earlier than its end. Updating the boundary makes the invariant explicit and filters overlapping candidates. Sorting helps discover candidates in proof order, but it does not itself replace the feasibility state."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "advance_start": "Future compatibility is determined by the selected end, not its start.",
+          "reset_boundary": "Resetting admits intervals that overlap the selected schedule.",
+          "keep_previous": "Sorting by end does not guarantee that a candidate starts after the last selected end."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "define_local_optimization_rule", "secondarySkillAtomIds": [], "learningStage": "strategy_selection", "patternVariantId": "interval_greedy", "problemArchetypeId": "choose_non_overlapping_set"}
+    },
+    {"id":"alg-greedy-intro-015-earliest-finish","prompt":"For selecting the maximum number of non-overlapping intervals, which local choice is the canonical candidate?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"earliest_finish","text":"Choose the compatible interval with the earliest finishing time."},{"id":"shortest_duration","text":"Choose the interval with the shortest duration."},{"id":"earliest_start","text":"Choose the interval that starts first."},{"id":"largest_gap","text":"Choose the interval that leaves the largest immediate gap."}],"acceptedOptionIds":["earliest_finish"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Earliest finish leaves the most room for later compatible intervals.","details":{"blocks":[{"type":"paragraph","text":"The interval endpoint, not duration or start alone, defines the remaining feasible suffix. A proof is still required, but this rule has the standard exchange argument."}]},"wrongOptionExplanationsByOptionId":{"shortest_duration":"This option does not establish a safe local choice for the stated objective.","earliest_start":"This option does not establish a safe local choice for the stated objective.","largest_gap":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"define_local_optimization_rule","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"interval_greedy","problemArchetypeId":"choose_non_overlapping_set"}},
+    {"id":"alg-greedy-intro-016-local-update","prompt":"After accepting an interval in an unweighted interval schedule, what state should the next local choice respect?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"last_finish","text":"The finish time of the last accepted interval."},{"id":"total_duration","text":"Only the sum of durations accepted so far."},{"id":"first_start","text":"The start time of the first interval in the schedule."},{"id":"input_index","text":"The original index of the last interval."}],"acceptedOptionIds":["last_finish"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Compatibility is determined by the current boundary.","details":{"blocks":[{"type":"paragraph","text":"The next candidate must start at or after the finish of the last accepted interval under the stated endpoint convention."}]},"wrongOptionExplanationsByOptionId":{"total_duration":"This option does not establish a safe local choice for the stated objective.","first_start":"This option does not establish a safe local choice for the stated objective.","input_index":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"define_local_optimization_rule","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"interval_greedy","problemArchetypeId":"choose_non_overlapping_set"}},
+    {"id":"alg-greedy-intro-017-tie-boundary","prompt":"If two candidate intervals have the same finish time, what may a correct interval greedy algorithm do?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"either_tie","text":"Choose either one when their finish boundary and feasibility effect are equivalent."},{"id":"always_longer","text":"Choose the longer interval to maximize covered time."},{"id":"always_earlier_start","text":"Choose the one with the earliest start regardless of compatibility."},{"id":"reject_both","text":"Reject both because equal keys invalidate greedy order."}],"acceptedOptionIds":["either_tie"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Equivalent boundary keys may be resolved by any deterministic tie-breaker.","details":{"blocks":[{"type":"paragraph","text":"For maximum cardinality, equal finish times leave the same future boundary. The tie rule must still preserve the interval contract and deterministic behavior if required."}]},"wrongOptionExplanationsByOptionId":{"always_longer":"This option does not establish a safe local choice for the stated objective.","always_earlier_start":"This option does not establish a safe local choice for the stated objective.","reject_both":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"define_local_optimization_rule","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"interval_greedy","problemArchetypeId":"choose_non_overlapping_set"}},
+    {"id":"alg-greedy-intro-018-objective","prompt":"Why must the local choice be stated together with the exact optimization objective?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"objective","text":"A rule safe for maximizing count may be unsafe for maximizing weight or covered length."},{"id":"syntax","text":"The objective matters only for naming variables."},{"id":"input_size","text":"Any local rule is correct when the input is small."},{"id":"order_only","text":"The objective never affects the sort key."}],"acceptedOptionIds":["objective"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Greedy safety is objective-specific.","details":{"blocks":[{"type":"paragraph","text":"Earliest finish is canonical for maximum interval count, but weighted selection needs different reasoning. A local key cannot be justified without the objective it serves."}]},"wrongOptionExplanationsByOptionId":{"syntax":"This option does not establish a safe local choice for the stated objective.","input_size":"This option does not establish a safe local choice for the stated objective.","order_only":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"define_local_optimization_rule","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"interval_greedy","problemArchetypeId":"choose_non_overlapping_set"}}
   ],
   "modeStructures": {
     "recognitionSets": [],

@@ -396,6 +396,506 @@
         "`k` satisfies `0 < k <= m`.",
         "If cutoff frequencies tie, the API either accepts any tied candidate or supplies a deterministic tie-break."
       ]
+    },
+    {
+      "id": "hpq-top-k-zero-and-full-boundaries",
+      "prompt": "Which boundary behavior is consistent with a function that returns the k largest values from n inputs without mutating the input?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "zero_empty_full_copy",
+            "text": "Return an empty result for k = 0; for k = n return all values, preserving whatever order the output contract specifies."
+          },
+          {
+            "id": "zero_minimum_one",
+            "text": "Reject k = 0 and always return at least one value."
+          },
+          {
+            "id": "full_heap_only",
+            "text": "For k = n, return only the heap root because it is the boundary value."
+          },
+          {
+            "id": "mutate_input",
+            "text": "Sort the input in place so the result can be read without additional state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero_empty_full_copy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The result cardinality must match k at both boundaries, while a non-mutating contract keeps input ownership explicit.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A top-k result contains exactly k candidates when the input and parameter contract allow it. For k = 0 that is the empty collection; for k = n no candidate may be discarded. The heap may still be used, but its root is only the weakest retained boundary, not the complete result. Sorting in place violates the stated input contract unless mutation is explicitly allowed."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_minimum_one": "There is no general reason to force a non-empty result when the requested cardinality is zero; the API should define or reject it explicitly, not silently change k.",
+          "full_heap_only": "The root identifies one cutoff candidate, while k = n requires all n values.",
+          "mutate_input": "In-place sorting changes caller-owned input and is not implied by top-k selection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      },
+      "constraints": [
+        "Assume 0 <= k <= n and a non-mutating input contract."
+      ]
+    },
+    {
+      "id": "hpq-top-k-admission-threshold",
+      "prompt": "A size-k min-heap stores the k largest values seen so far. For a new value x after the heap is full, which admission test is correct?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "replace_if_above_root",
+            "text": "Replace the root only when x outranks the root under the output comparator; otherwise discard x."
+          },
+          {
+            "id": "replace_if_below_root",
+            "text": "Replace the root when x is below it, because the root is the current largest value."
+          },
+          {
+            "id": "always_push",
+            "text": "Push x unconditionally and allow the heap to grow beyond k until the final output."
+          },
+          {
+            "id": "compare_last_array_slot",
+            "text": "Compare x with the last backing-array slot because that slot is the weakest retained candidate."
+          }
+        ],
+        "acceptedOptionIds": [
+          "replace_if_above_root"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "In a min-heap of the largest retained values, the root is the smallest member of the retained top-k set and therefore the admission threshold.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Once k candidates are retained, any new value no larger than the root cannot enter the top-k set. A stronger value replaces the root and is repaired downward, preserving both the size bound and the heap invariant. The backing-array tail has no priority meaning because heap positions are not sorted."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "replace_if_below_root": "The root is the weakest retained member for a largest-values heap, so a smaller value should be discarded, not admitted.",
+          "always_push": "Unconditional pushes violate the bounded-size contract and lose the top-k threshold property.",
+          "compare_last_array_slot": "Heap-array positions other than the root are not globally ordered by value."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      },
+      "constraints": [
+        "The heap already contains k candidates and stores the k largest values."
+      ]
+    },
+    {
+      "id": "hpq-top-k-tie-break-contract",
+      "prompt": "The top-k API must return exactly k records and order equal scores by earliest arrival. What must the heap comparator encode?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "score_arrival_tuple",
+            "text": "A composite key with score as the primary rank and arrival sequence as the deterministic tie-break."
+          },
+          {
+            "id": "score_only_any_heap_order",
+            "text": "Score only, because a heap automatically preserves arrival order for equal scores."
+          },
+          {
+            "id": "array_index_tie",
+            "text": "The current backing-array index as the permanent arrival rank."
+          },
+          {
+            "id": "deduplicate_equal_scores",
+            "text": "Keep only one record per score so ties cannot occur."
+          }
+        ],
+        "acceptedOptionIds": [
+          "score_arrival_tuple"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A product-visible tie rule is part of the ranking contract and must survive heap swaps explicitly.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The heap can maintain score order, but equal-score records are otherwise interchangeable under the primary comparator. Store arrival sequence in each record and compare the tuple in the direction required by admission and output. Array positions are transient, and equal scores do not imply duplicate records."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "score_only_any_heap_order": "A heap does not guarantee stable ordering for equal primary keys.",
+          "array_index_tie": "Sift operations change backing-array positions, so they cannot encode immutable arrival order.",
+          "deduplicate_equal_scores": "Records with equal scores may be distinct valid results and must not be removed without a deduplication contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "top_k",
+        "problemArchetypeId": "maintain_top_k"
+      },
+      "constraints": [
+        "Equal scores are allowed and records retain distinct arrival identities."
+      ]
+    },
+    {
+      "id": "hpq-top-k-deletion-boundary",
+      "prompt": "A bounded heap has retained the k largest values, but the API now allows arbitrary deletion of a retained value followed by a query for the current top k. What additional issue must the design address?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "repair_and_replenish",
+            "text": "Deletion must repair the heap and the system needs access to excluded values or another structure to replenish the k-set if the retained size falls below k."
+          },
+          {
+            "id": "root_only_repair",
+            "text": "Repairing the root is always enough because discarded values remain ordered outside the heap."
+          },
+          {
+            "id": "discarded_irrelevant_forever",
+            "text": "Previously discarded values can never matter even after a retained value is deleted."
+          },
+          {
+            "id": "sort_heap_array",
+            "text": "Sort the heap array after deletion and the missing top-k candidate will appear automatically."
+          }
+        ],
+        "acceptedOptionIds": [
+          "repair_and_replenish"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The insertion-only proof that discarded values are permanently irrelevant no longer applies when retained candidates can be removed.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Arbitrary deletion has two separate requirements: restore heap order after removing an internal or root entry, and find the next-best excluded value if the active set no longer contains k candidates. A bounded heap alone intentionally forgets candidates below its former threshold, so the product must retain history, use lazy deletion over a broader structure, or relax the replenishment contract."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "root_only_repair": "The deleted record may be anywhere, and heap repair does not recover values that were never retained.",
+          "discarded_irrelevant_forever": "Deletion changes the retained threshold, so a previously excluded value may become eligible.",
+          "sort_heap_array": "Sorting retained entries cannot reconstruct candidates that the bounded state discarded."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      },
+      "constraints": [
+        "The API permits deletion after prior insertions and requires a fresh top-k result."
+      ]
+    },
+    {
+      "id": "hpq-top-k-11_k_boundaries",
+      "prompt": "What should a top-k routine do when k=0 or k is greater than the number of input items?",
+      "constraints": [
+        "The API permits boundary k values.",
+        "The output size must follow the contract."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "normalize_output",
+            "text": "Return an empty result for k=0 and all available items or the contract's error for k>n; never invent padding values.",
+            "explanation": "Output cardinality must be explicit at both boundaries."
+          },
+          {
+            "id": "always_k",
+            "text": "Return exactly k values by padding with zeros when input has fewer than k.",
+            "explanation": "Padding changes the data and output semantics."
+          },
+          {
+            "id": "negative_k",
+            "text": "Treat k=0 as a request for all values because zero means no limit.",
+            "explanation": "That is a different API convention and must be stated."
+          },
+          {
+            "id": "ignore_k",
+            "text": "Return every input value regardless of k because selection is only an optimization.",
+            "explanation": "k defines the requested result size."
+          }
+        ],
+        "acceptedOptionIds": [
+          "normalize_output"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Top-k is a cardinality contract with explicit empty and oversized-request cases.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A heap implementation may handle k naturally, but the public result still needs a policy for no requested items and fewer than k available records."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always_k": "Padding changes the data and output semantics.",
+          "negative_k": "That is a different API convention and must be stated.",
+          "ignore_k": "k defines the requested result size."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-top-k-12_membership_vs_order",
+      "prompt": "What extra step is needed when top-k membership is correct but the output must be sorted?",
+      "constraints": [
+        "The heap returns the correct k records.",
+        "The output order is required to be ascending or descending."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sort_retained",
+            "text": "Sort the retained k records by the requested output order after selection, paying O(k log k) if needed.",
+            "explanation": "A heap guarantees its root priority, not total output order."
+          },
+          {
+            "id": "heap_array_order",
+            "text": "Return the backing heap array because heap order is globally sorted.",
+            "explanation": "Heap arrays are only partially ordered."
+          },
+          {
+            "id": "sort_input",
+            "text": "Sort the entire input after selecting the k records to guarantee order.",
+            "explanation": "Sorting only retained records is sufficient and cheaper."
+          },
+          {
+            "id": "reverse_root",
+            "text": "Reverse the root repeatedly without extracting the other retained records.",
+            "explanation": "The root alone cannot represent the full ordered output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sort_retained"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Selection and presentation order are separate contracts.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A bounded heap identifies membership efficiently but does not arrange all retained records. Sorting k entries or extracting them in a suitable order completes the output contract."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "heap_array_order": "Heap arrays are only partially ordered.",
+          "sort_input": "Sorting only retained records is sufficient and cheaper.",
+          "reverse_root": "The root alone cannot represent the full ordered output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-top-k-13_threshold",
+      "prompt": "In a k-largest heap, when can an incoming value be rejected without changing the retained set?",
+      "constraints": [
+        "The heap is a min-heap of retained k largest values.",
+        "The heap is already full."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "below_root",
+            "text": "Reject it when value is no larger than the root threshold, because it cannot enter the k-largest set under the tie policy.",
+            "explanation": "The root is the smallest retained candidate."
+          },
+          {
+            "id": "above_root",
+            "text": "Reject it when value is larger than the root because larger values are less useful.",
+            "explanation": "A larger value should replace the threshold."
+          },
+          {
+            "id": "any_value",
+            "text": "Reject every incoming value after the heap first reaches k.",
+            "explanation": "Later values may belong in the top k."
+          },
+          {
+            "id": "compare_tail",
+            "text": "Compare only with the last array slot because heap arrays are sorted at the tail.",
+            "explanation": "The root exposes the heap threshold."
+          }
+        ],
+        "acceptedOptionIds": [
+          "below_root"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A bounded heap uses its root as the admission threshold.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For k largest, a new value that exceeds the minimum retained value can replace it; values below that threshold cannot improve the selected set. Equal handling depends on record/tie policy."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "above_root": "A larger value should replace the threshold.",
+          "any_value": "Later values may belong in the top k.",
+          "compare_tail": "The root exposes the heap threshold."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
+    },
+    {
+      "id": "hpq-top-k-14_provenance",
+      "prompt": "Why should a top-k heap retain original indices when the output asks for positions rather than values?",
+      "constraints": [
+        "Values can repeat.",
+        "The output identifies source positions."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "store_record",
+            "text": "Store each value with its original index and compare or output the composite record according to the tie contract.",
+            "explanation": "Value alone cannot recover which occurrence was selected."
+          },
+          {
+            "id": "value_only",
+            "text": "Store only values because equal values identify equivalent positions.",
+            "explanation": "Equal payloads can occur at different indices."
+          },
+          {
+            "id": "reconstruct_after",
+            "text": "Discard indices and search the original input for each selected value afterward.",
+            "explanation": "Duplicates make reconstruction ambiguous and can add extra work."
+          },
+          {
+            "id": "sort_indices_first",
+            "text": "Sort indices before selection so values no longer need provenance.",
+            "explanation": "Sorting indices does not identify which duplicate occurrence was retained."
+          }
+        ],
+        "acceptedOptionIds": [
+          "store_record"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Top-k selection is over records when provenance is observable.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A composite entry preserves value, source index, and any stable sequence policy through heap eviction. A value-only heap can return the right multiset but the wrong positions."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "value_only": "Equal payloads can occur at different indices.",
+          "reconstruct_after": "Duplicates make reconstruction ambiguous and can add extra work.",
+          "sort_indices_first": "Sorting indices does not identify which duplicate occurrence was retained."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_bounded_top_k_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bounded_heap",
+        "problemArchetypeId": "maintain_top_k"
+      }
     }
   ],
   "modeStructures": {

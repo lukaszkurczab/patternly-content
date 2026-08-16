@@ -617,6 +617,280 @@
         "patternVariantId": "range_sum_query",
         "problemArchetypeId": "range_query"
       }
+    },
+    {
+      "id": "alg-prefix-vs-window-exact-negative-sum",
+      "prompt": "Why is a prefix-sum-plus-hash-state approach often safer than a simple moving window for exact subarray sum k when values may be negative?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "no_monotonic_shrink", "text": "Negative values break the monotonic relation needed to decide window expansion or shrinking from the current sum."},
+        {"id": "prefix_sorts", "text": "Prefix sums sort the input automatically before querying."},
+        {"id": "window_never_constant", "text": "A moving window always uses more space than a prefix map."},
+        {"id": "negative_forbidden_prefix", "text": "Prefix sums are valid only when all values are positive."}
+      ], "acceptedOptionIds": ["no_monotonic_shrink"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "With negative values, changing a boundary can increase or decrease the sum unpredictably, so local window decisions are not monotone.", "details": {"blocks": [{"type": "paragraph", "text": "A prefix-state method uses the exact identity currentPrefix - priorPrefix = k and can count matching prior states regardless of sign."}]}, "wrongOptionExplanationsByOptionId": {"prefix_sorts": "Prefix accumulation preserves input order and does not sort values.", "window_never_constant": "A window can use O(1) state; the prefix map may use O(n), depending on the task.", "negative_forbidden_prefix": "Prefix sums work with negative values; they are often especially useful when windows lose monotonicity."}},
+      "taxonomy": {"primarySkillAtomId": "choose_prefix_over_moving_window", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "one_dimensional_prefix", "problemArchetypeId": "range_query"}
+    },
+    {
+      "id": "alg-prefix-vs-window-11_negative",
+      "prompt": "Why does a prefix-sum map often replace a sliding window for exact target subarrays when values may be negative?",
+      "constraints": [
+        "Array values may be signed.",
+        "The task asks for exact contiguous ranges or counts."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_sum_monotonicity",
+            "text": "With negatives, expanding or shrinking does not change the sum monotonically; prefix differences can still test exact targets.",
+            "explanation": "Prefix state does not require endpoint monotonicity."
+          },
+          {
+            "id": "prefix_requires_positive",
+            "text": "Prefix sums work only for positive values because cumulative sums must increase.",
+            "explanation": "They work with signed values as algebraic sums."
+          },
+          {
+            "id": "sort_first",
+            "text": "Sort values so a window sum becomes monotone without changing the target count.",
+            "explanation": "Sorting changes which indices are contiguous."
+          },
+          {
+            "id": "frequency_only",
+            "text": "Negative values affect frequencies but not range sums.",
+            "explanation": "They directly affect cumulative sums."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_sum_monotonicity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The window proof and the prefix identity rely on different assumptions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For a range [l,r], sum = prefix[r+1]−prefix[l]. A hash map of previous prefix values can count target differences even when no monotone shrink rule exists."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_requires_positive": "They work with signed values as algebraic sums.",
+          "sort_first": "Sorting changes which indices are contiguous.",
+          "frequency_only": "They directly affect cumulative sums."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-12_many_queries",
+      "prompt": "When does a prefix array have a clear advantage over recomputing each range sum from the original array?",
+      "constraints": [
+        "The array is static.",
+        "Many arbitrary range queries are issued."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "constant_range_query",
+            "text": "After O(n) preprocessing, each range sum is O(1) by subtracting two prefix values, so repeated queries amortize the build.",
+            "explanation": "The prefix representation shares work across queries."
+          },
+          {
+            "id": "one_query_only",
+            "text": "Prefix preprocessing is always better even for one tiny range query.",
+            "explanation": "A direct scan may be simpler and cheaper for one small query."
+          },
+          {
+            "id": "dynamic_updates_free",
+            "text": "Prefix sums remain O(1) per query after arbitrary point updates without any repair.",
+            "explanation": "Updates can invalidate all later prefixes."
+          },
+          {
+            "id": "sort_ranges",
+            "text": "Sort query endpoints because prefixes require ranges in sorted order.",
+            "explanation": "Each query can be answered independently by its endpoints."
+          }
+        ],
+        "acceptedOptionIds": [
+          "constant_range_query"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix sums trade construction and static-state assumptions for fast repeated range queries.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The build cost is worthwhile when queries reuse the same array. If updates are frequent, a Fenwick tree, segment tree, or rebuild policy may be more appropriate."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "one_query_only": "A direct scan may be simpler and cheaper for one small query.",
+          "dynamic_updates_free": "Updates can invalidate all later prefixes.",
+          "sort_ranges": "Each query can be answered independently by its endpoints."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-13_difference",
+      "prompt": "What prefix expression gives the sum of inclusive array range [l,r] when prefix[0]=0 and prefix[i+1]=sum of a[0..i]?",
+      "constraints": [
+        "0<=l<=r<n.",
+        "Prefix uses a one-element offset."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prefix_r1_minus_l",
+            "text": "Use prefix[r+1] − prefix[l].",
+            "explanation": "prefix[r+1] includes a[r], while prefix[l] removes elements before l."
+          },
+          {
+            "id": "prefix_r_minus_l",
+            "text": "Use prefix[r] − prefix[l] for an inclusive range.",
+            "explanation": "That omits a[r] under the stated convention."
+          },
+          {
+            "id": "prefix_r1_minus_l1",
+            "text": "Use prefix[r+1] − prefix[l+1].",
+            "explanation": "That omits a[l]."
+          },
+          {
+            "id": "prefix_l_minus_r1",
+            "text": "Use prefix[l] − prefix[r+1].",
+            "explanation": "The subtraction order reverses the range sum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prefix_r1_minus_l"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The index offset is the contract that prevents boundary omissions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A zero prefix at index 0 represents an empty prefix. The inclusive range is the cumulative sum through r minus the cumulative sum through l−1, encoded as prefix[r+1]−prefix[l]."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "prefix_r_minus_l": "That omits a[r] under the stated convention.",
+          "prefix_r1_minus_l1": "That omits a[l].",
+          "prefix_l_minus_r1": "The subtraction order reverses the range sum."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
+    },
+    {
+      "id": "alg-prefix-vs-window-14_updates",
+      "prompt": "Why can a plain prefix array be a poor choice when point updates and range queries interleave?",
+      "constraints": [
+        "Updates can occur between queries.",
+        "Queries must reflect the latest values."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "repair_prefixes",
+            "text": "A point update changes every later prefix, so maintaining the array naively costs O(n) per update; a dynamic tree may be better.",
+            "explanation": "Static prefix sharing no longer remains free."
+          },
+          {
+            "id": "updates_local",
+            "text": "Only one prefix entry changes because each prefix stores one original element.",
+            "explanation": "Every later cumulative prefix includes the updated point."
+          },
+          {
+            "id": "query_invalid",
+            "text": "Range queries are impossible after any update.",
+            "explanation": "They are possible with updates or rebuilding, but the cost model changes."
+          },
+          {
+            "id": "sort_after",
+            "text": "Sort the array after each update to restore prefix validity.",
+            "explanation": "Sorting does not recompute cumulative sums or preserve indices."
+          }
+        ],
+        "acceptedOptionIds": [
+          "repair_prefixes"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Prefix arrays encode static cumulative state; updates have a suffix-wide dependency.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For point updates, a Fenwick or segment tree can maintain range sums in logarithmic update and query time, subject to the numeric and memory contract. A plain prefix array remains fine when updates are rare and rebuild cost is acceptable."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "updates_local": "Every later cumulative prefix includes the updated point.",
+          "query_invalid": "They are possible with updates or rebuilding, but the cost model changes.",
+          "sort_after": "Sorting does not recompute cumulative sums or preserve indices."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_prefix_over_moving_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_prefix",
+        "problemArchetypeId": "range_query"
+      }
     }
   ],
   "modeStructures": {

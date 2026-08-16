@@ -375,6 +375,306 @@
       "constraints": [
         "`n >= 1` and `H >= 2`."
       ]
+    },
+    {
+      "id": "hpq-complexity-full-heap-mutation-sequence",
+      "prompt": "An algorithm inserts n items into an initially empty binary heap and then removes all n items. What worst-case time and auxiliary-space bounds should be reported?",
+      "difficulty": "foundational",
+      "interaction": {"type": "complexity", "checkedDimensions": ["time", "auxiliary_space"], "availableValuesByDimension": {"time": ["O(n)", "O(n log n)", "O(n^2)"], "auxiliary_space": ["O(1)", "O(log n)", "O(n)"]}, "acceptedValuesByDimension": {"time": ["O(n log n)"], "auxiliary_space": ["O(n)"]}, "normalizedAliasesByDimension": {"time": {}, "auxiliary_space": {}}, "maxPoints": 2},
+      "scoringContract": {"type": "complexity", "maxPoints": 2},
+      "feedback": {"reason": "There are 2n logarithmic worst-case mutations, and the heap may hold all n items between phases.", "details": {"blocks": [{"type": "paragraph", "text": "Each push and pop can traverse heap height O(log n), so n insertions plus n removals give O(n log n) worst-case time. The backing array stores up to n entries, giving O(n) auxiliary space. A bottom-up heapify could reduce construction cost, but the repeated removals still contribute O(n log n)."}]}},
+      "taxonomy": {"primarySkillAtomId": "derive_heap_cost_from_heap_size", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["The heap is materialized in memory and no output storage is counted."]
+    },
+    {
+      "id": "hpq-complexity-bounded-frontier-updates",
+      "prompt": "A streaming top-k algorithm processes n values with a heap that never exceeds k retained entries. Each value may cause one push and one pop. What time and auxiliary-space bounds follow?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "complexity", "checkedDimensions": ["time", "auxiliary_space"], "availableValuesByDimension": {"time": ["O(n)", "O(n log k)", "O(k log n)", "O(n^2)"], "auxiliary_space": ["O(1)", "O(log k)", "O(k)", "O(n)"]}, "acceptedValuesByDimension": {"time": ["O(n log k)"], "auxiliary_space": ["O(k)"]}, "normalizedAliasesByDimension": {"time": {}, "auxiliary_space": {}}, "maxPoints": 2},
+      "scoringContract": {"type": "complexity", "maxPoints": 2},
+      "feedback": {"reason": "The priority work depends on the retained frontier size k, not on the full stream length n.", "details": {"blocks": [{"type": "paragraph", "text": "Each arrival performs constant checks and at most logarithmic heap repairs at size k. Across n arrivals this is O(n log k), with O(k) retained entries. A scan of all history per arrival would be larger; calling the time O(n) would hide nonconstant heap repair unless k is explicitly constant."}]}},
+      "taxonomy": {"primarySkillAtomId": "derive_heap_cost_from_heap_size", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bounded_heap", "problemArchetypeId": "maintain_top_k"},
+      "constraints": ["1 <= k <= n and the heap stores only the retained frontier."]
+    },
+    {
+      "id": "hpq-complexity-lazy-stale-purge",
+      "prompt": "A lazy-deletion priority queue performs n insertions and n logical deletions; each physical stale entry is purged at most once when it reaches the root. What amortized time bound follows?",
+      "difficulty": "advanced",
+      "interaction": {"type": "complexity", "checkedDimensions": ["time", "auxiliary_space"], "availableValuesByDimension": {"time": ["O(n)", "O(n log n)", "O(n^2)"], "auxiliary_space": ["O(1)", "O(n)", "O(n log n)"]}, "acceptedValuesByDimension": {"time": ["O(n log n)"], "auxiliary_space": ["O(n)"]}, "normalizedAliasesByDimension": {"time": {}, "auxiliary_space": {}}, "maxPoints": 2},
+      "scoringContract": {"type": "complexity", "maxPoints": 2},
+      "feedback": {"reason": "Every inserted entry is pushed once and physically popped at most once, with logarithmic repair per heap mutation.", "details": {"blocks": [{"type": "paragraph", "text": "Lazy deletion changes when removal occurs, not the total number of physical heap operations: at most O(n) pushes and O(n) stale or active pops. With heap size O(n), each costs O(log n), giving O(n log n) amortized time. Until purged, stale entries can occupy O(n) memory, so logical deletion does not imply constant space."}]}},
+      "taxonomy": {"primarySkillAtomId": "derive_heap_cost_from_heap_size", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["No periodic compaction reduces the physical heap below the inserted-entry bound."]
+    },
+    {
+      "id": "hpq-complexity-peek-with-mutations",
+      "prompt": "A client performs n heap insertions, n peek operations, and n removals. Which cost distinction should the complexity answer make?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "peek_constant_mutation_log", "text": "Peek is O(1) per operation, while push and pop are O(log h) in a heap of size h; the total is dominated by the mutations."}, {"id": "all_log", "text": "Every operation is O(log h) because reading the root requires descending the heap."}, {"id": "all_constant", "text": "All operations are O(1) because the root is always stored at index zero."}, {"id": "peek_linear", "text": "Peek is O(h) because all entries must be checked to validate the root."}], "acceptedOptionIds": ["peek_constant_mutation_log"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Root access is constant-time; only mutations may traverse a repair path.", "details": {"blocks": [{"type": "paragraph", "text": "A valid heap invariant guarantees the root is the required extreme, so peek reads one array position in O(1). Push and pop can move an element up or down height O(log h). For n operations of each kind, the O(n log h) mutation work dominates the O(n) peeks."}]}, "wrongOptionExplanationsByOptionId": {"all_log": "Reading the root does not require a repair path or scan.", "all_constant": "Mutation can move an element through the heap height even though root access is constant.", "peek_linear": "The heap invariant already summarizes the extreme at the root."}},
+      "taxonomy": {"primarySkillAtomId": "derive_heap_cost_from_heap_size", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["The heap invariant is maintained after every mutation."]
+    },
+    {
+      "id": "hpq-complexity-11-size-bound",
+      "prompt": "What determines the height cost of a binary heap operation when only k elements are retained?",
+      "constraints": [
+        "The heap is a complete binary tree.",
+        "The active heap contains at most k elements."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "log_k",
+            "text": "The height is O(log k), so push, pop, or replacement costs O(log k) aside from constant-time peek.",
+            "explanation": "Heap depth depends on active heap size."
+          },
+          {
+            "id": "log_n_input",
+            "text": "Every heap operation costs O(log n) even when the heap stores only two items from a huge stream.",
+            "explanation": "The active structure size, not raw input history, controls depth."
+          },
+          {
+            "id": "constant_all",
+            "text": "Heap operations are O(1) because the root is directly accessible.",
+            "explanation": "Restoring the heap invariant can move an item down or up."
+          },
+          {
+            "id": "k_squared",
+            "text": "The complete-tree shape makes heap operations O(k²).",
+            "explanation": "Each operation follows one root-to-leaf path."
+          }
+        ],
+        "acceptedOptionIds": [
+          "log_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap complexity follows the current number of retained elements, not the number of values ever seen.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A bounded top-k heap can process a stream of size n with O(log k) updates and O(k) memory. The input history affects the number of updates, while heap depth affects each update."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "log_n_input": "The active structure size, not raw input history, controls depth.",
+          "constant_all": "Restoring the heap invariant can move an item down or up.",
+          "k_squared": "Each operation follows one root-to-leaf path."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_heap_cost_from_heap_size",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-complexity-12-build",
+      "prompt": "What is the asymptotic cost of building a heap from an array of n values using bottom-up heapify?",
+      "constraints": [
+        "All n values are initially available.",
+        "The heap is built in place or with linear auxiliary storage."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "linear_heapify",
+            "text": "Bottom-up heapify is O(n) because most nodes are near leaves and move only a small distance.",
+            "explanation": "The sum of subtree heights is linear."
+          },
+          {
+            "id": "n_log_n_only",
+            "text": "It must be O(n log n) because inserting n values one at a time is the only heap construction method.",
+            "explanation": "Repeated insertion has that cost, bottom-up heapify is different."
+          },
+          {
+            "id": "constant",
+            "text": "It is O(1) because only the root needs correction.",
+            "explanation": "Every internal node may need a sift-down."
+          },
+          {
+            "id": "n_squared",
+            "text": "Each internal node scans the whole array, making construction quadratic.",
+            "explanation": "Sift-down follows its own subtree height, not the entire array."
+          }
+        ],
+        "acceptedOptionIds": [
+          "linear_heapify"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap construction cost depends on the construction method.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Bottom-up heapify starts at the last internal nodes and sifts down. Although an individual node can move logarithmically, the many shallow nodes make the total linear; repeated push is O(n log n)."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "n_log_n_only": "Repeated insertion has that cost, bottom-up heapify is different.",
+          "constant": "Every internal node may need a sift-down.",
+          "n_squared": "Sift-down follows its own subtree height, not the entire array."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_heap_cost_from_heap_size",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-complexity-13_bounded_stream",
+      "prompt": "A stream has n items but a top-k heap retains only k. What are the main time and space costs?",
+      "constraints": [
+        "Each incoming item is compared with the current threshold.",
+        "k is smaller than or equal to n."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "n_log_k_k_space",
+            "text": "At most O(n log k) time and O(k) auxiliary space, with a constant-time rejection or O(log k) replacement path.",
+            "explanation": "The heap is bounded while every stream item may be examined."
+          },
+          {
+            "id": "n_log_n_space_n",
+            "text": "The method is O(n log n) time and O(n) space because all stream values remain in the heap.",
+            "explanation": "A bounded top-k heap discards most values."
+          },
+          {
+            "id": "k_log_n",
+            "text": "Only k input items are read because the heap stores k items.",
+            "explanation": "Every stream item must be considered to know the top k."
+          },
+          {
+            "id": "constant",
+            "text": "Both time and space are O(1) because k is treated as a constant in all contracts.",
+            "explanation": "Even if k is small, n input items are processed; parameterized bounds should remain explicit."
+          }
+        ],
+        "acceptedOptionIds": [
+          "n_log_k_k_space"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The bounded heap separates stream length from retained frontier size.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The scan costs at least O(n) to read the stream. Each item can trigger an O(log k) replacement, and the heap stores k entries; if k is a fixed constant this simplifies but should not hide the parameter."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "n_log_n_space_n": "A bounded top-k heap discards most values.",
+          "k_log_n": "Every stream item must be considered to know the top k.",
+          "constant": "Even if k is small, n input items are processed; parameterized bounds should remain explicit."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_heap_cost_from_heap_size",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-complexity-14_heap_memory",
+      "prompt": "Why does storing a heap of k records require O(k) auxiliary space even when the source input is not copied?",
+      "constraints": [
+        "Each retained record occupies a heap slot.",
+        "The source may be streamed."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "retained_frontier",
+            "text": "The heap owns one slot per retained record, so its peak auxiliary space is O(k) independent of whether the source is streamed.",
+            "explanation": "Streaming removes input storage, not the frontier storage."
+          },
+          {
+            "id": "constant_root",
+            "text": "Only the root is stored explicitly; children are recomputed when needed.",
+            "explanation": "A binary heap stores all retained nodes or records."
+          },
+          {
+            "id": "o_n_stream",
+            "text": "Streaming still requires O(n) memory because the stream has n total values.",
+            "explanation": "A true stream need not retain all values."
+          },
+          {
+            "id": "log_k_space",
+            "text": "Heap height is logarithmic, so heap space is O(log k).",
+            "explanation": "Height and number of stored nodes are different measures."
+          }
+        ],
+        "acceptedOptionIds": [
+          "retained_frontier"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap space is measured by stored records, not by tree height.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A complete heap has k entries even though its height is log k. Streaming can keep source memory low, but the retained candidate frontier remains O(k)."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "constant_root": "A binary heap stores all retained nodes or records.",
+          "o_n_stream": "A true stream need not retain all values.",
+          "log_k_space": "Height and number of stored nodes are different measures."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_heap_cost_from_heap_size",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
     }
   ],
   "modeStructures": {

@@ -329,6 +329,316 @@
         "patternVariantId": "k_way_merge",
         "problemArchetypeId": "merge_sorted_sources"
       }
+    },
+    {
+      "id": "hpq-recognize-changing-extreme-after-update",
+      "prompt": "A system repeatedly asks for the current smallest score while items can be inserted and the current smallest can be removed. Which structural signal should guide the choice of data structure?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "priority_frontier", "text": "Maintain a min-priority frontier, because the required answer is a changing extreme under updates."}, {"id": "one_scan", "text": "Scan the original input once, because the smallest value never changes after insertion."}, {"id": "full_sort_each_query", "text": "Sort the entire collection before every query, because heaps cannot support removals."}, {"id": "membership_set", "text": "Use only a membership set, because the task asks whether items exist."}], "acceptedOptionIds": ["priority_frontier"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Repeated extreme access plus insert/remove updates is the characteristic priority-frontier workload.", "details": {"blocks": [{"type": "paragraph", "text": "The item answering one query can disappear and new candidates can arrive, so a one-time scan or one-time sort does not maintain the required state. A heap keeps the current minimum at the root while mutations repair one path. A map can support identity or membership but does not expose the smallest score without another ordering structure."}]}, "wrongOptionExplanationsByOptionId": {"one_scan": "Insertions and removals can change the current minimum after the original scan.", "full_sort_each_query": "Sorting works functionally but repeats more work than the incremental frontier structure requires.", "membership_set": "Presence does not answer which active item has the smallest score."}},
+      "taxonomy": {"primarySkillAtomId": "identify_repeated_extreme_requirement", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["The collection may be updated between extreme queries."]
+    },
+    {
+      "id": "hpq-recognize-bounded-frontier",
+      "prompt": "A stream requires the kth largest value after every arrival, and only the current kth value and the k larger-or-equal candidates matter. What heap signal is present?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "bounded_min_frontier", "text": "Keep a min-heap of size k; its root is the smallest member of the retained top-k frontier and therefore the kth largest."}, {"id": "full_max_history", "text": "Keep every value in a max-heap because the root alone is enough for every future kth query."}, {"id": "fifo_window", "text": "Keep the last k arrivals because rank is determined by recency."}, {"id": "one_time_selection", "text": "Use a one-time selection algorithm because the stream never changes after the first arrival."}], "acceptedOptionIds": ["bounded_min_frontier"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The requirement is a repeated rank frontier, not a repeated global sort; only the best k candidates need to survive.", "details": {"blocks": [{"type": "paragraph", "text": "After at least k arrivals, the smallest value among the retained k largest values is exactly the kth-largest answer. A min-heap exposes that threshold and evicts it when a larger value arrives, keeping state O(k). A max-heap of all history can answer but retains unnecessary information, while FIFO order ignores value rank."}]}, "wrongOptionExplanationsByOptionId": {"full_max_history": "A full history can be correct with additional work, but it misses the bounded-frontier structure and uses O(n) state.", "fifo_window": "The kth rank is value-based, not determined by the most recent k arrivals.", "one_time_selection": "Each new arrival can change the kth value, so the selection must be maintained incrementally."}},
+      "taxonomy": {"primarySkillAtomId": "identify_repeated_extreme_requirement", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bounded_heap", "problemArchetypeId": "maintain_top_k"},
+      "constraints": ["The stream may be longer than k and answers are requested online."]
+    },
+    {
+      "id": "hpq-recognize-k-way-head-frontier",
+      "prompt": "Several input lists are individually sorted ascending. The output must be one sorted merge, and after emitting a list head the next element from that same list becomes eligible. Which frontier signal identifies a heap solution?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "one_head_per_source", "text": "Maintain one current head per nonempty source in a min-heap, repeatedly emit the smallest head, and insert that source's next element."}, {"id": "sort_all_values", "text": "Concatenate all lists and sort after every emitted value."}, {"id": "source_fifo_only", "text": "Process complete lists in input order because each list is already sorted."}, {"id": "max_head", "text": "Keep the largest current head so that smaller values remain hidden until the end."}], "acceptedOptionIds": ["one_head_per_source"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Only the current head of each sorted source can be the next global minimum, so those heads form a changing bounded frontier.", "details": {"blocks": [{"type": "paragraph", "text": "The heap stores at most one candidate per nonexhausted list. Once the smallest head is emitted, only its source changes: advance that source and insert its next head. The local sortedness of each source proves that hidden later elements cannot beat its current head. This yields O(N log k) merge time for N total values and k sources, rather than repeatedly sorting all remaining values."}]}, "wrongOptionExplanationsByOptionId": {"sort_all_values": "Concatenation plus one final sort can work but does not use the incremental frontier and costs more than the k-way heap merge.", "source_fifo_only": "The smallest next value may come from any source, so source order is not a global merge order.", "max_head": "The global next output is the minimum head for ascending output; retaining the maximum exposes the wrong candidate."}},
+      "taxonomy": {"primarySkillAtomId": "identify_repeated_extreme_requirement", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["Each source list is sorted ascending and source identity is retained for advancement."]
+    },
+    {
+      "id": "hpq-recognize-priority-change-operation",
+      "prompt": "A waiting job's priority can improve while it remains in the queue, and the next operation must always return the current best job. Which additional requirement must be part of heap-pattern recognition?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "update_key_contract", "text": "The design must support a priority-update operation, lazy versioning, or reinsertion so the heap's exposed root reflects the current key."}, {"id": "insert_only", "text": "Ordinary insertion is enough because changing a key never affects heap order."}, {"id": "sort_once", "text": "Sort the initial queue; later priority changes cannot change the next job."}, {"id": "ignore_stale", "text": "Return the root without checking whether its stored priority is still current."}], "acceptedOptionIds": ["update_key_contract"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A heap frontier is correct only when mutations that change candidate priority are reflected in the ordering or filtered at the answer boundary.", "details": {"blocks": [{"type": "paragraph", "text": "Changing a key in place can violate both parent and child heap relations. An indexed heap can sift the updated entry, while lazy versioning can insert a new version and discard stale roots before peek or pop. Without one of these contracts, the root may represent an obsolete priority and no longer be the current best job."}]}, "wrongOptionExplanationsByOptionId": {"insert_only": "In-place priority changes can invalidate the heap invariant without a repair operation.", "sort_once": "Later updates change the required order, so an initial sort cannot maintain the frontier.", "ignore_stale": "A stale root can be priority-extreme but logically inactive or outdated."}},
+      "taxonomy": {"primarySkillAtomId": "identify_repeated_extreme_requirement", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "schedule_by_priority"},
+      "constraints": ["Job identity and current priority are distinct fields."]
+    },
+    {
+      "id": "hpq-recognize-one-shot-vs-online-extreme",
+      "prompt": "Which change converts a one-shot minimum query into a repeated-extreme workload where a heap frontier may become appropriate?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "updates_and_repeated_answers", "text": "The system must answer the minimum after many insertions and removals, rather than only once on a static collection."}, {"id": "rename_variable", "text": "Rename the scan variable to priority without changing the operations."}, {"id": "more_values_static", "text": "Increase the static input size but still ask for one minimum only."}, {"id": "print_format", "text": "Change the output from a number to a string while keeping one query."}], "acceptedOptionIds": ["updates_and_repeated_answers"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The heap's value appears when the extreme must be maintained across changing candidate sets and repeated access.", "details": {"blocks": [{"type": "paragraph", "text": "A static one-shot minimum is usually a linear scan. Repeated queries after insertions and removals create a dynamic ordered-frontier requirement: the current minimum must be exposed efficiently without rebuilding all state. More static values do not change that workload, and naming or output format does not create a new operation contract."}]}, "wrongOptionExplanationsByOptionId": {"rename_variable": "Names do not add repeated updates or an extreme-query requirement.", "more_values_static": "Input size affects cost but not the structural workload when only one answer is needed.", "print_format": "Representation of the answer does not change how candidates are maintained."}},
+      "taxonomy": {"primarySkillAtomId": "identify_repeated_extreme_requirement", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["The minimum query is repeated between updates."]
+    },
+    {
+      "id": "hpq-recognize-11_repeated_min",
+      "prompt": "Which problem signal most strongly suggests a priority queue?",
+      "constraints": [
+        "The algorithm repeatedly needs the current minimum.",
+        "Items may be inserted between extractions."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "dynamic_extreme",
+            "text": "Maintain a set of changing candidates while repeatedly extracting the smallest or largest under a priority key.",
+            "explanation": "That is the priority-queue operation pattern."
+          },
+          {
+            "id": "one_sort",
+            "text": "Find one minimum in an immutable array and never change the candidate set.",
+            "explanation": "A single static minimum may use a scan or sort without a heap."
+          },
+          {
+            "id": "contiguous_range",
+            "text": "Find a longest contiguous substring with a frequency constraint.",
+            "explanation": "That signal points to a sliding window."
+          },
+          {
+            "id": "all_pairs",
+            "text": "Enumerate every pair of points regardless of priority.",
+            "explanation": "Pair enumeration does not require repeated extreme extraction."
+          }
+        ],
+        "acceptedOptionIds": [
+          "dynamic_extreme"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The heap signal is repeated extreme access under changing membership.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A priority queue pays to maintain an ordered frontier while insertions and removals interleave. One static query may be simpler with a scan or sort."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "one_sort": "A single static minimum may use a scan or sort without a heap.",
+          "contiguous_range": "That signal points to a sliding window.",
+          "all_pairs": "Pair enumeration does not require repeated extreme extraction."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_repeated_extreme_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-recognize-12_streaming",
+      "prompt": "Why can a heap be appropriate for a streaming top-k problem when the full input cannot be stored?",
+      "constraints": [
+        "Values arrive one at a time.",
+        "Only k final records are required."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bounded_frontier",
+            "text": "It keeps only a bounded k-sized frontier while processing each arriving value and never needs the full stream in memory.",
+            "explanation": "The heap matches the online memory contract."
+          },
+          {
+            "id": "store_then_sort",
+            "text": "A heap requires storing the whole stream before it can identify top k.",
+            "explanation": "Bounded heaps are designed for online selection."
+          },
+          {
+            "id": "random_access",
+            "text": "Streaming top-k requires random access to all prior values.",
+            "explanation": "Each value is compared with the current threshold instead."
+          },
+          {
+            "id": "fixed_window",
+            "text": "Use a fixed-size window because k is a number.",
+            "explanation": "Top-k is not necessarily contiguous in arrival order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bounded_frontier"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The bounded heap is an online summary of the best k candidates.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Each new value can be rejected or replace the current worst retained value. Memory remains O(k), and no future random access to discarded values is needed."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "store_then_sort": "Bounded heaps are designed for online selection.",
+          "random_access": "Each value is compared with the current threshold instead.",
+          "fixed_window": "Top-k is not necessarily contiguous in arrival order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_repeated_extreme_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-recognize-13_merge_signal",
+      "prompt": "Which combination of signals identifies k-way merge rather than ordinary top-k selection?",
+      "constraints": [
+        "There are k individually sorted sources.",
+        "The output must preserve global sorted order across all source items."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "frontier_per_source",
+            "text": "Maintain one current frontier entry per source and repeatedly extract the globally smallest entry, then advance that source.",
+            "explanation": "Source ordering makes one head per source sufficient."
+          },
+          {
+            "id": "global_top_k",
+            "text": "Keep only the k largest values across all sources and discard the rest.",
+            "explanation": "That is top-k selection, not full merge."
+          },
+          {
+            "id": "single_source_sort",
+            "text": "Sort one source and ignore the others until the end.",
+            "explanation": "All source frontiers can contribute to the next output."
+          },
+          {
+            "id": "frequency_window",
+            "text": "Track counts inside a contiguous window spanning source boundaries.",
+            "explanation": "The merge contract is source-based, not window-based."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frontier_per_source"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "K-way merge adds source provenance and successor advancement to repeated extreme extraction.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The heap selects among k sorted frontiers, but every source item is eventually emitted. Top-k selection instead maintains only a bounded best subset."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "global_top_k": "That is top-k selection, not full merge.",
+          "single_source_sort": "All source frontiers can contribute to the next output.",
+          "frequency_window": "The merge contract is source-based, not window-based."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_repeated_extreme_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-recognize-14_bounded_selection",
+      "prompt": "When is a full sort a weaker fit than a heap for selecting k extremes?",
+      "constraints": [
+        "Only k outputs are needed.",
+        "The input may be large or streaming."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "avoid_full_retention",
+            "text": "A bounded heap can process values online with O(k) memory and O(n log k) updates, avoiding full O(n) retention and sorting.",
+            "explanation": "The heap matches both output size and access pattern."
+          },
+          {
+            "id": "sort_always",
+            "text": "Full sorting is always preferable because it also returns unselected values.",
+            "explanation": "Returning extra work is not an advantage when only k outputs are required."
+          },
+          {
+            "id": "heap_needs_sorted",
+            "text": "A heap is weaker because it cannot operate until input is sorted.",
+            "explanation": "Heaps maintain their own frontier invariant."
+          },
+          {
+            "id": "k_equals_n",
+            "text": "A heap is always better even when k equals n and sorted order is required.",
+            "explanation": "When all values are needed, the cost tradeoff may favor sorting or another method."
+          }
+        ],
+        "acceptedOptionIds": [
+          "avoid_full_retention"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Selection scope and input access pattern determine whether a heap avoids unnecessary work.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A heap is strongest when k is much smaller than n or values arrive online. If the full sorted order is required or k≈n, the comparison should be revisited rather than applying a heap by habit."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sort_always": "Returning extra work is not an advantage when only k outputs are required.",
+          "heap_needs_sorted": "Heaps maintain their own frontier invariant.",
+          "k_equals_n": "When all values are needed, the cost tradeoff may favor sorting or another method."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_repeated_extreme_requirement",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
     }
   ],
   "modeStructures": {

@@ -441,6 +441,292 @@
         "patternVariantId": "two_dimensional_dp",
         "problemArchetypeId": "grid_path_dp"
       }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-08-parent-pointer-contract",
+      "prompt": "A DP stores for each state the predecessor choice that produced its optimum. What is the reconstruction procedure?",
+      "difficulty": "foundational",
+      "interaction": {"type": "ordering", "elements": [
+        {"id": "start_final", "text": "Start at the terminal state representing the requested optimum."},
+        {"id": "read_parent", "text": "Read the stored predecessor or decision for the current state."},
+        {"id": "emit_choice", "text": "Emit the corresponding choice and move to that predecessor state."},
+        {"id": "stop_base", "text": "Stop when the base state is reached, then reverse the collected choices if needed."}
+      ], "canonicalOrder": ["start_final", "read_parent", "emit_choice", "stop_base"], "scoringMethod": "adjacent_relations"},
+      "scoringContract": {"type": "ordering", "maxPoints": 3},
+      "feedback": {"reason": "Parent data is followed backward from the final optimum until the base, then output order is restored if traversal was reverse.", "details": {"blocks": [{"type": "paragraph", "text": "The value table identifies the optimum but parent pointers identify one witness. Reconstruction must use the same state semantics as the recurrence, stop at a declared base, and not invent a parent for an unreachable state. Reversing the collected path is a presentation step after the chain is complete."}]}},
+      "taxonomy": {"primarySkillAtomId": "reconstruct_choice_from_dp_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "tabulation", "problemArchetypeId": "choose_or_skip"}
+    },
+    {
+      "id": "alg-dpintro-reconstruct-09-unreachable-witness",
+      "prompt": "A terminal DP state is marked impossible. What should reconstruction do?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "return_no_solution", "text": "Return the contract's explicit no-solution result and do not follow an absent parent chain."},
+        {"id": "invent_empty_path", "text": "Return an empty witness because every state has a trivial reconstruction."},
+        {"id": "follow_sentinel", "text": "Follow the infinity or sentinel index as if it were a real predecessor."},
+        {"id": "choose_any_parent", "text": "Choose any neighboring state to manufacture a path of the requested shape."}
+      ], "acceptedOptionIds": ["return_no_solution"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An impossible optimum has no valid predecessor chain and must remain distinct from an empty but valid solution.", "details": {"blocks": [{"type": "paragraph", "text": "The DP value contract should distinguish unreachable from a legitimate zero-length or zero-cost result. Reconstruction checks that terminal status before reading parent data. Treating a sentinel as a state creates a witness that violates the original constraints."}]}, "wrongOptionExplanationsByOptionId": {"invent_empty_path": "Empty can be a valid witness only when the problem defines it as reachable; impossibility is different.", "follow_sentinel": "Sentinel values encode absence, not a real state with a predecessor.", "choose_any_parent": "A neighboring state is valid only if the recurrence proves it leads to the terminal optimum."}},
+      "taxonomy": {"primarySkillAtomId": "reconstruct_choice_from_dp_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "tabulation", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {
+      "id": "alg-dpintro-reconstruct-10-tie-policy",
+      "prompt": "Two predecessor choices produce equal optimum values and the API requires deterministic output. What must be specified?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "explicit_tie_rule", "text": "Define a deterministic tie-break in the transition or parent recording, then use the same rule during reconstruction."},
+        {"id": "first_runtime_branch", "text": "Rely on whichever branch the compiler or hash iteration happens to visit first."},
+        {"id": "discard_equal", "text": "Discard both choices because equal optima cannot produce a valid witness."},
+        {"id": "sort_after_any", "text": "Choose any witness and sort its decisions afterward to recover the required tie order."}
+      ], "acceptedOptionIds": ["explicit_tie_rule"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Deterministic witness selection is an output contract and cannot be delegated to incidental traversal order.", "details": {"blocks": [{"type": "paragraph", "text": "If any optimum is accepted, either branch is semantically valid. If the API observes which one is returned, the tie rule must be explicit—such as prefer take, prefer skip, lexicographically smaller path, or earlier index—and parent recording must apply it consistently."}]}, "wrongOptionExplanationsByOptionId": {"first_runtime_branch": "Iteration or hash order may change across runs and is not a stable contract.", "discard_equal": "Equal value does not make both witnesses invalid; it creates a choice point.", "sort_after_any": "Postprocessing cannot generally recover a tie policy that was not encoded in the state decisions."}},
+      "taxonomy": {"primarySkillAtomId": "reconstruct_choice_from_dp_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_dp", "problemArchetypeId": "sequence_alignment_intro"}
+    },
+    {
+      "id": "alg-dpintro-reconstruct-11-backpointer",
+      "prompt": "What does a DP backpointer store?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "predecessor",
+            "text": "The predecessor state or choice that produced the selected value."
+          },
+          {
+            "id": "value",
+            "text": "Only the numeric optimum."
+          },
+          {
+            "id": "next",
+            "text": "The next raw input value."
+          },
+          {
+            "id": "all",
+            "text": "Every complete solution."
+          }
+        ],
+        "acceptedOptionIds": [
+          "predecessor"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "value": "The value may not identify a choice.",
+          "next": "Reconstruction follows state dependencies.",
+          "all": "One witness needs less storage."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-12-tie",
+      "prompt": "How should reconstruction handle equal-value predecessors?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "tie_policy",
+            "text": "Declare and apply a policy such as first, earliest, or lexicographically smallest."
+          },
+          {
+            "id": "random",
+            "text": "Choose arbitrary ties even when deterministic output is required."
+          },
+          {
+            "id": "all_paths",
+            "text": "Return every tied path for a one-path request."
+          },
+          {
+            "id": "impossible",
+            "text": "Ties make reconstruction impossible."
+          }
+        ],
+        "acceptedOptionIds": [
+          "tie_policy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "random": "That makes output unstable.",
+          "all_paths": "That changes output size.",
+          "impossible": "A policy resolves ties."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-13-reverse",
+      "prompt": "Why is a reconstructed DP path often reversed before return?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "backward_walk",
+            "text": "Following predecessors walks from end to start, so reverse collected choices or emit through a stack."
+          },
+          {
+            "id": "forward",
+            "text": "Backpointers point forward."
+          },
+          {
+            "id": "sort",
+            "text": "Sort choices to restore order."
+          },
+          {
+            "id": "drop",
+            "text": "Omit the start boundary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "backward_walk"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "forward": "Standard predecessors point backward.",
+          "sort": "Sorting can change the path.",
+          "drop": "It may be part of output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
+    },
+    {
+      "id": "alg-dpintro-reconstruct-14-score",
+      "prompt": "When is value-only compressed DP sufficient?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "score_only",
+            "text": "When the public output excludes a chosen path and the compressed recurrence computes the scalar correctly."
+          },
+          {
+            "id": "always",
+            "text": "Backpointers are mandatory for every DP."
+          },
+          {
+            "id": "recover",
+            "text": "The score always identifies a path."
+          },
+          {
+            "id": "count",
+            "text": "An optimum count is a selected solution."
+          }
+        ],
+        "acceptedOptionIds": [
+          "score_only"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always": "Unrequested witnesses need not be stored.",
+          "recover": "Compression can lose choices.",
+          "count": "Count and witness differ."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reconstruct_choice_from_dp_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "sequence_alignment_intro"
+      }
     }
   ],
   "modeStructures": {
@@ -462,7 +748,14 @@
           "alg-dpintro-reconstruct-04-backtrack-final-to-base",
           "alg-dpintro-reconstruct-05-compression-needs-recovery-plan",
           "alg-dpintro-reconstruct-06-deterministic-ties",
-          "alg-dpintro-reconstruct-07-grid-parent-transfer"
+          "alg-dpintro-reconstruct-07-grid-parent-transfer",
+          "alg-dpintro-reconstruct-08-parent-pointer-contract",
+          "alg-dpintro-reconstruct-09-unreachable-witness",
+          "alg-dpintro-reconstruct-10-tie-policy",
+          "alg-dpintro-reconstruct-11-backpointer",
+          "alg-dpintro-reconstruct-12-tie",
+          "alg-dpintro-reconstruct-13-reverse",
+          "alg-dpintro-reconstruct-14-score"
         ],
         "relationMetadata": {
           "mechanismBoundary": "reconstruct_solution_intro"

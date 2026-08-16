@@ -449,6 +449,292 @@
         "patternVariantId": "two_dimensional_dp",
         "problemArchetypeId": "grid_path_dp"
       }
+    },
+    {
+      "id": "alg-dpintro-tabulation-08-fill-dependency-order",
+      "prompt": "What is the first design artifact to derive before writing nested loops for a bottom-up DP?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "dependency_graph", "text": "The state meaning and dependency graph, from which table boundaries and a safe evaluation order follow."},
+        {"id": "loop_direction_guess", "text": "A forward loop template copied from another DP, regardless of this recurrence."},
+        {"id": "output_format_only", "text": "The final output formatting, because it determines which cells are legal to compute."},
+        {"id": "random_table", "text": "A table filled in arbitrary order, followed by a correction pass."}
+      ], "acceptedOptionIds": ["dependency_graph"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Tabulation is a schedule over state dependencies; loops are an implementation of that schedule, not its source.", "details": {"blocks": [{"type": "paragraph", "text": "Write what each cell means, which predecessor cells the transition reads, and which base cells are known. Then choose row/column directions that ensure each predecessor is ready. Copying loop shape without this graph can read uninitialized or overwritten data."}]}, "wrongOptionExplanationsByOptionId": {"loop_direction_guess": "The right direction changes with the recurrence and state formulation.", "output_format_only": "Output shape does not tell which internal dependencies must be computed first.", "random_table": "A later correction cannot generally recover values computed from unavailable predecessors."}},
+      "taxonomy": {"primarySkillAtomId": "tabulate_subproblems_bottom_up", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "tabulation", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {
+      "id": "alg-dpintro-tabulation-09-base-row-column",
+      "prompt": "A two-dimensional table has independent base semantics on its first row and first column. What should initialization do before interior transitions run?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "initialize_boundaries", "text": "Fill the base row and column according to their state meanings, then compute interior cells from ready predecessors."},
+        {"id": "zeros_everywhere", "text": "Fill the whole table with zero because every recurrence will overwrite it."},
+        {"id": "interior_first", "text": "Compute interior cells first and infer boundary values from whichever neighbors are present."},
+        {"id": "destination_only", "text": "Initialize only the destination because all other values are derived from it."}
+      ], "acceptedOptionIds": ["initialize_boundaries"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Boundary states are the base cases of the two-dimensional recurrence and must carry their own semantic values.", "details": {"blocks": [{"type": "paragraph", "text": "For alignment, the first row/column may count insertions; for grid paths, they encode reachability and obstacles. Interior cells depend on these boundary values, so default zeros are correct only where the state meaning says so. Initialization must precede consumers."}]}, "wrongOptionExplanationsByOptionId": {"zeros_everywhere": "A zero default may conflate unreachable, empty, and zero-cost states.", "interior_first": "Interior transitions would read uninitialized boundary predecessors.", "destination_only": "The transition direction determines which bases are available; one endpoint is not a universal base."}},
+      "taxonomy": {"primarySkillAtomId": "tabulate_subproblems_bottom_up", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_dp", "problemArchetypeId": "sequence_alignment_intro"}
+    },
+    {
+      "id": "alg-dpintro-tabulation-10-table-space-contract",
+      "prompt": "A bottom-up DP fills every cell but the product requests only the final value. Which conclusion is valid about table storage?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "compress_if_dependencies", "text": "Consider rolling rows or another compression only after verifying dependency liveness and whether reconstruction is required."},
+        {"id": "always_full_table", "text": "A final scalar always requires retaining every cell until return."},
+        {"id": "one_cell_anyway", "text": "Keep only one cell because intermediate states are never part of the output."},
+        {"id": "drop_bases", "text": "Discard base states immediately because later cells no longer need them."}
+      ], "acceptedOptionIds": ["compress_if_dependencies"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Output requirements permit compression only when the transition's live predecessors and any witness needs remain satisfied.", "details": {"blocks": [{"type": "paragraph", "text": "A full table is simple and often useful as a reference. If each row depends only on bounded prior rows and only the value is needed, rolling storage can reduce space. Reconstruction, tie policies, or long-range dependencies may require additional information; output cardinality alone does not decide."}]}, "wrongOptionExplanationsByOptionId": {"always_full_table": "Full storage is safe but not always necessary when dependencies are local and no witness is requested.", "one_cell_anyway": "A recurrence may need multiple predecessor values at once.", "drop_bases": "A base value may remain a live predecessor for later states or boundary transitions."}},
+      "taxonomy": {"primarySkillAtomId": "tabulate_subproblems_bottom_up", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "grid_path_dp"}
+    },
+    {
+      "id": "alg-dpintro-tabulation-11-order",
+      "prompt": "How should bottom-up tabulation choose its loop order?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "deps_first",
+            "text": "Compute every dependency before the state that reads it."
+          },
+          {
+            "id": "row",
+            "text": "Always use row-major order."
+          },
+          {
+            "id": "reverse",
+            "text": "Always fill backward."
+          },
+          {
+            "id": "random",
+            "text": "Any order works."
+          }
+        ],
+        "acceptedOptionIds": [
+          "deps_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "row": "Some dependencies require another direction.",
+          "reverse": "Direction follows dependencies.",
+          "random": "Uninitialized reads break the recurrence."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "tabulate_subproblems_bottom_up",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-tabulation-12-base",
+      "prompt": "Why are zero-capacity rows or empty-prefix columns common DP bases?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_subproblem",
+            "text": "They represent an empty subproblem and anchor interior transitions."
+          },
+          {
+            "id": "padding",
+            "text": "They are arbitrary padding."
+          },
+          {
+            "id": "zero",
+            "text": "Every objective uses zero."
+          },
+          {
+            "id": "final",
+            "text": "They store the final answer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_subproblem"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "padding": "Boundary cells are often read.",
+          "zero": "Objectives have different identities.",
+          "final": "They represent an empty state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "tabulate_subproblems_bottom_up",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-tabulation-13-inplace",
+      "prompt": "Why can loop direction change an in-place capacity DP result?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reuse_policy",
+            "text": "Ascending versus descending order determines whether an item is reused in the same iteration."
+          },
+          {
+            "id": "cosmetic",
+            "text": "Direction affects only speed."
+          },
+          {
+            "id": "ascending",
+            "text": "Ascending is universally correct."
+          },
+          {
+            "id": "same",
+            "text": "One row equals two rows in every order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reuse_policy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "cosmetic": "In-place semantics depend on order.",
+          "ascending": "0/1 variants often need descending.",
+          "same": "Overwritten dependencies differ."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "tabulate_subproblems_bottom_up",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-tabulation-14-empty-dimension",
+      "prompt": "What must be checked when a tabulated DP dimension has size zero?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_contract",
+            "text": "Define the zero-size result and safe boundary initialization before neighboring cells are accessed."
+          },
+          {
+            "id": "force",
+            "text": "Force a dimension to one and treat synthetic data as input."
+          },
+          {
+            "id": "skip",
+            "text": "Zero loop iterations automatically define the answer."
+          },
+          {
+            "id": "fill",
+            "text": "Fill absent dimensions with zeros."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "force": "Synthetic states can change the result.",
+          "skip": "Final access can still be invalid.",
+          "fill": "Padding must be semantic."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "tabulate_subproblems_bottom_up",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "state_compression",
+        "problemArchetypeId": "grid_path_dp"
+      }
     }
   ],
   "modeStructures": {
@@ -470,7 +756,14 @@
           "alg-dpintro-tabulation-04-bottom-up-lifecycle",
           "alg-dpintro-tabulation-05-compress-after-reference-table",
           "alg-dpintro-tabulation-06-unreachable-state-initialization",
-          "alg-dpintro-tabulation-07-grid-boundary-transfer"
+          "alg-dpintro-tabulation-07-grid-boundary-transfer",
+          "alg-dpintro-tabulation-08-fill-dependency-order",
+          "alg-dpintro-tabulation-09-base-row-column",
+          "alg-dpintro-tabulation-10-table-space-contract",
+          "alg-dpintro-tabulation-11-order",
+          "alg-dpintro-tabulation-12-base",
+          "alg-dpintro-tabulation-13-inplace",
+          "alg-dpintro-tabulation-14-empty-dimension"
         ],
         "relationMetadata": {
           "mechanismBoundary": "tabulation_bottom_up"

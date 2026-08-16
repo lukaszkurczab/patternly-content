@@ -387,6 +387,494 @@
         "patternVariantId": "k_way_merge",
         "problemArchetypeId": "merge_sorted_sources"
       }
+    },
+    {
+      "id": "hpq-k-way-entry-source-index",
+      "prompt": "What information must a k-way merge heap entry retain after its source head is selected?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_source_position",
+            "text": "The current value together with the source identity and position needed to fetch that source's successor."
+          },
+          {
+            "id": "value_only",
+            "text": "Only the value, because the next source can be inferred from the heap's array index."
+          },
+          {
+            "id": "source_only",
+            "text": "Only the source identity, because its next value can be recomputed by sorting all sources."
+          },
+          {
+            "id": "all_remaining_values",
+            "text": "Every remaining value from that source, so the heap never needs a push."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_source_position"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "After popping a head, the algorithm must identify the same source and advance only that source to expose its next candidate.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The heap key chooses the smallest visible value, but the source reference explains what to push next. The source position or iterator state advances once when its head is emitted. Heap-array positions are unstable after repair and cannot identify a source; inserting every remaining value would abandon the bounded-frontier design."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "value_only": "Equal or repeated values can come from different sources, and heap positions change after swaps.",
+          "source_only": "The heap needs the current key to choose the next globally smallest visible head; source identity alone is insufficient.",
+          "all_remaining_values": "Loading every value increases memory and changes the k-way frontier into a full-value heap."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-k-way-equal-head-tie",
+      "prompt": "Two sorted sources expose equal current values in the k-way merge frontier. What is required for a deterministic source order when the product exposes that order?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "source_tie_break",
+            "text": "Include a deterministic source or arrival tie-break in the comparator; value order alone permits either equal head."
+          },
+          {
+            "id": "heap_stable_by_default",
+            "text": "Rely on the binary heap to preserve insertion order for equal keys."
+          },
+          {
+            "id": "sort_all_output",
+            "text": "Emit all values first and sort the complete output to recover source order."
+          },
+          {
+            "id": "discard_duplicate",
+            "text": "Drop one equal value because equal outputs represent the same merge result."
+          }
+        ],
+        "acceptedOptionIds": [
+          "source_tie_break"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The primary merge key orders values, while any externally visible source order must be represented explicitly.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Equal values from different sources are both valid output entries and must not be deduplicated unless the problem says so. A binary heap does not promise stable insertion order for equal keys, so add a source identifier or another deterministic tie-break only when the contract observes provenance. If provenance is irrelevant, either equal head may be emitted."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "heap_stable_by_default": "Ordinary heaps preserve the comparator invariant, not FIFO provenance among equal keys.",
+          "sort_all_output": "Sorting all output changes streaming behavior and still needs provenance if equal values must be ordered by source.",
+          "discard_duplicate": "Merge emits every input element; equal values are not automatically duplicates to remove."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-k-way-output-limit",
+      "prompt": "The caller requests only the first M values from k sorted sources. Which optimization preserves the k-way merge invariant?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "stop_after_m_pops",
+            "text": "Seed the frontier normally, emit the minimum, advance its source, and stop after M output pops."
+          },
+          {
+            "id": "load_m_each_source",
+            "text": "Load the first M values from every source before comparing them."
+          },
+          {
+            "id": "stop_after_m_sources",
+            "text": "Stop when M distinct sources have contributed at least one value."
+          },
+          {
+            "id": "sort_all_sources",
+            "text": "Concatenate and sort all source values before taking the first M."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stop_after_m_pops"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Each heap pop yields the next globally smallest visible value, so the first M pops are exactly the requested prefix.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The frontier still needs at most one current head per non-exhausted source. After each emitted value, push only that source's successor. Once M values have been emitted, no later value can belong to the requested prefix, so the algorithm can stop without loading or sorting the remainder."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "load_m_each_source": "Loading M entries per source can use unnecessary memory and does not exploit the one-head frontier.",
+          "stop_after_m_sources": "The prefix may contain many values from one source or none from another; source count is not output count.",
+          "sort_all_sources": "Full concatenation and sorting discards the streaming and bounded-frontier advantages."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-k-way-termination-frontier",
+      "prompt": "When should a complete k-way merge terminate if some sources are empty and others have different lengths?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "frontier_empty",
+            "text": "When the heap frontier is empty, because no source has an un-emitted head remaining."
+          },
+          {
+            "id": "all_sources_started",
+            "text": "When every source has contributed at least one value, even if some still contain values."
+          },
+          {
+            "id": "original_k_pops",
+            "text": "After exactly k pops, because there are k sources."
+          },
+          {
+            "id": "first_empty_source",
+            "text": "As soon as any one source is exhausted, because the frontier is no longer full."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frontier_empty"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The heap contains exactly the available next candidates, so emptiness is the precise signal that all input values have been emitted.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "An exhausted source simply contributes no successor and disappears from the frontier. Other sources may continue producing values, so neither the original source count nor the first exhausted source determines completion. Empty input sources are skipped at initialization, and the merge ends only after every remaining source has also been exhausted."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "all_sources_started": "Starting a source says nothing about how many values remain in it.",
+          "original_k_pops": "The total output size is the sum of source lengths, not the number of sources.",
+          "first_empty_source": "Sources have independent lengths; one empty source does not exhaust the others."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-kway-11_frontier",
+      "prompt": "Why does a k-way merge heap store at most one active candidate from each sorted source?",
+      "constraints": [
+        "Each source is sorted.",
+        "The output always takes the smallest current source head."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "frontier_suffices",
+            "text": "The smallest unmerged item of each source is its head, so the global minimum must be among those k frontier candidates.",
+            "explanation": "All later items in a source are no smaller than its head."
+          },
+          {
+            "id": "all_items_heap",
+            "text": "All source items must be inserted because a later item may be globally smaller than a head.",
+            "explanation": "Sortedness rules out a later item being smaller than its own head."
+          },
+          {
+            "id": "largest_heads",
+            "text": "Store each source tail because tails represent the next output boundary.",
+            "explanation": "The next candidate is at the source head."
+          },
+          {
+            "id": "sort_after",
+            "text": "Concatenate all sources and sort after merging so frontier selection is unnecessary.",
+            "explanation": "That loses the intended k-way incremental method."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frontier_suffices"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorted-source order lets the heap represent the complete set of possible next outputs with one head per source.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "After popping a source head, push its successor from the same source. The heap size stays at most k while every output is selected in global order."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "all_items_heap": "Sortedness rules out a later item being smaller than its own head.",
+          "largest_heads": "The next candidate is at the source head.",
+          "sort_after": "That loses the intended k-way incremental method."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-kway-12_complexity",
+      "prompt": "What is the typical complexity of merging k sorted lists containing N total nodes with a min-heap?",
+      "constraints": [
+        "Each node is inserted and removed at most once.",
+        "The heap contains at most k frontier entries."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "n_log_k",
+            "text": "O(N log k) time and O(k) auxiliary heap space, excluding or separately reporting output storage.",
+            "explanation": "Each node pays for heap operations at size at most k."
+          },
+          {
+            "id": "n_log_n",
+            "text": "O(N log N) time is required because all nodes compete in one heap.",
+            "explanation": "The heap stores only k current heads."
+          },
+          {
+            "id": "k_log_n",
+            "text": "Only k nodes are processed because the heap has k entries.",
+            "explanation": "Every source node eventually becomes a frontier candidate."
+          },
+          {
+            "id": "n_plus_k_space_n",
+            "text": "The heap itself uses O(N) space because it produces N outputs.",
+            "explanation": "Output storage and active frontier are separate."
+          }
+        ],
+        "acceptedOptionIds": [
+          "n_log_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "K-way merge cost is parameterized by the number of sources, not only total output size.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Each of N nodes enters and leaves the heap once. The log factor is bounded by the active frontier k; output storage, if materialized, should be reported separately."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "n_log_n": "The heap stores only k current heads.",
+          "k_log_n": "Every source node eventually becomes a frontier candidate.",
+          "n_plus_k_space_n": "Output storage and active frontier are separate."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-kway-13_source_identity",
+      "prompt": "Why should a k-way merge heap entry retain its source identity and position?",
+      "constraints": [
+        "The popped entry must reveal which source to advance.",
+        "Sources may contain equal values."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "advance_correct_source",
+            "text": "Store value plus source id and next position/node so popping an entry can push exactly that source's successor.",
+            "explanation": "Value alone cannot identify the next frontier transition."
+          },
+          {
+            "id": "value_only",
+            "text": "Store only the value because equal values always have the same successor.",
+            "explanation": "Equal values can come from different sources and positions."
+          },
+          {
+            "id": "global_index",
+            "text": "Use one global index for all sources because sortedness makes source boundaries irrelevant.",
+            "explanation": "The successor relation is source-local."
+          },
+          {
+            "id": "rebuild_sources",
+            "text": "After each pop, rescan every source to find its next item.",
+            "explanation": "That adds avoidable work and loses the frontier state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "advance_correct_source"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The heap key selects a value, while source metadata enables the state transition after selection.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A composite entry separates ordering from provenance. Stable tie policy may also add source order or sequence position when output order is observable."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "value_only": "Equal values can come from different sources and positions.",
+          "global_index": "The successor relation is source-local.",
+          "rebuild_sources": "That adds avoidable work and loses the frontier state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
+    },
+    {
+      "id": "hpq-kway-14_empty_sources",
+      "prompt": "How should a k-way merge initialize when some source lists are empty?",
+      "constraints": [
+        "Empty sources contain no candidate head.",
+        "Nonempty sources may still contribute output."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "skip_empty",
+            "text": "Insert only nonempty source heads; empty sources contribute no heap entry and need no special output.",
+            "explanation": "The frontier contains only available candidates."
+          },
+          {
+            "id": "insert_null",
+            "text": "Insert a null sentinel for every empty source and compare null as the smallest value.",
+            "explanation": "Null is not a data item and can corrupt ordering."
+          },
+          {
+            "id": "abort_all",
+            "text": "Return empty output if any one source is empty.",
+            "explanation": "Other sources may contain valid items."
+          },
+          {
+            "id": "pad_zero",
+            "text": "Pad empty sources with zero so all k entries remain active.",
+            "explanation": "Padding invents values and changes the merge."
+          }
+        ],
+        "acceptedOptionIds": [
+          "skip_empty"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The heap frontier should contain real source heads only.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Skipping empty lists preserves the sorted merge invariant and allows the algorithm to continue with any nonempty source. A null or synthetic value is not an output candidate."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "insert_null": "Null is not a data item and can corrupt ordering.",
+          "abort_all": "Other sources may contain valid items.",
+          "pad_zero": "Padding invents values and changes the merge."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_sorted_sources_with_heap",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "k_way_merge",
+        "problemArchetypeId": "merge_sorted_sources"
+      }
     }
   ],
   "modeStructures": {

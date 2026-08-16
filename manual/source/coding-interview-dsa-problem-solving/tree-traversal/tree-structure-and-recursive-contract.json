@@ -399,6 +399,322 @@
         "Do not count storage occupied by the input tree.",
         "The implementation performs no path copying or memoization."
       ]
+    },
+    {
+      "id": "alg-tree-contract-null-base-separation",
+      "prompt": "A recursive tree helper returns a property of a subtree. Why should the null base case be chosen from the property meaning rather than copied from another helper?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "property_identity", "text": "Each property has its own identity or absence semantics: size uses 0, node-count height uses 0, edge-height uses -1, and validity often uses true."},
+        {"id": "one_base_all", "text": "Every tree helper should return one for null so parent formulas remain uniform."},
+        {"id": "error_base_all", "text": "Null should always throw because no property exists for an empty subtree."},
+        {"id": "root_only_base", "text": "Only the root needs a base case; child calls inherit its value."}
+      ], "acceptedOptionIds": ["property_identity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The base value is part of the recursive function's mathematical contract and must compose correctly with the parent formula.", "details": {"blocks": [{"type": "paragraph", "text": "Null size is zero, an empty path may be false or an identity depending on the predicate, and edge height is -1 so a leaf has height zero. Copying a base convention across properties can create systematic off-by-one or false-valid results."}]}, "wrongOptionExplanationsByOptionId": {"one_base_all": "Different aggregates have different identities and units.", "error_base_all": "Null is the normal base case for a recursive tree property.", "root_only_base": "Every child recursion eventually reaches null and needs a defined result."}},
+      "taxonomy": {"primarySkillAtomId": "define_tree_subproblem_contract", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "compute_subtree_property"}
+    },
+    {
+      "id": "alg-tree-contract-local-input-output",
+      "prompt": "Which contract description is most useful for a recursive helper that validates a subtree property?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "meaning_base_combine", "text": "State what the return value means, define null and leaf bases, and explain how a parent combines child results with the local node."},
+        {"id": "implementation_first", "text": "Write the recursion first and infer the state meaning from whichever values happen to return."},
+        {"id": "global_answer_only", "text": "Use one mutable answer and omit a per-subtree return contract."},
+        {"id": "node_value_only", "text": "Describe only the current node value because child results are implementation details."}
+      ], "acceptedOptionIds": ["meaning_base_combine"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A parent can combine children correctly only when each recursive call exposes a precise, independently usable meaning.", "details": {"blocks": [{"type": "paragraph", "text": "The contract is an interface: input subtree root, output summary/property, null and leaf semantics, and combination rule. Designing from code shape invites hidden state ambiguity, while a global flag makes helpers harder to compose and test."}]}, "wrongOptionExplanationsByOptionId": {"implementation_first": "Without a state meaning, a plausible recursion can return a value the parent misinterprets.", "global_answer_only": "A local return contract supports composition and avoids traversal-order coupling.", "node_value_only": "Many properties depend on child summaries, not the current value alone."}},
+      "taxonomy": {"primarySkillAtomId": "define_tree_subproblem_contract", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "validate_tree_property"}
+    },
+    {
+      "id": "alg-tree-contract-path-state-accumulation",
+      "prompt": "A root-to-leaf path-sum helper receives the accumulated sum before visiting node. What must its recursive contract state explicitly?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "sum_before_node_leaf_rule", "text": "Whether the input sum includes the current node yet, how the sum changes on entry, and that success is checked at a leaf."},
+        {"id": "check_any_node", "text": "Return true whenever the running sum equals target at an internal node, regardless of whether a leaf is reached."},
+        {"id": "ignore_node_value", "text": "Pass the same sum to both children because the node value is already represented by the edge."},
+        {"id": "global_sum", "text": "Use one global running sum so recursive calls share path information automatically."}
+      ], "acceptedOptionIds": ["sum_before_node_leaf_rule"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Path predicates depend on precise entry timing and leaf semantics; an ambiguous accumulator creates off-by-one or non-leaf matches.", "details": {"blocks": [{"type": "paragraph", "text": "If sumBefore excludes node.value, update next=sumBefore+node.value before recursing. For a root-to-leaf contract, compare target only when node has no children, and pass separate path-local values to left and right. Global mutable sums require careful backtracking and obscure the contract."}]}, "wrongOptionExplanationsByOptionId": {"check_any_node": "A root-to-leaf path is complete only at a leaf unless the problem explicitly says root-to-node.", "ignore_node_value": "Node values are part of path sum and must be included exactly once.", "global_sum": "Sibling recursion branches need independent path state; one global value requires explicit undo discipline."}},
+      "taxonomy": {"primarySkillAtomId": "define_tree_subproblem_contract", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "path_accumulation", "problemArchetypeId": "root_to_leaf_path"}
+    },
+    {
+      "id": "alg-tree-contract-tree-dag-boundary",
+      "prompt": "A recursive contract assumes a proper tree with one parent per node. What must change if the input may share child references or contain cycles?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "graph_identity_guard", "text": "Treat node identity as graph state and add visited or in-progress handling; tree-only recursion is no longer sufficient by assumption."},
+        {"id": "ignore_sharing", "text": "Run the same recursion because a shared child is equivalent to a duplicated subtree for every property."},
+        {"id": "sort_children", "text": "Sort child references to remove cycles before recursing."},
+        {"id": "duplicate_nodes_always", "text": "Copy every shared node without checking identity or cycles."}
+      ], "acceptedOptionIds": ["graph_identity_guard"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Sharing and cycles invalidate the tree's finite recursive decomposition and require graph-aware state handling.", "details": {"blocks": [{"type": "paragraph", "text": "A tree traversal can revisit no node through another parent, so no visited set is needed. In a DAG, sharing may cause duplicate work or different aggregation semantics; in a cycle, naive recursion may not terminate. Node identity and in-progress detection become part of the contract."}]}, "wrongOptionExplanationsByOptionId": {"ignore_sharing": "A shared child can be counted once or multiple times depending on graph semantics, and cycles can recurse forever.", "sort_children": "Ordering references does not remove graph cycles.", "duplicate_nodes_always": "Duplicating nodes changes identity and may still fail to terminate when traversing the original graph."}},
+      "taxonomy": {"primarySkillAtomId": "define_tree_subproblem_contract", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_preorder", "problemArchetypeId": "traverse_tree"}
+    },
+    {
+      "id": "alg-tree-contract-11_subproblem",
+      "prompt": "What should a recursive tree helper's contract specify before its implementation is written?",
+      "constraints": [
+        "The helper is called on arbitrary subtree roots.",
+        "The parent relies on the helper result."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "input_output_state",
+            "text": "Define what the input node represents, what result is returned for that subtree, the null base case, and whether state is local or carried.",
+            "explanation": "A precise contract makes the recurrence compositional."
+          },
+          {
+            "id": "code_first",
+            "text": "Start with pointer operations and infer the contract from whichever cases pass.",
+            "explanation": "Unstated semantics cause boundary and composition bugs."
+          },
+          {
+            "id": "global_only",
+            "text": "Specify only the final whole-tree answer because subtrees are implementation details.",
+            "explanation": "The recursive proof depends on subtree meaning."
+          },
+          {
+            "id": "values_only",
+            "text": "Specify the node value but not child or path state because recursion supplies the rest.",
+            "explanation": "State and result semantics still need definition."
+          }
+        ],
+        "acceptedOptionIds": [
+          "input_output_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A recursive function is safest when its subtree meaning and base case are explicit.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For example, “returns the height of this subtree” differs from “returns the best root-to-leaf sum through this node.” The parent can then combine results against a known invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "code_first": "Unstated semantics cause boundary and composition bugs.",
+          "global_only": "The recursive proof depends on subtree meaning.",
+          "values_only": "State and result semantics still need definition."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-contract-12_path_vs_subtree",
+      "prompt": "How does a carried root-to-node path state differ from a returned subtree summary?",
+      "constraints": [
+        "A tree query may depend on ancestor context.",
+        "Subtree results may be reusable across parents."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "direction_difference",
+            "text": "Carried state flows top-down with the current path, while returned summaries flow bottom-up with facts computed from descendants.",
+            "explanation": "The two state directions solve different dependencies."
+          },
+          {
+            "id": "same_state",
+            "text": "They are interchangeable because all tree information is local to the current node.",
+            "explanation": "Path context and descendant summary have different meanings."
+          },
+          {
+            "id": "subtree_only",
+            "text": "Only bottom-up returns can solve root-to-leaf path questions.",
+            "explanation": "Top-down carries are the direct fit for path context."
+          },
+          {
+            "id": "path_global",
+            "text": "One global path accumulator is safe for all branches without backtracking.",
+            "explanation": "Sibling branches need isolated path state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "direction_difference"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Tree recursion often combines top-down context and bottom-up summaries; the contract should identify which direction is needed.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A path sum needs the ancestor prefix as it descends. A height or balance result needs child summaries as it returns. Mixing the two without a defined invariant causes branch leakage or missing facts."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_state": "Path context and descendant summary have different meanings.",
+          "subtree_only": "Top-down carries are the direct fit for path context.",
+          "path_global": "Sibling branches need isolated path state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-contract-13_tree_vs_graph",
+      "prompt": "Why can a recursive tree algorithm fail if the input is actually a graph with shared child references?",
+      "constraints": [
+        "The graph may contain cycles or shared nodes.",
+        "The algorithm assumes each child has one parent."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "visited_identity",
+            "text": "The tree contract no longer holds; use visited identity or an explicit DAG/cycle policy before recursing to avoid repeats or infinite recursion.",
+            "explanation": "Tree acyclicity and unique-parent assumptions are missing."
+          },
+          {
+            "id": "values_prevent_cycle",
+            "text": "Equal or distinct values automatically prevent recursive revisits.",
+            "explanation": "Cycles and sharing are reference-topology properties."
+          },
+          {
+            "id": "sort_graph",
+            "text": "Sort adjacency values so a graph behaves like a tree.",
+            "explanation": "Sorting does not remove cycles or shared references."
+          },
+          {
+            "id": "same_contract",
+            "text": "Every graph is a tree for recursive purposes because each node can be called from a parent.",
+            "explanation": "Graph topology changes termination and multiplicity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "visited_identity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The recursive contract must include topology assumptions, not just node fields.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Trees have a unique path from the root and terminate at null. A graph may revisit identity through another edge, so the routine needs visited-state semantics or a DAG-specific proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "values_prevent_cycle": "Cycles and sharing are reference-topology properties.",
+          "sort_graph": "Sorting does not remove cycles or shared references.",
+          "same_contract": "Graph topology changes termination and multiplicity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-contract-14_side_effect",
+      "prompt": "Which choice makes a recursive tree helper easier to verify: hidden global mutation or an explicit return value?",
+      "constraints": [
+        "The parent needs a child result.",
+        "Branches may be evaluated in either order."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "explicit_return",
+            "text": "Return the subtree result explicitly and combine child returns at the parent, keeping branch effects local and testable.",
+            "explanation": "Explicit data flow mirrors the recurrence."
+          },
+          {
+            "id": "global_best_only",
+            "text": "Store every result in a global variable so no return contract is needed.",
+            "explanation": "Globals hide dependencies and complicate sibling isolation."
+          },
+          {
+            "id": "print_values",
+            "text": "Print each child result and let the parent parse output.",
+            "explanation": "I/O is not a compositional function contract."
+          },
+          {
+            "id": "shared_accumulator",
+            "text": "Mutate one accumulator across siblings without reset because all paths belong to the same tree.",
+            "explanation": "Sibling state can contaminate results."
+          }
+        ],
+        "acceptedOptionIds": [
+          "explicit_return"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Explicit return values make parent-child dependencies visible and preserve branch-local reasoning.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A global best can be valid as a separately justified accumulator, but the subtree interface still needs clear returned facts. Hidden side effects make correctness and reuse harder to prove."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "global_best_only": "Globals hide dependencies and complicate sibling isolation.",
+          "print_values": "I/O is not a compositional function contract.",
+          "shared_accumulator": "Sibling state can contaminate results."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "define_tree_subproblem_contract",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      }
     }
   ],
   "modeStructures": {

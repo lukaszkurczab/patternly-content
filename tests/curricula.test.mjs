@@ -29,7 +29,7 @@ function assertNoRetiredCertificationFields(value, path = "curriculum") {
 
 function assertCanonicalCertificationSlots(curriculum) {
   assert.equal(curriculum.schemaVersion, "patternly-certification-curriculum-v1");
-  assert.equal(curriculum.curriculumVersion, curriculum.trackId === "microsoft-azure-ai-fundamentals-ai-901" ? "2026.08.15" : "2026.08.11");
+  assert.equal(curriculum.curriculumVersion, "2026.08.11");
   assert.equal(curriculum.targetItemCount, curriculum.slots.length);
   assert.equal(curriculum.authoringItemCount, curriculum.slots.length);
   assert.equal(curriculum.existingVerifiedItemCount, 0);

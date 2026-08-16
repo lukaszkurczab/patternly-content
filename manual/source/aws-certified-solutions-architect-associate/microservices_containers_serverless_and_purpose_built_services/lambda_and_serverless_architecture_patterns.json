@@ -1,0 +1,1659 @@
+{
+  "schemaVersion": "certification-manual-source-v2",
+  "batchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04",
+  "trackId": "aws-certified-solutions-architect-associate",
+  "familyId": "certification",
+  "contentVersion": "aws-certified-solutions-architect-associate-authoring-v2026.08.15",
+  "taxonomyVersion": "aws-saa-c03-20-node-v2026.08.15",
+  "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+  "learningBlockId": "lambda_and_serverless_architecture_patterns",
+  "slotIds": [
+    "AWSSAA-N08-B04:invoke-model",
+    "AWSSAA-N08-B04:stateless-handler",
+    "AWSSAA-N08-B04:execution-role",
+    "AWSSAA-N08-B04:reserved-concurrency",
+    "AWSSAA-N08-B04:provisioned-concurrency",
+    "AWSSAA-N08-B04:cold-start",
+    "AWSSAA-N08-B04:memory-timeout",
+    "AWSSAA-N08-B04:idempotency",
+    "AWSSAA-N08-B04:event-driven",
+    "AWSSAA-N08-B04:workflow-boundary",
+    "AWSSAA-N08-B04:api-integration",
+    "AWSSAA-N08-B04:direct-integration",
+    "AWSSAA-N08-B04:layers",
+    "AWSSAA-N08-B04:versions-aliases",
+    "AWSSAA-N08-B04:tmp-storage",
+    "AWSSAA-N08-B04:vpc-lambda",
+    "AWSSAA-N08-B04:serverless-cost",
+    "AWSSAA-N08-B04:concurrency-quotas"
+  ],
+  "items": [
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-001",
+      "slotId": "AWSSAA-N08-B04:invoke-model",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_invocation_model_choice"
+      },
+      "prompt": "An API client needs an immediate validation result, while an image thumbnail can be generated later from the accepted upload. Which Lambda invocation design fits?",
+      "constraints": [
+        "Validation is on the request critical path.",
+        "Thumbnail generation can be eventual.",
+        "Both operations need failure handling."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Use a bounded synchronous Lambda integration for validation and an asynchronous event or queue-driven invocation for thumbnail generation with an explicit failure destination."
+          },
+          {
+            "optionId": "B",
+            "text": "Invoke both operations synchronously and keep the client request open until thumbnail generation finishes."
+          },
+          {
+            "optionId": "C",
+            "text": "Invoke validation asynchronously and return success before the required result is known."
+          },
+          {
+            "optionId": "D",
+            "text": "Use a security group to choose Lambda invocation type based on the source subnet."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda invocation mode should follow whether the caller needs the result immediately or can tolerate eventual processing.",
+        "Details": {
+          "mechanismOrProperty": "Synchronous invocation returns the function response to the caller; asynchronous invocation queues the event for later processing and has separate retry and destination behavior.",
+          "scenarioApplication": "The API validates before accepting the upload, then emits a thumbnail event that a Lambda processes independently and reports failures to a durable destination.",
+          "errorCorrection": "Synchronous thumbnail work increases latency, asynchronous validation cannot satisfy an immediate result, and security groups do not select invocation semantics.",
+          "boundaryOrTradeoff": "Asynchronous processing requires status and idempotency contracts; synchronous calls need timeout and downstream failure policies.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Making optional thumbnail work synchronous couples client latency to a noncritical operation.",
+          "C": "Returning success without the required validation result violates the request contract.",
+          "D": "Invocation mode is an API and event design choice, not a subnet security-group behavior."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:invoke-model:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "invoke-model"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/lambda-invocation.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-002",
+      "slotId": "AWSSAA-N08-B04:stateless-handler",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_stateless_execution"
+      },
+      "prompt": "A Lambda function stores the current customer's workflow state in a global variable and fails when the next invocation runs in another execution environment. What should change?",
+      "constraints": [
+        "Invocations may use different execution environments.",
+        "State must survive retries and replacement.",
+        "The function should scale horizontally."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Keep the handler stateless and store durable workflow state in an appropriate managed data or workflow service, using the request identifier to retrieve it."
+          },
+          {
+            "optionId": "B",
+            "text": "Increase Lambda memory so every invocation is guaranteed to reuse the same execution environment."
+          },
+          {
+            "optionId": "C",
+            "text": "Write state to the function deployment package so all future invocations see the latest value."
+          },
+          {
+            "optionId": "D",
+            "text": "Use a security group as the state store because all invocations share the function's network policy."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda execution environments are reusable but not a durable or exclusive state store; persistent state belongs in a managed service or explicit workflow.",
+        "Details": {
+          "mechanismOrProperty": "Lambda may create, reuse, or replace execution environments. Filesystem and global state can be useful for caching within one environment but cannot be the source of truth for a distributed workflow.",
+          "scenarioApplication": "The function reads and writes state using an idempotent key in DynamoDB or Step Functions, while optional local caches remain disposable.",
+          "errorCorrection": "Memory does not guarantee reuse, deployment packages are immutable artifacts, and security groups do not hold business state.",
+          "boundaryOrTradeoff": "External state adds calls and consistency considerations but makes retries, scale-out, and replacement explicit and safe.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "More memory does not guarantee that invocations share one environment.",
+          "C": "Deployment packages are not a mutable per-request state store.",
+          "D": "Security groups contain network rules and cannot store workflow state."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:stateless-handler:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "stateless-handler"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtime-environment.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-003",
+      "slotId": "AWSSAA-N08-B04:execution-role",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_execution_role_least_privilege"
+      },
+      "prompt": "A Lambda function reads one DynamoDB table and writes metrics to CloudWatch, but its role currently grants administrator access. Which security change is required?",
+      "constraints": [
+        "The function has one data-table dependency.",
+        "The role should be scoped to the function's actions.",
+        "Credentials should be temporary and managed by IAM."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Use a dedicated Lambda execution role with only the required DynamoDB resource actions and logging permissions, and remove administrator access."
+          },
+          {
+            "optionId": "B",
+            "text": "Embed an administrator access key in the function environment so the role no longer needs permissions."
+          },
+          {
+            "optionId": "C",
+            "text": "Use a security group to authorize DynamoDB API operations instead of IAM."
+          },
+          {
+            "optionId": "D",
+            "text": "Grant every Lambda in the account the same administrator role to simplify permission management."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda uses an execution role for AWS API access and should receive only the permissions required by that function.",
+        "Details": {
+          "mechanismOrProperty": "The execution role is assumed by the Lambda service and provides temporary credentials to the function. Its identity policy can scope actions and resources and allow CloudWatch Logs writes.",
+          "scenarioApplication": "The team grants table-specific read or write actions, log-group permissions, and reviews access when the function changes.",
+          "errorCorrection": "Embedded administrator keys are long-lived secrets, security groups do not authorize DynamoDB APIs, and a shared administrator role expands blast radius.",
+          "boundaryOrTradeoff": "Resource-level restrictions vary by action; where a service action cannot scope a resource, conditions and separate data boundaries are still needed.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Static administrator keys increase exposure and bypass the intended temporary execution-role model.",
+          "C": "Security groups control network access and do not replace IAM authorization for DynamoDB APIs.",
+          "D": "Sharing broad permissions across functions makes compromise and audit scope worse."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:execution-role:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "execution-role"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-004",
+      "slotId": "AWSSAA-N08-B04:reserved-concurrency",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_reserved_concurrency_isolation"
+      },
+      "prompt": "A noisy batch function can consume all account concurrency and cause a latency-sensitive API function to throttle. Which control isolates the workloads?",
+      "constraints": [
+        "The API and batch functions are separate.",
+        "Batch work is elastic but not latency-critical.",
+        "The account has a finite concurrency quota."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Set reserved concurrency for the API or batch function to allocate and cap capacity deliberately, then monitor throttles and backlog against the account quota."
+          },
+          {
+            "optionId": "B",
+            "text": "Allow the batch function unlimited concurrency because Lambda automatically reserves capacity for every production API."
+          },
+          {
+            "optionId": "C",
+            "text": "Put both functions in one VPC subnet because subnet placement isolates Lambda concurrency."
+          },
+          {
+            "optionId": "D",
+            "text": "Increase the batch function timeout so it consumes fewer concurrent executions."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Reserved concurrency can protect a critical function and cap a noisy function within account concurrency limits.",
+        "Details": {
+          "mechanismOrProperty": "Lambda concurrency is shared at account and function levels. Reserved concurrency both sets a function's available concurrency and prevents it from using more than the reservation.",
+          "scenarioApplication": "The team protects API capacity, bounds batch concurrency, and scales or queues batch work based on downstream capacity and event age.",
+          "errorCorrection": "Unbounded batch concurrency can starve the API, VPC subnets do not allocate Lambda concurrency, and a longer timeout can increase concurrent occupancy.",
+          "boundaryOrTradeoff": "Reservations reduce capacity available to other functions, so the sum and account quota need explicit headroom.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Lambda does not automatically reserve enough capacity for every critical function when another function consumes the quota.",
+          "C": "Subnet placement affects networking and does not isolate account concurrency.",
+          "D": "Longer execution increases the time a concurrent slot is occupied and can worsen saturation."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:reserved-concurrency:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "reserved-concurrency"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-005",
+      "slotId": "AWSSAA-N08-B04:provisioned-concurrency",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_provisioned_concurrency_latency"
+      },
+      "prompt": "A customer-facing API has predictable morning traffic and a strict latency target that cold starts violate. Which Lambda feature should be evaluated?",
+      "constraints": [
+        "The function is invoked synchronously.",
+        "Traffic has a predictable period.",
+        "The team accepts paying for warm execution environments during the target window."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Use provisioned concurrency for the published function version or alias during the latency-critical window, then validate capacity and cost against measured traffic."
+          },
+          {
+            "optionId": "B",
+            "text": "Use reserved concurrency alone because it initializes every execution environment before the first request."
+          },
+          {
+            "optionId": "C",
+            "text": "Increase timeout to hide cold-start latency from the client response."
+          },
+          {
+            "optionId": "D",
+            "text": "Put the function in a public subnet because public IPs eliminate initialization work."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Provisioned concurrency initializes execution environments ahead of requests and is intended for latency-sensitive predictable traffic.",
+        "Details": {
+          "mechanismOrProperty": "Reserved concurrency limits or reserves capacity but does not itself pre-initialize execution environments. Provisioned concurrency keeps configured environments initialized for a version or alias.",
+          "scenarioApplication": "The team provisions enough warm environments before the morning peak, scales the setting with the schedule, and measures spillover and cost.",
+          "errorCorrection": "A longer timeout increases client waiting, public networking does not remove runtime initialization, and reserved concurrency is not a warm-start guarantee.",
+          "boundaryOrTradeoff": "Provisioned concurrency adds cost even when unused and must be aligned with version, alias, traffic, and scaling behavior.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Reserved concurrency controls concurrency but does not pre-initialize execution environments.",
+          "C": "A longer timeout does not reduce cold-start time and can worsen user latency.",
+          "D": "Network addressability does not eliminate function initialization work."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:provisioned-concurrency:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "provisioned-concurrency"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-006",
+      "slotId": "AWSSAA-N08-B04:cold-start",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_cold_start_reduction"
+      },
+      "prompt": "A Lambda function has a large deployment package and performs expensive initialization on every new execution environment. Which improvement should be tested before adding permanent warm capacity?",
+      "constraints": [
+        "The function has a measurable initialization phase.",
+        "The request is latency-sensitive but not necessarily constant.",
+        "The business wants to reduce both latency and cost."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Reduce package size and initialization work, initialize only required clients, reuse safe connections, and measure cold-start distribution before deciding on provisioned concurrency."
+          },
+          {
+            "optionId": "B",
+            "text": "Add an infinite retry loop during initialization so the environment stays warm until a request arrives."
+          },
+          {
+            "optionId": "C",
+            "text": "Move all initialization into the handler for every request because repeated setup always reduces latency variance."
+          },
+          {
+            "optionId": "D",
+            "text": "Increase the function timeout because initialization cost is unrelated to response latency."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Reducing initialization and package work addresses cold-start latency directly and should be measured before paying for persistent warm environments.",
+        "Details": {
+          "mechanismOrProperty": "New execution environments run initialization before the handler. Smaller packages, lazy or selective initialization, and safe reuse can reduce startup work; provisioned concurrency is a separate capacity decision.",
+          "scenarioApplication": "The team removes unused dependencies, creates clients outside the handler when safe, and compares p95 or p99 initialization before and after the change.",
+          "errorCorrection": "Initialization loops waste resources, moving all setup into every request increases warm latency, and timeout does not reduce work.",
+          "boundaryOrTradeoff": "Lazy initialization can move latency to the first code path that needs a dependency; correctness and connection lifecycle must be tested.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "An initialization loop consumes resources and does not guarantee useful warm capacity.",
+          "C": "Repeated setup on every invocation increases warm-path latency and cost.",
+          "D": "A timeout only changes the allowed duration; it does not reduce initialization work."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:cold-start:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "cold-start"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-007",
+      "slotId": "AWSSAA-N08-B04:memory-timeout",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_memory_timeout_sizing"
+      },
+      "prompt": "A Lambda data transform is timing out, and increasing memory both speeds execution and increases cost per millisecond. Which tuning method is valid?",
+      "constraints": [
+        "Execution duration depends on memory allocation.",
+        "The function has a measurable workload distribution.",
+        "The team must protect the timeout and cost objectives."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Benchmark representative payloads across memory settings, measure duration, timeout rate, concurrency, and cost, then choose a configuration that satisfies the SLO."
+          },
+          {
+            "optionId": "B",
+            "text": "Set maximum memory without testing because higher memory is always cheaper when duration falls."
+          },
+          {
+            "optionId": "C",
+            "text": "Lower the timeout so the function reports success sooner when it cannot finish."
+          },
+          {
+            "optionId": "D",
+            "text": "Use a security group to allocate CPU because Lambda memory is unrelated to compute performance."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda memory influences available compute and must be tuned empirically against duration, cost, timeout, and concurrency behavior.",
+        "Details": {
+          "mechanismOrProperty": "The memory setting controls allocated memory and proportional compute resources. More memory can reduce duration but may change cost, downstream pressure, and concurrency consumption.",
+          "scenarioApplication": "The team runs representative benchmarks, selects a memory point with margin, sets a timeout above normal completion, and monitors tail latency and throttling.",
+          "errorCorrection": "Maximum memory is not always cheaper, lowering timeout causes failure rather than success, and security groups do not allocate Lambda compute.",
+          "boundaryOrTradeoff": "A faster function may increase downstream request rate; tuning must include database, API, and account concurrency limits.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-memory.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Higher memory can reduce duration but is not universally cheaper once allocation and downstream effects are included.",
+          "C": "A shorter timeout increases failures and does not make incomplete work successful.",
+          "D": "Security groups govern network access and do not allocate Lambda CPU or memory."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:memory-timeout:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "memory-timeout"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/configuration-memory.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-008",
+      "slotId": "AWSSAA-N08-B04:idempotency",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_event_idempotency"
+      },
+      "prompt": "An asynchronous Lambda updates an account balance, and the same event can be delivered more than once after a retry. Which application property is required?",
+      "constraints": [
+        "The event includes a stable transaction identifier.",
+        "The update is a financial side effect.",
+        "At-least-once delivery is possible."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Implement idempotent processing using a durable transaction key and conditional write or provider deduplication, then return the existing outcome for a duplicate event."
+          },
+          {
+            "optionId": "B",
+            "text": "Assume Lambda retries are exactly once because the event source is managed by AWS."
+          },
+          {
+            "optionId": "C",
+            "text": "Store the last transaction ID only in a global variable inside the execution environment."
+          },
+          {
+            "optionId": "D",
+            "text": "Use a VPC route to reject a duplicate event after the first invocation."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda retries and asynchronous event delivery can repeat a side effect; the handler must make business processing idempotent.",
+        "Details": {
+          "mechanismOrProperty": "A durable idempotency key and conditional operation let repeated events observe the same outcome without applying the balance change twice.",
+          "scenarioApplication": "The function records the transaction ID and result in a durable store, handles concurrent duplicates, and acknowledges only after the outcome is safe.",
+          "errorCorrection": "Managed invocation does not guarantee exactly-once side effects, global variables are not durable, and routes do not deduplicate business operations.",
+          "boundaryOrTradeoff": "The deduplication record needs a retention window covering delayed retries and replay; ambiguous external outcomes require reconciliation.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Lambda invocation guarantees do not make arbitrary external side effects exactly once.",
+          "C": "Execution environments can be replaced or run concurrently, so a global variable cannot be the source of truth.",
+          "D": "Network routes cannot determine whether a business transaction was already applied."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:idempotency:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "idempotency"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-009",
+      "slotId": "AWSSAA-N08-B04:event-driven",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "event_driven_lambda_decoupling"
+      },
+      "prompt": "A file-processing service must react whenever an object is created in S3, without a polling fleet. Which serverless pattern is appropriate?",
+      "constraints": [
+        "Processing can be asynchronous.",
+        "The event should identify the object.",
+        "Failures need retry and quarantine handling."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Configure an S3 event notification or EventBridge rule to invoke a Lambda path, validate loop prevention and permissions, and add retry or failure-destination handling."
+          },
+          {
+            "optionId": "B",
+            "text": "Run a continuously polling EC2 instance because serverless functions cannot respond to object events."
+          },
+          {
+            "optionId": "C",
+            "text": "Expose the S3 bucket publicly so Lambda can discover new objects through internet scans."
+          },
+          {
+            "optionId": "D",
+            "text": "Use an EBS snapshot event because snapshots are the only S3-compatible trigger."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "S3 object events can start event-driven processing without a polling fleet when the notification and failure contract is configured explicitly.",
+        "Details": {
+          "mechanismOrProperty": "S3 can publish object event notifications to supported destinations, including Lambda or an event bus, with IAM and event-filter configuration.",
+          "scenarioApplication": "The team filters the intended bucket and prefix, grants invoke permission, makes processing idempotent, and routes failed events to a durable investigation path.",
+          "errorCorrection": "Polling adds unnecessary infrastructure, public buckets are unsafe, and EBS snapshots are unrelated to S3 object events.",
+          "boundaryOrTradeoff": "Event delivery and ordering semantics must be understood; a processing function should not write back into the same trigger path without loop protection.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "S3 can produce events for supported destinations, so a polling fleet is not required.",
+          "C": "Public exposure is not needed and creates a security risk.",
+          "D": "EBS snapshot events do not represent S3 object creation."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:event-driven:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "event-driven"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/with-s3.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-010",
+      "slotId": "AWSSAA-N08-B04:workflow-boundary",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_workflow_orchestration_boundary"
+      },
+      "prompt": "A Lambda function contains ten sequential calls, retries each call differently, and stores step state in local variables. Operators cannot see which step failed. What should be changed?",
+      "constraints": [
+        "The process has durable multi-step state.",
+        "Each operation needs distinct retry and timeout policy.",
+        "Operations need visible recovery paths."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Move sequencing, branching, retries, timeouts, and durable state to Step Functions, leaving Lambda functions focused on individual business operations and idempotency."
+          },
+          {
+            "optionId": "B",
+            "text": "Add more nested callbacks to the same Lambda so orchestration remains hidden from operators."
+          },
+          {
+            "optionId": "C",
+            "text": "Use a larger Lambda timeout to make all ten operations one atomic transaction automatically."
+          },
+          {
+            "optionId": "D",
+            "text": "Use an S3 lifecycle policy as the workflow engine because it can schedule sequential transitions."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Step Functions makes multi-step control flow and recovery visible and durable, while Lambda remains the task implementation boundary.",
+        "Details": {
+          "mechanismOrProperty": "A state machine represents states, transitions, retries, catches, timeouts, and service integrations; function code performs focused operations and must handle repeats safely.",
+          "scenarioApplication": "The team decomposes the function into tasks, defines per-step policy, records execution history, and uses compensation or manual review for partial failure.",
+          "errorCorrection": "Nested callbacks preserve opacity, a timeout does not create atomicity, and S3 lifecycle actions are not business workflow transitions.",
+          "boundaryOrTradeoff": "An explicit workflow adds a managed orchestration component but reduces hidden state and improves recovery and operations.",
+          "url": "https://docs.aws.amazon.com/step-functions/latest/dg/sfn-best-practices.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "More hidden callbacks increase debugging and retry complexity instead of exposing state.",
+          "C": "A longer timeout does not make independent external operations atomic.",
+          "D": "Lifecycle rules manage storage objects and do not orchestrate business calls."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:workflow-boundary:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "workflow-boundary"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/step-functions/latest/dg/sfn-best-practices.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-011",
+      "slotId": "AWSSAA-N08-B04:api-integration",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "api_gateway_lambda_integration"
+      },
+      "prompt": "A public HTTP API needs authentication, throttling, request validation, and a Lambda backend without exposing function URLs directly. Which edge pattern fits?",
+      "constraints": [
+        "The API is public.",
+        "Cross-cutting API controls are required.",
+        "Lambda should remain an internal backend integration."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Use API Gateway as the managed API boundary with authentication, throttling, validation, and an integration to Lambda, then apply least-privilege invoke permission."
+          },
+          {
+            "optionId": "B",
+            "text": "Expose the Lambda function's execution role as the public API because IAM permissions replace API authentication for every client."
+          },
+          {
+            "optionId": "C",
+            "text": "Expose the function on a public IP because Lambda functions are network servers with stable addresses."
+          },
+          {
+            "optionId": "D",
+            "text": "Use an S3 static website as the API gateway because static hosting validates requests and invokes Lambda automatically."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "API Gateway provides an API-facing control plane and can integrate privately or directly with Lambda while keeping execution permissions separate.",
+        "Details": {
+          "mechanismOrProperty": "API Gateway handles API resources, authorization, throttling, validation, and integration; Lambda's resource policy or integration permission controls which gateway can invoke it.",
+          "scenarioApplication": "The team authenticates callers, validates input, limits rate, maps the request, and grants only the API's invoke permission to the function.",
+          "errorCorrection": "An execution role is assumed by Lambda and is not a public client credential, functions do not have stable public IPs, and S3 static hosting is not an API control plane.",
+          "boundaryOrTradeoff": "API Gateway adds an edge service and quotas; direct Lambda URLs or other front doors may fit simpler cases but must satisfy the same security and rate requirements.",
+          "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-integrations.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "A Lambda execution role is a workload identity, not a public API authentication mechanism.",
+          "C": "Lambda does not provide a stable public server IP for direct exposure.",
+          "D": "S3 website hosting does not replace API authentication, throttling, and integration policy."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:api-integration:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "api-integration"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-integrations.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-012",
+      "slotId": "AWSSAA-N08-B04:direct-integration",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "direct_service_integration_selection"
+      },
+      "prompt": "An API endpoint only needs to put a validated message on SQS and perform no custom transformation or business calculation. Which simplification should be considered?",
+      "constraints": [
+        "The request mapping is simple.",
+        "No custom code is required.",
+        "The API still needs authentication and throttling."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Evaluate a direct API Gateway-to-SQS integration to remove an unnecessary Lambda hop while preserving API authorization, validation, throttling, and queue permissions."
+          },
+          {
+            "optionId": "B",
+            "text": "Always insert Lambda because every API request must execute custom code even when the target API is sufficient."
+          },
+          {
+            "optionId": "C",
+            "text": "Expose SQS publicly and let clients call it without an API boundary."
+          },
+          {
+            "optionId": "D",
+            "text": "Use a security group as the message transformation layer between API Gateway and SQS."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "A supported service integration can reduce code, latency, and failure modes when no custom computation is needed.",
+        "Details": {
+          "mechanismOrProperty": "API Gateway can integrate with AWS services using an IAM role and request mapping. The API edge can retain authentication and throttling while SQS owns durable buffering.",
+          "scenarioApplication": "The team maps validated fields to SendMessage, scopes the integration role to one queue, and monitors queue and API failures.",
+          "errorCorrection": "Unneeded Lambda adds an execution hop, public SQS bypasses the API contract, and security groups do not transform messages.",
+          "boundaryOrTradeoff": "Direct integration is appropriate only when mapping, error behavior, and observability meet the contract; custom validation or business logic still requires a worker.",
+          "url": "https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-service-integrations.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "A Lambda hop is unnecessary when the managed integration can satisfy the complete contract.",
+          "C": "SQS should not be exposed as an ungoverned public API when an API boundary is required.",
+          "D": "Security groups control network traffic and do not transform request payloads."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:direct-integration:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "direct-integration"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-service-integrations.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-013",
+      "slotId": "AWSSAA-N08-B04:layers",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_layers_dependency_reuse"
+      },
+      "prompt": "Many Lambda functions use the same approved SDK extension, but copying it into every deployment package creates drift and large artifacts. Which mechanism should be evaluated?",
+      "constraints": [
+        "The dependency is shared across functions.",
+        "Versions must be controlled.",
+        "Function-specific code should remain separately deployable."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Use a versioned Lambda layer or build artifact for the shared dependency, test compatibility with each function runtime, and update consumers deliberately."
+          },
+          {
+            "optionId": "B",
+            "text": "Load the newest dependency from an unpinned internet URL during every invocation."
+          },
+          {
+            "optionId": "C",
+            "text": "Put the dependency in a security group so all functions can import it without a deployment artifact."
+          },
+          {
+            "optionId": "D",
+            "text": "Copy a different untracked dependency version into each function so no shared release is needed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda layers can package shared dependencies, but versioning and runtime compatibility remain explicit responsibilities.",
+        "Details": {
+          "mechanismOrProperty": "A layer is a separately managed package that can be attached to functions. Layer versions and function runtime compatibility should be tested and pinned through deployment automation.",
+          "scenarioApplication": "The platform publishes an approved layer version, functions reference it explicitly, and updates roll out after compatibility and security tests.",
+          "errorCorrection": "Runtime internet loading is non-reproducible and adds startup dependency, security groups do not contain code, and untracked copies create drift.",
+          "boundaryOrTradeoff": "Layers reduce package duplication but add version coupling and can increase cold-start or compatibility risk if overused.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Unpinned runtime downloads make deployments non-reproducible and add network and availability dependencies.",
+          "C": "Security groups are network rules and cannot package importable code.",
+          "D": "Untracked copies remove central visibility and allow security and behavior drift."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:layers:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "layers"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/chapter-layers.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-014",
+      "slotId": "AWSSAA-N08-B04:versions-aliases",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_version_alias_traffic_shift"
+      },
+      "prompt": "A team needs to deploy a new Lambda version to 5% of traffic, monitor errors, and roll back without changing every client integration. Which feature set fits?",
+      "constraints": [
+        "Clients use one stable function identifier.",
+        "Versions must be immutable.",
+        "Traffic shifting and rollback are required."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Publish immutable Lambda versions, route clients through an alias, and shift alias traffic with a measured deployment and rollback policy."
+          },
+          {
+            "optionId": "B",
+            "text": "Overwrite the function code in place and ask every client to change its function ARN for each release."
+          },
+          {
+            "optionId": "C",
+            "text": "Use an environment variable in each client process as the only traffic router, without a versioned function target."
+          },
+          {
+            "optionId": "D",
+            "text": "Use an S3 lifecycle transition to move invocation traffic between code packages."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Versions and aliases separate immutable deployment artifacts from the stable client target and support controlled traffic movement.",
+        "Details": {
+          "mechanismOrProperty": "Published Lambda versions are immutable; an alias points to a version and can be used as the stable invocation target while deployment tooling shifts traffic or rolls back.",
+          "scenarioApplication": "The team publishes version two, moves a small alias percentage, observes errors and duration, then completes or reverses the shift.",
+          "errorCorrection": "In-place overwrite removes reliable rollback, client changes spread deployment coupling, and S3 lifecycle does not route Lambda invocations.",
+          "boundaryOrTradeoff": "Traffic shifting needs metrics, alarms, and compatible state or schema behavior during coexistence.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-versions.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Overwriting code in place makes rollback and version attribution harder and forces client coordination.",
+          "C": "Client-local routing is fragmented and does not provide one controlled deployment target.",
+          "D": "Object lifecycle transitions do not control Lambda invocation routing."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:versions-aliases:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "versions-aliases"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/configuration-versions.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-015",
+      "slotId": "AWSSAA-N08-B04:tmp-storage",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_ephemeral_tmp_storage"
+      },
+      "prompt": "A Lambda image processor needs scratch space for a temporary decompression step, but the source and final output must survive function replacement. Which storage design is correct?",
+      "constraints": [
+        "Scratch files are disposable.",
+        "Source and output are durable business data.",
+        "The function may run concurrently in different environments."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Use /tmp only for disposable per-environment scratch data and read or write durable source and output through S3 or another appropriate persistent service."
+          },
+          {
+            "optionId": "B",
+            "text": "Write the final output only to /tmp because Lambda preserves the directory for every future invocation and environment."
+          },
+          {
+            "optionId": "C",
+            "text": "Use a global variable as the durable output index because all invocations share one runtime process."
+          },
+          {
+            "optionId": "D",
+            "text": "Store output in a security group because it is available across concurrent function environments."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda /tmp storage is local to an execution environment and suitable for scratch data, not a durable cross-invocation source of truth.",
+        "Details": {
+          "mechanismOrProperty": "The temporary filesystem can persist across reuse of one environment but is not guaranteed across environments or replacements. Durable objects belong in a persistent service such as S3.",
+          "scenarioApplication": "The function downloads source to /tmp, processes it, uploads the result to S3, and uses object identifiers for idempotent retries.",
+          "errorCorrection": "/tmp is not a durable shared store, global variables are environment-local, and security groups contain no application data.",
+          "boundaryOrTradeoff": "Local scratch can improve processing efficiency but needs disk-size monitoring and cleanup because concurrent or large files can exhaust it.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-ephemeral-storage.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "The temporary directory is not guaranteed to survive function replacement or be shared across environments.",
+          "C": "Global state is local to an execution environment and cannot be the durable output index.",
+          "D": "Security groups are network policies and do not store output data."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:tmp-storage:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "tmp-storage"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/configuration-ephemeral-storage.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-016",
+      "slotId": "AWSSAA-N08-B04:vpc-lambda",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_vpc_connectivity_tradeoff"
+      },
+      "prompt": "A Lambda function must access a private database, but after adding VPC configuration its calls to a public AWS API fail. Which network design should be checked?",
+      "constraints": [
+        "The database is private.",
+        "The function needs both private and public service access.",
+        "The team must avoid exposing the database."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Place the function in private subnets with routes, security groups, DNS, and suitable VPC endpoints or controlled NAT egress for required services, then test database and API paths separately."
+          },
+          {
+            "optionId": "B",
+            "text": "Put the database and function in public subnets because VPC-enabled Lambda cannot use private networking."
+          },
+          {
+            "optionId": "C",
+            "text": "Add a security group rule to create internet egress because security groups automatically provide a route to public services."
+          },
+          {
+            "optionId": "D",
+            "text": "Use an EBS snapshot as the network bridge between the Lambda ENI and the public API."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "VPC-enabled Lambda needs complete routing and egress design for both private dependencies and public AWS endpoints; network permissions alone are insufficient.",
+        "Details": {
+          "mechanismOrProperty": "Lambda network interfaces use the selected subnets and security groups. Private database access needs reachable routes and rules; public or AWS-service access needs NAT or supported VPC endpoints and DNS.",
+          "scenarioApplication": "The team keeps database subnets private, adds endpoint or NAT paths as required, and verifies route tables, DNS, NACLs, and security-group directions.",
+          "errorCorrection": "Public placement is not required and increases exposure, security groups do not create routes, and EBS is not network connectivity.",
+          "boundaryOrTradeoff": "VPC attachment adds network configuration and can affect startup and IP capacity; it should be used when private access is a real requirement.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "VPC-enabled Lambda can use private subnets; public database placement is unnecessary and risky.",
+          "C": "Security groups allow or deny traffic but do not create a route or internet egress path.",
+          "D": "Storage snapshots cannot bridge network interfaces to an API."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:vpc-lambda:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "vpc-lambda"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/configuration-vpc.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-017",
+      "slotId": "AWSSAA-N08-B04:serverless-cost",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_cost_workload_fit"
+      },
+      "prompt": "A function runs continuously for hours with stable high utilization and large memory requirements. Which architecture comparison is necessary?",
+      "constraints": [
+        "The workload is not bursty.",
+        "Execution is long-lived and predictable.",
+        "A container or instance service could host the process."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Compare Lambda duration and request pricing, timeout and concurrency limits, initialization behavior, and operational cost with containers or EC2 before selecting the serverless model."
+          },
+          {
+            "optionId": "B",
+            "text": "Choose Lambda automatically because serverless is always cheaper regardless of duration and utilization."
+          },
+          {
+            "optionId": "C",
+            "text": "Use Lambda with an infinite timeout because serverless functions are not bounded by execution limits."
+          },
+          {
+            "optionId": "D",
+            "text": "Use an S3 bucket as the long-running compute process because it has no execution timeout."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda is not automatically the best fit for a long, steady process; workload duration, limits, utilization, and total operations determine the boundary.",
+        "Details": {
+          "mechanismOrProperty": "Lambda execution has service limits and per-request or duration pricing. Containers or EC2 may provide better fit for continuously running processes, host access, or predictable high utilization.",
+          "scenarioApplication": "The team models actual duration, memory, concurrency, downstream load, deployment, and operations before choosing a runtime.",
+          "errorCorrection": "Serverless pricing is not universally cheaper, Lambda timeouts are bounded, and S3 is storage rather than compute.",
+          "boundaryOrTradeoff": "Lambda reduces host operations and can scale automatically; a steady process may trade those benefits for container or instance capacity economics.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Cost and fit depend on duration, memory, invocation rate, concurrency, and alternatives.",
+          "C": "Lambda has bounded execution time; an infinite timeout is not available.",
+          "D": "S3 cannot execute a long-running process."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:serverless-cost:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "serverless-cost"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    },
+    {
+      "itemId": "aws-saa-c03-AWSSAA-N08-B04-018",
+      "slotId": "AWSSAA-N08-B04:concurrency-quotas",
+      "nodeId": "microservices_containers_serverless_and_purpose_built_services",
+      "learningBlockId": "lambda_and_serverless_architecture_patterns",
+      "taxonomy": {
+        "examDomainId": "aws-saa-c03-domain-2",
+        "competencyAreaId": "microservices_containers_serverless_and_purpose_built_services",
+        "topicId": "lambda_and_serverless_architecture_patterns",
+        "skillAtomId": "lambda_account_concurrency_quota"
+      },
+      "prompt": "A launch event can invoke 20,000 Lambda executions in seconds, but the account concurrency quota and downstream database capacity are much lower. Which control sequence is safest?",
+      "constraints": [
+        "The event can be queued.",
+        "The database has a hard connection limit.",
+        "The business can tolerate delayed processing."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "A",
+            "text": "Use a durable queue or controlled event source, cap function concurrency to downstream capacity, monitor throttles and age, and request quota changes only when justified by tested capacity."
+          },
+          {
+            "optionId": "B",
+            "text": "Raise account concurrency without limit and let the database absorb the burst because Lambda scales independently."
+          },
+          {
+            "optionId": "C",
+            "text": "Invoke all functions synchronously from the client and let client timeouts provide backpressure."
+          },
+          {
+            "optionId": "D",
+            "text": "Remove the database connection limit because serverless invocations cannot create connection storms."
+          }
+        ],
+        "acceptedOptionIds": [
+          "A"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Lambda concurrency and downstream capacity must be coordinated; a queue and bounded concurrency convert an invocation burst into controlled work.",
+        "Details": {
+          "mechanismOrProperty": "Account and function concurrency quotas limit execution, while downstream resources may have lower limits. Event source batching, reserved concurrency, and queue age can implement backpressure.",
+          "scenarioApplication": "The event producer enqueues work, the function consumes at a safe concurrency, and alarms identify backlog, throttles, or database saturation.",
+          "errorCorrection": "Unbounded Lambda scale can overwhelm the database, client timeouts are not a durable buffer, and serverless does not eliminate connection storms.",
+          "boundaryOrTradeoff": "Bounded concurrency increases completion latency during a burst, so the product needs a visible queued state and a deadline-based scaling policy.",
+          "url": "https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "B": "Increasing concurrency without downstream protection can create a database outage.",
+          "C": "Client timeouts discard or duplicate work and do not provide durable backpressure.",
+          "D": "Serverless parallelism can create connection storms, so downstream limits remain essential."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-mixed-practice",
+        "certification-exam-simulation",
+        "certification-weak-area-review"
+      ],
+      "sourceBinding": {
+        "bindingId": "AWSSAA-N08-B04:concurrency-quotas:source-binding",
+        "claimIds": [
+          "aws-saa-c03-2.1"
+        ],
+        "anchorIds": [
+          "concurrency-quotas"
+        ],
+        "sourceRefs": [
+          "https://docs.aws.amazon.com/lambda/latest/dg/lambda-concurrency.html"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex",
+        "createdAt": "2026-08-15T00:00:00Z",
+        "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+      }
+    }
+  ],
+  "authoringProvenance": {
+    "authoringMethod": "manual",
+    "approvalStatus": "unapproved",
+    "author": "Codex",
+    "createdAt": "2026-08-15T00:00:00Z",
+    "contentBatchId": "aws-saa-c03-2026-08-15-AWSSAA-N08-B04"
+  }
+}

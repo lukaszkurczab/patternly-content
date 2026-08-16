@@ -439,6 +439,292 @@
         "patternVariantId": "two_dimensional_dp",
         "problemArchetypeId": "grid_path_dp"
       }
+    },
+    {
+      "id": "alg-dpintro-two-d-08-three-axis-signal",
+      "prompt": "A grid path answer depends on row, column, and how many obstacle removals remain. Which state model is sufficient?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "row_col_budget", "text": "dp(r, c, remainingRemovals), because all three coordinates can affect future legal paths."},
+        {"id": "row_col_only", "text": "dp(r, c), because the remaining removal budget can be inferred from location."},
+        {"id": "budget_only", "text": "dp(k), because every cell has the same movement options."},
+        {"id": "full_path_history", "text": "Store every previous cell sequence even though only position and remaining budget affect future moves."}
+      ], "acceptedOptionIds": ["row_col_budget"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An independent resource remaining at the same location creates a third future-relevant state coordinate.", "details": {"blocks": [{"type": "paragraph", "text": "Two paths can reach the same cell with different remaining removal budgets and therefore different future feasibility. The full path history is unnecessary if no other future rule depends on it. Dimensionality follows state sufficiency, not the visual number of input arrays."}]}, "wrongOptionExplanationsByOptionId": {"row_col_only": "The same cell with different remaining budgets can have different answers.", "budget_only": "Position determines which neighbors and obstacles remain available.", "full_path_history": "History beyond the retained future-relevant coordinates creates redundant states."}},
+      "taxonomy": {"primarySkillAtomId": "model_two_dimensional_dp", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_dp", "problemArchetypeId": "grid_path_dp"}
+    },
+    {
+      "id": "alg-dpintro-two-d-09-row-column-dependency",
+      "prompt": "A recurrence for cell (r,c) reads (r-1,c), (r,c-1), and (r-1,c-1). What does that imply about a one-row compression?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "temporary_diagonal", "text": "A one-row implementation needs a temporary old-diagonal value and an order that preserves up, left, and diagonal semantics."},
+        {"id": "left_only", "text": "Only the left value is needed because all grid recurrences can be read from one row."},
+        {"id": "reverse_columns_always", "text": "Always scan columns right to left so every predecessor remains old."},
+        {"id": "delete_previous_row", "text": "Delete the previous row before processing because the current row contains all needed cells."}
+      ], "acceptedOptionIds": ["temporary_diagonal"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The diagonal predecessor is overwritten when the current row reuses the column slot, so it needs explicit liveness handling.", "details": {"blocks": [{"type": "paragraph", "text": "At c, the old slot provides up; the updated c-1 provides left; and the old c-1 is the diagonal. A temporary variable carries that old c-1 before it is replaced. The scan direction depends on the recurrence, and blindly deleting the previous row loses up values."}]}, "wrongOptionExplanationsByOptionId": {"left_only": "The recurrence explicitly reads a value from the previous row and the diagonal.", "reverse_columns_always": "Direction must preserve the particular dependency set; reverse is not universally safe.", "delete_previous_row": "The previous row supplies live up and diagonal predecessors."}},
+      "taxonomy": {"primarySkillAtomId": "model_two_dimensional_dp", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "sequence_alignment_intro"}
+    },
+    {
+      "id": "alg-dpintro-two-d-10-dense-versus-sparse-grid",
+      "prompt": "A grid DP has R×C possible cells but obstacles make only K cells reachable. Which modeling choice should be considered?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "reachable_state_storage", "text": "Compare dense tabulation O(RC) with sparse memoization or frontier storage O(K), including access overhead and output needs."},
+        {"id": "dense_always", "text": "Use a full table because a two-dimensional state can never be sparse."},
+        {"id": "sparse_always", "text": "Use a map because every obstacle guarantees that sparse storage is faster."},
+        {"id": "ignore_obstacles", "text": "Compute all cells and treat obstacles as presentation-only metadata."}
+      ], "acceptedOptionIds": ["reachable_state_storage"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The logical state space and the reachable state set can have different sizes, so storage strategy is workload- and representation-dependent.", "details": {"blocks": [{"type": "paragraph", "text": "Bottom-up dense tables give predictable locality when most cells are reached. Top-down memoization or a sparse frontier can avoid unreachable cells when K is small, but map overhead and transition access matter. Obstacles remain part of state legality in either representation."}]}, "wrongOptionExplanationsByOptionId": {"dense_always": "Dense storage is not the only representation when many states are unreachable.", "sparse_always": "Sparse maps have overhead and may lose to dense arrays when the grid is mostly reachable.", "ignore_obstacles": "A path through a blocked cell violates the problem's transition contract."}},
+      "taxonomy": {"primarySkillAtomId": "model_two_dimensional_dp", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_dp", "problemArchetypeId": "grid_path_dp"}
+    },
+    {
+      "id": "alg-dpintro-two-d-11-prefix-pair",
+      "prompt": "What does (i,j) usually represent in pairwise sequence DP?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "pair_prefix",
+            "text": "A subproblem for the first i elements of one sequence and first j of the other."
+          },
+          {
+            "id": "storage",
+            "text": "Arbitrary storage coordinates with no input meaning."
+          },
+          {
+            "id": "one",
+            "text": "Only i matters; j is spare storage."
+          },
+          {
+            "id": "full",
+            "text": "Every cell represents both full inputs."
+          }
+        ],
+        "acceptedOptionIds": [
+          "pair_prefix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "storage": "A DP coordinate must define a subproblem.",
+          "one": "The second sequence changes the answer.",
+          "full": "Most cells are smaller subproblems."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "model_two_dimensional_dp",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-two-d-12-boundary",
+      "prompt": "Why does sequence-alignment DP need a complete base row and column?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_against_prefix",
+            "text": "They define aligning a nonempty prefix against an empty one and anchor the table."
+          },
+          {
+            "id": "origin",
+            "text": "The origin is enough."
+          },
+          {
+            "id": "zero",
+            "text": "Both boundaries are always zero."
+          },
+          {
+            "id": "reject",
+            "text": "Reject empty sequences."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_against_prefix"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "origin": "Boundary paths can accumulate cost.",
+          "zero": "Gap/edit objectives may accumulate.",
+          "reject": "They may be legal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "model_two_dimensional_dp",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-two-d-13-dependency",
+      "prompt": "What do predecessors (i−1,j), (i,j−1), and (i−1,j−1) represent?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "three_choices",
+            "text": "Consume one side, the other side, or both, then combine alternatives by the objective."
+          },
+          {
+            "id": "duplicates",
+            "text": "They are redundant copies of one state."
+          },
+          {
+            "id": "max",
+            "text": "Always take the maximum."
+          },
+          {
+            "id": "future",
+            "text": "Read (i+1,j+1) in bottom-up order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "three_choices"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "duplicates": "Changing either coordinate changes the subproblem.",
+          "max": "Objectives combine differently.",
+          "future": "That is an uncomputed dependency."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "model_two_dimensional_dp",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "grid_path_dp"
+      }
+    },
+    {
+      "id": "alg-dpintro-two-d-14-space",
+      "prompt": "When can a 2D DP table be reduced to O(n) space?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "row_liveness",
+            "text": "After proving row dependencies and update order, use rolling rows and retain provenance if a path is required."
+          },
+          {
+            "id": "scalar",
+            "text": "Every 2D DP needs one scalar."
+          },
+          {
+            "id": "any",
+            "text": "Overwrite in any order."
+          },
+          {
+            "id": "path",
+            "text": "A compressed table always reconstructs the same path."
+          }
+        ],
+        "acceptedOptionIds": [
+          "row_liveness"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "scalar": "Many transitions need a prior row.",
+          "any": "Writes can destroy left or diagonal reads.",
+          "path": "Witness data may be lost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "model_two_dimensional_dp",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "two_dimensional_dp",
+        "problemArchetypeId": "grid_path_dp"
+      }
     }
   ],
   "modeStructures": {
@@ -460,7 +746,14 @@
           "alg-dpintro-two-d-04-boundaries-before-interior",
           "alg-dpintro-two-d-05-row-compression-condition",
           "alg-dpintro-two-d-06-first-row-column-semantics",
-          "alg-dpintro-two-d-07-third-dimension-boundary"
+          "alg-dpintro-two-d-07-third-dimension-boundary",
+          "alg-dpintro-two-d-08-three-axis-signal",
+          "alg-dpintro-two-d-09-row-column-dependency",
+          "alg-dpintro-two-d-10-dense-versus-sparse-grid",
+          "alg-dpintro-two-d-11-prefix-pair",
+          "alg-dpintro-two-d-12-boundary",
+          "alg-dpintro-two-d-13-dependency",
+          "alg-dpintro-two-d-14-space"
         ],
         "relationMetadata": {
           "mechanismBoundary": "two_dimensional_dp_intro"

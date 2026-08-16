@@ -475,6 +475,308 @@
         "patternVariantId": "euclidean_algorithm",
         "problemArchetypeId": "compute_gcd_lcm"
       }
+    },
+    {
+      "id": "alg-mg-gcd-common-divisor-invariant",
+      "prompt": "Why does gcd(a,b)=gcd(b,a mod b) hold when b is nonzero?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "same_divisors", "text": "A divisor divides a and b exactly when it divides b and a−qb=a mod b, so the common-divisor sets are equal."},
+        {"id": "remainder_smaller_only", "text": "It holds only because the remainder is numerically smaller, without a divisor argument."},
+        {"id": "prime_only", "text": "It holds only when a and b are prime."},
+        {"id": "lcm_identity", "text": "It follows from lcm(a,b)=a·b, independent of divisors."}
+      ], "acceptedOptionIds": ["same_divisors"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The Euclidean step preserves the set of common divisors while reducing the second argument.", "details": {"blocks": [{"type": "paragraph", "text": "Since a=qb+r, any divisor of a and b divides r=a−qb. Conversely, a divisor of b and r divides a=qb+r. The remainder bound gives termination; the divisor equivalence gives correctness."}]}, "wrongOptionExplanationsByOptionId": {"remainder_smaller_only": "Decrease proves progress, not that the final divisor is unchanged.", "prime_only": "The identity holds for all integers under the chosen sign/zero contract.", "lcm_identity": "The gcd recurrence is a divisor relation; the lcm formula also needs a gcd and zero convention."}},
+      "taxonomy": {"primarySkillAtomId": "apply_euclidean_algorithm", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "euclidean_algorithm", "problemArchetypeId": "compute_gcd_lcm"}
+    },
+    {
+      "id": "alg-mg-gcd-early-termination",
+      "prompt": "In the iterative Euclidean algorithm, what is the correct stopping condition and returned value?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "while_b_nonzero_return_a", "text": "Repeat while b is nonzero, replacing (a,b) with (b,a mod b), then return nonnegative a."},
+        {"id": "while_a_nonzero_return_b", "text": "Repeat while a is nonzero with the same update, then return b regardless of sign."},
+        {"id": "stop_first_remainder", "text": "Stop after the first nonzero remainder and return it."},
+        {"id": "return_last_input", "text": "Return the original larger input because it is the first divisor tested."}
+      ], "acceptedOptionIds": ["while_b_nonzero_return_a"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The final nonzero remainder is the gcd, and the loop invariant places it in a when b reaches zero.", "details": {"blocks": [{"type": "paragraph", "text": "Each update decreases the second nonnegative remainder. When b=0, every common divisor is a divisor of a, so a is the gcd under the nonnegative result contract. The zero-input convention must be handled consistently before or within this loop."}]}, "wrongOptionExplanationsByOptionId": {"while_a_nonzero_return_b": "The update convention makes b the final gcd when it is zero; stopping on a reverses the roles.", "stop_first_remainder": "Intermediate remainders may still have a smaller common divisor.", "return_last_input": "The larger input need not divide the smaller one."}},
+      "taxonomy": {"primarySkillAtomId": "apply_euclidean_algorithm", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "euclidean_algorithm", "problemArchetypeId": "compute_gcd_lcm"}
+    },
+    {
+      "id": "alg-mg-gcd-lcm-overflow-order",
+      "prompt": "For positive integers a and b, which computation order reduces avoidable overflow when deriving lcm from gcd?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "divide_then_multiply", "text": "Compute g=gcd(a,b), then multiply (a/g)*b using a sufficiently wide representation and checked bounds."},
+        {"id": "multiply_first", "text": "Compute a*b/g in the narrow input type because division will always undo overflow."},
+        {"id": "gcd_plus_sum", "text": "Return gcd(a,b)+a+b because lcm is the next common multiple after the sum."},
+        {"id": "ignore_zero_contract", "text": "Use the same multiplication formula for zero inputs without defining the result."}
+      ], "acceptedOptionIds": ["divide_then_multiply"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The identity lcm(a,b)=a/g·b is algebraically equivalent but can keep the intermediate product smaller.", "details": {"blocks": [{"type": "paragraph", "text": "Divide one factor by the gcd before multiplication, then use a type and overflow policy that cover the final lcm. Zero and signed inputs require the library's explicit contract. Division after an overflowing product cannot recover the intended mathematical value."}]}, "wrongOptionExplanationsByOptionId": {"multiply_first": "The product may overflow before division, even when the final lcm fits.", "gcd_plus_sum": "The sum is not generally the least common multiple.", "ignore_zero_contract": "The formula and result semantics need a defined zero case."}},
+      "taxonomy": {"primarySkillAtomId": "apply_euclidean_algorithm", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "euclidean_algorithm", "problemArchetypeId": "compute_gcd_lcm"}
+    },
+    {
+      "id": "alg-mg-gcd-11-remainder-invariant",
+      "prompt": "Why does replacing (a,b) with (b,a mod b) preserve the gcd?",
+      "constraints": [
+        "b is nonzero in the loop step.",
+        "Divisibility is defined over the integer domain."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "common_divisors_same",
+            "text": "A number divides both a and b exactly when it divides b and a−q*b, so the common divisors are unchanged.",
+            "explanation": "The remainder differs from a by a multiple of b."
+          },
+          {
+            "id": "remainder_smaller_only",
+            "text": "It works only because the remainder is numerically smaller; size decrease alone preserves gcd.",
+            "explanation": "Termination comes from size decrease, but correctness comes from common-divisor equivalence."
+          },
+          {
+            "id": "prime_assumption",
+            "text": "The inputs must be prime for the replacement to preserve gcd.",
+            "explanation": "Euclid's step works for all integers with the stated domain."
+          },
+          {
+            "id": "multiplication_rule",
+            "text": "The gcd distributes over multiplication, so replacing a by a remainder is arbitrary.",
+            "explanation": "The proof uses divisibility, not an unrestricted distribution law."
+          }
+        ],
+        "acceptedOptionIds": [
+          "common_divisors_same"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Euclid's correctness is a divisibility invariant, while the decreasing remainder supplies termination.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If d divides a and b, it divides a−floor(a/b)b, the remainder. Conversely, a remainder and b reconstruct a, so they have the same common divisors. This proves equality of gcds at every step."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "remainder_smaller_only": "Termination comes from size decrease, but correctness comes from common-divisor equivalence.",
+          "prime_assumption": "Euclid's step works for all integers with the stated domain.",
+          "multiplication_rule": "The proof uses divisibility, not an unrestricted distribution law."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_euclidean_algorithm",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
+    },
+    {
+      "id": "alg-mg-gcd-12-lcm-zero",
+      "prompt": "What should an LCM routine return for inputs 0 and n under the common convention lcm(0,n)=0?",
+      "constraints": [
+        "The contract defines lcm(0,n) as zero.",
+        "n may be any integer in the accepted domain."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "zero_result",
+            "text": "Return 0 before applying the formula because zero has no positive common multiple under this convention.",
+            "explanation": "The explicit boundary rule controls the result."
+          },
+          {
+            "id": "divide_by_zero",
+            "text": "Compute abs(0*n)/gcd(0,n) without a special case; the quotient is always safe.",
+            "explanation": "The formula may be undefined or overflow-prone without a contract branch."
+          },
+          {
+            "id": "return_n",
+            "text": "Return n because every multiple of n is also a multiple of zero.",
+            "explanation": "Zero is a multiple of every integer, but the chosen LCM convention returns zero."
+          },
+          {
+            "id": "return_one",
+            "text": "Return 1 because gcd and lcm are complementary identities.",
+            "explanation": "The identity does not apply to the zero boundary this way."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero_result"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Zero inputs require an explicit LCM boundary policy before using the gcd-based formula.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The familiar `abs(a/gcd(a,b)*b)` formula assumes a nonzero domain or a defined zero convention. Handling zero first also avoids divide-by-zero and makes the API contract observable."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "divide_by_zero": "The formula may be undefined or overflow-prone without a contract branch.",
+          "return_n": "Zero is a multiple of every integer, but the chosen LCM convention returns zero.",
+          "return_one": "The identity does not apply to the zero boundary this way."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_euclidean_algorithm",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
+    },
+    {
+      "id": "alg-mg-gcd-13-divisibility",
+      "prompt": "If d divides both a and b, which relation follows for their gcd?",
+      "constraints": [
+        "a and b are integers.",
+        "d is a common divisor."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "divides_gcd",
+            "text": "d divides gcd(a,b), because the gcd is the greatest positive common divisor and every common divisor divides it.",
+            "explanation": "This is the defining divisibility property of the gcd."
+          },
+          {
+            "id": "gcd_divides_d",
+            "text": "gcd(a,b) always divides d because d was found first.",
+            "explanation": "The gcd is not ordered by discovery time."
+          },
+          {
+            "id": "d_equals_gcd",
+            "text": "d must equal gcd(a,b) for every common divisor.",
+            "explanation": "There can be many smaller common divisors."
+          },
+          {
+            "id": "sum_rule",
+            "text": "d divides a+b but tells nothing about gcd(a,b).",
+            "explanation": "It also constrains the gcd through the common-divisor definition."
+          }
+        ],
+        "acceptedOptionIds": [
+          "divides_gcd"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The gcd is a greatest common divisor in the divisibility order, not merely a numeric maximum found by search.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Every common divisor is a divisor of the gcd. A candidate d may be smaller than the gcd, and the Euclidean algorithm computes the maximal such structure efficiently."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "gcd_divides_d": "The gcd is not ordered by discovery time.",
+          "d_equals_gcd": "There can be many smaller common divisors.",
+          "sum_rule": "It also constrains the gcd through the common-divisor definition."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_euclidean_algorithm",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
+    },
+    {
+      "id": "alg-mg-gcd-14-reduce-rational",
+      "prompt": "Why can dividing numerator and denominator by their gcd reduce a rational fraction without changing its value?",
+      "constraints": [
+        "The denominator is nonzero.",
+        "The gcd divides both numerator and denominator."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "common_factor_cancels",
+            "text": "Writing numerator=g*p and denominator=g*q gives the same ratio p/q after canceling the common nonzero factor g.",
+            "explanation": "The gcd supplies a shared factor by definition."
+          },
+          {
+            "id": "gcd_changes_value",
+            "text": "Dividing by the gcd always changes the represented rational value to a smaller number.",
+            "explanation": "The numerator and denominator scale together, so the ratio remains equal."
+          },
+          {
+            "id": "denominator_only",
+            "text": "Divide only the denominator because it controls the fraction's magnitude.",
+            "explanation": "Changing one side changes the value."
+          },
+          {
+            "id": "prime_only",
+            "text": "Reduction is valid only when both inputs are prime.",
+            "explanation": "Primality would prevent nontrivial reduction rather than enable it."
+          }
+        ],
+        "acceptedOptionIds": [
+          "common_factor_cancels"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A shared nonzero factor can be canceled from numerator and denominator without changing the ratio.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The gcd gives the largest shared factor, producing a canonical reduced representation. The denominator nonzero condition remains essential."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "gcd_changes_value": "The numerator and denominator scale together, so the ratio remains equal.",
+          "denominator_only": "Changing one side changes the value.",
+          "prime_only": "Primality would prevent nontrivial reduction rather than enable it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_euclidean_algorithm",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
     }
   ],
   "modeStructures": {

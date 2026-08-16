@@ -534,6 +534,294 @@
       },
       "id": "alg-linked-list-merge-splice-08-shared-tail-precondition",
       "difficulty": "advanced"
+    },
+    {
+      "id": "alg-linked-list-merge-splice-09-empty-inputs",
+      "prompt": "A node-reusing merge receives one empty sorted list and one nonempty sorted list. What should the result contain?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "other_head", "text": "The nonempty list's existing head and entire suffix, attached without allocating data nodes."},
+        {"id": "null", "text": "Null because both inputs are required to contribute at least one node."},
+        {"id": "copy_other", "text": "A copied list because an empty input prevents pointer reuse."},
+        {"id": "dummy_only", "text": "The sentinel node because no comparison was performed."}
+      ], "acceptedOptionIds": ["other_head"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An empty sorted input contributes no nodes; the untouched nonempty suffix is already a valid sorted result.", "details": {"blocks": [{"type": "paragraph", "text": "The merge loop can stop when either pointer is null and append the remaining pointer directly. A dummy is scaffolding, not output, and node reuse means the existing suffix can be linked without copying."}]}, "wrongOptionExplanationsByOptionId": {"null": "The nonempty input still supplies the complete result.", "copy_other": "The contract reuses existing nodes and no copy is needed.", "dummy_only": "The logical result starts at dummy.next."}},
+      "taxonomy": {"primarySkillAtomId": "merge_nodes_without_losing_links", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "merge_lists", "problemArchetypeId": "merge_ordered_lists"}
+    },
+    {
+      "id": "alg-linked-list-merge-splice-10-shared-tail-guard",
+      "prompt": "Two sorted lists share a tail node, but the merge implementation assumes disjoint inputs and reuses nodes. What must be addressed?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "shared_identity_policy", "text": "Define whether shared nodes may appear once or twice and guard against creating a cycle or duplicating identity; the disjoint-input proof no longer applies unchanged."},
+        {"id": "ignore_sharing", "text": "Run the same merge because sortedness prevents any topology issue."},
+        {"id": "copy_everything", "text": "Always copy values without checking whether identity preservation is part of the contract."},
+        {"id": "sort_tail", "text": "Sort the shared tail to remove the alias."}
+      ], "acceptedOptionIds": ["shared_identity_policy"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Shared input identity changes what “append both lists” means and can make naive link rewiring cyclic.", "details": {"blocks": [{"type": "paragraph", "text": "A standard merge assumes each source node is owned by one input and can be selected once. With a shared suffix, selecting it from both pointers can revisit the same node or set a link back into the output. The contract must choose one occurrence, copy, or a specialized intersection-aware merge."}]}, "wrongOptionExplanationsByOptionId": {"ignore_sharing": "Sorted values do not prevent pointer aliasing or duplicate traversal.", "copy_everything": "Copying may violate a node-reuse contract and is not a policy decision by itself.", "sort_tail": "Sorting values does not remove shared references or fix links."}},
+      "taxonomy": {"primarySkillAtomId": "merge_nodes_without_losing_links", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "merge_lists", "problemArchetypeId": "merge_ordered_lists"}
+    },
+    {
+      "id": "alg-linked-list-merge-splice-11-append-remainder",
+      "prompt": "After a sorted merge loop stops because one input is empty, what must happen to the nonempty remainder?",
+      "constraints": [
+        "The remaining suffix is already sorted.",
+        "Nodes may be reused in place."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "attach_remainder",
+            "text": "Attach the remaining suffix directly to the output tail; no per-node comparison with an empty input is needed.",
+            "explanation": "The invariant already proves the remainder is the next sorted suffix."
+          },
+          {
+            "id": "discard_remainder",
+            "text": "Discard the remainder because the output is complete when one pointer reaches null.",
+            "explanation": "Discarding loses valid input nodes."
+          },
+          {
+            "id": "resort_remainder",
+            "text": "Sort the remaining suffix again before attaching it.",
+            "explanation": "The suffix was already sorted under the merge invariant."
+          },
+          {
+            "id": "copy_last_value",
+            "text": "Copy only the final remaining value into the output.",
+            "explanation": "Every remaining node belongs in the merged result."
+          }
+        ],
+        "acceptedOptionIds": [
+          "attach_remainder"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The merge invariant transfers the entire remaining sorted suffix once the other input is exhausted.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "At loop termination, all chosen output nodes precede both remaining pointers, and one pointer is null. The nonempty input is already internally ordered, so one link attachment preserves order and linear work."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "discard_remainder": "Discarding loses valid input nodes.",
+          "resort_remainder": "The suffix was already sorted under the merge invariant.",
+          "copy_last_value": "Every remaining node belongs in the merged result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      }
+    },
+    {
+      "id": "alg-linked-list-merge-splice-12-equal-values",
+      "prompt": "When merging two sorted lists with equal current values, which tie policy is safe under a node-preserving contract?",
+      "constraints": [
+        "Both equal-valued nodes must appear in the output.",
+        "Relative order between source lists is not specified."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "choose_either_preserve_both",
+            "text": "Choose either current node, advance only that source, and preserve the other node for the next comparison.",
+            "explanation": "The important invariants are sortedness and retaining both identities."
+          },
+          {
+            "id": "drop_duplicate",
+            "text": "Drop one node because equal values represent the same output element.",
+            "explanation": "Equal payloads do not imply equal node identity."
+          },
+          {
+            "id": "copy_value_once",
+            "text": "Copy the value once into a new node and discard both source nodes.",
+            "explanation": "This violates node reuse and multiplicity."
+          },
+          {
+            "id": "advance_both",
+            "text": "Attach one node and advance both sources because their values match.",
+            "explanation": "Advancing both loses one required node."
+          }
+        ],
+        "acceptedOptionIds": [
+          "choose_either_preserve_both"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A merge tie concerns source order, not whether an equal-valued node may be discarded.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Stable merge may choose a preferred source, but a node-preserving contract requires both nodes to remain reachable exactly once. The unchosen pointer must not advance until its node is attached."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "drop_duplicate": "Equal payloads do not imply equal node identity.",
+          "copy_value_once": "This violates node reuse and multiplicity.",
+          "advance_both": "Advancing both loses one required node."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      }
+    },
+    {
+      "id": "alg-linked-list-merge-splice-13-sortedness",
+      "prompt": "Which precondition does the standard two-pointer merge rely on for each input?",
+      "constraints": [
+        "Each input is sorted according to the same ordering.",
+        "The merge compares only the current heads."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "ordered_suffix_invariant",
+            "text": "After any prefix is consumed, each remaining input suffix is still ordered, so its head is the smallest remaining node from that source.",
+            "explanation": "This makes comparing the two heads sufficient."
+          },
+          {
+            "id": "unique_values",
+            "text": "All payloads must be distinct so the smaller head is unambiguous.",
+            "explanation": "Ties are safe when both nodes are preserved."
+          },
+          {
+            "id": "random_access",
+            "text": "The implementation must access arbitrary positions to verify every suffix.",
+            "explanation": "The merge uses sequential next links and the sortedness precondition."
+          },
+          {
+            "id": "same_length",
+            "text": "Inputs must have equal length so pointers advance in lockstep.",
+            "explanation": "Different lengths are handled by attaching the remainder."
+          }
+        ],
+        "acceptedOptionIds": [
+          "ordered_suffix_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Head comparison is sufficient only because each source head represents the minimum of its remaining ordered suffix.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The merge proof is an invariant about both suffixes. If either input is unsorted, a later node may be smaller than its current head and the two-pointer choice can no longer be locally safe."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "unique_values": "Ties are safe when both nodes are preserved.",
+          "random_access": "The merge uses sequential next links and the sortedness precondition.",
+          "same_length": "Different lengths are handled by attaching the remainder."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      }
+    },
+    {
+      "id": "alg-linked-list-merge-splice-14-shared-tail",
+      "prompt": "What extra policy is required before reusing nodes while merging inputs that share a suffix?",
+      "constraints": [
+        "The same node may be reachable from both heads.",
+        "The output must not duplicate identity or create a cycle."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "detect_shared_identity",
+            "text": "Detect or explicitly handle the shared suffix so each shared node is attached according to a one-occurrence policy and links remain acyclic.",
+            "explanation": "The ordinary disjoint-input proof does not cover aliases."
+          },
+          {
+            "id": "ignore_aliasing",
+            "text": "Run the ordinary merge because sortedness guarantees disjoint node identities.",
+            "explanation": "Sortedness says nothing about sharing."
+          },
+          {
+            "id": "duplicate_shared_nodes",
+            "text": "Attach the shared suffix once from each input to preserve both source lists in the output.",
+            "explanation": "One object cannot safely occur twice without an explicit graph-output contract."
+          },
+          {
+            "id": "sort_by_address",
+            "text": "Sort node addresses to make shared identity disappear.",
+            "explanation": "Address order does not remove aliases or define output semantics."
+          }
+        ],
+        "acceptedOptionIds": [
+          "detect_shared_identity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Shared input topology changes the meaning of node reuse and must be part of the merge contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A standard merge assumes disjoint ownership: each source node is selected once. With a shared tail, blindly advancing both pointers can duplicate a node or rewire a cycle. The implementation needs an explicit identity policy before choosing links."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "ignore_aliasing": "Sortedness says nothing about sharing.",
+          "duplicate_shared_nodes": "One object cannot safely occur twice without an explicit graph-output contract.",
+          "sort_by_address": "Address order does not remove aliases or define output semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "merge_nodes_without_losing_links",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "merge_lists",
+        "problemArchetypeId": "merge_ordered_lists"
+      }
     }
   ],
   "modeStructures": {

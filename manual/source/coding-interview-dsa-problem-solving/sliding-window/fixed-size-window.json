@@ -345,6 +345,584 @@
         "patternVariantId": "fixed_size_window",
         "problemArchetypeId": "fixed_length_aggregate"
       }
+    },
+    {
+      "id": "alg-sw-fixed-negative-values",
+      "prompt": "A task asks for the maximum sum of exactly k consecutive values, and the input may contain negative values. Which statement about a fixed-size rolling window is correct?",
+      "constraints": [
+        "Every candidate must contain exactly k input values.",
+        "The aggregate is the sum of the candidate values.",
+        "The answer is the maximum aggregate over all legal windows."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "fixed_size_negative_safe",
+            "text": "Negativity does not invalidate the fixed-size scan; add the incoming value, remove the outgoing value, and compare each complete window."
+          },
+          {
+            "id": "shrink_after_negative",
+            "text": "Shrink the window whenever its sum becomes negative because negative sums cannot be useful."
+          },
+          {
+            "id": "reset_after_negative",
+            "text": "Reset the window after a negative sum because the next legal candidate must start after it."
+          },
+          {
+            "id": "positive_precondition_required",
+            "text": "Require all values to be positive before a fixed-size sliding window can be used."
+          }
+        ],
+        "acceptedOptionIds": [
+          "fixed_size_negative_safe"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Fixed-size movement is determined by the length contract, not by a monotonicity proof about the sum.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "When every candidate has exactly k elements, the next candidate differs by one incoming value and one outgoing value. That identity remains true for negative, zero, and positive values, so the rolling sum stays correct. Positivity is needed by some variable-size shrink proofs, but not by a fixed-size scan. Shrinking or resetting after a negative total would skip legal windows and change the exact-length objective."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shrink_after_negative": "A negative fixed-length sum says nothing about whether the next overlapping length-k sum is larger; the boundary cannot change size.",
+          "reset_after_negative": "The next legal window may overlap the negative-sum window, so discarding its prefix has no proof.",
+          "positive_precondition_required": "Positivity is not required when the window width is fixed and the outgoing contribution is explicitly removed."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-linear-rolling-complexity",
+      "prompt": "After the first length-k sum is built, each next window subtracts one outgoing value, adds one incoming value, and evaluates the result once. What are the worst-case time and auxiliary-space complexities for an input of length n?",
+      "constraints": [
+        "The input is not copied or sorted.",
+        "The rolling state stores only the current sum and boundary variables.",
+        "Assume 1 <= k <= n."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(k)",
+            "O(n)",
+            "O(nk)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(k)",
+            "O(n)",
+            "O(nk)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "auxiliary_space": [
+            "O(1)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "initialization_plus_scan": "O(n)"
+          },
+          "auxiliary_space": {
+            "rolling_state": "O(1)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Each input value enters and leaves the fixed-size state at most once, and the algorithm stores only constant-size rolling state.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Building the first window costs O(k), and the remaining n-k windows each take O(1) update work. Since k <= n, the total is O(k + n-k) = O(n). The current sum, two boundaries, and answer use O(1) auxiliary space; the input itself is not counted as auxiliary storage. Recomputing every k-element sum would instead cost O(nk)."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-noninvertible-aggregate",
+      "prompt": "A fixed-size window must report the maximum value in every length-k block, and an O(n) target is required. When a new value enters and the oldest value leaves, which state strategy is appropriate?",
+      "constraints": [
+        "Every reported block has exactly k values.",
+        "The input may contain arbitrary comparable values.",
+        "The target complexity is O(n)."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "monotonic_deque",
+            "text": "Maintain a monotonic deque of candidate indices, removing expired indices and dominated values as the window advances."
+          },
+          {
+            "id": "subtract_outgoing_max",
+            "text": "Subtract the outgoing value from the current maximum and add the incoming value."
+          },
+          {
+            "id": "keep_old_max_forever",
+            "text": "Keep the current maximum even after its index leaves the window."
+          },
+          {
+            "id": "rescan_each_block",
+            "text": "Scan all k values for every block; this satisfies the required O(n) target."
+          }
+        ],
+        "acceptedOptionIds": [
+          "monotonic_deque"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Maximum is not updated by a simple subtract/add inverse, so the state must track which candidates remain capable of being the maximum.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A sum supports an exact outgoing subtraction, but a maximum does not: removing a nonmaximum changes nothing, while removing the current maximum requires knowing the next candidate. A decreasing deque stores indices in value order, discards indices outside the fixed boundaries, and removes values that the incoming value dominates. Keeping an expired maximum is incorrect, and rescanning every block costs O(nk), not O(n)."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "subtract_outgoing_max": "Maximum has no additive inverse; the outgoing value may not be the current maximum, and removing the maximum needs a replacement candidate.",
+          "keep_old_max_forever": "A value outside the current boundaries cannot contribute to the current block.",
+          "rescan_each_block": "There are n-k+1 blocks and an O(k) scan per block, giving O(nk) in the worst case."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-predicate-count-transfer",
+      "prompt": "For every contiguous block of exactly k records, count how many records satisfy predicate P. Which update preserves the fixed-window count when the block shifts one position right?",
+      "constraints": [
+        "The count is evaluated only for complete length-k blocks.",
+        "P can be evaluated independently for each record.",
+        "The next block shares k-1 records with the current block."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "remove_add_predicate",
+            "text": "Subtract 1 if the outgoing record satisfies P, then add 1 if the incoming record satisfies P."
+          },
+          {
+            "id": "add_incoming_only",
+            "text": "Add 1 whenever the incoming record satisfies P and never remove an old contribution."
+          },
+          {
+            "id": "reset_each_shift",
+            "text": "Reset the count to zero before processing every new block."
+          },
+          {
+            "id": "move_without_state",
+            "text": "Move both boundaries and reuse the old count without inspecting either changed record."
+          }
+        ],
+        "acceptedOptionIds": [
+          "remove_add_predicate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The fixed-window state changes only at the outgoing and incoming boundaries, and each change contributes an independent zero-or-one amount.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Represent each record's contribution as 1 when P is true and 0 otherwise. When the window shifts, the outgoing contribution must be removed and the incoming contribution added. Evaluating only complete windows keeps the count tied to the exact-length contract. This is the same boundary mechanism as a rolling sum, with a predicate count as the maintained aggregate."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "add_incoming_only": "The count would retain contributions from records that have left the block.",
+          "reset_each_shift": "Resetting is correct only with a full rescan; without that rescan it loses the shared k-1 contributions and does not provide the incremental update.",
+          "move_without_state": "The outgoing and incoming records may have different predicate results, so the count can change at both boundaries."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-emit-every-window",
+      "prompt": "A task must output the aggregate for every contiguous block of exactly k values, rather than only the best block. When should the current aggregate be emitted?",
+      "constraints": [
+        "The output contains one value per legal length-k block.",
+        "Partial prefixes and temporary length-k+1 states are not legal output entries.",
+        "The rolling aggregate is synchronized with the current boundaries."
+      ],
+      "difficulty": "introductory",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "emit_after_complete_update",
+            "text": "Emit after the first k values are present and after each later incoming value has been paired with removal of the outgoing value."
+          },
+          {
+            "id": "emit_partial_prefixes",
+            "text": "Emit every aggregate as soon as the right boundary advances, including prefixes shorter than k."
+          },
+          {
+            "id": "emit_before_removal",
+            "text": "Emit the temporary k+1 aggregate before removing the outgoing value."
+          },
+          {
+            "id": "emit_only_best",
+            "text": "Keep only the largest aggregate because fixed-size questions always ask for an optimum."
+          }
+        ],
+        "acceptedOptionIds": [
+          "emit_after_complete_update"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every output entry must correspond to one synchronized, complete length-k candidate, and the output contract does not ask for an optimum only.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The first emission occurs when the initial window reaches length k. Each subsequent shift adds the new value, removes the old leftmost value, and emits the restored length-k aggregate. A prefix is not a legal candidate, and the temporary expanded state contains one extra value. Selecting only the best aggregate would solve a different output problem and lose the results for the other legal blocks."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "emit_partial_prefixes": "The task requires exactly k values, so shorter prefixes are outside the output contract.",
+          "emit_before_removal": "Before removal the state represents k+1 values and cannot be assigned to the next length-k block.",
+          "emit_only_best": "The required output is one aggregate per block; retaining only an optimum discards valid requested results."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-11-initialize",
+      "prompt": "What state should a fixed-size window initialize before emitting the first length-k result?",
+      "constraints": [
+        "The input has at least k elements.",
+        "The aggregate can be updated by adding and removing one item."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "first_k_state",
+            "text": "Build the aggregate from the first k elements, set left=0 and right=k−1, then emit that window.",
+            "explanation": "The first result must contain exactly k input elements."
+          },
+          {
+            "id": "empty_first",
+            "text": "Emit the empty aggregate first and add elements until the window reaches k.",
+            "explanation": "The empty state is not a length-k output."
+          },
+          {
+            "id": "whole_input",
+            "text": "Aggregate all n elements because later shrinking will create the first window.",
+            "explanation": "That does unnecessary work and changes the first output."
+          },
+          {
+            "id": "right_zero",
+            "text": "Start with right=0 and claim the first single element has length k.",
+            "explanation": "Pointer coordinates must match the requested size."
+          }
+        ],
+        "acceptedOptionIds": [
+          "first_k_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Fixed-size emission begins with an actual k-element state, not an intermediate placeholder.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "After initialization, every shift removes the old left item and adds the new right item. This keeps the aggregate and the length invariant synchronized."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "empty_first": "The empty state is not a length-k output.",
+          "whole_input": "That does unnecessary work and changes the first output.",
+          "right_zero": "Pointer coordinates must match the requested size."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-12-outgoing-incoming",
+      "prompt": "In a rolling sum for a window [left,right] of length k, which update order preserves the next window's sum?",
+      "constraints": [
+        "The next window is [left+1,right+1].",
+        "The outgoing and incoming elements are both in bounds."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "remove_add",
+            "text": "Subtract input[left], increment or shift the boundary, then add input[right+1] to represent the next window.",
+            "explanation": "The transition removes exactly one old element and adds exactly one new one."
+          },
+          {
+            "id": "add_old_left",
+            "text": "Add input[left] again because the left element remains part of the rolling state.",
+            "explanation": "The left element leaves the next window."
+          },
+          {
+            "id": "remove_new_right",
+            "text": "Subtract input[right+1] before it enters the window.",
+            "explanation": "That reverses the incoming contribution."
+          },
+          {
+            "id": "recompute_all",
+            "text": "Recompute the entire next range to avoid specifying outgoing and incoming state.",
+            "explanation": "It is correct but defeats the rolling-state purpose and can become quadratic."
+          }
+        ],
+        "acceptedOptionIds": [
+          "remove_add"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A fixed shift is a one-out, one-in state transition.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The outgoing index belongs only to the old window, while the incoming index belongs only to the new one. Recomputing is a fallback but not the canonical linear rolling update."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "add_old_left": "The left element leaves the next window.",
+          "remove_new_right": "That reverses the incoming contribution.",
+          "recompute_all": "It is correct but defeats the rolling-state purpose and can become quadratic."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-13-k-one",
+      "prompt": "What is the correct fixed-window behavior when k=1?",
+      "constraints": [
+        "Each individual input element is one legal window.",
+        "The output includes one aggregate per input position."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "one_per_element",
+            "text": "Emit n windows, each containing one element, and ensure the outgoing/incoming transition does not skip positions.",
+            "explanation": "The fixed length equals the smallest nonempty window."
+          },
+          {
+            "id": "zero_windows",
+            "text": "Emit no windows because a one-element range has no interior.",
+            "explanation": "A window includes its endpoints and has length one."
+          },
+          {
+            "id": "whole_array",
+            "text": "Treat the entire array as the only window because k divides n.",
+            "explanation": "Fixed length does not imply disjoint partitioning."
+          },
+          {
+            "id": "pair_windows",
+            "text": "Use pairs because the rolling state needs two endpoints.",
+            "explanation": "The requested length is one, not two."
+          }
+        ],
+        "acceptedOptionIds": [
+          "one_per_element"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Length one is a boundary case that exposes off-by-one emission errors.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "There are n start positions for k=1. A correct loop must emit the initial item and then each subsequent item exactly once."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_windows": "A window includes its endpoints and has length one.",
+          "whole_array": "Fixed length does not imply disjoint partitioning.",
+          "pair_windows": "The requested length is one, not two."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-fixed-14-aggregate-transfer",
+      "prompt": "When the aggregate is not invertible, such as a window maximum, what state strategy replaces subtracting the outgoing value?",
+      "constraints": [
+        "The window still has fixed size k.",
+        "The aggregate must support exact updates under expiration."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "monotonic_deque",
+            "text": "Maintain a deque of candidate values or indices in monotone order and expire indices that leave the window.",
+            "explanation": "The front then represents the current maximum without inverse subtraction."
+          },
+          {
+            "id": "subtract_max",
+            "text": "Subtract the outgoing maximum from the current maximum to recover the next maximum.",
+            "explanation": "Maximum is not an invertible aggregate."
+          },
+          {
+            "id": "sum_only",
+            "text": "Track only the total sum and infer the maximum from it.",
+            "explanation": "A sum does not determine the maximum."
+          },
+          {
+            "id": "recompute_sort",
+            "text": "Sort each window independently and take its last value.",
+            "explanation": "It can be correct but loses the intended linear rolling strategy."
+          }
+        ],
+        "acceptedOptionIds": [
+          "monotonic_deque"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Non-invertible aggregates need a state structure that removes expired candidates without undoing values algebraically.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For sliding maximum, the deque stores indices with decreasing values. Each index enters and leaves once, preserving O(n) total work while the front is the current maximum."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "subtract_max": "Maximum is not an invertible aggregate.",
+          "sum_only": "A sum does not determine the maximum.",
+          "recompute_sort": "It can be correct but loses the intended linear rolling strategy."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_fixed_size_window_state",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
     }
   ],
   "modeStructures": {

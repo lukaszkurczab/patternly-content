@@ -330,6 +330,317 @@
         "Equal values may occur on different stable entry IDs.",
         "The empty collection has an explicit unavailable result outside this question."
       ]
+    },
+    {
+      "id": "hpq-streaming-running-min-with-deletions",
+      "prompt": "A stream reports the current minimum after insertions and deletions by ID. Why is a single running-minimum scalar no longer sufficient?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "deleted_min_recovery", "text": "If the stored minimum is deleted, the next minimum must be recovered from the remaining candidates, so a scalar must be supplemented by an ordered or lazy-priority structure."}, {"id": "scalar_updates_downward", "text": "The scalar can always decrease when any deletion occurs, so it remains sufficient."}, {"id": "deletion_no_effect", "text": "Deleting an entry cannot change the minimum because insertions already fixed it."}, {"id": "sort_only_once", "text": "A one-time sort remains sufficient even when arbitrary IDs are deleted later."}], "acceptedOptionIds": ["deleted_min_recovery"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Insertion-only extrema are monotone, but deletion can invalidate the stored winner and expose a previously discarded candidate.", "details": {"blocks": [{"type": "paragraph", "text": "A scalar minimum can update downward on insertion, but it has no information about the second-smallest or any other surviving value. When the minimum ID is removed, the answer must be reconstructed from retained candidates. A min-heap with lazy deletion, an indexed heap, or an ordered multiset maintains that recoverable frontier; a one-time scan or sort does not support arbitrary updates."}]}, "wrongOptionExplanationsByOptionId": {"scalar_updates_downward": "A deletion cannot be handled by comparing the removed value alone; the next minimum may be anywhere in the retained history.", "deletion_no_effect": "Removing the current minimum changes the answer whenever the collection remains nonempty.", "sort_only_once": "Subsequent deletions require a maintained active order or another query-time strategy."}},
+      "taxonomy": {"primarySkillAtomId": "maintain_streaming_extreme", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["Deletion identifies a stable entry and may remove the current minimum."]
+    },
+    {
+      "id": "hpq-streaming-kth-boundary-after-fill",
+      "prompt": "A bounded min-heap stores the k largest values seen so far. What does its root represent before and after the stream has received k values?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "threshold_after_k", "text": "Before k values it is simply the smallest retained value; once k values exist, it is the kth-largest value, assuming the heap contains all retained candidates."}, {"id": "always_global_max", "text": "It is always the maximum value seen because the heap stores the largest values."}, {"id": "kth_before_fill", "text": "It is the kth-largest value even before k values have arrived."}, {"id": "oldest_retained", "text": "It is the oldest retained value because heap insertion is stable."}], "acceptedOptionIds": ["threshold_after_k"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The rank interpretation becomes defined only when the retained frontier has reached its target size.", "details": {"blocks": [{"type": "paragraph", "text": "Before the heap contains k values, a kth-largest answer does not exist under the usual contract, so the API must return an explicit unavailable state. After fill, the min-root is the smallest member of the top-k set; exactly k−1 retained values are at least as large, making it the kth-largest threshold. Heap order does not encode age or expose the global maximum at the root."}]}, "wrongOptionExplanationsByOptionId": {"always_global_max": "A min-heap of the top-k frontier exposes the weakest retained value, not the strongest global value.", "kth_before_fill": "The requested rank is undefined until at least k values have arrived.", "oldest_retained": "Heap priority is value-based unless arrival sequence is explicitly part of the key."}},
+      "taxonomy": {"primarySkillAtomId": "maintain_streaming_extreme", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bounded_heap", "problemArchetypeId": "maintain_top_k"},
+      "constraints": ["The result before k arrivals is an explicit unavailable state."]
+    },
+    {
+      "id": "hpq-streaming-lazy-expiration-complexity",
+      "prompt": "A max-heap stores timestamped values for a moving time window and removes expired entries only when they reach the root. What is the amortized cost of processing n insertions and root purges, ignoring heap construction?",
+      "difficulty": "advanced",
+      "interaction": {"type": "complexity", "checkedDimensions": ["time", "auxiliary_space"], "availableValuesByDimension": {"time": ["O(n)", "O(n log n)", "O(n^2)"], "auxiliary_space": ["O(1)", "O(n)", "O(n log n)"]}, "acceptedValuesByDimension": {"time": ["O(n log n)"], "auxiliary_space": ["O(n)"]}, "normalizedAliasesByDimension": {"time": {}, "auxiliary_space": {}}, "maxPoints": 2},
+      "scoringContract": {"type": "complexity", "maxPoints": 2},
+      "feedback": {"reason": "Each insertion and each stale entry can participate in logarithmic heap repair, and stale entries remain stored until purged.", "details": {"blocks": [{"type": "paragraph", "text": "There are O(n) pushes, each O(log n), and each inserted entry is popped at most once when it becomes a stale root, also O(log n). Summed over the stream this is O(n log n), while the physical heap can contain O(n) entries if expiration is delayed. Lazy deletion preserves correctness with an explicit purge rule but does not make arbitrary interior deletion constant time."}]}},
+      "taxonomy": {"primarySkillAtomId": "maintain_streaming_extreme", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "difficulty": "advanced",
+      "constraints": ["Each stale entry is popped at most once and heap operations are logarithmic in current size."]
+    },
+    {
+      "id": "hpq-streaming-current-extreme-vs-history",
+      "prompt": "A stream reports the maximum after every insertion, but also supports deleting the current maximum by ID. Which change in the state contract makes a heap necessary instead of a scalar?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "winner_can_disappear", "text": "The current winner can disappear, so the next winner must remain recoverable from other active values."}, {"id": "more_reports", "text": "More reports alone make a scalar insufficient even when no value is deleted."}, {"id": "same_monotone", "text": "Deletion does not change the monotonicity of an insertion-only maximum."}, {"id": "output_format", "text": "Returning the maximum as a pair rather than a scalar forces a heap."}], "acceptedOptionIds": ["winner_can_disappear"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An insertion-only maximum is monotone and compresses to one scalar; deletion breaks that compression by invalidating the stored winner.", "details": {"blocks": [{"type": "paragraph", "text": "Without deletion, a value below the running maximum can never become the answer later. Deleting the current maximum makes a previously dominated value relevant, so the state must preserve an ordered frontier or enough history to recover the next maximum. A max-heap with ID validity, an indexed priority queue, or an ordered multiset can supply that contract."}]}, "wrongOptionExplanationsByOptionId": {"more_reports": "Repeated reports do not require more state when the statistic remains monotone under insertions only.", "same_monotone": "Deletion can lower the active maximum, so the insertion-only monotonicity argument no longer applies.", "output_format": "Output representation does not determine how active candidates are maintained."}},
+      "taxonomy": {"primarySkillAtomId": "maintain_streaming_extreme", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["Deletes name active entries by stable ID and the collection may remain nonempty."]
+    },
+    {
+      "id": "hpq-streaming-expiration-tie-boundary",
+      "prompt": "A window includes timestamps in [currentTime - W, currentTime]. A heap entry at timestamp currentTime - W is about to be reported. What validity test matches the inclusive boundary?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "expire_strictly_before", "text": "Expire entries only when timestamp < currentTime - W; an entry equal to the lower boundary is still active."}, {"id": "expire_at_boundary", "text": "Expire entries when timestamp <= currentTime - W, because all boundary entries are stale."}, {"id": "ignore_time", "text": "Always report the root because the heap comparator already encodes activity."}, {"id": "expire_after_query", "text": "Report the root first and remove stale entries only after returning the answer."}], "acceptedOptionIds": ["expire_strictly_before"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The mathematical interval includes its lower endpoint, so equality is active and the stale test is strict.", "details": {"blocks": [{"type": "paragraph", "text": "Window expiration is part of the application validity predicate layered on top of heap priority. For an inclusive interval, timestamp equal to currentTime − W is legal; only smaller timestamps must be purged before peeking. Using <= would incorrectly discard a boundary value, while reporting before purging can expose an expired root. The comparator and the validity inequality are separate contracts."}]}, "wrongOptionExplanationsByOptionId": {"expire_at_boundary": "The lower endpoint is included by [a,b], so equality is not stale.", "ignore_time": "Heap order does not encode whether an entry lies inside the active time window.", "expire_after_query": "The answer boundary must remove stale roots before returning a value."}},
+      "taxonomy": {"primarySkillAtomId": "maintain_streaming_extreme", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["The time window is inclusive at both endpoints."]
+    },
+    {
+      "id": "hpq-streaming-11_current_min",
+      "prompt": "How can a streaming routine maintain the minimum value seen so far?",
+      "constraints": [
+        "Values arrive one at a time.",
+        "The output asks for the current minimum after each arrival or at the end."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "update_min",
+            "text": "Initialize the running minimum and update it with min(currentMin,value) for each arrival.",
+            "explanation": "The minimum of the prefix is a sufficient summary."
+          },
+          {
+            "id": "store_all",
+            "text": "Store every value and scan the full history after each arrival.",
+            "explanation": "That is correct but abandons the O(1)-state streaming summary."
+          },
+          {
+            "id": "update_max",
+            "text": "Track the maximum because it contains the minimum information implicitly.",
+            "explanation": "The maximum does not determine the minimum."
+          },
+          {
+            "id": "sort_stream",
+            "text": "Sort the stream after each arrival before reading its first value.",
+            "explanation": "Sorting requires retained data and unnecessary work."
+          }
+        ],
+        "acceptedOptionIds": [
+          "update_min"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A running extreme is a constant-size summary of all values seen so far.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The invariant is that currentMin equals the minimum of the processed prefix. Each new value either preserves or replaces that summary, so time is O(n) and auxiliary state O(1)."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "store_all": "That is correct but abandons the O(1)-state streaming summary.",
+          "update_max": "The maximum does not determine the minimum.",
+          "sort_stream": "Sorting requires retained data and unnecessary work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-streaming-12_record_max",
+      "prompt": "If a stream routine must return both the current maximum and the earliest index where it occurred, what state is sufficient?",
+      "constraints": [
+        "Values can tie for the maximum.",
+        "The earliest occurrence is part of the output contract."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "value_and_index",
+            "text": "Track the maximum value and update its index only when a strictly larger value arrives; keep the earlier index on ties.",
+            "explanation": "The pair is the required streaming summary."
+          },
+          {
+            "id": "last_tie",
+            "text": "Update the index whenever the value equals the maximum so the latest occurrence is returned.",
+            "explanation": "That violates the earliest-tie policy."
+          },
+          {
+            "id": "value_only",
+            "text": "Track only the maximum value and reconstruct its first index from the stream later.",
+            "explanation": "A one-pass stream may not be replayable."
+          },
+          {
+            "id": "all_indices",
+            "text": "Store every index of every value to guarantee tie resolution.",
+            "explanation": "The earliest index summary needs constant state."
+          }
+        ],
+        "acceptedOptionIds": [
+          "value_and_index"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Tie behavior must be encoded in the update condition, not left to an arbitrary overwrite.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A streaming aggregate can carry `(bestValue,bestIndex)`. Strict improvement replaces both; equality preserves the earlier index. This maintains the exact tie contract with O(1) state."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "last_tie": "That violates the earliest-tie policy.",
+          "value_only": "A one-pass stream may not be replayable.",
+          "all_indices": "The earliest index summary needs constant state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-streaming-13_reset",
+      "prompt": "When should a running extreme be reset during a segmented stream?",
+      "constraints": [
+        "The stream contains explicit segment boundaries.",
+        "The output asks for an extreme per segment."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reset_at_boundary",
+            "text": "Finalize the current segment's result, then reinitialize the extreme before processing the next segment.",
+            "explanation": "A per-segment aggregate must not leak across boundaries."
+          },
+          {
+            "id": "never_reset",
+            "text": "Keep one global extreme because all segments share the same input stream.",
+            "explanation": "That returns a global result rather than per-segment results."
+          },
+          {
+            "id": "reset_each_value",
+            "text": "Reset after every value so each segment has a single-element extreme.",
+            "explanation": "The boundary, not each value, controls reset."
+          },
+          {
+            "id": "sort_segments",
+            "text": "Sort all segment values before resetting so boundaries are easier to detect.",
+            "explanation": "Sorting can destroy segment order and adds work."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reset_at_boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The aggregation scope is part of the state invariant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A running minimum or maximum is correct only over the values processed since its initialization. Explicit boundary events close one scope and start another."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "never_reset": "That returns a global result rather than per-segment results.",
+          "reset_each_value": "The boundary, not each value, controls reset.",
+          "sort_segments": "Sorting can destroy segment order and adds work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-streaming-14_empty",
+      "prompt": "What policy is needed when a running-extreme query receives an empty stream?",
+      "constraints": [
+        "No value exists from which to compute an extreme.",
+        "The API defines its unavailable-result behavior."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_policy",
+            "text": "Return the contract's empty, null, or unavailable result rather than an arbitrary numeric sentinel that may be a legal value.",
+            "explanation": "Absence must be distinguishable from a real extreme."
+          },
+          {
+            "id": "zero_default",
+            "text": "Return zero because it is a neutral value for every minimum and maximum query.",
+            "explanation": "Zero may not be in the domain or may be a valid value."
+          },
+          {
+            "id": "infinity_always",
+            "text": "Return positive infinity for both minimum and maximum regardless of the domain.",
+            "explanation": "The result type and semantics may not support that sentinel."
+          },
+          {
+            "id": "throw_always",
+            "text": "Throw for every empty stream even when the API allows empty output.",
+            "explanation": "Error behavior must come from the contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_policy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An extreme over an empty set is undefined unless the product defines an identity or unavailable state.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Initialization must distinguish “no value seen” from a legal numeric value. A boolean seen flag, option type, or explicit empty result can make the state safe."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_default": "Zero may not be in the domain or may be a valid value.",
+          "infinity_always": "The result type and semantics may not support that sentinel.",
+          "throw_always": "Error behavior must come from the contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_streaming_extreme",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
     }
   ],
   "modeStructures": {

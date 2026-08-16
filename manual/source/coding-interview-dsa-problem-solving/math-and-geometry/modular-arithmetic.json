@@ -564,6 +564,294 @@
         "patternVariantId": "modular_arithmetic",
         "problemArchetypeId": "divisibility_and_cycles"
       }
+    },
+    {
+      "id": "alg-mg-mod-normalize-negative-remainder",
+      "prompt": "In a language where remainder may be negative, what expression normalizes x into the range [0,m) for m>0?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "double_mod", "text": "((x % m) + m) % m."},
+        {"id": "single_mod", "text": "x % m is always enough regardless of x's sign."},
+        {"id": "abs_mod", "text": "abs(x) % m, which preserves x's residue."},
+        {"id": "divide_round", "text": "Round x/m to the nearest integer and subtract it from x."}
+      ], "acceptedOptionIds": ["double_mod"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The first remainder is shifted by one modulus when negative, and the second remainder puts the sum back in the canonical interval.", "details": {"blocks": [{"type": "paragraph", "text": "For x=-1 and m=5, a truncating remainder may be -1; adding m gives 4, and the outer modulo handles implementations whose first result was already nonnegative."}]}, "wrongOptionExplanationsByOptionId": {"single_mod": "Some languages return a negative remainder for negative x.", "abs_mod": "Absolute value changes the residue class: -1 and 1 are not interchangeable for every operation.", "divide_round": "Rounding does not provide a language-independent canonical remainder."}},
+      "taxonomy": {"primarySkillAtomId": "preserve_modular_equivalence", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "modular_arithmetic", "problemArchetypeId": "normalize_coordinates"}
+    },
+    {
+      "id": "alg-mg-mod-multiply-before-reduce",
+      "prompt": "To compute (a*b) mod m safely when a and b are already reduced but their product may overflow, what is required?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "wide_or_safe_mul", "text": "Use a sufficiently wide or overflow-safe multiplication before applying modulo."},
+        {"id": "reduce_operands_only", "text": "Reducing a and b individually guarantees their product cannot overflow."},
+        {"id": "float_product", "text": "Multiply as floating point and cast the remainder back."},
+        {"id": "add_mod", "text": "Replace multiplication with (a+b) mod m because both are residues."}
+      ], "acceptedOptionIds": ["wide_or_safe_mul"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Modular equivalence does not make the machine multiplication safe; the intermediate product still has to be represented correctly.", "details": {"blocks": [{"type": "paragraph", "text": "For bounded inputs, a wider type may suffice. For larger domains, use a checked multiplication, repeated doubling, or another overflow-safe modular multiplication routine."}]}, "wrongOptionExplanationsByOptionId": {"reduce_operands_only": "Two values below m can still have a product near m squared.", "float_product": "Floating point may lose exact low bits needed for the remainder.", "add_mod": "Addition is not equivalent to multiplication."}},
+      "taxonomy": {"primarySkillAtomId": "preserve_modular_equivalence", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "modular_arithmetic", "problemArchetypeId": "divisibility_and_cycles"}
+    },
+    {
+      "id": "alg-mg-mod-11_equivalence",
+      "prompt": "What does it mean for a and b to be congruent modulo m?",
+      "constraints": [
+        "m is a positive integer.",
+        "a and b are integers."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "difference_divisible",
+            "text": "m divides a−b, equivalently a and b have the same remainder class modulo m.",
+            "explanation": "Congruence is equality in the quotient by multiples of m."
+          },
+          {
+            "id": "equal_values",
+            "text": "a must equal b as ordinary integers.",
+            "explanation": "Congruent values can differ by any multiple of m."
+          },
+          {
+            "id": "sum_divisible",
+            "text": "m divides a+b for every congruent pair.",
+            "explanation": "The difference, not necessarily the sum, is divisible."
+          },
+          {
+            "id": "same_sign",
+            "text": "a and b must have the same sign.",
+            "explanation": "Congruence ignores sign differences separated by multiples of m."
+          }
+        ],
+        "acceptedOptionIds": [
+          "difference_divisible"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Modular equivalence identifies integers that differ by a multiple of the modulus.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The relation supports safe replacement of a by a congruent representative in addition and multiplication, provided the modulus and operations are handled consistently."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "equal_values": "Congruent values can differ by any multiple of m.",
+          "sum_divisible": "The difference, not necessarily the sum, is divisible.",
+          "same_sign": "Congruence ignores sign differences separated by multiples of m."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_modular_equivalence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "modular_arithmetic",
+        "problemArchetypeId": "divisibility_and_cycles"
+      }
+    },
+    {
+      "id": "alg-mg-mod-12_exponentiation",
+      "prompt": "Why does binary exponentiation reduce the number of multiplications for a large exponent?",
+      "constraints": [
+        "The exponent is nonnegative.",
+        "The modulus or arithmetic domain supports associative multiplication."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "square_and_halve",
+            "text": "Repeatedly square the base and halve the exponent, multiplying the result only for set bits, giving O(log e) multiplications.",
+            "explanation": "The exponent's binary representation controls the work."
+          },
+          {
+            "id": "multiply_e_times",
+            "text": "Multiply by the base e times because exponentiation has no reusable structure.",
+            "explanation": "Binary decomposition reuses squared powers."
+          },
+          {
+            "id": "sort_bits",
+            "text": "Sort the exponent bits before multiplying so powers remain ordered.",
+            "explanation": "Bit positions already define powers; sorting changes nothing useful."
+          },
+          {
+            "id": "divide_base",
+            "text": "Halve the base and keep the exponent unchanged to achieve logarithmic time.",
+            "explanation": "The exponent decomposition, not arbitrary base division, is the method."
+          }
+        ],
+        "acceptedOptionIds": [
+          "square_and_halve"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Exponentiation by squaring follows the binary representation of the exponent.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "At each step the base becomes its square and the exponent loses one bit. The accumulated result includes the current power when the bit is set, yielding logarithmic depth."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "multiply_e_times": "Binary decomposition reuses squared powers.",
+          "sort_bits": "Bit positions already define powers; sorting changes nothing useful.",
+          "divide_base": "The exponent decomposition, not arbitrary base division, is the method."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_modular_equivalence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "modular_arithmetic",
+        "problemArchetypeId": "divisibility_and_cycles"
+      }
+    },
+    {
+      "id": "alg-mg-mod-13_inverse",
+      "prompt": "Under a prime modulus p, when does a nonzero a have a multiplicative inverse modulo p?",
+      "constraints": [
+        "p is prime.",
+        "a is not divisible by p."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "coprime_to_p",
+            "text": "Because gcd(a,p)=1, an inverse exists; Fermat's relation can compute it as a^(p−2) mod p.",
+            "explanation": "Invertibility is equivalent to being coprime with the modulus."
+          },
+          {
+            "id": "all_values",
+            "text": "Every a including multiples of p has an inverse modulo p.",
+            "explanation": "Zero modulo p has no multiplicative inverse."
+          },
+          {
+            "id": "even_only",
+            "text": "Only even a values have inverses because prime moduli are odd.",
+            "explanation": "Parity is not the criterion."
+          },
+          {
+            "id": "ordinary_division",
+            "text": "Compute 1/a using floating-point division and round the result.",
+            "explanation": "Modular inverse is a congruence solution, not ordinary real division."
+          }
+        ],
+        "acceptedOptionIds": [
+          "coprime_to_p"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Modular division is valid only when the divisor is invertible in the chosen modulus.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For prime p, every nonzero residue is coprime to p. Fermat's theorem provides one computation route; the gcd condition is the underlying proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "all_values": "Zero modulo p has no multiplicative inverse.",
+          "even_only": "Parity is not the criterion.",
+          "ordinary_division": "Modular inverse is a congruence solution, not ordinary real division."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_modular_equivalence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "modular_arithmetic",
+        "problemArchetypeId": "divisibility_and_cycles"
+      }
+    },
+    {
+      "id": "alg-mg-mod-14_distribution",
+      "prompt": "Which modular identity permits reducing intermediate sums and products during a computation?",
+      "constraints": [
+        "The modulus m is fixed.",
+        "All operands are integers."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "distribute_mod",
+            "text": "(a+b) mod m equals ((a mod m)+(b mod m)) mod m, and multiplication has the analogous identity.",
+            "explanation": "Reducing congruent representatives preserves modular results."
+          },
+          {
+            "id": "divide_mod",
+            "text": "(a/b) mod m always equals (a mod m)/(b mod m) without invertibility conditions.",
+            "explanation": "Modular division requires an inverse and is not automatic."
+          },
+          {
+            "id": "absolute_mod",
+            "text": "abs(a) mod m equals a mod m for every negative a.",
+            "explanation": "Negation changes the residue representative unless normalized."
+          },
+          {
+            "id": "round_mod",
+            "text": "Rounding before every reduction preserves all modular products.",
+            "explanation": "Rounding can change the residue class."
+          }
+        ],
+        "acceptedOptionIds": [
+          "distribute_mod"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Addition and multiplication respect modular equivalence, enabling safe intermediate reduction.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The division identity is the important exception: it needs an invertible denominator and a modular inverse. Negative representatives should be normalized according to the language and output contract."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "divide_mod": "Modular division requires an inverse and is not automatic.",
+          "absolute_mod": "Negation changes the residue representative unless normalized.",
+          "round_mod": "Rounding can change the residue class."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_modular_equivalence",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "modular_arithmetic",
+        "problemArchetypeId": "divisibility_and_cycles"
+      }
     }
   ],
   "modeStructures": {

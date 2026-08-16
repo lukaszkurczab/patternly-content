@@ -442,6 +442,300 @@
         "secondarySkillAtomIds": [],
         "learningStage": "strategy_selection"
       }
+    },
+    {
+      "id": "ssc-compare-maintenance-amortization",
+      "prompt": "A reusable index costs P to build, M to maintain per update, and Q per query. The direct method costs S per query. Which total comparison is required for u updates and q queries?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "p_umq_vs_qs", "text": "Compare P + uM + qQ with qS, while checking memory, correctness, and update/query timing contracts."},
+        {"id": "q_less_p", "text": "Compare Q with P only because setup dominates every workload."},
+        {"id": "ignore_updates", "text": "Use P + qQ because updates do not change the preprocessed state."},
+        {"id": "compare_big_o_labels", "text": "Choose the candidate with the shorter asymptotic notation without using u or q."}
+      ], "acceptedOptionIds": ["p_umq_vs_qs"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Total workload cost includes setup, every maintenance event, and every query on each side of the comparison.", "details": {"blocks": [{"type": "paragraph", "text": "A static prefix array is attractive only while its validity survives. Once updates exist, rebuild or dynamic maintenance is part of the cost. Query volume can amortize setup, but update volume can erase that gain; memory and online response constraints remain independent gates."}]}, "wrongOptionExplanationsByOptionId": {"q_less_p": "Setup is paid once while Q is paid q times, so comparing only P and Q is dimensionally incomplete.", "ignore_updates": "Updates can make the index stale or require maintenance.", "compare_big_o_labels": "The actual workload and guarantees determine whether a candidate is feasible."}},
+      "taxonomy": {"primarySkillAtomId": "compare_candidate_cost_models", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-compare-output-cost-included",
+      "prompt": "A task must emit Θ(n²) matching pairs. Why can an O(n) discovery claim still fail to describe the total time?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "output_lower_bound", "text": "Writing Θ(n²) constant-size records already costs Ω(n²), so total time must include output production."},
+        {"id": "hash_breaks", "text": "Hashing is always invalid because maps cannot enumerate matches."},
+        {"id": "ignore_output", "text": "Count only discovery because output writes are outside algorithmic complexity."},
+        {"id": "sorting_required", "text": "Output size proves that sorting is the only legal strategy."}
+      ], "acceptedOptionIds": ["output_lower_bound"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An output-sensitive lower bound applies to the observable work of producing the promised result, not merely finding its existence.", "details": {"blocks": [{"type": "paragraph", "text": "Hashing can locate matches efficiently, but if every pair must be emitted, writing those records dominates at Ω(number of outputs). A complexity comparison should distinguish discovery, storage, and output costs; the lower bound does not prescribe sorting."}]}, "wrongOptionExplanationsByOptionId": {"hash_breaks": "Hashing may be a valid discovery mechanism; the output still imposes its own cost.", "ignore_output": "Output is part of the function's work and cannot be omitted from total time.", "sorting_required": "Many mechanisms can meet an output lower bound; sorting is not forced by output size."}},
+      "taxonomy": {"primarySkillAtomId": "compare_candidate_cost_models", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-compare-guarantee-dominates-expected",
+      "prompt": "A contract requires worst-case bounds, but one candidate has better expected time and a weaker collision guarantee. Which cost-model field must control selection?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "guarantee_match", "text": "Compare candidates under the contract's required guarantee; expected O(n) does not satisfy a worst-case O(n log n) promise if O(n²) remains possible."},
+        {"id": "expected_always", "text": "Choose expected performance because worst-case inputs are too rare to model."},
+        {"id": "ignore_collision", "text": "Treat hash collisions as an implementation detail outside the guarantee."},
+        {"id": "space_only", "text": "Choose solely by auxiliary space even when both candidates fit memory."}
+      ], "acceptedOptionIds": ["guarantee_match"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A candidate's complexity model is valid only if its guarantee type matches the service contract.", "details": {"blocks": [{"type": "paragraph", "text": "Expected, amortized, and worst-case bounds answer different operational questions. If the contract promises deterministic worst-case time, a conventional hash table with adversarial quadratic behavior is not equivalent to a worst-case sorting method, even if its typical benchmark is faster."}]}, "wrongOptionExplanationsByOptionId": {"expected_always": "Expected performance cannot satisfy a hard worst-case guarantee by assertion.", "ignore_collision": "Collision behavior is exactly what determines the hash table's worst-case bound.", "space_only": "Time guarantee and space feasibility are separate dimensions."}},
+      "taxonomy": {"primarySkillAtomId": "compare_candidate_cost_models", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-compare-11_output_cost",
+      "prompt": "Why should output size be included when comparing two candidate algorithms?",
+      "constraints": [
+        "The algorithm must return or emit m output items.",
+        "The comparison claims an end-to-end complexity."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "output_lower_bound",
+            "text": "Writing or returning m items costs at least Ω(m), so an algorithm cannot be called O(1) end-to-end when it must emit a large output.",
+            "explanation": "Output work is part of total runtime."
+          },
+          {
+            "id": "ignore_output",
+            "text": "Output cost is irrelevant because only internal computation is measured.",
+            "explanation": "The stated complexity should match the public operation."
+          },
+          {
+            "id": "sort_output",
+            "text": "Always sort the output to make output cost predictable.",
+            "explanation": "Sorting adds work and is not required by every contract."
+          },
+          {
+            "id": "memory_only",
+            "text": "Output size affects memory but never time.",
+            "explanation": "Producing output also takes time."
+          }
+        ],
+        "acceptedOptionIds": [
+          "output_lower_bound"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Complexity claims must account for mandatory output production.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "An algorithm may find a compact summary quickly, but returning all requested items requires touching them. State whether complexity is measured excluding or including output; product contracts normally need the end-to-end figure."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "ignore_output": "The stated complexity should match the public operation.",
+          "sort_output": "Sorting adds work and is not required by every contract.",
+          "memory_only": "Producing output also takes time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-12_preprocessing_memory",
+      "prompt": "A preprocessing method reduces query time but stores an O(n) index. Which tradeoff must be stated?",
+      "constraints": [
+        "Memory is bounded.",
+        "Queries may be repeated."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "space_for_time",
+            "text": "The method spends O(n) auxiliary space and build time to reduce later query cost; it is valid only if those resources fit the contract.",
+            "explanation": "Preprocessing is not free."
+          },
+          {
+            "id": "free_index",
+            "text": "The index has no cost because it is built before the timed query.",
+            "explanation": "Build and memory remain product costs."
+          },
+          {
+            "id": "query_only",
+            "text": "Only lookup time matters because the index is persistent.",
+            "explanation": "Persistence shifts but does not erase storage ownership."
+          },
+          {
+            "id": "more_space_always_better",
+            "text": "Use as much space as possible because extra memory always improves latency.",
+            "explanation": "Memory limits and access costs still matter."
+          }
+        ],
+        "acceptedOptionIds": [
+          "space_for_time"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A candidate comparison should make build time and auxiliary space visible alongside query latency.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The right strategy depends on the full workload and resource budget. A persistent index may amortize construction, but it still consumes storage and must remain consistent with source data."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "free_index": "Build and memory remain product costs.",
+          "query_only": "Persistence shifts but does not erase storage ownership.",
+          "more_space_always_better": "Memory limits and access costs still matter."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-13_expected_vs_worst",
+      "prompt": "Why can an expected O(1) hash lookup be rejected in favor of a worst-case O(log n) tree lookup?",
+      "constraints": [
+        "The application requires a worst-case latency guarantee.",
+        "Hash performance depends on distribution or implementation assumptions."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "guarantee_dominates",
+            "text": "The tree may be preferable because its worst-case bound satisfies the latency contract even if its expected average is slower.",
+            "explanation": "The relevant comparison is the required guarantee."
+          },
+          {
+            "id": "expected_always_better",
+            "text": "Expected O(1) is always superior to worst-case O(log n).",
+            "explanation": "Expected and worst-case guarantees answer different operational needs."
+          },
+          {
+            "id": "tree_constant",
+            "text": "Trees are always faster in practice because logarithms are smaller than constants.",
+            "explanation": "Constants and hardware vary; the guarantee is the stated reason."
+          },
+          {
+            "id": "hash_impossible",
+            "text": "Hash tables cannot support correctness because collisions change lookup results.",
+            "explanation": "Collision resolution preserves correctness under its contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "guarantee_dominates"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Cost models must match the risk contract, not just the smallest average notation.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If tail latency, adversarial input, or determinism matters, worst-case behavior can outweigh expected throughput. State the hash assumptions and choose the guarantee the product requires."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "expected_always_better": "Expected and worst-case guarantees answer different operational needs.",
+          "tree_constant": "Constants and hardware vary; the guarantee is the stated reason.",
+          "hash_impossible": "Collision resolution preserves correctness under its contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-compare-14_repeated_preprocessing",
+      "prompt": "A proposed solution sorts the input before every query even though the input is unchanged. What cost-model issue should be flagged?",
+      "constraints": [
+        "The same data supports many queries.",
+        "Sorting dominates the direct query work."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "hoist_shared_work",
+            "text": "Move invariant preprocessing outside the query loop and amortize it across all queries.",
+            "explanation": "Repeated identical work inflates total cost unnecessarily."
+          },
+          {
+            "id": "sorting_required_each",
+            "text": "Repeat sorting because each query needs a fresh ordering even when the input has not changed.",
+            "explanation": "No freshness event justifies the repetition."
+          },
+          {
+            "id": "ignore_build",
+            "text": "Keep the loop because preprocessing is not part of query complexity.",
+            "explanation": "Repeated setup is still total workload cost."
+          },
+          {
+            "id": "randomize_order",
+            "text": "Shuffle before each query to avoid relying on sortedness.",
+            "explanation": "Randomization changes the input and adds work without a stated need."
+          }
+        ],
+        "acceptedOptionIds": [
+          "hoist_shared_work"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Cost comparison should identify work invariant across queries and charge it once.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If the source data is immutable, sorting or indexing can be built once. Repeating it per query can turn an otherwise efficient workload into an avoidable Q-times preprocessing cost."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sorting_required_each": "No freshness event justifies the repetition.",
+          "ignore_build": "Repeated setup is still total workload cost.",
+          "randomize_order": "Randomization changes the input and adds work without a stated need."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "compare_candidate_cost_models",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
     }
   ],
   "modeStructures": {

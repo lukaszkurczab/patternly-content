@@ -330,6 +330,316 @@
         "Node values are not unique identifiers.",
         "The input satisfies proper-tree structure."
       ]
+    },
+    {
+      "id": "alg-tree-boundary-null-vs-leaf",
+      "prompt": "A recursive tree helper must distinguish an empty subtree from a leaf. Which statement is correct?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "null_then_leaf", "text": "Null means no node and uses the operation's identity; a leaf is a real node whose two child results use that identity."}, {"id": "leaf_is_null", "text": "A leaf is equivalent to null because both have no non-null children."}, {"id": "null_is_node", "text": "Null should be processed as a node with a default payload before checking children."}, {"id": "skip_leaf", "text": "Leaves can always be skipped because they contribute no child state."}], "acceptedOptionIds": ["null_then_leaf"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Empty structure and a real node with empty children have different semantic roles in a recursive contract.", "details": {"blocks": [{"type": "paragraph", "text": "A null call represents an empty region and returns the identity for the helper's combine operation. A leaf still contributes its own value, count, or node identity, then combines two identity child results. Treating the leaf as null drops valid data; treating null as a node invents a payload. Boundary handling must preserve the public meaning of both cases."}]}, "wrongOptionExplanationsByOptionId": {"leaf_is_null": "A leaf is present and contributes its node value or identity even though both child references are null.", "null_is_node": "Null has no payload and should terminate before node-specific processing.", "skip_leaf": "Leaves are often the base contributors for subtree aggregates, so skipping them changes the result."}},
+      "taxonomy": {"primarySkillAtomId": "handle_empty_and_leaf_boundaries", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "compute_subtree_property"},
+      "difficulty": "foundational",
+      "constraints": ["The helper's result is defined for both null and non-null roots."]
+    },
+    {
+      "id": "alg-tree-boundary-single-node-aggregate",
+      "prompt": "A single-node tree is processed by a subtree aggregate whose null-child identity is 0 and whose node contribution is 1. What result should the root return?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "one", "text": "1, because the root contributes one and both null children contribute zero."}, {"id": "zero", "text": "0, because both child subtrees are empty."}, {"id": "two", "text": "2, because the root has two child references."}, {"id": "undefined", "text": "Undefined, because a single-node tree has no recursive descendants."}], "acceptedOptionIds": ["one"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A leaf is a real subtree containing one node; null children contribute only their identity.", "details": {"blocks": [{"type": "paragraph", "text": "The recurrence is contribution(node) + aggregate(left) + aggregate(right). For a leaf this becomes 1 + 0 + 0 = 1. The number of child references is structural metadata, not node count, and the absence of descendants does not make the root absent. Testing a single-node tree exposes many off-by-one and null-identity errors."}]}, "wrongOptionExplanationsByOptionId": {"zero": "Zero is the identity for each missing child, not the aggregate for the existing root.", "two": "Null references do not count as nodes; the child count is not the aggregate.", "undefined": "The recursive contract explicitly defines null children, so a leaf has a valid result."}},
+      "taxonomy": {"primarySkillAtomId": "handle_empty_and_leaf_boundaries", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "compute_subtree_property"},
+      "difficulty": "foundational",
+      "constraints": ["The aggregate counts actual nodes and uses zero for an empty subtree."]
+    },
+    {
+      "id": "alg-tree-boundary-duplicate-identity",
+      "prompt": "Two distinct tree nodes contain the same value. A traversal must count nodes and preserve their structural positions. Which boundary rule applies?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "identity_not_value", "text": "Treat each node reference as a separate node; equal payload values do not justify deduplication."}, {"id": "dedupe_values", "text": "Count one node per distinct value because duplicate payloads represent the same information."}, {"id": "skip_right_duplicate", "text": "Skip a right child when its value equals the parent to avoid repeated output."}, {"id": "sort_then_unique", "text": "Sort traversal output and remove duplicate values before counting."}], "acceptedOptionIds": ["identity_not_value"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Tree traversal operates on node identity and edges unless the problem explicitly defines value-based deduplication.", "details": {"blocks": [{"type": "paragraph", "text": "A repeated value can occur at different structural positions and each node may have different children. Removing one by payload collapses distinct subtrees and changes counts, traversal output, and parent aggregates. A visited set is appropriate for shared graph references when the contract is per identity, but ordinary duplicate values in a proper tree are not repeated references."}]}, "wrongOptionExplanationsByOptionId": {"dedupe_values": "Equal payloads do not imply equal nodes or equal descendants.", "skip_right_duplicate": "Traversal order and node identity are independent of payload equality unless a duplicate policy explicitly says otherwise.", "sort_then_unique": "Sorting and deduplication change the requested structural traversal into a value-set operation."}},
+      "taxonomy": {"primarySkillAtomId": "handle_empty_and_leaf_boundaries", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "intermediate",
+      "constraints": ["The input is a proper tree and duplicate payload values are allowed."]
+    },
+    {
+      "id": "alg-tree-boundary-skewed-space-contract",
+      "prompt": "A recursive traversal is correct on balanced examples but overflows the call stack on a chain of n nodes. What should the boundary audit record?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "height_risk", "text": "Auxiliary recursion space is O(h), which becomes O(n) for a skewed tree; the input shape is part of the operational contract."}, {"id": "balanced_only", "text": "Balanced examples prove the recursion uses O(log n) space for every valid tree."}, {"id": "time_only", "text": "Stack depth cannot affect correctness or resource safety because each node is visited once."}, {"id": "dedupe_chain", "text": "Remove repeated values from the chain; value uniqueness determines recursion depth."}], "acceptedOptionIds": ["height_risk"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Recursion depth follows tree height, not node count's balanced-tree estimate.", "details": {"blocks": [{"type": "paragraph", "text": "A chain has height proportional to n, so one active call per ancestor can exhaust a fixed call stack even when time remains O(n). Balanced examples exercise only h = O(log n). The implementation should either state a height/resource precondition or use an explicit stack/iterative strategy if arbitrary valid shapes are allowed. Node values and duplicates do not determine structural depth."}]}, "wrongOptionExplanationsByOptionId": {"balanced_only": "Balance is a shape assumption, not a consequence of being a valid tree.", "time_only": "A linear visit count does not bound the simultaneous call frames or prevent stack overflow.", "dedupe_chain": "Value deduplication would change data and does not reduce the number of structural edges in the chain."}},
+      "taxonomy": {"primarySkillAtomId": "handle_empty_and_leaf_boundaries", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "advanced",
+      "constraints": ["The tree may be arbitrarily skewed and recursion stack is finite."]
+    },
+    {
+      "id": "alg-tree-boundary-empty-extreme-identity",
+      "prompt": "A helper returns the maximum value in a subtree, but the public contract allows an empty tree. Which design avoids confusing “no value” with a valid node value?",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "explicit_unavailable", "text": "Return an explicit unavailable result such as an option/sentinel outside the value domain, or require a nonempty input contract."}, {"id": "zero_sentinel", "text": "Return zero for empty trees regardless of the allowed node-value range."}, {"id": "negative_infinity_always", "text": "Use negative infinity without checking whether it belongs to the value domain or numeric type."}, {"id": "first_child_only", "text": "Return the first non-null child's maximum and ignore a lone root or other branch."}], "acceptedOptionIds": ["explicit_unavailable"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An empty maximum has no ordinary value unless the API supplies a mathematically and representationally valid identity or absence marker.", "details": {"blocks": [{"type": "paragraph", "text": "Unlike sum or count, maximum has no universal identity inside every possible node-value domain. Zero may be a real value, and negative infinity may be unrepresentable or part of the domain. An option-like unavailable result or a precondition that the tree is nonempty makes the boundary explicit. The choice must be reflected in both the helper and its callers; silently inventing a value corrupts aggregates."}]}, "wrongOptionExplanationsByOptionId": {"zero_sentinel": "Zero may be the true maximum of a nonempty tree, so it cannot generally encode absence.", "negative_infinity_always": "The sentinel must be outside the allowed domain and supported by the numeric representation; that is not automatic.", "first_child_only": "A maximum helper must consider the current node and both subtrees according to its contract."}},
+      "taxonomy": {"primarySkillAtomId": "handle_empty_and_leaf_boundaries", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "compute_subtree_property"},
+      "difficulty": "advanced",
+      "constraints": ["Node values may include zero and the tree may be empty."]
+    },
+    {
+      "id": "alg-tree-boundary-11_null_identity",
+      "prompt": "Why must a recursive tree aggregate define a null-child identity explicitly?",
+      "constraints": [
+        "Leaves invoke the helper on null children.",
+        "The parent combines child results algebraically."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "base_identity",
+            "text": "The null result must be the correct identity or invalid marker for the parent recurrence, so leaf and unary cases are defined.",
+            "explanation": "Base cases determine the recurrence's meaning."
+          },
+          {
+            "id": "zero_always",
+            "text": "Return zero for every aggregate because null contains no value.",
+            "explanation": "Zero can be wrong for minimum, maximum, or existence semantics."
+          },
+          {
+            "id": "skip_null",
+            "text": "Skip null without initializing the missing child result.",
+            "explanation": "The parent then combines undefined state."
+          },
+          {
+            "id": "parent_copy",
+            "text": "Return the parent value for a null child to preserve the path.",
+            "explanation": "A null child has no node value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "base_identity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Null is part of the mathematical contract of a subtree recurrence.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For count, zero may be the identity; for multiplication, one; for max or path existence, a special invalid state may be required. The parent formula must match the choice."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_always": "Zero can be wrong for minimum, maximum, or existence semantics.",
+          "skip_null": "The parent then combines undefined state.",
+          "parent_copy": "A null child has no node value."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "handle_empty_and_leaf_boundaries",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "compute_subtree_property"
+      }
+    },
+    {
+      "id": "alg-tree-boundary-12_single_node",
+      "prompt": "What is the correct boundary interpretation for a single-node tree in a root-to-leaf query?",
+      "constraints": [
+        "The root has no children.",
+        "The root's value contributes to the path."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "root_is_leaf",
+            "text": "The root is also a leaf, so the one-node path is a complete root-to-leaf path.",
+            "explanation": "Leaf means no children, including the root."
+          },
+          {
+            "id": "no_path",
+            "text": "There is no path because a path needs at least one edge.",
+            "explanation": "A path may contain one vertex under the usual contract."
+          },
+          {
+            "id": "null_only",
+            "text": "Only the null children count as leaves, not the root.",
+            "explanation": "Null pointers are not data leaves."
+          },
+          {
+            "id": "double_count",
+            "text": "Count the root once for itself and again for its null children.",
+            "explanation": "The root belongs to the path exactly once."
+          }
+        ],
+        "acceptedOptionIds": [
+          "root_is_leaf"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Short-tree boundaries should follow the structural definition of leaf.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A one-node tree is a valid root-to-leaf path of length one node. This case catches base logic that assumes an internal parent always exists."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "no_path": "A path may contain one vertex under the usual contract.",
+          "null_only": "Null pointers are not data leaves.",
+          "double_count": "The root belongs to the path exactly once."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "handle_empty_and_leaf_boundaries",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "compute_subtree_property"
+      }
+    },
+    {
+      "id": "alg-tree-boundary-13_skewed",
+      "prompt": "What does a skewed binary tree reveal about recursive tree algorithms?",
+      "constraints": [
+        "Every node may have only one child.",
+        "The height can equal n."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "height_risk",
+            "text": "It exposes recursion-depth and O(h) path-space risks and tests whether unary-child base cases are handled correctly.",
+            "explanation": "A skewed tree is the worst shape for depth."
+          },
+          {
+            "id": "balanced_assumed",
+            "text": "It is equivalent to a balanced tree because both contain n nodes.",
+            "explanation": "Shape changes height and traversal memory."
+          },
+          {
+            "id": "width_risk_only",
+            "text": "It only tests BFS width because DFS has no shape-dependent cost.",
+            "explanation": "DFS path depth is shape dependent."
+          },
+          {
+            "id": "sort_needed",
+            "text": "Skewed trees must be sorted before any traversal can be correct.",
+            "explanation": "Traversal correctness does not require sorting."
+          }
+        ],
+        "acceptedOptionIds": [
+          "height_risk"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Tree algorithms must state whether their cost depends on height, width, or both.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A chain-like tree makes h=n, so recursion can overflow and DFS stack can become linear. It also catches code that treats a missing left child as a leaf without checking a right child."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "balanced_assumed": "Shape changes height and traversal memory.",
+          "width_risk_only": "DFS path depth is shape dependent.",
+          "sort_needed": "Traversal correctness does not require sorting."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "handle_empty_and_leaf_boundaries",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "compute_subtree_property"
+      }
+    },
+    {
+      "id": "alg-tree-boundary-14_empty_vs_null",
+      "prompt": "Why should an empty tree result be distinguished from a node whose child pointer is null?",
+      "constraints": [
+        "The output may describe nodes or subtree properties.",
+        "Null pointers are structural absence, not node records."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "root_null_contract",
+            "text": "A null root means the entire tree is empty; a null child means only that one branch is absent and the parent still exists.",
+            "explanation": "The two cases occur at different recursion levels."
+          },
+          {
+            "id": "same_output",
+            "text": "Treat every null pointer as a separate empty tree in the final output.",
+            "explanation": "That can emit many phantom trees or levels."
+          },
+          {
+            "id": "null_node",
+            "text": "Emit null as a visited tree node whenever a child is absent.",
+            "explanation": "Traversal normally visits actual nodes only."
+          },
+          {
+            "id": "ignore_root",
+            "text": "Handle null root by creating a synthetic parent so child cases stay uniform.",
+            "explanation": "Synthetic nodes can violate the output contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "root_null_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Empty-root and missing-child semantics are related but not interchangeable.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The root-null case determines the whole result. During recursion, a null child supplies a base case to its existing parent. Confusing them creates phantom output or wrong aggregates."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_output": "That can emit many phantom trees or levels.",
+          "null_node": "Traversal normally visits actual nodes only.",
+          "ignore_root": "Synthetic nodes can violate the output contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "handle_empty_and_leaf_boundaries",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "compute_subtree_property"
+      }
     }
   ],
   "modeStructures": {

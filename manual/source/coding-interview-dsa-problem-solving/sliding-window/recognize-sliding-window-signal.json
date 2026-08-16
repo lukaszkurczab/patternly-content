@@ -412,6 +412,322 @@
         "secondarySkillAtomIds": [],
         "learningStage": "pattern_mechanics"
       }
+    },
+    {
+      "id": "alg-sw-recognize-contiguous-range-state",
+      "prompt": "Which combination is the strongest general signal for a sliding-window candidate?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "interval_incremental_validity", "text": "A contiguous [left,right] candidate, state updated as boundaries move, and a predicate or fixed-size rule that supports safe movement."},
+        {"id": "two_indices_anywhere", "text": "Exactly two index variables, regardless of what the interval means."},
+        {"id": "sorted_values", "text": "Sorted input, even when the answer may choose nonadjacent values."},
+        {"id": "hash_map_required", "text": "A hash map must appear in the implementation for the pattern to apply."}
+      ], "acceptedOptionIds": ["interval_incremental_validity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The family is defined by contiguous-range state and a boundary update proof, not by syntax or one data structure.", "details": {"blocks": [{"type": "paragraph", "text": "A fixed window has a known width; a variable window has a validity predicate and a legal shrink rule. Both maintain one interval. Two indices, sortedness, and hash-map usage can occur in unrelated algorithms and are insufficient classification signals."}]}, "wrongOptionExplanationsByOptionId": {"two_indices_anywhere": "Two indices can represent pairs, read/write compaction, or other state relations.", "sorted_values": "Sortedness supports pair elimination but does not imply contiguity.", "hash_map_required": "Window state can be a scalar, counter, deque, or another structure."}},
+      "taxonomy": {"primarySkillAtomId": "identify_contiguous_window_signal", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "frequency_constraint", "problemArchetypeId": "longest_valid_window"}
+    },
+    {
+      "id": "alg-sw-recognize-window-output-shape",
+      "prompt": "A task asks for an aggregate over every consecutive block of exactly k input positions. Which recognition statement is correct?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "fixed_window", "text": "It is a fixed-size sliding-window candidate; the left boundary advances once the right boundary creates a complete block."},
+        {"id": "arbitrary_pair", "text": "It is a two-sum pair task because two boundaries appear in the notation."},
+        {"id": "subsequence_dp", "text": "It must be subsequence DP because every input position is considered."},
+        {"id": "variable_shrink", "text": "It must shrink while a validity predicate fails, even though the width is fixed."}
+      ], "acceptedOptionIds": ["fixed_window"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Exact contiguity and fixed width determine the window state and update rule.", "details": {"blocks": [{"type": "paragraph", "text": "Maintain the aggregate for the last k positions by adding the incoming value and removing the value that falls out. No pair-elimination proof or variable validity repair is required. Negative values do not invalidate this exact-length invariant."}]}, "wrongOptionExplanationsByOptionId": {"arbitrary_pair": "The output contains every position in one consecutive block, not two arbitrary endpoints.", "subsequence_dp": "The task's interval aggregate has a direct rolling-state solution; considering each position does not imply subsequence choice.", "variable_shrink": "The width is prescribed, so a while-loop validity repair changes the output shape."}},
+      "taxonomy": {"primarySkillAtomId": "identify_contiguous_window_signal", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "fixed_size_window", "problemArchetypeId": "fixed_length_aggregate"}
+    },
+    {
+      "id": "alg-sw-recognize-no-window-exact-signed",
+      "prompt": "An array may contain signed values and the task counts all subarrays with sum exactly T. Which signal should prevent a naive expand-and-shrink window?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "no_monotone_direction", "text": "The current sum does not determine a safe boundary direction; prefix-sum state is a stronger candidate signal."},
+        {"id": "contiguous_means_window", "text": "Contiguity alone guarantees a sliding window regardless of value signs."},
+        {"id": "two_indices_prove", "text": "Two boundaries prove that shrinking left preserves all future exact sums."},
+        {"id": "negative_ignored", "text": "Negative values affect only performance, not correctness of the shrink rule."}
+      ], "acceptedOptionIds": ["no_monotone_direction"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Exact signed sums lack the monotone relation needed to decide which starts can be discarded by one boundary move.", "details": {"blocks": [{"type": "paragraph", "text": "A prefix-sum map can count equal differences without assuming sign. A naive window may remove a negative and increase the sum or discard an earlier start that a future negative would make useful. Contiguity defines the answer shape, not the legality of every expand/shrink rule."}]}, "wrongOptionExplanationsByOptionId": {"contiguous_means_window": "A contiguous target can require prefix sums or another strategy when validity is nonmonotone.", "two_indices_prove": "Index syntax contains no discarded-candidate theorem.", "negative_ignored": "Signs can change the direction and outcome of each boundary update."}},
+      "taxonomy": {"primarySkillAtomId": "identify_contiguous_window_signal", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics"}
+    },
+    {
+      "id": "alg-sw-recognize-fixed-variable-transfer",
+      "prompt": "Select all statements that correctly distinguish fixed-size and variable-size sliding windows.",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "fixed_width", "text": "A fixed-size window removes the element k positions behind when a new element enters."},
+        {"id": "variable_predicate", "text": "A variable-size window expands and shrinks according to a validity predicate or objective boundary."},
+        {"id": "fixed_requires_positive", "text": "Fixed-size windows require positive values for their rolling update to be correct."},
+        {"id": "variable_any_shrink", "text": "Any variable window is correct as long as left eventually reaches right."}
+      ], "acceptedOptionIds": ["fixed_width", "variable_predicate"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Fixed width supplies the outgoing position directly; variable width needs a proof that its shrink rule preserves the objective.", "details": {"blocks": [{"type": "paragraph", "text": "A fixed window can maintain sums or other aggregates for arbitrary values because membership changes predictably. A variable window's while condition must be tied to validity and discarded-start safety; termination alone is not correctness. The distinction is the state contract, not the sign of values."}]}, "wrongOptionExplanationsByOptionId": {"fixed_requires_positive": "Fixed membership updates work with negative values as well.", "variable_any_shrink": "A terminating shrink may still skip valid or optimal ranges without a monotonicity proof."}, "omittedCorrectExplanationsByOptionId": {"fixed_width": "The exact width determines which element exits.", "variable_predicate": "Variable movement needs a validity or objective condition to justify shrinkage."}},
+      "taxonomy": {"primarySkillAtomId": "identify_contiguous_window_signal", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "fixed_size_window", "problemArchetypeId": "fixed_length_aggregate"}
+    },
+    {
+      "id": "alg-sw-recognize-11-contiguous-phrase",
+      "prompt": "Which wording most strongly signals a sliding-window representation?",
+      "constraints": [
+        "The answer is based on a contiguous segment of an ordered input.",
+        "The segment can move as endpoints change."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "contiguous_subarray",
+            "text": "Find the longest or shortest contiguous subarray/substring satisfying a condition.",
+            "explanation": "The output geometry is exactly an interval of indices."
+          },
+          {
+            "id": "arbitrary_subset",
+            "text": "Choose any subset of elements regardless of their positions.",
+            "explanation": "A subset may contain gaps and is not one window."
+          },
+          {
+            "id": "all_pairs",
+            "text": "Evaluate every pair of positions with no contiguity requirement.",
+            "explanation": "Pair search has a different state geometry."
+          },
+          {
+            "id": "tree_subtree",
+            "text": "Return a connected subtree of a rooted tree.",
+            "explanation": "Tree topology is not a one-dimensional sliding interval."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contiguous_subarray"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The strongest signal is a contiguous range whose endpoints can advance through the input.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Sliding-window state compresses the current interval and updates it as the left and right boundaries move. The input order and contiguity requirement are essential."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_subset": "A subset may contain gaps and is not one window.",
+          "all_pairs": "Pair search has a different state geometry.",
+          "tree_subtree": "Tree topology is not a one-dimensional sliding interval."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_contiguous_window_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-recognize-12-fixed-length",
+      "prompt": "Which contract distinguishes a fixed-size window from a general variable-size window?",
+      "constraints": [
+        "Every output range has the same length k.",
+        "Adjacent outputs may overlap."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "constant_k",
+            "text": "The right boundary advances one step while the left boundary advances one step per shift after the first k items.",
+            "explanation": "This preserves exactly k elements."
+          },
+          {
+            "id": "shrink_on_invalid",
+            "text": "The left boundary moves only when a validity predicate fails.",
+            "explanation": "That is a variable-size repair rule."
+          },
+          {
+            "id": "never_overlap",
+            "text": "Each next range starts after the previous range ends.",
+            "explanation": "Sliding windows commonly overlap."
+          },
+          {
+            "id": "sort_before_scan",
+            "text": "The input must be sorted so fixed length is well-defined.",
+            "explanation": "Length is independent of value order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "constant_k"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Fixed length determines a deterministic one-in/one-out transition after initialization.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A fixed-size scan does not use validity repair to choose its length. It emits each start position and maintains exactly k active elements, including overlaps."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shrink_on_invalid": "That is a variable-size repair rule.",
+          "never_overlap": "Sliding windows commonly overlap.",
+          "sort_before_scan": "Length is independent of value order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_contiguous_window_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-recognize-13-prefix-vs-window",
+      "prompt": "When should prefix sums be considered before a sliding window for a contiguous range-sum query?",
+      "constraints": [
+        "Array values may be negative.",
+        "The query asks for exact target sums or many arbitrary ranges."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "nonmonotone_or_many_queries",
+            "text": "Use prefix sums or a prefix-hash method when range sums are not monotone under endpoint movement or when arbitrary repeated range queries dominate.",
+            "explanation": "Sliding shrink proofs need stronger monotonicity than prefix lookup does."
+          },
+          {
+            "id": "always_window",
+            "text": "Any contiguous sum problem is best represented by a sliding window.",
+            "explanation": "Negative values and arbitrary queries break the usual window advantages."
+          },
+          {
+            "id": "sort_values",
+            "text": "Sort values first so the window sum becomes monotone.",
+            "explanation": "Sorting destroys original contiguous-range semantics."
+          },
+          {
+            "id": "prefix_never",
+            "text": "Prefix sums cannot answer a range query because they store only cumulative values.",
+            "explanation": "Subtracting two prefixes is the standard exact range-sum query."
+          }
+        ],
+        "acceptedOptionIds": [
+          "nonmonotone_or_many_queries"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The choice depends on value monotonicity and query shape, not merely on the word contiguous.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Positive values with a threshold often permit an amortized window. Signed values or many arbitrary exact queries favor prefix sums or prefix-plus-hash state because endpoint movement need not be monotone."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always_window": "Negative values and arbitrary queries break the usual window advantages.",
+          "sort_values": "Sorting destroys original contiguous-range semantics.",
+          "prefix_never": "Subtracting two prefixes is the standard exact range-sum query."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_contiguous_window_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
+    },
+    {
+      "id": "alg-sw-recognize-14-at-most-k",
+      "prompt": "A substring problem asks for the longest range with at most k distinct symbols. Which structural signal supports a variable-size window?",
+      "constraints": [
+        "Adding a symbol can increase the distinct count.",
+        "Removing the leftmost symbol can decrease it."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "repair_monotone",
+            "text": "The violation can be repaired by advancing left while the right boundary only moves forward, enabling an amortized linear scan.",
+            "explanation": "This is the monotone validity structure."
+          },
+          {
+            "id": "exact_k_only",
+            "text": "The window is valid only when the distinct count equals k, so no shrink loop is needed.",
+            "explanation": "At-most constraints require repair from counts above k."
+          },
+          {
+            "id": "global_sort",
+            "text": "Sort the symbols so distinctness becomes a fixed property of the entire input.",
+            "explanation": "Sorting changes substring order."
+          },
+          {
+            "id": "negative_sum",
+            "text": "The key requirement is that all symbol values be positive.",
+            "explanation": "Distinct-count windows depend on membership, not numeric positivity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "repair_monotone"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "At-most constraints with reversible membership state often give a monotone shrink condition.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A frequency map tracks the current window, and once distinct count exceeds k, moving left eventually restores validity. Because each pointer advances only forward, the total work is linear."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "exact_k_only": "At-most constraints require repair from counts above k.",
+          "global_sort": "Sorting changes substring order.",
+          "negative_sum": "Distinct-count windows depend on membership, not numeric positivity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_contiguous_window_signal",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "fixed_size_window",
+        "problemArchetypeId": "fixed_length_aggregate"
+      }
     }
   ],
   "modeStructures": {

@@ -392,7 +392,395 @@
         "patternVariantId": "greedy_with_heap",
         "problemArchetypeId": "schedule_by_deadline"
       }
-    }
+    },
+    {
+      "id": "alg-greedy-intro-stg-007",
+      "prompt": "A schedule is sorted by a key before a greedy scan. Two records tie on that key, but one tie order can change the scan's first feasible boundary. What is the correct requirement?",
+      "constraints": [
+        "The primary key alone does not determine the future boundary.",
+        "The objective depends on the sequence produced by the scan."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "tie_break_proof", "text": "Define a tie-break with its own safety argument, or prove that every tied order gives an equivalent residual state and objective."},
+          {"id": "stable_sort_is_proof", "text": "Use a stable sort; preserving input order proves that the tie is harmless."},
+          {"id": "random_ties", "text": "Randomize tied records so that the scan cannot systematically make a bad choice."},
+          {"id": "ignore_boundary", "text": "Ignore the first boundary because later records will correct any tie-order effect."}
+        ],
+        "acceptedOptionIds": ["tie_break_proof"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "A sort key is safe only when its equality cases preserve the state that controls the remainder of the scan.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Sorting establishes an order, but a tie can still select different first feasible records. If those records leave different boundaries or values, the scan can produce different results. A stable sort gives deterministic behavior, not correctness; randomization gives no guarantee. The author should either add a secondary key supported by an exchange or dominance argument, or prove permutation invariance within the tie class."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "stable_sort_is_proof": "Stability preserves input order but does not show that the preserved order is optimal.",
+          "random_ties": "Random choice can select an unsafe tied record; lack of systematic bias is not a correctness theorem.",
+          "ignore_boundary": "The first boundary is exactly where later eligibility is determined, so an unsafe tie can affect the whole suffix."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "choose_sort_key_for_greedy_process", "secondarySkillAtomIds": [], "learningStage": "strategy_selection", "patternVariantId": "sort_then_greedy", "problemArchetypeId": "construct_optimal_sequence"}
+    },
+    {
+      "id": "alg-greedy-intro-stg-008",
+      "prompt": "Why can preprocessing order and greedy acceptance order differ in a correct algorithm?",
+      "constraints": [
+        "The input is sorted to expose constraints in a useful sequence.",
+        "A separate local rule decides whether to retain, replace, or reject each item."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "exposure_vs_commitment", "text": "Sorting can reveal when a constraint becomes active, while the greedy rule can use a different extremal property to make the safe commitment or repair."},
+          {"id": "two_orders_contradict", "text": "Two different orders cannot occur in one correct algorithm because a greedy method has exactly one key."},
+          {"id": "sort_always_accepts", "text": "The sorted order itself is the accepted solution, so no separate retention rule is needed."},
+          {"id": "acceptance_is_complexity", "text": "The acceptance rule only affects running time and never changes correctness."}
+        ],
+        "acceptedOptionIds": ["exposure_vs_commitment"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "A sorted traversal can expose the residual constraint, while a heap or local comparison implements the separate dominance choice within that prefix.",
+        "details": {"blocks": [{"type": "paragraph", "text": "In deadline scheduling, increasing deadlines determine which prefix must currently be feasible. When a prefix overflows, the longest selected duration is removed because that repair leaves the smallest remaining duration for the same count. Deadline order and longest-removal answer different questions: when to validate and which candidate to discard. The transfer rule is to name each order's role explicitly and prove both the exposure step and the local commitment."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "two_orders_contradict": "Different operations can use different orderings when they serve distinct proof roles.",
+          "sort_always_accepts": "Sorting only determines consideration order. Acceptance and replacement still determine the produced solution.",
+          "acceptance_is_complexity": "The acceptance rule determines which solution survives and is central to correctness."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "choose_sort_key_for_greedy_process", "secondarySkillAtomIds": [], "learningStage": "strategy_selection", "patternVariantId": "greedy_with_heap", "problemArchetypeId": "schedule_by_deadline"}
+    },
+    {
+      "id": "alg-greedy-intro-stg-009",
+      "prompt": "A problem asks for the minimum number of resources needed to cover intervals. A candidate sorts by start time and assigns each interval to the currently available resource. Which observation supports this sort order?",
+      "constraints": [
+        "An interval's start determines when it becomes active.",
+        "The algorithm must detect whether an existing resource is free before the interval starts."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "activation_order", "text": "Nondecreasing start order exposes arrivals in the order that resource feasibility changes; a separate minimum-end structure can identify the earliest free resource."},
+          {"id": "start_is_always_solution", "text": "Earliest start is always the objective-optimal interval choice, so no resource-state check is needed."},
+          {"id": "finish_order_required", "text": "Every interval problem must be sorted by finish time, regardless of whether the objective is selection or resource allocation."},
+          {"id": "duration_order", "text": "Shortest duration first is the only order that can minimize resource count."}
+        ],
+        "acceptedOptionIds": ["activation_order"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "For resource allocation, start time controls when an interval arrives; finish time is used inside the maintained availability state.",
+        "details": {"blocks": [{"type": "paragraph", "text": "The objective differs from maximum-cardinality interval selection. We are processing arrivals and tracking the resource that frees earliest. Sorting by start time ensures every interval is considered when its demand becomes active; a minimum-end structure then answers whether a resource can be reused. The transfer lesson is to derive the key from the moment the constraint changes, then separately prove the local update."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "start_is_always_solution": "Start order exposes arrivals but does not itself allocate resources or prove the minimum count.",
+          "finish_order_required": "The correct order depends on the objective and event semantics.",
+          "duration_order": "Duration does not determine when intervals arrive or how many overlap."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "choose_sort_key_for_greedy_process", "secondarySkillAtomIds": [], "learningStage": "strategy_selection", "patternVariantId": "sort_then_greedy", "problemArchetypeId": "choose_non_overlapping_set"}
+    },
+    {
+      "id": "alg-greedy-intro-stg-010",
+      "prompt": "A sort-then-greedy proof uses an adjacent-swap argument. What should the reviewer verify for every inverted adjacent pair?",
+      "constraints": [
+        "The swap must leave all jobs after the pair with the same start time.",
+        "The stated objective is the only criterion for accepting the order."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "local_swap_no_worse", "text": "Swapping the pair must not worsen the objective contribution of the pair or affected prefix, and it must preserve the suffix state."},
+          {"id": "swap_reduces_sort_key", "text": "It is enough that the swap makes the records look more sorted, even if the objective changes."},
+          {"id": "pair_order_irrelevant", "text": "Adjacent jobs never affect one another because total processing time is fixed."},
+          {"id": "examples_cover_inversions", "text": "Test one inverted pair on a sample input; that proves the swap for every surrounding prefix."}
+        ],
+        "acceptedOptionIds": ["local_swap_no_worse"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "An exchange proof is valid only when the local swap is objective-non-worsening and does not damage the rest of the schedule.",
+        "details": {"blocks": [{"type": "paragraph", "text": "The inversion argument removes one bad adjacent order at a time. The swap must preserve the pair's total completion boundary so later jobs are unaffected, while improving or preserving the objective values that can change inside the pair. A smaller inversion count is only a termination measure, not an optimization proof. Calculate the objective before and after one swap, including its effect on the suffix boundary."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "swap_reduces_sort_key": "Sorting progress is not the optimization objective.",
+          "pair_order_irrelevant": "Pair order can change which job completes first and therefore can change completion-based objectives.",
+          "examples_cover_inversions": "A local sample does not quantify over all surrounding prefixes or durations."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "choose_sort_key_for_greedy_process", "secondarySkillAtomIds": [], "learningStage": "strategy_selection", "patternVariantId": "sort_then_greedy", "problemArchetypeId": "construct_optimal_sequence"}
+    },
+    {
+      "id": "alg-greedy-intro-stg-011_key_from_proof",
+      "prompt": "How should the sort key be selected in a sort-then-greedy algorithm?",
+      "constraints": [
+        "The sorted order determines which local choice is encountered first.",
+        "The objective and feasibility invariant are known."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "proof_key",
+            "text": "Choose the key that makes the first available choice dominate alternatives under the exchange proof, not merely a convenient numeric field.",
+            "explanation": "The key is part of correctness, not just iteration order."
+          },
+          {
+            "id": "largest_field",
+            "text": "Sort by the largest input field because larger values are usually more important.",
+            "explanation": "Field magnitude may have no relation to future feasibility."
+          },
+          {
+            "id": "alphabetical",
+            "text": "Sort by textual representation so the order is deterministic.",
+            "explanation": "Determinism does not imply optimality."
+          },
+          {
+            "id": "random",
+            "text": "Any deterministic sort key is acceptable because greedy handles the rest.",
+            "explanation": "Different keys can produce different correctness outcomes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "proof_key"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The sort key is the algorithm's first-choice theorem made executable.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For interval cardinality, earliest finish exposes a dominated boundary; for another objective the key may differ or no simple key may be safe. Derive it from the exchange, then implement it."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "largest_field": "Field magnitude may have no relation to future feasibility.",
+          "alphabetical": "Determinism does not imply optimality.",
+          "random": "Different keys can produce different correctness outcomes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-stg-012_tie",
+      "prompt": "When a sort-then-greedy proof is insensitive to equal keys, what tie policy is appropriate?",
+      "constraints": [
+        "Equal primary keys leave the same proof-relevant boundary.",
+        "The output may still require deterministic behavior."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "safe_secondary",
+            "text": "Use any safe secondary key, such as original index, if determinism is required; equal primary keys remain equivalent for the proof.",
+            "explanation": "Tie handling can serve reproducibility without changing dominance."
+          },
+          {
+            "id": "arbitrary_unstated",
+            "text": "Leave ties unspecified even when output order is observable.",
+            "explanation": "Observable output requires a contract."
+          },
+          {
+            "id": "reject_ties",
+            "text": "Reject all equal-key candidates because the proof cannot choose between them.",
+            "explanation": "Equal proof boundaries can be represented by either candidate."
+          },
+          {
+            "id": "reverse_ties",
+            "text": "Always reverse equal keys because a secondary order must oppose the primary key.",
+            "explanation": "No universal reverse policy follows from equality."
+          }
+        ],
+        "acceptedOptionIds": [
+          "safe_secondary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A tie-break is a product/output policy unless the proof identifies a meaningful secondary boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Stable order or original index can make results reproducible. The important check is that the secondary key does not violate feasibility or the stated objective."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_unstated": "Observable output requires a contract.",
+          "reject_ties": "Equal proof boundaries can be represented by either candidate.",
+          "reverse_ties": "No universal reverse policy follows from equality."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-stg-013_one_pass",
+      "prompt": "After sorting candidates by a proven greedy key, what should the scan maintain?",
+      "constraints": [
+        "Each accepted choice changes future feasibility.",
+        "Candidates are processed in sorted order."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "frontier_invariant",
+            "text": "Maintain the sufficient feasibility frontier and update it only when a candidate is accepted; skip candidates that violate the frontier.",
+            "explanation": "The scan mirrors the proof state."
+          },
+          {
+            "id": "accept_all",
+            "text": "Accept every candidate in sorted order because sorting removes all conflicts.",
+            "explanation": "Sorted candidates can still be infeasible together."
+          },
+          {
+            "id": "reset_each",
+            "text": "Reset the frontier after each candidate so every item is evaluated independently.",
+            "explanation": "Resetting loses the selected prefix constraint."
+          },
+          {
+            "id": "global_best",
+            "text": "Keep only the highest raw key seen and ignore the accepted schedule.",
+            "explanation": "The selected set and frontier determine the objective."
+          }
+        ],
+        "acceptedOptionIds": [
+          "frontier_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The greedy scan is a state machine over the proof's sufficient boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Sorting establishes candidate order; it does not establish mutual feasibility. The frontier lets the algorithm reject illegal candidates while preserving the exchange invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "accept_all": "Sorted candidates can still be infeasible together.",
+          "reset_each": "Resetting loses the selected prefix constraint.",
+          "global_best": "The selected set and frontier determine the objective."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-stg-014_sort_cost",
+      "prompt": "What total cost should be reported for a sort-then-greedy algorithm on n candidates?",
+      "constraints": [
+        "Sorting uses comparison keys.",
+        "The greedy scan is linear after sorting."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "nlogn_plus_n",
+            "text": "O(n log n) for sorting plus O(n) for the scan, which simplifies to O(n log n) under the usual comparator model.",
+            "explanation": "Both phases belong in the end-to-end cost."
+          },
+          {
+            "id": "scan_only",
+            "text": "O(n) because the greedy scan is the only algorithmic phase.",
+            "explanation": "Preprocessing sorting is required work."
+          },
+          {
+            "id": "n_squared",
+            "text": "O(n²) because every greedy candidate compares with all prior choices.",
+            "explanation": "The proof state can support a linear scan after sorting."
+          },
+          {
+            "id": "sort_free",
+            "text": "O(1) preprocessing because the library performs sorting internally.",
+            "explanation": "Library work still consumes time."
+          }
+        ],
+        "acceptedOptionIds": [
+          "nlogn_plus_n"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sort-then-greedy method inherits the cost of its preprocessing phase.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The linear scan is not the whole algorithm. Include comparator cost, key materialization, and any output ordering or copy cost when the contract requires them."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "scan_only": "Preprocessing sorting is required work.",
+          "n_squared": "The proof state can support a linear scan after sorting.",
+          "sort_free": "Library work still consumes time."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_sort_key_for_greedy_process",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {"id":"alg-greedy-intro-015-sort-before-scan","prompt":"Why is sorting usually performed before the linear greedy scan?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"ordered_candidates","text":"The order makes the local choice visible and lets the scan maintain a simple invariant."},{"id":"proof_by_sort","text":"Sorting alone proves the greedy rule is optimal."},{"id":"remove_objective","text":"Sorting removes the need to state the objective."},{"id":"avoid_state","text":"Sorting eliminates all feasibility state."}],"acceptedOptionIds":["ordered_candidates"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Preprocessing exposes the order required by the greedy invariant.","details":{"blocks":[{"type":"paragraph","text":"The sort organizes candidates by a key such as finish time or deadline. The scan still needs a feasibility condition and a proof of the chosen key."}]},"wrongOptionExplanationsByOptionId":{"proof_by_sort":"This option does not establish a safe local choice for the stated objective.","remove_objective":"This option does not establish a safe local choice for the stated objective.","avoid_state":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"choose_sort_key_for_greedy_process","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"sort_then_greedy","problemArchetypeId":"construct_optimal_sequence"}},
+    {"id":"alg-greedy-intro-016-comparator","prompt":"What must a comparator for a sort-then-greedy algorithm preserve?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"key_order","text":"A deterministic order consistent with the proven local key and tie contract."},{"id":"random_order","text":"Any order is equivalent once a comparator exists."},{"id":"reverse_always","text":"Always reverse the key regardless of the proof."},{"id":"input_identity","text":"Only original indices matter; values are irrelevant."}],"acceptedOptionIds":["key_order"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"The comparator implements the mathematical key used by the proof.","details":{"blocks":[{"type":"paragraph","text":"If the proof depends on earliest finish, the comparator must order by finish, with a tie policy that preserves feasibility and deterministic output."}]},"wrongOptionExplanationsByOptionId":{"random_order":"This option does not establish a safe local choice for the stated objective.","reverse_always":"This option does not establish a safe local choice for the stated objective.","input_identity":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"choose_sort_key_for_greedy_process","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"sort_then_greedy","problemArchetypeId":"construct_optimal_sequence"}},
+    {"id":"alg-greedy-intro-017-order-objective","prompt":"Why can sorting by start time be wrong for maximum non-overlapping interval count?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"future_room","text":"An early-start interval may finish late and leave less room than an interval finishing earlier."},{"id":"start_is_end","text":"Start time and finish time are always equivalent."},{"id":"sort_irrelevant","text":"Any sorted order yields the same cardinality."},{"id":"duration_only","text":"Only duration determines compatibility."}],"acceptedOptionIds":["future_room"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Maximum count depends on preserving room for future intervals.","details":{"blocks":[{"type":"paragraph","text":"The earliest-start interval can block several later intervals. Earliest finish is the key supported by the standard exchange argument for this objective."}]},"wrongOptionExplanationsByOptionId":{"start_is_end":"This option does not establish a safe local choice for the stated objective.","sort_irrelevant":"This option does not establish a safe local choice for the stated objective.","duration_only":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"choose_sort_key_for_greedy_process","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"sort_then_greedy","problemArchetypeId":"construct_optimal_sequence"}},
+    {"id":"alg-greedy-intro-018-sort_then_heap","prompt":"When sorting alone cannot resolve a changing eligibility or reward tradeoff, what may the greedy design need?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"dynamic_frontier","text":"A priority queue or another explicit frontier that updates as state changes."},{"id":"fixed_order","text":"Keep the initial sort and ignore newly eligible choices."},{"id":"delete_rewards","text":"Discard rewards so every item is equivalent."},{"id":"no_state","text":"Remove all state from the loop."}],"acceptedOptionIds":["dynamic_frontier"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Some greedy processes require a dynamic choice set after each event.","details":{"blocks":[{"type":"paragraph","text":"An initial order can establish event timing, but a heap may be needed to choose among currently eligible items or to replace a prior choice under a proven rule."}]},"wrongOptionExplanationsByOptionId":{"fixed_order":"This option does not establish a safe local choice for the stated objective.","delete_rewards":"This option does not establish a safe local choice for the stated objective.","no_state":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"choose_sort_key_for_greedy_process","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"sort_then_greedy","problemArchetypeId":"construct_optimal_sequence"}}
   ],
   "modeStructures": {
     "recognitionSets": [],

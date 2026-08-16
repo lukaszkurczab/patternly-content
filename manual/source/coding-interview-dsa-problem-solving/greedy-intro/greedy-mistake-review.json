@@ -341,7 +341,576 @@
         "patternVariantId": "interval_greedy",
         "problemArchetypeId": "choose_non_overlapping_set"
       }
-    }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-006",
+      "prompt": "A proof checks that every selected item is feasible at the moment it is added and then concludes that the greedy result is optimal. Which review comment is strongest?",
+      "constraints": [
+        "The objective is to maximize total value, not merely to find any feasible solution.",
+        "No exchange, dominance, or upper-bound argument is included."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "feasible_implies_optimal",
+            "text": "The conclusion is valid because a feasible result is automatically optimal when every addition was legal."
+          },
+          {
+            "id": "feasibility_not_value",
+            "text": "The proof establishes feasibility only; it still must show that the choices preserve the best attainable value."
+          },
+          {
+            "id": "must_use_recursion",
+            "text": "The proof is incomplete only because every greedy proof must be recursive."
+          },
+          {
+            "id": "value_is_implementation_detail",
+            "text": "The values can be ignored because the selected set is already valid."
+          }
+        ],
+        "acceptedOptionIds": [
+          "feasibility_not_value"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Legality and optimality are different claims. A valid but low-value set can be produced by a completely feasible greedy sequence.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A feasibility invariant answers whether the current partial solution violates constraints. It does not compare that solution with alternatives that could have produced more value. To establish optimality, the proof needs a bridge such as an exchange that preserves value, a dominance relation, or an upper bound showing that no rejected alternative can improve the result.\n\nRecursion is optional: some greedy proofs use induction, but induction still needs a safety statement for the next commitment. The transfer test is to separate the proof obligations explicitly: first ask whether every produced state is legal, then ask why the discarded feasible choices cannot lead to a better objective. Passing the first test never settles the second."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "feasible_implies_optimal": "Many feasible solutions can have different values. Feasibility is necessary but not sufficient for an optimization claim.",
+          "must_use_recursion": "A greedy proof may be iterative, exchange-based, or invariant-based. Its missing ingredient is safety, not a particular proof format.",
+          "value_is_implementation_detail": "Value defines the objective. Ignoring it changes the problem from optimization to feasibility."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "running_best_choice",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-007",
+      "prompt": "A scheduling note says: “When two jobs have the same deadline, process either one first; the proof is unchanged.” The jobs have different durations and the algorithm uses a prefix-feasibility invariant. What should the reviewer request?",
+      "constraints": [
+        "A prefix is considered feasible only when its total duration is within the current deadline.",
+        "The note does not show that the two tie orders preserve the invariant."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "ties_never_matter",
+            "text": "No request is needed because equal deadlines make the jobs identical in every relevant respect."
+          },
+          {
+            "id": "state_tie_contract",
+            "text": "Specify the tie behavior or prove that all tie orders preserve the same prefix invariant and final objective."
+          },
+          {
+            "id": "replace_with_randomness",
+            "text": "Randomly permute tied jobs so that no proof has to discuss their order."
+          },
+          {
+            "id": "sort_by_value_only",
+            "text": "Break every deadline tie by highest value, regardless of the objective and invariant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "state_tie_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A tie in one key does not make records interchangeable when other fields affect duration, feasibility, or the repair choice.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Equal deadlines activate the same constraint boundary, but different durations can change which job is removed or retained when the prefix becomes infeasible. If the proof relies on a particular selected set, heap state, or stable ordering, the tie rule is part of the algorithm contract. The author may instead prove a stronger permutation-invariance statement showing that every tie order yields an equally good result and preserves the claimed invariant.\n\nRandomness does not remove a correctness obligation, and a value-based tie-break is not automatically safe: it must follow from the stated objective. The transfer rule is to inspect every equality case in a local ordering. Ask which non-key fields can influence future state; if any can, either define the tie-break or prove that it is immaterial."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "ties_never_matter": "Non-key fields can still affect duration and the state maintained by the algorithm. Equal deadlines do not imply identical jobs.",
+          "replace_with_randomness": "Random choice can select a bad order and makes reproducibility harder; it is not a proof of permutation invariance.",
+          "sort_by_value_only": "A new key needs its own correctness argument and may conflict with the prefix objective."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-008",
+      "prompt": "A reviewer tests an interval greedy algorithm only on inputs whose endpoints are distinct. The implementation accepts an interval when start >= currentEnd, but the problem statement never defines whether touching intervals overlap. What is the primary finding?",
+      "constraints": [
+        "The algorithm is intended to maximize the number of selected intervals.",
+        "The untested equality case can change which schedules are legal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "distinct_tests_cover_contract",
+            "text": "Distinct endpoints are sufficient because equality cannot affect a schedule with maximum count."
+          },
+          {
+            "id": "endpoint_semantics_missing",
+            "text": "The contract is underspecified; endpoint equality must be classified and the acceptance inequality aligned with it."
+          },
+          {
+            "id": "greedy_invalid_for_intervals",
+            "text": "Any endpoint ambiguity proves that interval greedy algorithms are invalid."
+          },
+          {
+            "id": "change_to_strict_only",
+            "text": "Always replace >= with > because strict comparisons are safer for interval algorithms."
+          }
+        ],
+        "acceptedOptionIds": [
+          "endpoint_semantics_missing"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equality at the boundary is part of the feasibility definition, not a cosmetic edge case.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If intervals are half-open, an interval beginning exactly at the previous end is compatible and >= is correct. If endpoints are closed or touching is defined as overlap, the acceptance condition changes. Tests with distinct endpoints cannot distinguish these contracts, so they provide no evidence for the equality branch.\n\nThe reviewer should require one explicit endpoint model, examples that exercise equality, and an implementation condition that matches the model. Neither strict nor non-strict comparison is universally safer. The transfer rule applies to all boundary-driven greedy algorithms: include equality, empty input, and zero-width cases in both the specification and the proof obligations."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "distinct_tests_cover_contract": "The omitted equality branch is exactly where the two endpoint conventions differ, so distinct tests cannot cover it.",
+          "greedy_invalid_for_intervals": "An ambiguous specification is a contract defect, not evidence against the valid earliest-finish interval strategy.",
+          "change_to_strict_only": "The correct inequality follows from endpoint semantics. Changing it without defining the model can reject legal touching intervals or accept illegal ones."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "interval_greedy",
+        "problemArchetypeId": "choose_non_overlapping_set"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-009",
+      "prompt": "A proof claims: “After sorting by key, the first k accepted items are best for every prefix.” It never states what “best” means or which state the suffix depends on. What is the most important repair?",
+      "constraints": [
+        "The algorithm makes irrevocable accept or reject decisions.",
+        "The objective and the residual feasibility boundary are both nontrivial."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "add_more_examples",
+            "text": "Add more examples until the word “best” becomes clear from the pattern."
+          },
+          {
+            "id": "define_invariant_and_state",
+            "text": "Define the prefix invariant in terms of the actual objective and identify the boundary or state that makes the suffix independent of discarded history."
+          },
+          {
+            "id": "remove_prefix_language",
+            "text": "Delete the word “prefix” and rely on the sorting order to convey the proof implicitly."
+          },
+          {
+            "id": "use_shorter_variable_names",
+            "text": "Rename the key and counters so that the argument is easier to implement."
+          }
+        ],
+        "acceptedOptionIds": [
+          "define_invariant_and_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A greedy proof needs a precise claim that can be preserved and transferred to the residual problem; an undefined “best” cannot support induction or exchange.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The phrase “best for the prefix” could mean maximum count, maximum value, minimum occupied resource, lexicographically smallest boundary, or something else. Those claims have different proof obligations. The proof must state the invariant precisely and show how the accepted prefix summarizes all information the suffix needs. If two prefixes have the same visible boundary but different future value, the claimed compression is false and more state may be required.\n\nExamples can help discover the right invariant, but they cannot define it by implication. Variable naming is secondary. The transfer rule is to write a sentence of the form “after processing this prefix, the maintained state has property P, and no alternative state with the same resource boundary has a better objective value.” If that sentence cannot be made exact, the greedy argument is not ready."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "add_more_examples": "Examples may expose ambiguity but do not turn an undefined claim into a universal invariant.",
+          "remove_prefix_language": "Removing a proof term hides the missing reasoning and does not establish what the algorithm preserves.",
+          "use_shorter_variable_names": "Naming can improve readability, but it cannot supply the absent objective comparison or residual-state argument."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "sort_then_greedy",
+        "problemArchetypeId": "construct_optimal_sequence"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-010",
+      "prompt": "A proposed greedy rule selects the shortest available job because every job consumes one unit of the objective. A variant of the problem assigns each job a different reward. Which audit conclusion is correct?",
+      "constraints": [
+        "The original equal-reward proof uses only the number of selected jobs.",
+        "The variant keeps the same feasibility constraints but maximizes total reward."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "proof_transfers_automatically",
+            "text": "The proof transfers because feasibility constraints are unchanged."
+          },
+          {
+            "id": "objective_change_breaks_exchange",
+            "text": "The equal-count exchange may no longer preserve value; the changed objective requires a new proof and may invalidate the local rule."
+          },
+          {
+            "id": "shortest_is_always_best",
+            "text": "Shortest duration remains optimal because it leaves the most capacity, independent of rewards."
+          },
+          {
+            "id": "only_heap_changes",
+            "text": "Keep the proof and change only the data structure used to find the shortest job."
+          }
+        ],
+        "acceptedOptionIds": [
+          "objective_change_breaks_exchange"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A one-for-one exchange that preserves the number of selected jobs does not necessarily preserve their total reward.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Greedy proofs are tied to the objective as well as to feasibility. In the equal-reward setting, replacing one selected job with another can be enough because both contribute one unit. With unequal rewards, the replacement may discard a high-value job or make a lower-value combination look equivalent when it is not. The same capacity argument may still support a different rule, but it cannot be reused without checking the value term.\n\nChanging the heap does not repair a proof whose exchange statement has changed. The transfer rule is to compare the exact quantity preserved by each local replacement with the new objective. If the proof preserves cardinality while the problem optimizes weighted value, the proof is aimed at the wrong theorem."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "proof_transfers_automatically": "The constraints are only one part of the theorem. The exchange must also preserve the new weighted objective.",
+          "shortest_is_always_best": "Leaving capacity can be useful but is not sufficient when the selected rewards differ; a longer high-value job may be preferable.",
+          "only_heap_changes": "Data-structure efficiency does not address the changed correctness claim."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-011_deadline_reward",
+      "prompt": "A schedule heuristic always accepts the shortest available job, but jobs have deadlines and different rewards. What is the main proof concern?",
+      "constraints": [
+        "The objective is total reward from on-time jobs.",
+        "Processing time and reward differ by job."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "objective_mismatch",
+            "text": "Shortest processing time alone does not preserve total reward; the rule needs a new feasibility and exchange proof for the weighted objective.",
+            "explanation": "A cardinality or capacity argument does not automatically transfer."
+          },
+          {
+            "id": "shortest_universal",
+            "text": "Shortest is always optimal because it leaves the most time for every future job.",
+            "explanation": "A long high-reward job can dominate a collection of short low-reward jobs."
+          },
+          {
+            "id": "heap_only",
+            "text": "Replace the array with a heap and keep the same proof.",
+            "explanation": "Data structure choice does not fix an objective mismatch."
+          },
+          {
+            "id": "deadlines_irrelevant",
+            "text": "Deadlines matter only to implementation, not to greedy correctness.",
+            "explanation": "They define feasibility."
+          }
+        ],
+        "acceptedOptionIds": [
+          "objective_mismatch"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Greedy correctness must preserve the actual objective and deadline feasibility together.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Changing equal rewards to weighted rewards changes what an exchange must protect. A shortest-job rule may still be useful in another theorem, but it is not justified by the old proof alone."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shortest_universal": "A long high-reward job can dominate a collection of short low-reward jobs.",
+          "heap_only": "Data structure choice does not fix an objective mismatch.",
+          "deadlines_irrelevant": "They define feasibility."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-012_local_vs_global",
+      "prompt": "A rule chooses the item with the best immediate ratio, but a small legal instance has a better combination with a lower first ratio. What should the reviewer conclude?",
+      "constraints": [
+        "The rule claims universal optimality.",
+        "The counterexample satisfies the same objective and constraints."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "local_not_proven",
+            "text": "The ratio is not a safe local key under the stated contract; the rule needs a counterexample explanation or a new proof.",
+            "explanation": "A better combination disproves automatic local dominance."
+          },
+          {
+            "id": "ratio_still_valid",
+            "text": "One combination cannot invalidate a ratio because greedy decisions are locally defined.",
+            "explanation": "A universal claim must survive every legal instance."
+          },
+          {
+            "id": "add_tie",
+            "text": "Add a tie-break even if the ratios differ.",
+            "explanation": "The failure is not a tie issue."
+          },
+          {
+            "id": "sort_ratios",
+            "text": "Sort twice by the same ratio to make the first choice globally safe.",
+            "explanation": "Repeated ordering does not create an exchange proof."
+          }
+        ],
+        "acceptedOptionIds": [
+          "local_not_proven"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A local score is a hypothesis about future dominance, not a correctness premise.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The reviewer should isolate which future combination the local choice eliminates and whether the objective can be exchanged without loss. A legal counterexample is sufficient evidence that the current theorem is false."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "ratio_still_valid": "A universal claim must survive every legal instance.",
+          "add_tie": "The failure is not a tie issue.",
+          "sort_ratios": "Repeated ordering does not create an exchange proof."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-013_feasibility_state",
+      "prompt": "A greedy implementation chooses the best key among all remaining items, including items that conflict with prior choices. Which issue is primary?",
+      "constraints": [
+        "The output must remain feasible.",
+        "Prior choices constrain future candidates."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "filter_before_key",
+            "text": "Apply the feasibility predicate relative to the current state before optimizing the local key.",
+            "explanation": "The greedy choice is defined over legal candidates only."
+          },
+          {
+            "id": "key_over_all",
+            "text": "The best key should be selected globally even if it violates the current partial solution.",
+            "explanation": "An infeasible choice cannot be part of the output."
+          },
+          {
+            "id": "reset_state",
+            "text": "Reset prior choices whenever a better key appears so feasibility no longer restricts selection.",
+            "explanation": "Resetting changes the optimization problem."
+          },
+          {
+            "id": "ignore_conflict",
+            "text": "Conflicts can be repaired after all choices are made without changing the objective.",
+            "explanation": "Repair may remove choices or lower value."
+          }
+        ],
+        "acceptedOptionIds": [
+          "filter_before_key"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Feasibility is a stage of the local rule, not a postprocessing concern.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The current partial solution defines which candidates are legal. Optimizing over illegal items can produce a locally attractive but invalid schedule or set."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "key_over_all": "An infeasible choice cannot be part of the output.",
+          "reset_state": "Resetting changes the optimization problem.",
+          "ignore_conflict": "Repair may remove choices or lower value."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {
+      "id": "alg-greedy-intro-gmr-014_proof_scope",
+      "prompt": "A greedy proof is valid for unit-weight intervals, but the implementation is reused for weighted intervals without review. What should change?",
+      "constraints": [
+        "The feasibility relation is unchanged.",
+        "The objective weights now differ."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reprove_weighted",
+            "text": "Recheck the exchange under total weight; preserving interval count is not enough when replacing a choice can change reward.",
+            "explanation": "The old theorem's objective premise changed."
+          },
+          {
+            "id": "reuse_proof",
+            "text": "Keep the proof because the interval boundaries and sorting are identical.",
+            "explanation": "Identical geometry does not preserve the objective exchange."
+          },
+          {
+            "id": "use_shortest",
+            "text": "Choose the shortest weighted interval because it leaves capacity.",
+            "explanation": "Capacity alone does not maximize total weight."
+          },
+          {
+            "id": "ignore_weights",
+            "text": "Compute the unweighted schedule and attach the weights only to the final result.",
+            "explanation": "The selected set depends on the weighted objective."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reprove_weighted"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The scope of a proof is defined by its objective and constraints, not by surface data fields.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Weighted interval scheduling can require dynamic programming or another state that compares compatible combinations. Reusing an unweighted greedy proof hides the changed value relation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "reuse_proof": "Identical geometry does not preserve the objective exchange.",
+          "use_shortest": "Capacity alone does not maximize total weight.",
+          "ignore_weights": "The selected set depends on the weighted objective."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_unsupported_greedy_reasoning",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection",
+        "patternVariantId": "greedy_with_heap",
+        "problemArchetypeId": "schedule_by_deadline"
+      }
+    },
+    {"id":"alg-greedy-intro-015-diagnose-failure","prompt":"A greedy solution fails one legal test. What should be checked first?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"invariant_rule","text":"Check the stated invariant, local rule, and proof obligation against the failing input."},{"id":"random_tie","text":"Change tie-breaking before understanding the failure."},{"id":"new_structure","text":"Replace the data structure without checking the rule."},{"id":"hide_case","text":"Exclude the input from the accepted domain."}],"acceptedOptionIds":["invariant_rule"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"A failing test can expose either an unsafe rule or an implementation defect.","details":{"blocks":[{"type":"paragraph","text":"Restate what the algorithm claims after each choice and compare that claim with the counterexample. This separates a proof failure from a coding failure."}]},"wrongOptionExplanationsByOptionId":{"random_tie":"This option does not establish a safe local choice for the stated objective.","new_structure":"This option does not establish a safe local choice for the stated objective.","hide_case":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"diagnose_unsupported_greedy_reasoning","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"greedy_with_heap","problemArchetypeId":"schedule_by_deadline"}},
+    {"id":"alg-greedy-intro-016-deadline-confusion","prompt":"Why can sorting jobs by deadline alone fail when each job has a different reward and a deadline?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"reward_selection","text":"Feasibility order does not by itself decide which rewards should be retained."},{"id":"deadline_complete","text":"Earliest deadlines always maximize total reward."},{"id":"duration_irrelevant","text":"Job duration never affects scheduling feasibility."},{"id":"heap_unneeded","text":"A heap cannot represent reward tradeoffs."}],"acceptedOptionIds":["reward_selection"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Deadline feasibility and reward selection are separate obligations.","details":{"blocks":[{"type":"paragraph","text":"A schedule can meet early deadlines while sacrificing a valuable job. The algorithm needs a proven selection rule, often involving a priority structure or a different objective formulation."}]},"wrongOptionExplanationsByOptionId":{"deadline_complete":"This option does not establish a safe local choice for the stated objective.","duration_irrelevant":"This option does not establish a safe local choice for the stated objective.","heap_unneeded":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"diagnose_unsupported_greedy_reasoning","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"greedy_with_heap","problemArchetypeId":"schedule_by_deadline"}},
+    {"id":"alg-greedy-intro-017-stale-choice","prompt":"What implementation risk appears when a greedy priority queue is not updated after the state changes?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"stale_frontier","text":"The queue may return an item whose key is no longer valid for the current feasible state."},{"id":"more_optimal","text":"Stale entries always improve optimality."},{"id":"no_effect","text":"Keys remain valid regardless of accepted choices."},{"id":"sort_once","text":"One initial sort removes every future state dependency."}],"acceptedOptionIds":["stale_frontier"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"A priority key is meaningful only for the state from which it was computed.","details":{"blocks":[{"type":"paragraph","text":"After accepting or removing items, eligibility and effective cost can change. The implementation must refresh, invalidate, or lazily validate queued entries."}]},"wrongOptionExplanationsByOptionId":{"more_optimal":"This option does not establish a safe local choice for the stated objective.","no_effect":"This option does not establish a safe local choice for the stated objective.","sort_once":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"diagnose_unsupported_greedy_reasoning","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"greedy_with_heap","problemArchetypeId":"schedule_by_deadline"}},
+    {"id":"alg-greedy-intro-018-tie-not-root","prompt":"Why should a tie-breaking change not be treated as the universal fix for a greedy failure?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"distinct_counterexample","text":"A counterexample with distinct local keys shows the rule itself is unsafe."},{"id":"tie_always","text":"Every greedy failure is caused by equal keys."},{"id":"syntax_fix","text":"Tie handling repairs syntax errors."},{"id":"proof_optional","text":"A working tie-breaker makes proof unnecessary."}],"acceptedOptionIds":["distinct_counterexample"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Many failures arise from the choice property, not from equal-key order.","details":{"blocks":[{"type":"paragraph","text":"Tie handling can make output deterministic or resolve an equivalent choice, but it cannot prove a local rule safe on inputs where all keys differ."}]},"wrongOptionExplanationsByOptionId":{"tie_always":"This option does not establish a safe local choice for the stated objective.","syntax_fix":"This option does not establish a safe local choice for the stated objective.","proof_optional":"This option does not establish a safe local choice for the stated objective."}},"taxonomy":{"primarySkillAtomId":"diagnose_unsupported_greedy_reasoning","secondarySkillAtomIds":[],"learningStage":"strategy_selection","patternVariantId":"greedy_with_heap","problemArchetypeId":"schedule_by_deadline"}}
   ],
   "modeStructures": {
     "recognitionSets": [],

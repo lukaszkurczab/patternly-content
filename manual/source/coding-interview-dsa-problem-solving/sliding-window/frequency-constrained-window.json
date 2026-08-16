@@ -338,6 +338,583 @@
         "patternVariantId": "frequency_constraint",
         "problemArchetypeId": "longest_valid_window"
       }
+    },
+    {
+      "id": "alg-sw-frequency-zero-distinct-boundary",
+      "prompt": "A task asks for the longest non-empty contiguous range containing at most K distinct values. What must the algorithm return when K = 0?",
+      "constraints": [
+        "The answer must be a non-empty range.",
+        "Every input value belongs to some value category.",
+        "K = 0 is allowed by the input contract."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "zero_no_nonempty",
+            "text": "Return length 0: no non-empty range can contain at most zero distinct values."
+          },
+          {
+            "id": "one_any_value",
+            "text": "Return length 1 because a singleton contains only one distinct value."
+          },
+          {
+            "id": "whole_input",
+            "text": "Return the full input because the distinct limit disables shrinking."
+          },
+          {
+            "id": "reject_k",
+            "text": "Reject K as invalid because a frequency window requires K to be positive."
+          }
+        ],
+        "acceptedOptionIds": [
+          "zero_no_nonempty"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Every non-empty range contains at least one distinct value, so the at-most-zero contract has no legal non-empty candidate.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The empty range has zero distinct values, but the output contract explicitly requires a non-empty range. As soon as any value enters the window, distinctCount becomes 1 and the repair removes that value again, leaving no non-empty valid state. A singleton therefore violates the limit, and K=0 is valid input rather than an error under the stated contract. The implementation should expose the no-candidate result instead of silently changing the objective to allow an empty answer."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "one_any_value": "A singleton has one distinct value, which exceeds K=0.",
+          "whole_input": "The whole input is non-empty and therefore contains at least one distinct value; the limit does not disable repair.",
+          "reject_k": "The stated contract permits K=0, so rejecting it changes the input domain rather than solving the boundary case."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "at_most_k_window",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-per-value-cap",
+      "prompt": "A window must contain no value more than M times. Adding the rightmost value x makes freq[x] = M + 1. Which repair preserves the longest valid window?",
+      "constraints": [
+        "The frequency cap applies separately to every value.",
+        "The objective is maximum window length.",
+        "M is a positive integer."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shrink_until_x_cap",
+            "text": "Remove from the left while freq[x] > M, decrementing each outgoing value's count."
+          },
+          {
+            "id": "remove_only_x",
+            "text": "Delete every x from the window immediately, regardless of the values before the earlier x."
+          },
+          {
+            "id": "shrink_once_any",
+            "text": "Remove exactly one leftmost value because one new value caused the violation."
+          },
+          {
+            "id": "clear_frequency_state",
+            "text": "Clear the map and restart after every value whose count exceeds M."
+          }
+        ],
+        "acceptedOptionIds": [
+          "shrink_until_x_cap"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The window becomes valid when enough leftmost occurrences leave for the incoming value's count to return to M or below.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The constraint is per value, not a distinct-value count. The earlier copies of x may be separated by other values, so one arbitrary removal may leave freq[x] above M. Moving left while the violated count exceeds M removes only the necessary prefix and preserves the longest valid suffix ending at the current right boundary. Every outgoing value must update the map because it may be a different category whose count matters to later repairs."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "remove_only_x": "The window boundary removes a prefix in encounter order; it cannot delete an interior x without also discarding preceding values.",
+          "shrink_once_any": "The outgoing value may not be the earlier x, so the violation can remain after one removal.",
+          "clear_frequency_state": "A full reset discards a valid suffix and is not justified by a local frequency violation."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-required-types-removal-order",
+      "prompt": "A window must contain at least one occurrence of every required type in a set R. The leftmost outgoing value is y, and y is required. Order the state updates when y leaves.",
+      "constraints": [
+        "coveredCount records how many required types currently have positive frequency.",
+        "The left boundary still points to y before the removal begins.",
+        "The window is allowed to remain temporarily incomplete while the right boundary later expands."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "decrement_y_frequency",
+            "text": "Decrement freq[y]."
+          },
+          {
+            "id": "decrement_covered_if_zero",
+            "text": "If y is required and freq[y] becomes 0, decrement coveredCount."
+          },
+          {
+            "id": "advance_left_required_type",
+            "text": "Advance left beyond the outgoing position."
+          }
+        ],
+        "canonicalOrder": [
+          "decrement_y_frequency",
+          "decrement_covered_if_zero",
+          "advance_left_required_type"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Coverage changes only when the outgoing required type loses its last occurrence, and the boundary must then advance to match the updated state.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The frequency map distinguishes one remaining copy from complete absence. Decrementing coveredCount for every outgoing required value would mark the window incomplete while another copy is still inside it. Read y while left still identifies the outgoing position, update its multiplicity, apply the zero-crossing rule, and only then advance the boundary."
+            },
+            {
+              "type": "callout",
+              "kind": "common_mistake",
+              "title": "Coverage is a zero-crossing summary",
+              "text": "The required type stops being covered on a 1→0 transition, not on every removal."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-last-seen-jump",
+      "prompt": "For the longest substring with no repeated character, the incoming character x was last seen at index p inside the current window. Which left-boundary update is safe?",
+      "constraints": [
+        "lastSeen[x] stores the most recent index of x.",
+        "left is the first index of the current candidate window.",
+        "The current window must contain no repeated character."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "jump_after_duplicate",
+            "text": "Set left = max(left, p + 1), then record lastSeen[x] as the incoming index."
+          },
+          {
+            "id": "jump_to_p",
+            "text": "Set left = p so the previous copy remains outside the next comparison."
+          },
+          {
+            "id": "always_increment_one",
+            "text": "Increment left once because one duplicate occurrence caused the violation."
+          },
+          {
+            "id": "reset_zero",
+            "text": "Reset left to zero because a repeated character invalidates the whole prefix."
+          }
+        ],
+        "acceptedOptionIds": [
+          "jump_after_duplicate"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The previous copy must be excluded, but left must never move backward when the stored occurrence is already outside the current window.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If p is inside the current window, the next valid start is p+1. If p is before left, the current window has no duplicate caused by that stored occurrence, so moving left backward would reintroduce invalid characters and lose a longer suffix. The max operation preserves monotone boundary movement. Recording the incoming position after choosing the new boundary keeps lastSeen synchronized."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "jump_to_p": "The previous copy remains at index p inside the candidate, so the resulting window is still invalid.",
+          "always_increment_one": "The earlier copy may be far from the left boundary; one removal does not necessarily exclude it.",
+          "reset_zero": "Only the prefix through the prior occurrence is known to be unusable; resetting discards valid suffixes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-map-linear-complexity",
+      "prompt": "A longest-window algorithm uses a frequency map, expected O(1) map operations, and left and right boundaries that each move only forward. What are the expected time and auxiliary-space complexities for n input values and a window limit K?",
+      "constraints": [
+        "The map stores only values currently present in the window.",
+        "At most K+1 keys exist during a transient at-most-K violation.",
+        "Each value is added once and removed at most once."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": [
+          "time",
+          "auxiliary_space"
+        ],
+        "availableValuesByDimension": {
+          "time": [
+            "O(1)",
+            "O(log n)",
+            "O(n)",
+            "O(nK)"
+          ],
+          "auxiliary_space": [
+            "O(1)",
+            "O(K)",
+            "O(n)",
+            "O(nK)"
+          ]
+        },
+        "acceptedValuesByDimension": {
+          "time": [
+            "O(n)"
+          ],
+          "auxiliary_space": [
+            "O(K)"
+          ]
+        },
+        "normalizedAliasesByDimension": {
+          "time": {
+            "amortized_boundary_scan": "O(n)"
+          },
+          "auxiliary_space": {
+            "frequency_keys": "O(K)"
+          }
+        },
+        "maxPoints": 2
+      },
+      "scoringContract": {
+        "type": "complexity",
+        "maxPoints": 2
+      },
+      "feedback": {
+        "reason": "Each boundary crosses the input at most once, while the frequency map stores only the active keys permitted by the constraint.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The right boundary performs n additions. Across all repairs, left performs at most n removals, so expected O(1) map work per event gives O(n) total time. The active map has at most K+1 keys during the transient violation described by the contract, hence O(K) auxiliary space. If the input alphabet were fixed, O(K) could simplify to O(1), but K remains explicit here."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-11-decrement-zero",
+      "prompt": "When the left pointer removes the last occurrence of a symbol from a frequency-constrained window, what state update is required?",
+      "constraints": [
+        "The constraint counts distinct symbols.",
+        "The window may become valid after the removal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "delete_and_decrement_distinct",
+            "text": "Decrement the symbol count and remove its key or decrement distinctCount when the count reaches zero.",
+            "explanation": "Distinctness tracks keys with positive frequency."
+          },
+          {
+            "id": "decrement_only",
+            "text": "Decrement the count but leave distinctCount unchanged forever.",
+            "explanation": "The number of present symbols then becomes stale."
+          },
+          {
+            "id": "delete_on_first",
+            "text": "Delete the key whenever any occurrence leaves, even if another remains.",
+            "explanation": "The symbol is still present while its count is positive."
+          },
+          {
+            "id": "increment_distinct",
+            "text": "Increase distinctCount because a pointer moved left.",
+            "explanation": "Removing the last occurrence decreases the number of distinct symbols."
+          }
+        ],
+        "acceptedOptionIds": [
+          "delete_and_decrement_distinct"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Frequency and distinct-count state must stay synchronized at the zero boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A key contributes one distinct symbol while its count is positive. Only the transition from one to zero removes that contribution; removing an earlier duplicate does not."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "decrement_only": "The number of present symbols then becomes stale.",
+          "delete_on_first": "The symbol is still present while its count is positive.",
+          "increment_distinct": "Removing the last occurrence decreases the number of distinct symbols."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-12-last-seen",
+      "prompt": "For a longest substring with no repeated symbols, why can last-seen indices jump the left pointer?",
+      "constraints": [
+        "The left pointer never moves backward.",
+        "Each symbol's last occurrence is stored."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "jump_max_last_plus_one",
+            "text": "Set left to max(left, lastSeen[ch]+1) when ch repeats, skipping positions that would include the previous occurrence.",
+            "explanation": "The max prevents a stale occurrence from moving left backward."
+          },
+          {
+            "id": "reset_zero",
+            "text": "Reset left to zero whenever a duplicate appears so every prefix is reconsidered.",
+            "explanation": "Resetting causes rescans and loses the current valid suffix."
+          },
+          {
+            "id": "increment_one",
+            "text": "Move left by one for every duplicate, regardless of the previous index.",
+            "explanation": "A distant previous occurrence may require a larger jump."
+          },
+          {
+            "id": "delete_right",
+            "text": "Delete the repeated character from the right end instead of moving left.",
+            "explanation": "The right pointer represents the new input and should not be discarded."
+          }
+        ],
+        "acceptedOptionIds": [
+          "jump_max_last_plus_one"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Last-seen state lets the algorithm jump directly beyond the offending previous occurrence.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The max with the current left boundary is essential: an older occurrence before the current window is irrelevant. Each left and right index still advances monotonically, giving linear time."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "reset_zero": "Resetting causes rescans and loses the current valid suffix.",
+          "increment_one": "A distant previous occurrence may require a larger jump.",
+          "delete_right": "The right pointer represents the new input and should not be discarded."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-13-per_symbol_cap",
+      "prompt": "A window constraint allows each symbol at most c occurrences. What event makes the window invalid?",
+      "constraints": [
+        "Counts are maintained for the current contiguous window.",
+        "c is a nonnegative integer."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "count_exceeds_c",
+            "text": "The window is invalid exactly when some symbol's count becomes greater than c after the right-side addition.",
+            "explanation": "The local cap is violated at that count transition."
+          },
+          {
+            "id": "count_equals_c",
+            "text": "The window becomes invalid as soon as any count equals c.",
+            "explanation": "A cap of c permits exactly c occurrences."
+          },
+          {
+            "id": "distinct_exceeds_c",
+            "text": "Only the number of distinct symbols matters, not each symbol's frequency.",
+            "explanation": "A per-symbol cap is different from a distinct-count cap."
+          },
+          {
+            "id": "left_equals_right",
+            "text": "Any nonempty window is invalid because its endpoints differ.",
+            "explanation": "Endpoint distance is unrelated to the occurrence cap."
+          }
+        ],
+        "acceptedOptionIds": [
+          "count_exceeds_c"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Per-symbol caps require inspecting the count of the symbol just added and shrinking until every count is within its own bound.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A distinct-count rule tracks keys; a cap rule tracks each value's multiplicity. The violation is strict excess over c, and removing from the left repairs it monotonically."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "count_equals_c": "A cap of c permits exactly c occurrences.",
+          "distinct_exceeds_c": "A per-symbol cap is different from a distinct-count cap.",
+          "left_equals_right": "Endpoint distance is unrelated to the occurrence cap."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
+    },
+    {
+      "id": "alg-sw-frequency-14-map_cost",
+      "prompt": "What complexity assumption is needed when claiming a frequency-map sliding window is O(n)?",
+      "constraints": [
+        "The input has n positions.",
+        "The implementation uses a map keyed by symbols."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "amortized_map_ops",
+            "text": "Each map update and lookup is expected O(1) or otherwise bounded by the symbol domain, and each pointer advances at most n times.",
+            "explanation": "Both state-operation cost and pointer amortization support the claim."
+          },
+          {
+            "id": "map_free",
+            "text": "Map operations are free because they are not part of pointer movement.",
+            "explanation": "State maintenance is real work."
+          },
+          {
+            "id": "sort_map",
+            "text": "The map must be sorted after every update to guarantee linear time.",
+            "explanation": "Sorting would add unnecessary cost."
+          },
+          {
+            "id": "quadratic_shrink",
+            "text": "The inner shrink loop makes the algorithm O(n^2) automatically.",
+            "explanation": "Monotone left movement makes total shrink operations O(n)."
+          }
+        ],
+        "acceptedOptionIds": [
+          "amortized_map_ops"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The linear claim combines amortized pointer movement with the cost model for map operations.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Right and left each advance at most n times. If map operations are expected constant time, total state work is linear; a different map model or costly key comparison must be included in the analysis."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "map_free": "State maintenance is real work.",
+          "sort_map": "Sorting would add unnecessary cost.",
+          "quadratic_shrink": "Monotone left movement makes total shrink operations O(n)."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "maintain_frequency_constrained_window",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "frequency_constraint",
+        "problemArchetypeId": "longest_valid_window"
+      }
     }
   ],
   "modeStructures": {

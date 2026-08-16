@@ -436,6 +436,322 @@
         "BFS enqueues each non-null node once.",
         "The complete tree's last level contains a constant fraction of all nodes."
       ]
+    },
+    {
+      "id": "alg-tree-choice-complete-level-output",
+      "prompt": "The output must list tree values level by level from the root, preserving left-to-right order within each level. Which traversal is the direct fit?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "bfs_queue", "text": "BFS with a queue, processing the current frontier before the next level."},
+        {"id": "dfs_inorder", "text": "Inorder DFS, because it visits every node in sorted structural order."},
+        {"id": "dfs_postorder", "text": "Postorder DFS, because children must be seen before parents."},
+        {"id": "sort_values", "text": "Collect all values and sort them, because depth is a value property."}
+      ], "acceptedOptionIds": ["bfs_queue"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "BFS frontier order directly matches level-order output and preserves each queue layer's left-to-right sequence.", "details": {"blocks": [{"type": "paragraph", "text": "A queue holds the next level while the current level is processed. DFS can produce level order with extra depth bookkeeping, but it is not the direct state match. Value sorting destroys structural depth and left-to-right order."}]}, "wrongOptionExplanationsByOptionId": {"dfs_inorder": "Inorder follows left subtree, node, right subtree rather than depth layers.", "dfs_postorder": "Postorder prioritizes child completion, not level order.", "sort_values": "Node values need not encode depth or structural order."}},
+      "taxonomy": {"primarySkillAtomId": "choose_tree_traversal_order", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bfs_level_order", "problemArchetypeId": "level_order_processing"}
+    },
+    {
+      "id": "alg-tree-choice-preorder-copy",
+      "prompt": "A tree clone must create each node before recursively cloning its children and attach the cloned children to it. Which traversal order matches the dependency?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "preorder_create_first", "text": "Preorder: create/copy the current node, then process left and right children."},
+        {"id": "postorder_create_first", "text": "Postorder: process both children first, then create the parent."},
+        {"id": "inorder_only", "text": "Inorder is required because cloning is a binary-search property."},
+        {"id": "level_sort", "text": "Sort nodes by value before allocating clones."}
+      ], "acceptedOptionIds": ["preorder_create_first"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The parent object must exist before child references can be attached, which is a preorder construction dependency.", "details": {"blocks": [{"type": "paragraph", "text": "The clone helper returns null for null, allocates a copy for a non-null node, recursively assigns cloned left and right children, and returns the parent. Postorder is a natural fit for aggregating child results, not for a contract that creates the parent first."}]}, "wrongOptionExplanationsByOptionId": {"postorder_create_first": "Postorder creates or returns parent information after children, opposite to the stated creation dependency.", "inorder_only": "Cloning does not require BST ordering.", "level_sort": "Values do not determine clone structure or pointer relationships."}},
+      "taxonomy": {"primarySkillAtomId": "choose_tree_traversal_order", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_preorder", "problemArchetypeId": "traverse_tree"}
+    },
+    {
+      "id": "alg-tree-choice-postorder-early-failure",
+      "prompt": "A property is valid only if both child summaries are valid and a local relation holds. Which optimization can postorder use safely?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "short_circuit_invalid", "text": "Return an invalid summary as soon as a child is invalid, provided no required global witness is lost."},
+        {"id": "skip_child", "text": "Inspect only the left child because the parent relation determines the right child."},
+        {"id": "record_before_children", "text": "Score the parent before child summaries because postorder does not need them."},
+        {"id": "sort_children", "text": "Sort child values before deciding validity."}
+      ], "acceptedOptionIds": ["short_circuit_invalid"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Postorder receives child summaries before combining them, so a decisive invalid child can stop work when the output contract permits.", "details": {"blocks": [{"type": "paragraph", "text": "The parent cannot be valid if a required child property already fails. Early return is safe only when the task does not require collecting all violations or another witness from the remaining subtree. Skipping a child without such a contract loses evidence."}]}, "wrongOptionExplanationsByOptionId": {"skip_child": "Both child summaries are part of the stated parent predicate.", "record_before_children": "The parent relation cannot be evaluated until its child results exist.", "sort_children": "Sorting is not part of a structural subtree-summary contract."}},
+      "taxonomy": {"primarySkillAtomId": "choose_tree_traversal_order", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_postorder", "problemArchetypeId": "compute_subtree_property"}
+    },
+    {
+      "id": "alg-tree-choice-space-boundary",
+      "prompt": "Which tree shape creates the largest recursive DFS call stack and the largest BFS frontier, respectively?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "chain_then_wide", "text": "A skewed chain for DFS depth and a broad near-complete tree for BFS frontier."},
+        {"id": "wide_then_chain", "text": "A broad tree for DFS depth and a chain for BFS frontier."},
+        {"id": "both_balanced", "text": "Only balanced trees can maximize either auxiliary structure."},
+        {"id": "values_determine", "text": "The largest value determines both space bounds."}
+      ], "acceptedOptionIds": ["chain_then_wide"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Recursive DFS space follows height, while BFS queue space follows maximum width.", "details": {"blocks": [{"type": "paragraph", "text": "A chain has height Θ(n), so recursive DFS can hold Θ(n) frames. A complete balanced tree has a widest level of Θ(n), so BFS can hold Θ(n) nodes at once. On a balanced tree DFS is O(log n) stack, while on a chain BFS may be O(1) frontier."}]}, "wrongOptionExplanationsByOptionId": {"wide_then_chain": "The shapes are reversed for the two storage measures.", "both_balanced": "Height and width are different structural quantities.", "values_determine": "Auxiliary traversal space depends on shape, not node values."}},
+      "taxonomy": {"primarySkillAtomId": "choose_tree_traversal_order", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "bfs_level_order", "problemArchetypeId": "traverse_tree"}
+    },
+    {
+      "id": "alg-tree-choice-11_level_output",
+      "prompt": "Which traversal is the direct fit when the output must be grouped by tree depth?",
+      "constraints": [
+        "The output contains one collection per depth.",
+        "The tree may be wide."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "bfs_levels",
+            "text": "Use BFS with a queue and a level-size boundary so nodes at each depth are emitted together.",
+            "explanation": "FIFO frontier order exposes complete depth layers."
+          },
+          {
+            "id": "inorder",
+            "text": "Use inorder because it visits every node exactly once.",
+            "explanation": "Visit count alone does not group by depth."
+          },
+          {
+            "id": "preorder_global",
+            "text": "Use preorder and append all nodes to one list, then infer levels from values.",
+            "explanation": "Values do not encode depth."
+          },
+          {
+            "id": "sort_values",
+            "text": "Sort node values into levels after traversal.",
+            "explanation": "Level is structural, not value-based."
+          }
+        ],
+        "acceptedOptionIds": [
+          "bfs_levels"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Traversal order should be selected from the output geometry and required state.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "BFS's frontier is exactly one depth at a time when the queue size is captured. DFS can compute depth-tagged results too, but it needs explicit depth state and grouping."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "inorder": "Visit count alone does not group by depth.",
+          "preorder_global": "Values do not encode depth.",
+          "sort_values": "Level is structural, not value-based."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-choice-12_postorder",
+      "prompt": "Which output dependency most strongly favors postorder over preorder?",
+      "constraints": [
+        "A parent result depends on both child results.",
+        "The parent should be emitted only after its children are complete."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "children_before_parent",
+            "text": "Use postorder because each child summary is available before computing or emitting the parent summary.",
+            "explanation": "Traversal order matches the dependency direction."
+          },
+          {
+            "id": "parent_before_child",
+            "text": "Use preorder because child values are needed to decide the parent.",
+            "explanation": "Preorder emits before child computation."
+          },
+          {
+            "id": "level_grouping",
+            "text": "Use postorder because it always groups nodes by depth.",
+            "explanation": "BFS provides level grouping."
+          },
+          {
+            "id": "sorted_keys",
+            "text": "Use postorder because it sorts every binary tree.",
+            "explanation": "Postorder does not imply key ordering."
+          }
+        ],
+        "acceptedOptionIds": [
+          "children_before_parent"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Choose postorder when the recurrence is bottom-up.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Height, subtree validity, expression evaluation, and deletion all need child work first. Preorder can still solve some tasks with extra state, but postorder is the direct contract match."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "parent_before_child": "Preorder emits before child computation.",
+          "level_grouping": "BFS provides level grouping.",
+          "sorted_keys": "Postorder does not imply key ordering."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-choice-13_dfs_space",
+      "prompt": "When is DFS often preferable to BFS for a very deep but narrow tree under a memory limit?",
+      "constraints": [
+        "The tree has height h close to n.",
+        "The maximum width is small."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "width_vs_depth",
+            "text": "A stack or recursion path may use O(h), while BFS also tracks the frontier; choose based on whether depth or width is the limiting resource and the recursion stack is acceptable.",
+            "explanation": "Traversal space depends on shape and implementation."
+          },
+          {
+            "id": "bfs_always_small",
+            "text": "BFS always uses less memory because it visits fewer nodes at a time.",
+            "explanation": "A wide frontier can dominate BFS memory."
+          },
+          {
+            "id": "dfs_constant",
+            "text": "DFS always uses O(1) space regardless of tree height.",
+            "explanation": "The path stack can be O(h)."
+          },
+          {
+            "id": "value_based",
+            "text": "Choose based only on the root value because shape does not affect memory.",
+            "explanation": "Tree shape determines frontier and path sizes."
+          }
+        ],
+        "acceptedOptionIds": [
+          "width_vs_depth"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Traversal choice includes both output dependency and resource shape.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "BFS peaks at width; DFS peaks at depth (or explicit stack size). A deep narrow tree can make DFS's O(h) large, so the actual bound and iterative/recursive representation must be checked rather than using a blanket rule."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_always_small": "A wide frontier can dominate BFS memory.",
+          "dfs_constant": "The path stack can be O(h).",
+          "value_based": "Tree shape determines frontier and path sizes."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-choice-14_iterative",
+      "prompt": "Why might an iterative traversal be required even when the recursive traversal is conceptually simpler?",
+      "constraints": [
+        "The tree can be skewed to height n.",
+        "The runtime stack has a bounded or small limit."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "explicit_stack_control",
+            "text": "Use an explicit stack or queue so memory and overflow behavior are controlled by the algorithm rather than an unbounded call stack.",
+            "explanation": "The traversal semantics can be preserved with explicit state."
+          },
+          {
+            "id": "recursion_faster",
+            "text": "Recursion is always faster because function calls are optimized by every runtime.",
+            "explanation": "Call overhead and stack limits vary."
+          },
+          {
+            "id": "no_state",
+            "text": "Iterative traversal needs no memory because it removes recursion.",
+            "explanation": "The pending frontier still needs storage."
+          },
+          {
+            "id": "sort_tree",
+            "text": "Sorting the tree avoids deep calls and is the canonical iterative replacement.",
+            "explanation": "Sorting is not a tree traversal replacement."
+          }
+        ],
+        "acceptedOptionIds": [
+          "explicit_stack_control"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Recursion is an implementation choice with stack-risk implications.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "An explicit stack makes pending nodes visible and can enforce the same preorder/inorder/postorder contract. Report its peak size; removing the call stack does not remove traversal state."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "recursion_faster": "Call overhead and stack limits vary.",
+          "no_state": "The pending frontier still needs storage.",
+          "sort_tree": "Sorting is not a tree traversal replacement."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_tree_traversal_order",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "bfs_level_order",
+        "problemArchetypeId": "traverse_tree"
+      }
     }
   ],
   "modeStructures": {

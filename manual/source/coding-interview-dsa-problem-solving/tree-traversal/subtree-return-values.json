@@ -387,6 +387,322 @@
         "The tree is a single chain.",
         "Every subtree array is conceptually required by this helper."
       ]
+    },
+    {
+      "id": "alg-tree-subtree-size-null-identity",
+      "prompt": "A helper returns subtree size and uses size(node)=1+size(left)+size(right) for non-null nodes. What should size(null) be?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "zero_nodes", "text": "0, because an empty subtree contains no nodes."},
+        {"id": "one_node", "text": "1, because the null child is reached from one parent edge."},
+        {"id": "negative_one", "text": "-1, to cancel the parent node from the sum."},
+        {"id": "error_always", "text": "Throw unconditionally because every recursive call must receive a node."}
+      ], "acceptedOptionIds": ["zero_nodes"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The null subtree is the additive identity for counting nodes.", "details": {"blocks": [{"type": "paragraph", "text": "A leaf contributes 1+0+0=1. Returning one for null overcounts every missing child, while negative one has no subtree-count meaning. The base case makes each parent call independently composable."}]}, "wrongOptionExplanationsByOptionId": {"one_node": "Null contains no node; the edge is not a node in the subtree.", "negative_one": "Counting an empty set uses zero, not a cancellation value.", "error_always": "Null is a normal recursive base case for a tree helper."}},
+      "taxonomy": {"primarySkillAtomId": "derive_parent_result_from_subtrees", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "compute_subtree_property"}
+    },
+    {
+      "id": "alg-tree-subtree-bst-boundary-duplicates",
+      "prompt": "A BST validator receives a duplicate value equal to the current node. Which rule must be applied consistently?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "explicit_duplicate_policy", "text": "Use the tree's declared duplicate policy—strictly left/right or an allowed side—and encode it in the child-boundary checks."},
+        {"id": "duplicates_always_valid", "text": "Accept duplicates anywhere because ordering is only approximate."},
+        {"id": "duplicates_always_invalid", "text": "Reject every duplicate even when the contract permits equal values on one side."},
+        {"id": "compare_subtree_size", "text": "Use subtree sizes instead of value ordering to decide duplicate placement."}
+      ], "acceptedOptionIds": ["explicit_duplicate_policy"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "BST validity depends on a precise ordering contract, including where equality is permitted.", "details": {"blocks": [{"type": "paragraph", "text": "A summary such as min/max must carry bounds or equality semantics to the parent. If duplicates are forbidden, equality fails; if duplicates belong consistently on one side, the corresponding bound is inclusive there and exclusive on the other. Size does not establish ordering."}]}, "wrongOptionExplanationsByOptionId": {"duplicates_always_valid": "Unrestricted equality can violate the declared BST invariant.", "duplicates_always_invalid": "Some BST contracts explicitly allow equal keys on one chosen side.", "compare_subtree_size": "Node counts do not determine value ordering."}},
+      "taxonomy": {"primarySkillAtomId": "derive_parent_result_from_subtrees", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "validate_tree_property"}
+    },
+    {
+      "id": "alg-tree-subtree-diameter-null-height",
+      "prompt": "A diameter helper returns both height in edges and the best diameter in a subtree. Which null summary is compatible with path-through-node calculations?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "height_minus_one_diameter_zero", "text": "Return height -1 and diameter 0 for null, so a leaf has height 0 and no negative path length is introduced."},
+        {"id": "height_zero_diameter_one", "text": "Return height 0 and diameter 1 because null contributes one edge to a leaf."},
+        {"id": "height_one_diameter_zero", "text": "Return height 1 and diameter 0, then subtract one only at the root."},
+        {"id": "null_unreachable", "text": "Skip null children and let the parent infer both values from one child."}
+      ], "acceptedOptionIds": ["height_minus_one_diameter_zero"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Edge-based height makes a leaf's path height 0, while an empty subtree's best diameter is 0.", "details": {"blocks": [{"type": "paragraph", "text": "For a node, path-through length is left.height + right.height + 2. With null height -1, a leaf gets -1+-1+2=0. The parent also compares child diameters, so the summary must carry both local path-through information and the best internal result."}]}, "wrongOptionExplanationsByOptionId": {"height_zero_diameter_one": "It makes a leaf path length two and assigns an edge to an absent child.", "height_one_diameter_zero": "The height convention then overcounts every non-null path.", "null_unreachable": "Both child summaries are needed to evaluate a node uniformly."}},
+      "taxonomy": {"primarySkillAtomId": "derive_parent_result_from_subtrees", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "compute_subtree_property"}
+    },
+    {
+      "id": "alg-tree-subtree-summary-sufficiency",
+      "prompt": "A parent property depends only on each child's height and whether that child subtree already contains a violation. What should the helper return?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "minimal_summary", "text": "Return a compact summary containing exactly the height and violation flag needed by the parent."},
+        {"id": "entire_subtree", "text": "Return every node because a parent can never combine summaries safely."},
+        {"id": "height_only", "text": "Return only height and discard violation information because the parent can rediscover it."},
+        {"id": "global_mutable_flag", "text": "Return nothing and rely on one traversal-wide mutable flag for all parent decisions."}
+      ], "acceptedOptionIds": ["minimal_summary"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A recursive contract should expose all and only the information required to combine a child result at its parent.", "details": {"blocks": [{"type": "paragraph", "text": "The summary is a sufficient interface: the parent can compute its own property without inspecting child internals. Returning full arrays wastes time and space, while omitting a future-relevant flag forces unsafe rediscovery or global mutable coupling."}]}, "wrongOptionExplanationsByOptionId": {"entire_subtree": "Full structure is unnecessary when the parent uses only two summary fields.", "height_only": "The parent would lose whether a child already violates the property.", "global_mutable_flag": "Shared mutable state obscures independent subtree contracts and complicates composition."}},
+      "taxonomy": {"primarySkillAtomId": "derive_parent_result_from_subtrees", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "subtree_aggregation", "problemArchetypeId": "validate_tree_property"}
+    },
+    {
+      "id": "alg-tree-subtree-11_summary",
+      "prompt": "What makes a recursive subtree return value sufficient for a parent computation?",
+      "constraints": [
+        "The parent recurrence depends on a finite summary of each child.",
+        "The summary can be combined in constant time."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "complete_summary",
+            "text": "The return value contains every child fact the parent needs and no future traversal of the child is required.",
+            "explanation": "This is the definition of a sufficient summary."
+          },
+          {
+            "id": "root_value_only",
+            "text": "The parent needs only each child's root payload for every subtree problem.",
+            "explanation": "Many recurrences require height, validity, counts, or other summaries."
+          },
+          {
+            "id": "return_all_nodes",
+            "text": "Return the entire subtree so the parent never loses information.",
+            "explanation": "That can destroy the intended time and space efficiency."
+          },
+          {
+            "id": "global_side_effect",
+            "text": "Store child results in global variables because return values cannot combine branches.",
+            "explanation": "Explicit return tuples or objects are safer and compositional."
+          }
+        ],
+        "acceptedOptionIds": [
+          "complete_summary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A subtree result is an interface between child and parent: it must be complete for the parent recurrence.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Typical summaries include height, size, validity, best path, or a tuple of these. Returning too little causes incorrect decisions; returning the whole subtree adds unnecessary work."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "root_value_only": "Many recurrences require height, validity, counts, or other summaries.",
+          "return_all_nodes": "That can destroy the intended time and space efficiency.",
+          "global_side_effect": "Explicit return tuples or objects are safer and compositional."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_parent_result_from_subtrees",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "validate_tree_property"
+      }
+    },
+    {
+      "id": "alg-tree-subtree-12_null_summary",
+      "prompt": "Why must the null-subtree summary be chosen together with the parent recurrence?",
+      "constraints": [
+        "Leaves call the helper on null children.",
+        "Different aggregates have different neutral or invalid values."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "match_recurrence",
+            "text": "The null summary must act as the correct identity or invalid state for the parent operation, so leaves and unary nodes combine correctly.",
+            "explanation": "Base cases define the algebra of the recurrence."
+          },
+          {
+            "id": "zero_universal",
+            "text": "Zero is always the correct null summary regardless of whether the task computes a minimum, maximum, or existence.",
+            "explanation": "One constant cannot represent every operation."
+          },
+          {
+            "id": "null_ignore",
+            "text": "Ignore null children and let the parent use an uninitialized local value.",
+            "explanation": "That creates undefined behavior at leaves."
+          },
+          {
+            "id": "parent_duplicate",
+            "text": "Return the parent summary for a null child to preserve depth.",
+            "explanation": "A null child has no parent subtree result."
+          }
+        ],
+        "acceptedOptionIds": [
+          "match_recurrence"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Null is not merely a pointer case; it is the base algebraic state of the recurrence.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For height, null may be -1 or 0 depending on convention; for sum it may be 0; for validity it may be true. The choice must match the combination formula and output semantics."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero_universal": "One constant cannot represent every operation.",
+          "null_ignore": "That creates undefined behavior at leaves.",
+          "parent_duplicate": "A null child has no parent subtree result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_parent_result_from_subtrees",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "validate_tree_property"
+      }
+    },
+    {
+      "id": "alg-tree-subtree-13_diameter",
+      "prompt": "Why does a tree-diameter recurrence often return height upward while updating a separate global best?",
+      "constraints": [
+        "A parent's diameter may pass through the parent.",
+        "The value needed by the parent differs from the best answer anywhere below."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "height_and_best",
+            "text": "Return the height needed to extend a path through the parent, while updating the global best with leftHeight+rightHeight+2.",
+            "explanation": "One value is an interface summary and the other is a global optimum."
+          },
+          {
+            "id": "return_diameter_only",
+            "text": "Return only the child diameter because a parent never needs child height.",
+            "explanation": "The parent needs heights to form a crossing path."
+          },
+          {
+            "id": "global_height_only",
+            "text": "Track only the maximum height; the longest path is always a single downward chain.",
+            "explanation": "A diameter can cross a node using two branches."
+          },
+          {
+            "id": "recompute_paths",
+            "text": "Enumerate every pair of leaves at each parent to avoid global state.",
+            "explanation": "That can be much slower than the linear recurrence."
+          }
+        ],
+        "acceptedOptionIds": [
+          "height_and_best"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The parent-facing interface and the global answer have different meanings.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A subtree's height is the longest downward arm that can be extended through its parent. The diameter candidate through the parent combines both child arms; the maximum over all parents is the final answer."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "return_diameter_only": "The parent needs heights to form a crossing path.",
+          "global_height_only": "A diameter can cross a node using two branches.",
+          "recompute_paths": "That can be much slower than the linear recurrence."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_parent_result_from_subtrees",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "validate_tree_property"
+      }
+    },
+    {
+      "id": "alg-tree-subtree-14_balance_summary",
+      "prompt": "What pair of values is sufficient for a parent to validate height balance in one postorder pass?",
+      "constraints": [
+        "The balance rule compares child heights.",
+        "An invalid child must invalidate the parent."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "valid_height",
+            "text": "Return either an invalid marker or the valid subtree height, so the parent can short-circuit and compare heights.",
+            "explanation": "The pair is encoded as a tagged height result."
+          },
+          {
+            "id": "value_and_depth",
+            "text": "Return the root payload and current recursion depth; child height can be inferred from those.",
+            "explanation": "Payload and global depth do not summarize subtree shape."
+          },
+          {
+            "id": "boolean_only",
+            "text": "Return only whether the child is balanced; the parent does not need its height.",
+            "explanation": "The parent must compare the two heights."
+          },
+          {
+            "id": "all_nodes",
+            "text": "Return every node to let the parent recompute height and balance.",
+            "explanation": "That increases memory and repeats work."
+          }
+        ],
+        "acceptedOptionIds": [
+          "valid_height"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "One tagged height summary carries both validity and the quantitative fact needed by the parent.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A common implementation returns -1 for invalid or a nonnegative height otherwise. Each parent performs one comparison and returns its own height, yielding linear total work."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "value_and_depth": "Payload and global depth do not summarize subtree shape.",
+          "boolean_only": "The parent must compare the two heights.",
+          "all_nodes": "That increases memory and repeats work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "derive_parent_result_from_subtrees",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "subtree_aggregation",
+        "problemArchetypeId": "validate_tree_property"
+      }
     }
   ],
   "modeStructures": {

@@ -483,7 +483,287 @@
         "patternVariantId": "connected_components",
         "problemArchetypeId": "count_components"
       }
-    }
+    },
+    {
+      "id": "alg-gt-signal-007",
+      "prompt": "A matrix uses 1 for land and 0 for water. Adjacent land cells sharing a side belong to the same island, and the task asks whether a land cell can reach another. What structure should drive recognition?",
+      "constraints": [
+        "Moves are allowed only up, down, left, and right."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "grid_graph_traversal",
+            "text": "Treat cells as graph vertices with implicit neighbor edges and traverse the reachable land cells."
+          },
+          {
+            "id": "sorted_pair_scan",
+            "text": "Sort row and column indices and use a two-sum endpoint argument."
+          },
+          {
+            "id": "prefix_only",
+            "text": "Use a prefix sum because connectivity is determined by an aggregate over a rectangle."
+          },
+          {
+            "id": "binary_search_answer",
+            "text": "Binary-search the cell value because every path has a monotone threshold."
+          }
+        ],
+        "acceptedOptionIds": [
+          "grid_graph_traversal"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The movement rule defines implicit graph edges between neighboring cells, so reachability is a graph traversal question.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A grid is a graph whose vertices are usable cells and whose edges are given by the allowed moves. BFS or DFS can mark the connected land region, while bounds checks and visited state prevent revisiting cells. The matrix representation hides the adjacency list but does not remove the graph structure."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sorted_pair_scan": "The task follows neighbor links rather than selecting two ordered values.",
+          "prefix_only": "A rectangle aggregate cannot determine whether two cells are connected through legal local moves.",
+          "binary_search_answer": "No monotone answer threshold is specified; the decisive relation is cell adjacency."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_connected_state_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "grid_graph",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-signal-008",
+      "prompt": "A directed dependency graph may contain cycles. The task asks whether a destination is reachable from a source by following directed edges. Which implementation signal is essential?",
+      "constraints": [
+        "The graph may have repeated paths and directed cycles."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "visited_reachability",
+            "text": "Traverse outgoing neighbors while marking visited vertices so cycles cannot cause unbounded revisits."
+          },
+          {
+            "id": "indegree_only",
+            "text": "Use only indegrees; reachability never needs to inspect outgoing edges from the source."
+          },
+          {
+            "id": "sort_vertices",
+            "text": "Sort vertex identifiers and compare adjacent names to infer directed paths."
+          },
+          {
+            "id": "single_parent",
+            "text": "Store exactly one parent per vertex and reject any vertex with a second incoming edge."
+          }
+        ],
+        "acceptedOptionIds": [
+          "visited_reachability"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Directed reachability is traversal over outgoing adjacency, and visited state is required when paths can merge or cycle.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Start from the source, inspect its outgoing neighbors, and mark each vertex when it is admitted to the traversal. Reaching the destination answers yes; exhausting the reachable set answers no. Indegree processing is useful for dependency ordering, not a replacement for source-directed reachability, and general graphs do not have one-parent tree structure."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "indegree_only": "Indegree does not reveal which vertices are reachable from this source or in which direction edges can be followed.",
+          "sort_vertices": "Identifier order has no relationship to directed adjacency.",
+          "single_parent": "A graph may have multiple incoming edges without being invalid; visited state handles converging paths and cycles."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_connected_state_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "adjacency_list",
+        "problemArchetypeId": "traverse_connected_state"
+      }
+    },
+    {
+      "id": "alg-gt-signal-009",
+      "prompt": "An unweighted graph asks for the minimum number of edges from source S to target T. Which recognition signal selects BFS over an arbitrary DFS traversal?",
+      "constraints": [
+        "Every edge has equal cost."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "layered_distance",
+            "text": "BFS visits vertices by nondecreasing edge distance, so the first discovery of T gives a shortest unweighted path length."
+          },
+          {
+            "id": "dfs_always_shortest",
+            "text": "DFS always finds the shortest path first because it explores one route completely."
+          },
+          {
+            "id": "sorted_neighbors",
+            "text": "Sorting neighbors makes any traversal shortest regardless of the search order."
+          },
+          {
+            "id": "visited_not_needed",
+            "text": "Shortest-path searches do not need visited state because distance decreases on every edge."
+          }
+        ],
+        "acceptedOptionIds": [
+          "layered_distance"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equal edge costs make BFS layers correspond to edge count, which is the requested objective.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "BFS enqueues all vertices at distance d before any vertex at distance d+1, so a vertex's first discovery has minimum edge distance. DFS may find a longer route first, and neighbor sorting changes tie order rather than the distance guarantee. Visited state remains necessary when the graph has cycles or converging paths."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "dfs_always_shortest": "DFS prioritizes depth, not minimum edge count, and can reach the target through a longer path first.",
+          "sorted_neighbors": "Neighbor order cannot turn depth-first exploration into a shortest-distance proof.",
+          "visited_not_needed": "Cycles and repeated paths can cause redundant or unbounded exploration without visited state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_connected_state_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "graph_bfs",
+        "problemArchetypeId": "shortest_unweighted_path"
+      }
+    },
+    {
+      "id": "alg-gt-signal-010",
+      "prompt": "Several starting cells in a grid are already active, and each minute activity spreads to all orthogonally adjacent inactive cells. The task asks when the last reachable cell activates. What traversal signal is decisive?",
+      "constraints": [
+        "All spreads take one minute and begin from the initially active cells at time zero."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "multi_source_bfs",
+            "text": "Initialize one BFS frontier with every source at distance zero and process the frontier layer by layer."
+          },
+          {
+            "id": "sequential_dfs_sources",
+            "text": "Run a complete DFS from each source and take the first activation time returned by each traversal."
+          },
+          {
+            "id": "single_source_only",
+            "text": "Choose the first listed source because all sources have identical influence."
+          },
+          {
+            "id": "sort_source_coordinates",
+            "text": "Sort the source coordinates and infer activation time from their row order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "multi_source_bfs"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Equal-time spreading from multiple origins is a multi-source shortest-distance problem.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Place every initial source in the queue before processing begins and mark all of them at distance zero. The first frontier that reaches a cell gives its minimum distance from any source. Sequential DFS traversals can overstate distances or overwrite a better arrival, while coordinate order has no relation to path length."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sequential_dfs_sources": "DFS does not preserve minimum distance, and processing sources sequentially can discover a cell later than another source would.",
+          "single_source_only": "A farther source may be the closest origin for a particular cell, so every source must enter the initial frontier.",
+          "sort_source_coordinates": "Activation follows grid-path distance, not lexical or row order of coordinates."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "identify_connected_state_search",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "multi_source_bfs",
+        "problemArchetypeId": "propagate_from_multiple_sources"
+      }
+    },
+    {
+      "id": "alg-gt-signal-011-reachability-output",
+      "prompt": "Which problem signal most directly calls for graph traversal rather than sorting values?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "reachability", "text": "Determine which states are reachable through allowed transitions."}, {"id": "numeric_order", "text": "Arrange numbers by magnitude with no transitions."}, {"id": "single_lookup", "text": "Check one key in a dictionary with no graph relation."}, {"id": "format_text", "text": "Normalize whitespace in an independent string."}], "acceptedOptionIds": ["reachability"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Traversal is the canonical way to exhaust states connected by an explicit edge or transition relation.", "details": {"blocks": [{"type": "paragraph", "text": "The graph can be explicit, implicit in a grid, or represented by dependencies. The key signal is connected-state exploration, not the surface vocabulary."}]}, "wrongOptionExplanationsByOptionId": {"numeric_order": "Sorting reveals order but does not traverse transitions.", "single_lookup": "One independent lookup does not define a graph search.", "format_text": "Text normalization has no implied state graph here."}},
+      "taxonomy": {"primarySkillAtomId": "identify_connected_state_search", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "adjacency_list", "problemArchetypeId": "traverse_connected_state"}
+    },
+    {
+      "id": "alg-gt-signal-012-unweighted-shortest",
+      "prompt": "Which combination signals BFS for a shortest-path task?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "unit_edges_fifo", "text": "Edges have equal cost and the search needs the minimum number of edges."}, {"id": "negative_weights", "text": "Edges have arbitrary negative weights and any traversal order is valid."}, {"id": "sorted_array", "text": "Values are sorted and the target is a numeric index."}, {"id": "all_paths_weighted", "text": "All weighted paths must be enumerated regardless of cost."}], "acceptedOptionIds": ["unit_edges_fifo"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "FIFO layers establish minimum edge count when every edge contributes one unit.", "details": {"blocks": [{"type": "paragraph", "text": "Weighted costs require a matching priority rule such as Dijkstra or another weighted algorithm. The data structure follows the edge-cost contract."}]}, "wrongOptionExplanationsByOptionId": {"negative_weights": "Ordinary BFS does not optimize arbitrary edge weights.", "sorted_array": "Sorted numeric search is a different pattern.", "all_paths_weighted": "BFS returns shortest distances under unit costs, not every weighted path."}},
+      "taxonomy": {"primarySkillAtomId": "identify_connected_state_search", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "graph_bfs", "problemArchetypeId": "shortest_unweighted_path"}
+    },
+    {
+      "id": "alg-gt-signal-013-dependency-order",
+      "prompt": "Which output requirement signals topological processing rather than ordinary reachability traversal?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "predecessors_before", "text": "Produce an order in which every prerequisite appears before its dependent."}, {"id": "visit_any", "text": "Visit every reachable vertex in any order."}, {"id": "nearest_source", "text": "Find minimum edge distance from one source in an unweighted graph."}, {"id": "count_values", "text": "Count repeated scalar values with no dependencies."}], "acceptedOptionIds": ["predecessors_before"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A topological order is a precedence constraint over directed dependencies.", "details": {"blocks": [{"type": "paragraph", "text": "Kahn's algorithm and DFS postorder are two ways to produce such an order when the dependency graph is acyclic; plain reachability alone does not enforce predecessor placement."}]}, "wrongOptionExplanationsByOptionId": {"visit_any": "Any traversal order can violate dependencies.", "nearest_source": "That is an unweighted shortest-path signal for BFS.", "count_values": "Scalar frequency counting has no dependency graph."}},
+      "taxonomy": {"primarySkillAtomId": "identify_connected_state_search", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "topological_order_intro", "problemArchetypeId": "order_dependencies"}
+    },
+    {
+      "id": "alg-gt-signal-014-component-count",
+      "prompt": "What signal distinguishes connected-component counting from a single-source reachability query?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "all_regions", "text": "The output must count every disconnected region, including regions with no path from one chosen source."}, {"id": "one_target", "text": "Only one target's distance from a known source is requested."}, {"id": "sorted_keys", "text": "The input keys are already sorted."}, {"id": "one_edge", "text": "The graph contains exactly one edge."}], "acceptedOptionIds": ["all_regions"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Component counting requires an outer scan that seeds a traversal for each still-unvisited region.", "details": {"blocks": [{"type": "paragraph", "text": "A single-source search may stop after one reachable set or one target. Component counting must continue until every vertex or traversable cell is classified."}]}, "wrongOptionExplanationsByOptionId": {"one_target": "One target usually needs only one-source traversal and can terminate early.", "sorted_keys": "Value order does not define graph connectivity.", "one_edge": "Graph size and connectivity contract, not edge count alone, determine the pattern."}},
+      "taxonomy": {"primarySkillAtomId": "identify_connected_state_search", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "connected_components", "problemArchetypeId": "count_components"}
+    },
+    {"id":"alg-gt-signal-015-neighbor-expansion","prompt":"Which prompt signal most directly indicates a graph traversal rather than sorting or counting alone?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"reachability","text":"The task asks which states can be reached through allowed transitions."},{"id":"ranked_values","text":"The task asks for values in sorted order."},{"id":"frequency","text":"The task asks how often each key occurs."},{"id":"single_arithmetic","text":"The task asks for one arithmetic expression."}],"acceptedOptionIds":["reachability"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Reachability is the defining output of a traversal search.","details":{"blocks":[{"type":"paragraph","text":"A graph traversal follows transitions from one state to neighboring states. Sorting and frequency counting do not imply a search frontier."}]},"wrongOptionExplanationsByOptionId":{"ranked_values":"This option does not satisfy the stated graph invariant or changes the problem contract.","frequency":"This option does not satisfy the stated graph invariant or changes the problem contract.","single_arithmetic":"This option does not satisfy the stated graph invariant or changes the problem contract."}},"taxonomy":{"primarySkillAtomId":"identify_connected_state_search","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"connected_components","problemArchetypeId":"count_components"}},
+    {"id":"alg-gt-signal-016-implicit-graph","prompt":"A prompt describes moving among valid board positions without naming vertices or edges. What should you recognize?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"implicit_graph","text":"Board positions are states and legal moves are implicit edges."},{"id":"no_graph","text":"It cannot be a graph problem without an adjacency-list input."},{"id":"sorting","text":"The board should first be sorted into a one-dimensional list."},{"id":"hash_only","text":"A hash table alone defines all legal moves."}],"acceptedOptionIds":["implicit_graph"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Many state-space problems encode graphs implicitly.","details":{"blocks":[{"type":"paragraph","text":"Model each valid position as a vertex and each legal move as an edge generated on demand. An explicit adjacency list is optional."}]},"wrongOptionExplanationsByOptionId":{"no_graph":"This option does not satisfy the stated graph invariant or changes the problem contract.","sorting":"This option does not satisfy the stated graph invariant or changes the problem contract.","hash_only":"This option does not satisfy the stated graph invariant or changes the problem contract."}},"taxonomy":{"primarySkillAtomId":"identify_connected_state_search","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"connected_components","problemArchetypeId":"count_components"}},
+    {"id":"alg-gt-signal-017-visited-need","prompt":"What prompt condition is the strongest signal that a visited set is required?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"cycles_or_reuse","text":"Transitions can return to an already reached state or revisit the same state through many paths."},{"id":"sorted_input","text":"The input arrives sorted."},{"id":"constant_domain","text":"The state domain is small."},{"id":"one_step","text":"Exactly one transition is allowed."}],"acceptedOptionIds":["cycles_or_reuse"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Repeated reachable states require a guard against duplicate work or infinite loops.","details":{"blocks":[{"type":"paragraph","text":"Cycles and converging paths make state identity essential. Marking visited on discovery prevents reprocessing the same vertex."}]},"wrongOptionExplanationsByOptionId":{"sorted_input":"This option does not satisfy the stated graph invariant or changes the problem contract.","constant_domain":"This option does not satisfy the stated graph invariant or changes the problem contract.","one_step":"This option does not satisfy the stated graph invariant or changes the problem contract."}},"taxonomy":{"primarySkillAtomId":"identify_connected_state_search","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"connected_components","problemArchetypeId":"count_components"}},
+    {"id":"alg-gt-signal-018-component-vs-target","prompt":"A prompt asks for the number of disconnected regions, not whether one target is reachable. What control-flow signal follows?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"outer_scan","text":"Use an outer scan to seed a traversal from every still-unvisited state."},{"id":"early_target","text":"Stop on the first target discovery."},{"id":"single_seed","text":"Run exactly one traversal from the first state."},{"id":"sort_first","text":"Sort all states before exploring them."}],"acceptedOptionIds":["outer_scan"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Counting all regions requires covering the entire state space.","details":{"blocks":[{"type":"paragraph","text":"One traversal covers one reachable region. The outer scan finds each unvisited seed and increments the count before exploring that region."}]},"wrongOptionExplanationsByOptionId":{"early_target":"This option does not satisfy the stated graph invariant or changes the problem contract.","single_seed":"This option does not satisfy the stated graph invariant or changes the problem contract.","sort_first":"This option does not satisfy the stated graph invariant or changes the problem contract."}},"taxonomy":{"primarySkillAtomId":"identify_connected_state_search","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"connected_components","problemArchetypeId":"count_components"}}
   ],
   "modeStructures": {
     "recognitionSets": [],

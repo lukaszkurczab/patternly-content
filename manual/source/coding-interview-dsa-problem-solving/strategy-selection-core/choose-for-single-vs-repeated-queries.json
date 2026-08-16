@@ -393,6 +393,315 @@
         "secondarySkillAtomIds": [],
         "learningStage": "strategy_selection"
       }
+    },
+    {
+      "id": "ssc-queries-one-query-preprocess-loss",
+      "prompt": "A static array receives one exact membership query, and building a hash set costs O(n) time and O(n) space. Which workload-aware conclusion is strongest?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "scan_once", "text": "Scan the array once unless another contract requires the index; preprocessing cannot repay its setup for this single query."},
+        {"id": "always_hash", "text": "Build the hash set because expected lookup is O(1), regardless of query count."},
+        {"id": "sort_always", "text": "Sort first because every query strategy must begin with preprocessing."},
+        {"id": "reject_membership", "text": "Exact membership cannot be answered without a reusable index."}
+      ], "acceptedOptionIds": ["scan_once"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "For one query, index construction is paid once to save at most one scan, so the workload does not justify it by itself.", "details": {"blocks": [{"type": "paragraph", "text": "A direct scan costs O(n) and uses O(1) extra space. Building a hash set adds O(n) setup and memory before the single lookup; it becomes attractive when many queries reuse the same immutable data or when another requirement needs the index. The per-query asymptotic bound alone is not the whole workload cost."}]}, "wrongOptionExplanationsByOptionId": {"always_hash": "Expected O(1) lookup does not erase O(n) setup and space when there is only one query.", "sort_always": "Sorting also adds setup and is not required for one exact membership check.", "reject_membership": "A scan answers one membership query directly; an index is optional, not logically necessary."}},
+      "taxonomy": {"primarySkillAtomId": "choose_strategy_for_query_volume", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-queries-update-maintenance-choice",
+      "prompt": "A dataset receives frequent point updates and range-sum queries, so rebuilding a prefix array after every update is too expensive. What decision should be evaluated next?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "maintain_dynamic_index", "text": "Compare a data structure with update and query support, such as a dynamic range-sum index, against the actual update/query ratio and resource limits."},
+        {"id": "keep_stale_prefix", "text": "Keep using the old prefix array because the query count is high, even when updates make it stale."},
+        {"id": "rebuild_after_each", "text": "Rebuild after every update because preprocessing is always preferable for repeated queries."},
+        {"id": "ignore_updates", "text": "Treat updates as irrelevant because range sums are defined on the original dataset."}
+      ], "acceptedOptionIds": ["maintain_dynamic_index"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Reusable preprocessing is valuable only while its state remains correct within the workload budget; frequent updates shift the comparison to maintenance cost.", "details": {"blocks": [{"type": "paragraph", "text": "A static prefix array gives cheap queries but has O(n) rebuild cost after a point update. A dynamic structure may offer logarithmic updates and queries, but the choice depends on q, update count, memory, and constants. Returning answers from stale state is incorrect, and blindly rebuilding ignores the new workload shape."}]}, "wrongOptionExplanationsByOptionId": {"keep_stale_prefix": "A stale index violates answer correctness after an update.", "rebuild_after_each": "Repeated preprocessing can dominate total time when updates are frequent; it must be compared rather than assumed best.", "ignore_updates": "The update operations change the data on which later queries are defined."}},
+      "taxonomy": {"primarySkillAtomId": "choose_strategy_for_query_volume", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-queries-online-after-static-build",
+      "prompt": "All data is known before execution, but queries arrive one at a time and cannot be batch-reordered. Which strategy property is required?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "preprocess_then_online", "text": "Build only query-independent state during preprocessing and ensure each online query can be answered immediately from that state."},
+        {"id": "know_future_queries", "text": "Preprocessing is impossible unless every future query parameter is listed before startup."},
+        {"id": "batch_reorder", "text": "Sort and reorder queries by value because online arrival order never affects the contract."},
+        {"id": "rebuild_each_query", "text": "Recompute the entire dataset for every query because online inputs forbid reusable state."}
+      ], "acceptedOptionIds": ["preprocess_then_online"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Online arrival constrains response timing, not the ability to build a reusable index from a static dataset.", "details": {"blocks": [{"type": "paragraph", "text": "A prefix table, sorted copy, or hash index can be built before queries arrive when it does not depend on their exact future parameters. Each request then performs its supported lookup immediately. Batch-only transformations are invalid if the service cannot delay or reorder responses, but query-independent preprocessing remains valid."}]}, "wrongOptionExplanationsByOptionId": {"know_future_queries": "A query-independent index is designed precisely to answer parameters that are not known during construction.", "batch_reorder": "Reordering violates an online response contract unless the product explicitly permits batching.", "rebuild_each_query": "Static data is reusable; recomputing it per query discards the purpose of preprocessing."}},
+      "taxonomy": {"primarySkillAtomId": "choose_strategy_for_query_volume", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-queries-break-even-formula",
+      "prompt": "A direct query costs S, preprocessing costs P, and an indexed query costs Q. Ignoring maintenance, which condition indicates that preprocessing can pay off for m queries?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "p_mq_less_ms", "text": "P + mQ is no greater than mS, with memory and correctness constraints also satisfied."},
+        {"id": "p_less_q", "text": "Preprocessing is justified whenever P < Q, regardless of m and direct cost."},
+        {"id": "q_less_p_only", "text": "Compare Q with P only; the number of queries does not affect the decision."},
+        {"id": "m_less_p", "text": "Preprocessing wins whenever m < P because fewer queries reduce total work."}
+      ], "acceptedOptionIds": ["p_mq_less_ms"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The workload comparison includes one setup cost and the per-query cost on both sides.", "details": {"blocks": [{"type": "paragraph", "text": "The direct baseline costs mS. The reusable strategy costs P once plus mQ, so the break-even inequality is P + mQ <= mS, subject to the index fitting memory and remaining correct. Maintenance, build latency, expected versus worst-case assumptions, and output costs must be added when present."}]}, "wrongOptionExplanationsByOptionId": {"p_less_q": "Preprocessing cost is paid once, while Q is paid m times; comparing only P and Q mixes unlike units.", "q_less_p_only": "Query count is exactly what amortizes setup and can reverse the decision.", "m_less_p": "A smaller query count generally makes setup harder to repay; the inequality must compare total costs."
+      }},
+      "taxonomy": {"primarySkillAtomId": "choose_strategy_for_query_volume", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-queries-11-build_cost",
+      "prompt": "A preprocessing structure costs O(n) to build and answers each query in O(1). When can it be a poor choice?",
+      "constraints": [
+        "The input is queried only once.",
+        "The build result is not reused elsewhere."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "build_not_amortized",
+            "text": "When the single query does not justify the preprocessing cost compared with a direct O(n) scan.",
+            "explanation": "A one-off workload may be dominated by setup."
+          },
+          {
+            "id": "always_best",
+            "text": "Never; O(1) query time always dominates construction cost.",
+            "explanation": "Total cost includes construction and query count."
+          },
+          {
+            "id": "more_queries_worse",
+            "text": "When there are many repeated queries because the structure consumes more memory.",
+            "explanation": "Repeated queries are exactly when build cost can amortize."
+          },
+          {
+            "id": "constant_memory",
+            "text": "When the input size is small, regardless of latency or memory requirements.",
+            "explanation": "Small inputs do not make all tradeoffs irrelevant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "build_not_amortized"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Strategy choice must compare total workload cost, not only the per-query asymptotic.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For Q queries, preprocessing total is build(n)+Q*query(n). A direct scan may win for Q=1 or when construction has a large constant, while the indexed structure wins when Q is large enough."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always_best": "Total cost includes construction and query count.",
+          "more_queries_worse": "Repeated queries are exactly when build cost can amortize.",
+          "constant_memory": "Small inputs do not make all tradeoffs irrelevant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-queries-12-online_updates",
+      "prompt": "Why can repeated queries favor a data structure that supports updates even if a static index has faster lookups?",
+      "constraints": [
+        "The underlying input changes between queries.",
+        "Answers must reflect the latest state."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "maintenance_tradeoff",
+            "text": "A static index may become stale; update cost must be included so the chosen structure preserves answer correctness over the changing workload.",
+            "explanation": "Fast stale answers are not valid answers."
+          },
+          {
+            "id": "lookup_only",
+            "text": "Choose the static index because lookup complexity is the only relevant cost.",
+            "explanation": "Updates and freshness are part of the workload contract."
+          },
+          {
+            "id": "rebuild_every_query",
+            "text": "Rebuild the static index after every query without counting rebuild time.",
+            "explanation": "Rebuild cost can dominate the workload."
+          },
+          {
+            "id": "ignore_mutation",
+            "text": "Treat updates as unrelated because queries are still read operations.",
+            "explanation": "Reads over changed data depend on how state is maintained."
+          }
+        ],
+        "acceptedOptionIds": [
+          "maintenance_tradeoff"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Query volume and mutation frequency jointly determine whether preprocessing remains useful.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A static index is appropriate only when its source assumptions remain true. With updates, include update or rebuild cost and select a representation whose freshness contract is explicit."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "lookup_only": "Updates and freshness are part of the workload contract.",
+          "rebuild_every_query": "Rebuild cost can dominate the workload.",
+          "ignore_mutation": "Reads over changed data depend on how state is maintained."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-queries-13-break_even",
+      "prompt": "What quantity helps compare a preprocessing strategy against a repeated direct scan?",
+      "constraints": [
+        "Build and query costs can be estimated.",
+        "The query count Q is known or bounded."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "total_cost_break_even",
+            "text": "Compare buildCost + Q*indexedQueryCost with Q*directQueryCost to find the workload break-even point.",
+            "explanation": "The same number of queries must be charged under both strategies."
+          },
+          {
+            "id": "query_only",
+            "text": "Compare indexedQueryCost with directQueryCost and ignore construction.",
+            "explanation": "Ignoring build cost misprices small workloads."
+          },
+          {
+            "id": "memory_only",
+            "text": "Choose the strategy with fewer variables because memory determines all break-even points.",
+            "explanation": "Time and memory are separate constraints."
+          },
+          {
+            "id": "input_size_only",
+            "text": "The input size alone determines the winner independent of Q.",
+            "explanation": "Query volume changes amortization."
+          }
+        ],
+        "acceptedOptionIds": [
+          "total_cost_break_even"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Break-even is a total-workload comparison.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A preprocessing plan pays its setup once and then answers Q queries. The direct plan pays its scan Q times. The correct comparison can incorporate memory, update, and latency constraints as additional contract terms."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "query_only": "Ignoring build cost misprices small workloads.",
+          "memory_only": "Time and memory are separate constraints.",
+          "input_size_only": "Query volume changes amortization."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-queries-14_cache_scope",
+      "prompt": "When is caching a query result unsafe?",
+      "constraints": [
+        "The answer depends on mutable input state.",
+        "The cache key omits part of that state or query contract."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "stale_or_collision",
+            "text": "It is unsafe when the key does not uniquely identify the current input state and query, because a cached answer can be stale or belong to another request.",
+            "explanation": "Caching requires both freshness and key completeness."
+          },
+          {
+            "id": "same_query_text",
+            "text": "It is always safe if the query text is identical.",
+            "explanation": "Identical text can run against different data or contracts."
+          },
+          {
+            "id": "small_result",
+            "text": "It is safe whenever the result is small because small values cannot become stale.",
+            "explanation": "Result size does not control freshness."
+          },
+          {
+            "id": "hash_anything",
+            "text": "Any hash key is safe even if collisions are possible.",
+            "explanation": "A collision can return the wrong answer unless handled by a verified key."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stale_or_collision"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A repeated query is reusable only when its cache identity includes all answer-determining state.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Caching trades computation for a freshness and identity contract. Mutable inputs, omitted parameters, or unchecked hash collisions can make a fast response incorrect."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_query_text": "Identical text can run against different data or contracts.",
+          "small_result": "Result size does not control freshness.",
+          "hash_anything": "A collision can return the wrong answer unless handled by a verified key."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_strategy_for_query_volume",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
     }
   ],
   "modeStructures": {

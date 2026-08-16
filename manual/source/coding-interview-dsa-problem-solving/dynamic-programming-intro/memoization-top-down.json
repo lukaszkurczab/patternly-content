@@ -451,7 +451,53 @@
         "patternVariantId": "memoization",
         "problemArchetypeId": "grid_path_dp"
       }
-    }
+    },
+    {
+      "id": "alg-dpintro-memo-08-key-encodes-all-future-input",
+      "prompt": "A memoized function solve(i, budget, mode) can take different transitions for different mode values. Which cache design is sound?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "full_state_key", "text": "Key by the complete future-relevant state tuple (i, budget, mode)."},
+        {"id": "index_only", "text": "Key only by i because memoization merges all calls at one position."},
+        {"id": "budget_only", "text": "Key only by budget because mode affects transitions but not the input suffix."},
+        {"id": "last_result", "text": "Keep one global result because recursive calls eventually return to the same root."}
+      ], "acceptedOptionIds": ["full_state_key"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Memoization is valid only when equal keys imply equal future subproblems and answers.", "details": {"blocks": [{"type": "paragraph", "text": "If budget or mode changes which branches are legal or valuable, calls that share only i are not equivalent. The key must encode every dimension that can affect the remaining recurrence. Extra irrelevant history may be omitted, but future-relevant state cannot."}]}, "wrongOptionExplanationsByOptionId": {"index_only": "Different budgets or modes at one index can produce different answers.", "budget_only": "The remaining suffix and mode still affect future choices.", "last_result": "A recursive tree contains many distinct subproblems, not one answer per root invocation."}},
+      "taxonomy": {"primarySkillAtomId": "memoize_recursive_subproblem", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "memoization", "problemArchetypeId": "choose_or_skip"}
+    },
+    {
+      "id": "alg-dpintro-memo-09-cycle-boundary",
+      "prompt": "A proposed recurrence can call solve(i) again without changing i on one branch. What must be checked before claiming ordinary memoization gives a terminating DP?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "progress_or_cycle_rule", "text": "Prove progress toward a base state or define cycle handling; caching a state only after it returns does not break a recursive cycle."},
+        {"id": "memo_always_terminates", "text": "Memoization guarantees termination because every call has a key."},
+        {"id": "delete_key_on_entry", "text": "Delete the key whenever a state is entered so recursion can continue freely."},
+        {"id": "ignore_self_call", "text": "Ignore self-calls because the eventual cached result will overwrite them."}
+      ], "acceptedOptionIds": ["progress_or_cycle_rule"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Memoization removes repeated completed work but does not by itself resolve a recursive dependency cycle.", "details": {"blocks": [{"type": "paragraph", "text": "A well-founded DP state decreases a measure or reaches a declared base. If a call re-enters the same unresolved state before its first computation finishes, a simple cache lookup may miss and recurse forever. The recurrence needs a progress proof or explicit cycle semantics such as visitation states."}]}, "wrongOptionExplanationsByOptionId": {"memo_always_terminates": "A cache does not contain a value for a state whose first evaluation is still in progress.", "delete_key_on_entry": "Deleting keys removes reuse and does not provide a cycle result.", "ignore_self_call": "An unresolved self-dependency cannot be replaced by a later cache write without a defined fixed-point rule."}},
+      "taxonomy": {"primarySkillAtomId": "memoize_recursive_subproblem", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "memoization", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {
+      "id": "alg-dpintro-memo-10-cache-hit-before-branch",
+      "prompt": "Which ordering of operations is required in a top-down memoized recurrence?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "ordering", "elements": [
+        {"id": "base_check", "text": "Handle the base case for the current state."},
+        {"id": "cache_check", "text": "Return a stored result if the state is already cached."},
+        {"id": "compute_branches", "text": "Compute the transition branches and aggregate their results."},
+        {"id": "store_result", "text": "Store the computed result under the complete state key."}
+      ], "canonicalOrder": ["base_check", "cache_check", "compute_branches", "store_result"], "scoringMethod": "adjacent_relations"},
+      "scoringContract": {"type": "ordering", "maxPoints": 3},
+      "feedback": {"reason": "Base and cache checks avoid unnecessary work; only a miss reaches the transition, whose result is stored under the state just solved.", "details": {"blocks": [{"type": "paragraph", "text": "A base result can be returned immediately. For non-base states, a valid cached result must be recognized even when its value is zero or negative, so presence is separate from truthiness. Only a miss computes branches and then records the answer for future calls."}]}},
+      "taxonomy": {"primarySkillAtomId": "memoize_recursive_subproblem", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "memoization", "problemArchetypeId": "count_ways"}
+    },
+    {"id":"alg-dpintro-memo-11-check-cache-first","prompt":"What is the canonical order for a top-down memoized helper?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"base-cache-branch","text":"Handle the base case, return a cached result if present, otherwise compute children and store the result."},{"id":"branch-before-cache","text":"Always recurse into children before checking the cache."},{"id":"store-input","text":"Store the raw input and never store the subproblem result."},{"id":"cache-final-only","text":"Cache only the root answer after all recursion finishes."}],"acceptedOptionIds":["base-cache-branch"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Checking the cache before branching is what prevents recomputation of a solved state.","details":{"blocks":[{"type":"paragraph","text":"Base cases may precede the cache or be included in the cache contract. The essential invariant is that a computed state is stored before callers reuse it."}]},"wrongOptionExplanationsByOptionId":{"branch-before-cache":"It recomputes the same descendants before discovering a cached answer.","store-input":"Memoization caches outputs by state, not only raw input.","cache-final-only":"Repeated subproblems remain uncached."}},"taxonomy":{"primarySkillAtomId":"memoize_recursive_subproblem","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"memoization","problemArchetypeId":"count_ways"}},
+    {"id":"alg-dpintro-memo-12-cache-key-complete","prompt":"What is the main correctness requirement for a memo table key?","difficulty":"advanced","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"all-result-factors","text":"It includes every state component that can change the subproblem result."},{"id":"index-only","text":"The first index is always enough, even with capacity or alignment context."},{"id":"call-order","text":"It records only the order in which the state was reached."},{"id":"random-hash","text":"Any short hash is correct even if different states collide."}],"acceptedOptionIds":["all-result-factors"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Different result-determining states must not share a cache entry.","details":{"blocks":[{"type":"paragraph","text":"For a sequence alignment or capacity problem, the key may require two indices or an index-plus-budget. Hashing can encode the key, but collisions must not merge semantic states."}]},"wrongOptionExplanationsByOptionId":{"index-only":"Omitted constraints produce wrong cache reuse.","call-order":"Reach history is not necessarily the subproblem identity.","random-hash":"A lossy key can return the wrong state's result."}},"taxonomy":{"primarySkillAtomId":"memoize_recursive_subproblem","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"memoization","problemArchetypeId":"sequence_alignment_intro"}},
+    {"id":"alg-dpintro-memo-13-sparse-reachable-states","prompt":"When can top-down memoization use less time than filling a complete bottom-up table?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"unreachable-pruned","text":"When only a sparse subset of theoretically possible states is reachable from the original query."},{"id":"all-states-needed","text":"When every possible state is required and no transition is computed."},{"id":"no-cache","text":"When repeated states are never cached."},{"id":"sort-table","text":"When states are sorted before recursion."}],"acceptedOptionIds":["unreachable-pruned"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Top-down evaluates demand-reachable states while bottom-up may materialize the full rectangular domain.","details":{"blocks":[{"type":"paragraph","text":"Both methods can have the same worst-case state count. The advantage depends on reachability, transition cost, and cache overhead."}]},"wrongOptionExplanationsByOptionId":{"all-states-needed":"If every state is needed, top-down has little sparsity benefit.","no-cache":"Without caching, repeated subproblems can make top-down worse.","sort-table":"Sorting is not the source of sparse-state savings."}},"taxonomy":{"primarySkillAtomId":"memoize_recursive_subproblem","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"memoization","problemArchetypeId":"optimize_prefix_or_suffix"}},
+    {"id":"alg-dpintro-memo-14-cache-sentinel","prompt":"What must distinguish an uncomputed memo entry from a valid computed result of zero?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"separate-marker","text":"Use a separate uncomputed marker or a presence flag rather than zero itself."},{"id":"zero-uncomputed","text":"Use zero for both because recomputing zero is harmless to correctness and cost."},{"id":"negative-only","text":"Use -1 even when valid results can be -1."},{"id":"no-cache","text":"Avoid caching any state that might return zero."}],"acceptedOptionIds":["separate-marker"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Zero can be a legitimate DP result, so it cannot always mean absent from the cache.","details":{"blocks":[{"type":"paragraph","text":"A separate boolean, optional value, or impossible sentinel preserves both correctness and memoization of zero-valued states."}]},"wrongOptionExplanationsByOptionId":{"zero-uncomputed":"Repeated recomputation can be exponential and can also confuse cache semantics.","negative-only":"A sentinel must be outside the valid result domain.","no-cache":"Valid zero results should still be reusable."}},"taxonomy":{"primarySkillAtomId":"memoize_recursive_subproblem","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"memoization","problemArchetypeId":"count_ways"}}
   ],
   "modeStructures": {
     "recognitionSets": [],
@@ -472,7 +518,14 @@
           "alg-dpintro-memo-04-acyclic-progress-before-cache",
           "alg-dpintro-memo-05-memo-table-not-rolling-state",
           "alg-dpintro-memo-06-cached-zero-sentinel",
-          "alg-dpintro-memo-07-two-parameter-transfer"
+          "alg-dpintro-memo-07-two-parameter-transfer",
+          "alg-dpintro-memo-08-key-encodes-all-future-input",
+          "alg-dpintro-memo-09-cycle-boundary",
+          "alg-dpintro-memo-10-cache-hit-before-branch",
+          "alg-dpintro-memo-11-check-cache-first",
+          "alg-dpintro-memo-12-cache-key-complete",
+          "alg-dpintro-memo-13-sparse-reachable-states",
+          "alg-dpintro-memo-14-cache-sentinel"
         ],
         "relationMetadata": {
           "mechanismBoundary": "memoization_top_down"

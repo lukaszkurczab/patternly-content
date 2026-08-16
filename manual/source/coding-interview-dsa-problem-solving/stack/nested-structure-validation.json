@@ -478,6 +478,294 @@
         "patternVariantId": "nested_structure_validation",
         "problemArchetypeId": "validate_nested_structure"
       }
+    },
+    {
+      "id": "alg-stack-nested-validation-close-matches-top",
+      "prompt": "When a closing delimiter is read in a nested-structure validator, what must be true before it is accepted?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "top_matches", "text": "The stack is nonempty and its top opening delimiter matches the closing delimiter."},
+        {"id": "any_opening", "text": "Any opening delimiter anywhere in the stack has the right type."},
+        {"id": "stack_empty", "text": "The stack is empty, because the closing delimiter completes the structure."},
+        {"id": "same_count", "text": "The total count of opening and closing delimiters is equal so far."}
+      ], "acceptedOptionIds": ["top_matches"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "LIFO order requires the most recently opened structure to close first.", "details": {"blocks": [{"type": "paragraph", "text": "A matching delimiter deeper in the stack cannot bypass an unmatched inner opening. After a successful match, pop exactly that top opening and continue."}]}, "wrongOptionExplanationsByOptionId": {"any_opening": "Allowing a deeper match accepts crossings such as ([)].", "stack_empty": "A closing delimiter without an opening counterpart is invalid.", "same_count": "Equal counts do not guarantee correct nesting order."}},
+      "taxonomy": {"primarySkillAtomId": "match_nested_structure_with_stack", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "nested_structure_validation", "problemArchetypeId": "validate_nested_structure"}
+    },
+    {
+      "id": "alg-stack-nested-validation-final-empty",
+      "prompt": "After scanning all tokens in a balanced-delimiter validator, what final condition confirms that no opening delimiter remains unmatched?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "stack_empty", "text": "The stack must be empty."},
+        {"id": "stack_nonempty", "text": "The stack must contain the last opening delimiter."},
+        {"id": "same_depth", "text": "The stack depth must equal the input length."},
+        {"id": "last_token_close", "text": "Only the type of the last token matters."}
+      ], "acceptedOptionIds": ["stack_empty"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Every accepted closing delimiter removes one opening; any remaining stack entry is an unmatched opening.", "details": {"blocks": [{"type": "paragraph", "text": "The validator therefore checks two boundaries: no closing may mismatch during the scan, and the stack must be empty afterward. Checking only one of these misses one-sided errors."}]}, "wrongOptionExplanationsByOptionId": {"stack_nonempty": "Remaining openings mean the input ended before they were closed.", "same_depth": "Stack depth measures unmatched openings, not total input size.", "last_token_close": "A final closing token can still close the wrong type or leave earlier openings unmatched."}},
+      "taxonomy": {"primarySkillAtomId": "match_nested_structure_with_stack", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "nested_structure_validation", "problemArchetypeId": "validate_nested_structure"}
+    },
+    {
+      "id": "alg-stack-nested-11_push_open",
+      "prompt": "In balanced-delimiter validation, what should happen when an opening token is read?",
+      "constraints": [
+        "Each opening token requires a matching closing token.",
+        "Closings must match the most recent unmatched opening."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "push_expected",
+            "text": "Push the opening token or its expected closing token onto the stack.",
+            "explanation": "The stack records the pending nested obligation."
+          },
+          {
+            "id": "pop_open",
+            "text": "Pop immediately because the opening token completes a pair.",
+            "explanation": "Its closing token has not yet arrived."
+          },
+          {
+            "id": "ignore_open",
+            "text": "Ignore openings and validate only the closing sequence.",
+            "explanation": "Without openings there is no expected nesting context."
+          },
+          {
+            "id": "queue_open",
+            "text": "Enqueue openings in FIFO order because nesting is chronological.",
+            "explanation": "Nested matching is LIFO, not FIFO."
+          }
+        ],
+        "acceptedOptionIds": [
+          "push_expected"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "An opening delimiter creates a pending obligation whose nearest match must be resolved first.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Storing the expected closing token can simplify validation. The stack top represents the innermost unmatched opening."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "pop_open": "Its closing token has not yet arrived.",
+          "ignore_open": "Without openings there is no expected nesting context.",
+          "queue_open": "Nested matching is LIFO, not FIFO."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-12_close_match",
+      "prompt": "What condition makes a closing delimiter invalid during stack validation?",
+      "constraints": [
+        "The stack may be empty.",
+        "Different delimiter types are possible."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "empty_or_mismatch",
+            "text": "It is invalid if the stack is empty or its top expected closer differs from the current closing token.",
+            "explanation": "Both absence and type mismatch violate nesting."
+          },
+          {
+            "id": "any_top",
+            "text": "Any closing token is valid as long as the stack is nonempty.",
+            "explanation": "Types must match, not merely depth."
+          },
+          {
+            "id": "bottom_match",
+            "text": "Compare the closer with the oldest opening at the bottom of the stack.",
+            "explanation": "Nested structures match the most recent opening."
+          },
+          {
+            "id": "value_count",
+            "text": "Check only whether the number of closings equals the number of openings so far.",
+            "explanation": "Counts cannot detect wrong nesting order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "empty_or_mismatch"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Delimiter validation needs both stack underflow and top-type checks.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A string such as `([)]` has balanced counts but violates nesting. The stack top captures the nearest unresolved opener, and an empty stack makes a leading closer illegal."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "any_top": "Types must match, not merely depth.",
+          "bottom_match": "Nested structures match the most recent opening.",
+          "value_count": "Counts cannot detect wrong nesting order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-13_final_empty",
+      "prompt": "What final condition is required for a delimiter string to be fully balanced after scanning all tokens?",
+      "constraints": [
+        "Every opening token creates one stack entry.",
+        "Every valid closing token removes one entry."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "stack_empty",
+            "text": "The stack must be empty; otherwise at least one opening delimiter has no closing match.",
+            "explanation": "End-of-input cannot leave unresolved obligations."
+          },
+          {
+            "id": "stack_nonempty",
+            "text": "The stack should contain the outermost opening so the structure has a root.",
+            "explanation": "A balanced string closes its outermost opening too."
+          },
+          {
+            "id": "last_token_close",
+            "text": "Only the final token type matters because earlier pairs were already checked.",
+            "explanation": "Unclosed openings can remain from earlier positions."
+          },
+          {
+            "id": "equal_counts_only",
+            "text": "Equal total counts of opening and closing tokens are sufficient.",
+            "explanation": "Counts do not guarantee correct nesting or complete matching."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stack_empty"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A balanced parse ends with no pending opening obligations.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The scan checks local matches; the final empty stack checks global completion. A nonempty stack represents unmatched openers even when counts happen to balance."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "stack_nonempty": "A balanced string closes its outermost opening too.",
+          "last_token_close": "Unclosed openings can remain from earlier positions.",
+          "equal_counts_only": "Counts do not guarantee correct nesting or complete matching."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
+    },
+    {
+      "id": "alg-stack-nested-14_depth",
+      "prompt": "What does the maximum stack size represent while validating nested structure?",
+      "constraints": [
+        "The stack stores unmatched openings.",
+        "The input may contain deeply nested delimiters."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "maximum_nesting",
+            "text": "The peak stack size is the maximum nesting depth, so auxiliary space is O(d) where d is that depth.",
+            "explanation": "Each active opener contributes one frame."
+          },
+          {
+            "id": "total_length",
+            "text": "The stack always uses O(n) space even when nesting depth is one.",
+            "explanation": "It stores only unresolved nesting, not all tokens."
+          },
+          {
+            "id": "constant",
+            "text": "The stack is O(1) because push and pop are constant time.",
+            "explanation": "Operation time and storage size differ."
+          },
+          {
+            "id": "pair_count",
+            "text": "Space equals the number of completed pairs, which remain stored for validation.",
+            "explanation": "Completed pairs are popped and need not remain."
+          }
+        ],
+        "acceptedOptionIds": [
+          "maximum_nesting"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Stack space follows peak unresolved nesting, not total input length when nesting is shallow.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A long flat sequence of pairs can use constant stack depth; a deeply nested short sequence uses depth-proportional space. Report the relevant parameter."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "total_length": "It stores only unresolved nesting, not all tokens.",
+          "constant": "Operation time and storage size differ.",
+          "pair_count": "Completed pairs are popped and need not remain."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "match_nested_structure_with_stack",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "nested_structure_validation",
+        "problemArchetypeId": "validate_nested_structure"
+      }
     }
   ],
   "modeStructures": {

@@ -362,7 +362,67 @@
         "patternVariantId": "undo_or_previous_state",
         "problemArchetypeId": "undo_previous_state"
       }
-    }
+    },
+    {
+      "id": "alg-stack-lifo-07-editor-undo-signal",
+      "prompt": "An editor commits commands C1, C2, and C3. Undo must remove the most recently committed command that has not already been undone. Which state discipline matches?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "command_stack", "text": "A stack of committed commands, with the newest command on top."},
+        {"id": "arrival_queue", "text": "A queue that removes C1 first because it arrived first."},
+        {"id": "sorted_commands", "text": "A sorted list ordered by command text rather than commit time."},
+        {"id": "random_set", "text": "A set, because any undone command is equally eligible."}
+      ], "acceptedOptionIds": ["command_stack"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Undo targets the newest still-active command, which is a direct LIFO requirement.", "details": {"blocks": [{"type": "paragraph", "text": "After C1, C2, C3, the first undo must remove C3, then C2, then C1. A stack stores only the unresolved history in the order needed by the next action. A queue, sorted order, or unordered set loses the required recency relation."}]}, "wrongOptionExplanationsByOptionId": {"arrival_queue": "FIFO would undo the oldest command first, reversing the required history order.", "sorted_commands": "Lexical or numeric sorting does not represent commit recency.", "random_set": "A set does not expose which eligible command was committed most recently."}},
+      "taxonomy": {"primarySkillAtomId": "identify_last_unresolved_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "undo_or_previous_state", "problemArchetypeId": "undo_previous_state"}
+    },
+    {
+      "id": "alg-stack-lifo-08-latest-opener-signal",
+      "prompt": "A parser reads open(A), open(B), close(B), close(A). Which recognition fact makes a stack sufficient for validating the nested structure?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "latest_unmatched_opener", "text": "Each closer must match the most recently opened context that has not yet been closed."},
+        {"id": "oldest_unmatched_opener", "text": "Each closer must match the oldest open context so the structure is processed FIFO."},
+        {"id": "largest_label", "text": "Each closer matches the numerically or lexically largest opener, regardless of nesting."},
+        {"id": "all_openers_equal", "text": "Open contexts have no order, so any pending opener may be removed."}
+      ], "acceptedOptionIds": ["latest_unmatched_opener"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Nested closure is newest-first: the latest unresolved opener owns the next legal close.", "details": {"blocks": [{"type": "paragraph", "text": "After open(A), open(B), B is the top unresolved context, so close(B) is legal and removes B. A then becomes the top and can be closed. The stack stores the unmatched contexts; it does not need to retain already resolved openers."}]}, "wrongOptionExplanationsByOptionId": {"oldest_unmatched_opener": "Oldest-first would pair close(B) with A and violate proper nesting.", "largest_label": "Labels do not determine nesting ownership; opening order does.", "all_openers_equal": "The nesting contract makes the most recent unresolved opener uniquely eligible."}},
+      "taxonomy": {"primarySkillAtomId": "identify_last_unresolved_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "nested_structure_validation", "problemArchetypeId": "validate_nested_structure"}
+    },
+    {
+      "id": "alg-stack-lifo-09-fifo-boundary",
+      "prompt": "A support system must process tickets in arrival order, oldest first, even when newer tickets are waiting. What is the correct classification?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "queue_fifo", "text": "A FIFO queue is the matching state discipline."},
+        {"id": "stack_lifo", "text": "A LIFO stack is required because every pending item has a last position."},
+        {"id": "nested_stack", "text": "A nesting stack is required because tickets can be processed one at a time."},
+        {"id": "monotonic_stack", "text": "A monotonic stack is required because ticket age is ordered."}
+      ], "acceptedOptionIds": ["queue_fifo"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Oldest-first service is FIFO, so it is a boundary case that should not be mislabeled as LIFO merely because a container is needed.", "details": {"blocks": [{"type": "paragraph", "text": "A stack would return the newest pending ticket and violate the service contract. Nothing in the requirement asks for nested resolution, nearest-value dominance, or a most-recent rollback. Recognizing the requested order is more decisive than the presence of a push-like insertion operation."}]}, "wrongOptionExplanationsByOptionId": {"stack_lifo": "LIFO serves the newest ticket first, opposite to the stated oldest-first policy.", "nested_stack": "Sequential processing does not imply nested unresolved contexts.", "monotonic_stack": "No candidate domination or nearest-value query is present; ticket age is simply FIFO order."}},
+      "taxonomy": {"primarySkillAtomId": "identify_last_unresolved_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics"}
+    },
+    {
+      "id": "alg-stack-lifo-10-recency-signals",
+      "prompt": "Select all problem signals that support an ordinary LIFO stack rather than a queue or monotonic stack.",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "latest_unresolved", "text": "The next action always targets the most recently opened or unresolved context."},
+        {"id": "undo_latest", "text": "Undo removes the latest committed state that has not already been undone."},
+        {"id": "oldest_waiting", "text": "The next action must process the oldest pending item."},
+        {"id": "dominated_candidates", "text": "Candidates may be permanently removed because an ordered successor dominates them for a nearest-value query."}
+      ], "acceptedOptionIds": ["latest_unresolved", "undo_latest"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Ordinary LIFO follows recency, while FIFO follows age and monotonic stacks add an ordered-dominance invariant.", "details": {"blocks": [{"type": "paragraph", "text": "Nested validation and undo both need the newest unresolved or reversible entry. Oldest waiting work is queue behavior. Permanently removing dominated candidates is a separate monotonic-stack proof and requires more than simple recency."}]}, "wrongOptionExplanationsByOptionId": {"oldest_waiting": "Oldest-first is FIFO and conflicts with newest-first resolution.", "dominated_candidates": "This signal points to a monotonic stack, whose ordered candidate invariant is distinct from ordinary LIFO."}, "omittedCorrectExplanationsByOptionId": {"latest_unresolved": "The newest pending context is exactly the entry exposed by a stack.", "undo_latest": "Rollback of the most recent pending state is a direct LIFO transfer."}},
+      "taxonomy": {"primarySkillAtomId": "identify_last_unresolved_state", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "undo_or_previous_state", "problemArchetypeId": "deferred_resolution"}
+    },
+    {"id":"alg-stack-lifo-11-browser-back","prompt":"Which interaction is a natural LIFO-stack signal?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"browser_back","text":"Undo browser navigation by returning to the most recently visited page first."},{"id":"queue_arrivals","text":"Serve customers in arrival order."},{"id":"sorted_numbers","text":"Return numbers in numeric order."},{"id":"range_sum","text":"Answer range sums with cumulative boundaries."}],"acceptedOptionIds":["browser_back"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Back navigation removes the newest history entry before older entries.","details":{"blocks":[{"type":"paragraph","text":"The defining signal is last-in-first-out reversal of recent state. A queue matches arrival order, while sorting and prefix sums solve different relations."}]},"wrongOptionExplanationsByOptionId":{"queue_arrivals":"Arrival order is FIFO.","sorted_numbers":"Numeric order is not recency order.","range_sum":"Range aggregation uses prefix state, not LIFO history."}},"taxonomy":{"primarySkillAtomId":"identify_last_unresolved_state","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"undo_or_previous_state","problemArchetypeId":"undo_previous_state"}},
+    {"id":"alg-stack-lifo-12-nested-close","prompt":"Why does nested-delimiter validation require LIFO state?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"last_open_closes","text":"The most recently opened delimiter must be the first one closed."},{"id":"first_open_closes","text":"The earliest opening delimiter always closes first."},{"id":"any_match","text":"Any matching opening anywhere in the stack may close."},{"id":"sorted_delimiters","text":"Delimiters are closed in alphabetic order."}],"acceptedOptionIds":["last_open_closes"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Proper nesting is a last-opened, first-closed constraint.","details":{"blocks":[{"type":"paragraph","text":"The stack top is the only legal opening counterpart for a closing token. Allowing an older match accepts crossing structures."}]},"wrongOptionExplanationsByOptionId":{"first_open_closes":"That is not nested closure order.","any_match":"A deeper unmatched opening cannot be skipped.","sorted_delimiters":"Delimiter type order is not lexical."}},"taxonomy":{"primarySkillAtomId":"identify_last_unresolved_state","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"nested_structure_validation","problemArchetypeId":"validate_nested_structure"}},
+    {"id":"alg-stack-lifo-13-undo-latest","prompt":"What must an undo stack expose when a user asks to undo once?","difficulty":"foundational","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"latest_snapshot","text":"The most recently stored reversible state, then remove or consume it."},{"id":"oldest_snapshot","text":"The first snapshot ever stored."},{"id":"all_snapshots","text":"Every snapshot at once, even for one undo."},{"id":"future_state","text":"A state that has not yet been recorded."}],"acceptedOptionIds":["latest_snapshot"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"Undo reverses the latest action first.","details":{"blocks":[{"type":"paragraph","text":"A second undo reveals the prior snapshot. Snapshot ownership and branch behavior must be explicit if new actions occur after an undo."}]},"wrongOptionExplanationsByOptionId":{"oldest_snapshot":"Oldest-first is queue behavior.","all_snapshots":"One undo consumes one latest action under the usual contract.","future_state":"Undo cannot restore a state never recorded."}},"taxonomy":{"primarySkillAtomId":"identify_last_unresolved_state","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","patternVariantId":"undo_or_previous_state","problemArchetypeId":"undo_previous_state"}},
+    {"id":"alg-stack-lifo-14-deferred-resolution","prompt":"Which task pattern uses a stack because the latest unresolved item should be matched when new input arrives?","difficulty":"intermediate","interaction":{"type":"choice","selectionMode":"single","options":[{"id":"nearest_pending","text":"Resolve the most recent pending boundary or candidate when a qualifying event appears."},{"id":"oldest_pending","text":"Always resolve the oldest pending item first."},{"id":"global_sort","text":"Sort all events before any state is created."},{"id":"independent_lookup","text":"Answer each item without retaining unresolved state."}],"acceptedOptionIds":["nearest_pending"]},"scoringContract":{"type":"choice","resultSemantics":"exact_selected_set_with_partial_v1"},"feedback":{"reason":"The stack top represents the latest unresolved candidate that a new event can close or resolve.","details":{"blocks":[{"type":"paragraph","text":"Nested structures, undo history, and nearest-boundary problems share this LIFO signal even though their payloads differ."}]},"wrongOptionExplanationsByOptionId":{"oldest_pending":"Oldest-first requires FIFO state.","global_sort":"Some online resolutions cannot be deferred to a global sort.","independent_lookup":"The task explicitly needs unresolved history."}},"taxonomy":{"primarySkillAtomId":"identify_last_unresolved_state","secondarySkillAtomIds":[],"learningStage":"pattern_mechanics","problemArchetypeId":"deferred_resolution"}}
   ],
   "modeStructures": {
     "recognitionSets": [
@@ -395,6 +455,10 @@
           "alg-stack-lifo-04-oldest-pending-boundary",
           "alg-stack-lifo-05-explicit-stack-not-recursion",
           "alg-stack-lifo-06-navigation-history-transfer",
+          "alg-stack-lifo-07-editor-undo-signal",
+          "alg-stack-lifo-08-latest-opener-signal",
+          "alg-stack-lifo-09-fifo-boundary",
+          "alg-stack-lifo-10-recency-signals",
           "alg-stack-ops-06-stack-versus-queue-trace",
           "alg-stack-nested-01-recognize-proper-nesting",
           "alg-stack-nested-06-queue-fails-nesting",
@@ -430,6 +494,10 @@
           "alg-stack-lifo-04-oldest-pending-boundary",
           "alg-stack-lifo-05-explicit-stack-not-recursion",
           "alg-stack-lifo-06-navigation-history-transfer",
+          "alg-stack-lifo-07-editor-undo-signal",
+          "alg-stack-lifo-08-latest-opener-signal",
+          "alg-stack-lifo-09-fifo-boundary",
+          "alg-stack-lifo-10-recency-signals",
           "alg-stack-mono-signal-01-deferred-nearest-boundary",
           "alg-stack-mono-signal-02-dominated-suffix",
           "alg-stack-mono-signal-03-reject-arbitrary-range-maximum",

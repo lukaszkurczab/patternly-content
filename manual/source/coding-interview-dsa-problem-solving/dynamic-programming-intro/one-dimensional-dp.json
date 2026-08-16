@@ -447,6 +447,292 @@
         "patternVariantId": "two_dimensional_dp",
         "problemArchetypeId": "choose_or_skip"
       }
+    },
+    {
+      "id": "alg-dpintro-one-d-08-recurrence-window-memory",
+      "prompt": "A one-dimensional DP state dp[i] depends only on dp[i - 1] and dp[i - 3], and only the final value is needed. What storage is sufficient?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "three_recent_states", "text": "Keep a rolling buffer containing the last three required state values and update it in dependency order."},
+        {"id": "two_states", "text": "Keep only the immediately previous state because every one-dimensional DP has a one-step dependency."},
+        {"id": "all_history_required", "text": "Keep all n states because a scalar state cannot be compressed."},
+        {"id": "final_only", "text": "Keep only dp[n] while computing because earlier values can be discarded before use."}
+      ], "acceptedOptionIds": ["three_recent_states"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Storage follows the maximum dependency distance, not merely the number of state dimensions.", "details": {"blocks": [{"type": "paragraph", "text": "The state has one logical axis, but dp[i] still reads a value three positions back. A rolling buffer or equivalent named variables must preserve every value until its last read. Keeping all states is safe but unnecessary when reconstruction is not required; keeping only the final value loses dependencies."}]}, "wrongOptionExplanationsByOptionId": {"two_states": "The transition needs dp[i-3], which may already have been overwritten.", "all_history_required": "One-dimensional semantics do not require full history when only a bounded suffix of states is read.", "final_only": "The final state cannot be computed without its predecessor values."}},
+      "taxonomy": {"primarySkillAtomId": "model_one_dimensional_dp", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "state_compression", "problemArchetypeId": "count_ways"}
+    },
+    {
+      "id": "alg-dpintro-one-d-09-state-axis-counterexample",
+      "prompt": "A solver claims an array problem is one-dimensional because there is only one input array. Which counter-signal disproves that claim?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "capacity_constraint", "text": "The future answer also depends on remaining capacity, a budget, or another independent changing constraint."},
+        {"id": "large_array", "text": "The input array has many elements."},
+        {"id": "single_output", "text": "The function returns one scalar at the end."},
+        {"id": "iterative_loop", "text": "The implementation uses a loop rather than recursion."}
+      ], "acceptedOptionIds": ["capacity_constraint"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "DP dimensionality counts independent future-relevant state coordinates, not input containers or output count.", "details": {"blocks": [{"type": "paragraph", "text": "One array can still define a two-dimensional state such as (index, remaining capacity). Size, scalar output, and loop syntax do not add or remove state dimensions. The correct test is whether two calls with the same index can have different future answers under another changing constraint."}]}, "wrongOptionExplanationsByOptionId": {"large_array": "Input length is a size parameter, not automatically a state coordinate.", "single_output": "A multidimensional DP can aggregate to one final result.", "iterative_loop": "Tabulation syntax does not determine the logical state definition."}},
+      "taxonomy": {"primarySkillAtomId": "model_one_dimensional_dp", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "two_dimensional_dp", "problemArchetypeId": "choose_or_skip"}
+    },
+    {
+      "id": "alg-dpintro-one-d-10-prefix-suffix-semantics",
+      "prompt": "Which distinction correctly separates prefix and suffix one-dimensional DP states?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "meaning_and_direction", "text": "A prefix state summarizes what is achievable through earlier positions, while a suffix state summarizes what remains from the current position; their dependencies and loop directions follow those meanings."},
+        {"id": "same_state_names", "text": "Prefix and suffix states are interchangeable because both use one index."},
+        {"id": "prefix_always_optimum", "text": "Prefix states always maximize and suffix states always minimize."},
+        {"id": "suffix_no_base", "text": "Suffix states need no base case because the end index has no remaining input."}
+      ], "acceptedOptionIds": ["meaning_and_direction"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The same number of coordinates can represent different subproblems; state meaning determines transitions, bases, and schedule.", "details": {"blocks": [{"type": "paragraph", "text": "A prefix table commonly accumulates toward i, while a suffix recurrence branches into i+1 or later. Neither direction fixes the objective operator: either can count, minimize, or maximize. The end of a suffix is precisely where a base case is needed."}]}, "wrongOptionExplanationsByOptionId": {"same_state_names": "Index position alone does not identify whether the state describes consumed or remaining input.", "prefix_always_optimum": "Objective semantics are independent of prefix versus suffix orientation.", "suffix_no_base": "The empty suffix still needs a declared answer such as zero cost or one completion."}},
+      "taxonomy": {"primarySkillAtomId": "model_one_dimensional_dp", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "one_dimensional_dp", "problemArchetypeId": "optimize_prefix_or_suffix"}
+    },
+    {
+      "id": "alg-dpintro-one-d-11-state-boundary",
+      "prompt": "What should the index in a one-dimensional DP state mean?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "boundary",
+            "text": "A prefix, suffix, position, or capacity boundary that fully defines the subproblem."
+          },
+          {
+            "id": "loop",
+            "text": "Only a loop counter with no subproblem interpretation."
+          },
+          {
+            "id": "rank",
+            "text": "Always the rank of the final answer."
+          },
+          {
+            "id": "slot",
+            "text": "A storage slot that may read arbitrary states."
+          }
+        ],
+        "acceptedOptionIds": [
+          "boundary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "loop": "Transitions cannot be proved from storage labels.",
+          "rank": "State meaning is problem-specific.",
+          "slot": "Storage must respect dependencies."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "model_one_dimensional_dp",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_dp",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-one-d-12-base",
+      "prompt": "Why must a one-dimensional DP base case match the empty-prefix or empty-suffix meaning?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "identity",
+            "text": "It encodes the correct identity or impossible value for the first transition."
+          },
+          {
+            "id": "zero",
+            "text": "Every DP should start at zero."
+          },
+          {
+            "id": "first",
+            "text": "Initialize only from the first input item."
+          },
+          {
+            "id": "final",
+            "text": "Use the final answer as the base."
+          }
+        ],
+        "acceptedOptionIds": [
+          "identity"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "zero": "Zero is not universal for min, max, count, or impossible states.",
+          "first": "Many recurrences need an empty boundary.",
+          "final": "That creates circular information."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "model_one_dimensional_dp",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_dp",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-one-d-13-transition",
+      "prompt": "What must a one-dimensional DP transition explain?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "choices",
+            "text": "Which final decision is made and which predecessor states cover every legal alternative."
+          },
+          {
+            "id": "syntax",
+            "text": "Only the assignment syntax."
+          },
+          {
+            "id": "largest",
+            "text": "Always choose the largest neighboring state."
+          },
+          {
+            "id": "future",
+            "text": "Read uncomputed future states and repair them later."
+          }
+        ],
+        "acceptedOptionIds": [
+          "choices"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "syntax": "Syntax does not prove completeness.",
+          "largest": "Min, max, count, and feasibility combine differently.",
+          "future": "Dependencies must be available."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "model_one_dimensional_dp",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_dp",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
+    },
+    {
+      "id": "alg-dpintro-one-d-14-rolling",
+      "prompt": "When is one-dimensional DP compression to rolling state safe?",
+      "constraints": [
+        "The stated DP contract applies.",
+        "State dependencies must remain valid."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "liveness",
+            "text": "After a future-read proof, preserve any provenance needed for reconstruction."
+          },
+          {
+            "id": "two",
+            "text": "Every 1D DP needs only two previous states."
+          },
+          {
+            "id": "score",
+            "text": "The final score always reconstructs choices."
+          },
+          {
+            "id": "format",
+            "text": "Compression is formatting only."
+          }
+        ],
+        "acceptedOptionIds": [
+          "liveness"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option preserves the DP state contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The state meaning, dependency order, and output contract must agree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "two": "Some transitions read longer history.",
+          "score": "Overwriting can lose witness information.",
+          "format": "It changes available dependencies."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "model_one_dimensional_dp",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "one_dimensional_dp",
+        "problemArchetypeId": "optimize_prefix_or_suffix"
+      }
     }
   ],
   "modeStructures": {
@@ -468,7 +754,14 @@
           "alg-dpintro-one-d-04-prefix-model-order",
           "alg-dpintro-one-d-05-rolling-window-size",
           "alg-dpintro-one-d-06-small-n-bounds",
-          "alg-dpintro-one-d-07-single-input-two-state-transfer"
+          "alg-dpintro-one-d-07-single-input-two-state-transfer",
+          "alg-dpintro-one-d-08-recurrence-window-memory",
+          "alg-dpintro-one-d-09-state-axis-counterexample",
+          "alg-dpintro-one-d-10-prefix-suffix-semantics",
+          "alg-dpintro-one-d-11-state-boundary",
+          "alg-dpintro-one-d-12-base",
+          "alg-dpintro-one-d-13-transition",
+          "alg-dpintro-one-d-14-rolling"
         ],
         "relationMetadata": {
           "mechanismBoundary": "one_dimensional_dp"

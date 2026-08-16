@@ -552,6 +552,294 @@
         "patternVariantId": "custom_key_sort",
         "problemArchetypeId": "reveal_ordered_structure"
       }
+    },
+    {
+      "id": "alg-sorting-mistake-lost-provenance",
+      "prompt": "A solution sorts raw values and later returns their indices. What information was lost?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "original_identity", "text": "The mapping from each sorted value back to its original position."},
+        {"id": "sorted_order", "text": "The sorted order, because raw values cannot be compared after sorting."},
+        {"id": "array_length", "text": "The length, which sorting changes."},
+        {"id": "value_sign", "text": "Whether values were positive or negative."}
+      ], "acceptedOptionIds": ["original_identity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An in-place sort preserves values but not their original positions as a recoverable relation.", "details": {"blocks": [{"type": "paragraph", "text": "Carry (value, originalIndex) records or use a separate index array. The choice is part of the output contract, not a cosmetic implementation detail."}]}, "wrongOptionExplanationsByOptionId": {"sorted_order": "Sorting creates and preserves ordered values; it is not the missing information.", "array_length": "Sorting does not change length.", "value_sign": "Sorting preserves each value's sign."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_invalid_sorting_assumption", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "sort_then_scan", "problemArchetypeId": "reveal_ordered_structure"}
+    },
+    {
+      "id": "alg-sorting-mistake-comparator-inconsistent",
+      "prompt": "A custom comparator says a<b, b<c, and c<a for three records. What risk does this introduce?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "violates_transitivity", "text": "It violates comparator transitivity, so the sort has no coherent total order to establish."},
+        {"id": "stable_sort", "text": "It merely requests a stable sort and is otherwise harmless."},
+        {"id": "duplicates_removed", "text": "It causes the sort to remove one of the three records."},
+        {"id": "linear_time", "text": "It guarantees the sorting algorithm becomes linear."}
+      ], "acceptedOptionIds": ["violates_transitivity"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A comparator used for sorting must be consistent enough to define an order; a cycle makes pairwise decisions contradictory.", "details": {"blocks": [{"type": "paragraph", "text": "The result may be unpredictable or implementation-dependent. Validate field directions and tie-breaking rather than patching the output after sorting."}]}, "wrongOptionExplanationsByOptionId": {"stable_sort": "Stability preserves equal-key order; it cannot repair a cyclic comparator.", "duplicates_removed": "Sorting reorders records and does not delete them.", "linear_time": "Comparator inconsistency does not improve asymptotic sorting cost."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_invalid_sorting_assumption", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "custom_key_sort", "problemArchetypeId": "process_by_priority_key"}
+    },
+    {
+      "id": "alg-sorting-mistake-11_stable_tie",
+      "prompt": "A sort-based solution returns correct values but violates the required original order among equal keys. What assumption failed?",
+      "constraints": [
+        "Equal-key order is observable.",
+        "The chosen sort or comparator does not guarantee stability."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "stability_contract",
+            "text": "The solution assumed equal keys were interchangeable, but the contract requires a stable tie policy or an explicit original-index secondary key.",
+            "explanation": "Values can match while record order differs."
+          },
+          {
+            "id": "unique_keys",
+            "text": "Equal keys cannot occur because sorting makes every key unique.",
+            "explanation": "Sorting does not remove duplicate keys."
+          },
+          {
+            "id": "ascending_only",
+            "text": "The issue is necessarily ascending versus descending direction.",
+            "explanation": "The primary order can be correct while stability fails."
+          },
+          {
+            "id": "heap_needed",
+            "text": "Only a heap can preserve equal-key order; stable sorting is impossible.",
+            "explanation": "Stable sort or composite keys can preserve it."
+          }
+        ],
+        "acceptedOptionIds": [
+          "stability_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting correctness includes tie semantics when record order is part of output.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A comparator that returns equality leaves tie order to the sort implementation unless stability is guaranteed. Include original position when the runtime's stability or the contract is uncertain."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "unique_keys": "Sorting does not remove duplicate keys.",
+          "ascending_only": "The primary order can be correct while stability fails.",
+          "heap_needed": "Stable sort or composite keys can preserve it."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sorting-mistake-12_comparator",
+      "prompt": "Why can a comparator that is not transitive make a sorting algorithm produce an invalid result?",
+      "constraints": [
+        "The comparator defines the requested order.",
+        "The sorting implementation assumes a consistent ordering relation."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "inconsistent_order",
+            "text": "Nontransitive comparisons can create cycles such as a<b, b<c, c<a, so no total order satisfies all comparisons.",
+            "explanation": "Sorting relies on order consistency for correctness."
+          },
+          {
+            "id": "sort_fixes",
+            "text": "The sort algorithm always repairs an inconsistent comparator by choosing a deterministic order.",
+            "explanation": "Determinism does not make the result satisfy the intended relation."
+          },
+          {
+            "id": "only_slow",
+            "text": "Comparator inconsistency affects runtime only and never output validity.",
+            "explanation": "It can violate sortedness or trigger runtime-specific behavior."
+          },
+          {
+            "id": "duplicates_only",
+            "text": "Nontransitivity occurs only when keys are equal.",
+            "explanation": "Distinct keys can form a comparison cycle."
+          }
+        ],
+        "acceptedOptionIds": [
+          "inconsistent_order"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A comparator is part of the mathematical input to sorting and must define a consistent ordering.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Before blaming the sort, check antisymmetry and transitivity, including mixed-direction tie rules. A stable algorithm cannot compensate for a relation that is not sortable."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sort_fixes": "Determinism does not make the result satisfy the intended relation.",
+          "only_slow": "It can violate sortedness or trigger runtime-specific behavior.",
+          "duplicates_only": "Distinct keys can form a comparison cycle."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sorting-mistake-13_wrong_direction",
+      "prompt": "A downstream scan assumes ascending values, but the preprocessing sort is descending. What should the review identify?",
+      "constraints": [
+        "The scan's invariant depends on adjacent values being nondecreasing.",
+        "The sort order is configurable."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "order_contract_mismatch",
+            "text": "The sort direction and scan invariant disagree; either change the comparator or rewrite the scan proof for descending order.",
+            "explanation": "Preprocessing order is part of the algorithm contract."
+          },
+          {
+            "id": "direction_irrelevant",
+            "text": "Any sorted order is equivalent because a sorted array has the same adjacent relationships.",
+            "explanation": "Monotone direction determines which pointer or scan move is safe."
+          },
+          {
+            "id": "sort_twice",
+            "text": "Sort ascending after every scan step to restore the invariant.",
+            "explanation": "Repeated sorting hides the mismatch and changes complexity."
+          },
+          {
+            "id": "reverse_output",
+            "text": "Reverse the final answer values without changing the scan decisions.",
+            "explanation": "Incorrect decisions cannot be repaired by output reversal."
+          }
+        ],
+        "acceptedOptionIds": [
+          "order_contract_mismatch"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A scan's correctness proof depends on the exact monotone direction supplied by preprocessing.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Ascending and descending orders are both valid inputs to different algorithms, but the movement rule must match. A post-hoc reversal cannot repair choices already discarded."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "direction_irrelevant": "Monotone direction determines which pointer or scan move is safe.",
+          "sort_twice": "Repeated sorting hides the mismatch and changes complexity.",
+          "reverse_output": "Incorrect decisions cannot be repaired by output reversal."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
+    },
+    {
+      "id": "alg-sorting-mistake-14_mutation",
+      "prompt": "A function sorts its input in place even though callers expect the original sequence unchanged. What is the defect?",
+      "constraints": [
+        "Input immutability is part of the public contract.",
+        "Sorting is observable through aliases or later reads."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "mutation_violation",
+            "text": "The sort changes caller-visible state; use a copy or an explicitly permitted in-place contract and include copy cost.",
+            "explanation": "Correct sorted values do not excuse forbidden mutation."
+          },
+          {
+            "id": "values_same",
+            "text": "There is no defect because sorting preserves the value multiset.",
+            "explanation": "Order and aliases are observable."
+          },
+          {
+            "id": "copy_free",
+            "text": "Copying is free because it does not change the algorithm's asymptotic time.",
+            "explanation": "Copying uses time and auxiliary space."
+          },
+          {
+            "id": "only_stability",
+            "text": "The only issue could be stability, not mutation.",
+            "explanation": "Mutation is a separate contract dimension."
+          }
+        ],
+        "acceptedOptionIds": [
+          "mutation_violation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sorting side effects are part of correctness whenever input ownership or aliasing is observable.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A nonmutating implementation may copy before sorting, use an immutable sort, or change the API contract. The additional memory and time should be reported rather than hidden."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "values_same": "Order and aliases are observable.",
+          "copy_free": "Copying uses time and auxiliary space.",
+          "only_stability": "Mutation is a separate contract dimension."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_invalid_sorting_assumption",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "custom_key_sort",
+        "problemArchetypeId": "process_by_priority_key"
+      }
     }
   ],
   "modeStructures": {

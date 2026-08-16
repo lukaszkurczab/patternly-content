@@ -405,6 +405,494 @@
         "patternVariantId": "running_extreme",
         "problemArchetypeId": "schedule_by_priority"
       }
+    },
+    {
+      "id": "hpq-mechanics-push-parent-chain",
+      "prompt": "A new value is appended at the next open leaf position in a min-heap. Which repair sequence preserves the heap invariant?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "swap_with_root",
+            "text": "Compare it with the root and swap directly whenever it is smaller."
+          },
+          {
+            "id": "sift_up_parent",
+            "text": "Compare it with its parent, swap when it has higher priority, then continue from the parent position."
+          },
+          {
+            "id": "sift_down_new_leaf",
+            "text": "Compare it with its children and move it downward from the leaf."
+          },
+          {
+            "id": "rebuild_all_levels",
+            "text": "Rebuild every level of the heap after each insertion."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sift_up_parent"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Insertion can violate the invariant only along the new node's ancestor chain, so repair moves upward one parent at a time.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Append the value to preserve the complete-tree shape. If it outranks its parent, swap the two and repeat at the value's new index. The process stops when the parent already has the correct priority or the value reaches the root. Only the ancestor chain can be invalid after an insertion, so rebuilding unrelated levels is unnecessary."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "swap_with_root": "The value may need to pass several ancestors, and swapping directly with the root can leave an intermediate parent-child relation invalid.",
+          "sift_down_new_leaf": "A newly appended leaf has no children, so a possible violation is with its parent, not below it.",
+          "rebuild_all_levels": "Insertion requires local repair along one ancestor chain; rebuilding the whole heap adds unnecessary work."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "trace_heap_operation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mechanics-pop-last-replacement",
+      "prompt": "After removing the root from a binary min-heap with more than one element, which operation restores the complete shape and identifies the possible violation?",
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "shift_left",
+            "text": "Shift every remaining array entry one position to the left and stop."
+          },
+          {
+            "id": "replace_root_last_leaf",
+            "text": "Move the last leaf to the root, shrink the array, then sift that value down if it outranks a child."
+          },
+          {
+            "id": "replace_last_root",
+            "text": "Move the old root to the last position and sift the last element upward."
+          },
+          {
+            "id": "sort_remaining",
+            "text": "Sort all remaining values and use the sorted array as the heap."
+          }
+        ],
+        "acceptedOptionIds": [
+          "replace_root_last_leaf"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Replacing the root with the last leaf preserves the complete-tree shape; only the moved value's downward path can now violate min-heap order.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Save the root as the result, move the final array element into index 0, remove the final slot, and compare the moved value with its children. When it is larger than a child, swap with the smaller child and continue. The replacement creates at most a downward violation at the root of the repaired subtree."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "shift_left": "Array shifting does not express the complete binary-tree replacement rule and can destroy the heap's parent-child indexing.",
+          "replace_last_root": "The last leaf must replace the removed root; moving the old root to the leaf does not restore the root priority invariant.",
+          "sort_remaining": "A heap operation needs local sift-down repair, not a full sort of all remaining values."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "trace_heap_operation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mechanics-peek-no-mutation",
+      "prompt": "What should `peek` do on a valid non-empty heap when the caller wants the current extreme without removing it?",
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "return_root_unchanged",
+            "text": "Return the root value without changing the backing array or heap size."
+          },
+          {
+            "id": "pop_then_push",
+            "text": "Remove the root, repair the heap, and insert the value again."
+          },
+          {
+            "id": "scan_all_values",
+            "text": "Scan every value because the root is not guaranteed to be the extreme."
+          },
+          {
+            "id": "sift_root_first",
+            "text": "Run a full sift operation before reading the root even when the heap is already valid."
+          }
+        ],
+        "acceptedOptionIds": [
+          "return_root_unchanged"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The heap invariant already places the requested extreme at the root, and peek is non-destructive by contract.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For a valid min-heap, index 0 contains the minimum; for a valid max-heap, it contains the maximum. Peek reads that position and leaves both the array and size unchanged. Removal and reinsertion would add work and can change identity or tie order, while a full scan ignores the invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "pop_then_push": "Peek must not remove or reinsert the element; those mutations are part of pop and push, not observation.",
+          "scan_all_values": "The heap invariant guarantees the selected extreme at the root, so scanning all entries is unnecessary.",
+          "sift_root_first": "A valid heap needs no repair before a read, and an unnecessary mutation can affect implementation state or ties."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "trace_heap_operation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mechanics-equal-children-tie",
+      "prompt": "During min-heap sift-down, both children are valid candidates and have the same priority. What determines which child should be selected?",
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "always_left",
+            "text": "Always select the left child because it is stored first."
+          },
+          {
+            "id": "always_right",
+            "text": "Always select the right child because it is closer to the end of the array."
+          },
+          {
+            "id": "comparator_tie_rule",
+            "text": "Use the comparator's explicit tie rule; if no observable tie rule exists, either equal child is valid for heap order."
+          },
+          {
+            "id": "compare_subtrees",
+            "text": "Recursively inspect both subtrees and choose the child with the globally smaller descendant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "comparator_tie_rule"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Sift-down must choose the child that wins the heap comparator; equal priority requires an explicit product tie rule only when the behavior is observable.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For unequal children, swapping with the smaller child is necessary: choosing the larger child can leave the smaller one above the moved value and violate the invariant. For equal children, either local choice preserves the primary min-heap relation. If the product promises stable or deterministic identity ordering, encode that in the comparator or tie-break key; array side alone is not a general stability guarantee."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "always_left": "Left-first is only one possible implementation tie rule; it is not universally required by heap order or product behavior.",
+          "always_right": "Right-first is likewise arbitrary and can violate a required external tie-break rule.",
+          "compare_subtrees": "Heap repair is local; recursively searching descendants is unnecessary and changes the operation's complexity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "trace_heap_operation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mechanics-11_sift_up",
+      "prompt": "What invariant does sift-up restore after inserting a new item at the end of a binary heap?",
+      "constraints": [
+        "The new item is initially a leaf.",
+        "The heap is ordered by parent priority."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "parent_relation",
+            "text": "While the new item outranks its parent, swap it upward until the parent-child order is restored or it reaches the root.",
+            "explanation": "Only the ancestor path can be invalid after append."
+          },
+          {
+            "id": "sift_all",
+            "text": "Compare the new item with every unrelated node before choosing its final position.",
+            "explanation": "Unrelated subtrees remain valid."
+          },
+          {
+            "id": "sift_down",
+            "text": "Move the new item downward because appending always violates its child relations.",
+            "explanation": "A new leaf has no children yet."
+          },
+          {
+            "id": "sort_array",
+            "text": "Sort the entire backing array after each insertion.",
+            "explanation": "Sorting is unnecessary and changes heap operation cost."
+          }
+        ],
+        "acceptedOptionIds": [
+          "parent_relation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Insertion changes one root-to-leaf path, so upward repair needs only parent comparisons.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "All existing parent-child edges remain valid. The new entry can violate only its relation with ancestors, and swaps along that path restore the heap invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sift_all": "Unrelated subtrees remain valid.",
+          "sift_down": "A new leaf has no children yet.",
+          "sort_array": "Sorting is unnecessary and changes heap operation cost."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "trace_heap_operation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mechanics-12_sift_down",
+      "prompt": "After popping a heap root, why is the last entry moved to the root before sift-down?",
+      "constraints": [
+        "The heap is stored compactly as an array.",
+        "The last entry is the only one that can fill the removed slot without a gap."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "complete_shape",
+            "text": "Moving the last entry preserves the complete-tree shape; sift-down then repairs its possibly violated child relations.",
+            "explanation": "Shape and order are separate heap invariants."
+          },
+          {
+            "id": "last_is_extreme",
+            "text": "The last entry is always the next extreme, so no repair is needed.",
+            "explanation": "Its value need not be near the root in priority."
+          },
+          {
+            "id": "move_first_child",
+            "text": "Move the left child to the root because children are closer to the root.",
+            "explanation": "That leaves a hole and does not preserve compact shape."
+          },
+          {
+            "id": "rebuild",
+            "text": "Rebuild the heap from all remaining entries because local repair is impossible.",
+            "explanation": "One replacement and sift-down suffice."
+          }
+        ],
+        "acceptedOptionIds": [
+          "complete_shape"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Pop removes the root while keeping a complete array-backed tree and repairing only the affected path.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The last entry fills the root slot without leaving a hole. It may need to move down by swapping with the higher-priority child until every edge is valid."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "last_is_extreme": "Its value need not be near the root in priority.",
+          "move_first_child": "That leaves a hole and does not preserve compact shape.",
+          "rebuild": "One replacement and sift-down suffice."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "trace_heap_operation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mechanics-13_peek_mutation",
+      "prompt": "What should peek do to a heap when the operation contract promises observation without removal?",
+      "constraints": [
+        "The root contains the current extreme.",
+        "The caller may call peek repeatedly."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "read_only_root",
+            "text": "Return or inspect the root without changing the array, size, or heap ordering.",
+            "explanation": "Peek is an observational operation."
+          },
+          {
+            "id": "pop_then_push",
+            "text": "Pop the root and push it back because the value is unchanged.",
+            "explanation": "That mutates state and can affect tie identity or counters."
+          },
+          {
+            "id": "sift_root",
+            "text": "Sift the root on every peek even when no key changed.",
+            "explanation": "Unnecessary mutation violates the read-only contract."
+          },
+          {
+            "id": "copy_all",
+            "text": "Copy and sort the entire heap to inspect the root safely.",
+            "explanation": "The heap root is already the required extreme."
+          }
+        ],
+        "acceptedOptionIds": [
+          "read_only_root"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Peek is constant-time observation when the heap invariant is maintained.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Repeated peeks must return the same state and should not alter insertion order, lazy-deletion metadata, or size. Any cleanup policy should be explicit and separate from pure peek."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "pop_then_push": "That mutates state and can affect tie identity or counters.",
+          "sift_root": "Unnecessary mutation violates the read-only contract.",
+          "copy_all": "The heap root is already the required extreme."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "trace_heap_operation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
+    },
+    {
+      "id": "hpq-mechanics-14_array_indices",
+      "prompt": "In a zero-based array heap, which child indices correspond to a node at index i?",
+      "constraints": [
+        "The heap uses the standard complete-tree array layout.",
+        "Index arithmetic must avoid reading beyond the active heap size."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "two_i_plus",
+            "text": "Left child is 2i+1 and right child is 2i+2; each is valid only if below the current size.",
+            "explanation": "These formulas encode the complete binary tree."
+          },
+          {
+            "id": "i_plus_one",
+            "text": "Children are i+1 and i+2 for every node.",
+            "explanation": "That layout would not represent heap levels."
+          },
+          {
+            "id": "i_div_two",
+            "text": "Children are floor(i/2) and floor(i/2)+1.",
+            "explanation": "Those formulas describe parent-adjacent positions incorrectly."
+          },
+          {
+            "id": "two_i",
+            "text": "Children are 2i and 2i+1 under zero-based indexing.",
+            "explanation": "That formula is for a different one-based convention."
+          }
+        ],
+        "acceptedOptionIds": [
+          "two_i_plus"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Array index formulas are part of the heap representation invariant.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The child formulas must be paired with bounds checks. Confusing zero-based and one-based indexing produces skipped nodes or out-of-range access during sift-down."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "i_plus_one": "That layout would not represent heap levels.",
+          "i_div_two": "Those formulas describe parent-adjacent positions incorrectly.",
+          "two_i": "That formula is for a different one-based convention."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "trace_heap_operation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "choose_repeated_extreme"
+      }
     }
   ],
   "modeStructures": {

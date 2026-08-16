@@ -323,6 +323,316 @@
         "patternVariantId": "running_extreme",
         "problemArchetypeId": "schedule_by_priority"
       }
+    },
+    {
+      "id": "hpq-orientation-minimum-deadline",
+      "prompt": "A scheduler repeatedly selects the available job with the earliest deadline. Which heap orientation matches the deadline key without transforming it?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "min_deadline", "text": "A min-heap keyed by deadline, because the smallest deadline must be exposed at the root."}, {"id": "max_deadline", "text": "A max-heap keyed by deadline, because the latest deadline leaves more time."}, {"id": "fifo", "text": "A FIFO queue, because jobs arrived before the deadline check."}, {"id": "heap_orientation_irrelevant", "text": "Either heap orientation returns the earliest deadline if the key is unchanged."}], "acceptedOptionIds": ["min_deadline"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The required application-level extreme is the minimum deadline, so the unchanged numeric key belongs in a min-heap.", "details": {"blocks": [{"type": "paragraph", "text": "Heap orientation is a direct translation of the root contract: the item that must be removed next must be the root under the comparator. A max-heap would expose the latest deadline and could violate an earliest-deadline policy. If the available API only offers a max-heap, negating or reversing the comparator can emulate min order, but that is an explicit key transformation."}]}, "wrongOptionExplanationsByOptionId": {"max_deadline": "Later deadline is the opposite extreme from the specified earliest-deadline rule.", "fifo": "Arrival order is a separate policy and does not expose the smallest deadline.", "heap_orientation_irrelevant": "The root differs between min and max orientation when deadlines are unequal."}},
+      "taxonomy": {"primarySkillAtomId": "choose_heap_orientation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "schedule_by_priority"},
+      "constraints": ["Smaller numeric deadlines have higher scheduling priority."]
+    },
+    {
+      "id": "hpq-orientation-max-priority-from-min-api",
+      "prompt": "An API exposes only a min-heap, but the application must repeatedly remove the largest score. Which design preserves the required order?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "reverse_comparator", "text": "Use a reversed comparator or an order-reversing key so the largest original score becomes the smallest heap key."}, {"id": "same_key", "text": "Use the original score unchanged; a min-heap will still expose the largest after enough pops."}, {"id": "read_leaf_max", "text": "Scan only the leaves because the maximum must be a leaf in a heap."}, {"id": "reverse_after_pop", "text": "Pop minima and reverse their output after the queue is empty."}], "acceptedOptionIds": ["reverse_comparator"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The API can emulate the opposite extreme only by reversing the comparison used for heap priority.", "details": {"blocks": [{"type": "paragraph", "text": "A min-heap with unchanged keys exposes the smallest score. Reversing the comparator, negating a safe numeric key, or wrapping a composite key maps the desired maximum to the heap minimum. Reading arbitrary leaves is not sufficient because their relative order is unconstrained, and reversing output after popping changes the temporal selection order rather than fixing it."}]}, "wrongOptionExplanationsByOptionId": {"same_key": "The unchanged min key returns the smallest score first.", "read_leaf_max": "A heap does not globally order leaves, so the maximum has no guaranteed leaf position.", "reverse_after_pop": "The application observes the wrong removal sequence before any reversal can occur."}},
+      "taxonomy": {"primarySkillAtomId": "choose_heap_orientation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "choose_repeated_extreme"},
+      "constraints": ["The key transformation preserves comparison semantics for all valid scores."]
+    },
+    {
+      "id": "hpq-orientation-composite-primary-key",
+      "prompt": "Tasks should be ordered by higher urgency first, then by shorter duration, then by earlier arrival. Which comparator shape is correct for a min-heap?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "neg_urgency_duration_arrival", "text": "(-urgency, duration, arrivalSequence)."}, {"id": "urgency_neg_duration_arrival", "text": "(urgency, -duration, arrivalSequence)."}, {"id": "duration_neg_urgency_arrival", "text": "(duration, -urgency, arrivalSequence)."}, {"id": "neg_urgency_neg_duration_neg_arrival", "text": "(-urgency, -duration, -arrivalSequence)."}], "acceptedOptionIds": ["neg_urgency_duration_arrival"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Each desired descending field is negated for min-order, while ascending duration and arrival remain unchanged in their tie positions.", "details": {"blocks": [{"type": "paragraph", "text": "Lexicographic min comparison sees the smallest first field. Negating urgency makes larger urgency smaller; once urgency ties, ordinary duration puts shorter jobs first; once both tie, ordinary arrival sequence puts earlier jobs first. Negating the wrong fields reverses a secondary policy, while putting duration first changes which requirement has precedence."}]}, "wrongOptionExplanationsByOptionId": {"urgency_neg_duration_arrival": "Unchanged urgency makes low urgency run first under min-order, and negative duration reverses the requested shorter-first tie-break.", "duration_neg_urgency_arrival": "Duration becomes the primary key, so urgency no longer dominates.", "neg_urgency_neg_duration_neg_arrival": "Urgency is correct, but both secondary orders are reversed from the stated policy."}},
+      "taxonomy": {"primarySkillAtomId": "choose_heap_orientation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "schedule_by_priority"},
+      "constraints": ["Tuple comparison is lexicographic and arrivalSequence is unique."]
+    },
+    {
+      "id": "hpq-orientation-top-k-symmetric",
+      "prompt": "A stream algorithm retains the k smallest values with a bounded heap and evicts the root on overflow. Which orientation exposes the correct eviction boundary?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "max_heap", "text": "A max-heap, because the largest retained value is the worst member of the k-smallest set."}, {"id": "min_heap", "text": "A min-heap, because small values should always appear at the root even when they are safe."}, {"id": "fifo", "text": "A FIFO queue, because the newest value is the only possible replacement."}, {"id": "both", "text": "Both orientations evict the same root without transforming the key."}], "acceptedOptionIds": ["max_heap"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "For k smallest, the largest retained value is the admission threshold and must be exposed for eviction.", "details": {"blocks": [{"type": "paragraph", "text": "The bounded heap is oriented around the worst item inside the desired frontier. A new value can replace the current largest retained value if it is smaller. A max-heap exposes that threshold in O(log k). The min-heap root is the safest retained value and is therefore the wrong boundary for overflow repair. This is the symmetric counterpart of using a min-heap for k largest."}]}, "wrongOptionExplanationsByOptionId": {"min_heap": "The smallest retained value should be protected, not evicted; the largest defines the k-smallest threshold.", "fifo": "Admission depends on value rank, not arrival time.", "both": "Without a key transformation, opposite orientations expose different roots and produce different retained sets."}},
+      "taxonomy": {"primarySkillAtomId": "choose_heap_orientation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "top_k", "problemArchetypeId": "maintain_top_k"},
+      "constraints": ["The heap is full before each overflow decision and k is positive."]
+    },
+    {
+      "id": "hpq-orientation-tie-stability",
+      "prompt": "A priority queue needs the smallest primary key, and equal primary keys must leave in insertion order. What must the heap key include?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [{"id": "primary_sequence", "text": "(primaryKey, insertionSequence), compared lexicographically in a min-heap."}, {"id": "primary_only", "text": "The primary key alone; equal entries are stable in every heap implementation."}, {"id": "sequence_primary", "text": "(insertionSequence, primaryKey), so arrival always dominates priority."}, {"id": "negative_sequence", "text": "(primaryKey, -insertionSequence), so newer equal-priority entries leave first."}], "acceptedOptionIds": ["primary_sequence"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The secondary sequence key makes ties deterministic and preserves FIFO behavior within equal primary priority.", "details": {"blocks": [{"type": "paragraph", "text": "A heap guarantees only the comparator order; equal keys may be removed in any implementation-dependent order unless the comparator distinguishes them. Keeping the primary key first preserves its dominance, and a monotonically increasing insertion sequence breaks ties toward earlier arrivals. Reversing the sequence produces LIFO ties, while placing sequence first changes the primary scheduling rule."}]}, "wrongOptionExplanationsByOptionId": {"primary_only": "Equal comparator keys have no required relative order in a heap.", "sequence_primary": "Arrival becomes the main priority and can make an older low-priority item precede a newer high-priority item.", "negative_sequence": "Negating the sequence makes later equal-priority arrivals leave before earlier ones."}},
+      "taxonomy": {"primarySkillAtomId": "choose_heap_orientation", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "running_extreme", "problemArchetypeId": "schedule_by_priority"},
+      "constraints": ["InsertionSequence is unique and increases with each arrival."]
+    },
+    {
+      "id": "hpq-orientation-11_top_k_smallest",
+      "prompt": "Which heap orientation naturally retains the k smallest values seen in a stream?",
+      "constraints": [
+        "The heap is bounded at k entries.",
+        "An incoming value replaces a retained value only when it is smaller."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "max_heap_threshold",
+            "text": "Use a max-heap so the largest retained value is at the root and can be evicted when a smaller candidate arrives.",
+            "explanation": "The root is the worst member of the k-smallest frontier."
+          },
+          {
+            "id": "min_heap_threshold",
+            "text": "Use a min-heap so the smallest retained value is evicted first.",
+            "explanation": "Evicting the smallest discards a required result."
+          },
+          {
+            "id": "orientation_irrelevant",
+            "text": "Either orientation is identical because the retained set is unordered.",
+            "explanation": "Root orientation determines efficient eviction."
+          },
+          {
+            "id": "two_heaps_required",
+            "text": "Use both heaps for every update even though only one threshold is needed.",
+            "explanation": "One max-heap suffices for k smallest."
+          }
+        ],
+        "acceptedOptionIds": [
+          "max_heap_threshold"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Choose the root as the retained frontier's worst candidate.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For k smallest, the largest retained value is the threshold. A max-heap exposes it in O(1) and supports O(log k) replacement; the orientation is symmetric for k largest."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "min_heap_threshold": "Evicting the smallest discards a required result.",
+          "orientation_irrelevant": "Root orientation determines efficient eviction.",
+          "two_heaps_required": "One max-heap suffices for k smallest."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_heap_orientation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "schedule_by_priority"
+      }
+    },
+    {
+      "id": "hpq-orientation-12_priority_queue",
+      "prompt": "A scheduler repeatedly selects the task with the earliest deadline among available tasks. Which orientation should its priority queue expose?",
+      "constraints": [
+        "The next task minimizes deadline.",
+        "Tasks may become available over time."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "min_by_deadline",
+            "text": "Use a min-heap keyed by deadline, with any required tie-break encoded secondarily.",
+            "explanation": "The next minimum priority is the earliest deadline."
+          },
+          {
+            "id": "max_by_deadline",
+            "text": "Use a max-heap so the latest deadline is always selected first.",
+            "explanation": "That reverses the scheduling priority."
+          },
+          {
+            "id": "heap_by_duration",
+            "text": "Key only by duration because shorter tasks always meet earlier deadlines.",
+            "explanation": "Duration and deadline are distinct fields."
+          },
+          {
+            "id": "fifo_only",
+            "text": "Use insertion order because availability order is the same as priority order.",
+            "explanation": "A later task can have an earlier deadline."
+          }
+        ],
+        "acceptedOptionIds": [
+          "min_by_deadline"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Heap orientation is determined by the direction of the next required extreme.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The comparator should encode deadline first and any deterministic tie policy second. Availability events are separate from the priority order among currently eligible tasks."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "max_by_deadline": "That reverses the scheduling priority.",
+          "heap_by_duration": "Duration and deadline are distinct fields.",
+          "fifo_only": "A later task can have an earlier deadline."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_heap_orientation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "schedule_by_priority"
+      }
+    },
+    {
+      "id": "hpq-orientation-13_tie_break",
+      "prompt": "When a priority queue must choose the smallest score and then the earliest input index, how should the comparator be defined?",
+      "constraints": [
+        "Scores may tie.",
+        "The earliest index is the required secondary policy."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "lexicographic_key",
+            "text": "Compare `(score,index)` lexicographically, so score determines priority and index resolves equal scores.",
+            "explanation": "The comparator mirrors the full output contract."
+          },
+          {
+            "id": "score_only",
+            "text": "Compare scores only and accept arbitrary order among ties.",
+            "explanation": "Arbitrary ties violate the index policy."
+          },
+          {
+            "id": "index_only",
+            "text": "Compare index first because input order is always the primary objective.",
+            "explanation": "That ignores the required score priority."
+          },
+          {
+            "id": "post_sort",
+            "text": "Use an arbitrary heap order and sort only the final single result.",
+            "explanation": "A single chosen result cannot be repaired after selection."
+          }
+        ],
+        "acceptedOptionIds": [
+          "lexicographic_key"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Tie semantics belong in the heap ordering rather than in an after-the-fact repair.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A composite key makes the next choice deterministic and correct. If ties are intentionally arbitrary, that too should be stated as the contract."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "score_only": "Arbitrary ties violate the index policy.",
+          "index_only": "That ignores the required score priority.",
+          "post_sort": "A single chosen result cannot be repaired after selection."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_heap_orientation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "schedule_by_priority"
+      }
+    },
+    {
+      "id": "hpq-orientation-14_top_k_ties",
+      "prompt": "A top-k query includes more records tied at the cutoff than the output can contain. What must the heap comparator support?",
+      "constraints": [
+        "The output has a deterministic tie policy.",
+        "Record identity or input order is available."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "deterministic_cutoff",
+            "text": "Use the primary score plus the contract's secondary key so exactly the permitted tied records are retained.",
+            "explanation": "The cutoff is otherwise underdetermined."
+          },
+          {
+            "id": "random_cutoff",
+            "text": "Any tied records are interchangeable even when output order is specified.",
+            "explanation": "The stated policy makes their identity observable."
+          },
+          {
+            "id": "keep_all_ties",
+            "text": "Return every tied record even if that exceeds the k-sized output contract.",
+            "explanation": "That changes the requested output size."
+          },
+          {
+            "id": "deduplicate_values",
+            "text": "Collapse tied records with equal values into one representative.",
+            "explanation": "Distinct records can both belong in the result."
+          }
+        ],
+        "acceptedOptionIds": [
+          "deterministic_cutoff"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Top-k with ties is a selection contract, not merely a numeric threshold.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The heap must retain the correct records at the cutoff according to a declared secondary order. Deduplication or unbounded tie expansion changes multiplicity and output size."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "random_cutoff": "The stated policy makes their identity observable.",
+          "keep_all_ties": "That changes the requested output size.",
+          "deduplicate_values": "Distinct records can both belong in the result."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "choose_heap_orientation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "running_extreme",
+        "problemArchetypeId": "schedule_by_priority"
+      }
     }
   ],
   "modeStructures": {

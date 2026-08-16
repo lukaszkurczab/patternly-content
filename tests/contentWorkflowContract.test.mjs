@@ -23,7 +23,8 @@ test("content workflows retain full technical-input history and clean locked ins
   assert.doesNotMatch(`${freeNodeInventory}\n${freeNodePins}\n${bundledPackages}`, /google-cloud-associate-cloud-engineer|gcp-ace/);
 });
 
-test("GCP active ingress and selectors are absent while historical release evidence remains", async () => {
+test("GCP authoring ingress is canonical while runtime selectors and old paths remain absent", async () => {
+  await assert.doesNotReject(() => stat("manual/source/google-cloud-associate-cloud-engineer/setup_environment/compute_execution_model_selection.json"));
   for (const path of [
     "manual/source/google-cloud-associate-cloud-engineer/gcp-ace-0001.json",
     "manual/source/google-cloud-associate-cloud-engineer/README.md",

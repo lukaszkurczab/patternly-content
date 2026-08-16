@@ -582,6 +582,294 @@
         "patternVariantId": "vector_orientation",
         "problemArchetypeId": "compare_geometric_orientation"
       }
+    },
+    {
+      "id": "alg-mg-overflow-widen-before-multiply",
+      "prompt": "A and B fit in 32-bit signed integers, but their product may not. What is the safe order for computing A*B?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "widen_operand", "text": "Convert at least one operand to a wider integer type before multiplication."},
+        {"id": "multiply_then_widen", "text": "Multiply in 32-bit arithmetic and widen the result afterward."},
+        {"id": "use_float_round", "text": "Convert to floating point and round the product back to an integer."},
+        {"id": "check_sign_only", "text": "Check only whether A and B have the same sign."}
+      ], "acceptedOptionIds": ["widen_operand"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The multiplication operation chooses its arithmetic width before the result exists.", "details": {"blocks": [{"type": "paragraph", "text": "Widening after an overflowing multiplication cannot recover the lost high bits. The same rule applies to cross products, squared distances, and intermediate LCM calculations."}]}, "wrongOptionExplanationsByOptionId": {"multiply_then_widen": "Overflow has already occurred before conversion.", "use_float_round": "Floating point can lose integer precision for large values.", "check_sign_only": "A same-sign product can still exceed the representable magnitude."}},
+      "taxonomy": {"primarySkillAtomId": "avoid_integer_overflow_in_computation", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "coordinate_transform", "problemArchetypeId": "compare_geometric_orientation"}
+    },
+    {
+      "id": "alg-mg-overflow-lcm-gcd-order",
+      "prompt": "Which expression minimizes overflow risk when computing lcm(a,b) for positive integers?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "divide_first", "text": "(a / gcd(a,b)) * b, using a wide type for the final product."},
+        {"id": "multiply_first", "text": "(a * b) / gcd(a,b) in the original narrow type."},
+        {"id": "add_values", "text": "a + b, because LCM is a sum of the inputs."},
+        {"id": "use_remainder", "text": "a % b, because gcd and LCM use the same output."}
+      ], "acceptedOptionIds": ["divide_first"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Dividing by the gcd before multiplying preserves the mathematical identity while reducing the intermediate magnitude.", "details": {"blocks": [{"type": "paragraph", "text": "The final product can still exceed the chosen type, so width and input constraints remain part of the contract. The ordering specifically avoids an unnecessary a*b overflow."}]}, "wrongOptionExplanationsByOptionId": {"multiply_first": "The product can overflow before the exact division removes the common factor.", "add_values": "LCM is a least common multiple, not a sum.", "use_remainder": "Remainder is an intermediate operation in Euclid's algorithm, not the LCM result."}},
+      "taxonomy": {"primarySkillAtomId": "avoid_integer_overflow_in_computation", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "euclidean_algorithm", "problemArchetypeId": "compute_gcd_lcm"}
+    },
+    {
+      "id": "alg-mg-overflow-11-widen-before-multiply",
+      "prompt": "Why must an implementation widen an integer operand before multiplying two large inputs?",
+      "constraints": [
+        "The mathematical product may exceed the operand type.",
+        "The language evaluates multiplication in the operand type unless widened."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "prevent_early_wrap",
+            "text": "Widening before multiplication prevents overflow from occurring before the result is stored in the wider type.",
+            "explanation": "Casting only the already-overflowed result is too late."
+          },
+          {
+            "id": "cast_after",
+            "text": "Multiply in the narrow type and cast afterward; the wider result recovers lost high bits.",
+            "explanation": "Overflow has already discarded those bits."
+          },
+          {
+            "id": "division_safe",
+            "text": "Multiplication cannot overflow when a later division will reduce the value.",
+            "explanation": "Evaluation happens before the later division."
+          },
+          {
+            "id": "float_always_exact",
+            "text": "Convert to floating point because it represents every large integer exactly.",
+            "explanation": "Floating point has finite precision and may lose integer exactness."
+          }
+        ],
+        "acceptedOptionIds": [
+          "prevent_early_wrap"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Overflow is an evaluation-time failure, so the expression must be widened before the risky operation.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A wider destination does not retroactively recover a wrapped product. Cast an operand or otherwise select a wider arithmetic domain before multiplication, then check whether that domain itself is sufficient."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "cast_after": "Overflow has already discarded those bits.",
+          "division_safe": "Evaluation happens before the later division.",
+          "float_always_exact": "Floating point has finite precision and may lose integer exactness."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
+    },
+    {
+      "id": "alg-mg-overflow-12-lcm-order",
+      "prompt": "Which multiplication order reduces avoidable overflow when computing a nonzero LCM from a and b?",
+      "constraints": [
+        "gcd(a,b) is nonzero.",
+        "A wide integer type is available but has finite range."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "divide_first",
+            "text": "Compute abs(a / gcd(a,b) * b) in a widened type, dividing before multiplying.",
+            "explanation": "The exact division removes the common factor before the product grows."
+          },
+          {
+            "id": "multiply_first",
+            "text": "Compute abs(a*b)/gcd(a,b) because multiplication is simpler to read.",
+            "explanation": "The intermediate product can overflow even when the final LCM fits."
+          },
+          {
+            "id": "use_remainder",
+            "text": "Use a mod b instead of gcd because the remainder is always smaller.",
+            "explanation": "A remainder is not the common factor needed for LCM."
+          },
+          {
+            "id": "cast_final",
+            "text": "Cast only the final product after narrow multiplication.",
+            "explanation": "Overflow may occur before the cast."
+          }
+        ],
+        "acceptedOptionIds": [
+          "divide_first"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Factoring out the gcd before multiplying lowers the intermediate magnitude while preserving the mathematical LCM.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The division is exact because gcd divides a. The multiplication must still be widened and the zero case handled separately, but the order removes avoidable common-factor growth."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "multiply_first": "The intermediate product can overflow even when the final LCM fits.",
+          "use_remainder": "A remainder is not the common factor needed for LCM.",
+          "cast_final": "Overflow may occur before the cast."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
+    },
+    {
+      "id": "alg-mg-overflow-13-midpoint",
+      "prompt": "What is the overflow-safe way to compute the midpoint of integer bounds l and r?",
+      "constraints": [
+        "l and r fit in the integer type.",
+        "The midpoint must round consistently toward the lower bound."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "offset_mid",
+            "text": "Use l + (r − l) / 2, with a type wide enough for the difference under the bounds contract.",
+            "explanation": "It avoids adding two potentially large positive bounds."
+          },
+          {
+            "id": "sum_mid",
+            "text": "Use (l+r)/2 because division occurs before the result is stored.",
+            "explanation": "The addition is evaluated first and can overflow."
+          },
+          {
+            "id": "max_min",
+            "text": "Use max(l,r)/2 + min(l,r)/2 without checking signed rounding.",
+            "explanation": "Separate division can change the intended midpoint for signed or odd values."
+          },
+          {
+            "id": "floating_mid",
+            "text": "Convert to floating point and round later for exact integer behavior.",
+            "explanation": "Floating representation can lose integer precision."
+          }
+        ],
+        "acceptedOptionIds": [
+          "offset_mid"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Subtracting the lower bound before adding keeps the intermediate within the interval span.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The classic sum formula can overflow even when the midpoint is representable. The offset form still needs a signed-range policy if l and r can have extreme opposite signs."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sum_mid": "The addition is evaluated first and can overflow.",
+          "max_min": "Separate division can change the intended midpoint for signed or odd values.",
+          "floating_mid": "Floating representation can lose integer precision."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
+    },
+    {
+      "id": "alg-mg-overflow-14-mod-product",
+      "prompt": "A modular computation needs (a*b) mod m but a and b are near the integer limit. Which concern is primary?",
+      "constraints": [
+        "The product is evaluated before the modulo operation.",
+        "The final residue must be correct."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "safe_mod_multiply",
+            "text": "Use a wider type or a safe modular-multiplication method so the product cannot overflow before reduction.",
+            "explanation": "Modulo after a wrapped product yields the wrong residue."
+          },
+          {
+            "id": "mod_after_wrap",
+            "text": "Compute the narrow product and reduce it; modulo will remove any overflow artifact.",
+            "explanation": "Overflow changes the residue before reduction."
+          },
+          {
+            "id": "drop_modulus",
+            "text": "Skip reduction until the final answer because intermediate values are mathematically exact.",
+            "explanation": "Finite machine arithmetic is not unbounded integer arithmetic."
+          },
+          {
+            "id": "round_float",
+            "text": "Use floating point and round the residue to the nearest integer.",
+            "explanation": "Floating rounding can lose modular exactness for large products."
+          }
+        ],
+        "acceptedOptionIds": [
+          "safe_mod_multiply"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Reduction is only useful after a correct product or a multiplication method that controls intermediate growth.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Depending on bounds, a wider type, repeated doubling, or a language-supported wide multiply may be required. The implementation must prove the chosen method preserves the modular result."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "mod_after_wrap": "Overflow changes the residue before reduction.",
+          "drop_modulus": "Finite machine arithmetic is not unbounded integer arithmetic.",
+          "round_float": "Floating rounding can lose modular exactness for large products."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "avoid_integer_overflow_in_computation",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "euclidean_algorithm",
+        "problemArchetypeId": "compute_gcd_lcm"
+      }
     }
   ],
   "modeStructures": {

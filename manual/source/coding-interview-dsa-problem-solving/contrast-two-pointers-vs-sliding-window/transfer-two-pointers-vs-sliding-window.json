@@ -446,6 +446,421 @@
         "More than one revision may be correct.",
         "Judge only the structural changes stated."
       ]
+    },
+    {
+      "id": "alg-ctpsw-transfer-08",
+      "prompt": "A stream processor keeps a contiguous range [left, right], maintains the number of distinct event types in that range, and removes events from the left while the count exceeds K. Which transfer is justified?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "window_validity_transfer",
+            "text": "Sliding window, because range-owned distinct-count state and a shrink rule maintain a validity predicate."
+          },
+          {
+            "id": "pair_elimination_transfer",
+            "text": "Two pointers, because any two boundaries automatically define a pair-search invariant."
+          },
+          {
+            "id": "sorting_transfer",
+            "text": "Sorting, because the event types must be ordered before the range can be valid."
+          },
+          {
+            "id": "no_pattern_transfer",
+            "text": "Neither pattern, because distinct counts cannot be updated incrementally."
+          }
+        ],
+        "acceptedOptionIds": [
+          "window_validity_transfer"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The candidate is a contiguous interval with incrementally maintained validity, which is the sliding-window transfer boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The frequency or set state belongs to the current range. When a new right value violates the distinct-type limit, removing left values updates that same state until the predicate is restored. The use of two indices is incidental; no pair of values is being selected or permanently eliminated by an endpoint comparison."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "pair_elimination_transfer": "The algorithm does not compare two endpoint values to discard pair candidates; it repairs a range predicate.",
+          "sorting_transfer": "Distinctness can be tracked with a set or counts without ordering the stream.",
+          "no_pattern_transfer": "Range membership and distinct counts can be updated in constant or amortized constant time per boundary movement."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_two_pointers_vs_window_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "The current range is inclusive and state is updated when either boundary moves."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-transfer-09",
+      "prompt": "An in-place compaction scan reads each array position and writes the next retained value. Which detail prevents it from being classified as a sliding window?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_range_validity_state",
+            "text": "The indices describe read/write roles, not a contiguous candidate range whose validity is maintained and repaired."
+          },
+          {
+            "id": "same_direction_indices",
+            "text": "Both indices move left to right, but sliding windows require opposite directions."
+          },
+          {
+            "id": "in_place_forbidden",
+            "text": "Sliding windows cannot modify the input array in place."
+          },
+          {
+            "id": "no_hash_map",
+            "text": "A sliding window is impossible unless it uses a hash map."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_range_validity_state"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Read/write compaction is a two-pointer state relation, but it does not maintain a window predicate over all elements between its boundaries.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The write index marks the next output slot and the read index scans input. Elements between them are not necessarily a candidate interval with aggregate state. Same-direction motion and in-place mutation are compatible with either family; what is absent is a contiguous range plus a validity-and-shrink proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_direction_indices": "Direction is not the family boundary; same-direction two-pointers scans exist.",
+          "in_place_forbidden": "A window may be used with in-place data depending on the problem contract.",
+          "no_hash_map": "Window state can be a scalar, queue, counters, deque, or another structure; a hash map is not mandatory."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_two_pointers_vs_window_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Classify the invariant represented by the two indices."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-transfer-10",
+      "prompt": "Select all changes that can transfer a sorted pair-search task into a valid sliding-window task.",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "replace_pair_with_contiguous_budget",
+            "text": "Replace the arbitrary pair output with the longest contiguous segment under a nonnegative sum budget."
+          },
+          {
+            "id": "replace_pair_with_frequency_limit",
+            "text": "Replace the arbitrary pair output with a contiguous segment whose frequency state must stay within a limit."
+          },
+          {
+            "id": "rename_endpoints",
+            "text": "Rename the pair endpoints left and right while preserving the pair output."
+          },
+          {
+            "id": "drop_sortedness_only",
+            "text": "Remove sortedness while preserving an arbitrary two-value output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "replace_pair_with_contiguous_budget",
+          "replace_pair_with_frequency_limit"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A sliding-window transfer requires a contiguous candidate and state whose validity changes predictably with boundary movement.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Both accepted revisions introduce a range-level objective and an incremental predicate: a nonnegative budget or a frequency limit. Renaming endpoints leaves the original pair relation unchanged, and removing sortedness only invalidates the old pair proof. A problem can require a different algorithm without thereby becoming a window problem."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "rename_endpoints": "Variable names do not change the candidate shape or introduce window-owned state.",
+          "drop_sortedness_only": "The pair remains arbitrary, so loss of sortedness does not create contiguity or a shrink predicate."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "replace_pair_with_contiguous_budget": "The range is contiguous and nonnegative budget violations admit a monotone shrink proof.",
+          "replace_pair_with_frequency_limit": "Frequency state can be updated as values enter and leave a contiguous range, giving a validity rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_two_pointers_vs_window_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "More than one revision may be correct.",
+        "Judge only the structural changes stated."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-transfer-11",
+      "prompt": "A pair problem changes its output from arbitrary endpoints to the longest contiguous range under a nonnegative budget. What structural change occurred?",
+      "constraints": [
+        "The contrast boundary is part of the contract.",
+        "Classify by maintained state and proof."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "window_transfer",
+            "text": "The candidate became a range with an incrementally maintainable budget predicate, so a window proof may apply."
+          },
+          {
+            "id": "rename",
+            "text": "Only endpoint variable names changed."
+          },
+          {
+            "id": "drop_sort",
+            "text": "Removing sortedness alone creates a window."
+          },
+          {
+            "id": "same",
+            "text": "The pair method is unchanged."
+          }
+        ],
+        "acceptedOptionIds": [
+          "window_transfer"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option follows the contrast's invariant boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pointer syntax can support pair elimination, range validity repair, or neither. The classification must follow candidate identity, maintained state, and a safe movement proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "rename": "The output contract changed substantially.",
+          "drop_sort": "It does not create contiguity or range state.",
+          "same": "A pair and range have different invariants."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_two_pointers_vs_window_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-transfer-12",
+      "prompt": "What change transfers a frequency-constrained task naturally to a sliding window?",
+      "constraints": [
+        "The contrast boundary is part of the contract.",
+        "Classify by maintained state and proof."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "membership",
+            "text": "The output is a contiguous segment and its frequency state updates when symbols enter or leave."
+          },
+          {
+            "id": "sort",
+            "text": "Sort symbols before checking frequency."
+          },
+          {
+            "id": "pair",
+            "text": "Select two endpoint symbols only."
+          },
+          {
+            "id": "rename",
+            "text": "Rename indices left/right."
+          }
+        ],
+        "acceptedOptionIds": [
+          "membership"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option follows the contrast's invariant boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pointer syntax can support pair elimination, range validity repair, or neither. The classification must follow candidate identity, maintained state, and a safe movement proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "sort": "Sorting changes substring order.",
+          "pair": "Interior frequencies matter.",
+          "rename": "Names do not create a range state."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_two_pointers_vs_window_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-transfer-13",
+      "prompt": "What should happen if a changed problem has neither endpoint elimination nor monotone window validity?",
+      "constraints": [
+        "The contrast boundary is part of the contract.",
+        "Classify by maintained state and proof."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "neither",
+            "text": "Choose neither template and derive a state method whose invariant matches the new contract."
+          },
+          {
+            "id": "force_pair",
+            "text": "Force two pointers because the old problem used them."
+          },
+          {
+            "id": "force_window",
+            "text": "Force a window because the answer still has two boundaries."
+          },
+          {
+            "id": "flag",
+            "text": "Add a label saying the old method is future-compatible."
+          }
+        ],
+        "acceptedOptionIds": [
+          "neither"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option follows the contrast's invariant boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pointer syntax can support pair elimination, range validity repair, or neither. The classification must follow candidate identity, maintained state, and a safe movement proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "force_pair": "The old proof no longer applies.",
+          "force_window": "Boundaries alone are insufficient.",
+          "flag": "A label does not solve the missing invariant."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_two_pointers_vs_window_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-transfer-14",
+      "prompt": "Which transfer check should be performed after moving a pattern to a new data type?",
+      "constraints": [
+        "The contrast boundary is part of the contract.",
+        "Classify by maintained state and proof."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "operations",
+            "text": "Verify that comparison, aggregation, identity, and update operations retain the assumptions used by the original proof."
+          },
+          {
+            "id": "copy",
+            "text": "Copy the original code unchanged."
+          },
+          {
+            "id": "names",
+            "text": "Rename variables to match the new type."
+          },
+          {
+            "id": "benchmark",
+            "text": "Benchmark first and infer correctness from speed."
+          }
+        ],
+        "acceptedOptionIds": [
+          "operations"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option follows the contrast's invariant boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pointer syntax can support pair elimination, range validity repair, or neither. The classification must follow candidate identity, maintained state, and a safe movement proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "copy": "Operations may no longer be valid.",
+          "names": "Names do not preserve invariants.",
+          "benchmark": "Performance does not prove transfer."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_two_pointers_vs_window_decision",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
     }
   ],
   "modeStructures": {
@@ -468,7 +883,14 @@
           "alg-ctpsw-transfer-04",
           "alg-ctpsw-transfer-05",
           "alg-ctpsw-transfer-06",
-          "alg-ctpsw-transfer-07"
+          "alg-ctpsw-transfer-07",
+          "alg-ctpsw-transfer-08",
+          "alg-ctpsw-transfer-09",
+          "alg-ctpsw-transfer-10",
+        "alg-ctpsw-transfer-11",
+        "alg-ctpsw-transfer-12",
+        "alg-ctpsw-transfer-13",
+        "alg-ctpsw-transfer-14"
         ]
       }
     ],

@@ -390,6 +390,477 @@
       "constraints": [
         "More than one statement may be correct."
       ]
+    },
+    {
+      "id": "alg-ctpsw-slam-07",
+      "prompt": "Order the proof steps that justify shrinking a longest nonnegative-sum window after its sum exceeds budget B.",
+      "interaction": {
+        "type": "ordering",
+        "elements": [
+          {
+            "id": "state_over_budget",
+            "text": "The current contiguous range has sum greater than B."
+          },
+          {
+            "id": "remove_left_contribution",
+            "text": "Remove the outgoing left value from the maintained sum and advance left."
+          },
+          {
+            "id": "sum_not_increase",
+            "text": "Use nonnegativity to conclude that each removal cannot increase the sum."
+          },
+          {
+            "id": "record_valid_length",
+            "text": "Once the sum is at most B, record the current valid length."
+          }
+        ],
+        "canonicalOrder": [
+          "state_over_budget",
+          "remove_left_contribution",
+          "sum_not_increase",
+          "record_valid_length"
+        ],
+        "scoringMethod": "adjacent_relations"
+      },
+      "scoringContract": {
+        "type": "ordering",
+        "maxPoints": 3
+      },
+      "feedback": {
+        "reason": "The shrink proof connects an observed violation to a monotone repair and scores only after validity returns.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The window first becomes over budget. Removing the leftmost value updates the state, and nonnegative values establish that repeated removals cannot make the sum larger. When the predicate is restored, the current range is a valid candidate for the longest objective. Without the nonnegativity premise, the third relation is not available."
+            }
+          ]
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "intermediate",
+      "constraints": [
+        "Assume all values are nonnegative and the objective is the longest valid range."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-08",
+      "prompt": "For arbitrary signed values, which statement is a valid reason that a previously discarded window start might become useful after later expansion?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "future_negative_rescue",
+            "text": "A future negative value can lower the sum, so an earlier start removed while over budget might later form a valid longer range."
+          },
+          {
+            "id": "future_positive_rescue",
+            "text": "A future positive value always lowers an over-budget sum and makes the old start valid."
+          },
+          {
+            "id": "contiguity_proves_monotone",
+            "text": "Contiguity alone means every discarded start remains permanently dominated."
+          },
+          {
+            "id": "left_always_safe",
+            "text": "Advancing left is safe because every boundary move is monotone by definition."
+          }
+        ],
+        "acceptedOptionIds": [
+          "future_negative_rescue"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A later negative contribution can change the validity relation in favor of a start that an over-budget repair discarded too early.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The positive-only proof relies on future additions never making an over-budget earlier range valid again. With signed values, a negative suffix can reduce the sum, so the best valid range may need an earlier left boundary. This is why a terminating expand/shrink loop can still be incorrect: its discarded-candidate theorem is missing."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "future_positive_rescue": "A positive addition increases or preserves the sum, so it cannot rescue an over-budget sum under this constraint.",
+          "contiguity_proves_monotone": "Contiguity describes the shape of the candidate, not how future values affect its validity.",
+          "left_always_safe": "Boundary movement is safe only when an invariant proves that discarded starts cannot become useful later."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "Assume the objective is a longest range under an upper-sum bound."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-09",
+      "prompt": "A problem asks for a contiguous subarray with sum exactly T and allows negative values. Why is the rule “shrink whenever sum is not T” not justified?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "both_directions_possible",
+            "text": "Removing the left value can move the sum either up or down, and future values can change which earlier start is useful."
+          },
+          {
+            "id": "exact_target_never_window",
+            "text": "Exact-sum objectives can never be solved with a contiguous range."
+          },
+          {
+            "id": "two_indices_forbidden",
+            "text": "Any algorithm with two moving boundaries is invalid for exact-sum problems."
+          },
+          {
+            "id": "positive_values_always_break",
+            "text": "Even positive-only values make every shrink rule invalid."
+          }
+        ],
+        "acceptedOptionIds": [
+          "both_directions_possible"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "With signed values and an exact target, “not equal” does not identify one safe direction for discarding starts or extending the range.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If the current sum is below T, a future positive may help, but a future negative may not; if it is above T, removing a negative can increase the sum rather than reduce it. The algorithm therefore lacks the monotone movement proof required by a simple expand/shrink loop. Prefix-sum indexing or another method may solve the problem, but rejecting the proposed rule is not rejecting contiguity itself."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "exact_target_never_window": "Exact-sum contiguous problems are valid problem shapes; the issue is the missing monotonicity proof for this movement rule.",
+          "two_indices_forbidden": "Two boundaries are allowed; their movement must be justified by the input properties and objective.",
+          "positive_values_always_break": "For suitable positive or nonnegative constraints, exact-sum movement can have a directional proof; arbitrary signed values are the stated boundary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "Do not assume a sign restriction that is absent from the problem."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-10",
+      "prompt": "Select all claims that are insufficient by themselves to justify a sliding-window shrink rule.",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "id": "linear_runtime",
+            "text": "Every index advances at most n times, so the loop is O(n)."
+          },
+          {
+            "id": "two_boundaries",
+            "text": "The implementation uses left and right boundaries."
+          },
+          {
+            "id": "contiguous_objective",
+            "text": "The answer is required to be contiguous."
+          },
+          {
+            "id": "monotone_discard_proof",
+            "text": "Removing from the left restores validity and permanently makes discarded starts irrelevant."
+          }
+        ],
+        "acceptedOptionIds": [
+          "linear_runtime",
+          "two_boundaries",
+          "contiguous_objective"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Runtime, syntax, and output shape do not prove that a boundary move is semantically safe; the discarded-candidate theorem does.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A loop may be linear and contiguous yet still discard an optimal start. Two indices describe mechanics, not correctness. The required proof must connect the state update and shrink condition to a monotone validity relation and show that no future expansion can make a discarded boundary necessary."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "monotone_discard_proof": "This is the substantive condition: it explains both why shrinking restores validity and why the removed starts need not be revisited."
+        },
+        "omittedCorrectExplanationsByOptionId": {
+          "linear_runtime": "Termination and O(n) movement say nothing about whether the algorithm discards a correct answer.",
+          "two_boundaries": "Boundary syntax does not identify the validity measure or movement theorem.",
+          "contiguous_objective": "Contiguity is a requirement on answers, not proof that a particular shrink direction is safe."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      },
+      "difficulty": "advanced",
+      "constraints": [
+        "More than one statement may be correct."
+      ]
+    },
+    {
+      "id": "alg-ctpsw-slam-11",
+      "prompt": "What changed input property most directly supports a validity-driven shrink rule for a sum threshold?",
+      "constraints": [
+        "The contrast boundary is part of the contract.",
+        "Classify by maintained state and proof."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "positive_values",
+            "text": "Positive contributions make expansion nondecreasing and left removal nonincreasing, so shrinking can restore a threshold monotonically."
+          },
+          {
+            "id": "two_indices",
+            "text": "Two boundaries are enough regardless of values."
+          },
+          {
+            "id": "linear",
+            "text": "O(n) movement proves every shrink is safe."
+          },
+          {
+            "id": "sorted",
+            "text": "Sorted values are required for every sum window."
+          }
+        ],
+        "acceptedOptionIds": [
+          "positive_values"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option follows the contrast's invariant boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pointer syntax can support pair elimination, range validity repair, or neither. The classification must follow candidate identity, maintained state, and a safe movement proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "two_indices": "Syntax does not prove monotonicity.",
+          "linear": "Cost does not prove correctness.",
+          "sorted": "Positivity, not sorting, supports this rule."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-slam-12",
+      "prompt": "What must be shown before a window can permanently discard starts while shrinking?",
+      "constraints": [
+        "The contrast boundary is part of the contract.",
+        "Classify by maintained state and proof."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "discard_proof",
+            "text": "The removed starts cannot become part of a future optimal valid range under any later right expansion."
+          },
+          {
+            "id": "contiguous",
+            "text": "The answer is contiguous."
+          },
+          {
+            "id": "names",
+            "text": "The code uses left and right."
+          },
+          {
+            "id": "runtime",
+            "text": "The loop is linear."
+          }
+        ],
+        "acceptedOptionIds": [
+          "discard_proof"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option follows the contrast's invariant boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pointer syntax can support pair elimination, range validity repair, or neither. The classification must follow candidate identity, maintained state, and a safe movement proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "contiguous": "Contiguity alone does not justify discard.",
+          "names": "Names carry no theorem.",
+          "runtime": "A fast wrong discard remains wrong."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-slam-13",
+      "prompt": "Why can signed values cross the shrink-legality boundary of a positive-sum window?",
+      "constraints": [
+        "The contrast boundary is part of the contract.",
+        "Classify by maintained state and proof."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "signed_breaks",
+            "text": "Removing a negative value can increase the sum and adding one can decrease it, so the usual one-way validity proof fails."
+          },
+          {
+            "id": "same",
+            "text": "Signed sums behave like positive sums under pointer movement."
+          },
+          {
+            "id": "overflow",
+            "text": "Only integer overflow causes the failure."
+          },
+          {
+            "id": "sort",
+            "text": "Sorting signed values restores original subarray semantics."
+          }
+        ],
+        "acceptedOptionIds": [
+          "signed_breaks"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option follows the contrast's invariant boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pointer syntax can support pair elimination, range validity repair, or neither. The classification must follow candidate identity, maintained state, and a safe movement proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same": "They can move in either direction.",
+          "overflow": "The issue exists with exact arithmetic.",
+          "sort": "Sorting changes contiguity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
+    },
+    {
+      "id": "alg-ctpsw-slam-14",
+      "prompt": "What is the safest response when a proposed shrink rule has no monotonicity proof?",
+      "constraints": [
+        "The contrast boundary is part of the contract.",
+        "Classify by maintained state and proof."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "reject_rule",
+            "text": "Reject or restrict the rule until a discard theorem is established; choose another state method if needed."
+          },
+          {
+            "id": "label",
+            "text": "Keep the rule and label it a window."
+          },
+          {
+            "id": "benchmark",
+            "text": "Accept it after passing common examples."
+          },
+          {
+            "id": "faster",
+            "text": "Move left faster to compensate."
+          }
+        ],
+        "acceptedOptionIds": [
+          "reject_rule"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The accepted option follows the contrast's invariant boundary.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The same pointer syntax can support pair elimination, range validity repair, or neither. The classification must follow candidate identity, maintained state, and a safe movement proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "label": "Metadata does not create safety.",
+          "benchmark": "Examples do not prove universal discard.",
+          "faster": "Speed does not repair semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "validate_window_shrink_monotonicity",
+        "secondarySkillAtomIds": [],
+        "learningStage": "contrast_practice"
+      }
     }
   ],
   "modeStructures": {
@@ -411,7 +882,15 @@
           "alg-ctpsw-slam-03",
           "alg-ctpsw-slam-04",
           "alg-ctpsw-slam-05",
-          "alg-ctpsw-slam-06"
+          "alg-ctpsw-slam-06",
+          "alg-ctpsw-slam-07",
+          "alg-ctpsw-slam-08",
+          "alg-ctpsw-slam-09",
+          "alg-ctpsw-slam-10",
+        "alg-ctpsw-slam-11",
+        "alg-ctpsw-slam-12",
+        "alg-ctpsw-slam-13",
+        "alg-ctpsw-slam-14"
         ]
       }
     ],

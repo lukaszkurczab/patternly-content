@@ -532,6 +532,294 @@
         "patternVariantId": "vector_orientation",
         "problemArchetypeId": "compare_geometric_orientation"
       }
+    },
+    {
+      "id": "alg-mg-geometry-degenerate-segment-policy",
+      "prompt": "When testing whether a point lies on a segment whose endpoints are identical, which special case must be handled explicitly?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "point_equals_endpoint", "text": "Treat the segment as one point and test exact coordinate equality."},
+        {"id": "divide_by_zero", "text": "Compute its slope by dividing by the zero-length horizontal span."},
+        {"id": "always_outside", "text": "Declare every point outside because a segment needs two distinct endpoints."},
+        {"id": "ignore_endpoint", "text": "Skip the endpoint because collinearity is undefined."}
+      ], "acceptedOptionIds": ["point_equals_endpoint"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A zero-length segment has a well-defined geometric set: the single endpoint.", "details": {"blocks": [{"type": "paragraph", "text": "A determinant may report collinearity for many points, so it is not sufficient by itself. Combine the degenerate check with the exact point identity requirement before applying ordinary segment bounds."}]}, "wrongOptionExplanationsByOptionId": {"divide_by_zero": "Slope division is undefined for a zero-length segment.", "always_outside": "A degenerate segment can legitimately contain its sole endpoint.", "ignore_endpoint": "The endpoint is the entire geometric object in this case."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_degenerate_or_precision_case", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "vector_orientation", "problemArchetypeId": "compare_geometric_orientation"}
+    },
+    {
+      "id": "alg-mg-geometry-endpoint-inclusive-contract",
+      "prompt": "For a segment-intersection predicate whose contract counts touching endpoints as an intersection, which boundary rule is required?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "inclusive_bounds", "text": "Use inclusive comparisons when checking whether a collinear point lies within the endpoint box."},
+        {"id": "strict_bounds", "text": "Use strict comparisons so shared endpoints are excluded."},
+        {"id": "round_endpoints", "text": "Round endpoints to avoid equality checks."},
+        {"id": "orientation_only", "text": "Ignore coordinate bounds and rely only on determinant signs."}
+      ], "acceptedOptionIds": ["inclusive_bounds"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Endpoint contact belongs to the closed segments when the output contract defines touching as intersection.", "details": {"blocks": [{"type": "paragraph", "text": "Orientation establishes collinearity or crossing, but the endpoint policy decides whether equality is accepted at the final bounds check. The comparison must match the stated geometric contract."}]}, "wrongOptionExplanationsByOptionId": {"strict_bounds": "Strict comparisons reject the very endpoint contact the contract includes.", "round_endpoints": "Rounding changes exact input geometry and can create false contacts.", "orientation_only": "Collinearity alone does not prove that the point lies between both segment endpoints."}},
+      "taxonomy": {"primarySkillAtomId": "diagnose_degenerate_or_precision_case", "secondarySkillAtomIds": [], "learningStage": "foundations", "patternVariantId": "vector_orientation", "problemArchetypeId": "compare_geometric_orientation"}
+    },
+    {
+      "id": "alg-mg-geometry-11-degenerate-point",
+      "prompt": "A segment's endpoints coincide. Which policy must a geometry routine make explicit?",
+      "constraints": [
+        "The input permits zero-length segments.",
+        "The routine may compare orientation, distance, or intersection."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "degenerate_contract",
+            "text": "Decide whether the segment is treated as a point and define its distance, intersection, and direction behavior before applying nondegenerate formulas.",
+            "explanation": "Many slope and normalization formulas divide by segment length."
+          },
+          {
+            "id": "arbitrary_direction",
+            "text": "Assign a direction of (1,0) so every segment has a usable unit vector.",
+            "explanation": "An arbitrary direction changes the geometric meaning of a zero-length segment."
+          },
+          {
+            "id": "divide_anyway",
+            "text": "Normalize by its zero length and rely on floating-point behavior.",
+            "explanation": "This creates undefined or nonportable results."
+          },
+          {
+            "id": "discard_input",
+            "text": "Ignore every zero-length segment because it cannot affect any geometric answer.",
+            "explanation": "A point can lie on, intersect, or define a boundary."
+          }
+        ],
+        "acceptedOptionIds": [
+          "degenerate_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Degenerate geometry is a contract case, not a numerical nuisance to hide.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A zero-length segment has a location but no unique direction. The routine must specify point semantics and avoid dividing by zero; it may still be relevant to containment or intersection."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "arbitrary_direction": "An arbitrary direction changes the geometric meaning of a zero-length segment.",
+          "divide_anyway": "This creates undefined or nonportable results.",
+          "discard_input": "A point can lie on, intersect, or define a boundary."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-12-inclusive-endpoints",
+      "prompt": "When a segment intersection contract includes endpoints, what must the orientation test do for collinear cases?",
+      "constraints": [
+        "Touching at an endpoint counts as intersection.",
+        "Collinear overlap is possible."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "include_zero_orientation",
+            "text": "Treat zero orientations as potentially valid and then check bounding-box overlap to distinguish touch or overlap from disjoint collinear points.",
+            "explanation": "Strict turn tests would reject legal boundary intersections."
+          },
+          {
+            "id": "strict_turn_only",
+            "text": "Require all four orientations to be strictly positive or negative.",
+            "explanation": "Endpoint and collinear cases have zero orientation."
+          },
+          {
+            "id": "ignore_bounds",
+            "text": "Any zero orientation proves the segments overlap regardless of coordinate ranges.",
+            "explanation": "Collinear points can lie outside the other segment."
+          },
+          {
+            "id": "use_slope_division",
+            "text": "Compute slopes and compare them, ignoring endpoint coordinates.",
+            "explanation": "Vertical lines and bounds make slope-only tests incomplete."
+          }
+        ],
+        "acceptedOptionIds": [
+          "include_zero_orientation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Inclusive intersection needs a zero-orientation branch plus a positional bounds check.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Orientation signs detect crossing turns, but touching and collinear overlap sit on the zero boundary. The bounding box confirms whether the collinear point lies on the segment rather than merely on its supporting line."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "strict_turn_only": "Endpoint and collinear cases have zero orientation.",
+          "ignore_bounds": "Collinear points can lie outside the other segment.",
+          "use_slope_division": "Vertical lines and bounds make slope-only tests incomplete."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-13-epsilon-policy",
+      "prompt": "Why should a floating-point geometry routine define an epsilon policy instead of comparing every computed value to exact zero?",
+      "constraints": [
+        "Coordinates or derived values may be non-integers.",
+        "Near-collinear cases are legal."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "scale_aware_tolerance",
+            "text": "A tolerance must be tied to numeric scale and the contract, so near-zero orientation is classified consistently.",
+            "explanation": "A fixed unexamined threshold can fail at different magnitudes."
+          },
+          {
+            "id": "epsilon_always_one",
+            "text": "Use epsilon=1 for every coordinate range; it makes all near-zero values safe.",
+            "explanation": "A large fixed epsilon misclassifies ordinary geometry."
+          },
+          {
+            "id": "exact_zero_float",
+            "text": "Exact zero comparison is sufficient because arithmetic preserves real-number identities.",
+            "explanation": "Floating-point rounding can turn a mathematical zero into a small residual."
+          },
+          {
+            "id": "round_inputs",
+            "text": "Round all coordinates to integers before testing orientation.",
+            "explanation": "Rounding changes the input geometry and may change the answer."
+          }
+        ],
+        "acceptedOptionIds": [
+          "scale_aware_tolerance"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Robust floating-point predicates need an explicit error and scale policy.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The acceptable uncertainty depends on coordinate magnitude, operation count, and the output contract. Exact arithmetic or adaptive predicates may be preferable; silently using a universal epsilon is not a proof."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "epsilon_always_one": "A large fixed epsilon misclassifies ordinary geometry.",
+          "exact_zero_float": "Floating-point rounding can turn a mathematical zero into a small residual.",
+          "round_inputs": "Rounding changes the input geometry and may change the answer."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
+    },
+    {
+      "id": "alg-mg-geometry-14-collinear-bounds",
+      "prompt": "Two segments lie on one line but their projections do not overlap. What should an intersection test return under an inclusive endpoint contract?",
+      "constraints": [
+        "Collinearity is true.",
+        "The segments occupy disjoint coordinate ranges."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "no_intersection",
+            "text": "Return no intersection because the supporting line is shared but the closed segment sets are disjoint.",
+            "explanation": "Intersection requires a common point on both finite segments."
+          },
+          {
+            "id": "line_intersection",
+            "text": "Return intersection because sharing an infinite supporting line is sufficient.",
+            "explanation": "The contract concerns segments, not infinite lines."
+          },
+          {
+            "id": "endpoint_created",
+            "text": "Create a virtual endpoint at the nearest gap and return it.",
+            "explanation": "Virtual points are not input intersections."
+          },
+          {
+            "id": "orientation_nonzero",
+            "text": "Treat the case as a crossing because collinear points have zero orientation.",
+            "explanation": "Zero orientation is expected; bounds decide overlap."
+          }
+        ],
+        "acceptedOptionIds": [
+          "no_intersection"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Collinearity is necessary for a collinear overlap but not sufficient without projection overlap.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A segment is a bounded set. The test must combine zero orientation with coordinate-range overlap; disjoint collinear segments share a line but no point."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "line_intersection": "The contract concerns segments, not infinite lines.",
+          "endpoint_created": "Virtual points are not input intersections.",
+          "orientation_nonzero": "Zero orientation is expected; bounds decide overlap."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "diagnose_degenerate_or_precision_case",
+        "secondarySkillAtomIds": [],
+        "learningStage": "foundations",
+        "patternVariantId": "vector_orientation",
+        "problemArchetypeId": "compare_geometric_orientation"
+      }
     }
   ],
   "modeStructures": {

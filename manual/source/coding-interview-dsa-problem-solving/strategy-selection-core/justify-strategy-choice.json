@@ -380,6 +380,314 @@
         "secondarySkillAtomIds": [],
         "learningStage": "strategy_selection"
       }
+    },
+    {
+      "id": "ssc-justify-mutation-tradeoff",
+      "prompt": "An algorithm sorts the input to enable a linear scan, but the API promises to preserve the caller's order. Which addition makes the strategy justification complete?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "copy_or_forbid", "text": "Explain whether sorting a copy is affordable or whether the strategy is invalid under the mutation contract."},
+        {"id": "ignore_order", "text": "Omit the issue because asymptotic time is more important than input ownership."},
+        {"id": "sort_then_restore_free", "text": "Claim that sorting and restoring original order has no additional cost."},
+        {"id": "rename_input", "text": "Rename the input as a working array so mutation no longer counts."}
+      ], "acceptedOptionIds": ["copy_or_forbid"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A strategy must satisfy the output and side-effect contract as well as the computational objective.", "details": {"blocks": [{"type": "paragraph", "text": "Sorting can be a sound preprocessing strategy when mutation is allowed or when a copy fits the space budget. If the caller's order must remain unchanged and copying is too expensive, the proposed strategy does not meet the problem contract. Renaming a reference does not remove the side effect, and restoring order adds real work."}]}, "wrongOptionExplanationsByOptionId": {"ignore_order": "Input preservation is a correctness requirement, not an optional optimization detail.", "sort_then_restore_free": "Copying, sorting, and restoring have time and possibly space costs that must be included.", "rename_input": "Names do not change aliasing or observable mutation."}},
+      "taxonomy": {"primarySkillAtomId": "justify_strategy_with_constraints_and_invariants", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-justify-expected-cost-assumption",
+      "prompt": "A proposed hash-map solution claims O(n) time for exact membership queries. Which qualification belongs in the strategy justification?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "expected_hash_cost", "text": "State that the bound is expected under the hash-table assumptions and separately account for memory and any adversarial worst case."},
+        {"id": "hash_always_constant", "text": "Claim hashing is worst-case constant time for every key distribution and implementation."},
+        {"id": "ignore_collisions", "text": "Ignore collisions because the map abstraction hides them from the proof."},
+        {"id": "space_is_time", "text": "Treat O(n) extra space as proof that lookup time is O(1)."}
+      ], "acceptedOptionIds": ["expected_hash_cost"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Complexity claims depend on the data-structure guarantee being used, and expected hashing is not an unconditional worst-case theorem.", "details": {"blocks": [{"type": "paragraph", "text": "A strong explanation identifies the map operations, their expected cost under the chosen hash assumptions, the number of operations, and the O(n) auxiliary state. If worst-case guarantees or adversarial keys matter, a different structure or hashing policy may be required. Hiding collisions does not make their cost disappear."}]}, "wrongOptionExplanationsByOptionId": {"hash_always_constant": "Typical hash-table lookup is expected O(1), while worst-case behavior depends on collisions and implementation guarantees.", "ignore_collisions": "The complexity argument must state the assumption under which collisions remain controlled.", "space_is_time": "Memory size and operation time are independent dimensions of the contract."}},
+      "taxonomy": {"primarySkillAtomId": "justify_strategy_with_constraints_and_invariants", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-justify-invariant-before-cost",
+      "prompt": "A candidate explanation says only “this is O(n log n), so it is correct.” What essential reasoning is missing?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "correctness_invariant", "text": "A state invariant or elimination argument showing that the operations preserve the required answer and do not discard a needed candidate."},
+        {"id": "more_benchmarks", "text": "More runtime measurements on one input size; measurements replace a correctness proof."},
+        {"id": "shorter_variable_names", "text": "Shorter names so the asymptotic argument is easier to read."},
+        {"id": "larger_constant", "text": "A larger hidden constant to make the complexity claim safer."}
+      ], "acceptedOptionIds": ["correctness_invariant"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Complexity measures resource use; it does not establish that the returned result satisfies the problem contract.", "details": {"blocks": [{"type": "paragraph", "text": "The justification must connect the chosen state to the answer: what does each entry mean, which candidates are removed, and why are those removals safe? Only after correctness is established should time, space, and assumptions be derived. A fast algorithm can consistently compute the wrong result."}]}, "wrongOptionExplanationsByOptionId": {"more_benchmarks": "Empirical speed does not prove correctness for all valid inputs.", "shorter_variable_names": "Readability can help review but does not supply an invariant.", "larger_constant": "A constant-factor change cannot turn a missing correctness argument into a proof."}},
+      "taxonomy": {"primarySkillAtomId": "justify_strategy_with_constraints_and_invariants", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-justify-transfer-boundary",
+      "prompt": "Select all statements that belong in the boundary section of a strategy justification.",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "multiple", "options": [
+        {"id": "signed_values_break_window", "text": "State that a simple sum-based window rule may fail when signed values remove monotonicity."},
+        {"id": "unsorted_breaks_pair", "text": "State that a sorted two-pointer elimination proof does not transfer to arbitrary unsorted input without another invariant."},
+        {"id": "label_pattern", "text": "State that the strategy applies whenever the problem title contains the pattern name."},
+        {"id": "complexity_always_wins", "text": "State that the fastest asymptotic candidate always wins regardless of output and mutation contracts."}
+      ], "acceptedOptionIds": ["signed_values_break_window", "unsorted_breaks_pair"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A transfer boundary identifies the changed premise that invalidates the proof or makes another strategy more appropriate.", "details": {"blocks": [{"type": "paragraph", "text": "Signed values can break a shrink monotonicity argument, and unsorted input can remove the endpoint-elimination theorem used by a sorted pair scan. Pattern labels and asymptotic speed are not universal licenses; the actual constraints, invariants, output, and side effects decide applicability."}]}, "wrongOptionExplanationsByOptionId": {"label_pattern": "Names do not supply the structural preconditions required by the algorithm.", "complexity_always_wins": "A candidate that violates correctness or side-effect contracts is not a valid strategy, regardless of asymptotic cost."}, "omittedCorrectExplanationsByOptionId": {"signed_values_break_window": "The window proof depends on how boundary removal changes the maintained measure.", "unsorted_breaks_pair": "The sorted-order implication is the reason an endpoint can be discarded; without it the move needs a new proof."}},
+      "taxonomy": {"primarySkillAtomId": "justify_strategy_with_constraints_and_invariants", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-justify-11_constraint_fit",
+      "prompt": "What is the strongest concise justification for selecting an O(n log n) sort-and-scan over an O(n) hash approach?",
+      "constraints": [
+        "The hash approach requires expected O(1) operations.",
+        "The environment requires deterministic worst-case behavior and permits sorting."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "guarantee_and_contract",
+            "text": "Sorting meets the deterministic worst-case and memory contract; the expected-time hash alternative does not provide the required guarantee.",
+            "explanation": "The justification connects constraints to the tradeoff."
+          },
+          {
+            "id": "log_is_always_faster",
+            "text": "O(n log n) is always faster than O(n) because sorting has optimized libraries.",
+            "explanation": "Asymptotic order does not support that claim."
+          },
+          {
+            "id": "hash_incorrect",
+            "text": "Hashing is mathematically incorrect whenever collisions are possible.",
+            "explanation": "Correct collision handling preserves results."
+          },
+          {
+            "id": "sort_familiar",
+            "text": "Choose sorting because it is familiar, regardless of the stated constraints.",
+            "explanation": "Familiarity is not a contract-based justification."
+          }
+        ],
+        "acceptedOptionIds": [
+          "guarantee_and_contract"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A strategy justification should name the constraint that makes the tradeoff worthwhile.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The linear notation alone is not decisive when one bound is expected and the other deterministic. The chosen approach is justified by the required guarantee and available memory, not by library familiarity."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "log_is_always_faster": "Asymptotic order does not support that claim.",
+          "hash_incorrect": "Correct collision handling preserves results.",
+          "sort_familiar": "Familiarity is not a contract-based justification."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_strategy_with_constraints_and_invariants",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-justify-12_invariant_sentence",
+      "prompt": "Which sentence best justifies a two-pointer scan on a sorted array for a target pair?",
+      "constraints": [
+        "The array is sorted.",
+        "The pointer movement must discard candidates safely."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "movement_invariant",
+            "text": "If the current sum is too small, moving the left pointer right discards no solution using that left value; if too large, moving the right pointer left is symmetric.",
+            "explanation": "This states the monotone elimination invariant."
+          },
+          {
+            "id": "looks_sorted",
+            "text": "Two pointers are appropriate because sorted arrays usually use two pointers.",
+            "explanation": "Pattern association is not a proof."
+          },
+          {
+            "id": "try_all",
+            "text": "The scan checks every pair explicitly, so no candidate is discarded.",
+            "explanation": "The algorithm does discard pairs and must justify it."
+          },
+          {
+            "id": "hash_needed",
+            "text": "Sorting guarantees a hash table is unnecessary for every pair problem.",
+            "explanation": "The target relation and output contract still matter."
+          }
+        ],
+        "acceptedOptionIds": [
+          "movement_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A good justification explains why each pointer movement safely eliminates a region of candidates.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Sorted order turns the current sum comparison into a dominance fact: all pairs beyond one boundary are too large or too small. That is the proof behind linear movement."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "looks_sorted": "Pattern association is not a proof.",
+          "try_all": "The algorithm does discard pairs and must justify it.",
+          "hash_needed": "The target relation and output contract still matter."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_strategy_with_constraints_and_invariants",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-justify-13_state_sufficiency",
+      "prompt": "How should a strategy justification explain that a frequency map is sufficient for a window constraint?",
+      "constraints": [
+        "The predicate depends only on symbol multiplicities.",
+        "The window changes by adding right and removing left."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "sufficient_summary",
+            "text": "The map stores exactly the counts needed to decide validity, and each boundary update changes those counts without needing the full window history.",
+            "explanation": "This establishes state sufficiency and update closure."
+          },
+          {
+            "id": "store_everything",
+            "text": "The map is sufficient because it stores every prior array position.",
+            "explanation": "A frequency map stores aggregate counts, not all history."
+          },
+          {
+            "id": "validity_assumed",
+            "text": "The map is correct because frequency constraints are common in interviews.",
+            "explanation": "The proof must connect state to the predicate."
+          },
+          {
+            "id": "sort_symbols",
+            "text": "The map works only after sorting the current window.",
+            "explanation": "Sorting changes order and is unnecessary for multiplicity constraints."
+          }
+        ],
+        "acceptedOptionIds": [
+          "sufficient_summary"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A state is justified by showing that it is sufficient for validity and closed under the algorithm's transitions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If the predicate asks only about counts, adding and removing one symbol updates the complete decision state. If order or positions matter, the map alone is insufficient."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "store_everything": "A frequency map stores aggregate counts, not all history.",
+          "validity_assumed": "The proof must connect state to the predicate.",
+          "sort_symbols": "Sorting changes order and is unnecessary for multiplicity constraints."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_strategy_with_constraints_and_invariants",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-justify-14_unavailable_choice",
+      "prompt": "What should a justification say when no candidate satisfies all constraints simultaneously?",
+      "constraints": [
+        "Every known approach violates at least one contract dimension.",
+        "The user expects an honest decision."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "surface_tradeoff",
+            "text": "State that the current constraints are mutually incompatible or require relaxing a specific dimension; do not present a violating strategy as compliant.",
+            "explanation": "An explicit unavailable state preserves trust."
+          },
+          {
+            "id": "hide_violation",
+            "text": "Choose the fastest approach and omit the constraint it violates.",
+            "explanation": "Silent contract violations are not a valid strategy."
+          },
+          {
+            "id": "add_flag",
+            "text": "Add a metadata flag saying the approach is future-compatible.",
+            "explanation": "Metadata does not make an invalid approach valid."
+          },
+          {
+            "id": "average_cases",
+            "text": "Present the approach as correct because it works on common inputs.",
+            "explanation": "Common cases cannot satisfy a universal contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "surface_tradeoff"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A strategy choice is allowed to be unavailable when the constraints conflict; the justification should expose the exact conflict.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "For example, an in-place O(1)-space requirement can conflict with preserving arbitrary input order and aliases. The correct response is to identify the required relaxation or ask for a changed contract, not to hide the violation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "hide_violation": "Silent contract violations are not a valid strategy.",
+          "add_flag": "Metadata does not make an invalid approach valid.",
+          "average_cases": "Common cases cannot satisfy a universal contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "justify_strategy_with_constraints_and_invariants",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
     }
   ],
   "modeStructures": {

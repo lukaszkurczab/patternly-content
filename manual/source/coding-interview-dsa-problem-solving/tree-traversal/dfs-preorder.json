@@ -339,6 +339,379 @@
         "Children are pushed only when non-null.",
         "The stack is LIFO."
       ]
+    },
+    {
+      "id": "alg-tree-preorder-serialize-null-markers",
+      "prompt": "A preorder serializer must reconstruct the exact binary-tree shape, including missing children. What must it emit for a null child?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "explicit_null_marker", "text": "A distinct null marker, because preorder values alone cannot distinguish absent children from different shapes."},
+          {"id": "skip_nulls", "text": "Nothing; the decoder can infer every missing child from the next value."},
+          {"id": "zero_value", "text": "The numeric value zero, regardless of the node-value domain."},
+          {"id": "repeat_parent", "text": "The parent value, so the decoder knows where the child belongs."}
+        ],
+        "acceptedOptionIds": ["explicit_null_marker"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "Preorder gives the root-first sequence, but null structure markers provide the information needed to recover child boundaries.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Without null markers, a preorder list such as [1, 2] can represent a left child, a right child, or a longer path depending on the missing structure. Emitting an explicit marker for every null link lets the decoder consume the root, recursively decode the left subtree, then the right subtree with an unambiguous shape contract. A sentinel must be outside the valid payload domain or encoded with a tagged representation."}]},
+        "wrongOptionExplanationsByOptionId": {
+          "skip_nulls": "Values alone do not encode where a subtree ends, so multiple shapes can share the same preorder sequence.",
+          "zero_value": "Zero may be a valid node value and would conflate data with missing structure.",
+          "repeat_parent": "Repeating a value does not identify whether the absent link was left or right and can duplicate real data."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "apply_preorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_preorder", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "intermediate",
+      "constraints": ["Node values may include zero and duplicates."]
+    },
+    {
+      "id": "alg-tree-preorder-subtree-size",
+      "prompt": "A recursive preorder helper should return the number of nodes in a subtree while also visiting the current node before its children. Which combine rule is correct?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "one_plus_children", "text": "Emit or process the current node, then return 1 + size(left) + size(right), with size(null) = 0."},
+          {"id": "children_only", "text": "Return size(left) + size(right); the current node is already visited so it need not count."},
+          {"id": "preorder_sum_only", "text": "Return the preorder position of the current node rather than aggregating both subtrees."},
+          {"id": "null_one", "text": "Use size(null) = 1 so every missing child contributes its structural boundary."}
+        ],
+        "acceptedOptionIds": ["one_plus_children"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {
+        "reason": "Visit order and aggregate order are separate concerns: the current node is processed first, while subtree size counts the current node plus both child results.",
+        "details": {"blocks": [{"type": "paragraph", "text": "Preorder specifies when the current-node action occurs, not a different arithmetic identity for subtree aggregation. A null subtree contains zero nodes. Therefore a leaf returns 1, a unary node returns 1 plus its nonempty child size, and a general node returns 1 plus both child sizes. Omitting the current node confuses “visited” with “counted.”"}]},
+        "wrongOptionExplanationsByOptionId": {
+          "children_only": "The current node contributes one node even though preorder processes it before the recursive calls.",
+          "preorder_sum_only": "A position in the visit sequence does not equal the number of nodes in the subtree.",
+          "null_one": "Empty subtrees contain no nodes; returning one would inflate every parent count."
+        }
+      },
+      "taxonomy": {"primarySkillAtomId": "apply_preorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_preorder", "problemArchetypeId": "compute_subtree_property"},
+      "difficulty": "foundational",
+      "constraints": ["The subtree-size identity counts actual nodes only."]
+    },
+    {
+      "id": "alg-tree-preorder-iterative-space",
+      "prompt": "An iterative preorder traversal stores pending right children on a stack while descending through left children. What auxiliary-space bound is shape-sensitive?",
+      "interaction": {
+        "type": "complexity",
+        "checkedDimensions": ["time", "auxiliary_space"],
+        "availableValuesByDimension": {"time": ["O(log n)", "O(n)", "O(n log n)", "O(n^2)"], "auxiliary_space": ["O(1)", "O(log n)", "O(h)", "O(n)"]},
+        "acceptedValuesByDimension": {"time": ["O(n)"], "auxiliary_space": ["O(h)"]},
+        "normalizedAliasesByDimension": {"time": {}, "auxiliary_space": {}},
+        "maxPoints": 2
+      },
+      "scoringContract": {"type": "complexity", "maxPoints": 2},
+      "feedback": {"reason": "Each node is processed once, while pending ancestors and sibling subtrees occupy at most a root-to-leaf path of height h.", "details": {"blocks": [{"type": "paragraph", "text": "The traversal time is O(n). The explicit stack grows with the number of pending nodes along the current descent, which is O(h): logarithmic for a balanced tree and linear for a chain. Reporting O(n) auxiliary space is a valid worst-case specialization but hides the structural dependence; the output list is excluded."}]}},
+      "taxonomy": {"primarySkillAtomId": "apply_preorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_preorder", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "intermediate",
+      "constraints": ["Do not count the returned traversal output as auxiliary space."]
+    },
+    {
+      "id": "alg-tree-preorder-root-first-validation",
+      "prompt": "A validator must reject a tree as soon as a node violates a root-to-leaf bound, before spending time on that node's descendants. Which traversal property supports this behavior?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "check_before_children", "text": "Preorder processes the node before its children, so it can validate the node against inherited bounds and short-circuit immediately."},
+          {"id": "children_before_node", "text": "Postorder is required because a node's own value cannot be checked until both children finish."},
+          {"id": "breadth_only", "text": "Only breadth-first traversal can validate a root-to-leaf bound."},
+          {"id": "null_check_is_validation", "text": "The null guard itself validates every non-null value without comparing bounds."}
+        ],
+        "acceptedOptionIds": ["check_before_children"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Root-first processing exposes the current value together with the constraints inherited from its ancestors.", "details": {"blocks": [{"type": "paragraph", "text": "A preorder validator can carry lower and upper bounds down the path. On entering a non-null node, it checks the node's value against those bounds before recursing. If the check fails, no descendant can repair that violation, so early return is correct. Postorder is useful when validity depends on computed child summaries, but it is not required for a direct inherited-bound check."}]}, "wrongOptionExplanationsByOptionId": {"children_before_node": "A node's own value can be checked as soon as it is reached; child summaries are not needed for inherited-bound validation.", "breadth_only": "The bound can be carried along a depth-first path; breadth-first traversal is not required.", "null_check_is_validation": "The null guard handles structure but does not compare a real node value against its inherited bounds."}},
+      "taxonomy": {"primarySkillAtomId": "apply_preorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_preorder", "problemArchetypeId": "validate_tree_property"},
+      "difficulty": "intermediate",
+      "constraints": ["Bounds are passed from the root toward each child."]
+    },
+    {
+      "id": "alg-tree-preorder-empty-output",
+      "prompt": "What should preorder traversal return for a null root when its public contract is “return the values of all nodes in visit order”?",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {"id": "empty_output", "text": "An empty output sequence, because the tree contains no nodes."},
+          {"id": "null_value", "text": "A sequence containing a null payload as if it were a node."},
+          {"id": "zero_value", "text": "A sequence containing zero for the missing root."},
+          {"id": "error_always", "text": "An error, because traversal requires at least one node under every contract."}
+        ],
+        "acceptedOptionIds": ["empty_output"]
+      },
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "An empty tree has no values to emit, so the output identity is an empty sequence.", "details": {"blocks": [{"type": "paragraph", "text": "The null root is the empty-subtree base case. Returning an empty sequence makes traversal compositional: concatenating the result of an absent child contributes nothing, and callers do not need a separate special case. Null or zero may be legitimate payload values, so inventing either would violate the stated output contract."}]}, "wrongOptionExplanationsByOptionId": {"null_value": "A null marker is structure metadata, not a value of an actual node under this output contract.", "zero_value": "Zero can be a legitimate value and should not be invented for a missing root.", "error_always": "The stated contract can represent an empty tree with an empty sequence; nonempty input is not required."}},
+      "taxonomy": {"primarySkillAtomId": "apply_preorder_processing", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "dfs_preorder", "problemArchetypeId": "traverse_tree"},
+      "difficulty": "foundational",
+      "constraints": ["Only actual node values belong in the output."]
+    },
+    {
+      "id": "alg-tree-preorder-11_serialize",
+      "prompt": "Why is preorder with null markers sufficient to serialize and reconstruct a binary tree shape?",
+      "constraints": [
+        "The traversal emits every node and every null child position.",
+        "The reconstruction consumes tokens in the same order."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "root_before_children",
+            "text": "Preorder emits each root before its left and right subtrees, while null markers preserve missing-child boundaries, making the parse unambiguous.",
+            "explanation": "The pair of order and null markers encodes structure."
+          },
+          {
+            "id": "values_only",
+            "text": "Node values alone uniquely determine the shape.",
+            "explanation": "Different shapes can share the same value sequence."
+          },
+          {
+            "id": "inorder_no_null",
+            "text": "Inorder without null markers always reconstructs the original tree.",
+            "explanation": "Traversal order without structural markers is ambiguous."
+          },
+          {
+            "id": "sort_tokens",
+            "text": "Sort serialized tokens before reconstruction so parents are grouped.",
+            "explanation": "Sorting destroys traversal structure."
+          }
+        ],
+        "acceptedOptionIds": [
+          "root_before_children"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preorder supplies a recursive grammar: node token then left subtree then right subtree, with null tokens for empty productions.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Without null markers, the same preorder values can represent multiple shapes. The decoder must consume tokens in exactly the encoding order."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "values_only": "Different shapes can share the same value sequence.",
+          "inorder_no_null": "Traversal order without structural markers is ambiguous.",
+          "sort_tokens": "Sorting destroys traversal structure."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-preorder-12_clone",
+      "prompt": "Why does preorder naturally support cloning a tree?",
+      "constraints": [
+        "The clone must allocate a node before attaching cloned children.",
+        "Null children must remain null."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "allocate_then_recurse",
+            "text": "Create the clone of the current node first, then recursively clone and attach its left and right children.",
+            "explanation": "Parent allocation precedes child attachment."
+          },
+          {
+            "id": "children_only",
+            "text": "Clone child subtrees first and infer the parent value from their roots.",
+            "explanation": "Child roots do not determine the parent identity or value."
+          },
+          {
+            "id": "postorder_required",
+            "text": "Only postorder can clone because parents must be processed after children.",
+            "explanation": "Either order can clone with the appropriate construction steps."
+          },
+          {
+            "id": "share_children",
+            "text": "Reuse original child pointers because cloning values is enough.",
+            "explanation": "That creates a partially shared structure rather than an independent clone."
+          }
+        ],
+        "acceptedOptionIds": [
+          "allocate_then_recurse"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preorder mirrors the construction dependency: create the parent object before wiring its recursively cloned children.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The result is a new identity graph with the same shape and payloads. Sharing original child references would violate independence."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "children_only": "Child roots do not determine the parent identity or value.",
+          "postorder_required": "Either order can clone with the appropriate construction steps.",
+          "share_children": "That creates a partially shared structure rather than an independent clone."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-preorder-13_stack_order",
+      "prompt": "When simulating preorder with an explicit stack, in which order should children be pushed to visit left before right?",
+      "constraints": [
+        "The stack is LIFO.",
+        "The desired traversal is node, left subtree, right subtree."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "push_right_then_left",
+            "text": "Push the right child first and the left child second so left is popped and processed first.",
+            "explanation": "LIFO reverses push order."
+          },
+          {
+            "id": "push_left_then_right",
+            "text": "Push left first and right second because source order should be preserved.",
+            "explanation": "Right would be popped first under LIFO."
+          },
+          {
+            "id": "queue_children",
+            "text": "Push both into a queue because stacks cannot represent preorder.",
+            "explanation": "An explicit stack is the standard simulation."
+          },
+          {
+            "id": "push_parent_again",
+            "text": "Push the parent between children to preserve root-first order.",
+            "explanation": "Revisiting the parent can duplicate output."
+          }
+        ],
+        "acceptedOptionIds": [
+          "push_right_then_left"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Explicit-stack traversal must account for LIFO ordering when encoding the recursive child order.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The stack top is the next node. Pushing right before left makes left the first pop, followed by its descendants and then right."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "push_left_then_right": "Right would be popped first under LIFO.",
+          "queue_children": "An explicit stack is the standard simulation.",
+          "push_parent_again": "Revisiting the parent can duplicate output."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      }
+    },
+    {
+      "id": "alg-tree-preorder-14_bounds",
+      "prompt": "How can preorder validate a binary search tree using value bounds?",
+      "constraints": [
+        "The BST ordering convention is specified.",
+        "Each recursive call receives bounds for the current subtree."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "propagate_bounds",
+            "text": "Check the node against its open or closed bounds, then recurse left with an upper bound and right with a lower bound derived from the node.",
+            "explanation": "Bounds encode all ancestor constraints."
+          },
+          {
+            "id": "parent_only",
+            "text": "Check each child only against its immediate parent value.",
+            "explanation": "A node can violate an ancestor bound while satisfying its parent comparison."
+          },
+          {
+            "id": "inorder_required",
+            "text": "BST validation is impossible without materializing a full inorder list.",
+            "explanation": "Bounds or streaming inorder both validate it."
+          },
+          {
+            "id": "sort_tree",
+            "text": "Sort the nodes before checking bounds so every subtree becomes valid.",
+            "explanation": "Sorting changes the tree and cannot validate its original structure."
+          }
+        ],
+        "acceptedOptionIds": [
+          "propagate_bounds"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Preorder carries the ancestor constraints needed to validate each node at the moment it is visited.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Immediate parent comparisons are insufficient: a node in a left subtree must also obey every upper bound from its ancestors. Bounds make those obligations explicit."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "parent_only": "A node can violate an ancestor bound while satisfying its parent comparison.",
+          "inorder_required": "Bounds or streaming inorder both validate it.",
+          "sort_tree": "Sorting changes the tree and cannot validate its original structure."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "apply_preorder_processing",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "dfs_preorder",
+        "problemArchetypeId": "traverse_tree"
+      }
     }
   ],
   "modeStructures": {

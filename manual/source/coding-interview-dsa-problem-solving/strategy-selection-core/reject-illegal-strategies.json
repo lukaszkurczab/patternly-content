@@ -446,6 +446,300 @@
         "secondarySkillAtomIds": [],
         "learningStage": "strategy_selection"
       }
+    },
+    {
+      "id": "ssc-reject-window-missing-state-update",
+      "prompt": "A variable window advances left while invalid but never removes the outgoing element from its aggregate state. What is the legality decision?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "reject_stale_state", "text": "Reject it until state and boundary movement are synchronized; the predicate is evaluated on the wrong range."},
+        {"id": "accept_if_terminates", "text": "Accept it because left eventually reaches right and the loop terminates."},
+        {"id": "accept_if_linear", "text": "Accept it because each pointer moves at most n times."},
+        {"id": "replace_with_sort", "text": "Sorting automatically fixes the aggregate update without changing the implementation."}
+      ], "acceptedOptionIds": ["reject_stale_state"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "A termination or runtime argument cannot legalize a state invariant that is already false.", "details": {"blocks": [{"type": "paragraph", "text": "When a boundary leaves, its contribution must leave the maintained state. Otherwise a later validity check refers to elements outside the candidate interval, so the algorithm can stop too late, score a wrong range, or miss a legal one. Fix the canonical update before comparing costs."}]}, "wrongOptionExplanationsByOptionId": {"accept_if_terminates": "A terminating algorithm can still return an incorrect answer.", "accept_if_linear": "Complexity does not prove state correctness.", "replace_with_sort": "Sorting does not update a range aggregate or preserve the original window contract."}},
+      "taxonomy": {"primarySkillAtomId": "reject_strategy_without_required_invariant", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-reject-bfs-for-weighted-cost",
+      "prompt": "A candidate uses ordinary BFS to minimize total cost in a graph whose edges have weights 1 and 7. What invariant failure justifies rejection?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "layers_not_cost", "text": "BFS layers order edge count, not weighted path cost, so first discovery need not be cheapest."},
+        {"id": "visited_forbidden", "text": "BFS is illegal because weighted graphs cannot use visited state."},
+        {"id": "queue_too_small", "text": "The queue must be replaced only because weighted graphs require a larger container."},
+        {"id": "negative_edges_required", "text": "BFS fails only when some edge weights are negative."}
+      ], "acceptedOptionIds": ["layers_not_cost"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The correctness invariant behind BFS is nondecreasing unit-distance layers, which does not match arbitrary nonnegative costs.", "details": {"blocks": [{"type": "paragraph", "text": "A path with two edges can cost 14 while a path with three edges costs 3. BFS may finalize the former first. A weighted method such as Dijkstra for nonnegative weights is needed; visited state remains useful under that method."}]}, "wrongOptionExplanationsByOptionId": {"visited_forbidden": "Weighted algorithms also track settled or relaxed vertices; the issue is ordering by cost.", "queue_too_small": "Container capacity is not the missing proof.", "negative_edges_required": "Different positive weights already break edge-count ordering."}},
+      "taxonomy": {"primarySkillAtomId": "reject_strategy_without_required_invariant", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-reject-unproven-greedy-choice",
+      "prompt": "A greedy candidate chooses the locally smallest next value, but no exchange argument or invariant connects that choice to a global optimum. What is the correct review result?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "reject_missing_proof", "text": "Reject or hold it as unproven until a safe-choice/exchange argument or counterexample analysis establishes correctness."},
+        {"id": "accept_local_best", "text": "Accept it because a locally smallest choice is always compatible with a global minimum."},
+        {"id": "accept_if_fast", "text": "Accept it if its runtime is better than the reference, even without proof."},
+        {"id": "label_heuristic_solution", "text": "Ship it as exact because calling it a heuristic makes the proof unnecessary."}
+      ], "acceptedOptionIds": ["reject_missing_proof"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Greedy correctness requires a theorem that makes the irreversible local choice safe; speed and naming cannot replace it.", "details": {"blocks": [{"type": "paragraph", "text": "A candidate may be experimentally useful or correct for a restricted domain, but an exact product contract needs a proof or an explicit counterexample boundary. The reference and constraints should remain available while the missing exchange argument is resolved."}]}, "wrongOptionExplanationsByOptionId": {"accept_local_best": "Local optimality does not imply global optimality without problem-specific structure.", "accept_if_fast": "A faster wrong algorithm is not a valid replacement.", "label_heuristic_solution": "Metadata cannot turn an unproven exact result into a correct implementation."}},
+      "taxonomy": {"primarySkillAtomId": "reject_strategy_without_required_invariant", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-reject-11_weighted_bfs",
+      "prompt": "Why is ordinary BFS not a valid shortest-path strategy when edges have arbitrary positive weights?",
+      "constraints": [
+        "The objective is minimum total edge weight.",
+        "Edge weights are not all equal."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "fifo_not_cost",
+            "text": "FIFO order tracks edge count rather than accumulated weight, so Dijkstra or another weighted method is required.",
+            "explanation": "The unweighted BFS invariant no longer matches the objective."
+          },
+          {
+            "id": "bfs_weighted",
+            "text": "BFS remains correct because every edge is traversed once.",
+            "explanation": "Traversal count does not equal path cost."
+          },
+          {
+            "id": "sort_edges",
+            "text": "Sort edges once and then run ordinary BFS to make levels represent weight.",
+            "explanation": "Edge order does not convert weighted paths into unit edges."
+          },
+          {
+            "id": "negative_only",
+            "text": "BFS fails only when weights are negative; arbitrary positive weights are safe.",
+            "explanation": "Different positive weights already break depth-cost equivalence."
+          }
+        ],
+        "acceptedOptionIds": [
+          "fifo_not_cost"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A strategy is illegal when its traversal order proves the wrong objective.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "BFS is correct for unit-cost edges because depth equals path cost. With weighted edges, a deeper path can be cheaper or a shallower path more expensive; Dijkstra's priority by distance restores the needed invariant."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "bfs_weighted": "Traversal count does not equal path cost.",
+          "sort_edges": "Edge order does not convert weighted paths into unit edges.",
+          "negative_only": "Different positive weights already break depth-cost equivalence."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-12_unproved_greedy",
+      "prompt": "What is the correct rejection reason for a greedy rule that has no feasible exchange or dominance proof?",
+      "constraints": [
+        "The rule claims universal optimality.",
+        "The input domain includes legal adversarial cases."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "missing_correctness_theorem",
+            "text": "Reject it as unproven until a safety property is established or a different strategy preserves alternatives.",
+            "explanation": "Fast local choices are not correct by default."
+          },
+          {
+            "id": "runtime_only",
+            "text": "Accept it if its asymptotic complexity is optimal, because correctness follows from speed.",
+            "explanation": "Runtime and optimality are independent."
+          },
+          {
+            "id": "examples_enough",
+            "text": "Accept it after it passes representative examples.",
+            "explanation": "Examples cannot quantify over all legal cases."
+          },
+          {
+            "id": "metadata",
+            "text": "Mark it as a future-safe approach without changing the implementation.",
+            "explanation": "A label does not supply a proof."
+          }
+        ],
+        "acceptedOptionIds": [
+          "missing_correctness_theorem"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The absence of a proof obligation is itself a strategy rejection signal.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A candidate may later be proved correct, but until the exchange, invariant, or state argument exists, it should not be presented as universally valid. The alternative may be DP, search, or a different greedy key."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "runtime_only": "Runtime and optimality are independent.",
+          "examples_enough": "Examples cannot quantify over all legal cases.",
+          "metadata": "A label does not supply a proof."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-13_signed_window",
+      "prompt": "Why should a positive-sum sliding-window strategy be rejected for arbitrary signed values when the target predicate is exact?",
+      "constraints": [
+        "Negative values are legal.",
+        "The strategy shrinks while the sum is too large."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "monotonicity_missing",
+            "text": "Adding or removing a value can move the sum in either direction, so the expand/shrink invariant is false; use prefix-based or another signed-safe state.",
+            "explanation": "The positive-value premise is required."
+          },
+          {
+            "id": "same_rule",
+            "text": "The strategy remains correct because a window is contiguous regardless of values.",
+            "explanation": "Contiguity does not imply sum monotonicity."
+          },
+          {
+            "id": "cast_numbers",
+            "text": "Use a wider numeric type to restore the monotone movement proof.",
+            "explanation": "Width fixes overflow, not sign behavior."
+          },
+          {
+            "id": "sort_values",
+            "text": "Sort values first so negatives appear before positives and the original subarray answers remain unchanged.",
+            "explanation": "Sorting changes contiguity and index semantics."
+          }
+        ],
+        "acceptedOptionIds": [
+          "monotonicity_missing"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A strategy can be illegal because its core invariant is false under the new domain.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The issue is semantic, not numeric precision. Prefix sums plus a map can find exact signed ranges without assuming that pointer movements monotonically improve the sum."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_rule": "Contiguity does not imply sum monotonicity.",
+          "cast_numbers": "Width fixes overflow, not sign behavior.",
+          "sort_values": "Sorting changes contiguity and index semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-reject-14_mutating_sort",
+      "prompt": "Why should an in-place sort be rejected when the algorithm contract requires preserving input order and caller aliases?",
+      "constraints": [
+        "Input mutation is forbidden.",
+        "Callers may retain references to the original collection."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "contract_violation",
+            "text": "In-place sorting changes observable input state; use a copy or a nonmutating approach and charge its resources.",
+            "explanation": "A faster implementation is still illegal if it mutates forbidden state."
+          },
+          {
+            "id": "values_same",
+            "text": "It is valid because sorting preserves the same values.",
+            "explanation": "Order and aliases are part of the contract."
+          },
+          {
+            "id": "copy_free",
+            "text": "Copying is unnecessary because the sort result is all that callers need.",
+            "explanation": "The stated caller contract requires the original unchanged."
+          },
+          {
+            "id": "flag_only",
+            "text": "Add a metadata flag saying mutation is acceptable without changing the API behavior.",
+            "explanation": "Metadata cannot override the public contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "contract_violation"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Strategy legality includes ownership, mutation, and aliasing constraints.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "If sorting is otherwise the right algorithm, copy explicitly and report O(n) extra space/time. If that budget is disallowed, choose a strategy that works without mutating the input."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "values_same": "Order and aliases are part of the contract.",
+          "copy_free": "The stated caller contract requires the original unchanged.",
+          "flag_only": "Metadata cannot override the public contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "reject_strategy_without_required_invariant",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
     }
   ],
   "modeStructures": {

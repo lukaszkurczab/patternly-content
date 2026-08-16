@@ -449,6 +449,300 @@
         "secondarySkillAtomIds": [],
         "learningStage": "strategy_selection"
       }
+    },
+    {
+      "id": "ssc-transfer-log-stream-state",
+      "prompt": "A log stream arrives once, cannot be replayed, and must report whether each event ID has appeared earlier. Which transferred mechanism fits?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "online_seen_set", "text": "Maintain a seen-ID set online, query it before insertion, then insert the current ID."},
+        {"id": "offline_sort", "text": "Sort the complete stream after it ends, which still answers every earlier prefix immediately."},
+        {"id": "sliding_window_only", "text": "Keep only the last two IDs because duplicate detection concerns adjacent events."},
+        {"id": "binary_search_unsorted", "text": "Binary-search the arrival order without maintaining sorted state."}
+      ], "acceptedOptionIds": ["online_seen_set"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The online and no-replay contract transfers the membership-state strategy, not an offline preprocessing strategy.", "details": {"blocks": [{"type": "paragraph", "text": "For each ID, check membership before adding it. The set is the minimum retained history needed for arbitrary earlier duplicates. Sorting after collection cannot emit prefix answers, and limiting history to a window changes the duplicate definition."}]}, "wrongOptionExplanationsByOptionId": {"offline_sort": "It delays answers and cannot satisfy the per-arrival output contract.", "sliding_window_only": "A duplicate may be separated by any number of intervening events.", "binary_search_unsorted": "Binary search requires ordered state that is not present."}},
+      "taxonomy": {"primarySkillAtomId": "transfer_strategy_selection_to_new_surface_form", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-transfer-repeated-range-update-boundary",
+      "prompt": "A new domain asks thousands of range totals on immutable values, then changes the values to support frequent point updates. Which transfer boundary matters?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "static_index_invalidated", "text": "A static prefix-sum strategy no longer remains valid without rebuilds; compare a maintained dynamic range structure against update/query volume."},
+        {"id": "same_prefix_anyway", "text": "Keep the prefix array because the query wording is unchanged."},
+        {"id": "window_transfer", "text": "Use a moving window because every range query is contiguous."},
+        {"id": "sort_each_update", "text": "Sort after every update because sorting always maintains sums."}
+      ], "acceptedOptionIds": ["static_index_invalidated"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "The new update model changes index lifetime and maintenance cost even though the query surface still says range.", "details": {"blocks": [{"type": "paragraph", "text": "A prefix sum answers static ranges cheaply but becomes stale after an update. A dynamic index may support logarithmic updates and queries, subject to memory and constants. Contiguity alone does not turn arbitrary online ranges into one moving window."}]}, "wrongOptionExplanationsByOptionId": {"same_prefix_anyway": "Answers would use stale data unless the prefix structure is rebuilt or maintained.", "window_transfer": "Queries can arrive in arbitrary order and refer to arbitrary ranges.", "sort_each_update": "Sorting values does not maintain positional range sums."}},
+      "taxonomy": {"primarySkillAtomId": "transfer_strategy_selection_to_new_surface_form", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-transfer-sorted-pair-proof",
+      "prompt": "A new problem supplies already sorted package weights and asks whether two distinct packages sum to capacity C. Which proof transfers directly?",
+      "difficulty": "intermediate",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "endpoint_elimination", "text": "Use two endpoints; if their sum is too small advance the lower value, and if too large retreat the higher value under sorted-order elimination."},
+        {"id": "window_validity", "text": "Shrink a contiguous range while its total exceeds C; pair output is a window contract."},
+        {"id": "prefix_sum", "text": "Build prefix sums because two distinct positions always form a range."},
+        {"id": "greedy_smallest", "text": "Always choose the smallest package because it leaves the most capacity."}
+      ], "acceptedOptionIds": ["endpoint_elimination"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Sortedness makes an endpoint comparison eliminate all pairs involving one endpoint in the relevant direction.", "details": {"blocks": [{"type": "paragraph", "text": "If the smallest plus largest is below C, the smallest cannot pair with any remaining value to reach C; if above, the largest cannot. The candidate is an arbitrary pair, not a contiguous range, so window and prefix-sum rules do not transfer."}]}, "wrongOptionExplanationsByOptionId": {"window_validity": "The output selects two values, not every value in an interval.", "prefix_sum": "A pair sum is not an interval sum, even when indices have a numeric order.", "greedy_smallest": "Choosing one endpoint without the complementary elimination comparison is not a complete proof."}},
+      "taxonomy": {"primarySkillAtomId": "transfer_strategy_selection_to_new_surface_form", "secondarySkillAtomIds": [], "learningStage": "strategy_selection"}
+    },
+    {
+      "id": "ssc-transfer-11_surface_change",
+      "prompt": "How should a known algorithmic pattern be transferred when the problem changes from arrays to strings?",
+      "constraints": [
+        "Strings are sequences of symbols.",
+        "The operation depends on order and contiguous ranges rather than numeric arithmetic."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "preserve_invariant",
+            "text": "Transfer the state invariant and boundary movement, replacing numeric operations with symbol operations only where the proof permits.",
+            "explanation": "The surface representation can change while the mental unit remains."
+          },
+          {
+            "id": "copy_numeric",
+            "text": "Copy numeric comparisons unchanged because strings also have indices.",
+            "explanation": "Symbol predicates may not support numeric monotonicity."
+          },
+          {
+            "id": "rename_only",
+            "text": "Rename the array to string and assume every transition remains valid.",
+            "explanation": "The actual predicate and state must be checked."
+          },
+          {
+            "id": "sort_string",
+            "text": "Sort characters before applying any contiguous-window pattern.",
+            "explanation": "Sorting destroys original substring order."
+          }
+        ],
+        "acceptedOptionIds": [
+          "preserve_invariant"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Pattern transfer is about preserving the proof-relevant invariant, not copying syntax.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A frequency window can transfer naturally to symbols; a sum-monotonic window may not. Identify which operations and assumptions survive the new surface form."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "copy_numeric": "Symbol predicates may not support numeric monotonicity.",
+          "rename_only": "The actual predicate and state must be checked.",
+          "sort_string": "Sorting destroys original substring order."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_strategy_selection_to_new_surface_form",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-transfer-12_constraint_change",
+      "prompt": "A familiar two-pointer method assumes sorted input, but the new problem guarantees only arbitrary order. What is the correct transfer step?",
+      "constraints": [
+        "The original proof uses sortedness.",
+        "The new input contract removes that precondition."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "rederive_or_replace",
+            "text": "Recheck candidate elimination; if no monotone relation survives, replace the method or add justified preprocessing with provenance.",
+            "explanation": "A missing proof premise cannot be silently assumed."
+          },
+          {
+            "id": "keep_method",
+            "text": "Keep the method because pointer positions are still ordered from left to right.",
+            "explanation": "Index order is not value order."
+          },
+          {
+            "id": "metadata_fix",
+            "text": "Label the input as effectively sorted so the runtime can use the old path.",
+            "explanation": "Metadata does not create a value invariant."
+          },
+          {
+            "id": "test_only",
+            "text": "Run more examples until arbitrary order appears to work.",
+            "explanation": "Empirical success cannot establish a universal elimination proof."
+          }
+        ],
+        "acceptedOptionIds": [
+          "rederive_or_replace"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A changed constraint can invalidate the core theorem of a transferred pattern.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The next candidate may be hashing, sorting plus index decoration, or another state model. The choice follows the new contract and proof, not the old pattern label."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "keep_method": "Index order is not value order.",
+          "metadata_fix": "Metadata does not create a value invariant.",
+          "test_only": "Empirical success cannot establish a universal elimination proof."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_strategy_selection_to_new_surface_form",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-transfer-13_output_change",
+      "prompt": "A problem changes from returning one valid pair to returning all unique value pairs. What must be reconsidered?",
+      "constraints": [
+        "The output multiplicity and uniqueness rules changed.",
+        "The old method stopped at its first witness."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "output_and_duplicates",
+            "text": "Change termination, duplicate skipping, and result storage so every required unique value pair is emitted without losing valid combinations.",
+            "explanation": "The output contract changes the state and control flow."
+          },
+          {
+            "id": "same_early_return",
+            "text": "Return the first pair because it proves at least one valid answer exists.",
+            "explanation": "One witness is insufficient for exhaustive output."
+          },
+          {
+            "id": "ignore_values",
+            "text": "Keep all index duplicates because output uniqueness is unrelated to values.",
+            "explanation": "Unique value-pair output requires a duplicate policy."
+          },
+          {
+            "id": "sort_output_only",
+            "text": "Collect one witness and sort it to represent all solutions.",
+            "explanation": "Sorting cannot create omitted solutions."
+          }
+        ],
+        "acceptedOptionIds": [
+          "output_and_duplicates"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A transfer must preserve the new output contract, not only the recognition pattern.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Exhaustive output changes whether the scan continues, how equal values are skipped, and whether indices or values define identity. Those are correctness decisions before optimization."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "same_early_return": "One witness is insufficient for exhaustive output.",
+          "ignore_values": "Unique value-pair output requires a duplicate policy.",
+          "sort_output_only": "Sorting cannot create omitted solutions."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_strategy_selection_to_new_surface_form",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
+    },
+    {
+      "id": "ssc-transfer-14_numeric_domain",
+      "prompt": "A sliding-window pattern transfers from positive integers to signed integers. Which question should be answered first?",
+      "constraints": [
+        "The original proof uses monotone sum behavior.",
+        "Negative values are legal in the new problem."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "monotonicity_check",
+            "text": "Check whether expanding and shrinking still move the predicate monotonically; if not, choose a state such as prefixes that captures signed behavior.",
+            "explanation": "The positivity premise may be the entire reason the window works."
+          },
+          {
+            "id": "positivity_assume",
+            "text": "Treat negative values as zero so the old proof remains applicable.",
+            "explanation": "Changing input values changes the problem."
+          },
+          {
+            "id": "same_shrink",
+            "text": "Keep shrinking while sum exceeds target because signed sums behave like positive sums.",
+            "explanation": "Removing a negative value can increase the sum."
+          },
+          {
+            "id": "sort_signed",
+            "text": "Sort signed values so their sum becomes monotone without affecting subarray identity.",
+            "explanation": "Sorting changes contiguous-range semantics."
+          }
+        ],
+        "acceptedOptionIds": [
+          "monotonicity_check"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "The first transfer audit is whether the key invariant survives the changed numeric domain.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Signed values can make both expansion and shrink nonmonotone. Exact range sums may require prefix sums or other methods; the old window is not automatically transferable."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "positivity_assume": "Changing input values changes the problem.",
+          "same_shrink": "Removing a negative value can increase the sum.",
+          "sort_signed": "Sorting changes contiguous-range semantics."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "transfer_strategy_selection_to_new_surface_form",
+        "secondarySkillAtomIds": [],
+        "learningStage": "strategy_selection"
+      }
     }
   ],
   "modeStructures": {

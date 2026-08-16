@@ -643,6 +643,294 @@
       },
       "id": "alg-linked-list-rewiring-08-sublist-splice-two-boundaries",
       "difficulty": "advanced"
+    },
+    {
+      "id": "alg-linked-list-rewiring-09-reverse-empty-boundary",
+      "prompt": "A link-reversal helper receives head=null or one node. What should it return under an in-place reverse contract?",
+      "difficulty": "foundational",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "same_head", "text": "Return null for an empty list and the same node for a one-node list, with no invalid dereference."},
+        {"id": "new_sentinel", "text": "Allocate a sentinel so even an empty list has a node to reverse."},
+        {"id": "drop_single", "text": "Return null for a one-node list because no link was reversed."},
+        {"id": "self_loop_single", "text": "Point a single node to itself so the reverse has an explicit edge."}
+      ], "acceptedOptionIds": ["same_head"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Reversal changes links when they exist but preserves the logical node set and empty/singleton identities.", "details": {"blocks": [{"type": "paragraph", "text": "The loop can return immediately for null or a singleton. Allocating or self-linking changes the topology and violates an in-place reverse contract; absence of a link to reverse does not mean the node should disappear."}]}, "wrongOptionExplanationsByOptionId": {"new_sentinel": "A sentinel is an extra node and is not required for reversal.", "drop_single": "The singleton remains the list's head.", "self_loop_single": "A self-loop changes an acyclic singleton into a cycle."}},
+      "taxonomy": {"primarySkillAtomId": "preserve_reachable_nodes_during_rewire", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "pointer_rewiring", "problemArchetypeId": "reverse_linked_structure"}
+    },
+    {
+      "id": "alg-linked-list-rewiring-10-cycle-precondition",
+      "prompt": "A standard in-place list reversal assumes an acyclic singly linked list. What risk appears if the input may contain a reachable cycle?",
+      "difficulty": "advanced",
+      "interaction": {"type": "choice", "selectionMode": "single", "options": [
+        {"id": "termination_and_contract", "text": "The loop may not terminate or may reverse a cycle into an unintended topology; detect/forbid cycles or define a bounded cycle-aware contract first."},
+        {"id": "no_change", "text": "Cycles cannot affect reversal because every node still has one next pointer."},
+        {"id": "sort_cycle", "text": "Sort node values before reversing to make cycle traversal finite."},
+        {"id": "copy_one_cycle", "text": "Copy one arbitrary cycle node and assume the original becomes acyclic."}
+      ], "acceptedOptionIds": ["termination_and_contract"]},
+      "scoringContract": {"type": "choice", "resultSemantics": "exact_selected_set_with_partial_v1"},
+      "feedback": {"reason": "Acyclic reversal relies on reaching null; a cycle removes that termination boundary and changes reachable topology.", "details": {"blocks": [{"type": "paragraph", "text": "The usual prev/current loop terminates when current becomes null. In a cycle, current can revisit nodes indefinitely and rewiring may produce a different cycle depending on where it stops. The API must reject cycles, detect them, or specify exact cycle reversal semantics before applying the tree-like proof."}]}, "wrongOptionExplanationsByOptionId": {"no_change": "A cycle can prevent null termination and make link updates revisit nodes.", "sort_cycle": "Values do not determine or remove pointer cycles.", "copy_one_cycle": "Copying one node does not define how the remaining cyclic references are handled."}},
+      "taxonomy": {"primarySkillAtomId": "preserve_reachable_nodes_during_rewire", "secondarySkillAtomIds": [], "learningStage": "pattern_mechanics", "patternVariantId": "pointer_rewiring", "problemArchetypeId": "reverse_linked_structure"}
+    },
+    {
+      "id": "alg-linked-list-rewiring-11-save_successor",
+      "prompt": "When reversing one link `current.next`, which reference must be saved before the assignment?",
+      "constraints": [
+        "The list is singly linked.",
+        "The original successor must remain reachable."
+      ],
+      "difficulty": "foundational",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "save_next",
+            "text": "Save current.next in a temporary successor reference before pointing current.next backward.",
+            "explanation": "The saved successor is the only route to the unprocessed suffix."
+          },
+          {
+            "id": "save_prev_only",
+            "text": "Save only prev because the successor can be recovered from the reversed link.",
+            "explanation": "The original successor is lost once current.next is overwritten."
+          },
+          {
+            "id": "overwrite_first",
+            "text": "Overwrite current.next and inspect the old value afterward.",
+            "explanation": "The old pointer is no longer available after the assignment."
+          },
+          {
+            "id": "copy_value",
+            "text": "Copy the successor payload so the successor link need not be retained.",
+            "explanation": "Values do not preserve node reachability or identity."
+          }
+        ],
+        "acceptedOptionIds": [
+          "save_next"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Pointer rewiring must preserve the unprocessed successor before changing the only outgoing link.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The standard iterative reversal keeps `next = current.next`, then sets `current.next = prev`, advances prev, and advances current to next. The save-before-overwrite order is the invariant's safety step."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "save_prev_only": "The original successor is lost once current.next is overwritten.",
+          "overwrite_first": "The old pointer is no longer available after the assignment.",
+          "copy_value": "Values do not preserve node reachability or identity."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "reverse_linked_structure"
+      }
+    },
+    {
+      "id": "alg-linked-list-rewiring-12_sublist_boundary",
+      "prompt": "When reversing a sublist from position l to r, which external links must be reconnected afterward?",
+      "constraints": [
+        "The sublist has a predecessor when l is not the head.",
+        "The reversed segment may have a successor."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "connect_pre_and_after",
+            "text": "Connect the predecessor to the new segment head and the old segment head, now its tail, to the segment successor.",
+            "explanation": "Both sides of the reversed segment must remain reachable."
+          },
+          {
+            "id": "connect_head_only",
+            "text": "Update only the overall head because internal reversal determines every other link.",
+            "explanation": "A middle segment also has an incoming predecessor link."
+          },
+          {
+            "id": "connect_tail_only",
+            "text": "Reconnect only the old segment tail to the successor.",
+            "explanation": "Without the predecessor link, the new segment head may be detached."
+          },
+          {
+            "id": "copy_segment",
+            "text": "Copy the segment into new nodes so boundary links need no update.",
+            "explanation": "Copying changes identity and is not required by an in-place contract."
+          }
+        ],
+        "acceptedOptionIds": [
+          "connect_pre_and_after"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "A local reversal changes the segment's entry and exit nodes, so both external boundaries need explicit reconnection.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "The old segment head becomes the new tail and the old segment tail becomes the new head. The predecessor and successor links must be updated consistently, with a dummy head often simplifying l=1."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "connect_head_only": "A middle segment also has an incoming predecessor link.",
+          "connect_tail_only": "Without the predecessor link, the new segment head may be detached.",
+          "copy_segment": "Copying changes identity and is not required by an in-place contract."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "reverse_linked_structure"
+      }
+    },
+    {
+      "id": "alg-linked-list-rewiring-13_cycle_guard",
+      "prompt": "Why must a routine that assumes an acyclic list reject or handle a cycle before repeatedly following next links?",
+      "constraints": [
+        "The input contract may allow cycles.",
+        "The routine expects traversal to terminate."
+      ],
+      "difficulty": "intermediate",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "termination_policy",
+            "text": "It must detect or explicitly reject the cycle, because a traversal or reversal invariant based on a null tail may never terminate or may corrupt shared topology.",
+            "explanation": "Acyclicity is a precondition for many rewiring proofs."
+          },
+          {
+            "id": "null_eventual",
+            "text": "Every linked-list traversal eventually reaches null even when a cycle exists.",
+            "explanation": "A cycle has no null successor along its loop."
+          },
+          {
+            "id": "sort_cycle",
+            "text": "Sorting reachable values removes the cycle before rewiring.",
+            "explanation": "Value order does not change pointer topology."
+          },
+          {
+            "id": "ignore_contract",
+            "text": "Proceed unchanged because pointer assignments are local and cannot affect termination.",
+            "explanation": "Local rewiring can change or preserve a cycle and affect reachability."
+          }
+        ],
+        "acceptedOptionIds": [
+          "termination_policy"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "Rewiring algorithms need a topology precondition or a cycle-aware policy.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "Acyclic reversal relies on current eventually becoming null. If a cycle is legal, the routine needs a bounded traversal, detection, or explicit semantics; silently applying an acyclic proof is unsafe."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "null_eventual": "A cycle has no null successor along its loop.",
+          "sort_cycle": "Value order does not change pointer topology.",
+          "ignore_contract": "Local rewiring can change or preserve a cycle and affect reachability."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "reverse_linked_structure"
+      }
+    },
+    {
+      "id": "alg-linked-list-rewiring-14_identity",
+      "prompt": "What should an in-place pointer-rewiring routine preserve when node identity is part of the contract?",
+      "constraints": [
+        "Callers may hold aliases to original nodes.",
+        "The operation changes links rather than values."
+      ],
+      "difficulty": "advanced",
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "id": "same_nodes_new_links",
+            "text": "Reuse the specified node objects, preserve their required reachability and aliases, and change only the permitted links.",
+            "explanation": "Identity and topology are both observable."
+          },
+          {
+            "id": "copy_values",
+            "text": "Allocate replacement nodes with equal values because the output sequence is the same.",
+            "explanation": "Replacement breaks aliases and identity."
+          },
+          {
+            "id": "value_multiset",
+            "text": "Preserve only the multiset of payloads; any node topology is acceptable.",
+            "explanation": "The contract explicitly observes identities and links."
+          },
+          {
+            "id": "drop_aliases",
+            "text": "Invalidate external references so the routine can freely rebuild the list.",
+            "explanation": "The caller's aliases are part of the public behavior."
+          }
+        ],
+        "acceptedOptionIds": [
+          "same_nodes_new_links"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1"
+      },
+      "feedback": {
+        "reason": "In-place rewiring is a topology operation under an identity contract, not a value-copy operation.",
+        "details": {
+          "blocks": [
+            {
+              "type": "paragraph",
+              "text": "A correct implementation can reverse or splice existing nodes while keeping the caller-visible objects. Tests should retain aliases and verify reachability and link direction after mutation."
+            }
+          ]
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "copy_values": "Replacement breaks aliases and identity.",
+          "value_multiset": "The contract explicitly observes identities and links.",
+          "drop_aliases": "The caller's aliases are part of the public behavior."
+        }
+      },
+      "taxonomy": {
+        "primarySkillAtomId": "preserve_reachable_nodes_during_rewire",
+        "secondarySkillAtomIds": [],
+        "learningStage": "pattern_mechanics",
+        "patternVariantId": "pointer_rewiring",
+        "problemArchetypeId": "reverse_linked_structure"
+      }
     }
   ],
   "modeStructures": {

@@ -12,7 +12,7 @@ const candidates = [
   ["google-cloud-associate-cloud-engineer", "certification", "npm run audit:gcp:authoring"],
   ["aws-certified-solutions-architect-associate", "certification", "npm run audit:aws-workbook-source"],
   ["microsoft-azure-ai-fundamentals-ai-901", "certification", "npm run audit:ai901"],
-  ["microsoft-azure-administrator-associate-az-104", "certification", null],
+  ["microsoft-azure-administrator-associate-az-104", "certification", "npm run authoring:validate"],
   ["backend-system-design-interview", "design_interview", "npm run validate:backend-system-design"],
   ["frontend-system-design-interview", "design_interview", "npm run validate:frontend-bank"],
   ["object-oriented-design-interview", "design_interview", "npm run validate:object-oriented-design"]

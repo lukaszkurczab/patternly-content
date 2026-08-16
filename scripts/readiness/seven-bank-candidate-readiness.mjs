@@ -60,7 +60,15 @@ async function sourceSummary(trackId, familyId, validatorCommand) {
   };
 }
 
-const sourceCommit = (await exec("git", ["rev-parse", "HEAD"], { cwd: root })).stdout.trim();
+// The report is an output, so HEAD would change merely by committing this file.
+// Track the newest commit that changed the content inputs the report describes.
+const sourceCommit = (await exec("git", [
+  "log", "-1", "--format=%H", "--",
+  "manual/source",
+  "config/authoring",
+  "config/curricula",
+  "docs/track-briefs"
+], { cwd: root })).stdout.trim();
 const banks = await Promise.all(candidates.map(([trackId, familyId, validator]) => sourceSummary(trackId, familyId, validator)));
 const report = { schemaVersion: "seven-bank-candidate-readiness-v1", sourceCommit, candidateTrackIds: banks.map((bank) => bank.trackId).sort(), banks: banks.sort((a, b) => a.trackId.localeCompare(b.trackId)) };
 const bytes = `${canonical(report)}\n`;

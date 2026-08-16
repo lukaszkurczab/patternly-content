@@ -20,13 +20,14 @@ const exactKeys = (value, keys, label) => {
 
 function selectorFor(brief, artifact) {
   if (brief.trackId === "coding-interview-dsa-problem-solving" && artifact.familyId === "coding_interview") return Object.freeze({ field: "taxonomy.roadmapNodeId", equals: brief.freeNodeId });
+  if (brief.internalFamily === "certification" && artifact.familyId === "certification") return Object.freeze({ field: "nodeId", equals: brief.freeNodeId });
   fail("UNSUPPORTED_FREE_NODE_SELECTOR", `No canonical free-node selector exists for ${brief.trackId}.`);
 }
 
 function selectItems(artifact, selector) {
   const bank = JSON.parse(artifact.artifactBytes).bank;
   if (!Array.isArray(bank.items)) fail("INVALID_ARTIFACT", `Published artifact has no item collection: ${artifact.trackId}.`);
-  const selected = bank.items.filter((item) => selector.field === "taxonomy.roadmapNodeId" ? item.taxonomy?.roadmapNodeId === selector.equals : item?.domain === selector.equals);
+  const selected = bank.items.filter((item) => selector.field === "taxonomy.roadmapNodeId" ? item.taxonomy?.roadmapNodeId === selector.equals : selector.field === "nodeId" ? item?.nodeId === selector.equals : item?.domain === selector.equals);
   if (!selected.length) fail("EMPTY_FREE_NODE", `Pinned artifact contains no items for ${artifact.trackId}/${selector.equals}.`);
   const result = selected.map((item) => {
     const id = text(item?.id, "published item id", "INVALID_ARTIFACT");

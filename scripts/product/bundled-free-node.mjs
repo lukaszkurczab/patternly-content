@@ -35,6 +35,7 @@ function artifactFor(release, trackId) {
 
 function nodeValue(item, selector) {
   if (selector.field === "taxonomy.roadmapNodeId") return item?.taxonomy?.roadmapNodeId;
+  if (selector.field === "nodeId") return item?.nodeId;
   if (selector.field === "domain") return item?.domain;
   fail("UNSUPPORTED_FREE_NODE_SELECTOR", `Unsupported free-node selector ${selector.field}.`);
 }
@@ -80,8 +81,9 @@ function selectedAssets(bank, selectedItems, assetBytesById) {
 
 function exactTaxonomySubset(taxonomy, selectedItems, familyId, freeNodeId) {
   if (familyId === "certification") {
-    if (!taxonomy.cloudDomains?.includes(freeNodeId)) fail("DANGLING_FREE_NODE_REFERENCE", `Certification taxonomy does not own ${freeNodeId}.`);
-    return Object.freeze({ ...taxonomy, cloudDomains: Object.freeze([freeNodeId]) });
+    if (!taxonomy.nodeIds?.includes(freeNodeId) || !taxonomy.tags?.includes(freeNodeId)) fail("DANGLING_FREE_NODE_REFERENCE", `Certification taxonomy does not own ${freeNodeId}.`);
+    const selectedTags = new Set(selectedItems.flatMap((item) => item.tags ?? []));
+    return Object.freeze({ ...taxonomy, nodeIds: Object.freeze([freeNodeId]), tags: Object.freeze((taxonomy.tags ?? []).filter((tag) => selectedTags.has(tag)).sort(compare)) });
   }
   const ids = {
     roadmapNodes: new Set([freeNodeId]), mentalUnits: new Set(), patternFamilies: new Set(), patternVariants: new Set(), problemArchetypes: new Set(), skillAtoms: new Set(), learningStages: new Set(), falseHeuristics: new Set()
@@ -265,7 +267,7 @@ export function payloadFromBundledFreeNode(record) {
 }
 
 function itemBelongsToPayloadNode(item, payload) {
-  return payload.familyId === "coding_interview" ? item.taxonomy?.roadmapNodeId === payload.freeNodeId : item.domain === payload.freeNodeId;
+  return payload.familyId === "coding_interview" ? item.taxonomy?.roadmapNodeId === payload.freeNodeId : payload.familyId === "certification" ? item.nodeId === payload.freeNodeId : item.domain === payload.freeNodeId;
 }
 
 export function verifyBundledFreeNodeRecord(record) {

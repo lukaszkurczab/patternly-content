@@ -501,10 +501,56 @@ function validateCodingInterviewSource(batches, track, family, taxonomyConfig, t
   return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items, itemFingerprints, modeStructures: publishedModeStructures, feedbackAssets, batches, technicalEvidence, technicalInputFingerprint };
 }
 function certificationTaxonomy(taxonomy) {
-  if (taxonomy.schemaVersion !== "taxonomy-config-v1" || !Array.isArray(taxonomy.axes) || !taxonomy.axes.includes("cloud-domain") || !taxonomy.axes.includes("tag")) throw new PublishingFailure("MISSING_CANONICAL_TAXONOMY", "Certification taxonomy must declare cloud-domain and tag axes.");
-  return new Set(ids(taxonomy.cloudDomains, "Certification cloud domains", "MISSING_CANONICAL_TAXONOMY"));
+  if (taxonomy.schemaVersion === "taxonomy-config-v1" && Array.isArray(taxonomy.axes) && taxonomy.axes.includes("cloud-domain") && taxonomy.axes.includes("tag")) {
+    return { cloudDomains: new Set(ids(taxonomy.cloudDomains, "Certification cloud domains", "MISSING_CANONICAL_TAXONOMY")) };
+  }
+  if (taxonomy.schemaVersion === "patternly-certification-objective-registry-v1" && Array.isArray(taxonomy.domains)) {
+    return { cloudDomains: new Set(taxonomy.domains.map((domain) => text(record(domain, "Certification objective domain", "MISSING_CANONICAL_TAXONOMY").domainId, "Certification objective domainId", "MISSING_CANONICAL_TAXONOMY"))) };
+  }
+  throw new PublishingFailure("MISSING_CANONICAL_TAXONOMY", "Certification taxonomy must declare canonical cloud-domain or objective-registry domains.");
 }
-function validateCertificationItem(value, cloudDomains) {
+function modernCertificationDetails(details, itemId) {
+  const source = record(details, `${itemId} Details`, "INVALID_RESPONSE");
+  const blocks = [
+    ["Mechanism or property", source.mechanismOrProperty],
+    ["Scenario application", source.scenarioApplication],
+    ["Error correction", source.errorCorrection],
+    ["Boundary or tradeoff", source.boundaryOrTradeoff],
+    ["Transfer", source.transfer],
+    ["Source", source.url],
+  ].filter(([, value]) => value !== undefined).map(([title, value]) => ({ type: "paragraph", text: `${title}: ${text(value, `${itemId} Details.${title}`, "INVALID_RESPONSE")}` }));
+  return { blocks };
+}
+function normalizeModernCertificationItem(value, cloudDomains) {
+  const source = record(value, "Certification source item", "INVALID_RESPONSE"); const id = text(source.itemId, "Certification source itemId", "INVALID_RESPONSE");
+  const taxonomy = record(source.taxonomy, `${id} taxonomy`, "INVALID_REFERENCE"); const domain = text(taxonomy.examDomainId, `${id} examDomainId`, "INVALID_REFERENCE");
+  if (!cloudDomains.has(domain)) throw new PublishingFailure("INVALID_REFERENCE", `${id} has an unknown certification objective domain.`);
+  const interaction = record(source.interaction, `${id} interaction`, "INVALID_RESPONSE"); const type = interaction.selectionMode === "multiple" ? "multiple" : interaction.selectionMode === "single" ? "single" : undefined;
+  if (!type || interaction.type !== "choice") throw new PublishingFailure("INVALID_RESPONSE", `${id} has an unsupported choice interaction.`);
+  const options = list(interaction.options, `${id} options`, "INVALID_RESPONSE").map((option) => { const entry = record(option, `${id} option`, "INVALID_RESPONSE"); return { id: text(entry.optionId, `${id} option id`, "INVALID_RESPONSE"), text: text(entry.text, `${id} option text`, "INVALID_RESPONSE") }; });
+  const correctOptionIds = ids(interaction.acceptedOptionIds, `${id} acceptedOptionIds`, "INVALID_RESPONSE");
+  const tags = ids([domain, taxonomy.competencyAreaId, taxonomy.topicId, taxonomy.skillAtomId], `${id} taxonomy tags`, "INVALID_REFERENCE");
+  const feedbackSource = record(source.feedback, `${id} feedback`, "INVALID_RESPONSE");
+  return {
+    id,
+    domain,
+    type,
+    question: text(source.prompt, `${id} prompt`, "INVALID_RESPONSE"),
+    options,
+    correctOptionIds,
+    feedback: {
+      reason: text(feedbackSource.Reason, `${id} Reason`, "INVALID_RESPONSE"),
+      details: modernCertificationDetails(feedbackSource.Details, id),
+      wrongOptionExplanationsByOptionId: record(feedbackSource.wrongOptionExplanationsByOptionId, `${id} wrong-option explanations`, "INVALID_RESPONSE"),
+      ...(type === "multiple" ? { omittedCorrectExplanationsByOptionId: record(feedbackSource.omittedCorrectElementExplanationsByOptionId, `${id} omitted-correct explanations`, "INVALID_RESPONSE") } : {}),
+    },
+    tags,
+    examSignals: ids(source.sourceBinding?.claimIds ?? [], `${id} claim IDs`, "INVALID_REFERENCE"),
+    nodeId: text(source.nodeId, `${id} nodeId`, "INVALID_REFERENCE"),
+  };
+}
+function validateCertificationItem(value, cloudDomains, sourceVersion = "certification-manual-source-v1") {
+  if (sourceVersion === "certification-manual-source-v2") return normalizeModernCertificationItem(value, cloudDomains);
   const item = record(value, "Certification item", "INVALID_RESPONSE"); const id = text(item.id, "Certification item id", "INVALID_RESPONSE");
   text(item.question, `${id} question`, "INVALID_RESPONSE");
   if (!cloudDomains.has(text(item.domain, `${id} domain`, "INVALID_REFERENCE"))) throw new PublishingFailure("INVALID_REFERENCE", `${id} has an unknown cloud domain.`);
@@ -554,7 +600,7 @@ function certificationDiagnosticBaseline(track, items) {
   if (canonicalJson(Object.keys(configuration).sort(compare)) !== canonicalJson(["diagnosticBaseline", "focusPractice", "mixedPractice", "quickReview", "scenarioPractice", "schemaVersion", "weakAreaReview"]) || configuration.schemaVersion !== "certification-track-mode-config-v1") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification track mode configuration is invalid.");
   const baseline = record(configuration.diagnosticBaseline, "Certification Diagnostic Baseline blueprint", "MISSING_TRACK_MODE_CONFIGURATION");
   const keys = ["actualLength", "blueprintId", "blueprintVersion", "feedbackTiming", "itemIds", "modeId", "reinsertPolicy", "requestedLength", "shortening", "timerKind", "uniqueItemsRequired"];
-  if (canonicalJson(Object.keys(baseline).sort(compare)) !== canonicalJson(keys) || baseline.blueprintId !== "gcp-ace-diagnostic-baseline-v1" || baseline.blueprintVersion !== "1" || baseline.modeId !== "certification-diagnostic-baseline" || baseline.requestedLength !== 40 || baseline.actualLength !== 40 || baseline.shortening !== "prohibited" || baseline.uniqueItemsRequired !== 40 || baseline.timerKind !== "elapsed_foreground" || baseline.feedbackTiming !== "after_each_durable_submit" || baseline.reinsertPolicy !== "disabled") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Diagnostic Baseline blueprint conflicts with its fixed-40 contract.");
+  if (canonicalJson(Object.keys(baseline).sort(compare)) !== canonicalJson(keys) || !text(baseline.blueprintId, "Certification Diagnostic Baseline blueprint ID", "INVALID_TRACK_MODE_CONFIGURATION") || baseline.blueprintVersion !== "1" || baseline.modeId !== "certification-diagnostic-baseline" || baseline.requestedLength !== 40 || baseline.actualLength !== 40 || baseline.shortening !== "prohibited" || baseline.uniqueItemsRequired !== 40 || baseline.timerKind !== "elapsed_foreground" || baseline.feedbackTiming !== "after_each_durable_submit" || baseline.reinsertPolicy !== "disabled") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Diagnostic Baseline blueprint conflicts with its fixed-40 contract.");
   const itemIds = ids(baseline.itemIds, "Certification Diagnostic Baseline item IDs", "INVALID_TRACK_MODE_CONFIGURATION");
   if (itemIds.length !== 40 || new Set(itemIds).size !== 40 || itemIds.some((itemId) => !items.some((item) => item.id === itemId))) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Diagnostic Baseline must name exactly forty unique current items.");
   return { ...baseline, itemIds: Object.freeze([...itemIds]) };
@@ -562,7 +608,7 @@ function certificationDiagnosticBaseline(track, items) {
 function certificationFocusPractice(track, items) {
   const focus = record(track.modeConfiguration.focusPractice, "Certification Focus Practice blueprint", "MISSING_TRACK_MODE_CONFIGURATION");
   const keys = ["blueprintId", "blueprintVersion", "modeId", "requestedLengths", "selectionScope", "shortening", "topicIds"];
-  if (canonicalJson(Object.keys(focus).sort(compare)) !== canonicalJson(keys) || focus.blueprintId !== "gcp-ace-focus-practice-v1" || focus.blueprintVersion !== "1" || focus.modeId !== "certification-focus-practice" || focus.selectionScope !== "cloud_domain" || focus.shortening !== "allowed_within_topic") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Focus Practice blueprint conflicts with its declared contract.");
+  if (canonicalJson(Object.keys(focus).sort(compare)) !== canonicalJson(keys) || !text(focus.blueprintId, "Certification Focus Practice blueprint ID", "INVALID_TRACK_MODE_CONFIGURATION") || focus.blueprintVersion !== "1" || focus.modeId !== "certification-focus-practice" || focus.selectionScope !== "cloud_domain" || focus.shortening !== "allowed_within_topic") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Focus Practice blueprint conflicts with its declared contract.");
   const requestedLengths = list(focus.requestedLengths, "Certification Focus Practice requested lengths", "INVALID_TRACK_MODE_CONFIGURATION");
   if (canonicalJson(requestedLengths) !== canonicalJson([10, 20, 40])) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Focus Practice must declare exactly 10, 20, and 40 requested lengths.");
   const topicIds = ids(focus.topicIds, "Certification Focus Practice topic IDs", "INVALID_TRACK_MODE_CONFIGURATION");
@@ -573,7 +619,7 @@ function certificationFocusPractice(track, items) {
 function certificationScenarioPractice(track, items) {
   const scenario = record(track.modeConfiguration.scenarioPractice, "Certification Scenario Practice blueprint", "MISSING_TRACK_MODE_CONFIGURATION");
   const keys = ["blueprintId", "blueprintVersion", "competencies", "modeId", "requestedLengths", "selectionScope", "shortening"];
-  if (canonicalJson(Object.keys(scenario).sort(compare)) !== canonicalJson(keys) || scenario.blueprintId !== "gcp-ace-scenario-practice-v1" || scenario.blueprintVersion !== "1" || scenario.modeId !== "certification-scenario-practice" || scenario.selectionScope !== "explicit_tag_competency" || scenario.shortening !== "allowed_within_competency") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Scenario Practice blueprint conflicts with its declared contract.");
+  if (canonicalJson(Object.keys(scenario).sort(compare)) !== canonicalJson(keys) || !text(scenario.blueprintId, "Certification Scenario Practice blueprint ID", "INVALID_TRACK_MODE_CONFIGURATION") || scenario.blueprintVersion !== "1" || scenario.modeId !== "certification-scenario-practice" || scenario.selectionScope !== "explicit_tag_competency" || scenario.shortening !== "allowed_within_competency") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Scenario Practice blueprint conflicts with its declared contract.");
   const requestedLengths = list(scenario.requestedLengths, "Certification Scenario Practice requested lengths", "INVALID_TRACK_MODE_CONFIGURATION");
   if (canonicalJson(requestedLengths) !== canonicalJson([10, 20, 40])) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Scenario Practice must declare exactly 10, 20, and 40 requested lengths.");
   const byId = new Map(items.map((item) => [item.id, item]));
@@ -593,7 +639,7 @@ function certificationScenarioPractice(track, items) {
 function certificationWeakAreaReview(track) {
   const review = record(track.modeConfiguration.weakAreaReview, "Certification Weak Area Review blueprint", "MISSING_TRACK_MODE_CONFIGURATION");
   const keys = ["blueprintId", "blueprintVersion", "modeId", "persistentResolutionPolicy", "requestedLengths", "selectionScope", "shortening"];
-  if (canonicalJson(Object.keys(review).sort(compare)) !== canonicalJson(keys) || review.blueprintId !== "gcp-ace-weak-area-review-v1" || review.blueprintVersion !== "1" || review.modeId !== "certification-weak-area-review" || review.shortening !== "allowed_within_eligible_review_evidence" || review.selectionScope !== "eligible_due_review_evidence" || review.persistentResolutionPolicy !== "two_consecutive_due_review_successes") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Weak Area Review blueprint conflicts with its declared contract.");
+  if (canonicalJson(Object.keys(review).sort(compare)) !== canonicalJson(keys) || !text(review.blueprintId, "Certification Weak Area Review blueprint ID", "INVALID_TRACK_MODE_CONFIGURATION") || review.blueprintVersion !== "1" || review.modeId !== "certification-weak-area-review" || review.shortening !== "allowed_within_eligible_review_evidence" || review.selectionScope !== "eligible_due_review_evidence" || review.persistentResolutionPolicy !== "two_consecutive_due_review_successes") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Weak Area Review blueprint conflicts with its declared contract.");
   const requestedLengths = list(review.requestedLengths, "Certification Weak Area Review requested lengths", "INVALID_TRACK_MODE_CONFIGURATION");
   if (canonicalJson(requestedLengths) !== canonicalJson([10, 20])) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Weak Area Review must declare exactly 10 and 20 requested lengths.");
   return Object.freeze({ ...review, requestedLengths: Object.freeze([...requestedLengths]) });
@@ -601,7 +647,7 @@ function certificationWeakAreaReview(track) {
 function certificationMixedPractice(track, items) {
   const mixed = record(track.modeConfiguration.mixedPractice, "Certification Mixed Practice blueprint", "MISSING_TRACK_MODE_CONFIGURATION");
   const keys = ["blueprintId", "blueprintVersion", "itemIds", "modeId", "requestedLengths", "selectionScope", "shortening"];
-  if (canonicalJson(Object.keys(mixed).sort(compare)) !== canonicalJson(keys) || mixed.blueprintId !== "gcp-ace-mixed-practice-v1" || mixed.blueprintVersion !== "1" || mixed.modeId !== "certification-mixed-practice" || mixed.shortening !== "allowed_within_interleaved_blueprint" || mixed.selectionScope !== "unique_interleaved_blueprint") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Mixed Practice blueprint conflicts with its declared contract.");
+  if (canonicalJson(Object.keys(mixed).sort(compare)) !== canonicalJson(keys) || !text(mixed.blueprintId, "Certification Mixed Practice blueprint ID", "INVALID_TRACK_MODE_CONFIGURATION") || mixed.blueprintVersion !== "1" || mixed.modeId !== "certification-mixed-practice" || mixed.shortening !== "allowed_within_interleaved_blueprint" || mixed.selectionScope !== "unique_interleaved_blueprint") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Mixed Practice blueprint conflicts with its declared contract.");
   const requestedLengths = list(mixed.requestedLengths, "Certification Mixed Practice requested lengths", "INVALID_TRACK_MODE_CONFIGURATION");
   if (canonicalJson(requestedLengths) !== canonicalJson([10, 20, 40])) throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Mixed Practice must declare exactly 10, 20, and 40 requested lengths.");
   const itemIds = ids(mixed.itemIds, "Certification Mixed Practice item IDs", "INVALID_TRACK_MODE_CONFIGURATION");
@@ -611,7 +657,7 @@ function certificationMixedPractice(track, items) {
 function certificationQuickReview(track) {
   const review = record(track.modeConfiguration.quickReview, "Certification Quick Review blueprint", "MISSING_TRACK_MODE_CONFIGURATION");
   const keys = ["blueprintId", "blueprintVersion", "maximumLength", "modeId", "persistentResolutionPolicy", "selectionScope", "shortening"];
-  if (canonicalJson(Object.keys(review).sort(compare)) !== canonicalJson(keys) || review.blueprintId !== "gcp-ace-quick-review-v1" || review.blueprintVersion !== "1" || review.modeId !== "certification-quick-review" || review.maximumLength !== 10 || review.shortening !== "allowed_within_eligible_review_evidence" || review.selectionScope !== "eligible_due_review_evidence" || review.persistentResolutionPolicy !== "two_consecutive_due_review_successes") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Quick Review blueprint conflicts with its declared contract.");
+  if (canonicalJson(Object.keys(review).sort(compare)) !== canonicalJson(keys) || !text(review.blueprintId, "Certification Quick Review blueprint ID", "INVALID_TRACK_MODE_CONFIGURATION") || review.blueprintVersion !== "1" || review.modeId !== "certification-quick-review" || review.maximumLength !== 10 || review.shortening !== "allowed_within_eligible_review_evidence" || review.selectionScope !== "eligible_due_review_evidence" || review.persistentResolutionPolicy !== "two_consecutive_due_review_successes") throw new PublishingFailure("INVALID_TRACK_MODE_CONFIGURATION", "Certification Quick Review blueprint conflicts with its declared contract.");
   return Object.freeze({ ...review });
 }
 function certificationModeReadiness({ items, declaredModes, profile, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview }) {
@@ -639,16 +685,20 @@ function certificationModeReadiness({ items, declaredModes, profile, diagnosticB
   return Object.freeze(readiness);
 }
 function validateCertificationSource(batches, track, family, taxonomyConfig, technicalInputFingerprint, sourceCommitValue) {
-  const cloudDomains = certificationTaxonomy(taxonomyConfig); const profile = validateCertificationExamExperienceProfile(track.profile); const first = batches[0]; const batchIds = [];
+  const { cloudDomains } = certificationTaxonomy(taxonomyConfig); const profile = validateCertificationExamExperienceProfile(track.profile); const first = batches[0]; const batchIds = []; const sourceVersions = new Set(batches.map((batch) => batch.schemaVersion));
+  if (sourceVersions.size !== 1 || !["certification-manual-source-v1", "certification-manual-source-v2"].includes(first.schemaVersion)) throw new PublishingFailure("INVALID_ENVELOPE", "Certification source batches must use one supported source contract.");
+  const sourceVersion = first.schemaVersion;
   if (profile.blueprint.sections.some((section) => !cloudDomains.has(section.contentDomainId))) throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile maps a blueprint section outside the installed training taxonomy.");
   const legalModes = ids(family.modes?.map((mode) => mode?.id), "Certification family modes", "INVALID_MODE");
   for (const batch of batches) {
-    if (batch.schemaVersion !== "certification-manual-source-v1" || batch.trackId !== track.trackId || batch.familyId !== track.familyId || batch.contentVersion !== first.contentVersion || batch.taxonomyVersion !== track.taxonomyVersion || canonicalJson(batch.declaredModes) !== canonicalJson(first.declaredModes)) throw new PublishingFailure("INVALID_ENVELOPE", "Certification batch envelope conflicts with track configuration.");
+    const declaredModes = sourceVersion === "certification-manual-source-v1" ? batch.declaredModes : batch.items.flatMap((item) => item.modeEligibility ?? []);
+    const firstModes = sourceVersion === "certification-manual-source-v1" ? first.declaredModes : first.items.flatMap((item) => item.modeEligibility ?? []);
+    if (batch.trackId !== track.trackId || batch.familyId !== track.familyId || batch.contentVersion !== first.contentVersion || batch.taxonomyVersion !== track.taxonomyVersion || canonicalJson([...new Set(declaredModes)].sort(compare)) !== canonicalJson([...new Set(firstModes)].sort(compare))) throw new PublishingFailure("INVALID_ENVELOPE", "Certification batch envelope conflicts with track configuration.");
     batchIds.push(text(batch.batchId, "Certification batchId"));
   }
-  unique(batchIds, "DUPLICATE_ID", "Certification batch IDs"); const declaredModes = ids(first.declaredModes, "Certification declaredModes", "INVALID_MODE");
-  if (canonicalJson(declaredModes) !== canonicalJson(legalModes)) throw new PublishingFailure("INVALID_MODE", "Certification declared modes must exactly match its family contract.");
-  const items = batches.flatMap((batch) => list(batch.items, "Certification items").map((item) => validateCertificationItem(item, cloudDomains))); unique(items.map((item) => item.id), "DUPLICATE_ID", "Certification item IDs");
+  unique(batchIds, "DUPLICATE_ID", "Certification batch IDs"); const declaredModes = ids(sourceVersion === "certification-manual-source-v1" ? first.declaredModes : [...new Set(first.items.flatMap((item) => item.modeEligibility ?? []))].sort(compare), "Certification declaredModes", "INVALID_MODE");
+  if (canonicalJson(sourceVersion === "certification-manual-source-v1" ? declaredModes : [...declaredModes].sort(compare)) !== canonicalJson(sourceVersion === "certification-manual-source-v1" ? legalModes : [...legalModes].sort(compare))) throw new PublishingFailure("INVALID_MODE", "Certification declared modes must exactly match its family contract.");
+  const items = batches.flatMap((batch) => list(batch.items, "Certification items").map((item) => validateCertificationItem(item, cloudDomains, sourceVersion))); unique(items.map((item) => item.id), "DUPLICATE_ID", "Certification item IDs");
   for (const mode of family.modes) if (declaredModes.includes(mode.id) && items.length < mode.minimumPool) throw new PublishingFailure("MODE_UNREADY", `${mode.id} does not meet its minimum pool.`);
   const identities = items.map((item) => canonicalHash({ question: item.question.trim().toLocaleLowerCase(), options: item.options.map((option) => option.text.trim().toLocaleLowerCase()).sort(compare), correctOptionIds: [...item.correctOptionIds].sort(compare) })); unique(identities, "DUPLICATE_CONTENT_IDENTITY", "Certification content identities");
   const diagnosticBaseline = certificationDiagnosticBaseline(track, items);
@@ -659,7 +709,7 @@ function validateCertificationSource(batches, track, family, taxonomyConfig, tec
   const quickReview = certificationQuickReview(track);
   const modeReadiness = certificationModeReadiness({ items, declaredModes, profile, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview });
   const itemFingerprints = Object.fromEntries(items.map((item) => [item.id, canonicalHash(item)]));
-  const technicalEvidence = batches.map((batch) => evidenceFor({ track, family, batchId: batch.batchId, technicalInputFingerprint, batchFingerprint: canonicalHash(batch), itemFingerprints: Object.fromEntries(batch.items.map((item) => [item.id, itemFingerprints[item.id]])), validatedAtSourceCommit: sourceCommitValue }));
+  const technicalEvidence = batches.map((batch) => evidenceFor({ track, family, batchId: batch.batchId, technicalInputFingerprint, batchFingerprint: canonicalHash(batch), itemFingerprints: Object.fromEntries(batch.items.map((item) => { const itemId = sourceVersion === "certification-manual-source-v1" ? item.id : item.itemId; return [itemId, itemFingerprints[itemId]]; })), validatedAtSourceCommit: sourceCommitValue }));
   const publishedItems = items.map((item) => ({ ...item, itemFingerprint: itemFingerprints[item.id] })).sort((a, b) => compare(a.id, b.id));
   return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items: publishedItems, itemFingerprints, modeStructures: {}, examExperienceProfile: profile, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview, modeReadiness, batches, technicalEvidence, technicalInputFingerprint };
 }

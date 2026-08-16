@@ -75,7 +75,7 @@ test("briefs keep complete-track validModes separate from intended or implemente
   for (const brief of canonicalBriefs) {
     assert.ok(brief.freeNodeExperience.modeIds.every((modeId) => brief.validModes.includes(modeId)));
     assert.ok(brief.freeNodeExperience.modeIds.length < brief.validModes.length);
-    if (brief.trackId === "coding-interview-dsa-problem-solving") {
+    if (["coding-interview-dsa-problem-solving", "microsoft-azure-administrator-associate-az-104"].includes(brief.trackId)) {
       assert.equal(brief.freeNodeExperience.implementationStatus, "profile_implemented");
       assert.ok(brief.freeNodeExperience.profilePath);
     } else {
@@ -107,11 +107,26 @@ test("validator rejects empty, unavailable, duplicate, and family-invalid brief 
   assert.throws(() => validateTrackBrief(wrongFamily, schema), /must be coding_interview/);
 });
 
-test("only Coding Interview has an active source-backed brief", async () => {
+test("source-backed briefs expose only the canonical implemented profile contracts", async () => {
   const codingBrief = canonicalBriefs.find((brief) => brief.trackId === "coding-interview-dsa-problem-solving");
   const codingTaxonomy = JSON.parse(await readFile("config/taxonomy/coding-interview-dsa-problem-solving.json", "utf8"));
   const codingTrack = JSON.parse(await readFile("config/tracks/coding-interview-dsa-problem-solving.json", "utf8"));
   assert.equal(codingBrief.internalFamily, codingTrack.familyId);
   assert.ok(codingTaxonomy.roadmapNodes.some((node) => node.id === codingBrief.freeNodeId));
   assert.deepEqual(new Set(codingBrief.validModes), new Set(codingTrack.modeConfiguration.userModeMappings.map((mapping) => mapping.userModeId)));
+
+  const azBrief = canonicalBriefs.find((brief) => brief.trackId === "microsoft-azure-administrator-associate-az-104");
+  const azTaxonomy = JSON.parse(await readFile("config/taxonomy/microsoft-azure-administrator-associate-az-104.json", "utf8"));
+  const azTrack = JSON.parse(await readFile("config/tracks/microsoft-azure-administrator-associate-az-104.json", "utf8"));
+  assert.equal(azBrief.internalFamily, azTrack.familyId);
+  assert.ok(azTaxonomy.tags.includes(azBrief.freeNodeId));
+  assert.deepEqual(new Set(azBrief.validModes), new Set([
+    azTrack.modeConfiguration.diagnosticBaseline.modeId,
+    azTrack.modeConfiguration.focusPractice.modeId,
+    azTrack.modeConfiguration.scenarioPractice.modeId,
+    azTrack.modeConfiguration.weakAreaReview.modeId,
+    azTrack.modeConfiguration.mixedPractice.modeId,
+    azTrack.modeConfiguration.quickReview.modeId,
+    "certification-exam-simulation"
+  ]));
 });

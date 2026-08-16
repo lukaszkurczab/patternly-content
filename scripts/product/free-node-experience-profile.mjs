@@ -17,6 +17,11 @@ const exactModeContract = Object.freeze({
     Object.freeze({ modeId: "coding-interview-guided-practice", blueprintModeId: "coding-interview-guided-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "canonical_family_package_local" }),
     Object.freeze({ modeId: "coding-interview-custom-practice", blueprintModeId: "coding-interview-guided-practice", availability: "immediate", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "learner_selected_free_node_mental_unit", reinsertPolicy: "canonical_family_package_local" }),
     Object.freeze({ modeId: "coding-interview-weak-area-review", blueprintModeId: "coding-interview-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "canonical_family_package_local" })
+  ]),
+  "microsoft-azure-administrator-associate-az-104": Object.freeze([
+    Object.freeze({ modeId: "certification-focus-practice", blueprintModeId: "certification-focus-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "certification-quick-review", blueprintModeId: "certification-quick-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "due_free_node_review_evidence", reinsertPolicy: "disabled" })
   ])
 });
 

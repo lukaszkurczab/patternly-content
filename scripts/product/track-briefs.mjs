@@ -31,6 +31,12 @@ const IMPLEMENTED_FREE_PROFILES = Object.freeze({
     profileVersion: "1",
     profilePath: "config/free-node-experience-profiles/coding-interview-dsa-problem-solving.json",
     modeIds: Object.freeze(["coding-interview-learn-approach", "coding-interview-guided-practice", "coding-interview-custom-practice", "coding-interview-weak-area-review"])
+  }),
+  "microsoft-azure-administrator-associate-az-104": Object.freeze({
+    profileId: "microsoft-azure-administrator-associate-az-104-free-node-v1",
+    profileVersion: "1",
+    profilePath: "config/free-node-experience-profiles/microsoft-azure-administrator-associate-az-104.json",
+    modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
   })
 });
 

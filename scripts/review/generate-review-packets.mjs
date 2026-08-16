@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { summarizeSource, validateApprovalRecord } from "./content-approval.mjs";
 
 const root = process.cwd();
 const readinessPath = join(root, "evidence/readiness/eight-track-launch-readiness.json");
@@ -97,6 +98,13 @@ async function buildPacket(track, sourceCommit) {
     counts.set(type, (counts.get(type) ?? 0) + 1);
     return counts;
   }, new Map())].sort(([a], [b]) => a.localeCompare(b)));
+  let approval = null;
+  try {
+    approval = JSON.parse(await readFile(join(root, "evidence/content-approvals", `${track.trackId}.json`), "utf8"));
+    validateApprovalRecord(approval, { sourceCommit, trackId: track.trackId, sourceSummary: await summarizeSource({ root, trackId: track.trackId }) });
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
   const samples = [];
   for (const block of [...blocks.values()].sort((a, b) => `${a.nodeId}::${a.learningBlockId}`.localeCompare(`${b.nodeId}::${b.learningBlockId}`))) {
     const sorted = [...block.records].sort((a, b) => (itemIdentity(a.item) ?? "").localeCompare(itemIdentity(b.item) ?? ""));
@@ -143,22 +151,22 @@ async function buildPacket(track, sourceCommit) {
       check("interaction-contract", missingInteraction === 0 ? "pass" : "fail", `${missingInteraction} items lack a choice interaction or accepted-option list.`, missingInteraction),
       check("source-binding-observed", urls.length > 0 ? "pass" : "manual-review-required", urls.length > 0 ? `${urls.length} exact HTTPS source URLs were observed.` : "This family uses repository-native provenance; a human reviewer must verify its source binding.", urls.length),
       check("structural-validation", "required_in_ci", `Run ${track.structuralValidation.command} from a clean checkout.`),
-      check("human-approval", "blocked", `Current authoring approval states: ${approvals.join(", ") || "not declared"}. Agent output cannot approve content.`),
+      check("human-approval", approval ? "pass" : "blocked", approval ? `Approved under ${approval.approvalId}.` : `Current authoring approval states: ${approvals.join(", ") || "not declared"}.`),
       check("runtime-and-publishing-admission", "blocked", "Runtime and publishing admission remain explicitly not granted.")
     ],
     knownLimitations: [
-      "This packet prepares review; it is not a factual, technical, editorial, or Product Owner approval.",
+      approval ? "Content approval is recorded separately and covers only the exact source commit and item identities named in the approval record." : "This packet prepares review; it is not a factual, technical, editorial, or Product Owner approval.",
       "Source freshness is represented by the exact source commit and observed URLs; HTTP freshness is not rechecked by this generator.",
       "Runtime, publishing, package, and learner admission are outside this packet and remain blocked until their explicit evidence exists."
     ],
     approvalForm: {
-      status: "pending",
-      reviewer: null,
-      reviewedAt: null,
-      disposition: null,
+      status: approval ? "approved" : "pending",
+      reviewer: approval?.reviewer ?? null,
+      reviewedAt: approval?.reviewDate ?? null,
+      disposition: approval?.finalDisposition ?? null,
       reviewScope: { sourceCommit, sourceFileCount: files.length, canonicalItemCount: records.length, sampleCount: samples.length, automatedFindingIds: ["source-files-present", "item-identities-unique", "prompts-present", "feedback-present", "interaction-contract", "source-binding-observed"] },
-      acceptedLimitations: [],
-      recordPath: null
+      acceptedLimitations: approval?.acceptedLimitations ?? [],
+      recordPath: approval ? `evidence/content-approvals/${track.trackId}.json` : null
     }
   };
 }

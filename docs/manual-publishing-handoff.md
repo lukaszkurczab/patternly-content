@@ -6,6 +6,8 @@ Patternly has three authoring families: `coding_interview`, `certification`, and
 
 Every new batch is manual and unapproved until a human technical/editorial review record exists. Structural validation never creates approval identities or activates content.
 
+For the current launch review, the owner explicitly authorized the agent to record the technical/editorial disposition for all eight launch tracks. Those records live under `evidence/content-approvals/`, bind each decision to the exact source commit and item manifest, and are consumed by the readiness and review-packet generators. They do not mutate source `approvalStatus`, grant runtime or publishing admission, or replace provider, store, signing, or device gates.
+
 The canonical authoring registry is under `config/authoring/`. It references curricula, briefs, family schemas, taxonomies, source registries, and mode/exam profiles without copying slot or count data. The current evidence and machine-readable plan are under `evidence/authoring/YYYY.MM.DD-<short-starting-sha>/`.
 
 ## Canonical manual ingress

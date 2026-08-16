@@ -3,6 +3,7 @@ import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
+import { summarizeSource, validateApprovalRecord } from "../review/content-approval.mjs";
 
 const exec = promisify(execFile);
 const root = process.cwd();
@@ -60,6 +61,15 @@ async function sourceSummary(trackId, familyId, validatorCommand) {
   const packageRoot = join(root, "artifacts/bundled-free-nodes", trackId);
   let bundledPackage = null;
   try { bundledPackage = (await walk(packageRoot)).filter((file) => file.endsWith("package.json")).map((file) => relative(root, file)).sort(); } catch { bundledPackage = []; }
+  const approvalPath = join(root, "evidence/content-approvals", `${trackId}.json`);
+  let approval = null;
+  try {
+    const approvalBytes = await readFile(approvalPath, "utf8");
+    approval = JSON.parse(approvalBytes);
+    validateApprovalRecord(approval, { sourceCommit, trackId, sourceSummary: await summarizeSource({ root, trackId }) });
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
   return {
     trackId,
     familyId,
@@ -71,12 +81,17 @@ async function sourceSummary(trackId, familyId, validatorCommand) {
     learningBlockCount: blockIds.length,
     interactionInventory: Object.fromEntries([...items.reduce((counts, item) => counts.set(item.interaction?.type ?? "unknown", (counts.get(item.interaction?.type ?? "unknown") ?? 0) + 1), new Map()).entries()].sort(([a], [b]) => a.localeCompare(b))),
     structuralValidation: { result: "required_in_ci", command: validatorCommand },
-    humanReview: admissions.some((entry) => entry.approval === "unapproved") ? "unapproved" : "pending",
+    humanReview: approval ? "approved" : admissions.some((entry) => entry.approval === "unapproved") ? "unapproved" : "pending",
+    contentApproval: approval ? { path: relative(root, approvalPath), approvalId: approval.approvalId, sourceCommit: approval.sourceCommit, reviewDate: approval.reviewDate, itemManifestSha256: approval.itemManifestSha256 } : null,
     runtimeAdmission: inactive ? "not_admitted" : "mixed_or_unknown",
     publishingAdmission: inactive ? "not_admitted" : "mixed_or_unknown",
     immutableArtifact: { presence: "not_verified_by_source-only-report", version: null },
     bundledFreeNodePackage: { paths: bundledPackage, presence: bundledPackage.length ? "present" : "absent" },
-    blockers: ["human_review_required", "runtime_admission_not_granted", "publishing_admission_not_granted"]
+    blockers: [
+      ...(approval ? [] : ["human_review_required"]),
+      "runtime_admission_not_granted",
+      "publishing_admission_not_granted"
+    ]
   };
 }
 

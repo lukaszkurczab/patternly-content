@@ -6,12 +6,13 @@ import { promisify } from "node:util";
 
 const exec = promisify(execFile);
 const root = process.cwd();
-const outputPath = join(root, "evidence/readiness/seven-bank-candidate-readiness.json");
+const outputPath = join(root, "evidence/readiness/eight-track-launch-readiness.json");
 const candidates = [
   ["coding-interview-dsa-problem-solving", "coding_interview", "npm run validate:real:coding-interview"],
   ["google-cloud-associate-cloud-engineer", "certification", "npm run audit:gcp:authoring"],
   ["aws-certified-solutions-architect-associate", "certification", "npm run audit:aws-workbook-source"],
   ["microsoft-azure-ai-fundamentals-ai-901", "certification", "npm run audit:ai901"],
+  ["microsoft-azure-administrator-associate-az-104", "certification", null],
   ["backend-system-design-interview", "design_interview", "npm run validate:backend-system-design"],
   ["frontend-system-design-interview", "design_interview", "npm run validate:frontend-bank"],
   ["object-oriented-design-interview", "design_interview", "npm run validate:object-oriented-design"]
@@ -30,7 +31,26 @@ async function walk(directory) {
 }
 async function sourceSummary(trackId, familyId, validatorCommand) {
   const sourceRoot = join(root, "manual/source", trackId);
-  const files = (await walk(sourceRoot)).filter((file) => file.endsWith(".json")).sort();
+  let files = [];
+  try { files = (await walk(sourceRoot)).filter((file) => file.endsWith(".json")).sort(); } catch {}
+  if (!files.length) return {
+    trackId,
+    familyId,
+    currentSourceRoot: relative(root, sourceRoot),
+    authoringRegistrationPath: `config/authoring/tracks/${trackId}.json`,
+    sourceFileCount: 0,
+    canonicalItemCount: 0,
+    nodeCount: 0,
+    learningBlockCount: 0,
+    interactionInventory: {},
+    structuralValidation: { result: "blocked_source_absent", command: null },
+    humanReview: "not_possible_source_absent",
+    runtimeAdmission: "not_admitted",
+    publishingAdmission: "not_admitted",
+    immutableArtifact: { presence: "not_verified_by_source-only-report", version: null },
+    bundledFreeNodePackage: { paths: [], presence: "absent" },
+    blockers: ["canonical_learner_source_absent", "human_review_required", "runtime_admission_not_granted", "publishing_admission_not_granted"]
+  };
   const batches = await Promise.all(files.map(async (file) => ({ file, value: JSON.parse(await readFile(file, "utf8")) })));
   const items = batches.flatMap(({ value }) => value.items ?? []);
   const nodeIds = [...new Set(batches.map(({ value }) => value.nodeId).filter(Boolean))].sort();
@@ -70,8 +90,8 @@ const sourceCommit = (await exec("git", [
   "docs/track-briefs"
 ], { cwd: root })).stdout.trim();
 const banks = await Promise.all(candidates.map(([trackId, familyId, validator]) => sourceSummary(trackId, familyId, validator)));
-const report = { schemaVersion: "seven-bank-candidate-readiness-v1", sourceCommit, candidateTrackIds: banks.map((bank) => bank.trackId).sort(), banks: banks.sort((a, b) => a.trackId.localeCompare(b.trackId)) };
+const report = { schemaVersion: "eight-track-launch-readiness-v1", launchTrackIds: banks.map((bank) => bank.trackId).sort(), sourceCommit, tracks: banks.sort((a, b) => a.trackId.localeCompare(b.trackId)) };
 const bytes = `${canonical(report)}\n`;
 await mkdir(join(root, "evidence/readiness"), { recursive: true });
 await writeFile(outputPath, bytes);
-console.log(JSON.stringify({ path: relative(root, outputPath), sha256: hash(bytes), banks: report.banks.length }, null, 2));
+console.log(JSON.stringify({ path: relative(root, outputPath), sha256: hash(bytes), tracks: report.tracks.length }, null, 2));

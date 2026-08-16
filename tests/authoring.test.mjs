@@ -14,7 +14,7 @@ const runFile = promisify(execFile);
 
 async function copyFixture() {
   const fixture = await mkdtemp(join(tmpdir(), "patternly-authoring-scaffold-"));
-  for (const sourcePath of ["config", "docs/track-briefs", "manual", "schemas"]) {
+  for (const sourcePath of ["config", "docs/track-briefs", "evidence/curriculum", "manual", "schemas"]) {
     const targetPath = join(fixture, sourcePath);
     await mkdir(dirname(targetPath), { recursive: true });
     await cp(join(ROOT, sourcePath), targetPath, { recursive: true });
@@ -93,7 +93,7 @@ function certificationFixtureResult(result) {
   const slot = track.slots[0];
   const block = track.learningBlocks.find((entry) => entry.learningBlockId === slot.learningBlockId && entry.nodeId === slot.nodeId);
   const path = `manual/source/${track.trackId}/${slot.nodeId}/${slot.learningBlockId}.json`;
-  const sourceBinding = { bindingId: "fixture-certification-binding", claimIds: ["fixture-claim"], anchorIds: ["fixture-anchor"], sourceRefs: ["fixture-source"] };
+  const sourceBinding = { bindingId: "fixture-certification-binding", claimIds: ["fixture-claim"], anchorIds: ["fixture-anchor"], sourceRefs: ["https://learn.microsoft.com/en-us/fixture/source"] };
   Object.assign(slot, { authoringAdmitted: true, authoringAdmittedItemCount: 1, blockedItemCount: 0, sourceStatus: "exact_direct", sourceBinding, plannedSourcePath: path, writableSourcePaths: [path] });
   Object.assign(block, { authoringAdmittedItemCount: 1, blockedItemCount: block.blockedItemCount - 1, plannedSourcePath: path, sourcePaths: [path], plannedAuthoringBriefPath: `manual/source/${track.trackId}/${slot.nodeId}/${slot.learningBlockId}.authoring.md` });
   Object.assign(track, { authoringAdmittedItemCount: 1, blockedItemCount: track.blockedItemCount - 1, plannedFutureSourceFileCount: 1, sourceReadyBlockCount: 1 });
@@ -141,6 +141,8 @@ test("authoring validator rejects incomplete feedback, mode expansion, and indir
   await assert.rejects(() => validateManualBatch(ROOT, unknownAnswer, { manifestResult: certification }), (error) => error instanceof AuthoringFailure && error.code === "UNKNOWN_ANSWER_ID");
   const missingReason = structuredClone(base); delete missingReason.items[0].feedback.Reason;
   await assert.rejects(() => validateManualBatch(ROOT, missingReason, { manifestResult: certification }), (error) => error instanceof AuthoringFailure && error.code === "INVALID_SCHEMA");
+  const missingSource = structuredClone(base); delete missingSource.items[0].feedback.Details.url;
+  await assert.rejects(() => validateManualBatch(ROOT, missingSource, { manifestResult: certification }), (error) => error instanceof AuthoringFailure && error.code === "INVALID_SCHEMA");
 });
 
 test("path validation and version identity reject drift from the canonical block owner", async () => {

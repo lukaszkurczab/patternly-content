@@ -24,7 +24,7 @@ function expectedTaxonomy(slot, familyId) {
   return { nodeId: slot.nodeId, learningBlockId: slot.learningBlockId, skillAtomId: slot.raw.directSkillOrDecisionAtomId };
 }
 
-function checkFeedback(item, slot, trackId) {
+function checkFeedback(item, slot, trackId, familyId) {
   const feedback = item.feedback;
   if (GENERIC_FEEDBACK.has(feedback.Reason.trim().toLocaleLowerCase())) throw new AuthoringFailure("INVALID_FEEDBACK", `${item.itemId} uses generic Reason feedback.`);
   const optionIds = item.interaction.options.map((option) => option.optionId);
@@ -36,7 +36,13 @@ function checkFeedback(item, slot, trackId) {
   const expectedOmitted = item.interaction.selectionMode === "multiple" ? accepted : [];
   if (!exact(omitted, expectedOmitted) || omitted.some((id) => !text(feedback.omittedCorrectElementExplanationsByOptionId[id], `${item.itemId} omitted-correct feedback ${id}`))) throw new AuthoringFailure("INCOMPLETE_FEEDBACK", `${item.itemId} omitted-correct feedback does not match the selection model.`);
   for (const key of ["mechanismOrProperty", "scenarioApplication", "errorCorrection", "boundaryOrTradeoff"]) text(feedback.Details[key], `${item.itemId} Details.${key}`);
-  if (trackId === "aws-certified-solutions-architect-associate" || trackId === "google-cloud-associate-cloud-engineer") text(feedback.Details.url, `${item.itemId} Details.url`);
+  if (familyId === "certification") {
+    text(feedback.Details.url, `${item.itemId} Details.url`);
+    let url;
+    try { url = new URL(feedback.Details.url); } catch { throw new AuthoringFailure("INVALID_SOURCE_URL", `${item.itemId} Details.url must be an absolute HTTPS URL.`); }
+    if (url.protocol !== "https:") throw new AuthoringFailure("INVALID_SOURCE_URL", `${item.itemId} Details.url must use HTTPS.`);
+    if (trackId === "microsoft-azure-administrator-associate-az-104" && !(url.hostname === "learn.microsoft.com" || url.hostname.endsWith(".learn.microsoft.com"))) throw new AuthoringFailure("INVALID_SOURCE_URL", `${item.itemId} AZ-104 Details.url must point to Microsoft Learn.`);
+  }
   if (slot.transferBoundary && !text(feedback.Details.transfer, `${item.itemId} Details.transfer`)) throw new AuthoringFailure("INCOMPLETE_DETAILS", `${item.itemId} must author transfer feedback for its transfer boundary.`);
 }
 
@@ -67,6 +73,12 @@ function checkSourceBinding(item, slot, familyId) {
   if (!binding || !binding.bindingId || !Array.isArray(binding.claimIds) || !binding.claimIds.length || !Array.isArray(binding.anchorIds) || !binding.anchorIds.length || !Array.isArray(binding.sourceRefs) || !binding.sourceRefs.length) throw new AuthoringFailure("SOURCE_BINDING_MISMATCH", `${item.itemId} must carry non-empty exact claim, anchor, and source references.`);
   if (binding.bindingId !== expected.bindingId || !exact(binding.claimIds, expected.claimIds) || !exact(binding.anchorIds, expected.anchorIds) || !exact(binding.sourceRefs, expected.sourceRefs)) throw new AuthoringFailure("SOURCE_BINDING_MISMATCH", `${item.itemId} source binding is not exact for its slot.`);
   if (familyId === "design_interview" && !binding.bindingId.startsWith("design-binding:")) throw new AuthoringFailure("SOURCE_BINDING_MISMATCH", `${item.itemId} Design source binding is not a direct registry binding.`);
+}
+
+function checkFeedbackSourceUrl(item, track) {
+  if (track.trackId !== "microsoft-azure-administrator-associate-az-104") return;
+  const sourceUrls = new Set(item.sourceBinding.sourceRefs.map((sourceRef) => track.sourceRecords.find((source) => source.sourceId === sourceRef)?.url ?? sourceRef));
+  if (!sourceUrls.has(item.feedback.Details.url)) throw new AuthoringFailure("FEEDBACK_SOURCE_MISMATCH", `${item.itemId} Details.url must resolve to one of its bound AZ-104 Microsoft Learn sources.`);
 }
 
 function expectedSourcePath(track, nodeId, learningBlockId) {
@@ -115,8 +127,9 @@ export async function validateManualBatch(root, batch, { manifestResult, actualP
     if (canonical(item.taxonomy) !== canonical(expectedTaxonomy(track.normalized.slots.find((entry) => entry.slotId === item.slotId), track.familyId))) throw new AuthoringFailure("INVALID_TAXONOMY", `${item.itemId} taxonomy does not equal its canonical slot taxonomy.`);
     checkInteraction(item, family, slot);
     if (!exact(item.modeEligibility, slot.modeEligibility)) throw new AuthoringFailure("MODE_DRIFT", `${item.itemId} mode eligibility differs from the canonical slot contract.`);
-    checkFeedback(item, track.normalized.slots.find((entry) => entry.slotId === item.slotId), batch.trackId);
+    checkFeedback(item, track.normalized.slots.find((entry) => entry.slotId === item.slotId), batch.trackId, track.familyId);
     checkSourceBinding(item, slot, track.familyId);
+    checkFeedbackSourceUrl(item, track);
     if (batch.trackId === "aws-certified-solutions-architect-associate" && !item.sourceBinding.sourceRefs.includes(item.feedback.Details.url)) throw new AuthoringFailure("FEEDBACK_SOURCE_MISMATCH", `${item.itemId} Details.url must match one of its bound source references.`);
     checkProvenance(item.authoringProvenance, batch.batchId, `${item.itemId}.authoringProvenance`);
   }

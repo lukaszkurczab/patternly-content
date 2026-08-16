@@ -8,19 +8,20 @@ const expectedTrackIds = [
 ];
 
 export const firstSafeSlotIds = [
-  "microsoft-azure-administrator-associate-az-104:scope_and_resource_model:azure_resources_correct_management_group_subscription_resource_group_resource_scope:slot:classify-management-group-governance-scope",
-  "microsoft-azure-administrator-associate-az-104:scope_and_resource_model:azure_resources_correct_management_group_subscription_resource_group_resource_scope:slot:classify-subscription-billing-and-quota-boundary",
-  "microsoft-azure-administrator-associate-az-104:scope_and_resource_model:azure_resources_correct_management_group_subscription_resource_group_resource_scope:slot:classify-resource-group-lifecycle-boundary",
-  "microsoft-azure-administrator-associate-az-104:scope_and_resource_model:resource_provider_regional_dependencies_deployment:slot:verify-provider-registration-state",
-  "microsoft-azure-administrator-associate-az-104:scope_and_resource_model:resource_provider_regional_dependencies_deployment:slot:verify-resource-type-region-support",
-  "microsoft-azure-administrator-associate-az-104:scope_and_resource_model:resource_provider_regional_dependencies_deployment:slot:verify-api-version-for-resource-type",
-  "microsoft-azure-administrator-associate-az-104:portal_cli_powershell_arm_boundary:portal_cli_powershell_arm_bicep_based_repeatability_operational_context:slot:select-portal-for-single-inspected-change",
-  "microsoft-azure-administrator-associate-az-104:portal_cli_powershell_arm_boundary:portal_cli_powershell_arm_bicep_based_repeatability_operational_context:slot:select-cli-for-shell-automation",
-  "microsoft-azure-administrator-associate-az-104:portal_cli_powershell_arm_boundary:portal_cli_powershell_arm_bicep_based_repeatability_operational_context:slot:select-powershell-for-object-pipeline-automation",
-  "microsoft-azure-administrator-associate-az-104:portal_cli_powershell_arm_boundary:portal_cli_powershell_arm_bicep_based_repeatability_operational_context:slot:select-bicep-for-declarative-repeatable-state",
-  "microsoft-azure-administrator-associate-az-104:portal_cli_powershell_arm_boundary:plane_resource_operations_data_plane_access_operations:slot:classify-resource-create-as-control-plane",
-  "microsoft-azure-administrator-associate-az-104:portal_cli_powershell_arm_boundary:plane_resource_operations_data_plane_access_operations:slot:classify-blob-read-as-data-plane",
-  "microsoft-azure-administrator-associate-az-104:portal_cli_powershell_arm_boundary:plane_resource_operations_data_plane_access_operations:slot:distinguish-management-endpoint-from-instance-endpoint"
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:scenario-decision-01",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:scenario-decision-02",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:scenario-decision-03",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:scenario-decision-04",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:scenario-decision-05",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:scenario-decision-06",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:configuration-sequence-07",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:configuration-sequence-08",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:troubleshooting-effective-state-09",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:troubleshooting-effective-state-10",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:tool-or-iac-11",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:boundary-or-contrast-12",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:boundary-or-contrast-13",
+  "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:boundary-or-contrast-14"
 ];
 
 const fail = (code, message) => { const error = new Error(`${code}: ${message}`); error.code = code; throw error; };

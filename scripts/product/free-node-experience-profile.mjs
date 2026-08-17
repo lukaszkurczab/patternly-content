@@ -22,6 +22,11 @@ const exactModeContract = Object.freeze({
     Object.freeze({ modeId: "certification-focus-practice", blueprintModeId: "certification-focus-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
     Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
     Object.freeze({ modeId: "certification-quick-review", blueprintModeId: "certification-quick-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "due_free_node_review_evidence", reinsertPolicy: "disabled" })
+  ]),
+  "certification-default": Object.freeze([
+    Object.freeze({ modeId: "certification-focus-practice", blueprintModeId: "certification-focus-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "certification-quick-review", blueprintModeId: "certification-quick-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "due_free_node_review_evidence", reinsertPolicy: "disabled" })
   ])
 });
 
@@ -54,7 +59,7 @@ export function validateFreeNodeExperienceProfile({ profile, schema, brief, trac
   const familyModeIds = new Set(family.modes ? family.modes.map((entry) => entry.id) : [...canonicalUserMappings(track).keys()]);
   if (modeIds.some((modeId) => !familyModeIds.has(modeId))) fail("UNSUPPORTED_FREE_NODE_MODE", "A Free profile mode is unsupported by its canonical family.");
 
-  const expected = exactModeContract[profile.trackId];
+  const expected = exactModeContract[profile.trackId] ?? (profile.familyId === "certification" ? exactModeContract["certification-default"] : undefined);
   if (!expected || !same(modeIds, expected.map((entry) => entry.modeId))) fail("INVALID_FREE_NODE_MODE_SET", "The Free profile differs from the Product Owner-approved mode set.");
   const blueprints = canonicalBlueprintModes(track);
   const mappings = canonicalUserMappings(track);

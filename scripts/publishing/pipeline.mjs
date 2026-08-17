@@ -14,6 +14,7 @@ export const hash = (value) => createHash("sha256").update(value).digest("hex");
 export const CANONICAL_SERIALIZATION_VERSION = "canonical-json-v1";
 export const SIMULATION_SOLVER_LIMIT = 50_000;
 export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v5";
+const CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION = "certification-node-manual-source-v1";
 const canonical = (value) => {
   if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -60,11 +61,24 @@ async function technicalJson(root, path, commit) {
   if (/^[a-f0-9]{40}$/.test(commit ?? "")) return JSON.parse((await git(root, ["show", `${commit}:${path}`])).stdout);
   return json(inside(root, path));
 }
+async function sourceSchemaVersion(root, trackId, commit) {
+  const sourceRoot = `manual/source/${trackId}`;
+  let sourcePaths;
+  if (/^[a-f0-9]{40}$/.test(commit ?? "")) {
+    sourcePaths = (await git(root, ["ls-tree", "-r", "--name-only", commit, "--", sourceRoot])).stdout.trim().split("\n").filter((path) => path.endsWith(".json"));
+  } else {
+    sourcePaths = (await files(join(root, sourceRoot))).map((path) => relative(root, path)).filter((path) => path.endsWith(".json"));
+  }
+  if (!sourcePaths.length) return undefined;
+  const firstPath = sourcePaths.sort(compare)[0];
+  const value = await technicalJson(root, firstPath, commit);
+  return value?.schemaVersion;
+}
 async function technicalInputPaths(root, trackId, commit) {
   const trackPath = `config/tracks/${trackId}.json`; const track = await technicalJson(root, trackPath, commit);
   const familyPath = `config/families/${text(track.familyId, "track familyId")}.json`;
   const taxonomyPath = relative(root, inside(root, text(track.taxonomyPath, "track taxonomyPath")));
-  const manualSchemaPath = track.familyId === "coding_interview" ? "schemas/publishing/coding-interview-manual-source.schema.json" : track.familyId === "certification" ? "schemas/publishing/certification-manual-source.schema.json" : track.familyId === "design_interview" ? "schemas/publishing/design-interview-manual-source.schema.json" : (() => { throw new PublishingFailure("UNSUPPORTED_RUNTIME_FAMILY", `No runtime publishing contract exists for ${track.familyId}.`); })();
+  const manualSchemaPath = track.familyId === "coding_interview" ? "schemas/publishing/coding-interview-manual-source.schema.json" : track.familyId === "certification" ? (await sourceSchemaVersion(root, trackId, commit)) === CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION ? "schemas/publishing/certification-node-manual-source.schema.json" : "schemas/publishing/certification-manual-source.schema.json" : track.familyId === "design_interview" ? "schemas/publishing/design-interview-manual-source.schema.json" : (() => { throw new PublishingFailure("UNSUPPORTED_RUNTIME_FAMILY", `No runtime publishing contract exists for ${track.familyId}.`); })();
   const paths = [
     `manual/source/${trackId}`, trackPath, familyPath, taxonomyPath, manualSchemaPath,
     "schemas/publishing/technical-validation-evidence.schema.json", "scripts/publishing/pipeline.mjs", "package.json", "package-lock.json"
@@ -529,7 +543,7 @@ function normalizeModernCertificationItem(value, cloudDomains) {
   if (!type || interaction.type !== "choice") throw new PublishingFailure("INVALID_RESPONSE", `${id} has an unsupported choice interaction.`);
   const options = list(interaction.options, `${id} options`, "INVALID_RESPONSE").map((option) => { const entry = record(option, `${id} option`, "INVALID_RESPONSE"); return { id: text(entry.optionId, `${id} option id`, "INVALID_RESPONSE"), text: text(entry.text, `${id} option text`, "INVALID_RESPONSE") }; });
   const correctOptionIds = ids(interaction.acceptedOptionIds, `${id} acceptedOptionIds`, "INVALID_RESPONSE");
-  const tags = ids([domain, taxonomy.competencyAreaId, taxonomy.topicId, taxonomy.skillAtomId], `${id} taxonomy tags`, "INVALID_REFERENCE");
+  const tags = ids([...new Set([domain, taxonomy.competencyAreaId, taxonomy.topicId, taxonomy.skillAtomId])], `${id} taxonomy tags`, "INVALID_REFERENCE");
   const feedbackSource = record(source.feedback, `${id} feedback`, "INVALID_RESPONSE");
   return {
     id,
@@ -686,8 +700,11 @@ function certificationModeReadiness({ items, declaredModes, profile, diagnosticB
 }
 function validateCertificationSource(batches, track, family, taxonomyConfig, technicalInputFingerprint, sourceCommitValue) {
   const { cloudDomains } = certificationTaxonomy(taxonomyConfig); const profile = validateCertificationExamExperienceProfile(track.profile); const first = batches[0]; const batchIds = []; const sourceVersions = new Set(batches.map((batch) => batch.schemaVersion));
-  if (sourceVersions.size !== 1 || !["certification-manual-source-v1", "certification-manual-source-v2"].includes(first.schemaVersion)) throw new PublishingFailure("INVALID_ENVELOPE", "Certification source batches must use one supported source contract.");
+  if (sourceVersions.size !== 1 || !["certification-manual-source-v1", "certification-manual-source-v2", CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION].includes(first.schemaVersion)) throw new PublishingFailure("INVALID_ENVELOPE", "Certification source batches must use one supported source contract.");
   const sourceVersion = first.schemaVersion;
+  const nodeAuthoringSource = sourceVersion === CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION;
+  if (nodeAuthoringSource && batches.some((batch) => !Array.isArray(batch.items) || batch.items.some((item) => !Object.hasOwn(item, "itemId")))) throw new PublishingFailure("INVALID_ENVELOPE", "Certification node-authoring batches must use itemId records consistently.");
+  const normalizedSourceVersion = nodeAuthoringSource ? "certification-manual-source-v2" : sourceVersion;
   if (profile.blueprint.sections.some((section) => !cloudDomains.has(section.contentDomainId))) throw new PublishingFailure("INVALID_EXAM_EXPERIENCE_PROFILE", "Certification exam experience profile maps a blueprint section outside the installed training taxonomy.");
   const legalModes = ids(family.modes?.map((mode) => mode?.id), "Certification family modes", "INVALID_MODE");
   for (const batch of batches) {
@@ -698,7 +715,7 @@ function validateCertificationSource(batches, track, family, taxonomyConfig, tec
   }
   unique(batchIds, "DUPLICATE_ID", "Certification batch IDs"); const declaredModes = ids(sourceVersion === "certification-manual-source-v1" ? first.declaredModes : [...new Set(first.items.flatMap((item) => item.modeEligibility ?? []))].sort(compare), "Certification declaredModes", "INVALID_MODE");
   if (canonicalJson(sourceVersion === "certification-manual-source-v1" ? declaredModes : [...declaredModes].sort(compare)) !== canonicalJson(sourceVersion === "certification-manual-source-v1" ? legalModes : [...legalModes].sort(compare))) throw new PublishingFailure("INVALID_MODE", "Certification declared modes must exactly match its family contract.");
-  const items = batches.flatMap((batch) => list(batch.items, "Certification items").map((item) => validateCertificationItem(item, cloudDomains, sourceVersion))); unique(items.map((item) => item.id), "DUPLICATE_ID", "Certification item IDs");
+  const items = batches.flatMap((batch) => list(batch.items, "Certification items").map((item) => validateCertificationItem(item, cloudDomains, normalizedSourceVersion))); unique(items.map((item) => item.id), "DUPLICATE_ID", "Certification item IDs");
   for (const mode of family.modes) if (declaredModes.includes(mode.id) && items.length < mode.minimumPool) throw new PublishingFailure("MODE_UNREADY", `${mode.id} does not meet its minimum pool.`);
   const identities = items.map((item) => canonicalHash({ question: item.question.trim().toLocaleLowerCase(), options: item.options.map((option) => option.text.trim().toLocaleLowerCase()).sort(compare), correctOptionIds: [...item.correctOptionIds].sort(compare) })); unique(identities, "DUPLICATE_CONTENT_IDENTITY", "Certification content identities");
   const diagnosticBaseline = certificationDiagnosticBaseline(track, items);
@@ -722,7 +739,9 @@ export async function inspectTrack({ root = ROOT, trackId, sourceRepositoryCommi
   if (!["coding_interview", "certification"].includes(track.familyId)) throw new PublishingFailure("UNSUPPORTED_RUNTIME_FAMILY", `Runtime publishing is not implemented for family ${track.familyId}; use the authoring contract only.`);
   if (!FAMILY_RUNTIME_DISPATCH[track.familyId]) throw new PublishingFailure("UNSUPPORTED_RUNTIME_FAMILY", `Runtime publishing is not implemented for family ${track.familyId}.`);
   const batches = (await discoverSourceBatches(root, trackId)).map(({ value }) => value); const commit = await sourceCommit(root, sourceRepositoryCommit);
-  const sourceSchema = await json(join(root, "schemas", "publishing", FAMILY_RUNTIME_DISPATCH[track.familyId].schema));
+  const nodeAuthoringSource = track.familyId === "certification" && batches.every((batch) => batch.schemaVersion === CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION && Array.isArray(batch.items) && batch.items.every((item) => Object.hasOwn(item, "itemId")));
+  const sourceSchemaName = nodeAuthoringSource ? "certification-node-manual-source.schema.json" : FAMILY_RUNTIME_DISPATCH[track.familyId].schema;
+  const sourceSchema = await json(join(root, "schemas", "publishing", sourceSchemaName));
   batches.forEach((batch, index) => validateJsonSchema(batch, sourceSchema, `manual source batch ${index}`));
   const feedbackAssets = track.familyId === "coding_interview" ? await loadCodingInterviewFeedbackAssets(root) : undefined;
   const technicalInputFingerprint = canonicalHash({ fingerprintSchemaVersion: 1, trackId: track.trackId, familyId: track.familyId, sourceBatches: batches, trackConfig: track, familyConfig: family, taxonomy, sourceSchema, ...(feedbackAssets ? { feedbackAssets } : {}), validatorVersion: PUBLISHING_VALIDATOR_VERSION, canonicalSerializationVersion: CANONICAL_SERIALIZATION_VERSION });

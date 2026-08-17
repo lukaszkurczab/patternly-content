@@ -43,6 +43,19 @@ const RELEASE_INPUT_PATHS = [
   "package-lock.json",
 ];
 
+const VALIDATOR_MAX_BUFFER = 256 * 1024 * 1024;
+
+async function runStructuralValidator(command) {
+  const match = /^npm run ([A-Za-z0-9:_-]+)$/u.exec(command);
+  if (!match) return { result: "invalid_command", command };
+  try {
+    await exec("npm", ["run", match[1]], { cwd: root, maxBuffer: VALIDATOR_MAX_BUFFER });
+    return { result: "passed", command };
+  } catch {
+    return { result: "failed", command };
+  }
+}
+
 async function immutableArtifactSummary(trackId) {
   const releasesRoot = join(root, "artifacts/releases");
   let releaseDirectories;
@@ -121,6 +134,7 @@ async function sourceSummary(trackId, familyId, validatorCommand) {
   const packageRoot = join(root, "artifacts/bundled-free-nodes", trackId);
   let bundledPackage = null;
   try { bundledPackage = (await walk(packageRoot)).filter((file) => file.endsWith("package.json")).map((file) => relative(root, file)).sort(); } catch { bundledPackage = []; }
+  const structuralValidation = await runStructuralValidator(validatorCommand);
   const approvalPath = join(root, "evidence/content-approvals", `${trackId}.json`);
   let approval = null;
   try {
@@ -140,7 +154,7 @@ async function sourceSummary(trackId, familyId, validatorCommand) {
     nodeCount: nodeIds.length,
     learningBlockCount: blockIds.length,
     interactionInventory: Object.fromEntries([...items.reduce((counts, item) => counts.set(item.interaction?.type ?? "unknown", (counts.get(item.interaction?.type ?? "unknown") ?? 0) + 1), new Map()).entries()].sort(([a], [b]) => a.localeCompare(b))),
-    structuralValidation: { result: "required_in_ci", command: validatorCommand },
+    structuralValidation,
     humanReview: approval ? "approved" : admissions.some((entry) => entry.approval === "unapproved") ? "unapproved" : "pending",
     contentApproval: approval ? { path: relative(root, approvalPath), approvalId: approval.approvalId, sourceCommit: approval.sourceCommit, reviewDate: approval.reviewDate, itemManifestSha256: approval.itemManifestSha256 } : null,
     runtimeAdmission: inactive ? "not_admitted" : "mixed_or_unknown",

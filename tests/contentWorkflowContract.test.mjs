@@ -51,3 +51,10 @@ test("readiness reports only a current immutable artifact whose inputs still mat
   });
   assert.equal(gcp?.immutableArtifact?.presence, "not_verified_by_source-only-report");
 });
+
+test("readiness records the result of every canonical technical validator", () => {
+  for (const track of readiness.tracks) {
+    assert.equal(track.structuralValidation?.result, "passed", track.trackId);
+    assert.match(track.structuralValidation?.command ?? "", /^npm run /u);
+  }
+});

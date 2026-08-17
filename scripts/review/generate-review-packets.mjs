@@ -150,7 +150,13 @@ async function buildPacket(track, sourceCommit) {
       check("feedback-present", missingFeedback === 0 ? "pass" : "fail", `${missingFeedback} items lack a feedback object.`, missingFeedback),
       check("interaction-contract", missingInteraction === 0 ? "pass" : "fail", `${missingInteraction} items lack a choice interaction or accepted-option list.`, missingInteraction),
       check("source-binding-observed", urls.length > 0 ? "pass" : "manual-review-required", urls.length > 0 ? `${urls.length} exact HTTPS source URLs were observed.` : "This family uses repository-native provenance; a human reviewer must verify its source binding.", urls.length),
-      check("structural-validation", "required_in_ci", `Run ${track.structuralValidation.command} from a clean checkout.`),
+      check(
+        "structural-validation",
+        track.structuralValidation?.result === "passed" ? "pass" : "blocked",
+        track.structuralValidation?.result === "passed"
+          ? `${track.structuralValidation.command} passed from the clean checkout.`
+          : `Run ${track.structuralValidation?.command ?? "the track validator"} from a clean checkout; current result is ${track.structuralValidation?.result ?? "unknown"}.`,
+      ),
       check("human-approval", approval ? "pass" : "blocked", approval ? `Approved under ${approval.approvalId}.` : `Current authoring approval states: ${approvals.join(", ") || "not declared"}.`),
       check("runtime-and-publishing-admission", "blocked", "Runtime and publishing admission remain explicitly not granted.")
     ],

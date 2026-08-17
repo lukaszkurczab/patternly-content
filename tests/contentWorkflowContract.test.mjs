@@ -41,13 +41,15 @@ test("GCP authoring ingress is canonical while runtime selectors and old paths r
 
 test("readiness reports only a current immutable artifact whose inputs still match HEAD", () => {
   const az = readiness.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
+  const ai = readiness.tracks.find((track) => track.trackId === "microsoft-azure-ai-fundamentals-ai-901");
   const gcp = readiness.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
-  assert.deepEqual(az?.immutableArtifact, {
-    checksumSha256: "968386e75c9abd4b54401e9876dadba6c0dbd01003aea8cfcad3a8d7027569ec",
+  assert.equal(az?.immutableArtifact?.presence, "not_verified_by_source-only-report");
+  assert.deepEqual(ai?.immutableArtifact, {
+    checksumSha256: "474f1a403baf502abe10980ff4d7563493664ef1bad7859e2d0fb0ff65fb92c4",
     presence: "verified",
-    releaseId: "patternly-az104-0001",
-    sourceRepositoryCommit: "67437fa377b4021fb1a4764095fa16e6048641a2",
-    version: "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15",
+    releaseId: "patternly-ai901-0001",
+    sourceRepositoryCommit: "52fa7c03da6dee4e08a5df15ccb6cf608cd90c88",
+    version: "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15",
   });
   assert.equal(gcp?.immutableArtifact?.presence, "not_verified_by_source-only-report");
 });

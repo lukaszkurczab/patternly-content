@@ -8,6 +8,7 @@ const realReleaseWorkflow = readFileSync(".github/workflows/real-content-release
 const freeNodeInventory = readFileSync("scripts/product/free-node-inventory.mjs", "utf8");
 const freeNodePins = readFileSync("config/free-node-inventory-pins.json", "utf8");
 const bundledPackages = readFileSync("config/bundled-free-node-packages.json", "utf8");
+const readiness = JSON.parse(readFileSync("evidence/readiness/eight-track-launch-readiness.json", "utf8"));
 
 test("content workflows retain full technical-input history and clean locked installs", () => {
   assert.match(architectureWorkflow, /uses: actions\/checkout@v4\n        with:\n          fetch-depth: 0/);
@@ -36,4 +37,17 @@ test("GCP authoring ingress is canonical while runtime selectors and old paths r
   ]) await assert.rejects(() => stat(path), (error) => error?.code === "ENOENT");
   await assert.doesNotReject(() => stat("artifacts/releases/patternly-core-0018/release.json"));
   await assert.doesNotReject(() => stat("artifacts/tracks/google-cloud-associate-cloud-engineer/gcp-ace-0016/track-artifact.json"));
+});
+
+test("readiness reports only a current immutable artifact whose inputs still match HEAD", () => {
+  const az = readiness.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
+  const gcp = readiness.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
+  assert.deepEqual(az?.immutableArtifact, {
+    checksumSha256: "968386e75c9abd4b54401e9876dadba6c0dbd01003aea8cfcad3a8d7027569ec",
+    presence: "verified",
+    releaseId: "patternly-az104-0001",
+    sourceRepositoryCommit: "67437fa377b4021fb1a4764095fa16e6048641a2",
+    version: "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15",
+  });
+  assert.equal(gcp?.immutableArtifact?.presence, "not_verified_by_source-only-report");
 });

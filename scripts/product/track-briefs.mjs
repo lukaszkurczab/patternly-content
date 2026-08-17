@@ -37,6 +37,12 @@ const IMPLEMENTED_FREE_PROFILES = Object.freeze({
     profileVersion: "1",
     profilePath: "config/free-node-experience-profiles/microsoft-azure-administrator-associate-az-104.json",
     modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
+  }),
+  "microsoft-azure-ai-fundamentals-ai-901": Object.freeze({
+    profileId: "microsoft-azure-ai-fundamentals-ai-901-free-node-v1",
+    profileVersion: "1",
+    profilePath: "config/free-node-experience-profiles/microsoft-azure-ai-fundamentals-ai-901.json",
+    modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
   })
 });
 

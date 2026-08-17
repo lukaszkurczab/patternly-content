@@ -15,6 +15,7 @@ export const CANONICAL_SERIALIZATION_VERSION = "canonical-json-v1";
 export const SIMULATION_SOLVER_LIMIT = 50_000;
 export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v5";
 const CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION = "certification-node-manual-source-v1";
+const GIT_MAX_BUFFER = 256 * 1024 * 1024;
 const canonical = (value) => {
   if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
@@ -52,7 +53,7 @@ async function config(root, trackId) {
   const family = await json(join(root, "config", "families", `${track.familyId}.json`));
   return { track, family, taxonomy: await json(inside(root, track.taxonomyPath)) };
 }
-async function git(root, args) { return exec("git", args, { cwd: root }); }
+async function git(root, args) { return exec("git", args, { cwd: root, maxBuffer: GIT_MAX_BUFFER }); }
 async function sourceCommit(root, override) {
   if (override) return text(override, "sourceRepositoryCommit");
   try { return (await git(root, ["rev-parse", "HEAD"])).stdout.trim(); } catch { throw new PublishingFailure("SOURCE_COMMIT_UNAVAILABLE", "A buildable source repository must have a current Git commit."); }

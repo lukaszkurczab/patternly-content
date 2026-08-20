@@ -43,7 +43,13 @@ test("readiness reports only a current immutable artifact whose inputs still mat
   const az = readiness.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
   const ai = readiness.tracks.find((track) => track.trackId === "microsoft-azure-ai-fundamentals-ai-901");
   const gcp = readiness.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
-  assert.equal(az?.immutableArtifact?.presence, "not_verified_by_source-only-report");
+  assert.deepEqual(az?.immutableArtifact, {
+    checksumSha256: "968386e75c9abd4b54401e9876dadba6c0dbd01003aea8cfcad3a8d7027569ec",
+    presence: "verified",
+    releaseId: "patternly-az104-0002",
+    sourceRepositoryCommit: "ad6cbe1b6948ddb16b7c9f7f3a26ddb49c12e0de",
+    version: "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15",
+  });
   assert.deepEqual(ai?.immutableArtifact, {
     checksumSha256: "474f1a403baf502abe10980ff4d7563493664ef1bad7859e2d0fb0ff65fb92c4",
     presence: "verified",

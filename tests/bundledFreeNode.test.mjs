@@ -26,7 +26,7 @@ async function inputs(trackId) {
     load(`docs/track-briefs/${trackId}.json`), load("config/free-node-inventory-pins.json"), load(`config/free-node-experience-profiles/${trackId}.json`), load("schemas/product/free-node-experience-profile.schema.json"), load(`config/tracks/${trackId}.json`), load("config/bundled-free-node-packages.json"), load("schemas/product/bundled-free-node-packages.schema.json")
   ]);
   const pin = pins.pins.find((entry) => entry.trackId === trackId); const releaseId = pin.releaseId;
-  const [release, inventory, family, taxonomy, technicalEvidenceBytes, buildReport] = await Promise.all([load(`artifacts/releases/${releaseId}/release.json`), load(`artifacts/free-node-inventories/${releaseId}/${trackId}.json`), load(`config/families/${profile.familyId}.json`), load(`config/taxonomy/${trackId}.json`), readFile(pin.technicalEvidencePath), load(`artifacts/tracks/${trackId}/${pin.contentVersion}/build-report.json`)]);
+  const [release, inventory, family, taxonomy, technicalEvidenceBytes, buildReport] = await Promise.all([load(`artifacts/releases/${releaseId}/release.json`), load(`artifacts/free-node-inventories/${releaseId}/${trackId}.json`), load(`config/families/${profile.familyId}.json`), load(`config/taxonomy/${trackId}.json`), readFile(pin.technicalEvidencePath), load(pin.buildReportPath)]);
   const artifact = release.artifacts.find((entry) => entry.trackId === trackId); const bank = JSON.parse(artifact.artifactBytes).bank; const assetBytesById = {};
   for (const asset of bank.feedbackAssets ?? []) assetBytesById[asset.id] = (await readFile(asset.sourcePath)).toString("base64");
   return { release, releaseId, brief, inventory, pin, profile, profileSchema, track, family, taxonomy, packageConfiguration, packageConfigurationSchema, profileSourceRepositoryCommit: COMMIT, assetBytesById, technicalEvidenceBytes, buildReport };
@@ -182,7 +182,7 @@ test("checksum mutation, immutable overwrite, and failed generation are fail-clo
   const root = await fixtureRoot();
   try {
     const first = await writeBundledFreeNode({ root, trackId: TRACKS[0], profileSourceRepositoryCommit: COMMIT });
-    assert.equal(canonicalBundledFreeNodePath(first.record), `artifacts/bundled-free-nodes/${TRACKS[0]}/${TRACKS[0]}-free-node-0001/package.json`);
+    assert.equal(canonicalBundledFreeNodePath(first.record), `artifacts/bundled-free-nodes/${TRACKS[0]}/${TRACKS[0]}-free-node-0002/package.json`);
     await assert.rejects(() => writeBundledFreeNode({ root, trackId: TRACKS[0], profileSourceRepositoryCommit: COMMIT }), fails("IMMUTABLE_BUNDLED_FREE_NODE"));
     const before = await readFile(first.path, "utf8"); assert.equal(before, canonicalJson(first.record));
   } finally { await rm(root, { recursive: true, force: true }); }

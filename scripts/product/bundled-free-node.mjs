@@ -361,7 +361,7 @@ async function canonicalInputs({ root, trackId, injectedProfileSourceCommit }) {
   const inventoryPath = join("artifacts", "free-node-inventories", pin.releaseId, `${trackId}.json`);
   const [release, inventory, profileSchema, track, family, taxonomy, technicalEvidenceBytes, buildReport] = await Promise.all([
     readJson(join(root, "artifacts", "releases", pin.releaseId, "release.json")), validateFreeNodeInventory({ root, inventoryPath }), readJson(join(root, "schemas/product/free-node-experience-profile.schema.json")), readJson(join(root, `config/tracks/${trackId}.json`)), readJson(join(root, `config/families/${profile.familyId}.json`)), readJson(join(root, `config/taxonomy/${trackId}.json`))
-    , readFile(resolve(root, pin.technicalEvidencePath)), readJson(join(root, "artifacts", "tracks", trackId, pin.contentVersion, "build-report.json"))
+    , readFile(resolve(root, pin.technicalEvidencePath)), readJson(resolve(root, pin.buildReportPath))
   ]);
   const artifact = artifactFor(release, trackId); const bank = JSON.parse(artifact.artifactBytes).bank; const assetBytesById = {};
   for (const asset of bank.feedbackAssets ?? []) assetBytesById[asset.id] = (await readFile(join(root, asset.sourcePath))).toString("base64");

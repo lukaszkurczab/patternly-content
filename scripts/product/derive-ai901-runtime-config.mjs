@@ -86,9 +86,10 @@ const freeProfile = {
   ]
 };
 const packageConfiguration = { schemaVersion: "patternly-bundled-free-node-packages-v1", packages: [
-  { trackId: "coding-interview-dsa-problem-solving", packageVersion: "coding-interview-dsa-problem-solving-free-node-0001", minimumAppVersion: "0.1.0" },
-  { trackId: "microsoft-azure-administrator-associate-az-104", packageVersion: "microsoft-azure-administrator-associate-az-104-free-node-0001", minimumAppVersion: "0.1.0" },
-  { trackId, packageVersion: `${trackId}-free-node-0001`, minimumAppVersion: "0.1.0" }
+  { trackId: "coding-interview-dsa-problem-solving", packageVersion: "coding-interview-dsa-problem-solving-free-node-0002", minimumAppVersion: "0.1.0" },
+  { trackId: "google-cloud-associate-cloud-engineer", packageVersion: "google-cloud-associate-cloud-engineer-free-node-0002", minimumAppVersion: "0.1.0" },
+  { trackId: "microsoft-azure-administrator-associate-az-104", packageVersion: "microsoft-azure-administrator-associate-az-104-free-node-0002", minimumAppVersion: "0.1.0" },
+  { trackId, packageVersion: `${trackId}-free-node-0002`, minimumAppVersion: "0.1.0" }
 ] };
 
 await writeJson(join(root, "config", "taxonomy", `${trackId}.json`), taxonomy);

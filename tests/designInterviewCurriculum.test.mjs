@@ -452,7 +452,7 @@ test("a deferred-resolution handoff reason must state the derived deferred roste
 test("Design audit reconciles each pinned authoring batch to its owning nodes", () => {
   const expectedByTrack = {
     "backend-system-design-interview": { reliability_and_failure_containment: 8 },
-    "frontend-system-design-interview": { frontend_architecture_foundations: 1, accessible_interaction_design: 8, evolution_testing_and_case_synthesis: 1 },
+    "frontend-system-design-interview": { requirements_user_journeys_constraints_and_frontend_decomposition: 1, accessible_interaction_design: 8, evolution_testing_and_case_synthesis: 1 },
     "object-oriented-design-interview": { object_modeling_foundations: 3, responsibilities_and_collaborations: 1, invariants_and_lifecycle: 1, identity_persistence_and_external_boundaries: 4 }
   };
 

@@ -38,7 +38,8 @@ test("free-node inventory refuses checksum-tampered pinned artifacts", async () 
 
 test("free-node inventory allows only the exact canonical release pins", async () => {
   await assert.rejects(() => generateFreeNodeInventory({ releaseId: "patternly-core-0016", trackId: "coding-interview-dsa-problem-solving" }), fails("FREE_NODE_INVENTORY_PIN_MISMATCH"));
-  await assert.rejects(() => generateFreeNodeInventory({ releaseId: "patternly-launch-2026-08-21-01", trackId: "backend-system-design-interview" }), fails("MISSING_FREE_NODE_INVENTORY_PIN"));
+  const backend = await generateFreeNodeInventory({ releaseId: "patternly-launch-2026-08-21-01", trackId: "backend-system-design-interview" });
+  assert.equal(backend.itemCount, 145);
 });
 
 test("free-node inventory pins verify exact owned technical-evidence bytes and internal identity", async () => {

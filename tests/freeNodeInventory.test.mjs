@@ -32,7 +32,7 @@ test("free-node inventory refuses checksum-tampered pinned artifacts", async () 
   const codingBrief = await briefFor("coding-interview-dsa-problem-solving");
   const codingPin = await pinFor("coding-interview-dsa-problem-solving");
   const tamperedRelease = clone(sourceRelease);
-  tamperedRelease.artifacts[0].checksumSha256 = "0".repeat(64);
+  tamperedRelease.artifacts.find((entry) => entry.trackId === "coding-interview-dsa-problem-solving").checksumSha256 = "0".repeat(64);
   assert.throws(() => inventoryFromPinnedRelease({ release: tamperedRelease, releaseId: "patternly-launch-2026-08-21-01", brief: codingBrief, trackId: "coding-interview-dsa-problem-solving", pin: codingPin }), fails("CHECKSUM_MISMATCH"));
 });
 

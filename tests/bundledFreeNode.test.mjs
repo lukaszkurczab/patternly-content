@@ -146,11 +146,11 @@ test("profile semantic validation rejects all-modes Free, invented IDs, excluded
 });
 
 test("builder rejects mixed inventories and compatibility sets crossing into Premium", async () => {
-  const mixed = await inputs(TRACKS[0]); const envelope = JSON.parse(mixed.release.artifacts[0].artifactBytes); const outside = envelope.bank.items.find((item) => item.taxonomy.roadmapNodeId !== mixed.brief.freeNodeId);
+  const mixed = await inputs(TRACKS[0]); const envelope = JSON.parse(mixed.release.artifacts.find((entry) => entry.trackId === TRACKS[0]).artifactBytes); const outside = envelope.bank.items.find((item) => item.taxonomy.roadmapNodeId !== mixed.brief.freeNodeId);
   mixed.inventory = clone(mixed.inventory); mixed.inventory.items.push({ id: outside.id, itemFingerprint: outside.itemFingerprint }); mixed.inventory.itemCount += 1;
   assert.throws(() => bundledFreeNodeFromInputs(mixed), fails("MIXED_FREE_NODE"));
 
-  const crossing = await inputs(TRACKS[0]); const artifact = crossing.release.artifacts[0]; const bankEnvelope = JSON.parse(artifact.artifactBytes); const selected = bankEnvelope.bank.items.find((item) => item.taxonomy.roadmapNodeId === crossing.brief.freeNodeId); const crossSet = bankEnvelope.bank.compatibilitySets.find((entry) => [...(entry.itemIds ?? []), ...(entry.sourceItemIds ?? []), ...(entry.targetItemIds ?? [])].some((id) => !crossing.inventory.items.some((inventoryItem) => inventoryItem.id === id)));
+  const crossing = await inputs(TRACKS[0]); const artifact = crossing.release.artifacts.find((entry) => entry.trackId === TRACKS[0]); const bankEnvelope = JSON.parse(artifact.artifactBytes); const selected = bankEnvelope.bank.items.find((item) => item.taxonomy.roadmapNodeId === crossing.brief.freeNodeId); const crossSet = bankEnvelope.bank.compatibilitySets.find((entry) => [...(entry.itemIds ?? []), ...(entry.sourceItemIds ?? []), ...(entry.targetItemIds ?? [])].some((id) => !crossing.inventory.items.some((inventoryItem) => inventoryItem.id === id)));
   assert.ok(crossSet); selected.compatibilityMemberships.push(crossSet.id); artifact.artifactBytes = canonicalJson(bankEnvelope); artifact.checksumSha256 = sha256(artifact.artifactBytes); crossing.pin = { ...crossing.pin, artifactChecksumSha256: artifact.checksumSha256 }; crossing.buildReport = { ...crossing.buildReport, checksumSha256: artifact.checksumSha256 };
   crossing.inventory = inventoryFromPinnedRelease({ release: crossing.release, releaseId: crossing.releaseId, brief: crossing.brief, trackId: crossing.brief.trackId, pin: crossing.pin });
   assert.throws(() => bundledFreeNodeFromInputs(crossing), fails("FREE_NODE_COMPATIBILITY_NOT_CLOSED"));

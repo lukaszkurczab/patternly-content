@@ -48,18 +48,24 @@ test("readiness reports only a current immutable artifact whose inputs still mat
   assert.deepEqual(az?.immutableArtifact, {
     checksumSha256: "968386e75c9abd4b54401e9876dadba6c0dbd01003aea8cfcad3a8d7027569ec",
     presence: "verified",
-    releaseId: "patternly-az104-0002",
-    sourceRepositoryCommit: "ad6cbe1b6948ddb16b7c9f7f3a26ddb49c12e0de",
+    releaseId: "patternly-launch-2026-08-21-01",
+    sourceRepositoryCommit: "f0a4027a787a514a2fc1e4d47ac996eee40c72bf",
     version: "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15",
   });
   assert.deepEqual(ai?.immutableArtifact, {
     checksumSha256: "474f1a403baf502abe10980ff4d7563493664ef1bad7859e2d0fb0ff65fb92c4",
     presence: "verified",
-    releaseId: "patternly-ai901-0001",
-    sourceRepositoryCommit: "52fa7c03da6dee4e08a5df15ccb6cf608cd90c88",
+    releaseId: "patternly-launch-2026-08-21-01",
+    sourceRepositoryCommit: "f0a4027a787a514a2fc1e4d47ac996eee40c72bf",
     version: "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15",
   });
-  assert.equal(gcp?.immutableArtifact?.presence, "not_verified_by_source-only-report");
+  assert.deepEqual(gcp?.immutableArtifact, {
+    checksumSha256: "732f915e43542ca1318bf32aafd1f2cfab77012eb3c8d236a362a92a993740e4",
+    presence: "verified",
+    releaseId: "patternly-launch-2026-08-21-01",
+    sourceRepositoryCommit: "f0a4027a787a514a2fc1e4d47ac996eee40c72bf",
+    version: "google-cloud-associate-cloud-engineer-authoring-v2026.08.11",
+  });
 });
 
 test("readiness records the result of every canonical technical validator", () => {

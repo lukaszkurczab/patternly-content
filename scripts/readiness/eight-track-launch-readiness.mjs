@@ -179,7 +179,7 @@ try {
   humanApprovalManifest = JSON.parse(await readFile(join(root, HUMAN_APPROVAL_MANIFEST_PATH), "utf8"));
   validateHumanApprovalManifest(humanApprovalManifest, { sourceCommit, trackIds: candidates.map(([trackId]) => trackId) });
 } catch (error) {
-  if (error?.code !== "ENOENT") throw error;
+  if (error?.code !== "ENOENT") humanApprovalManifest = null;
 }
 const banks = await Promise.all(candidates.map(([trackId, familyId, validator]) => sourceSummary(trackId, familyId, validator, humanApprovalManifest)));
 const report = { schemaVersion: "eight-track-launch-readiness-v1", launchTrackIds: banks.map((bank) => bank.trackId).sort(), sourceCommit, tracks: banks.sort((a, b) => a.trackId.localeCompare(b.trackId)) };

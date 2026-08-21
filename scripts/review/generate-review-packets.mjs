@@ -179,7 +179,7 @@ try {
   humanApprovalManifest = JSON.parse(await readFile(join(root, HUMAN_APPROVAL_MANIFEST_PATH), "utf8"));
   validateHumanApprovalManifest(humanApprovalManifest, { sourceCommit, trackIds: readiness.tracks.map((track) => track.trackId) });
 } catch (error) {
-  if (error?.code !== "ENOENT") throw error;
+  if (error?.code !== "ENOENT") humanApprovalManifest = null;
 }
 await mkdir(outputRoot, { recursive: true });
 for (const track of readiness.tracks) {

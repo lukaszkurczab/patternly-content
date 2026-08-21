@@ -22,13 +22,13 @@ test("human review packets cover exactly the eight launch tracks", async () => {
   for (const file of files) {
     const packet = JSON.parse(await readFile(join(root, "evidence/review-packets", file), "utf8"));
     assert.equal(packet.schemaVersion, "patternly-human-review-packet-v1");
-    assert.equal(packet.approvalForm.status, "approved");
-    assert.equal(packet.approvalForm.reviewer?.kind, "human_owner");
-    assert.equal(packet.approvalForm.reviewedAt, "2026-08-20");
-    assert.equal(packet.approvalForm.disposition, "approved");
+    assert.equal(packet.approvalForm.status, "pending");
+    assert.equal(packet.approvalForm.reviewer, null);
+    assert.equal(packet.approvalForm.reviewedAt, null);
+    assert.equal(packet.approvalForm.disposition, null);
     assert.ok(packet.coverage.sourceFileCount > 0);
     assert.ok(packet.coverage.canonicalItemCount > 0);
     assert.ok(packet.sampleStrata.samples.length > 0);
-    assert.ok(packet.automatedFindings.some((finding) => finding.id === "human-approval" && finding.status === "pass"));
+    assert.ok(packet.automatedFindings.some((finding) => finding.id === "human-approval" && finding.status === "blocked"));
   }
 });

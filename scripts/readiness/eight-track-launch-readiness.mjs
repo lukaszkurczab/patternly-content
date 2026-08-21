@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { execFile } from "node:child_process";
@@ -9,6 +10,7 @@ import { HUMAN_APPROVAL_MANIFEST_PATH, summarizeSource, validateHumanApprovalEnt
 const exec = promisify(execFile);
 const root = process.cwd();
 const outputPath = join(root, "evidence/readiness/eight-track-launch-readiness.json");
+const ADMISSION_MANIFEST_PATH = "evidence/admissions/eight-track-launch-admission.json";
 const candidates = [
   ["coding-interview-dsa-problem-solving", "coding_interview", "npm run validate:real:coding-interview"],
   ["google-cloud-associate-cloud-engineer", "certification", "npm run audit:gcp:authoring"],
@@ -50,6 +52,34 @@ const RELEASE_INPUT_PATHS = [
 ];
 
 const VALIDATOR_MAX_BUFFER = 256 * 1024 * 1024;
+
+function validSha(value, length) { return typeof value === "string" && new RegExp(`^[a-f0-9]{${length}}$`).test(value); }
+
+function loadAdmissionManifest(expectedSourceCommit) {
+  try {
+    const manifest = JSON.parse(readFileSync(join(root, ADMISSION_MANIFEST_PATH), "utf8"));
+    if (manifest?.schemaVersion !== "eight-track-launch-admission-v1"
+      || manifest?.releaseId !== "patternly-launch-2026-08-21-02"
+      || manifest?.contentSourceCommit !== expectedSourceCommit
+      || !validSha(manifest?.applicationCommit, 40)
+      || !Array.isArray(manifest?.tracks)
+      || manifest.tracks.length !== candidates.length
+      || new Set(manifest.tracks.map((entry) => entry?.trackId)).size !== candidates.length) return null;
+    for (const entry of manifest.tracks) {
+      if (!candidates.some(([trackId]) => trackId === entry?.trackId)
+        || entry?.publishing?.status !== "admitted"
+        || entry.publishing.releaseId !== manifest.releaseId
+        || !validSha(entry.publishing.checksumSha256, 64)
+        || entry?.runtime?.status !== "admitted"
+        || entry.runtime.applicationCommit !== manifest.applicationCommit
+        || entry.runtime.testResult !== "passed"
+        || typeof entry.runtime.testCommand !== "string"
+        || entry.runtime.testCommand.trim().length === 0
+        || !validSha(entry.runtime.evidenceSha256, 64)) return null;
+    }
+    return manifest;
+  } catch { return null; }
+}
 
 async function runStructuralValidator(command) {
   const match = /^npm run ([A-Za-z0-9:_-]+)$/u.exec(command);
@@ -109,7 +139,7 @@ async function immutableArtifactSummary(trackId) {
   return { presence: "not_verified_by_source-only-report", version: null };
 }
 
-async function sourceSummary(trackId, familyId, validatorCommand, humanApprovalManifest) {
+async function sourceSummary(trackId, familyId, validatorCommand, humanApprovalManifest, admissionManifest) {
   const sourceRoot = join(root, "manual/source", trackId);
   let files = [];
   try { files = (await walk(sourceRoot)).filter((file) => file.endsWith(".json")).sort(); } catch {}
@@ -137,7 +167,6 @@ async function sourceSummary(trackId, familyId, validatorCommand, humanApprovalM
   const nodeIds = [...new Set(batches.map(({ value }) => value.nodeId).filter(Boolean))].sort();
   const blockIds = [...new Set(batches.map(({ value }) => value.learningBlockId).filter(Boolean))].sort();
   const admissions = batches.map(({ value }) => ({ runtime: value.runtimeAdmission, publishing: value.publishingAdmission, approval: value.authoringProvenance?.approvalStatus }));
-  const inactive = admissions.every((entry) => entry.runtime === undefined || entry.runtime === "not_admitted") && admissions.every((entry) => entry.publishing === undefined || entry.publishing === "not_admitted");
   const packageRoot = join(root, "artifacts/bundled-free-nodes", trackId);
   let bundledPackage = null;
   try { bundledPackage = (await walk(packageRoot)).filter((file) => file.endsWith("package.json")).map((file) => relative(root, file)).sort(); } catch { bundledPackage = []; }
@@ -145,6 +174,14 @@ async function sourceSummary(trackId, familyId, validatorCommand, humanApprovalM
   const approval = humanApprovalManifest?.tracks.find((entry) => entry.trackId === trackId) ?? null;
   if (approval) validateHumanApprovalEntry(approval, { sourceCommit, trackId, sourceSummary: await summarizeSource({ root, trackId }) });
   const agentReviewPath = `evidence/content-approvals/${trackId}.json`;
+  const immutableArtifact = await immutableArtifactSummary(trackId);
+  const admission = admissionManifest?.tracks.find((entry) => entry.trackId === trackId) ?? null;
+  const publishingAdmission = admission?.publishing.releaseId === immutableArtifact.releaseId
+    && admission?.publishing.checksumSha256 === immutableArtifact.checksumSha256
+    && immutableArtifact.presence === "verified"
+    ? "admitted"
+    : "not_admitted";
+  const runtimeAdmission = admission?.runtime.status === "admitted" ? "admitted" : "not_admitted";
   return {
     trackId,
     familyId,
@@ -159,14 +196,14 @@ async function sourceSummary(trackId, familyId, validatorCommand, humanApprovalM
     humanReview: approval ? "approved" : admissions.some((entry) => entry.approval === "unapproved") ? "unapproved" : "pending",
     humanApproval: approval ? { path: HUMAN_APPROVAL_MANIFEST_PATH, approvalId: approval.approvalId, sourceCommit: approval.sourceCommit, confirmationDate: humanApprovalManifest.confirmationDate, itemManifestSha256: approval.itemManifestSha256 } : null,
     agentReviewPreparation: { path: agentReviewPath, status: "recorded", reviewerKind: "owner_authorized_agent" },
-    runtimeAdmission: inactive ? "not_admitted" : "mixed_or_unknown",
-    publishingAdmission: inactive ? "not_admitted" : "mixed_or_unknown",
-    immutableArtifact: await immutableArtifactSummary(trackId),
+    runtimeAdmission,
+    publishingAdmission,
+    immutableArtifact,
     bundledFreeNodePackage: { paths: bundledPackage, presence: bundledPackage.length ? "present" : "absent" },
     blockers: [
       ...(approval ? [] : ["human_review_required"]),
-      "runtime_admission_not_granted",
-      "publishing_admission_not_granted"
+      ...(runtimeAdmission === "admitted" ? [] : ["runtime_admission_not_granted"]),
+      ...(publishingAdmission === "admitted" ? [] : ["publishing_admission_not_granted"])
     ]
   };
 }
@@ -187,7 +224,8 @@ try {
 } catch (error) {
   if (error?.code !== "ENOENT") humanApprovalManifest = null;
 }
-const banks = await Promise.all(candidates.map(([trackId, familyId, validator]) => sourceSummary(trackId, familyId, validator, humanApprovalManifest)));
+const admissionManifest = loadAdmissionManifest(sourceCommit);
+const banks = await Promise.all(candidates.map(([trackId, familyId, validator]) => sourceSummary(trackId, familyId, validator, humanApprovalManifest, admissionManifest)));
 const report = { schemaVersion: "eight-track-launch-readiness-v1", launchTrackIds: banks.map((bank) => bank.trackId).sort(), sourceCommit, tracks: banks.sort((a, b) => a.trackId.localeCompare(b.trackId)) };
 const bytes = `${canonical(report)}\n`;
 await mkdir(join(root, "evidence/readiness"), { recursive: true });

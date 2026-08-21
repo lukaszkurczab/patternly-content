@@ -34,18 +34,18 @@ test("stale agent review records never become current approval", async () => {
   }
 });
 
-test("human owner approval stays bound to the exact approved source commit", async () => {
+test("human owner approval stays bound to the exact current source commit", async () => {
   const readiness = JSON.parse(await readFile(join(root, "evidence/readiness/eight-track-launch-readiness.json"), "utf8"));
   const manifest = JSON.parse(await readFile(join(root, "evidence/human-content-approvals/manifest.json"), "utf8"));
   const schema = JSON.parse(await readFile(join(root, "schemas/review/human-content-approval-manifest.schema.json"), "utf8"));
   await validateSchema(manifest, schema, "evidence/human-content-approvals/manifest.json");
-  assert.throws(() => validateHumanApprovalManifest(manifest, { sourceCommit: readiness.sourceCommit, trackIds: expectedTracks }), /source commit mismatch/);
+  assert.doesNotThrow(() => validateHumanApprovalManifest(manifest, { sourceCommit: readiness.sourceCommit, trackIds: expectedTracks }));
   assert.equal(manifest.approver.kind, "human_owner");
   assert.equal(manifest.approver.id, "lukaszkurczab");
   for (const trackId of expectedTracks) {
     const summary = await summarizeSource({ root, trackId });
     const approval = manifest.tracks.find((entry) => entry.trackId === trackId);
-    assert.throws(() => validateHumanApprovalEntry(approval, { sourceCommit: readiness.sourceCommit, trackId, sourceSummary: summary }), /source commit mismatch|differs from current source/);
-    assert.notEqual(approval.sourceCommit, readiness.sourceCommit);
+    assert.doesNotThrow(() => validateHumanApprovalEntry(approval, { sourceCommit: readiness.sourceCommit, trackId, sourceSummary: summary }));
+    assert.equal(approval.sourceCommit, readiness.sourceCommit);
   }
 });

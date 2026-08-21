@@ -21,6 +21,7 @@ const exactKeys = (value, keys, label) => {
 function selectorFor(brief, artifact) {
   if (brief.trackId === "coding-interview-dsa-problem-solving" && artifact.familyId === "coding_interview") return Object.freeze({ field: "taxonomy.roadmapNodeId", equals: brief.freeNodeId });
   if (brief.internalFamily === "certification" && artifact.familyId === "certification") return Object.freeze({ field: "nodeId", equals: brief.freeNodeId });
+  if (brief.internalFamily === "design_interview" && artifact.familyId === "design_interview") return Object.freeze({ field: "taxonomy.roadmapNodeId", equals: brief.freeNodeId });
   fail("UNSUPPORTED_FREE_NODE_SELECTOR", `No canonical free-node selector exists for ${brief.trackId}.`);
 }
 

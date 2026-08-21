@@ -7,7 +7,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { canonicalJson, PublishingFailure, validateCanonicalJsonSchema, verifyArtifactRecord } from "../publishing/pipeline.mjs";
-import { FREE_NODE_EXPERIENCE_PROFILE_SCHEMA_VERSION, loadCanonicalFreeNodeExperienceProfiles, validateFreeNodeExperienceProfile } from "./free-node-experience-profile.mjs";
+import { FREE_NODE_EXPERIENCE_PROFILE_SCHEMA_VERSION, loadCanonicalFreeNodeExperienceProfiles, loadCanonicalTrack, validateFreeNodeExperienceProfile } from "./free-node-experience-profile.mjs";
 import { inventoryFromPinnedRelease, loadCanonicalFreeNodeInventoryPins, validateFreeNodeInventory, verifyPinnedTechnicalEvidence } from "./free-node-inventory.mjs";
 import { ROOT, loadCanonicalTrackBriefs } from "./track-briefs.mjs";
 
@@ -84,6 +84,24 @@ function exactTaxonomySubset(taxonomy, selectedItems, familyId, freeNodeId) {
     if (!taxonomy.nodeIds?.includes(freeNodeId) || !taxonomy.tags?.includes(freeNodeId)) fail("DANGLING_FREE_NODE_REFERENCE", `Certification taxonomy does not own ${freeNodeId}.`);
     const selectedTags = new Set(selectedItems.flatMap((item) => item.tags ?? []));
     return Object.freeze({ ...taxonomy, nodeIds: Object.freeze([freeNodeId]), tags: Object.freeze((taxonomy.tags ?? []).filter((tag) => selectedTags.has(tag)).sort(compare)) });
+  }
+  if (familyId === "design_interview") {
+    const node = (taxonomy.nodes ?? []).find((entry) => entry?.nodeId === freeNodeId);
+    if (!node) fail("DANGLING_FREE_NODE_REFERENCE", `Design curriculum does not own ${freeNodeId}.`);
+    const local = (values) => Object.freeze((values ?? []).filter((entry) => entry?.nodeId === freeNodeId));
+    return Object.freeze({
+      schemaVersion: taxonomy.schemaVersion,
+      curriculumVersion: taxonomy.curriculumVersion,
+      trackId: taxonomy.trackId,
+      familyId: taxonomy.familyId,
+      freeNodeId,
+      nodes: Object.freeze([node]),
+      blockPlans: local(taxonomy.blockPlans),
+      targetPlans: local(taxonomy.targetPlans),
+      slots: local(taxonomy.slots),
+      crossNodeRelationships: Object.freeze([]),
+      modeFeasibility: Object.freeze(taxonomy.modeFeasibility ?? []),
+    });
   }
   const ids = {
     roadmapNodes: new Set([freeNodeId]), mentalUnits: new Set(), patternFamilies: new Set(), patternVariants: new Set(), problemArchetypes: new Set(), skillAtoms: new Set(), learningStages: new Set(), falseHeuristics: new Set()
@@ -267,7 +285,7 @@ export function payloadFromBundledFreeNode(record) {
 }
 
 function itemBelongsToPayloadNode(item, payload) {
-  return payload.familyId === "coding_interview" ? item.taxonomy?.roadmapNodeId === payload.freeNodeId : payload.familyId === "certification" ? item.nodeId === payload.freeNodeId : item.domain === payload.freeNodeId;
+  return payload.familyId === "coding_interview" || payload.familyId === "design_interview" ? item.taxonomy?.roadmapNodeId === payload.freeNodeId : item.nodeId === payload.freeNodeId;
 }
 
 export function verifyBundledFreeNodeRecord(record) {
@@ -359,13 +377,13 @@ async function canonicalInputs({ root, trackId, injectedProfileSourceCommit }) {
   const brief = briefs.find((entry) => entry.trackId === trackId); const pin = pins.find((entry) => entry.trackId === trackId); const profile = profiles.find((entry) => entry.trackId === trackId);
   if (!brief || !pin || !profile) fail("MISSING_BUNDLED_FREE_NODE_INPUT", `Canonical brief, profile, or inventory pin is absent for ${trackId}.`);
   const inventoryPath = join("artifacts", "free-node-inventories", pin.releaseId, `${trackId}.json`);
-  const [release, inventory, profileSchema, track, family, taxonomy, technicalEvidenceBytes, buildReport] = await Promise.all([
-    readJson(join(root, "artifacts", "releases", pin.releaseId, "release.json")), validateFreeNodeInventory({ root, inventoryPath }), readJson(join(root, "schemas/product/free-node-experience-profile.schema.json")), readJson(join(root, `config/tracks/${trackId}.json`)), readJson(join(root, `config/families/${profile.familyId}.json`)), readJson(join(root, `config/taxonomy/${trackId}.json`))
-    , readFile(resolve(root, pin.technicalEvidencePath)), readJson(resolve(root, pin.buildReportPath))
+  const track = await loadCanonicalTrack({ root, trackId, brief });
+  const [release, inventory, profileSchema, family, taxonomy, technicalEvidenceBytes, buildReport] = await Promise.all([
+    readJson(join(root, "artifacts", "releases", pin.releaseId, "release.json")), validateFreeNodeInventory({ root, inventoryPath }), readJson(join(root, "schemas/product/free-node-experience-profile.schema.json")), readJson(join(root, `config/families/${profile.familyId}.json`)), readJson(join(root, track.taxonomyPath)), readFile(resolve(root, pin.technicalEvidencePath)), readJson(resolve(root, pin.buildReportPath))
   ]);
   const artifact = artifactFor(release, trackId); const bank = JSON.parse(artifact.artifactBytes).bank; const assetBytesById = {};
   for (const asset of bank.feedbackAssets ?? []) assetBytesById[asset.id] = (await readFile(join(root, asset.sourcePath))).toString("base64");
-  const sourcePaths = [brief.freeNodeExperience.profilePath, `docs/track-briefs/${trackId}.json`, `config/tracks/${trackId}.json`, "config/bundled-free-node-packages.json", "schemas/product", "scripts/product", "package.json", "package-lock.json"];
+  const sourcePaths = [brief.freeNodeExperience.profilePath, `docs/track-briefs/${trackId}.json`, track.authoringRegistrationPath ?? `config/tracks/${trackId}.json`, track.taxonomyPath, "config/bundled-free-node-packages.json", "schemas/product", "scripts/product", "package.json", "package-lock.json"];
   const sourceCommit = injectedProfileSourceCommit ?? await profileSourceCommit(root, sourcePaths);
   return { release, releaseId: pin.releaseId, brief, inventory, pin, profile, profileSchema, track, family, taxonomy, packageConfiguration: packageOwner.configuration, packageConfigurationSchema: packageOwner.schema, profileSourceRepositoryCommit: sourceCommit, assetBytesById, technicalEvidenceBytes, buildReport };
 }

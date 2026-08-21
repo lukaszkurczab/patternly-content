@@ -32,18 +32,74 @@ const exactModeContract = Object.freeze({
     Object.freeze({ modeId: "certification-focus-practice", blueprintModeId: "certification-focus-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
     Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
     Object.freeze({ modeId: "certification-quick-review", blueprintModeId: "certification-quick-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "due_free_node_review_evidence", reinsertPolicy: "disabled" })
+  ]),
+  "design-interview-default": Object.freeze([
+    Object.freeze({ modeId: "design-interview-learn-framework", blueprintModeId: "design-interview-learn-framework", availability: "immediate", requestedLengths: Object.freeze([1, 10]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "design-interview-tradeoff-practice", blueprintModeId: "design-interview-tradeoff-practice", availability: "immediate", requestedLengths: Object.freeze([1, 10]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "design-interview-weak-area-review", blueprintModeId: "design-interview-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([1, 10]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" })
   ])
 });
 
 function canonicalBlueprintModes(track) {
   if (track.familyId === "coding_interview") return new Map(track.modeConfiguration.practiceBlueprints.map((entry) => [entry.modeId, entry]));
+  if (track.familyId === "design_interview") return new Map(track.modeConfiguration.practiceBlueprints.map((entry) => [entry.modeId, entry]));
   const configuration = track.modeConfiguration;
   return new Map([configuration.focusPractice, configuration.weakAreaReview, configuration.quickReview].map((entry) => [entry.modeId, entry]));
 }
 
 function canonicalUserMappings(track) {
   if (track.familyId === "coding_interview") return new Map(track.modeConfiguration.userModeMappings.map((entry) => [entry.userModeId, entry.blueprintModeId]));
+  if (track.familyId === "design_interview") return new Map(track.modeConfiguration.practiceBlueprints.map((entry) => [entry.modeId, entry.modeId]));
   return new Map([...canonicalBlueprintModes(track).keys()].map((modeId) => [modeId, modeId]));
+}
+
+const DESIGN_MODE_IDS = Object.freeze([
+  "design-interview-learn-framework",
+  "design-interview-guided-case",
+  "design-interview-requirements-practice",
+  "design-interview-tradeoff-practice",
+  "design-interview-weak-area-review",
+  "design-interview-independent-case",
+  "design-interview-simulation",
+]);
+
+function designModeConfiguration() {
+  return Object.freeze({
+    schemaVersion: "design-interview-track-mode-config-v1",
+    practiceBlueprints: Object.freeze(DESIGN_MODE_IDS.map((modeId) => Object.freeze({
+      blueprintId: `${modeId}-v1`,
+      blueprintVersion: "1",
+      modeId,
+      requestedLengths: Object.freeze([1, 10]),
+      defaultRequestedLength: 10,
+      shortening: "allowed",
+      minimumActualLength: 1,
+      selectionBoundary: "one_roadmap_node",
+      reinsertPolicy: "disabled",
+    }))),
+  });
+}
+
+export async function loadCanonicalTrack({ root, trackId, brief }) {
+  try {
+    return await readJson(join(root, `config/tracks/${trackId}.json`));
+  } catch (error) {
+    if (error?.code !== "ENOENT" || brief.internalFamily !== "design_interview") throw error;
+    const registration = await readJson(join(root, `config/authoring/tracks/${trackId}.json`));
+    const curriculum = await readJson(join(root, registration.curriculumPath));
+    return Object.freeze({
+      schemaVersion: "track-config-v1",
+      trackId: registration.trackId,
+      familyId: registration.familyId,
+      taxonomyVersion: curriculum.curriculumVersion,
+      taxonomyPath: registration.curriculumPath,
+      freeNodeId: brief.freeNodeId,
+      declaredModes: Object.freeze([...brief.validModes]),
+      freeNodeExperienceProfilePath: brief.freeNodeExperience.profilePath,
+      authoringRegistrationPath: `config/authoring/tracks/${trackId}.json`,
+      modeConfiguration: designModeConfiguration(),
+    });
+  }
 }
 
 export function validateFreeNodeExperienceProfile({ profile, schema, brief, track, family }) {
@@ -61,10 +117,10 @@ export function validateFreeNodeExperienceProfile({ profile, schema, brief, trac
   if (modeIds.some((modeId) => /(?:^|-)free(?:-|$)/.test(modeId))) fail("FREE_ONLY_MODE_ID", "Free-node profiles must reuse canonical family mode IDs.");
   if (modeIds.some((modeId) => !brief.validModes.includes(modeId))) fail("FREE_NODE_MODE_OUTSIDE_TRACK", "Every Free profile mode must be present in complete-track validModes.");
   if (same(sorted(modeIds), sorted(brief.validModes))) fail("ALL_VALID_MODES_TREATED_AS_FREE", "Complete-track validModes must not become the Free package mode set.");
-  const familyModeIds = new Set(family.modes ? family.modes.map((entry) => entry.id) : [...canonicalUserMappings(track).keys()]);
+  const familyModeIds = new Set(family.modes ? family.modes.map((entry) => entry.modeId ?? entry.id) : [...canonicalUserMappings(track).keys()]);
   if (modeIds.some((modeId) => !familyModeIds.has(modeId))) fail("UNSUPPORTED_FREE_NODE_MODE", "A Free profile mode is unsupported by its canonical family.");
 
-  const expected = exactModeContract[profile.trackId] ?? (profile.familyId === "certification" ? exactModeContract["certification-default"] : undefined);
+  const expected = exactModeContract[profile.trackId] ?? (profile.familyId === "certification" ? exactModeContract["certification-default"] : profile.familyId === "design_interview" ? exactModeContract["design-interview-default"] : undefined);
   if (!expected || !same(modeIds, expected.map((entry) => entry.modeId))) fail("INVALID_FREE_NODE_MODE_SET", "The Free profile differs from the Product Owner-approved mode set.");
   const blueprints = canonicalBlueprintModes(track);
   const mappings = canonicalUserMappings(track);
@@ -88,9 +144,12 @@ export function validateFreeNodeExperienceProfile({ profile, schema, brief, trac
     if (!same(custom.feedbackOptions, ["afterEachAnswer", "atSessionEnd"]) || custom.blueprintModeId !== "coding-interview-guided-practice") fail("INVALID_FREE_NODE_MODE_MAPPING", "Coding Custom Practice must map to Guided Practice with both canonical feedback options.");
     const weak = modes.find((entry) => entry.modeId === "coding-interview-weak-area-review");
     if (!same(weak.selection.reviewSources, ["due_queue", "session_misses"]) || weak.selection.sessionMissesMustBeCommitted !== true) fail("FREE_NODE_POLICY_NOT_CLOSED", "Coding Weak Area Review must use only due or committed node-local miss evidence.");
-  } else {
+  } else if (profile.familyId === "certification") {
     if (modes.some((entry) => entry.modeId.includes("custom") || entry.modeId.includes("learn"))) fail("UNSUPPORTED_FREE_NODE_MODE", "Certification does not gain Custom or Learn modes for symmetry.");
     for (const mode of modes.filter((entry) => entry.availability === "evidence_conditioned")) if (!same(mode.selection.reviewSources, ["due_queue"])) fail("FREE_NODE_POLICY_NOT_CLOSED", "Certification review modes must consume only due package-local evidence.");
+  } else {
+    const weak = modes.find((entry) => entry.modeId === "design-interview-weak-area-review");
+    if (!weak || !same(weak.selection.reviewSources, ["due_queue"]) || weak.selection.emptyEligibility !== "unavailable" || weak.selection.shortening !== "truthful_to_eligible_count") fail("FREE_NODE_POLICY_NOT_CLOSED", "Design Weak Area Review must use only due package-local evidence.");
   }
   return profile;
 }
@@ -107,7 +166,7 @@ export async function loadCanonicalFreeNodeExperienceProfiles({ root = ROOT } = 
     const profile = await readJson(join(root, FREE_NODE_EXPERIENCE_PROFILE_DIRECTORY, filename));
     const brief = briefs.find((entry) => entry.trackId === profile.trackId);
     if (!brief || filename !== `${profile.trackId}.json`) fail("INVALID_FREE_NODE_EXPERIENCE_PROFILE", "Profile filename and canonical track brief identity must agree.");
-    const track = await readJson(join(root, `config/tracks/${profile.trackId}.json`));
+    const track = await loadCanonicalTrack({ root, trackId: profile.trackId, brief });
     const family = await readJson(join(root, `config/families/${profile.familyId}.json`));
     validateFreeNodeExperienceProfile({ profile, schema, brief, track, family });
     profiles.push(profile);

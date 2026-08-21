@@ -19,8 +19,8 @@ test("content workflows retain full technical-input history and clean locked ins
   assert.ok(realReleaseWorkflow.indexOf("Coding Interview validate hard gate") < realReleaseWorkflow.indexOf("Build isolated release candidate"));
   assert.doesNotMatch(realReleaseWorkflow, /build:real:(coding_interview|certification)/);
   assert.match(realReleaseWorkflow, /node scripts\/publishing\/ci-release-gate\.mjs/);
-  assert.match(architectureWorkflow, /coding-interview-dsa-problem-solving-free-node-0002\/package\.json/);
-  assert.match(architectureWorkflow, /google-cloud-associate-cloud-engineer-free-node-0002\/package\.json/);
+  assert.match(architectureWorkflow, /config\/bundled-free-node-packages\.json/);
+  assert.match(architectureWorkflow, /validateBundledFreeNode/);
   assert.match(`${freeNodeInventory}\n${freeNodePins}\n${bundledPackages}`, /google-cloud-associate-cloud-engineer/);
 });
 
@@ -48,22 +48,22 @@ test("readiness reports only a current immutable artifact whose inputs still mat
   assert.deepEqual(az?.immutableArtifact, {
     checksumSha256: "968386e75c9abd4b54401e9876dadba6c0dbd01003aea8cfcad3a8d7027569ec",
     presence: "verified",
-    releaseId: "patternly-launch-2026-08-21-01",
-    sourceRepositoryCommit: "f0a4027a787a514a2fc1e4d47ac996eee40c72bf",
+    releaseId: "patternly-launch-2026-08-21-02",
+    sourceRepositoryCommit: "868a565f638286d45b5e5cef1acd1a7bf97fc38d",
     version: "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15",
   });
   assert.deepEqual(ai?.immutableArtifact, {
     checksumSha256: "474f1a403baf502abe10980ff4d7563493664ef1bad7859e2d0fb0ff65fb92c4",
     presence: "verified",
-    releaseId: "patternly-launch-2026-08-21-01",
-    sourceRepositoryCommit: "f0a4027a787a514a2fc1e4d47ac996eee40c72bf",
+    releaseId: "patternly-launch-2026-08-21-02",
+    sourceRepositoryCommit: "868a565f638286d45b5e5cef1acd1a7bf97fc38d",
     version: "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15",
   });
   assert.deepEqual(gcp?.immutableArtifact, {
     checksumSha256: "732f915e43542ca1318bf32aafd1f2cfab77012eb3c8d236a362a92a993740e4",
     presence: "verified",
-    releaseId: "patternly-launch-2026-08-21-01",
-    sourceRepositoryCommit: "f0a4027a787a514a2fc1e4d47ac996eee40c72bf",
+    releaseId: "patternly-launch-2026-08-21-02",
+    sourceRepositoryCommit: "868a565f638286d45b5e5cef1acd1a7bf97fc38d",
     version: "google-cloud-associate-cloud-engineer-authoring-v2026.08.11",
   });
 });

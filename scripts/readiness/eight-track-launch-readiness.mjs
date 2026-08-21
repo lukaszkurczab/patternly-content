@@ -34,10 +34,16 @@ async function walk(directory) {
 
 const RELEASE_INPUT_PATHS = [
   "manual/source",
+  "config/authoring",
+  "config/curricula",
+  "config/design-interview-source-registry.json",
   "config/families",
   "config/tracks",
   "config/taxonomy",
+  "docs/track-briefs",
+  "schemas/curriculum",
   "schemas/publishing",
+  "scripts/curriculum",
   "scripts/publishing",
   "package.json",
   "package-lock.json",

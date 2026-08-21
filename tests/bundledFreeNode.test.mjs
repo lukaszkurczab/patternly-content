@@ -182,7 +182,7 @@ test("checksum mutation, immutable overwrite, and failed generation are fail-clo
   const root = await fixtureRoot();
   try {
     const first = await writeBundledFreeNode({ root, trackId: TRACKS[0], profileSourceRepositoryCommit: COMMIT });
-    assert.equal(canonicalBundledFreeNodePath(first.record), `artifacts/bundled-free-nodes/${TRACKS[0]}/${TRACKS[0]}-free-node-0002/package.json`);
+    assert.equal(canonicalBundledFreeNodePath(first.record), `artifacts/bundled-free-nodes/${TRACKS[0]}/${TRACKS[0]}-free-node-0003/package.json`);
     await assert.rejects(() => writeBundledFreeNode({ root, trackId: TRACKS[0], profileSourceRepositoryCommit: COMMIT }), fails("IMMUTABLE_BUNDLED_FREE_NODE"));
     const before = await readFile(first.path, "utf8"); assert.equal(before, canonicalJson(first.record));
   } finally { await rm(root, { recursive: true, force: true }); }

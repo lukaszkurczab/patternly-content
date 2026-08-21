@@ -13,7 +13,7 @@ const compare = (left, right) => left === right ? 0 : left < right ? -1 : 1;
 export const hash = (value) => createHash("sha256").update(value).digest("hex");
 export const CANONICAL_SERIALIZATION_VERSION = "canonical-json-v1";
 export const SIMULATION_SOLVER_LIMIT = 50_000;
-export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v5";
+export const PUBLISHING_VALIDATOR_VERSION = "content-publishing-validator-v6";
 const CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION = "certification-node-manual-source-v1";
 const GIT_MAX_BUFFER = 256 * 1024 * 1024;
 const canonical = (value) => {
@@ -42,14 +42,23 @@ async function files(root) {
   const nested = await Promise.all(entries.sort((a, b) => compare(a.name, b.name)).map((entry) => entry.isDirectory() ? files(join(root, entry.name)) : [join(root, entry.name)]));
   return nested.flat();
 }
-export async function discoverSourceBatches(root, trackId) {
-  const base = join(root, "manual", "source", trackId);
+export async function discoverSourceBatches(root, trackId, manualSourceRoot = `manual/source/${trackId}`) {
+  const base = inside(root, manualSourceRoot);
   const paths = (await files(base)).filter((path) => path.endsWith(".json")).sort((a, b) => compare(relative(base, a), relative(base, b)));
   if (!paths.length) throw new PublishingFailure("EMPTY_INGRESS", `No manual source JSON exists for ${trackId}.`);
   return Promise.all(paths.map(async (path) => ({ path, value: await json(path) })));
 }
 async function config(root, trackId) {
-  const track = await json(join(root, "config", "tracks", `${trackId}.json`));
+  let track;
+  try { track = await json(join(root, "config", "tracks", `${trackId}.json`)); }
+  catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+    const registration = await json(join(root, "config", "authoring", "tracks", `${trackId}.json`));
+    if (registration.familyId !== "design_interview") throw error;
+    const curriculum = await json(inside(root, registration.curriculumPath));
+    const brief = await json(join(root, "docs/track-briefs", `${trackId}.json`));
+    track = { trackId: registration.trackId, familyId: registration.familyId, taxonomyPath: registration.curriculumPath, manualSourceRoot: registration.manualSourceRoot, freeNodeId: brief.freeNodeId, declaredModes: brief.validModes, ...(registration.authoringVersion?.contentVersion ? { contentVersion: registration.authoringVersion.contentVersion } : {}), authoringRegistrationPath: `config/authoring/tracks/${trackId}.json`, trackBriefPath: registration.trackBriefPath };
+  }
   const family = await json(join(root, "config", "families", `${track.familyId}.json`));
   return { track, family, taxonomy: await json(inside(root, track.taxonomyPath)) };
 }
@@ -76,12 +85,21 @@ async function sourceSchemaVersion(root, trackId, commit) {
   return value?.schemaVersion;
 }
 async function technicalInputPaths(root, trackId, commit) {
-  const trackPath = `config/tracks/${trackId}.json`; const track = await technicalJson(root, trackPath, commit);
+  let trackPath = `config/tracks/${trackId}.json`; let track;
+  try { track = await technicalJson(root, trackPath, commit); }
+  catch (error) {
+    const registrationPath = `config/authoring/tracks/${trackId}.json`;
+    const registration = await technicalJson(root, registrationPath, commit);
+    if (registration.familyId !== "design_interview") throw error;
+    const curriculum = await technicalJson(root, registration.curriculumPath, commit);
+    trackPath = registrationPath;
+    track = { trackId: registration.trackId, familyId: registration.familyId, taxonomyVersion: curriculum.curriculumVersion, taxonomyPath: registration.curriculumPath, manualSourceRoot: registration.manualSourceRoot, authoringRegistrationPath: registrationPath };
+  }
   const familyPath = `config/families/${text(track.familyId, "track familyId")}.json`;
   const taxonomyPath = relative(root, inside(root, text(track.taxonomyPath, "track taxonomyPath")));
   const manualSchemaPath = track.familyId === "coding_interview" ? "schemas/publishing/coding-interview-manual-source.schema.json" : track.familyId === "certification" ? (await sourceSchemaVersion(root, trackId, commit)) === CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION ? "schemas/publishing/certification-node-manual-source.schema.json" : "schemas/publishing/certification-manual-source.schema.json" : track.familyId === "design_interview" ? "schemas/publishing/design-interview-manual-source.schema.json" : (() => { throw new PublishingFailure("UNSUPPORTED_RUNTIME_FAMILY", `No runtime publishing contract exists for ${track.familyId}.`); })();
   const paths = [
-    `manual/source/${trackId}`, trackPath, familyPath, taxonomyPath, manualSchemaPath,
+    text(track.manualSourceRoot ?? `manual/source/${trackId}`, "track manualSourceRoot"), trackPath, familyPath, taxonomyPath, manualSchemaPath,
     "schemas/publishing/technical-validation-evidence.schema.json", "scripts/publishing/pipeline.mjs", "package.json", "package-lock.json"
   ];
   if (track.familyId === "coding_interview") {
@@ -731,19 +749,116 @@ function validateCertificationSource(batches, track, family, taxonomyConfig, tec
   const publishedItems = items.map((item) => ({ ...item, itemFingerprint: itemFingerprints[item.id] })).sort((a, b) => compare(a.id, b.id));
   return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items: publishedItems, itemFingerprints, modeStructures: {}, examExperienceProfile: profile, diagnosticBaseline, focusPractice, scenarioPractice, weakAreaReview, mixedPractice, quickReview, modeReadiness, batches, technicalEvidence, technicalInputFingerprint };
 }
+
+function validateDesignCandidateEnvelope(batch, label) {
+  const value = record(batch, label, "INVALID_ENVELOPE");
+  if (!/^(?:backend-system-design-interview|frontend-system-design-interview|object-oriented-design-interview)-candidate-source-v1$/u.test(value.schemaVersion)) throw new PublishingFailure("INVALID_ENVELOPE", `${label} is not a supported Design candidate source envelope.`);
+  if (!["system_design", "object_oriented_design"].includes(value.familyId)) throw new PublishingFailure("INVALID_ENVELOPE", `${label} has an unsupported authoring family identity.`);
+  for (const key of ["trackId", "contentVersion", "taxonomyVersion", "nodeId", "nodeTitle", "learningBlockId"]) text(value[key], `${label}.${key}`);
+  if (!Array.isArray(value.items) || value.items.length === 0) throw new PublishingFailure("EMPTY_INGRESS", `${label} must contain at least one candidate item.`);
+  for (const item of value.items) {
+    const candidate = record(item, `${label}.items[]`, "INVALID_RESPONSE");
+    for (const key of ["itemId", "nodeId", "prompt", "interaction", "scoringContract", "feedback"]) if (candidate[key] === undefined) throw new PublishingFailure("INVALID_RESPONSE", `${label} item is missing ${key}.`);
+    validateDesignInteraction(candidate.interaction, candidate.scoringContract, candidate.itemId);
+    const feedback = record(candidate.feedback, `${candidate.itemId} feedback`, "INVALID_RESPONSE");
+    text(feedback.Reason, `${candidate.itemId} feedback Reason`, "INVALID_RESPONSE");
+    if (!record(feedback.Details, `${candidate.itemId} feedback Details`, "INVALID_RESPONSE")) throw new PublishingFailure("INVALID_RESPONSE", `${candidate.itemId} feedback Details is invalid.`);
+  }
+}
+
+function validateDesignInteraction(interaction, scoringContract, itemId) {
+  const value = record(interaction, `${itemId} interaction`, "INVALID_RESPONSE");
+  const scoring = record(scoringContract, `${itemId} scoringContract`, "INVALID_RESPONSE");
+  if (value.type === "choice") {
+    if (!["single", "multiple"].includes(value.selectionMode) || !Array.isArray(value.options) || value.options.length < 2 || !Array.isArray(value.acceptedOptionIds) || value.acceptedOptionIds.length === 0) throw new PublishingFailure("INVALID_RESPONSE", `${itemId} choice interaction is invalid.`);
+    const optionIds = value.options.map((option) => text(record(option, `${itemId} choice option`, "INVALID_RESPONSE").optionId, `${itemId} choice optionId`, "INVALID_RESPONSE"));
+    unique(optionIds, "DUPLICATE_ID", `${itemId} choice option IDs`);
+    for (const option of value.options) text(option.text, `${itemId} choice option text`, "INVALID_RESPONSE");
+    if (value.acceptedOptionIds.some((id) => !optionIds.includes(id)) || new Set(value.acceptedOptionIds).size !== value.acceptedOptionIds.length) throw new PublishingFailure("INVALID_RESPONSE", `${itemId} choice acceptedOptionIds escape the options.`);
+    if (scoring.type !== "choice" || scoring.resultSemantics !== "exact_selected_set_with_partial_v1") throw new PublishingFailure("INVALID_RESPONSE", `${itemId} choice scoring contract is invalid.`);
+    return;
+  }
+  if (value.type === "ordering") {
+    if (!Array.isArray(value.elements) || value.elements.length < 2 || !Array.isArray(value.canonicalOrder) || value.canonicalOrder.length !== value.elements.length || value.scoringMethod !== "adjacent_relations") throw new PublishingFailure("INVALID_RESPONSE", `${itemId} ordering interaction is invalid.`);
+    const elementIds = value.elements.map((element) => text(record(element, `${itemId} ordering element`, "INVALID_RESPONSE").elementId, `${itemId} elementId`, "INVALID_RESPONSE"));
+    unique(elementIds, "DUPLICATE_ID", `${itemId} ordering element IDs`);
+    for (const element of value.elements) text(element.text, `${itemId} ordering element text`, "INVALID_RESPONSE");
+    if (value.canonicalOrder.some((id) => !elementIds.includes(id)) || new Set(value.canonicalOrder).size !== elementIds.length || scoring.type !== "ordering" || scoring.resultSemantics !== "adjacent_relations_v1" || scoring.maxPoints !== elementIds.length - 1) throw new PublishingFailure("INVALID_RESPONSE", `${itemId} ordering scoring contract is invalid.`);
+    return;
+  }
+  if (value.type === "decision_matrix") {
+    if (!Array.isArray(value.dimensions) || value.dimensions.length < 1 || value.scoringMethod !== "dimension_exact" || scoring.type !== "decision_matrix" || scoring.resultSemantics !== "exact_dimension_values_v1" || scoring.maxPoints !== value.dimensions.length) throw new PublishingFailure("INVALID_RESPONSE", `${itemId} decision_matrix interaction is invalid.`);
+    const dimensionIds = value.dimensions.map((dimension) => text(record(dimension, `${itemId} dimension`, "INVALID_RESPONSE").dimensionId, `${itemId} dimensionId`, "INVALID_RESPONSE"));
+    unique(dimensionIds, "DUPLICATE_ID", `${itemId} dimension IDs`);
+    for (const dimension of value.dimensions) {
+      const values = record(dimension, `${itemId} dimension`, "INVALID_RESPONSE").values;
+      if (!Array.isArray(values) || values.length < 2 || !Array.isArray(dimension.acceptedValueIds) || dimension.acceptedValueIds.length === 0) throw new PublishingFailure("INVALID_RESPONSE", `${itemId} decision_matrix dimension is invalid.`);
+      const valueIds = values.map((entry) => text(record(entry, `${itemId} matrix value`, "INVALID_RESPONSE").valueId, `${itemId} valueId`, "INVALID_RESPONSE"));
+      unique(valueIds, "DUPLICATE_ID", `${itemId} value IDs`);
+      for (const entry of values) text(entry.text, `${itemId} matrix value text`, "INVALID_RESPONSE");
+      if (dimension.acceptedValueIds.some((id) => !valueIds.includes(id)) || new Set(dimension.acceptedValueIds).size !== dimension.acceptedValueIds.length) throw new PublishingFailure("INVALID_RESPONSE", `${itemId} acceptedValueIds escape the matrix dimension.`);
+    }
+    return;
+  }
+  throw new PublishingFailure("INVALID_RESPONSE", `${itemId} uses an unsupported Design interaction type.`);
+}
+
+function designFeedback(feedback, itemId) {
+  const source = record(feedback, `${itemId} feedback`, "INVALID_RESPONSE");
+  const details = record(source.Details, `${itemId} feedback Details`, "INVALID_RESPONSE");
+  const detailBlocks = Object.entries(details).filter(([, value]) => value !== undefined && value !== null).map(([title, value]) => ({ type: "paragraph", text: `${title}: ${text(value, `${itemId} feedback Details.${title}`, "INVALID_RESPONSE")}` }));
+  if (!detailBlocks.length) throw new PublishingFailure("INVALID_RESPONSE", `${itemId} feedback Details has no explanatory content.`);
+  return Object.freeze({ reason: text(source.Reason, `${itemId} feedback Reason`, "INVALID_RESPONSE"), details: Object.freeze({ blocks: Object.freeze(detailBlocks) }), ...(source.wrongOptionExplanationsByOptionId && typeof source.wrongOptionExplanationsByOptionId === "object" && !Array.isArray(source.wrongOptionExplanationsByOptionId) ? { wrongOptionExplanationsByOptionId: Object.freeze({ ...source.wrongOptionExplanationsByOptionId }) } : {}) });
+}
+
+function normalizeDesignItem(item) {
+  const itemId = text(item.itemId, "Design itemId", "INVALID_RESPONSE");
+  const interaction = record(item.interaction, `${itemId} interaction`, "INVALID_RESPONSE");
+  const normalizedInteraction = interaction.type === "choice"
+    ? { type: "choice", selectionMode: interaction.selectionMode, options: interaction.options.map((option) => ({ id: option.optionId, text: option.text })), acceptedOptionIds: [...interaction.acceptedOptionIds] }
+    : interaction.type === "ordering"
+      ? { type: "ordering", elements: interaction.elements.map((element) => ({ id: element.elementId, text: element.text })), canonicalOrder: [...interaction.canonicalOrder], scoringMethod: "adjacent_relations" }
+      : { type: "decision_matrix", dimensions: interaction.dimensions.map((dimension) => ({ dimensionId: dimension.dimensionId, label: dimension.label, values: dimension.values.map((value) => ({ valueId: value.valueId, text: value.text })), acceptedValueIds: [...dimension.acceptedValueIds] })), scoringMethod: "dimension_exact" };
+  const sourceTaxonomy = record(item.taxonomy, `${itemId} taxonomy`, "INVALID_REFERENCE");
+  const taxonomy = Object.freeze({ roadmapNodeId: text(item.nodeId, `${itemId} nodeId`, "INVALID_REFERENCE"), mentalUnitId: text(item.mentalUnitId, `${itemId} mentalUnitId`, "INVALID_REFERENCE"), primaryCompetencyId: text(item.primaryCompetencyId, `${itemId} primaryCompetencyId`, "INVALID_REFERENCE"), ...(sourceTaxonomy ? { ...sourceTaxonomy } : {}) });
+  const provenance = Object.freeze({ sourceBinding: item.sourceBinding ?? null, authoringProvenance: item.authoringProvenance ?? null });
+  return Object.freeze({ id: itemId, prompt: text(item.prompt, `${itemId} prompt`, "INVALID_RESPONSE"), ...(item.constraints ? { constraints: item.constraints } : {}), ...(item.difficulty ? { difficulty: item.difficulty } : {}), interaction: Object.freeze(normalizedInteraction), scoringContract: Object.freeze({ ...item.scoringContract }), feedback: designFeedback(item.feedback, itemId), taxonomy, provenance, itemFingerprint: canonicalHash({ id: itemId, prompt: item.prompt, interaction: normalizedInteraction, scoringContract: item.scoringContract, feedback: item.feedback, taxonomy, provenance }) });
+}
+
+function validateDesignSource(batches, track, family, taxonomyConfig, technicalInputFingerprint, sourceCommitValue) {
+  const first = batches[0];
+  for (const batch of batches) {
+    validateDesignCandidateEnvelope(batch, `Design source ${batch.batchId ?? batch.nodeId}`);
+    if (batch.trackId !== track.trackId || batch.contentVersion !== first.contentVersion || batch.taxonomyVersion !== first.taxonomyVersion) throw new PublishingFailure("VERSION_MISMATCH", "Design source batches must share one track, content version, and taxonomy version.");
+  }
+  const normalized = batches.flatMap((batch) => batch.items.map((item) => ({ batch, item: normalizeDesignItem(item) })));
+  unique(normalized.map(({ item }) => item.id), "DUPLICATE_ID", "Design item IDs");
+  const items = normalized.map(({ item }) => item).sort((left, right) => compare(left.id, right.id));
+  const itemFingerprints = Object.fromEntries(items.map((item) => [item.id, item.itemFingerprint]));
+  const declaredModes = ids(track.declaredModes ?? ["design-interview-learn-framework", "design-interview-guided-case", "design-interview-requirements-practice", "design-interview-tradeoff-practice", "design-interview-weak-area-review", "design-interview-independent-case", "design-interview-simulation"], "Design declared modes", "INVALID_MODE");
+  const interactionTypes = [...new Set(items.map((item) => item.interaction.type))].sort(compare);
+  const modeReadiness = declaredModes.map((modeId) => Object.freeze({ modeId, requestedLengths: Object.freeze([1, Math.min(10, items.length)]), defaultRequestedLength: Math.min(10, items.length), availableUniqueItemCount: items.length, interactionTypes: Object.freeze(interactionTypes) }));
+  const technicalEvidence = batches.map((batch) => evidenceFor({ track, family, batchId: text(batch.nodeId, "Design batch nodeId"), technicalInputFingerprint, batchFingerprint: canonicalHash(batch), itemFingerprints: Object.fromEntries(batch.items.map((item) => [item.itemId, itemFingerprints[item.itemId]])), validatedAtSourceCommit: sourceCommitValue }));
+  return { contentVersion: first.contentVersion, taxonomyVersion: first.taxonomyVersion, declaredModes, items, itemFingerprints, modeStructures: { modeReadiness }, modeReadiness, batches, technicalEvidence, technicalInputFingerprint, freeNodeId: track.freeNodeId, sourceFreeNodeItemCount: items.filter((item) => item.taxonomy.roadmapNodeId === track.freeNodeId).length };
+}
+
 const FAMILY_RUNTIME_DISPATCH = Object.freeze({
   coding_interview: { schema: "coding-interview-manual-source.schema.json", validate: validateCodingInterviewSource },
   certification: { schema: "certification-manual-source.schema.json", validate: validateCertificationSource },
+  design_interview: { schema: "design-interview-manual-source.schema.json", validate: validateDesignSource },
 });
 export async function inspectTrack({ root = ROOT, trackId, sourceRepositoryCommit }) {
   const { track, family, taxonomy } = await config(root, trackId);
-  if (!["coding_interview", "certification"].includes(track.familyId)) throw new PublishingFailure("UNSUPPORTED_RUNTIME_FAMILY", `Runtime publishing is not implemented for family ${track.familyId}; use the authoring contract only.`);
   if (!FAMILY_RUNTIME_DISPATCH[track.familyId]) throw new PublishingFailure("UNSUPPORTED_RUNTIME_FAMILY", `Runtime publishing is not implemented for family ${track.familyId}.`);
   const batches = (await discoverSourceBatches(root, trackId)).map(({ value }) => value); const commit = await sourceCommit(root, sourceRepositoryCommit);
   const nodeAuthoringSource = track.familyId === "certification" && batches.every((batch) => batch.schemaVersion === CERTIFICATION_NODE_AUTHORING_SOURCE_VERSION && Array.isArray(batch.items) && batch.items.every((item) => Object.hasOwn(item, "itemId")));
   const sourceSchemaName = nodeAuthoringSource ? "certification-node-manual-source.schema.json" : FAMILY_RUNTIME_DISPATCH[track.familyId].schema;
   const sourceSchema = await json(join(root, "schemas", "publishing", sourceSchemaName));
-  batches.forEach((batch, index) => validateJsonSchema(batch, sourceSchema, `manual source batch ${index}`));
+  if (track.familyId === "design_interview") {
+    batches.forEach((batch, index) => validateDesignCandidateEnvelope(batch, `manual source batch ${index}`));
+  } else {
+    batches.forEach((batch, index) => validateJsonSchema(batch, sourceSchema, `manual source batch ${index}`));
+  }
   const feedbackAssets = track.familyId === "coding_interview" ? await loadCodingInterviewFeedbackAssets(root) : undefined;
   const technicalInputFingerprint = canonicalHash({ fingerprintSchemaVersion: 1, trackId: track.trackId, familyId: track.familyId, sourceBatches: batches, trackConfig: track, familyConfig: family, taxonomy, sourceSchema, ...(feedbackAssets ? { feedbackAssets } : {}), validatorVersion: PUBLISHING_VALIDATOR_VERSION, canonicalSerializationVersion: CANONICAL_SERIALIZATION_VERSION });
   const source = FAMILY_RUNTIME_DISPATCH[track.familyId].validate(batches, track, family, taxonomy, technicalInputFingerprint, commit, feedbackAssets);

@@ -4,7 +4,7 @@ import { join, relative } from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { verifyArtifactRecord } from "../publishing/pipeline.mjs";
-import { summarizeSource, validateApprovalRecord } from "../review/content-approval.mjs";
+import { HUMAN_APPROVAL_MANIFEST_PATH, summarizeSource, validateHumanApprovalEntry, validateHumanApprovalManifest } from "../review/content-approval.mjs";
 
 const exec = promisify(execFile);
 const root = process.cwd();
@@ -103,7 +103,7 @@ async function immutableArtifactSummary(trackId) {
   return { presence: "not_verified_by_source-only-report", version: null };
 }
 
-async function sourceSummary(trackId, familyId, validatorCommand) {
+async function sourceSummary(trackId, familyId, validatorCommand, humanApprovalManifest) {
   const sourceRoot = join(root, "manual/source", trackId);
   let files = [];
   try { files = (await walk(sourceRoot)).filter((file) => file.endsWith(".json")).sort(); } catch {}
@@ -119,6 +119,7 @@ async function sourceSummary(trackId, familyId, validatorCommand) {
     interactionInventory: {},
     structuralValidation: { result: "blocked_source_absent", command: null },
     humanReview: "not_possible_source_absent",
+    humanApproval: null,
     runtimeAdmission: "not_admitted",
     publishingAdmission: "not_admitted",
     immutableArtifact: await immutableArtifactSummary(trackId),
@@ -135,15 +136,9 @@ async function sourceSummary(trackId, familyId, validatorCommand) {
   let bundledPackage = null;
   try { bundledPackage = (await walk(packageRoot)).filter((file) => file.endsWith("package.json")).map((file) => relative(root, file)).sort(); } catch { bundledPackage = []; }
   const structuralValidation = await runStructuralValidator(validatorCommand);
-  const approvalPath = join(root, "evidence/content-approvals", `${trackId}.json`);
-  let approval = null;
-  try {
-    const approvalBytes = await readFile(approvalPath, "utf8");
-    approval = JSON.parse(approvalBytes);
-    validateApprovalRecord(approval, { sourceCommit, trackId, sourceSummary: await summarizeSource({ root, trackId }) });
-  } catch (error) {
-    if (error?.code !== "ENOENT") throw error;
-  }
+  const approval = humanApprovalManifest?.tracks.find((entry) => entry.trackId === trackId) ?? null;
+  if (approval) validateHumanApprovalEntry(approval, { sourceCommit, trackId, sourceSummary: await summarizeSource({ root, trackId }) });
+  const agentReviewPath = `evidence/content-approvals/${trackId}.json`;
   return {
     trackId,
     familyId,
@@ -156,7 +151,8 @@ async function sourceSummary(trackId, familyId, validatorCommand) {
     interactionInventory: Object.fromEntries([...items.reduce((counts, item) => counts.set(item.interaction?.type ?? "unknown", (counts.get(item.interaction?.type ?? "unknown") ?? 0) + 1), new Map()).entries()].sort(([a], [b]) => a.localeCompare(b))),
     structuralValidation,
     humanReview: approval ? "approved" : admissions.some((entry) => entry.approval === "unapproved") ? "unapproved" : "pending",
-    contentApproval: approval ? { path: relative(root, approvalPath), approvalId: approval.approvalId, sourceCommit: approval.sourceCommit, reviewDate: approval.reviewDate, itemManifestSha256: approval.itemManifestSha256 } : null,
+    humanApproval: approval ? { path: HUMAN_APPROVAL_MANIFEST_PATH, approvalId: approval.approvalId, sourceCommit: approval.sourceCommit, confirmationDate: humanApprovalManifest.confirmationDate, itemManifestSha256: approval.itemManifestSha256 } : null,
+    agentReviewPreparation: { path: agentReviewPath, status: "recorded", reviewerKind: "owner_authorized_agent" },
     runtimeAdmission: inactive ? "not_admitted" : "mixed_or_unknown",
     publishingAdmission: inactive ? "not_admitted" : "mixed_or_unknown",
     immutableArtifact: await immutableArtifactSummary(trackId),
@@ -178,7 +174,14 @@ const sourceCommit = (await exec("git", [
   "config/curricula",
   "docs/track-briefs"
 ], { cwd: root })).stdout.trim();
-const banks = await Promise.all(candidates.map(([trackId, familyId, validator]) => sourceSummary(trackId, familyId, validator)));
+let humanApprovalManifest = null;
+try {
+  humanApprovalManifest = JSON.parse(await readFile(join(root, HUMAN_APPROVAL_MANIFEST_PATH), "utf8"));
+  validateHumanApprovalManifest(humanApprovalManifest, { sourceCommit, trackIds: candidates.map(([trackId]) => trackId) });
+} catch (error) {
+  if (error?.code !== "ENOENT") throw error;
+}
+const banks = await Promise.all(candidates.map(([trackId, familyId, validator]) => sourceSummary(trackId, familyId, validator, humanApprovalManifest)));
 const report = { schemaVersion: "eight-track-launch-readiness-v1", launchTrackIds: banks.map((bank) => bank.trackId).sort(), sourceCommit, tracks: banks.sort((a, b) => a.trackId.localeCompare(b.trackId)) };
 const bytes = `${canonical(report)}\n`;
 await mkdir(join(root, "evidence/readiness"), { recursive: true });

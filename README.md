@@ -1,5 +1,14 @@
 # Patternly manual content publishing and authoring
 
+The content repository is an authoring and immutable publishing system. It is
+not a runtime API and has no dependency on the backend for content admission.
+
+When a readiness script needs the application checkout, use the explicit
+`PATTERNLY_FRONTEND_ROOT` environment variable. `PATTERNLY_BACKEND_ROOT` is
+reserved for checks that genuinely require backend evidence; the current
+runtime admission check does not require it and therefore does not introduce
+an artificial dependency.
+
 The canonical flow is family-specific manual source → read-only validation → human review → immutable track artifact → immutable release. Authoring readiness is a planning gate; it is separate from human approval, runtime publication, and release activation. Runtime applications import generated artifact bytes at build time; they never use this repository or a content HTTP endpoint at runtime.
 
 Only `manual/source/<trackId>/` is learner-item ingress. Certification and Design Interview future source files use `manual/source/<trackId>/<nodeId>/<learningBlockId>.json`; Coding Interview keeps its existing source layout. Generated manifests and authoring briefs live in evidence and sidecar paths, never as learner source. Empty or placeholder JSON is forbidden.

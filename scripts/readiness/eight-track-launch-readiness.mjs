@@ -61,7 +61,7 @@ function loadAdmissionManifest(expectedSourceCommit) {
     if (manifest?.schemaVersion !== "eight-track-launch-admission-v1"
       || manifest?.releaseId !== "patternly-launch-2026-08-21-02"
       || manifest?.contentSourceCommit !== expectedSourceCommit
-      || !validSha(manifest?.applicationCommit, 40)
+      || !validSha(manifest?.frontendCommit, 40)
       || !Array.isArray(manifest?.tracks)
       || manifest.tracks.length !== candidates.length
       || new Set(manifest.tracks.map((entry) => entry?.trackId)).size !== candidates.length) return null;
@@ -71,7 +71,7 @@ function loadAdmissionManifest(expectedSourceCommit) {
         || entry.publishing.releaseId !== manifest.releaseId
         || !validSha(entry.publishing.checksumSha256, 64)
         || entry?.runtime?.status !== "admitted"
-        || entry.runtime.applicationCommit !== manifest.applicationCommit
+        || entry.runtime.frontendCommit !== manifest.frontendCommit
         || entry.runtime.testResult !== "passed"
         || typeof entry.runtime.testCommand !== "string"
         || entry.runtime.testCommand.trim().length === 0

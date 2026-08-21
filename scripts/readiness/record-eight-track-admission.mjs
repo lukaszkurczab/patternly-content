@@ -8,7 +8,7 @@ import { verifyArtifactRecord } from "../publishing/pipeline.mjs";
 
 const exec = promisify(execFile);
 const root = process.cwd();
-const applicationRoot = resolve(process.env.PATTERNLY_APPLICATION_ROOT ?? join(root, "..", "patternly"));
+const frontendRoot = resolve(process.env.PATTERNLY_FRONTEND_ROOT ?? join(root, "..", "patternly"));
 const releaseId = "patternly-launch-2026-08-21-02";
 const trackIds = [
   "aws-certified-solutions-architect-associate",
@@ -30,14 +30,14 @@ const hash = (value) => createHash("sha256").update(value).digest("hex");
 const jsonBytes = (value) => `${canonical(value)}\n`;
 const git = async (cwd, args) => (await exec("git", args, { cwd })).stdout.trim();
 
-const applicationCommit = await git(applicationRoot, ["rev-parse", "HEAD"]);
-if (!/^[a-f0-9]{40}$/.test(applicationCommit)) throw new Error("Application HEAD is not a full commit SHA.");
-const applicationStatus = await git(applicationRoot, ["status", "--porcelain", "--untracked-files=all"]);
-if (applicationStatus) throw new Error("Application worktree must be clean before recording admission evidence.");
+const frontendCommit = await git(frontendRoot, ["rev-parse", "HEAD"]);
+if (!/^[a-f0-9]{40}$/.test(frontendCommit)) throw new Error("Frontend HEAD is not a full commit SHA.");
+const frontendStatus = await git(frontendRoot, ["status", "--porcelain", "--untracked-files=all"]);
+if (frontendStatus) throw new Error("Frontend worktree must be clean before recording admission evidence.");
 
 const testCommand = "node --import tsx --test tests/runtimeAdmissionEightTrack.test.ts";
 const test = await exec(process.execPath, ["--import", "tsx", "--test", "tests/runtimeAdmissionEightTrack.test.ts"], {
-  cwd: applicationRoot,
+  cwd: frontendRoot,
   maxBuffer: 16 * 1024 * 1024,
 });
 const output = `${test.stdout}${test.stderr}`;
@@ -46,7 +46,7 @@ if (!/# pass 1\b/u.test(output) || !/runtime admission proves exact package reso
 }
 const verifiedAt = new Date().toISOString();
 const runtimeEvidence = {
-  applicationCommit,
+  frontendCommit,
   command: testCommand,
   outputSha256: hash(output),
   schemaVersion: "patternly-runtime-admission-evidence-v1",
@@ -55,7 +55,7 @@ const runtimeEvidence = {
   verifiedAt,
 };
 const runtimeEvidenceBytes = jsonBytes(runtimeEvidence);
-const runtimeEvidencePath = `evidence/admissions/runtime/${applicationCommit}.json`;
+const runtimeEvidencePath = `evidence/admissions/runtime/${frontendCommit}.json`;
 await mkdir(join(root, "evidence/admissions/runtime"), { recursive: true });
 await writeFile(join(root, runtimeEvidencePath), runtimeEvidenceBytes);
 
@@ -71,7 +71,7 @@ if (artifacts.size !== trackIds.length || trackIds.some((trackId) => !artifacts.
 
 const contentSourceCommit = await git(root, ["log", "-1", "--format=%H", "--", "manual/source", "config/authoring", "config/curricula", "docs/track-briefs"]);
 const manifest = {
-  applicationCommit,
+  frontendCommit,
   contentSourceCommit,
   releaseId,
   schemaVersion: "eight-track-launch-admission-v1",
@@ -80,7 +80,7 @@ const manifest = {
     return {
       publishing: { checksumSha256: artifact.checksumSha256, releaseId, status: "admitted" },
       runtime: {
-        applicationCommit,
+        frontendCommit,
         evidencePath: runtimeEvidencePath,
         evidenceSha256: hash(runtimeEvidenceBytes),
         status: "admitted",
@@ -96,7 +96,7 @@ const manifest = {
 await mkdir(join(root, "evidence/admissions"), { recursive: true });
 await writeFile(join(root, "evidence/admissions/eight-track-launch-admission.json"), jsonBytes(manifest));
 console.log(JSON.stringify({
-  applicationCommit,
+  frontendCommit,
   contentSourceCommit,
   manifest: relative(root, join(root, "evidence/admissions/eight-track-launch-admission.json")),
   runtimeEvidence: runtimeEvidencePath,

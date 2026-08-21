@@ -43,6 +43,18 @@ const IMPLEMENTED_FREE_PROFILES = Object.freeze({
     profileVersion: "1",
     profilePath: "config/free-node-experience-profiles/microsoft-azure-ai-fundamentals-ai-901.json",
     modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
+  }),
+  "google-cloud-associate-cloud-engineer": Object.freeze({
+    profileId: "google-cloud-associate-cloud-engineer-free-node-v1",
+    profileVersion: "1",
+    profilePath: "config/free-node-experience-profiles/google-cloud-associate-cloud-engineer.json",
+    modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
+  }),
+  "aws-certified-solutions-architect-associate": Object.freeze({
+    profileId: "aws-certified-solutions-architect-associate-free-node-v1",
+    profileVersion: "1",
+    profilePath: "config/free-node-experience-profiles/aws-certified-solutions-architect-associate.json",
+    modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
   })
 });
 

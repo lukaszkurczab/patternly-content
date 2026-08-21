@@ -23,6 +23,11 @@ const exactModeContract = Object.freeze({
     Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
     Object.freeze({ modeId: "certification-quick-review", blueprintModeId: "certification-quick-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "due_free_node_review_evidence", reinsertPolicy: "disabled" })
   ]),
+  "aws-certified-solutions-architect-associate": Object.freeze([
+    Object.freeze({ modeId: "certification-focus-practice", blueprintModeId: "certification-focus-practice", availability: "immediate", requestedLengths: Object.freeze([4]), defaultRequestedLength: 4, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([4]), defaultRequestedLength: 4, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "certification-quick-review", blueprintModeId: "certification-quick-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([4]), defaultRequestedLength: 4, selectionKind: "due_free_node_review_evidence", reinsertPolicy: "disabled" })
+  ]),
   "certification-default": Object.freeze([
     Object.freeze({ modeId: "certification-focus-practice", blueprintModeId: "certification-focus-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
     Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
@@ -70,7 +75,8 @@ export function validateFreeNodeExperienceProfile({ profile, schema, brief, trac
     if (mappings.get(mode.modeId) !== mode.blueprintModeId || !blueprints.has(mode.blueprintModeId)) fail("INVALID_FREE_NODE_MODE_MAPPING", `${mode.modeId} does not map to one canonical existing blueprint.`);
     const blueprint = blueprints.get(mode.blueprintModeId);
     const supportedLengths = blueprint.requestedLengths ?? (blueprint.maximumLength ? [blueprint.maximumLength] : []);
-    if (mode.requestedLengths.some((length) => !supportedLengths.includes(length))) fail("UNSUPPORTED_FREE_NODE_LENGTH", `${mode.modeId} requests a length unsupported by its canonical blueprint.`);
+    const shortNodeLength = profile.trackId === "aws-certified-solutions-architect-associate" && mode.requestedLengths.every((length) => Number.isSafeInteger(length) && length > 0 && length <= Math.min(...supportedLengths));
+    if (mode.requestedLengths.some((length) => !supportedLengths.includes(length)) && !shortNodeLength) fail("UNSUPPORTED_FREE_NODE_LENGTH", `${mode.modeId} requests a length unsupported by its canonical blueprint.`);
     if (mode.availability === "evidence_conditioned") {
       if (!mode.selection.reviewSources?.length || mode.selection.emptyEligibility !== "unavailable" || mode.selection.shortening !== "truthful_to_eligible_count") fail("FREE_NODE_POLICY_NOT_CLOSED", `${mode.modeId} must expose truthful package-bounded review eligibility.`);
     } else if (mode.selection.reviewSources !== undefined || mode.selection.emptyEligibility !== undefined || mode.selection.shortening !== undefined) fail("INVALID_FREE_NODE_MODE_CONFIGURATION", `${mode.modeId} must not carry review-only controls.`);

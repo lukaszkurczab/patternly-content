@@ -29,12 +29,14 @@ test("GCP authoring ingress is canonical while runtime selectors and old paths r
   for (const path of [
     "manual/source/google-cloud-associate-cloud-engineer/gcp-ace-0001.json",
     "manual/source/google-cloud-associate-cloud-engineer/README.md",
-    "config/tracks/google-cloud-associate-cloud-engineer.json",
-    "config/taxonomy/google-cloud-associate-cloud-engineer.json",
-    "config/free-node-experience-profiles/google-cloud-associate-cloud-engineer.json",
     "evidence/curriculum/2026.08.09/gcp-old-source-inventory.json",
     "manual/source/google-cloud-associate-cloud-engineer/setup_environment/compute_execution_model_selection.json",
   ]) await assert.rejects(() => stat(path), (error) => error?.code === "ENOENT");
+  for (const path of [
+    "config/tracks/google-cloud-associate-cloud-engineer.json",
+    "config/taxonomy/google-cloud-associate-cloud-engineer.json",
+    "config/free-node-experience-profiles/google-cloud-associate-cloud-engineer.json",
+  ]) await assert.doesNotReject(() => stat(path));
   await assert.doesNotReject(() => stat("artifacts/releases/patternly-core-0018/release.json"));
   await assert.doesNotReject(() => stat("artifacts/tracks/google-cloud-associate-cloud-engineer/gcp-ace-0016/track-artifact.json"));
 });

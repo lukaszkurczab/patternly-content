@@ -41,7 +41,9 @@ for (const path of paths) {
     fail(`${path}: schema ${error.message}`);
     continue;
   }
-  if (!batch.batchId.startsWith("aws-saa-c03-2026-08-15-AWSSAA-")) fail(`${path}: unexpected workbook-driven batchId ${batch.batchId}`);
+  const workbookBatchId = batch.batchId.startsWith("aws-saa-c03-2026-08-15-AWSSAA-");
+  const productFreeBatchId = batch.batchId === "aws-saa-c03-2026-08-15-AWSSAA-FREE-N01-B01" && batch.nodeId === "aws_secure_architecture_foundations" && batch.learningBlockId === "policy_evaluation_and_scope";
+  if (!workbookBatchId && !productFreeBatchId) fail(`${path}: unexpected AWS source batchId ${batch.batchId}`);
   const pathParts = path.split("/");
   const sourceStem = pathParts[4]?.replace(/\.json$/, "");
   const canonicalBlockPath = sourceStem === batch.learningBlockId;

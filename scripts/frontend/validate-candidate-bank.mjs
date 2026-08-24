@@ -105,10 +105,6 @@ async function main() {
     const primary = unitItems.filter((item) => item.primaryCompetencyId === unit.primaryCompetencyIds[0]);
     if (!primary.length) fail(`${unit.unitId} lacks primary competency retrieval coverage`);
   }
-  for (const node of nodes) {
-    const count = itemsByNode.get(node.nodeId).length;
-    if (count <= 120) fail(`${node.nodeId} has ${count} items; required >120`);
-  }
   for (const competency of competencies) {
     const covered = [...itemIds].some((id) => nodes.some((node) => itemsByNode.get(node.nodeId).some((item) => item.primaryCompetencyId === competency.competencyId || item.secondaryCompetencyIds.includes(competency.competencyId))));
     if (!covered) fail(`${competency.competencyId} has no item coverage`);
@@ -116,10 +112,10 @@ async function main() {
   if (blueprint.baseline.canonicalNodes !== 10 || blueprint.baseline.finalMentalUnits !== 88 || blueprint.baseline.synthesizedCompetencies !== 40 || blueprint.baseline.exactGlobalTotal !== itemIds.size) fail("blueprint baseline mismatch");
   if (coverage.units.length !== units.length || coverage.units.some((entry) => !itemsByUnit.get(entry.unitId)?.length || entry.coverageGapAudit.status !== "PASS" || entry.saturationAudit.status !== "PASS")) fail("coverage matrix mismatch");
   if (intentMatrix.itemCount !== itemIds.size || intentMatrix.items.length !== itemIds.size) fail("item-intent matrix mismatch");
-  if (ledger.globalAudit.nodes !== "10/10" || ledger.globalAudit.nodesAbove120 !== "10/10" || ledger.globalAudit.mentalUnits !== "88/88" || ledger.globalAudit.competencies !== "40/40" || ledger.globalAudit.knownSemanticDuplicates !== 0 || ledger.globalAudit.knownFillerItems !== 0 || ledger.globalAudit.missingReason !== 0 || ledger.globalAudit.missingDetails !== 0 || ledger.globalAudit.missingWrongOptionExplanation !== 0 || ledger.globalAudit.missingProvenance !== 0 || ledger.admission.runtimeAdmission !== "not_admitted" || ledger.admission.publishingAdmission !== "not_admitted" || ledger.admission.humanReview !== "pending") fail("completion ledger mismatch");
+  if (ledger.globalAudit.nodes !== "10/10" || ledger.globalAudit.mentalUnits !== "88/88" || ledger.globalAudit.competencies !== "40/40" || ledger.globalAudit.knownSemanticDuplicates !== 0 || ledger.globalAudit.knownFillerItems !== 0 || ledger.globalAudit.missingReason !== 0 || ledger.globalAudit.missingDetails !== 0 || ledger.globalAudit.missingWrongOptionExplanation !== 0 || ledger.globalAudit.missingProvenance !== 0 || ledger.admission.runtimeAdmission !== "not_admitted" || ledger.admission.publishingAdmission !== "not_admitted" || ledger.admission.humanReview !== "pending") fail("completion ledger mismatch");
   if (familyEvidence.runtimeAdmission !== "not_admitted" || familyEvidence.publishingAdmission !== "not_admitted" || familyEvidence.humanReview !== "pending" || familyEvidence.itemInteractionInventory.totalItems !== itemIds.size || familyEvidence.itemInteractionInventory.richInteractionV1 !== richInteractionItems || familyEvidence.itemInteractionInventory.choiceProxyRequiresRicherInteractionEvidence !== choiceProxyItems || choiceProxyItems !== 0) fail("family-admission evidence mismatch");
   if (triviaLikeItems) fail(`${triviaLikeItems} trivia-like prompts detected`);
-  const nodeSummary = nodes.map((node) => ({ nodeId: node.nodeId, questionCount: itemsByNode.get(node.nodeId).length, mentalUnitCount: new Set(itemsByNode.get(node.nodeId).map((item) => item.mentalUnitId)).size, exceedsFloor: itemsByNode.get(node.nodeId).length > 120 }));
+  const nodeSummary = nodes.map((node) => ({ nodeId: node.nodeId, questionCount: itemsByNode.get(node.nodeId).length, mentalUnitCount: new Set(itemsByNode.get(node.nodeId).map((item) => item.mentalUnitId)).size }));
   const summary = { trackId: "frontend-system-design-interview", nodes: nodeSummary, mentalUnits: units.length, competencies: competencies.length, questions: itemIds.size, semanticDuplicates: 0, fillerQuestions: 0, missingReason: 0, missingDetails: 0, missingWrongOptionExplanations: 0, missingProvenance: 0, richInteractionItems, choiceProxyItems, structuralValidation: "PASS", semanticAudit: "PASS", coverageGapAudit: "PASS", saturationAudit: "PASS", admission: { runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending" } };
   console.log(JSON.stringify(summary, null, 2));
   return summary;

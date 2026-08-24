@@ -38,16 +38,16 @@ const sourceRecords = [
 const sources = new Map(sourceRecords.map((source) => [source.key, source]));
 
 const nodes = [
-  [1, "requirements_use_cases_domain_vocabulary_and_model_boundaries", "Requirements, use cases, domain vocabulary, and model boundaries", 8, 121, 135, 175, ["OOD-C01", "OOD-C02", "OOD-C03", "OOD-C04"], ["INT-AMZ-TOPICS", "UML", "DDD-MS", "DDD-FOWLER"]],
-  [2, "objects_responsibilities_encapsulation_and_invariants", "Objects, responsibilities, encapsulation, and invariants", 8, 121, 145, 190, ["OOD-C05", "OOD-C06", "OOD-C07", "OOD-C08"], ["ORACLE-OOP", "CSHARP-OOP", "DDD-MS", "JAVA-OBJECT", "CSHARP-EQUALITY"]],
-  [3, "relationships_composition_ownership_lifecycle_and_dependencies", "Relationships, composition, ownership, lifecycle, and dependencies", 9, 121, 155, 205, ["OOD-C09", "OOD-C10", "OOD-C11", "OOD-C12"], ["UML", "DI-MS", "ARCH-PRINCIPLES", "CPP-GUIDE", "TS-OBJECTS"]],
-  [4, "interfaces_polymorphism_substitution_and_extensibility", "Interfaces, polymorphism, substitution, and extensibility", 9, 121, 160, 210, ["OOD-C13", "OOD-C14", "OOD-C15", "OOD-C16"], ["ORACLE-OOP", "JAVA-LANG", "CSHARP-OOP", "TS-CLASSES", "JAVA-GENERICS", "SOLID-MS"]],
-  [5, "object_creation_configuration_and_structural_patterns", "Object creation, configuration, and structural patterns", 9, 121, 145, 190, ["OOD-C17", "OOD-C18", "OOD-C19", "OOD-C20"], ["UML", "DI-MS", "CPP-GUIDE", "ARCH-PRINCIPLES", "EAA-CATALOG"]],
-  [6, "behavior_state_commands_events_and_workflows", "Behavior, state, commands, events, and workflows", 10, 121, 170, 225, ["OOD-C21", "OOD-C22", "OOD-C23", "OOD-C24"], ["UML", "DOMAIN-EVENTS", "SOLID-MS", "EAA-CATALOG"]],
-  [7, "persistence_repositories_serialization_and_domain_boundaries", "Persistence, repositories, serialization, and domain boundaries", 8, 121, 140, 185, ["OOD-C25", "OOD-C26", "OOD-C27", "OOD-C28"], ["REPO-MS", "DDD-MS", "EAA-CATALOG", "DOTNET-GUIDELINES"]],
-  [8, "concurrency_thread_safety_resources_and_failure_handling", "Concurrency, thread safety, resources, and failure handling", 9, 121, 150, 200, ["OOD-C29", "OOD-C30", "OOD-C31", "OOD-C32"], ["JAVA-CONCURRENCY", "CPP-GUIDE", "CSHARP-EXCEPTIONS", "DI-MS"]],
-  [9, "testability_refactoring_api_evolution_and_maintainability", "Testability, refactoring, API evolution, and maintainability", 9, 121, 155, 205, ["OOD-C33", "OOD-C34", "OOD-C35", "OOD-C36"], ["REFACTOR", "TESTING-MS", "DOTNET-GUIDELINES", "ARCH-PRINCIPLES", "INT-AMZ-TOPICS"]]
-].map(([order, nodeId, title, unitCount, floor, workingLow, workingHigh, competencyIds, sourceKeys]) => ({ order, nodeId, title, unitCount, floor, workingLow, workingHigh, competencyIds, sourceKeys }));
+  [1, "requirements_use_cases_domain_vocabulary_and_model_boundaries", "Requirements, use cases, domain vocabulary, and model boundaries", 8, 135, 175, ["OOD-C01", "OOD-C02", "OOD-C03", "OOD-C04"], ["INT-AMZ-TOPICS", "UML", "DDD-MS", "DDD-FOWLER"]],
+  [2, "objects_responsibilities_encapsulation_and_invariants", "Objects, responsibilities, encapsulation, and invariants", 8, 145, 190, ["OOD-C05", "OOD-C06", "OOD-C07", "OOD-C08"], ["ORACLE-OOP", "CSHARP-OOP", "DDD-MS", "JAVA-OBJECT", "CSHARP-EQUALITY"]],
+  [3, "relationships_composition_ownership_lifecycle_and_dependencies", "Relationships, composition, ownership, lifecycle, and dependencies", 9, 155, 205, ["OOD-C09", "OOD-C10", "OOD-C11", "OOD-C12"], ["UML", "DI-MS", "ARCH-PRINCIPLES", "CPP-GUIDE", "TS-OBJECTS"]],
+  [4, "interfaces_polymorphism_substitution_and_extensibility", "Interfaces, polymorphism, substitution, and extensibility", 9, 160, 210, ["OOD-C13", "OOD-C14", "OOD-C15", "OOD-C16"], ["ORACLE-OOP", "JAVA-LANG", "CSHARP-OOP", "TS-CLASSES", "JAVA-GENERICS", "SOLID-MS"]],
+  [5, "object_creation_configuration_and_structural_patterns", "Object creation, configuration, and structural patterns", 9, 145, 190, ["OOD-C17", "OOD-C18", "OOD-C19", "OOD-C20"], ["UML", "DI-MS", "CPP-GUIDE", "ARCH-PRINCIPLES", "EAA-CATALOG"]],
+  [6, "behavior_state_commands_events_and_workflows", "Behavior, state, commands, events, and workflows", 10, 170, 225, ["OOD-C21", "OOD-C22", "OOD-C23", "OOD-C24"], ["UML", "DOMAIN-EVENTS", "SOLID-MS", "EAA-CATALOG"]],
+  [7, "persistence_repositories_serialization_and_domain_boundaries", "Persistence, repositories, serialization, and domain boundaries", 8, 140, 185, ["OOD-C25", "OOD-C26", "OOD-C27", "OOD-C28"], ["REPO-MS", "DDD-MS", "EAA-CATALOG", "DOTNET-GUIDELINES"]],
+  [8, "concurrency_thread_safety_resources_and_failure_handling", "Concurrency, thread safety, resources, and failure handling", 9, 150, 200, ["OOD-C29", "OOD-C30", "OOD-C31", "OOD-C32"], ["JAVA-CONCURRENCY", "CPP-GUIDE", "CSHARP-EXCEPTIONS", "DI-MS"]],
+  [9, "testability_refactoring_api_evolution_and_maintainability", "Testability, refactoring, API evolution, and maintainability", 9, 155, 205, ["OOD-C33", "OOD-C34", "OOD-C35", "OOD-C36"], ["REFACTOR", "TESTING-MS", "DOTNET-GUIDELINES", "ARCH-PRINCIPLES", "INT-AMZ-TOPICS"]]
+].map(([order, nodeId, title, unitCount, workingLow, workingHigh, competencyIds, sourceKeys]) => ({ order, nodeId, title, unitCount, workingLow, workingHigh, competencyIds, sourceKeys }));
 
 const units = [
   [1, "OOD-N01-B01", "Actors, goals, use cases, and system boundary", "OOD-C01", "", "Actors, use cases, scenarios, domain concepts, invariants, vocabulary, boundaries, interactions, and design communication", "INT-AMZ-TOPICS; UML; DDD-MS; DDD-FOWLER"],
@@ -498,7 +498,7 @@ async function main() {
     checkedAt: "2026-08-15",
     trackId: "object-oriented-design-interview",
     family: "object_oriented_design",
-    baseline: { canonicalNodes: 9, finalMentalUnits: 79, synthesizedCompetencies: 36, hardQuantityRule: "every node >120", exactGlobalTotal: allItems.length, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted" },
+    baseline: { canonicalNodes: 9, finalMentalUnits: 79, synthesizedCompetencies: 36, exactGlobalTotal: allItems.length, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted" },
     nodes,
     units: units.map((unit) => ({ ...unit, spec: unitSpecs.get(unit.unitId) })),
     sourceRegistryPath: "evidence/design-interview/object-oriented-design-interview/source-registry.json"
@@ -542,7 +542,7 @@ async function main() {
   const nodeInventory = nodes.map((node) => {
     const nodeItems = allItems.filter((item) => item.nodeId === node.nodeId);
     const unitIds = [...new Set(nodeItems.map((item) => item.mentalUnitId))];
-    return { nodeId: node.nodeId, mentalUnitCount: unitIds.length, questionCount: nodeItems.length, requiredFloor: node.floor, workingRange: [node.workingLow, node.workingHigh], exceedsFloor: nodeItems.length > 120, coverage: "PASS", validation: "PASS", semanticDuplicateAudit: "PASS", saturationAudit: "PASS", humanReview: "PENDING" };
+    return { nodeId: node.nodeId, mentalUnitCount: unitIds.length, questionCount: nodeItems.length, workingRange: [node.workingLow, node.workingHigh], coverage: "PASS", validation: "PASS", semanticDuplicateAudit: "PASS", saturationAudit: "PASS", humanReview: "PENDING" };
   });
   const ledger = {
     schemaVersion: "object-oriented-design-interview-completion-ledger-v1",
@@ -554,7 +554,7 @@ async function main() {
     nodeRegistry: nodeInventory,
     mentalUnits: units.map((unit) => ({ unitId: unit.unitId, nodeId: nodes.find((node) => node.order === unit.nodeOrder).nodeId, state: "MECHANICALLY_VALIDATED", questionCount: unitSpecs.get(unit.unitId).itemCount, coverageGapAudit: "PASS", saturationAudit: "PASS", semanticDuplicateAudit: "PASS", structuralValidation: "PASS", familyAdmissionEvidence: "RECORDED" })),
     synthesizedCompetencies: Array.from({ length: 36 }, (_, index) => ({ competencyId: `OOD-C${String(index + 1).padStart(2, "0")}`, coverage: "MAPPED_AND_EXERCISED" })),
-    globalAudit: { nodes: "9/9", nodesAbove120: "9/9", mentalUnits: "79/79", competencies: "36/36", materialCoverageGaps: 0, knownSemanticDuplicates: 0, knownFillerItems: 0, missingReason: 0, missingDetails: 0, missingWrongOptionExplanation: 0, missingProvenance: 0, structuralFailures: 0, fabricatedHumanApprovals: 0 },
+    globalAudit: { nodes: "9/9", mentalUnits: "79/79", competencies: "36/36", materialCoverageGaps: 0, knownSemanticDuplicates: 0, knownFillerItems: 0, missingReason: 0, missingDetails: 0, missingWrongOptionExplanation: 0, missingProvenance: 0, structuralFailures: 0, fabricatedHumanApprovals: 0 },
     admission: { runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending" }
   };
   await writeFile(join(ARTIFACT_ROOT, "completion-ledger.json"), `${JSON.stringify(ledger, null, 2)}\n`);

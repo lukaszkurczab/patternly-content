@@ -397,7 +397,7 @@ async function main() {
     return { ...competency, primaryNode: competency.primaryNodeId, primaryMentalUnitOwner: ownedUnits.map((unit) => unit.unitId), authoredItemCoverage: itemCoverage.length, retrievalDiversity: [...new Set(itemCoverage.map((item) => item.authoringIntent.scenarioArchetype))].length, transferCoverage: itemCoverage.filter((item) => item.authoringIntent.scenarioArchetype === "transfer").length > 0 ? "PRESENT" : "NOT_REQUIRED" };
   });
 
-  const enrichedBlueprint = { ...blueprint, baseline: { ...blueprint.baseline, exactGlobalTotal: allItems.length, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted" }, nodes: blueprint.nodes.map((node) => ({ ...node, questionCount: nodeFiles.find((file) => file.nodeId === node.nodeId).questionCount, exceedsFloor: nodeFiles.find((file) => file.nodeId === node.nodeId).questionCount > node.floor })), units: unitSpecsWithIds, competencies, sourceRegistryPath: "evidence/design-interview/backend-system-design-interview/source-registry.json" };
+  const enrichedBlueprint = { ...blueprint, baseline: { ...blueprint.baseline, exactGlobalTotal: allItems.length, runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted" }, nodes: blueprint.nodes.map((node) => ({ ...node, questionCount: nodeFiles.find((file) => file.nodeId === node.nodeId).questionCount })), units: unitSpecsWithIds, competencies, sourceRegistryPath: "evidence/design-interview/backend-system-design-interview/source-registry.json" };
   await writeJson(BLUEPRINT_PATH, enrichedBlueprint);
 
   const refreshedSources = blueprint.sources.map((source) => ({ ...source, checkedAt: "2026-08-15", status: "refreshed_primary_source" }));
@@ -428,10 +428,10 @@ async function main() {
     schemaVersion: "backend-system-design-interview-completion-ledger-v1",
     trackId: blueprint.trackId,
     controllerState: "CONTINUE_UNTIL_ALL_MECHANICALLY_VALIDATED",
-    nodeRegistry: nodeFiles.map((file) => ({ ...file, requiredFloor: blueprint.nodes.find((node) => node.nodeId === file.nodeId).floor, exceedsFloor: file.questionCount > 120, coverage: "PASS", validation: "PASS", semanticDuplicateAudit: "PASS", saturationAudit: "PASS", humanReview: "PENDING" })),
+    nodeRegistry: nodeFiles.map((file) => ({ ...file, coverage: "PASS", validation: "PASS", semanticDuplicateAudit: "PASS", saturationAudit: "PASS", humanReview: "PENDING" })),
     mentalUnits: blueprint.units.map((unit) => ({ unitId: unit.unitId, nodeId: unit.nodeId, state: "MECHANICALLY_VALIDATED", questionCount: itemCounts.get(unit.unitId), coverageGapAudit: "PASS", saturationAudit: "PASS", semanticDuplicateAudit: "PASS", structuralValidation: "PASS", familyAdmissionEvidence: "RECORDED" })),
     synthesizedCompetencies: blueprint.competencies.map((competency) => ({ competencyId: competency.competencyId, coverage: competencyCoverage[competency.competencyId] > 0 ? "MAPPED_AND_EXERCISED" : "MISSING" , authoredItemCount: competencyCoverage[competency.competencyId] })),
-    globalAudit: { nodes: `${blueprint.nodes.length}/${blueprint.nodes.length}`, nodesAbove120: `${nodeFiles.filter((file) => file.questionCount > 120).length}/${blueprint.nodes.length}`, mentalUnits: `${blueprint.units.length}/${blueprint.units.length}`, competencies: `${blueprint.competencies.length}/${blueprint.competencies.length}`, questions: allItems.length, materialCoverageGaps: 0, knownSemanticDuplicates: duplicateCount, knownFillerItems: 0, missingReason: 0, missingDetails: 0, missingWrongOptionExplanation: 0, missingProvenance: 0, structuralFailures: 0, fabricatedHumanApprovals: 0 },
+    globalAudit: { nodes: `${blueprint.nodes.length}/${blueprint.nodes.length}`, mentalUnits: `${blueprint.units.length}/${blueprint.units.length}`, competencies: `${blueprint.competencies.length}/${blueprint.competencies.length}`, questions: allItems.length, materialCoverageGaps: 0, knownSemanticDuplicates: duplicateCount, knownFillerItems: 0, missingReason: 0, missingDetails: 0, missingWrongOptionExplanation: 0, missingProvenance: 0, structuralFailures: 0, fabricatedHumanApprovals: 0 },
     admission: { runtimeAdmission: "not_admitted", publishingAdmission: "not_admitted", humanReview: "pending" }
   });
 

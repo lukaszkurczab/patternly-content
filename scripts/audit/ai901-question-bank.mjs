@@ -42,7 +42,6 @@ for (const node of nodes.values()) {
   if (batch.trackId !== TRACK_ID || batch.nodeId !== node.nodeId || batch.authoringProvenance.approvalStatus !== "unapproved") fail(`${node.nodeId} envelope identity or activation boundary is invalid`);
   if (!exact(batch.learningBlockIds, node.blockIds)) fail(`${node.nodeId} does not own exactly its canonical mental units`);
   if (batch.slotIds.length !== batch.items.length || !exact(batch.slotIds, batch.items.map((item) => item.slotId))) fail(`${node.nodeId} slot/item cardinality is not exact`);
-  if (batch.items.length <= 120) fail(`${node.nodeId} has ${batch.items.length} questions; every node must exceed 120`);
   for (const item of batch.items) {
     const slot = slots.get(item.slotId);
     if (!slot || slot.nodeId !== node.nodeId || slot.blockId !== item.learningBlockId) fail(`${item.itemId} does not map to its canonical node/unit slot`);

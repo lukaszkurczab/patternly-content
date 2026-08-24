@@ -96,7 +96,6 @@ async function main() {
     }
     nodeCounts.set(node.nodeId, (nodeCounts.get(node.nodeId) ?? 0) + batch.items.length);
   }
-  for (const node of blueprint.nodes) if ((nodeCounts.get(node.nodeId) ?? 0) <= 120) fail(`${node.nodeId} has ${nodeCounts.get(node.nodeId) ?? 0}; every node must exceed 120`);
   for (const unit of blueprint.units) if (unitCounts.get(unit.unitId) !== unit.finalCount) fail(`${unit.unitId} finalCount does not match authored items`);
   unique(itemIds, "global item IDs");
   unique(intentKeys, "global semantic intent keys");

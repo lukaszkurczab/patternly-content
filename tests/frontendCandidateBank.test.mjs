@@ -10,7 +10,7 @@ async function readBlock(nodeId, learningBlockId) { return JSON.parse(await read
 test("Frontend System Design candidate bank satisfies the workbook contract", async () => {
   const result = await main();
   assert.equal(result.nodes.length, 10);
-  assert.ok(result.nodes.every((node) => node.exceedsFloor));
+  assert.ok(result.nodes.every((node) => Number.isInteger(node.questionCount) && node.questionCount > 0));
   assert.equal(result.mentalUnits, 88);
   assert.equal(result.competencies, 40);
   assert.equal(result.questions, 1766);

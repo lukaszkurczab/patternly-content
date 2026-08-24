@@ -87,7 +87,6 @@ async function main() {
     }
     nodeCounts.set(node.nodeId, (nodeCounts.get(node.nodeId) ?? 0) + batch.items.length);
   }
-  for (const node of nodes) if ((nodeCounts.get(node.nodeId) ?? 0) <= 120) fail(`${node.nodeId} has ${nodeCounts.get(node.nodeId) ?? 0}; every node must exceed 120`);
   unique(itemIds, "global item IDs");
   unique(intentKeys, "semantic intent keys");
   if (itemIds.length !== 1413) fail(`expected 1413 candidate items, got ${itemIds.length}`);

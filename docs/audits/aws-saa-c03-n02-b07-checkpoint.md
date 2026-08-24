@@ -18,4 +18,4 @@ Candidate source batch `aws-saa-c03-2026-08-15-AWSSAA-N02-B07` is authored and p
 
 ## Next
 
-N02 now totals 122 candidate questions across six canonical mental units plus this repeated batch and exceeds the workbook node floor. Continue with N03 `vpc_security_segmentation_and_private_service_access`; later run the global catalog/publishing gates after the unrelated repository blockers are resolved.
+N02 now totals 122 candidate questions across six canonical mental units plus this repeated batch. The count is retained as operational provenance and does not create a node floor or authorize expansion. Continue with N03 `vpc_security_segmentation_and_private_service_access`; later run the catalog and publishing gates after the unrelated repository blockers are resolved.

@@ -46,4 +46,4 @@ Repository-wide validation is not a clean release gate yet. The existing shared 
 
 ## Remaining work
 
-N01 is above the workbook's per-node minimum, but it is still pending human review and runtime admission. N02 authoring has started with `organizations_accounts_ous_and_hierarchy`; the next N02 mental unit is `control_tower_and_preventive_detective_guardrails`, followed by cross-node catalog integration and a fresh global validation pass after the unrelated repository blockers are resolved.
+N01's recorded authored count remains pending human review and runtime admission. N02 authoring has started with `organizations_accounts_ous_and_hierarchy`; the next N02 mental unit is `control_tower_and_preventive_detective_guardrails`, followed by cross-node catalog integration and a fresh validation pass after the unrelated repository blockers are resolved.

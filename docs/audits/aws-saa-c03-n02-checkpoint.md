@@ -2,7 +2,7 @@
 
 ## Status
 
-Candidate source for `multi_account_governance_and_resource_authorization` is complete against the workbook's per-node floor. All authored content remains `unapproved` and is not runtime-admitted.
+Candidate source for `multi_account_governance_and_resource_authorization` is complete for its current planned authoring slice. The recorded count is operational evidence, not a readiness floor. All authored content remains `unapproved` and is not runtime-admitted.
 
 ## Batches
 
@@ -23,4 +23,4 @@ Candidate source for `multi_account_governance_and_resource_authorization` is co
 
 ## Remaining work
 
-Continue with N03 `vpc_security_segmentation_and_private_service_access`, then complete the remaining workbook nodes and perform the global catalog, publication, and human-review handoffs.
+Continue with N03 `vpc_security_segmentation_and_private_service_access`, then complete the remaining workbook authoring slices and perform the catalog, publication, and human-review handoffs. No count threshold is an admission gate.

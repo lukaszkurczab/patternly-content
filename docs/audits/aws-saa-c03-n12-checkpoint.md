@@ -1,15 +1,15 @@
 # AWS SAA-C03 N12 checkpoint — historical evidence
 
-> This checkpoint preserves its original audit evidence. Its reference to a
-> repository rule above 120 items is superseded by the 2026-08-24 owner directive:
-> no global question-count threshold defines readiness, and content changes are
-> targeted and evidence-driven.
+> This checkpoint preserves its original audit evidence. Its earlier numeric
+> planning note is retained as provenance only; the 2026-08-24 owner directive
+> makes clear that no global question-count threshold defines readiness and that
+> content changes are targeted and evidence-driven.
 
 ## Storage performance, scalability and hybrid access
 
 Node: \`storage_performance_scalability_and_hybrid_access\`
 
-All source items remain \`unapproved\` candidate content pending human review. The workbook's planned count is a planning estimate, not a filler quota; the node is intentionally above the repository rule of more than 120 authored questions.
+All source items remain \`unapproved\` candidate content pending human review. The workbook's planned count is a planning estimate, not a filler quota or readiness floor; the node contains 124 candidate items as recorded operational provenance.
 
 | Learning block | Items |
 | --- | ---: |

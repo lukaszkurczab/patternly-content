@@ -9,7 +9,7 @@ import { verifyArtifactRecord } from "../publishing/pipeline.mjs";
 const exec = promisify(execFile);
 const root = process.cwd();
 const frontendRoot = resolve(process.env.PATTERNLY_FRONTEND_ROOT ?? join(root, "..", "patternly"));
-const releaseId = "patternly-launch-2026-08-21-02";
+const releaseId = "patternly-launch-2026-08-25-01";
 const trackIds = [
   "aws-certified-solutions-architect-associate",
   "backend-system-design-interview",

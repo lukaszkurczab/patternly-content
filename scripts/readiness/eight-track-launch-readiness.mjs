@@ -59,7 +59,7 @@ function loadAdmissionManifest(expectedSourceCommit) {
   try {
     const manifest = JSON.parse(readFileSync(join(root, ADMISSION_MANIFEST_PATH), "utf8"));
     if (manifest?.schemaVersion !== "eight-track-launch-admission-v1"
-      || manifest?.releaseId !== "patternly-launch-2026-08-21-02"
+      || manifest?.releaseId !== "patternly-launch-2026-08-25-01"
       || manifest?.contentSourceCommit !== expectedSourceCommit
       || !validSha(manifest?.frontendCommit, 40)
       || !Array.isArray(manifest?.tracks)

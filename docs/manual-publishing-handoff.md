@@ -4,6 +4,14 @@
 
 Patternly has three authoring families: `coding_interview`, `certification`, and `design_interview`. Authoring readiness means that a slot has a canonical curriculum binding, interaction and feedback contract, exact provenance requirement, deterministic future source path, and human-review handoff. It does not mean human approval, runtime publication, package readiness, release admission, or production activation.
 
+Launch scope is exactly eight learner-visible tracks. The authoring catalogue may
+contain post-launch briefs, but they do not enter launch admission or runtime
+registration. The accepted eight-track launch banks are the final baseline: content
+is not mass-reduced, mass-expanded, or exhaustively re-reviewed. There is no
+global `>120 questions/node` readiness rule; counts are operational evidence, and
+changes are targeted to demonstrated defects or coverage/profile/provenance needs.
+Patternly's value is decision practice and remediation, not question-bank size.
+
 Every new batch is manual and unapproved until a human technical/editorial review record exists. Structural validation never creates approval identities or activates content.
 
 For the current launch review, the owner explicitly confirmed the exact eight-track source manifests from commit `e73c7314eee7b2cd3f53b04c952b6af6526d3685`. The agent-prepared records under `evidence/content-approvals/` remain traceability evidence and never count as human approval. The owner decision is stored separately in `evidence/human-content-approvals/manifest.json`, binds each exact source and item manifest to the recorded human owner and confirmation date, and does not grant runtime or publishing admission or replace provider, store, signing, or device gates. No agent command may create or upgrade that owner decision.
@@ -33,6 +41,12 @@ Every Coding Interview item has one primary skill atom, de-duplicated secondary 
 The checked-in Coding Interview taxonomy and 213 source batches are canonical and schema-validated. Any new batch must provide the complete versioned taxonomy manifest required by the source contract; this remains `MANUAL ONLY` and is never replaced with inferred mappings.
 
 The only Coding Interview mode IDs are `coding-interview-learn-approach`, `coding-interview-guided-practice`, `coding-interview-recognize-patterns`, `coding-interview-contrast-practice`, `coding-interview-weak-area-review`, `coding-interview-independent-practice`, and `coding-interview-simulation`. The six practice blueprints and the fixed-40 simulation blueprint are owned only by `config/tracks/coding-interview-dsa-problem-solving.json`; source batches do not own mode blueprints. Recognition sets, contrast sets, interleaved scopes, compatibility sets, simulation pools, and simulation profiles remain explicit source structures. A declared mode is content-ready only when its track blueprint meets its `minimumActualLength`; bank-wide item count is not evidence. Interview Simulation uses one declared pool/profile and deterministic `sha256-ranked-constraints-v1` selection of exactly 40 unique items without replacement.
+
+The local/internal Content Review Console is a review aid over these source files,
+not a second authority. It may surface advisory risks, coverage, and
+changed-since-review state, but explicit human outcomes remain required and source
+fingerprints bind the review. It has no cloud, remote database, production auth,
+secrets, automatic rewrite, or self-approval path.
 
 ## Commands and hard stops
 

@@ -1,4 +1,9 @@
-# GCP Associate Cloud Engineer — audyt źródła i plan authoringu
+# GCP Associate Cloud Engineer — historical audyt źródła i plan authoringu
+
+> This report preserves a prior authoring snapshot and is not current repository
+> authority. Current source/configuration state, immutable evidence, and launch
+> scope are determined by the canonical authoring contracts and current validators;
+> the 2026-08-24 owner directive supersedes contradictory status or count claims.
 
 ## Zakres i źródło wejściowe
 

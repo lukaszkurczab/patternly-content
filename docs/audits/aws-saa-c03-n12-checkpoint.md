@@ -1,4 +1,9 @@
-# AWS SAA-C03 N12 checkpoint
+# AWS SAA-C03 N12 checkpoint — historical evidence
+
+> This checkpoint preserves its original audit evidence. Its reference to a
+> repository rule above 120 items is superseded by the 2026-08-24 owner directive:
+> no global question-count threshold defines readiness, and content changes are
+> targeted and evidence-driven.
 
 ## Storage performance, scalability and hybrid access
 

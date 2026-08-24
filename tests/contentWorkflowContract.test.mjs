@@ -41,31 +41,20 @@ test("GCP authoring ingress is canonical while runtime selectors and old paths r
   await assert.doesNotReject(() => stat("artifacts/tracks/google-cloud-associate-cloud-engineer/gcp-ace-0016/track-artifact.json"));
 });
 
-test("readiness reports only a current immutable artifact whose inputs still match HEAD", () => {
+test("readiness refuses superseded immutable artifacts whose inputs no longer match HEAD", () => {
   const az = readiness.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
   const ai = readiness.tracks.find((track) => track.trackId === "microsoft-azure-ai-fundamentals-ai-901");
   const gcp = readiness.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
-  assert.deepEqual(az?.immutableArtifact, {
-    checksumSha256: "968386e75c9abd4b54401e9876dadba6c0dbd01003aea8cfcad3a8d7027569ec",
-    presence: "verified",
-    releaseId: "patternly-launch-2026-08-21-02",
-    sourceRepositoryCommit: "868a565f638286d45b5e5cef1acd1a7bf97fc38d",
-    version: "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15",
-  });
-  assert.deepEqual(ai?.immutableArtifact, {
-    checksumSha256: "474f1a403baf502abe10980ff4d7563493664ef1bad7859e2d0fb0ff65fb92c4",
-    presence: "verified",
-    releaseId: "patternly-launch-2026-08-21-02",
-    sourceRepositoryCommit: "868a565f638286d45b5e5cef1acd1a7bf97fc38d",
-    version: "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15",
-  });
-  assert.deepEqual(gcp?.immutableArtifact, {
-    checksumSha256: "732f915e43542ca1318bf32aafd1f2cfab77012eb3c8d236a362a92a993740e4",
-    presence: "verified",
-    releaseId: "patternly-launch-2026-08-21-02",
-    sourceRepositoryCommit: "868a565f638286d45b5e5cef1acd1a7bf97fc38d",
-    version: "google-cloud-associate-cloud-engineer-authoring-v2026.08.11",
-  });
+  for (const [trackId, track] of [
+    ["microsoft-azure-administrator-associate-az-104", az],
+    ["microsoft-azure-ai-fundamentals-ai-901", ai],
+    ["google-cloud-associate-cloud-engineer", gcp],
+  ]) {
+    assert.deepEqual(track?.immutableArtifact, {
+      presence: "not_verified_by_source-only-report",
+      version: null,
+    }, trackId);
+  }
 });
 
 test("readiness records the result of every canonical technical validator", () => {

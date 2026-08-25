@@ -41,7 +41,7 @@ test("GCP authoring ingress is canonical while runtime selectors and old paths r
   await assert.doesNotReject(() => stat("artifacts/tracks/google-cloud-associate-cloud-engineer/gcp-ace-0016/track-artifact.json"));
 });
 
-test("readiness refuses superseded immutable artifacts whose inputs no longer match HEAD", () => {
+test("readiness verifies the current immutable artifacts against the active release", () => {
   const az = readiness.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
   const ai = readiness.tracks.find((track) => track.trackId === "microsoft-azure-ai-fundamentals-ai-901");
   const gcp = readiness.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
@@ -50,10 +50,9 @@ test("readiness refuses superseded immutable artifacts whose inputs no longer ma
     ["microsoft-azure-ai-fundamentals-ai-901", ai],
     ["google-cloud-associate-cloud-engineer", gcp],
   ]) {
-    assert.deepEqual(track?.immutableArtifact, {
-      presence: "not_verified_by_source-only-report",
-      version: null,
-    }, trackId);
+    assert.equal(track?.immutableArtifact?.presence, "verified", trackId);
+    assert.equal(track?.immutableArtifact?.releaseId, "patternly-launch-2026-08-25-01", trackId);
+    assert.equal(track?.immutableArtifact?.sourceRepositoryCommit, "6a6fd729b9d45086aa5d4f6cf27ec48ef664811c", trackId);
   }
 });
 

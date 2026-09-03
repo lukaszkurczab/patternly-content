@@ -563,12 +563,14 @@ function normalizeModernCertificationItem(value, cloudDomains) {
   const options = list(interaction.options, `${id} options`, "INVALID_RESPONSE").map((option) => { const entry = record(option, `${id} option`, "INVALID_RESPONSE"); return { id: text(entry.optionId, `${id} option id`, "INVALID_RESPONSE"), text: text(entry.text, `${id} option text`, "INVALID_RESPONSE") }; });
   const correctOptionIds = ids(interaction.acceptedOptionIds, `${id} acceptedOptionIds`, "INVALID_RESPONSE");
   const tags = ids([...new Set([domain, taxonomy.competencyAreaId, taxonomy.topicId, taxonomy.skillAtomId])], `${id} taxonomy tags`, "INVALID_REFERENCE");
+  const prompt = text(source.prompt, `${id} prompt`, "INVALID_RESPONSE");
+  const constraints = list(source.constraints, `${id} constraints`, "INVALID_RESPONSE").map((constraint, index) => text(constraint, `${id} constraint ${index + 1}`, "INVALID_RESPONSE"));
   const feedbackSource = record(source.feedback, `${id} feedback`, "INVALID_RESPONSE");
   return {
     id,
     domain,
     type,
-    question: text(source.prompt, `${id} prompt`, "INVALID_RESPONSE"),
+    question: `${prompt}\n\n${constraints.map((constraint) => `• ${constraint}`).join("\n")}`,
     options,
     correctOptionIds,
     feedback: {

@@ -75,7 +75,7 @@ test("briefs keep complete-track validModes separate from intended or implemente
   for (const brief of canonicalBriefs) {
     assert.ok(brief.freeNodeExperience.modeIds.every((modeId) => brief.validModes.includes(modeId)));
     assert.ok(brief.freeNodeExperience.modeIds.length < brief.validModes.length);
-    if (["coding-interview-dsa-problem-solving", "google-cloud-associate-cloud-engineer", "aws-certified-solutions-architect-associate", "microsoft-azure-administrator-associate-az-104", "microsoft-azure-ai-fundamentals-ai-901", "backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"].includes(brief.trackId)) {
+    if (["coding-interview-dsa-problem-solving", "claude-certified-architect-professional-certification", "google-cloud-associate-cloud-engineer", "aws-certified-solutions-architect-associate", "microsoft-azure-administrator-associate-az-104", "microsoft-azure-ai-fundamentals-ai-901", "backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"].includes(brief.trackId)) {
       assert.equal(brief.freeNodeExperience.implementationStatus, "profile_implemented");
       assert.ok(brief.freeNodeExperience.profilePath);
     } else {

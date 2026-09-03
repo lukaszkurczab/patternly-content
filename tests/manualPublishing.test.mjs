@@ -529,6 +529,48 @@ test("certification publishes a validated, explicit exam experience profile", as
   } finally { await rm(path, { recursive: true }); }
 });
 
+test("modern certification source preserves ordered constraints in the learner question and keeps v1 questions unchanged", async () => {
+  const sourceRoot = join("manual", "source", "claude-certified-architect-professional-certification");
+  const sourceItems = [];
+  for (const node of await readdir(sourceRoot, { withFileTypes: true })) {
+    if (!node.isDirectory()) continue;
+    for (const filename of await readdir(join(sourceRoot, node.name))) {
+      if (!filename.endsWith(".json")) continue;
+      const batch = JSON.parse(await readFile(join(sourceRoot, node.name, filename), "utf8"));
+      sourceItems.push(...batch.items);
+    }
+  }
+  const inspected = await inspectTrack({ trackId: "claude-certified-architect-professional-certification", sourceRepositoryCommit: COMMIT });
+  const publishedById = new Map(inspected.source.items.map((item) => [item.id, item]));
+  assert.equal(sourceItems.length, 300);
+  for (const source of sourceItems) {
+    const published = publishedById.get(source.itemId);
+    assert.ok(published, `missing normalized item ${source.itemId}`);
+    assert.equal(published.question, `${source.prompt}\n\n${source.constraints.map((constraint) => `• ${constraint}`).join("\n")}`);
+    assert.deepEqual(published.options, source.interaction.options.map((option) => ({ id: option.optionId, text: option.text })));
+    assert.deepEqual(published.correctOptionIds, source.interaction.acceptedOptionIds);
+    assert.equal(published.feedback.reason, source.feedback.Reason);
+    assert.deepEqual(published.feedback.details.blocks, [
+      ["Mechanism or property", source.feedback.Details.mechanismOrProperty],
+      ["Scenario application", source.feedback.Details.scenarioApplication],
+      ["Error correction", source.feedback.Details.errorCorrection],
+      ["Boundary or tradeoff", source.feedback.Details.boundaryOrTradeoff],
+      ["Transfer", source.feedback.Details.transfer],
+      ["Source", source.feedback.Details.url],
+    ].map(([title, value]) => ({ type: "paragraph", text: `${title}: ${value}` })));
+    assert.deepEqual(published.feedback.wrongOptionExplanationsByOptionId, source.feedback.wrongOptionExplanationsByOptionId);
+    if (source.interaction.selectionMode === "multiple") assert.deepEqual(published.feedback.omittedCorrectExplanationsByOptionId, source.feedback.omittedCorrectElementExplanationsByOptionId);
+    assert.deepEqual(published.examSignals, source.sourceBinding.claimIds);
+    assert.equal(published.nodeId, source.nodeId);
+  }
+
+  const fixturePath = await root({ certification: certificationBatch() });
+  try {
+    const fixture = await inspectTrack({ root: fixturePath, trackId: "google-cloud-associate-cloud-engineer", sourceRepositoryCommit: COMMIT });
+    assert.equal(fixture.source.items[0].question, "Fixture certification question 1?");
+  } finally { await rm(fixturePath, { recursive: true }); }
+});
+
 test("Certification fixture publishing declares every canonical mode, including the profile-backed simulation", async () => {
   const path = await root({ certification: certificationBatch() });
   try {

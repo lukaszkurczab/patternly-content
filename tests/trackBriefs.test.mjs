@@ -28,13 +28,13 @@ const canonicalBriefs = await loadCanonicalTrackBriefs();
 
 const copy = (value) => structuredClone(value);
 
-test("canonical catalogue has exactly ten distinct LEARNING-PRODUCTS-001 briefs", () => {
-  assert.equal(canonicalBriefs.length, 10);
+test("canonical catalogue has one distinct LEARNING-PRODUCTS-001 brief per target track", () => {
+  assert.equal(canonicalBriefs.length, Object.keys(TARGET_TRACK_FAMILIES).length);
   assert.deepEqual(new Set(canonicalBriefs.map((brief) => brief.trackId)), new Set(Object.keys(TARGET_TRACK_FAMILIES)));
   assert.deepEqual(new Set(canonicalBriefs.map((brief) => brief.internalFamily)), new Set(["certification", "coding_interview", "design_interview"]));
 });
 
-test("strict schema requires the ten product-contract brief fields", () => {
+test("strict schema requires the product-contract brief fields", () => {
   for (const field of requiredContractFields) assert.ok(schema.required.includes(field), `${field} must be required`);
   assert.equal(schema.additionalProperties, false);
   for (const brief of canonicalBriefs) {

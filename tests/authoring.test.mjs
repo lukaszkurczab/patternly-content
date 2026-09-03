@@ -100,9 +100,9 @@ function certificationFixtureResult(result) {
   return fixture;
 }
 
-test("authoring catalogue covers ten tracks and derives current counts", async () => {
+test("authoring catalogue covers every registered track and derives current counts", async () => {
   const result = await validateAuthoringContracts(ROOT);
-  assert.equal(result.manifest.trackCount, 10);
+  assert.equal(result.manifest.trackCount, result.model.curricula.size);
   for (const track of result.manifest.tracks) {
     assert.equal(track.existingVerifiedItemCount + track.authoringAdmittedItemCount + track.blockedItemCount, track.plannedItemCount, track.trackId);
     assert.equal(track.plannedItemCount - track.existingVerifiedItemCount, track.remainingItemCount, track.trackId);

@@ -16,7 +16,8 @@ const canonicalCertificationRegistryTrustAnchors = Object.freeze({
   "hashicorp-terraform-associate-004": Object.freeze({ provider: "HashiCorp", officialSourceHosts: Object.freeze(["developer.hashicorp.com"]), firstPartyDocumentationHosts: Object.freeze(["developer.hashicorp.com", "www.hashicorp.com"]) }),
   "kubernetes-cloud-native-associate-kcna": Object.freeze({ provider: "Linux Foundation / Cloud Native Computing Foundation", officialSourceHosts: Object.freeze(["training.linuxfoundation.org", "docs.linuxfoundation.org", "raw.githubusercontent.com"]), firstPartyDocumentationHosts: Object.freeze(["kubernetes.io", "www.cncf.io"]) }),
   "microsoft-azure-administrator-associate-az-104": Object.freeze({ provider: "Microsoft", officialSourceHosts: Object.freeze(["learn.microsoft.com"]), firstPartyDocumentationHosts: Object.freeze(["learn.microsoft.com"]) }),
-  "microsoft-azure-ai-fundamentals-ai-901": Object.freeze({ provider: "Microsoft", officialSourceHosts: Object.freeze(["learn.microsoft.com"]), firstPartyDocumentationHosts: Object.freeze(["learn.microsoft.com"]) })
+  "microsoft-azure-ai-fundamentals-ai-901": Object.freeze({ provider: "Microsoft", officialSourceHosts: Object.freeze(["learn.microsoft.com"]), firstPartyDocumentationHosts: Object.freeze(["learn.microsoft.com"]) }),
+  "claude-certified-architect-professional-certification": Object.freeze({ provider: "Anthropic", officialSourceHosts: Object.freeze(["anthropic-partners.skilljar.com", "everpath-course-content.s3-accelerate.amazonaws.com"]), firstPartyDocumentationHosts: Object.freeze(["assets.anthropic.com", "www.anthropic.com", "platform.claude.com", "code.claude.com", "docs.anthropic.com", "docs.claude.com", "modelcontextprotocol.io", "privacy.claude.com", "support.claude.com", "anthropic-partners.skilljar.com"]) })
 });
 export const CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS = Object.freeze(Object.keys(canonicalCertificationRegistryTrustAnchors));
 function assertCanonicalCertificationRegistryTrustAnchor(registry) {
@@ -86,9 +87,9 @@ export async function loadCertificationObjectiveRegistries({ root }) {
   let names = [];
   try { names = (await readdir(directory)).filter((name) => name.endsWith(".json")).sort(); } catch (error) { if (error.code !== "ENOENT") throw error; }
   const expectedNames = new Set(CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS.map((trackId) => `${trackId}.json`));
-  if (names.length !== expectedNames.size || names.some((name) => !expectedNames.has(name))) fail("CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH", "Certification objective registries must contain exactly the six canonical registry files.");
+  if (names.length !== expectedNames.size || names.some((name) => !expectedNames.has(name))) fail("CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH", `Certification objective registries must contain exactly the ${expectedNames.size} canonical registry files.`);
   const registries = new Map();
   for (const name of names) { const registry = validateCertificationObjectiveRegistry(await readJson(join(directory, name)), name); if (registries.has(registry.trackId)) fail("DUPLICATE_CERTIFICATION_OBJECTIVE_REGISTRY", `${registry.trackId} has multiple registries.`); Object.defineProperty(registry, "__registryPath", { value: `config/certification-objective-registries/${name}` }); registries.set(registry.trackId, registry); }
-  if (registries.size !== expectedNames.size || CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS.some((trackId) => !registries.has(trackId))) fail("CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH", "Certification objective registries must resolve every canonical registry track.");
+  if (registries.size !== expectedNames.size || CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS.some((trackId) => !registries.has(trackId))) fail("CERTIFICATION_OBJECTIVE_REGISTRY_SET_MISMATCH", `Certification objective registries must resolve all ${expectedNames.size} canonical registry tracks.`);
   return registries;
 }

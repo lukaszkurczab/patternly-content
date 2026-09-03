@@ -1,11 +1,6 @@
-const expectedTrackIds = [
-  "google-cloud-associate-cloud-engineer",
-  "hashicorp-terraform-associate-004",
-  "microsoft-azure-ai-fundamentals-ai-901",
-  "kubernetes-cloud-native-associate-kcna",
-  "microsoft-azure-administrator-associate-az-104",
-  "aws-certified-solutions-architect-associate"
-];
+import { CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS } from "./certification-objective-registries.mjs";
+
+const expectedTrackIds = CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS;
 
 export const firstSafeSlotIds = [
   "microsoft-azure-administrator-associate-az-104:AZ104-N01-B01:identity-and-directory-foundations:slot:scenario-decision-01",
@@ -130,7 +125,7 @@ export function buildCertificationAuthoringBacklog(curricula) {
 
 export function validateCertificationPromotion(curricula, registries) {
   const certifications = curricula.filter((curriculum) => curriculum.familyId === "certification");
-  if (!sameSet(certifications.map((curriculum) => curriculum.trackId).sort(), [...expectedTrackIds].sort())) fail("CERTIFICATION_PROMOTION_TRACK_SET", "exactly six direct canonical certification configs are required");
+  if (!sameSet(certifications.map((curriculum) => curriculum.trackId).sort(), [...expectedTrackIds].sort())) fail("CERTIFICATION_PROMOTION_TRACK_SET", `exactly ${expectedTrackIds.length} direct canonical certification configs are required`);
   const slots = certifications.flatMap((curriculum) => curriculum.slots);
   unique(slots.map((slot) => slot.slotId), "CERTIFICATION_PROMOTION_DUPLICATE_SLOT_ID", "cross-track slot identity");
   unique(slots.map((slot) => slot.dedupeFingerprint), "CERTIFICATION_PROMOTION_DUPLICATE_SEMANTIC_IDENTITY", "cross-track semantic identity");

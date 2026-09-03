@@ -1,0 +1,783 @@
+{
+  "schemaVersion": "certification-manual-source-v2",
+  "batchId": "claude-certified-architect-professional-certification:CCARP-D03-O02",
+  "trackId": "claude-certified-architect-professional-certification",
+  "familyId": "certification",
+  "contentVersion": "ccarp-2026.09.03",
+  "taxonomyVersion": "2026.09.03",
+  "nodeId": "enterprise_tools_retrieval_and_integration",
+  "learningBlockId": "CCARP-D03-O02",
+  "slotIds": [
+    "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:selection",
+    "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:diagnosis",
+    "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:boundary",
+    "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:transfer",
+    "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-01",
+    "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-02",
+    "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-03",
+    "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-04"
+  ],
+  "items": [
+    {
+      "itemId": "CCARP-D03-O02-selection",
+      "slotId": "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:selection",
+      "nodeId": "enterprise_tools_retrieval_and_integration",
+      "learningBlockId": "CCARP-D03-O02",
+      "taxonomy": {
+        "examDomainId": "ccarp-domain-3",
+        "competencyAreaId": "enterprise_tools_retrieval_and_integration",
+        "topicId": "CCARP-D03-O02",
+        "skillAtomId": "authz-gap-analysis"
+      },
+      "prompt": "An enterprise MCP server exposes payroll over HTTP and forwards a user bearer token to a downstream payroll service without checking audience or scopes. Which authorization design closes the trust boundary?",
+      "constraints": [
+        "The received token must target the current resource and contain the requested scope.",
+        "The downstream payroll service is a separate resource server."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "Validate the incoming bearer token only at the MCP edge, then forward it over TLS and let the payroll service decide whether its audience and scopes are acceptable."
+          },
+          {
+            "optionId": "b",
+            "text": "Pass the same token in a protected header or query parameter to the downstream service, relying on its normal authentication middleware to reject misuse."
+          },
+          {
+            "optionId": "c",
+            "text": "Validate issuer, audience, expiry, and scope at the MCP resource server, then obtain a separately issued least-privileged credential for the downstream resource."
+          },
+          {
+            "optionId": "d",
+            "text": "Have Claude decide whether payroll access is appropriate from the request and use the user token for both resources when the explanation is confident."
+          }
+        ],
+        "acceptedOptionIds": [
+          "c"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "The MCP server must validate the credential for itself and must not pass a received token to a different resource. A separate downstream credential keeps audiences and least privilege explicit.",
+        "Details": {
+          "mechanismOrProperty": "Resource-server validation checks issuer, audience, expiry, and scope; token exchange or another separately issued credential represents the downstream trust relationship.",
+          "scenarioApplication": "Reject a token not intended for the MCP resource, authorize the payroll operation at its scope, and call the downstream service only with its approved credential.",
+          "errorCorrection": "Do not treat transport encryption or model judgment as authorization; bind each token to the resource and operation that will enforce it.",
+          "boundaryOrTradeoff": "Separate validation and credentials add setup and token-management work, but they prevent token confusion and limit the impact of a compromised or overbroad token.",
+          "transfer": "For chained services, validate incoming credentials at every resource boundary and use a least-privileged credential for the next resource.",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "a": "TLS protects transport but does not make a token intended for one resource valid for another or establish the needed scope.",
+          "b": "Query parameters expose credentials to logs and do not solve audience or privilege validation.",
+          "d": "A model response cannot enforce an authenticated subject, audience, or payroll scope at the resource boundary."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-diagnostic-baseline",
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-weak-area-review",
+        "certification-mixed-practice",
+        "certification-quick-review",
+        "certification-exam-simulation"
+      ],
+      "sourceBinding": {
+        "bindingId": "claude-certified-architect-professional-certification:claude-certified-architect-professional-certification:CCARP-D03-O02:slot:selection:source-binding",
+        "claimIds": [
+          "ccarp-3.2"
+        ],
+        "anchorIds": [
+          "ccarp-anchor-2f49917cdbf4f3d7"
+        ],
+        "sourceRefs": [
+          "ccarp-doc-d2811bcffa8c",
+          "ccarp-exam-guide-v1"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex — gpt-5.6-luna (max), controller reviewed",
+        "createdAt": "2026-09-03",
+        "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+      }
+    },
+    {
+      "itemId": "CCARP-D03-O02-diagnosis",
+      "slotId": "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:diagnosis",
+      "nodeId": "enterprise_tools_retrieval_and_integration",
+      "learningBlockId": "CCARP-D03-O02",
+      "taxonomy": {
+        "examDomainId": "ccarp-domain-3",
+        "competencyAreaId": "enterprise_tools_retrieval_and_integration",
+        "topicId": "CCARP-D03-O02",
+        "skillAtomId": "authz-gap-analysis"
+      },
+      "prompt": "A web client starts an MCP authorization flow. The authorization server accepts any redirect URI under the company domain, and the client sends neither state nor PKCE. What should the security diagnosis require?",
+      "constraints": [
+        "The code flow must bind an exact destination and the response to its initiating session.",
+        "The client needs protection against authorization-code interception."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "Keep a company-domain redirect wildcard, deliver the code through the browser fragment, and rely on TLS and the signed-in account to identify the initiating client."
+          },
+          {
+            "optionId": "b",
+            "text": "Remove the callback registration and ask the user to paste the authorization code into the client, treating manual possession as the session binding."
+          },
+          {
+            "optionId": "c",
+            "text": "Register one broad callback and compare the account after redemption, without validating a per-request state value or a code verifier."
+          },
+          {
+            "optionId": "d",
+            "text": "Require exact pre-registered redirect URIs, validate state for the initiating session, and use PKCE to bind the code exchange to the client."
+          }
+        ],
+        "acceptedOptionIds": [
+          "d"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "A broad redirect accepts destinations the client did not register, missing state allows response mix-up, and missing PKCE leaves a public client code vulnerable to interception. The three controls address distinct bindings.",
+        "Details": {
+          "mechanismOrProperty": "Exact URI comparison constrains the redirect, state links the response to the initiating browser transaction, and PKCE binds the authorization code to the verifier held by the client.",
+          "scenarioApplication": "Register the precise callback, generate and validate state per authorization request, and require a code challenge and verifier on the token exchange.",
+          "errorCorrection": "Diagnose authorization as destination, session, and code binding rather than relying on domain ownership or transport confidentiality alone.",
+          "boundaryOrTradeoff": "The checks require registration and per-request state, but they reduce redirect abuse, response injection, and intercepted-code reuse.",
+          "transfer": "For browser authorization flows, make the redirect exact and bind both the response and code exchange to the initiating client transaction.",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "a": "A domain wildcard still permits an unregistered destination, a fragment does not replace state, and TLS does not bind the code to this client.",
+          "b": "Manual copy-paste removes a controlled callback but does not establish a secure redirect or code-binding protocol.",
+          "c": "Checking the account after redemption is too late to prevent redirect or authorization-code mix-up."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-diagnostic-baseline",
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-weak-area-review",
+        "certification-mixed-practice",
+        "certification-quick-review",
+        "certification-exam-simulation"
+      ],
+      "sourceBinding": {
+        "bindingId": "claude-certified-architect-professional-certification:claude-certified-architect-professional-certification:CCARP-D03-O02:slot:diagnosis:source-binding",
+        "claimIds": [
+          "ccarp-3.2"
+        ],
+        "anchorIds": [
+          "ccarp-anchor-e5edec41b9cdaae9"
+        ],
+        "sourceRefs": [
+          "ccarp-doc-d2811bcffa8c",
+          "ccarp-exam-guide-v1"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex — gpt-5.6-luna (max), controller reviewed",
+        "createdAt": "2026-09-03",
+        "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+      }
+    },
+    {
+      "itemId": "CCARP-D03-O02-boundary",
+      "slotId": "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:boundary",
+      "nodeId": "enterprise_tools_retrieval_and_integration",
+      "learningBlockId": "CCARP-D03-O02",
+      "taxonomy": {
+        "examDomainId": "ccarp-domain-3",
+        "competencyAreaId": "enterprise_tools_retrieval_and_integration",
+        "topicId": "CCARP-D03-O02",
+        "skillAtomId": "authz-gap-analysis"
+      },
+      "prompt": "A developer runs a local MCP server as a child process over stdio on a locked workstation. A reviewer proposes applying HTTP bearer-token authorization to every message because the local database is sensitive. Which boundary-specific control is correct?",
+      "constraints": [
+        "The server is currently a local child process connected over stdio.",
+        "If the integration changes to HTTP, its HTTP resource authorization requirements apply even to a local listener."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "Protect stdio credentials with process, environment, and workstation controls, and apply MCP HTTP authorization requirements whenever the server uses HTTP transport, including a local HTTP listener."
+          },
+          {
+            "optionId": "b",
+            "text": "Run a bearer-token exchange through the stdio stream for every local call, even though the child process is not an HTTP resource server."
+          },
+          {
+            "optionId": "c",
+            "text": "Assume the local child process is trusted and disable credential checks while the workstation and process environment remain otherwise unrestricted."
+          },
+          {
+            "optionId": "d",
+            "text": "Place the local database password in the tool schema so Claude can supply it to the child process when a sensitive query is requested."
+          }
+        ],
+        "acceptedOptionIds": [
+          "a"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "The protocol boundary differs by transport. Stdio is protected through the process and environment, while HTTP exposure introduces a resource-server authorization boundary; sensitive data still needs local controls.",
+        "Details": {
+          "mechanismOrProperty": "Process ownership, environment permissions, and workstation isolation protect local stdio credentials; an HTTP transport must validate bearer tokens and scopes at its resource boundary, regardless of where the listener runs.",
+          "scenarioApplication": "Keep secrets out of model-visible metadata, restrict the child process environment and files, and apply HTTP authorization when the integration changes from stdio to HTTP.",
+          "errorCorrection": "Match the credential and threat control to the actual transport instead of mechanically applying a remote protocol to a local process.",
+          "boundaryOrTradeoff": "Local process controls require host hardening and careful launch configuration, but they avoid an inapplicable protocol exchange while still protecting the database.",
+          "transfer": "For integrations, identify who can reach the boundary and choose process, network, or protocol authorization controls accordingly.",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "b": "An HTTP exchange is not the stdio transport boundary and adds no useful resource-server binding inside a local message stream.",
+          "c": "Local execution does not eliminate threats from a compromised process, environment, or workstation and cannot justify removing controls.",
+          "d": "Secrets in tool descriptions become model-visible metadata and are not a safe credential mechanism."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-diagnostic-baseline",
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-weak-area-review",
+        "certification-mixed-practice",
+        "certification-quick-review",
+        "certification-exam-simulation"
+      ],
+      "sourceBinding": {
+        "bindingId": "claude-certified-architect-professional-certification:claude-certified-architect-professional-certification:CCARP-D03-O02:slot:boundary:source-binding",
+        "claimIds": [
+          "ccarp-3.2"
+        ],
+        "anchorIds": [
+          "ccarp-anchor-e2dfa30f7fd4dde0"
+        ],
+        "sourceRefs": [
+          "ccarp-doc-d2811bcffa8c",
+          "ccarp-exam-guide-v1"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex — gpt-5.6-luna (max), controller reviewed",
+        "createdAt": "2026-09-03",
+        "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+      }
+    },
+    {
+      "itemId": "CCARP-D03-O02-transfer",
+      "slotId": "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:transfer",
+      "nodeId": "enterprise_tools_retrieval_and_integration",
+      "learningBlockId": "CCARP-D03-O02",
+      "taxonomy": {
+        "examDomainId": "ccarp-domain-3",
+        "competencyAreaId": "enterprise_tools_retrieval_and_integration",
+        "topicId": "CCARP-D03-O02",
+        "skillAtomId": "authz-gap-analysis"
+      },
+      "prompt": "An expense assistant can call a billing API with model-supplied account_id and refund_amount. The backend trusts those fields, and a test reaches another tenant's account. Which TWO controls must be at the resource boundary? Select TWO.",
+      "constraints": [
+        "Identity and tenant scope must come from validated credentials, not model arguments.",
+        "Refund is a high-impact side effect requiring server authorization and an audit trail."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "multiple",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "Keep the model-supplied account_id as the source of tenant identity and add a prompt reminder to use the current account."
+          },
+          {
+            "optionId": "b",
+            "text": "Derive the authenticated subject and tenant from validated credentials, authorize the requested account and refund scope at the backend, and reject mismatches."
+          },
+          {
+            "optionId": "c",
+            "text": "Let Claude redact suspicious account IDs and approve the refund when its explanation sounds consistent with the user request."
+          },
+          {
+            "optionId": "d",
+            "text": "Allow the API to accept any account ID but ask a support analyst to reconcile cross-tenant refunds at the end of the day."
+          },
+          {
+            "optionId": "e",
+            "text": "Record denied or mismatched attempts and require the backend to apply the refund approval and least-privilege checks before mutation."
+          }
+        ],
+        "acceptedOptionIds": [
+          "b",
+          "e"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "multiple"
+      },
+      "feedback": {
+        "Reason": "Model arguments are untrusted inputs. The backend must bind resources and side effects to the authenticated subject, enforce the refund scope, and record failures for investigation.",
+        "Details": {
+          "mechanismOrProperty": "Credential validation supplies identity and tenant context; the resource server checks account ownership and refund permission before its mutation path runs.",
+          "scenarioApplication": "Ignore a model-supplied cross-tenant identity when it conflicts with the token, reject the call, require approval as configured, and audit the denial or mutation.",
+          "errorCorrection": "Treat tool parameters as requests to authorize, not as grants of authority, and make the service boundary the enforcement point.",
+          "boundaryOrTradeoff": "Server authorization and audit logging add latency and operational records, but they prevent tenant crossing and make denied attempts reviewable.",
+          "transfer": "For any AI-triggered mutation, derive identity server-side, authorize the target resource and action, and retain an auditable decision.",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "a": "Prompt wording cannot bind a model-provided account to the authenticated tenant and leaves the vulnerable backend unchanged.",
+          "c": "Model redaction and confidence do not enforce ownership or refund authority at the API boundary.",
+          "d": "End-of-day reconciliation is too late to prevent a cross-tenant or duplicate refund and accepts an unauthorized mutation."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {
+          "b": "Without server-derived identity and resource authorization, an account_id argument can cross tenants or exceed the subject's scope.",
+          "e": "Without a pre-mutation approval check and denial audit, a high-impact refund can execute without enforceable authorization or evidence."
+        }
+      },
+      "modeEligibility": [
+        "certification-diagnostic-baseline",
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-weak-area-review",
+        "certification-mixed-practice",
+        "certification-quick-review",
+        "certification-exam-simulation"
+      ],
+      "sourceBinding": {
+        "bindingId": "claude-certified-architect-professional-certification:claude-certified-architect-professional-certification:CCARP-D03-O02:slot:transfer:source-binding",
+        "claimIds": [
+          "ccarp-3.2"
+        ],
+        "anchorIds": [
+          "ccarp-anchor-74ea409d8712a607"
+        ],
+        "sourceRefs": [
+          "ccarp-doc-d2811bcffa8c",
+          "ccarp-exam-guide-v1"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex — gpt-5.6-luna (max), controller reviewed",
+        "createdAt": "2026-09-03",
+        "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+      }
+    },
+    {
+      "itemId": "CCARP-D03-O02-scenario-01",
+      "slotId": "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-01",
+      "nodeId": "enterprise_tools_retrieval_and_integration",
+      "learningBlockId": "CCARP-D03-O02",
+      "taxonomy": {
+        "examDomainId": "ccarp-domain-3",
+        "competencyAreaId": "enterprise_tools_retrieval_and_integration",
+        "topicId": "CCARP-D03-O02",
+        "skillAtomId": "authz-gap-analysis"
+      },
+      "prompt": "A payroll tool catalog exposes read, export, and adjustment operations. The user has payroll.read but not payroll.export or payroll.adjust, while the model can still see and request all three. Which enforcement design is correct?",
+      "constraints": [
+        "Operation visibility should reflect current scopes.",
+        "The server must recheck scope and approval before any export or mutation."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "Show read, export, and adjustment tools but add a system instruction that Claude should call export or adjustment only after the user explicitly asks."
+          },
+          {
+            "optionId": "b",
+            "text": "Hide export and adjustment in the catalog UI, but let the server accept a hidden call when Claude supplies a business justification in its arguments."
+          },
+          {
+            "optionId": "c",
+            "text": "Expose only tools allowed by the current scope, require server-side scope and approval checks for export or adjustment, and reject unauthorized requests."
+          },
+          {
+            "optionId": "d",
+            "text": "Grant payroll.export temporarily when a model confidence or task-completion prediction indicates that a payroll file would be useful."
+          }
+        ],
+        "acceptedOptionIds": [
+          "c"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "A logged-in identity alone does not grant every payroll operation. Discovery should reduce accidental exposure, but the resource server remains the authority for current scope and high-impact approval.",
+        "Details": {
+          "mechanismOrProperty": "Access-token scopes map to operation permissions; server checks run at invocation so a visible or stale model plan cannot bypass current authorization.",
+          "scenarioApplication": "Expose the read tool for this user, keep export and adjustment unavailable, and reject any attempted call unless the current credential and approval satisfy the operation.",
+          "errorCorrection": "Use capability visibility as a convenience and server authorization as the security control; never treat a user request or model plan as a scope grant.",
+          "boundaryOrTradeoff": "Per-user catalogs and invocation checks require refresh and policy plumbing, but they make least privilege visible and enforceable.",
+          "transfer": "For tool catalogs, filter discovery by scope and reauthorize every consequential call against current identity and policy.",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "a": "Prompt instructions can be bypassed and do not prevent the model from requesting a visible export or adjustment.",
+          "b": "Hiding names without server rejection leaves the operation callable and makes a plausible reason an authority substitute.",
+          "d": "A model prediction cannot grant a missing scope or provide the approval required for a payroll mutation."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-diagnostic-baseline",
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-weak-area-review",
+        "certification-mixed-practice",
+        "certification-quick-review",
+        "certification-exam-simulation"
+      ],
+      "sourceBinding": {
+        "bindingId": "claude-certified-architect-professional-certification:claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-01:source-binding",
+        "claimIds": [
+          "ccarp-3.2"
+        ],
+        "anchorIds": [
+          "ccarp-anchor-a94d2b227dde232d"
+        ],
+        "sourceRefs": [
+          "ccarp-doc-d2811bcffa8c",
+          "ccarp-exam-guide-v1"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex — gpt-5.6-luna (max), controller reviewed",
+        "createdAt": "2026-09-03",
+        "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+      }
+    },
+    {
+      "itemId": "CCARP-D03-O02-scenario-02",
+      "slotId": "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-02",
+      "nodeId": "enterprise_tools_retrieval_and_integration",
+      "learningBlockId": "CCARP-D03-O02",
+      "taxonomy": {
+        "examDomainId": "ccarp-domain-3",
+        "competencyAreaId": "enterprise_tools_retrieval_and_integration",
+        "topicId": "CCARP-D03-O02",
+        "skillAtomId": "authz-gap-analysis"
+      },
+      "prompt": "A long-running agent discovers a payroll export while the user is authorized, but the role is revoked before the queued invocation reaches the server. What should happen at execution?",
+      "constraints": [
+        "Authorization may change between discovery and invocation.",
+        "The current subject, credential validity, and export scope must be checked at the resource boundary."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "Validate the current credential and scope immediately before execution, reject the stale export handle if authorization is gone, and audit the operation and subject."
+          },
+          {
+            "optionId": "b",
+            "text": "Trust the discovery result and execute the queued export because the role and token were valid when the agent planned the operation."
+          },
+          {
+            "optionId": "c",
+            "text": "Execute the export first and request user confirmation after the payroll file has been generated, so an analyst can cancel future requests."
+          },
+          {
+            "optionId": "d",
+            "text": "Refresh the catalog once per day and allow all handles discovered before the refresh to run during the remaining interval."
+          }
+        ],
+        "acceptedOptionIds": [
+          "a"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "Discovery is a capability hint, not a durable grant. Revocation before invocation must take effect at the current resource boundary, before the export is produced.",
+        "Details": {
+          "mechanismOrProperty": "The server validates a current credential, audience, expiry, and operation scope atomically or immediately before the side effect; an audit record explains the rejection.",
+          "scenarioApplication": "Mark the queued handle stale, revalidate or refresh as needed, reject the export after role revocation, and record the attempted operation and subject.",
+          "errorCorrection": "Close the time-of-check/time-of-use gap at invocation instead of trusting an earlier catalog snapshot.",
+          "boundaryOrTradeoff": "A late rejection can waste planning work and require the agent to report an unavailable state, but it prevents execution under revoked authority.",
+          "transfer": "For long-running plans, reauthorize every consequential operation at execution and make revoked or expired capabilities explicit.",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "b": "A cached catalog can outlive role changes and would turn a previously valid plan into an unauthorized export.",
+          "c": "Post-production confirmation cannot undo a payroll disclosure and is not an authorization check.",
+          "d": "A daily refresh leaves a long revocation window and still trusts stale operation handles."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-diagnostic-baseline",
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-weak-area-review",
+        "certification-mixed-practice",
+        "certification-quick-review",
+        "certification-exam-simulation"
+      ],
+      "sourceBinding": {
+        "bindingId": "claude-certified-architect-professional-certification:claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-02:source-binding",
+        "claimIds": [
+          "ccarp-3.2"
+        ],
+        "anchorIds": [
+          "ccarp-anchor-38ffe939f2f0c734"
+        ],
+        "sourceRefs": [
+          "ccarp-doc-d2811bcffa8c",
+          "ccarp-exam-guide-v1"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "Codex — gpt-5.6-luna (max), controller reviewed",
+        "createdAt": "2026-09-03",
+        "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+      }
+    },
+    {
+      "itemId": "CCARP-D03-O02-scenario-03",
+      "slotId": "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-03",
+      "nodeId": "enterprise_tools_retrieval_and_integration",
+      "learningBlockId": "CCARP-D03-O02",
+      "taxonomy": {
+        "examDomainId": "ccarp-domain-3",
+        "competencyAreaId": "enterprise_tools_retrieval_and_integration",
+        "topicId": "CCARP-D03-O02",
+        "skillAtomId": "authz-gap-analysis"
+      },
+      "prompt": "A local MCP server currently runs as a child process over stdio on a locked workstation. The same server is moved behind a shared HTTP endpoint for six remote clients, each with separate tenant scopes and user sessions.\n\nWhich authorization design fits the move from local stdio to shared remote HTTP?",
+      "constraints": [
+        "The endpoint now serves six remote clients, bearer tokens, separate tenants, and user sessions.",
+        "Process and environment controls protected the old local child process only.",
+        "Issuer, audience, expiry, resource, scope, redirect, and invocation checks are available."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "Keep stdio environment controls because the server code and tool names did not change."
+          },
+          {
+            "optionId": "b",
+            "text": "Pass the bearer token as a model argument and let the model select the tenant operation before the server executes it."
+          },
+          {
+            "optionId": "c",
+            "text": "Terminate tokens at a shared gateway and trust the MCP server to execute any operation named by an authenticated client."
+          },
+          {
+            "optionId": "d",
+            "text": "Use MCP HTTP authorization and explicitly validate issuer, audience, expiry, resource, and scopes at the resource server, independent of model arguments."
+          }
+        ],
+        "acceptedOptionIds": [
+          "d"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "The same logical tools require a different authorization strategy once they cross from local process isolation to a remote shared resource.",
+        "Details": {
+          "mechanismOrProperty": "MCP's HTTP authorization requirements differ from stdio, where environment and process controls protect credentials. The scenario's mechanism is governed by this decisive constraint: The transport boundary has changed, so local process controls no longer suffice; remote HTTP authorization and resource-server enforcement are required.",
+          "scenarioApplication": "Use MCP HTTP authorization for the shared endpoint, validate issuer, audience, expiry, resource, and scopes at the resource server, and keep tenant binding and invocation checks independent of model arguments.",
+          "errorCorrection": "Remote clients are outside the protected process, so environment controls cannot bind a bearer token to its resource, tenant, or scope.",
+          "boundaryOrTradeoff": "If the server returns to a local child process with no remote exposure, use process and environment controls again, while keeping application authorization for sensitive operations.",
+          "transfer": "Route each information need through the smallest governed interface that matches its evidence shape, and preserve explicit authorization, freshness, and unavailable states when the evidence cannot support a claim.",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "a": "Remote clients are outside the protected process, so environment controls cannot bind a bearer token to its resource, tenant, or scope.",
+          "b": "Model-supplied arguments are not an authorization boundary; the resource server must validate the token and enforce tenant and operation scope.",
+          "c": "Gateway authentication alone does not establish the resource, tenant, or invocation scope at the resource server for each operation."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-diagnostic-baseline",
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-weak-area-review",
+        "certification-mixed-practice",
+        "certification-quick-review",
+        "certification-exam-simulation"
+      ],
+      "sourceBinding": {
+        "bindingId": "claude-certified-architect-professional-certification:claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-03:source-binding",
+        "claimIds": [
+          "ccarp-3.2"
+        ],
+        "anchorIds": [
+          "ccarp-anchor-e2dfa30f7fd4dde0"
+        ],
+        "sourceRefs": [
+          "ccarp-doc-d2811bcffa8c",
+          "ccarp-exam-guide-v1"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "gpt-5.6-luna (max), independently reviewed; controller integration",
+        "createdAt": "2026-09-03",
+        "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+      }
+    },
+    {
+      "itemId": "CCARP-D03-O02-scenario-04",
+      "slotId": "claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-04",
+      "nodeId": "enterprise_tools_retrieval_and_integration",
+      "learningBlockId": "CCARP-D03-O02",
+      "taxonomy": {
+        "examDomainId": "ccarp-domain-3",
+        "competencyAreaId": "enterprise_tools_retrieval_and_integration",
+        "topicId": "CCARP-D03-O02",
+        "skillAtomId": "authz-gap-analysis"
+      },
+      "prompt": "A user starts a large payroll export with a valid token. The export job is resumable, but the token expires during generation and the user role is revoked before the download artifact is released.\n\nWhich release protocol protects the resumable export after authorization changes?",
+      "constraints": [
+        "The token expires during generation and the user's role is revoked before the download artifact is released.",
+        "The export state is resumable and can be bound to subject, resource, and scope.",
+        "The download is consequential and must be audited at completion."
+      ],
+      "interaction": {
+        "type": "choice",
+        "selectionMode": "single",
+        "options": [
+          {
+            "optionId": "a",
+            "text": "Pause release, persist the job, reauthorize, recheck subject, resource, and scope, then publish only with current authorization and audit."
+          },
+          {
+            "optionId": "b",
+            "text": "Continue with the original token because its scope was valid when the tool was discovered, then log the expiry after delivery."
+          },
+          {
+            "optionId": "c",
+            "text": "Delete the expired job and start a new export under the current session without linking it to the original requester or checkpoint."
+          },
+          {
+            "optionId": "d",
+            "text": "Resume after checking only that the current role is present, leaving the original token and resource binding unchanged."
+          }
+        ],
+        "acceptedOptionIds": [
+          "a"
+        ]
+      },
+      "scoringContract": {
+        "type": "choice",
+        "resultSemantics": "exact_selected_set_with_partial_v1",
+        "selectionMode": "single"
+      },
+      "feedback": {
+        "Reason": "The case integrates token lifecycle with durable workflow state so a safe pause is explicit and resumable.",
+        "Details": {
+          "mechanismOrProperty": "The resource server must validate that the token is intended for it and must not forward a received token upstream to another resource server. The scenario's mechanism is governed by this decisive constraint: Authorization must be checked at each release boundary; a token valid at discovery cannot authorize a later artifact after expiry or revocation.",
+          "scenarioApplication": "Persist the resumable job, stop release when the token or role is stale, reauthorize and recheck subject, resource, and scope before continuing, and publish only after the current authorization and audit record succeeds.",
+          "errorCorrection": "The token is expired and the role revoked before a consequential release; discovery-time authority cannot authorize a later artifact.",
+          "boundaryOrTradeoff": "If reauthorization succeeds with the same intended resource and scope, resume from the checkpoint; if it fails, retain the job as unavailable and do not expose the artifact.",
+          "transfer": "Route each information need through the smallest governed interface that matches its evidence shape, and preserve explicit authorization, freshness, and unavailable states when the evidence cannot support a claim.",
+          "url": "https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization"
+        },
+        "wrongOptionExplanationsByOptionId": {
+          "b": "Discovery-time authority cannot authorize a later artifact after token expiry and role revocation; logging after delivery is too late.",
+          "c": "Starting over loses resumable state and audit continuity; reauthorization should preserve the intended resource and requester linkage.",
+          "d": "A role check alone does not revalidate subject, resource, and scope for the artifact; all current authorization fields must pass before release."
+        },
+        "omittedCorrectElementExplanationsByOptionId": {}
+      },
+      "modeEligibility": [
+        "certification-diagnostic-baseline",
+        "certification-focus-practice",
+        "certification-scenario-practice",
+        "certification-weak-area-review",
+        "certification-mixed-practice",
+        "certification-quick-review",
+        "certification-exam-simulation"
+      ],
+      "sourceBinding": {
+        "bindingId": "claude-certified-architect-professional-certification:claude-certified-architect-professional-certification:CCARP-D03-O02:slot:scenario-04:source-binding",
+        "claimIds": [
+          "ccarp-3.2"
+        ],
+        "anchorIds": [
+          "ccarp-anchor-2f49917cdbf4f3d7"
+        ],
+        "sourceRefs": [
+          "ccarp-doc-d2811bcffa8c",
+          "ccarp-exam-guide-v1"
+        ]
+      },
+      "authoringProvenance": {
+        "authoringMethod": "manual",
+        "approvalStatus": "unapproved",
+        "author": "gpt-5.6-luna (max), independently reviewed; controller integration",
+        "createdAt": "2026-09-03",
+        "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+      }
+    }
+  ],
+  "authoringProvenance": {
+    "authoringMethod": "manual",
+    "approvalStatus": "unapproved",
+    "author": "gpt-5.6-luna (max), independently reviewed; controller integration",
+    "createdAt": "2026-09-03",
+    "contentBatchId": "claude-certified-architect-professional-certification:CCARP-D03-O02"
+  }
+}

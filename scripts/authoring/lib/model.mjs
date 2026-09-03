@@ -5,21 +5,14 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { TARGET_TRACK_FAMILIES } from "../../product/track-briefs.mjs";
+
 const exec = promisify(execFile);
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-export const TRACK_IDS = [
-  "coding-interview-dsa-problem-solving",
-  "aws-certified-solutions-architect-associate",
-  "google-cloud-associate-cloud-engineer",
-  "hashicorp-terraform-associate-004",
-  "kubernetes-cloud-native-associate-kcna",
-  "microsoft-azure-administrator-associate-az-104",
-  "microsoft-azure-ai-fundamentals-ai-901",
-  "backend-system-design-interview",
-  "frontend-system-design-interview",
-  "object-oriented-design-interview"
-];
 export const FAMILY_IDS = ["coding_interview", "certification", "design_interview"];
+export const TRACK_IDS = Object.freeze(Object.keys(TARGET_TRACK_FAMILIES).sort((left, right) =>
+  FAMILY_IDS.indexOf(TARGET_TRACK_FAMILIES[left]) - FAMILY_IDS.indexOf(TARGET_TRACK_FAMILIES[right]) || (left === right ? 0 : left < right ? -1 : 1)
+));
 export const compare = (a, b) => a === b ? 0 : a < b ? -1 : 1;
 export const canonical = (value) => {
   if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
@@ -230,7 +223,7 @@ export async function loadAuthoringModel(root = ROOT) {
   const familyConfigs = new Map((await Promise.all(FAMILY_IDS.map(async (familyId) => [familyId, await readJson(root, `config/families/${familyId}.json`)]))).map(([familyId, value]) => [familyId, value]));
   const registrations = new Map((await Promise.all(trackPaths.map(async (path) => [path, await readJson(root, path)]))).map(([path, value]) => [value.trackId, { ...value, path }]));
   if (families.size !== 3 || FAMILY_IDS.some((id) => !families.has(id))) throw new AuthoringFailure("REGISTRY_COVERAGE", "Authoring registry must contain exactly the three current families.");
-  if (registrations.size !== TRACK_IDS.length || TRACK_IDS.some((id) => !registrations.has(id))) throw new AuthoringFailure("REGISTRY_COVERAGE", "Authoring registry must contain exactly the ten current tracks.");
+  if (registrations.size !== TRACK_IDS.length || TRACK_IDS.some((id) => !registrations.has(id))) throw new AuthoringFailure("REGISTRY_COVERAGE", `Authoring registry must contain exactly the ${TRACK_IDS.length} current tracks.`);
   const curricula = new Map();
   for (const trackId of TRACK_IDS) {
     const registration = registrations.get(trackId);

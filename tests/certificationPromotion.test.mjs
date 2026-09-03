@@ -3,20 +3,20 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { loadCertificationObjectiveRegistries } from "../scripts/curriculum/certification-objective-registries.mjs";
+import { CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS, loadCertificationObjectiveRegistries } from "../scripts/curriculum/certification-objective-registries.mjs";
 import { buildCertificationAuthoringBacklog, firstSafeSlotIds, validateCertificationPromotion } from "../scripts/curriculum/certification-promotion.mjs";
 
 const root = process.cwd();
-const trackIds = ["google-cloud-associate-cloud-engineer", "hashicorp-terraform-associate-004", "microsoft-azure-ai-fundamentals-ai-901", "kubernetes-cloud-native-associate-kcna", "microsoft-azure-administrator-associate-az-104", "aws-certified-solutions-architect-associate"];
+const trackIds = [...CANONICAL_CERTIFICATION_REGISTRY_TRACK_IDS];
 const curricula = await Promise.all(trackIds.map(async (trackId) => JSON.parse(await readFile(`config/curricula/${trackId}.json`, "utf8"))));
 const registries = await loadCertificationObjectiveRegistries({ root });
 const valid = (mutate) => { const copy = structuredClone(curricula); mutate(copy); return validateCertificationPromotion(copy, registries); };
 const recomputeContentFingerprint = (curriculum) => { const { promotionProvenance, contentFingerprint, ...payload } = curriculum; curriculum.contentFingerprint = createHash("sha256").update(JSON.stringify(payload)).digest("hex"); };
 
-test("Stage04 promotion validates the exact six direct certification configs and partitions every slot", () => {
+test("Stage04 promotion validates every canonical direct certification config and partitions every slot", () => {
   const result = validateCertificationPromotion(curricula, registries);
   const expectedSlotCount = curricula.reduce((sum, curriculum) => sum + curriculum.slots.length, 0);
-  assert.equal(result.trackCount, 6);
+  assert.equal(result.trackCount, trackIds.length);
   assert.equal(result.slotCount, expectedSlotCount);
   assert.deepEqual(result.firstSafeBatch.slotIds, firstSafeSlotIds);
   assert.equal(result.authoringBatches.flatMap((batch) => batch.slotIds).length, expectedSlotCount);

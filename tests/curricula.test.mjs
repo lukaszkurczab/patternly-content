@@ -7,7 +7,7 @@ import test from "node:test";
 import { catalogueFingerprint, loadCurricula, validateCurriculum } from "../scripts/curriculum/curricula.mjs";
 import { loadCertificationObjectiveRegistries, validateCertificationObjectiveRegistry } from "../scripts/curriculum/certification-objective-registries.mjs";
 import { buildExistingContentInventories } from "../scripts/curriculum/curriculum-inventory.mjs";
-import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
+import { TARGET_TRACK_FAMILIES, loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
 import { validateDesignInterviewCurriculum } from "../scripts/curriculum/design-interview-curricula.mjs";
 
 const curricula = await loadCurricula();
@@ -29,7 +29,7 @@ function assertNoRetiredCertificationFields(value, path = "curriculum") {
 
 function assertCanonicalCertificationSlots(curriculum) {
   assert.equal(curriculum.schemaVersion, "patternly-certification-curriculum-v1");
-  assert.ok(["2026.08.11", "2026.08.15"].includes(curriculum.curriculumVersion));
+  assert.ok(["2026.08.11", "2026.08.15", "2026.09.03"].includes(curriculum.curriculumVersion));
   assert.equal(curriculum.targetItemCount, curriculum.slots.length);
   assert.equal(curriculum.authoringItemCount, curriculum.slots.length);
   assert.equal(curriculum.existingVerifiedItemCount, 0);
@@ -73,8 +73,8 @@ function assertDirectCertificationSlotContract(curriculum, registry) {
 }
 
 test("curriculum catalogue represents every release track without admitting active content", () => {
-  assert.equal(curricula.length, 10);
-  assert.equal(new Set(curricula.map((entry) => entry.trackId)).size, 10);
+  assert.equal(curricula.length, Object.keys(TARGET_TRACK_FAMILIES).length);
+  assert.equal(new Set(curricula.map((entry) => entry.trackId)).size, Object.keys(TARGET_TRACK_FAMILIES).length);
   assert.match(catalogueFingerprint(curricula), /^[a-f0-9]{64}$/);
   for (const curriculum of curricula) {
     assert.ok(curriculum.nodes.some((node) => node.nodeId === curriculum.freeNodeId && node.freeOrPremiumRole === "free"));

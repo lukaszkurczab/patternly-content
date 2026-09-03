@@ -67,7 +67,7 @@ function ownerQuickCheck(manifest, generatedOutputFingerprint) {
     "",
     "## Gate",
     "",
-    `**${manifest.gateResult}** — all ten current curricula are deterministically mapped; blocked slots are explicit and receive no writable source path.`,
+    `**${manifest.gateResult}** — all ${manifest.trackCount} current curricula are deterministically mapped; blocked slots are explicit and receive no writable source path.`,
     "",
     `Starting SHA: \`${manifest.startingSha}\``,
     `Audited repository SHA: \`${manifest.repositorySha}\``,
@@ -100,8 +100,8 @@ function ownerQuickCheck(manifest, generatedOutputFingerprint) {
     "- Added the three-family authoring registry and exact track registrations without copying curriculum slots or counts.",
     "- Added strict Certification and Design source contracts with semantic slot, feedback, taxonomy, mode, provenance, and direct-source validation.",
     "- Added deterministic plan/scaffold tooling and regenerated current-SHA evidence.",
-    "- Added explicit Certification single-selection allocation to all current slots and recomputed the six canonical content fingerprints.",
-    "- Preserved all existing Coding Interview learner-source JSON bytes; no new learner-source JSON was created.",
+    "- Validated explicit single/multiple-selection contracts against each authored batch.",
+    "- Validation reads existing learner-source JSON without rewriting it.",
     "",
     "## Owner decisions",
     "",
@@ -151,7 +151,6 @@ function nextTask(manifest) {
 async function audit() {
   const result = await validateAuthoringContracts(ROOT);
   validateManifest(result.manifest, result.model);
-  const certificationSlotCount = result.manifest.tracks.filter((track) => track.familyId === "certification").reduce((sum, track) => sum + track.plannedItemCount, 0);
   const directory = outputDirectory(result.manifest);
   await mkdir(directory, { recursive: true });
   const ingressFiles = await repoFiles(ROOT, ["manual/source"]);
@@ -164,19 +163,19 @@ async function audit() {
     remote: "https://github.com/lukaszkurczab/patternly-content.git",
     canonicalCatalogue: result.manifest.trackIds,
     confirmedFacts: [
-      "Exactly ten current curricula and ten track briefs exist.",
+      `Exactly ${result.manifest.trackCount} current curricula and track briefs exist.`,
       "The current families are coding_interview, certification, and design_interview.",
-      "Only Coding Interview has real manual source JSON and an active config/tracks runtime registration.",
+      `The canonical manual ingress contains ${result.sourceHashes.length} source JSON files across the registered authoring tracks.`,
       "Certification and Design Interview are not runtime/publication admitted by this task.",
       "Design authoring admission is the exact-direct roster derived from the canonical family handoffs.",
       "Certification authoring admission requires literal resolved_exact_direct documentation with non-empty sourceRefs and anchorPropertyRefs; generic resolved status and sourceRef-as-anchor fallback are rejected."
     ],
     correctedAssumptions: [
-      "The stale Coding Interview README claim that no question bank exists is false because 213 real source JSON files exist.",
+      "Authoring facts are derived from current source files; historical counts are not current bank evidence.",
       "Certification authoring readiness is not runtime or release readiness.",
       "Design Interview source readiness is not productive case or simulation readiness."
     ],
-    correctedCanonicalDefects: [`Certification slots declared choice interaction without a selection model; all ${certificationSlotCount} current slots now explicitly declare single selection and have recomputed content fingerprints.`],
+    correctedCanonicalDefects: [],
     auditInputFingerprint: result.auditInputFingerprint,
     generatedOutputFingerprint: result.generatedOutputFingerprint,
     sourceJsonCount: result.sourceHashes.length,

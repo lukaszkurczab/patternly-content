@@ -332,10 +332,11 @@ export function validateCurriculum(curriculum, brief, registry) {
 
 export async function loadCurricula({ root = ROOT } = {}) {
   const briefs = await loadCanonicalTrackBriefs({ root }); const registries = await loadCertificationObjectiveRegistries({ root }); const directory = join(root, "config", "curricula"); const names = (await readdir(directory)).filter((name) => name.endsWith(".json")).sort();
-  if (names.length !== Object.keys(TARGET_TRACK_FAMILIES).length) fail("CURRICULUM_CATALOGUE_DENSITY", "Curriculum directory must contain exactly the ten release tracks.");
+  const expectedTrackCount = Object.keys(TARGET_TRACK_FAMILIES).length;
+  if (names.length !== expectedTrackCount) fail("CURRICULUM_CATALOGUE_DENSITY", `Curriculum directory must contain exactly the ${expectedTrackCount} release tracks.`);
   const curricula = [];
   for (const name of names) { const curriculum = await readJson(join(directory, name)); if (name !== `${curriculum.trackId}.json`) fail("CURRICULUM_FILENAME_MISMATCH", `${name} must match track ID.`); const brief = briefs.find((entry) => entry.trackId === curriculum.trackId); if (!brief) fail("UNKNOWN_CURRICULUM_TRACK", `${curriculum.trackId} lacks a canonical brief.`); curricula.push(curriculum.schemaVersion === "patternly-certification-curriculum-v1" ? validateCertificationCurriculum(curriculum, { brief, registry: registries.get(curriculum.trackId) }) : curriculum.schemaVersion === "patternly-design-interview-curriculum-v1" ? validateDesignInterviewCurriculum(curriculum, { brief }) : validateCurriculum(curriculum, brief, registries.get(curriculum.trackId))); }
-  const ids = curricula.map((curriculum) => curriculum.trackId); assertUnique(ids, "track IDs"); if (Object.keys(TARGET_TRACK_FAMILIES).some((id) => !ids.includes(id))) fail("CURRICULUM_TRACK_SET_MISMATCH", "Curricula must represent the exact ten-track catalogue.");
+  const ids = curricula.map((curriculum) => curriculum.trackId); assertUnique(ids, "track IDs"); if (Object.keys(TARGET_TRACK_FAMILIES).some((id) => !ids.includes(id))) fail("CURRICULUM_TRACK_SET_MISMATCH", `Curricula must represent the exact ${expectedTrackCount}-track catalogue.`);
   validateCertificationPromotion(curricula, registries);
   return Object.freeze(curricula);
 }

@@ -153,7 +153,7 @@ export async function validateAuthoringRegistrations(root) {
 
 export function validateManifest(manifest, model) {
   if (manifest.schemaVersion !== "patternly-authoring-scaffold-manifest-v1" || manifest.gateResult !== "READY_FOR_FIRST_REAL_BOUNDED_AUTHORING_BATCH" || manifest.planningGateResult !== "READY_FOR_SCAFFOLDING_WITH_EXPLICIT_BLOCKS") throw new AuthoringFailure("INVALID_MANIFEST", "Scaffold manifest identity or gate result is invalid.");
-  if (manifest.trackCount !== 10 || canonicalJson(manifest.trackIds) !== canonicalJson([...model.curricula.keys()].sort(compare))) throw new AuthoringFailure("INVALID_MANIFEST", "Scaffold manifest must cover exactly the ten current tracks.");
+  if (manifest.trackCount !== model.curricula.size || canonicalJson(manifest.trackIds) !== canonicalJson([...model.curricula.keys()].sort(compare))) throw new AuthoringFailure("INVALID_MANIFEST", `Scaffold manifest must cover exactly the ${model.curricula.size} current tracks.`);
   if (!manifest.firstRealAuthoringBatch?.trackId || !manifest.firstRealAuthoringBatch?.path) throw new AuthoringFailure("FIRST_BATCH", "Manifest must select one explicit first real authoring batch.");
   const allWritablePaths = [];
   for (const track of manifest.tracks) {

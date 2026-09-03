@@ -16,7 +16,8 @@ export const TARGET_TRACK_FAMILIES = Object.freeze({
   "microsoft-azure-administrator-associate-az-104": "certification",
   "microsoft-azure-ai-fundamentals-ai-901": "certification",
   "hashicorp-terraform-associate-004": "certification",
-  "kubernetes-cloud-native-associate-kcna": "certification"
+  "kubernetes-cloud-native-associate-kcna": "certification",
+  "claude-certified-architect-professional-certification": "certification"
 });
 
 const PROHIBITED_BRIEF_TEXT = /\b(?:coming[ -]soon|placeholder|tbd|todo)\b/i;
@@ -171,7 +172,7 @@ export async function loadCanonicalTrackBriefs({ root = ROOT } = {}) {
   if (new Set(actualIds).size !== actualIds.length) throw new TrackBriefValidationError("DUPLICATE_TRACK_BRIEF", "Track brief IDs must be distinct.");
   const expectedIds = Object.keys(TARGET_TRACK_FAMILIES).sort();
   if (actualIds.length !== expectedIds.length || expectedIds.some((id) => !actualIds.includes(id))) {
-    throw new TrackBriefValidationError("TRACK_BRIEF_SET_MISMATCH", "The canonical brief set must contain exactly the ten LEARNING-PRODUCTS-001 track IDs.");
+    throw new TrackBriefValidationError("TRACK_BRIEF_SET_MISMATCH", `The canonical brief set must contain exactly the ${expectedIds.length} LEARNING-PRODUCTS-001 track IDs.`);
   }
   if (new Set(briefs.map((brief) => brief.freeNodeId)).size !== briefs.length) throw new TrackBriefValidationError("DUPLICATE_FREE_NODE_ID", "Every track brief must own a distinct freeNodeId.");
   if (new Set(briefs.map((brief) => brief.internalFamily)).size !== 3) throw new TrackBriefValidationError("TRACK_FAMILY_SET_MISMATCH", "The canonical brief set must use exactly three internal families.");

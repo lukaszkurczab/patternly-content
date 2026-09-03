@@ -7,7 +7,7 @@ const fingerprint = (value) => createHash("sha256").update(JSON.stringify(value)
 
 export function validateCertificationCurriculum(curriculum, { brief, registry }) {
   for (const field of required) if (!Object.hasOwn(curriculum, field)) fail("MISSING_CERTIFICATION_CURRICULUM_FIELD", `${curriculum.trackId}.${field}`);
-  const allowedVersion = curriculum.curriculumVersion === "2026.08.11" || (["microsoft-azure-ai-fundamentals-ai-901", "microsoft-azure-administrator-associate-az-104"].includes(curriculum.trackId) && curriculum.curriculumVersion === "2026.08.15");
+  const allowedVersion = curriculum.curriculumVersion === "2026.08.11" || (["microsoft-azure-ai-fundamentals-ai-901", "microsoft-azure-administrator-associate-az-104"].includes(curriculum.trackId) && curriculum.curriculumVersion === "2026.08.15") || (curriculum.trackId === "claude-certified-architect-professional-certification" && curriculum.curriculumVersion === "2026.09.03");
   if (curriculum.schemaVersion !== "patternly-certification-curriculum-v1" || !allowedVersion || curriculum.familyId !== "certification") fail("INVALID_CERTIFICATION_CURRICULUM_VERSION", curriculum.trackId);
   if (curriculum.trackId !== brief.trackId || curriculum.freeNodeId !== brief.freeNodeId || curriculum.officialObjectiveRegistryRef !== registry.__registryPath) fail("CERTIFICATION_CURRICULUM_BRIEF_MISMATCH", curriculum.trackId);
   if (!Array.isArray(curriculum.slots) || !curriculum.slots.length || curriculum.targetItemCount !== curriculum.slots.length || curriculum.existingVerifiedItemCount !== 0 || curriculum.authoringItemCount !== curriculum.slots.length) fail("INVALID_CERTIFICATION_SLOT_ACCOUNTING", curriculum.trackId);

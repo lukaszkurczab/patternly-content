@@ -56,6 +56,15 @@ function preflightInventory({ artifact, brief, inventory }) {
   return { bank, selected: selected.sort((left, right) => compare(left.id, right.id)) };
 }
 
+function validateDiagnosticSelection({ profile, bank, selected }) {
+  if (profile.trackId !== "google-cloud-associate-cloud-engineer") return;
+  const diagnostic = profile.modes.find((entry) => entry.modeId === "certification-diagnostic-baseline");
+  const profileItemIds = diagnostic?.selection?.itemIds;
+  const bankItemIds = bank.diagnosticBaseline?.itemIds;
+  const selectedItemIds = new Set(selected.map((item) => item.id));
+  if (!Array.isArray(profileItemIds) || !Array.isArray(bankItemIds) || profileItemIds.length !== 40 || new Set(profileItemIds).size !== 40 || bankItemIds.length !== 40 || new Set(bankItemIds).size !== 40 || canonicalJson(profileItemIds) !== canonicalJson(bankItemIds) || profileItemIds.some((itemId) => !selectedItemIds.has(itemId))) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", "Google Cloud Diagnostic Baseline must equal the immutable bank blueprint and remain inside the selected Free-node inventory.");
+}
+
 function assetReferences(value, references = []) {
   if (Array.isArray(value)) for (const entry of value) assetReferences(entry, references);
   else if (isObject(value)) for (const [key, child] of Object.entries(value)) {
@@ -205,6 +214,7 @@ export function bundledFreeNodeFromInputs({ release, releaseId, brief, inventory
   const artifact = artifactFor(release, brief.trackId);
   const technicalEvidence = validatedTechnicalEvidence({ pin, technicalEvidenceBytes, buildReport, artifact });
   const { bank, selected } = preflightInventory({ artifact, brief, inventory });
+  validateDiagnosticSelection({ profile, bank, selected });
   const expectedInventory = inventoryFromPinnedRelease({ release, releaseId, brief, trackId: brief.trackId, pin });
   if (canonicalJson(inventory) !== canonicalJson(expectedInventory)) fail("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH", `Inventory does not exactly equal the canonical pinned selection for ${brief.trackId}.`);
   validateCompleteTrackContract({ brief, artifact, profile });

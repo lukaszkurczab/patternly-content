@@ -124,7 +124,7 @@ test("GCP Diagnostic Baseline packages and prepares the exact canonical 40-item 
   const diagnostic = payload.freeNodeExperienceProfile.modes.find((entry) => entry.modeId === "certification-diagnostic-baseline");
   const blueprint = source.track.modeConfiguration.diagnosticBaseline;
 
-  assert.equal(record.manifest.packageVersion, `${CERTIFICATION_TRACK}-free-node-0005`);
+  assert.equal(record.manifest.packageVersion, `${CERTIFICATION_TRACK}-free-node-0006`);
   assert.equal(record.manifest.itemCount, 136);
   assert.equal(payload.freeNodeExperienceProfile.profileId, `${CERTIFICATION_TRACK}-free-node-v2`);
   assert.equal(payload.freeNodeExperienceProfile.profileVersion, "2");
@@ -153,6 +153,30 @@ test("GCP Diagnostic Baseline rejects reordered, shortened, duplicate, or unknow
   invalid((itemIds) => { itemIds.pop(); });
   invalid((itemIds) => { itemIds[39] = itemIds[0]; });
   invalid((itemIds) => { itemIds[39] = "gcp-item-outside-blueprint"; });
+});
+
+test("GCP Diagnostic builder binds the profile to the immutable bank and selected inventory", async () => {
+  const source = await inputs(CERTIFICATION_TRACK);
+  const baseline = source.track.modeConfiguration.diagnosticBaseline.itemIds;
+  const mutateInputs = (itemIds) => {
+    const value = clone(source);
+    value.technicalEvidenceBytes = source.technicalEvidenceBytes;
+    value.profile.modes.find((entry) => entry.modeId === "certification-diagnostic-baseline").selection.itemIds = [...itemIds];
+    value.track.modeConfiguration.diagnosticBaseline.itemIds = [...itemIds];
+    assert.throws(() => bundledFreeNodeFromInputs(value), fails("BUNDLED_FREE_NODE_PROVENANCE_MISMATCH"));
+  };
+
+  mutateInputs(Array.from({ length: 40 }, (_, index) => `gcp-mutated-diagnostic-${String(index + 1).padStart(2, "0")}`));
+  mutateInputs([...baseline].reverse());
+  mutateInputs(source.inventory.items.map((entry) => entry.id).filter((itemId) => !baseline.includes(itemId)).slice(0, 40));
+});
+
+test("historical GCP 0004 remains structurally verifiable without the Diagnostic mode", async () => {
+  const record = await load("artifacts/bundled-free-nodes/google-cloud-associate-cloud-engineer/google-cloud-associate-cloud-engineer-free-node-0004/package.json");
+  assert.doesNotThrow(() => verifyBundledFreeNodeRecord(record));
+  const { payload } = payloadFromBundledFreeNode(record);
+  assert.equal(payload.freeNodeExperienceProfile.profileId, "google-cloud-associate-cloud-engineer-free-node-v1");
+  assert.equal(payload.freeNodeExperienceProfile.modes.some((entry) => entry.modeId === "certification-diagnostic-baseline"), false);
 });
 
 test("Coding Weak Area Review is package-local, evidence-conditioned, unique, and truthfully shortened", async () => {

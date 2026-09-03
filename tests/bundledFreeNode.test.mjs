@@ -20,6 +20,7 @@ const load = async (path) => JSON.parse(await readFile(path, "utf8"));
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const exec = promisify(execFile);
 const git = (root, ...args) => exec("git", args, { cwd: root });
+const CERTIFICATION_TRACK = "google-cloud-associate-cloud-engineer";
 
 async function inputs(trackId) {
   const [brief, pins, profile, profileSchema, track, packageConfiguration, packageConfigurationSchema] = await Promise.all([
@@ -114,6 +115,44 @@ test("Coding package prepares every approved immediate mode and excludes full-tr
   }
   for (const excluded of ["recognize", "contrast", "independent", "simulation", "recognitionSets", "contrastSets", "interleavedScopes", "simulationPools", "simulationProfiles"]) assert.equal(JSON.stringify(payload.modeStructures).includes(excluded), false);
   assert.ok(payload.items.every((item) => item.taxonomy.roadmapNodeId === "complexity_and_constraints"));
+});
+
+test("GCP Diagnostic Baseline packages and prepares the exact canonical 40-item blueprint", async () => {
+  const source = await inputs(CERTIFICATION_TRACK);
+  const record = await generateBundledFreeNode({ trackId: CERTIFICATION_TRACK, profileSourceRepositoryCommit: COMMIT });
+  const { payload } = payloadFromBundledFreeNode(record);
+  const diagnostic = payload.freeNodeExperienceProfile.modes.find((entry) => entry.modeId === "certification-diagnostic-baseline");
+  const blueprint = source.track.modeConfiguration.diagnosticBaseline;
+
+  assert.equal(record.manifest.packageVersion, `${CERTIFICATION_TRACK}-free-node-0005`);
+  assert.equal(record.manifest.itemCount, 136);
+  assert.equal(payload.freeNodeExperienceProfile.profileId, `${CERTIFICATION_TRACK}-free-node-v2`);
+  assert.equal(payload.freeNodeExperienceProfile.profileVersion, "2");
+  assert.equal(diagnostic.selection.itemIds.length, 40);
+  assert.equal(new Set(diagnostic.selection.itemIds).size, 40);
+  assert.deepEqual(diagnostic.selection.itemIds, blueprint.itemIds);
+
+  const session = prepareBundledFreeNodeSession(record, { modeId: diagnostic.modeId, requestedLength: 40 });
+  assert.equal(session.status, "ready");
+  assert.equal(session.actualLength, 40);
+  assert.equal(session.shortened, false);
+  assert.deepEqual(session.itemIds, blueprint.itemIds);
+  assert.throws(() => prepareBundledFreeNodeSession(record, { modeId: diagnostic.modeId, requestedLength: 20 }), fails("UNSUPPORTED_FREE_NODE_SESSION"));
+});
+
+test("GCP Diagnostic Baseline rejects reordered, shortened, duplicate, or unknown blueprint items", async () => {
+  const source = await inputs(CERTIFICATION_TRACK);
+  const validate = (profile) => validateFreeNodeExperienceProfile({ ...source, schema: source.profileSchema, profile });
+  const invalid = (mutate) => {
+    const profile = clone(source.profile);
+    mutate(profile.modes.find((entry) => entry.modeId === "certification-diagnostic-baseline").selection.itemIds);
+    assert.throws(() => validate(profile), (error) => ["INVALID_SCHEMA", "INVALID_FREE_NODE_MODE_CONFIGURATION"].includes(error.code));
+  };
+
+  invalid((itemIds) => { [itemIds[0], itemIds[1]] = [itemIds[1], itemIds[0]]; });
+  invalid((itemIds) => { itemIds.pop(); });
+  invalid((itemIds) => { itemIds[39] = itemIds[0]; });
+  invalid((itemIds) => { itemIds[39] = "gcp-item-outside-blueprint"; });
 });
 
 test("Coding Weak Area Review is package-local, evidence-conditioned, unique, and truthfully shortened", async () => {

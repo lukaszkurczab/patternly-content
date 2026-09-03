@@ -18,6 +18,12 @@ const exactModeContract = Object.freeze({
     Object.freeze({ modeId: "coding-interview-custom-practice", blueprintModeId: "coding-interview-guided-practice", availability: "immediate", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "learner_selected_free_node_mental_unit", reinsertPolicy: "canonical_family_package_local" }),
     Object.freeze({ modeId: "coding-interview-weak-area-review", blueprintModeId: "coding-interview-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "canonical_family_package_local" })
   ]),
+  "google-cloud-associate-cloud-engineer": Object.freeze([
+    Object.freeze({ modeId: "certification-diagnostic-baseline", blueprintModeId: "certification-diagnostic-baseline", availability: "immediate", requestedLengths: Object.freeze([40]), defaultRequestedLength: 40, selectionKind: "exact_free_node", reinsertPolicy: "disabled", requiresExactItemIds: true }),
+    Object.freeze({ modeId: "certification-focus-practice", blueprintModeId: "certification-focus-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
+    Object.freeze({ modeId: "certification-quick-review", blueprintModeId: "certification-quick-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "due_free_node_review_evidence", reinsertPolicy: "disabled" })
+  ]),
   "microsoft-azure-administrator-associate-az-104": Object.freeze([
     Object.freeze({ modeId: "certification-focus-practice", blueprintModeId: "certification-focus-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
     Object.freeze({ modeId: "certification-weak-area-review", blueprintModeId: "certification-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "disabled" }),
@@ -44,7 +50,7 @@ function canonicalBlueprintModes(track) {
   if (track.familyId === "coding_interview") return new Map(track.modeConfiguration.practiceBlueprints.map((entry) => [entry.modeId, entry]));
   if (track.familyId === "design_interview") return new Map(track.modeConfiguration.practiceBlueprints.map((entry) => [entry.modeId, entry]));
   const configuration = track.modeConfiguration;
-  return new Map([configuration.focusPractice, configuration.weakAreaReview, configuration.quickReview].map((entry) => [entry.modeId, entry]));
+  return new Map([configuration.diagnosticBaseline, configuration.focusPractice, configuration.weakAreaReview, configuration.quickReview].filter(Boolean).map((entry) => [entry.modeId, entry]));
 }
 
 function canonicalUserMappings(track) {
@@ -130,9 +136,14 @@ export function validateFreeNodeExperienceProfile({ profile, schema, brief, trac
     if (mode.selection.freeNodeId !== profile.freeNodeId || mode.selection.itemSource !== "package_items" || mode.selection.requireUniqueItemIds !== true) fail("FREE_NODE_POLICY_NOT_CLOSED", `${mode.modeId} lacks an exact package-local Free-node boundary.`);
     if (mappings.get(mode.modeId) !== mode.blueprintModeId || !blueprints.has(mode.blueprintModeId)) fail("INVALID_FREE_NODE_MODE_MAPPING", `${mode.modeId} does not map to one canonical existing blueprint.`);
     const blueprint = blueprints.get(mode.blueprintModeId);
-    const supportedLengths = blueprint.requestedLengths ?? (blueprint.maximumLength ? [blueprint.maximumLength] : []);
+    const supportedLengths = blueprint.requestedLengths ?? (blueprint.maximumLength ? [blueprint.maximumLength] : blueprint.requestedLength ? [blueprint.requestedLength] : []);
     const shortNodeLength = profile.trackId === "aws-certified-solutions-architect-associate" && mode.requestedLengths.every((length) => Number.isSafeInteger(length) && length > 0 && length <= Math.min(...supportedLengths));
     if (mode.requestedLengths.some((length) => !supportedLengths.includes(length)) && !shortNodeLength) fail("UNSUPPORTED_FREE_NODE_LENGTH", `${mode.modeId} requests a length unsupported by its canonical blueprint.`);
+    if (contract.requiresExactItemIds) {
+      const selectedItemIds = mode.selection.itemIds;
+      const blueprintItemIds = blueprint.itemIds;
+      if (!Array.isArray(selectedItemIds) || selectedItemIds.length !== 40 || new Set(selectedItemIds).size !== 40 || !Array.isArray(blueprintItemIds) || blueprintItemIds.length !== 40 || new Set(blueprintItemIds).size !== 40 || !same(selectedItemIds, blueprintItemIds)) fail("INVALID_FREE_NODE_MODE_CONFIGURATION", `${mode.modeId} must carry the exact 40-item canonical blueprint.`);
+    } else if (mode.selection.itemIds !== undefined) fail("INVALID_FREE_NODE_MODE_CONFIGURATION", `${mode.modeId} must not carry a fixed item blueprint.`);
     if (mode.availability === "evidence_conditioned") {
       if (!mode.selection.reviewSources?.length || mode.selection.emptyEligibility !== "unavailable" || mode.selection.shortening !== "truthful_to_eligible_count") fail("FREE_NODE_POLICY_NOT_CLOSED", `${mode.modeId} must expose truthful package-bounded review eligibility.`);
     } else if (mode.selection.reviewSources !== undefined || mode.selection.emptyEligibility !== undefined || mode.selection.shortening !== undefined) fail("INVALID_FREE_NODE_MODE_CONFIGURATION", `${mode.modeId} must not carry review-only controls.`);

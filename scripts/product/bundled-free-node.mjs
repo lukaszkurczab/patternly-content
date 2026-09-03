@@ -313,6 +313,12 @@ export function verifyBundledFreeNodeRecord(record) {
   const configurationKeys = payload.familyId === "coding_interview" ? ["compatibilitySets", "configurations", "userModeMappings"] : ["configurations"];
   if (canonicalJson(Object.keys(payload.modeStructures).sort(compare)) !== canonicalJson(configurationKeys.sort(compare))) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node mode structures have an unsupported family shape.");
   if (canonicalJson(payload.modeStructures.configurations) !== canonicalJson(profile.modes)) fail("INVALID_BUNDLED_FREE_NODE", "Bundled Free-node configurations differ from its profile.");
+  const diagnostic = profile.modes.find((entry) => entry.modeId === "certification-diagnostic-baseline");
+  if (payload.trackId === "google-cloud-associate-cloud-engineer" && diagnostic) {
+    const diagnosticItemIds = diagnostic.selection?.itemIds;
+    const packageItemIds = new Set(payload.items.map((item) => item.id));
+    if (diagnostic.selection?.kind !== "exact_free_node" || diagnostic.availability !== "immediate" || canonicalJson(diagnostic.requestedLengths) !== canonicalJson([40]) || diagnostic.defaultRequestedLength !== 40 || diagnostic.reinsertPolicy !== "disabled" || !Array.isArray(diagnosticItemIds) || diagnosticItemIds.length !== 40 || new Set(diagnosticItemIds).size !== 40 || diagnosticItemIds.some((id) => !packageItemIds.has(id))) fail("INVALID_BUNDLED_FREE_NODE", "Google Cloud Diagnostic Baseline must carry exactly 40 unique package-local items.");
+  }
   if (payload.familyId === "coding_interview") {
     const expectedMappings = profile.modes.map((entry) => ({ userModeId: entry.modeId, blueprintModeId: entry.blueprintModeId }));
     if (canonicalJson(payload.modeStructures.userModeMappings) !== canonicalJson(expectedMappings)) fail("INVALID_BUNDLED_FREE_NODE", "Coding Custom and canonical user-mode mappings differ from the profile.");
@@ -345,6 +351,13 @@ export function prepareBundledFreeNodeSession(record, { modeId, requestedLength,
     }
     candidates = [...new Map(eligible.map((item) => [item.id, item])).values()].sort((left, right) => compare(left.id, right.id));
     if (!candidates.length) return unavailable(modeId, requestedLength);
+  } else if (configuration.modeId === "certification-diagnostic-baseline") {
+    if (requestedLength !== 40 || !Array.isArray(configuration.selection.itemIds) || configuration.selection.itemIds.length !== 40 || new Set(configuration.selection.itemIds).size !== 40) fail("UNSUPPORTED_FREE_NODE_SESSION", "Certification Diagnostic Baseline is fixed to its exact 40-item blueprint.");
+    candidates = configuration.selection.itemIds.map((itemId) => {
+      const item = byId.get(itemId);
+      if (!item) fail("FREE_NODE_SESSION_NOT_PREPARABLE", `Certification Diagnostic Baseline item ${itemId} is outside the package.`);
+      return item;
+    });
   } else if (configuration.selection.kind === "learner_selected_free_node_mental_unit") {
     if (typeof mentalUnitId !== "string" || !mentalUnitId) fail("INVALID_FREE_NODE_MENTAL_UNIT", "Custom Practice requires one Free-node mental unit.");
     if (!configuration.feedbackOptions.includes(feedbackOption)) fail("INVALID_FREE_NODE_FEEDBACK_OPTION", "Custom Practice feedback option is unsupported.");

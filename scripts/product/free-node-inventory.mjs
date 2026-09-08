@@ -120,10 +120,14 @@ export function inventoryFromPinnedRelease({ release, releaseId, brief, trackId,
 
 export async function generateFreeNodeInventory({ root = ROOT, releaseId, trackId }) {
   text(releaseId, "releaseId", "INVALID_RELEASE"); text(trackId, "trackId", "INVALID_TRACK");
-  const [briefs, pins, release] = await Promise.all([loadCanonicalTrackBriefs({ root }), loadCanonicalFreeNodeInventoryPins({ root }), readJson(join(root, "artifacts", "releases", releaseId, "release.json"))]);
+  const [briefs, pins] = await Promise.all([loadCanonicalTrackBriefs({ root }), loadCanonicalFreeNodeInventoryPins({ root })]);
   const brief = briefs.find((entry) => entry.trackId === trackId);
   if (!brief) fail("MISSING_TRACK_BRIEF", `No canonical brief exists for ${trackId}.`);
-  return inventoryFromPinnedRelease({ release, releaseId, brief, trackId, pin: pins.find((entry) => entry.trackId === trackId) });
+  const pin = pins.find((entry) => entry.trackId === trackId);
+  if (!pin) fail("MISSING_FREE_NODE_INVENTORY_PIN", `No canonical free-node inventory pin exists for ${trackId}.`);
+  if (pin.releaseId !== releaseId) fail("FREE_NODE_INVENTORY_PIN_MISMATCH", `Release ${releaseId} is not the canonical immutable free-node inventory source for ${trackId}.`);
+  const release = await readJson(join(root, "artifacts", "releases", releaseId, "release.json"));
+  return inventoryFromPinnedRelease({ release, releaseId, brief, trackId, pin });
 }
 
 export async function writeFreeNodeInventory({ root = ROOT, releaseId, trackId, outputPath }) {

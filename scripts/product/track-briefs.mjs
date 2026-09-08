@@ -29,7 +29,7 @@ const INTENDED_FREE_MODES_BY_FAMILY = Object.freeze({
 const IMPLEMENTED_FREE_PROFILES = Object.freeze({
   "coding-interview-dsa-problem-solving": Object.freeze({
     profileId: "coding-interview-dsa-problem-solving-free-node-v1",
-    profileVersion: "1",
+    profileVersion: "2",
     profilePath: "config/free-node-experience-profiles/coding-interview-dsa-problem-solving.json",
     modeIds: Object.freeze(["coding-interview-learn-approach", "coding-interview-guided-practice", "coding-interview-custom-practice", "coding-interview-weak-area-review"])
   }),

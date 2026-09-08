@@ -368,6 +368,11 @@ export function prepareBundledFreeNodeSession(record, { modeId, requestedLength,
       if (!item) fail("FREE_NODE_SESSION_NOT_PREPARABLE", `Certification Diagnostic Baseline item ${itemId} is outside the package.`);
       return item;
     });
+  } else if (configuration.modeId === "coding-interview-custom-practice" && configuration.selection.kind === "exact_free_node") {
+    if (mentalUnitId !== undefined) fail("INVALID_FREE_NODE_MENTAL_UNIT", "Custom Practice exact Free-node scope does not accept a mental unit.");
+    if (!Array.isArray(configuration.feedbackOptions) || !configuration.feedbackOptions.includes("afterEachAnswer") || !configuration.feedbackOptions.includes("atSessionEnd")) fail("INVALID_FREE_NODE_FEEDBACK_OPTION", "Custom Practice must expose both canonical feedback options.");
+    if (!configuration.feedbackOptions.includes(feedbackOption)) fail("INVALID_FREE_NODE_FEEDBACK_OPTION", "Custom Practice feedback option is unsupported.");
+    candidates = [...payload.items].sort((left, right) => compare(left.id, right.id));
   } else if (configuration.selection.kind === "learner_selected_free_node_mental_unit") {
     if (typeof mentalUnitId !== "string" || !mentalUnitId) fail("INVALID_FREE_NODE_MENTAL_UNIT", "Custom Practice requires one Free-node mental unit.");
     if (!configuration.feedbackOptions.includes(feedbackOption)) fail("INVALID_FREE_NODE_FEEDBACK_OPTION", "Custom Practice feedback option is unsupported.");

@@ -100,6 +100,7 @@ test("historical package validation ignores provenance-only commit drift but rej
 test("Coding package prepares every approved immediate mode and excludes full-track-only structures", async () => {
   const record = await generateBundledFreeNode({ trackId: TRACKS[0], profileSourceRepositoryCommit: COMMIT });
   const { payload } = payloadFromBundledFreeNode(record);
+  assert.equal(record.manifest.packageVersion, "coding-interview-dsa-problem-solving-free-node-0005");
   assert.deepEqual(record.manifest.modeIds, ["coding-interview-custom-practice", "coding-interview-guided-practice", "coding-interview-learn-approach", "coding-interview-weak-area-review"]);
   assert.deepEqual(Object.keys(payload.modeStructures).sort(), ["compatibilitySets", "configurations", "userModeMappings"]);
   assert.deepEqual(payload.modeStructures.userModeMappings.find((entry) => entry.userModeId === "coding-interview-custom-practice"), { userModeId: "coding-interview-custom-practice", blueprintModeId: "coding-interview-guided-practice" });
@@ -108,13 +109,33 @@ test("Coding package prepares every approved immediate mode and excludes full-tr
     const session = prepareBundledFreeNodeSession(record, { modeId: "coding-interview-guided-practice", requestedLength });
     assert.equal(session.actualLength, requestedLength); assert.equal(new Set(session.itemIds).size, requestedLength);
   }
-  const mentalUnits = [...new Set(payload.items.map((item) => item.taxonomy.primaryMentalUnitId))];
-  for (const mentalUnitId of mentalUnits) for (const feedbackOption of ["afterEachAnswer", "atSessionEnd"]) {
-    const session = prepareBundledFreeNodeSession(record, { modeId: "coding-interview-custom-practice", requestedLength: 10, mentalUnitId, feedbackOption });
-    assert.equal(session.actualLength, 10); assert.equal(session.feedbackOption, feedbackOption); assert.ok(session.itemIds.every((id) => payload.items.find((item) => item.id === id).taxonomy.primaryMentalUnitId === mentalUnitId));
+  for (const requestedLength of [10, 20, 40]) for (const feedbackOption of ["afterEachAnswer", "atSessionEnd"]) {
+    const session = prepareBundledFreeNodeSession(record, { modeId: "coding-interview-custom-practice", requestedLength, feedbackOption });
+    assert.equal(session.actualLength, requestedLength);
+    assert.equal(session.feedbackOption, feedbackOption);
+    assert.equal(new Set(session.itemIds).size, requestedLength);
+    assert.ok(session.itemIds.every((id) => payload.items.find((item) => item.id === id).taxonomy.roadmapNodeId === "complexity_and_constraints"));
   }
+  const mentalUnitId = payload.items[0].taxonomy.primaryMentalUnitId;
+  assert.throws(() => prepareBundledFreeNodeSession(record, { modeId: "coding-interview-custom-practice", requestedLength: 10, mentalUnitId, feedbackOption: "afterEachAnswer" }), fails("INVALID_FREE_NODE_MENTAL_UNIT"));
+  assert.throws(() => prepareBundledFreeNodeSession(record, { modeId: "coding-interview-custom-practice", requestedLength: 10, feedbackOption: "unsupported" }), fails("INVALID_FREE_NODE_FEEDBACK_OPTION"));
+  assert.throws(() => prepareBundledFreeNodeSession(record, { modeId: "coding-interview-custom-practice", requestedLength: 10 }), fails("INVALID_FREE_NODE_FEEDBACK_OPTION"));
   for (const excluded of ["recognize", "contrast", "independent", "simulation", "recognitionSets", "contrastSets", "interleavedScopes", "simulationPools", "simulationProfiles"]) assert.equal(JSON.stringify(payload.modeStructures).includes(excluded), false);
   assert.ok(payload.items.every((item) => item.taxonomy.roadmapNodeId === "complexity_and_constraints"));
+});
+
+test("historical Coding 0004 preserves the mental-unit Custom Practice contract", async () => {
+  const record = await load("artifacts/bundled-free-nodes/coding-interview-dsa-problem-solving/coding-interview-dsa-problem-solving-free-node-0004/package.json");
+  assert.doesNotThrow(() => verifyBundledFreeNodeRecord(record));
+  const { payload } = payloadFromBundledFreeNode(record);
+  const mentalUnitId = payload.items[0].taxonomy.primaryMentalUnitId;
+  for (const feedbackOption of ["afterEachAnswer", "atSessionEnd"]) {
+    const session = prepareBundledFreeNodeSession(record, { modeId: "coding-interview-custom-practice", requestedLength: 10, mentalUnitId, feedbackOption });
+    assert.equal(session.actualLength, 10);
+    assert.equal(session.feedbackOption, feedbackOption);
+    assert.ok(session.itemIds.every((id) => payload.items.find((item) => item.id === id).taxonomy.primaryMentalUnitId === mentalUnitId));
+  }
+  assert.throws(() => prepareBundledFreeNodeSession(record, { modeId: "coding-interview-custom-practice", requestedLength: 10, feedbackOption: "afterEachAnswer" }), fails("INVALID_FREE_NODE_MENTAL_UNIT"));
 });
 
 test("GCP Diagnostic Baseline packages and prepares the exact canonical 40-item blueprint", async () => {
@@ -203,7 +224,7 @@ test("profile semantic validation rejects all-modes Free, invented IDs, excluded
     const lifecycle = clone(value.profile); lifecycle.runnerId = "second-runner"; assert.throws(() => validate(lifecycle), fails("INVALID_SCHEMA"));
   }
   const coding = await inputs(TRACKS[0]);
-  const longCustom = clone(coding.profile); longCustom.modes.find((entry) => entry.modeId === "coding-interview-custom-practice").requestedLengths = [20]; assert.throws(() => validateFreeNodeExperienceProfile({ ...coding, schema: coding.profileSchema, profile: longCustom }), fails("INVALID_FREE_NODE_MODE_CONFIGURATION"));
+  const longCustom = clone(coding.profile); longCustom.modes.find((entry) => entry.modeId === "coding-interview-custom-practice").requestedLengths = [10, 20]; assert.throws(() => validateFreeNodeExperienceProfile({ ...coding, schema: coding.profileSchema, profile: longCustom }), fails("INVALID_FREE_NODE_MODE_CONFIGURATION"));
   const wrongMapping = clone(coding.profile); wrongMapping.modes.find((entry) => entry.modeId === "coding-interview-custom-practice").blueprintModeId = "coding-interview-custom-practice"; assert.throws(() => validateFreeNodeExperienceProfile({ ...coding, schema: coding.profileSchema, profile: wrongMapping }), fails("INVALID_FREE_NODE_MODE_CONFIGURATION"));
   const excludedCoding = clone(coding.profile); excludedCoding.modes[0].modeId = "coding-interview-simulation"; assert.throws(() => validateFreeNodeExperienceProfile({ ...coding, schema: coding.profileSchema, profile: excludedCoding }), fails("INVALID_FREE_NODE_MODE_SET"));
 });
@@ -245,7 +266,7 @@ test("checksum mutation, immutable overwrite, and failed generation are fail-clo
   const root = await fixtureRoot();
   try {
     const first = await writeBundledFreeNode({ root, trackId: TRACKS[0], profileSourceRepositoryCommit: COMMIT });
-    assert.equal(canonicalBundledFreeNodePath(first.record), `artifacts/bundled-free-nodes/${TRACKS[0]}/${TRACKS[0]}-free-node-0004/package.json`);
+    assert.equal(canonicalBundledFreeNodePath(first.record), `artifacts/bundled-free-nodes/${TRACKS[0]}/${TRACKS[0]}-free-node-0005/package.json`);
     await assert.rejects(() => writeBundledFreeNode({ root, trackId: TRACKS[0], profileSourceRepositoryCommit: COMMIT }), fails("IMMUTABLE_BUNDLED_FREE_NODE"));
     const before = await readFile(first.path, "utf8"); assert.equal(before, canonicalJson(first.record));
   } finally { await rm(root, { recursive: true, force: true }); }

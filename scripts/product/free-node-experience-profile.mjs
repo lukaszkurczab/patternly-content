@@ -15,7 +15,7 @@ const exactModeContract = Object.freeze({
   "coding-interview-dsa-problem-solving": Object.freeze([
     Object.freeze({ modeId: "coding-interview-learn-approach", blueprintModeId: "coding-interview-learn-approach", availability: "immediate", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "disabled" }),
     Object.freeze({ modeId: "coding-interview-guided-practice", blueprintModeId: "coding-interview-guided-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "canonical_family_package_local" }),
-    Object.freeze({ modeId: "coding-interview-custom-practice", blueprintModeId: "coding-interview-guided-practice", availability: "immediate", requestedLengths: Object.freeze([10]), defaultRequestedLength: 10, selectionKind: "learner_selected_free_node_mental_unit", reinsertPolicy: "canonical_family_package_local" }),
+    Object.freeze({ modeId: "coding-interview-custom-practice", configurationVersion: "2", blueprintModeId: "coding-interview-guided-practice", availability: "immediate", requestedLengths: Object.freeze([10, 20, 40]), defaultRequestedLength: 10, selectionKind: "exact_free_node", reinsertPolicy: "canonical_family_package_local" }),
     Object.freeze({ modeId: "coding-interview-weak-area-review", blueprintModeId: "coding-interview-weak-area-review", availability: "evidence_conditioned", requestedLengths: Object.freeze([10, 20]), defaultRequestedLength: 10, selectionKind: "free_node_review_evidence", reinsertPolicy: "canonical_family_package_local" })
   ]),
   "google-cloud-associate-cloud-engineer": Object.freeze([
@@ -132,7 +132,7 @@ export function validateFreeNodeExperienceProfile({ profile, schema, brief, trac
   const mappings = canonicalUserMappings(track);
   for (const [index, mode] of modes.entries()) {
     const contract = expected[index];
-    if (mode.configurationVersion !== "1" || mode.blueprintModeId !== contract.blueprintModeId || mode.availability !== contract.availability || !same(mode.requestedLengths, contract.requestedLengths) || mode.defaultRequestedLength !== contract.defaultRequestedLength || mode.selection.kind !== contract.selectionKind || mode.reinsertPolicy !== contract.reinsertPolicy) fail("INVALID_FREE_NODE_MODE_CONFIGURATION", `${mode.modeId} differs from its approved node-local configuration.`);
+    if (mode.configurationVersion !== (contract.configurationVersion ?? "1") || mode.blueprintModeId !== contract.blueprintModeId || mode.availability !== contract.availability || !same(mode.requestedLengths, contract.requestedLengths) || mode.defaultRequestedLength !== contract.defaultRequestedLength || mode.selection.kind !== contract.selectionKind || mode.reinsertPolicy !== contract.reinsertPolicy) fail("INVALID_FREE_NODE_MODE_CONFIGURATION", `${mode.modeId} differs from its approved node-local configuration.`);
     if (mode.selection.freeNodeId !== profile.freeNodeId || mode.selection.itemSource !== "package_items" || mode.selection.requireUniqueItemIds !== true) fail("FREE_NODE_POLICY_NOT_CLOSED", `${mode.modeId} lacks an exact package-local Free-node boundary.`);
     if (mappings.get(mode.modeId) !== mode.blueprintModeId || !blueprints.has(mode.blueprintModeId)) fail("INVALID_FREE_NODE_MODE_MAPPING", `${mode.modeId} does not map to one canonical existing blueprint.`);
     const blueprint = blueprints.get(mode.blueprintModeId);
@@ -152,7 +152,7 @@ export function validateFreeNodeExperienceProfile({ profile, schema, brief, trac
   if (!primary || primary.availability !== "immediate" || !primary.requestedLengths.includes(profile.primaryEntry.requestedLength)) fail("MISSING_IMMEDIATE_FREE_NODE_PRIMARY", "The primary Free entry must be immediately executable at its declared length.");
   if (profile.trackId === "coding-interview-dsa-problem-solving") {
     const custom = modes.find((entry) => entry.modeId === "coding-interview-custom-practice");
-    if (!same(custom.feedbackOptions, ["afterEachAnswer", "atSessionEnd"]) || custom.blueprintModeId !== "coding-interview-guided-practice") fail("INVALID_FREE_NODE_MODE_MAPPING", "Coding Custom Practice must map to Guided Practice with both canonical feedback options.");
+    if (!same(custom.feedbackOptions, ["afterEachAnswer", "atSessionEnd"]) || custom.blueprintModeId !== "coding-interview-guided-practice" || custom.selection.kind !== "exact_free_node") fail("INVALID_FREE_NODE_MODE_MAPPING", "Coding Custom Practice must map to Guided Practice with both canonical feedback options and exact Free-node selection.");
     const weak = modes.find((entry) => entry.modeId === "coding-interview-weak-area-review");
     if (!same(weak.selection.reviewSources, ["due_queue", "session_misses"]) || weak.selection.sessionMissesMustBeCommitted !== true) fail("FREE_NODE_POLICY_NOT_CLOSED", "Coding Weak Area Review must use only due or committed node-local miss evidence.");
   } else if (profile.familyId === "certification") {

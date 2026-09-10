@@ -1,5 +1,7 @@
 # Patternly Content — KISS plan
 
+> **Rola po konsolidacji:** kryteria techniczne `SIMP-01–05`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
+
 **Status:** podejście implementowalne; bez implementacji
 **Cel:** repozytorium ma być prostą bazą pytań JSON, a aplikacja ma bezpośrednio konsumować jej prosty artefakt podczas buildu
 

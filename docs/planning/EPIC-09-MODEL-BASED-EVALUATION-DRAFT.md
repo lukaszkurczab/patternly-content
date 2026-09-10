@@ -1,5 +1,7 @@
 # EPIC-09 — model-based evaluation wszystkich banków
 
+> **Rola po konsolidacji:** specyfikacja i kryteria `09-A–09-H`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
+
 **Status:** `deferred` do zakończenia uproszczenia repozytorium content
 **Charakter:** uzupełniająca ścieżka jakościowa
 **Zakres:** wszystkie 9 zaakceptowanych banków, około 16 041 pozycji według obecnych raportów i źródeł

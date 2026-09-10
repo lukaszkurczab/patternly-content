@@ -8,7 +8,7 @@ const realReleaseWorkflow = readFileSync(".github/workflows/real-content-release
 const freeNodeInventory = readFileSync("scripts/product/free-node-inventory.mjs", "utf8");
 const freeNodePins = readFileSync("config/free-node-inventory-pins.json", "utf8");
 const bundledPackages = readFileSync("config/bundled-free-node-packages.json", "utf8");
-const readiness = JSON.parse(readFileSync("evidence/readiness/eight-track-launch-readiness.json", "utf8"));
+const readiness = JSON.parse(readFileSync("evidence/readiness/candidate-readiness.json", "utf8"));
 
 test("content workflows retain full technical-input history and clean locked installs", () => {
   assert.match(architectureWorkflow, /uses: actions\/checkout@v4\n        with:\n          fetch-depth: 0/);
@@ -41,7 +41,7 @@ test("GCP authoring ingress is canonical while runtime selectors and old paths r
   await assert.doesNotReject(() => stat("artifacts/tracks/google-cloud-associate-cloud-engineer/gcp-ace-0016/track-artifact.json"));
 });
 
-test("readiness verifies the current immutable artifacts against the active release", () => {
+test("readiness binds every candidate track to its exact immutable artifact", () => {
   const az = readiness.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
   const ai = readiness.tracks.find((track) => track.trackId === "microsoft-azure-ai-fundamentals-ai-901");
   const gcp = readiness.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
@@ -50,9 +50,9 @@ test("readiness verifies the current immutable artifacts against the active rele
     ["microsoft-azure-ai-fundamentals-ai-901", ai],
     ["google-cloud-associate-cloud-engineer", gcp],
   ]) {
-    assert.equal(track?.immutableArtifact?.presence, "verified", trackId);
-    assert.equal(track?.immutableArtifact?.releaseId, "patternly-launch-2026-08-25-01", trackId);
-    assert.equal(track?.immutableArtifact?.sourceRepositoryCommit, "6a6fd729b9d45086aa5d4f6cf27ec48ef664811c", trackId);
+    assert.equal(track?.artifact?.releaseId, "patternly-launch-2026-08-25-01", trackId);
+    assert.match(track?.artifact?.sourceRepositoryCommit ?? "", /^[a-f0-9]{40}$/u, trackId);
+    assert.match(track?.artifact?.checksumSha256 ?? "", /^[a-f0-9]{64}$/u, trackId);
   }
 });
 

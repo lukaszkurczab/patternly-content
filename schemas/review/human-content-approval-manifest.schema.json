@@ -1,12 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "patternly-human-content-approval-manifest-v1",
+  "$id": "patternly-human-content-approval-manifest-v2",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "schemaVersion",
     "decisionId",
-    "sourceCommit",
+    "candidateManifestPath",
+    "candidateId",
     "approver",
     "confirmationDate",
     "reviewScope",
@@ -15,9 +16,10 @@
     "finalDisposition"
   ],
   "properties": {
-    "schemaVersion": { "const": "patternly-human-content-approval-manifest-v1" },
+    "schemaVersion": { "const": "patternly-human-content-approval-manifest-v2" },
     "decisionId": { "type": "string", "minLength": 1 },
-    "sourceCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "candidateManifestPath": { "const": "evidence/content-acceptance/candidate-manifest-v1.json" },
+    "candidateId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "approver": {
       "type": "object",
       "additionalProperties": false,
@@ -32,37 +34,42 @@
     "reviewScope": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
     "tracks": {
       "type": "array",
-      "minItems": 8,
+      "minItems": 9,
+      "maxItems": 9,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "approvalId",
-          "trackId",
-          "familyId",
-          "sourceCommit",
-          "sourceRoot",
-          "sourceManifestSha256",
-          "itemManifestSha256",
-          "sourceFileCount",
-          "canonicalItemCount",
-          "reviewPacketPath",
-          "reviewPacketSourceCommit",
-          "reviewPacketSampleCount"
-        ],
+        "required": ["approvalId", "candidateId", "trackId", "familyId", "source", "reviewPacket"],
         "properties": {
           "approvalId": { "type": "string", "minLength": 1 },
+          "candidateId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
           "trackId": { "type": "string", "minLength": 1 },
           "familyId": { "type": "string", "minLength": 1 },
-          "sourceCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
-          "sourceRoot": { "type": "string", "minLength": 1 },
-          "sourceManifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-          "itemManifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-          "sourceFileCount": { "type": "integer", "minimum": 1 },
-          "canonicalItemCount": { "type": "integer", "minimum": 1 },
-          "reviewPacketPath": { "type": "string", "minLength": 1 },
-          "reviewPacketSourceCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
-          "reviewPacketSampleCount": { "type": "integer", "minimum": 1 }
+          "source": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["sourceCommit", "sourceRoot", "sourceFileCount", "canonicalItemCount", "sourceManifestSha256", "itemManifestSha256"],
+            "properties": {
+              "sourceCommit": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+              "sourceRoot": { "type": "string", "minLength": 1 },
+              "contentVersion": { "type": "string", "minLength": 1 },
+              "sourceFileCount": { "type": "integer", "minimum": 1 },
+              "canonicalItemCount": { "type": "integer", "minimum": 1 },
+              "sourceManifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "itemManifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            }
+          },
+          "reviewPacket": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "candidateId", "status", "sampleCount"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "candidateId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+              "status": { "enum": ["performed", "not_performed"] },
+              "sampleCount": { "type": "integer", "minimum": 0 }
+            }
+          }
         }
       }
     },

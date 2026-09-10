@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { HUMAN_APPROVAL_MANIFEST_PATH, summarizeSource, validateHumanApprovalEntry, validateHumanApprovalManifest } from "./content-approval.mjs";
+import { HUMAN_APPROVAL_MANIFEST_PATH, loadHumanApprovalManifest, summarizeSource, validateHumanApprovalEntry } from "./content-approval.mjs";
+import { loadCandidateManifest, validateCandidateReadiness } from "./candidate-manifest.mjs";
 
 const root = process.cwd();
-const readinessPath = join(root, "evidence/readiness/eight-track-launch-readiness.json");
+const readinessPath = join(root, "evidence/readiness/candidate-readiness.json");
 const outputRoot = join(root, "evidence/review-packets");
 
 const canonical = (value) => {
@@ -54,7 +55,7 @@ function check(id, status, detail, count) {
   return { id, status, detail, ...(count === undefined ? {} : { count }) };
 }
 
-async function buildPacket(track, sourceCommit, humanApprovalManifest) {
+async function buildPacket(track, candidate, humanApprovalManifest) {
   const sourceRoot = join(root, "manual/source", track.trackId);
   const files = await walk(sourceRoot);
   const batches = await Promise.all(files.map(async (file) => ({
@@ -99,7 +100,8 @@ async function buildPacket(track, sourceCommit, humanApprovalManifest) {
     return counts;
   }, new Map())].sort(([a], [b]) => a.localeCompare(b)));
   const approval = humanApprovalManifest?.tracks.find((entry) => entry.trackId === track.trackId) ?? null;
-  if (approval) validateHumanApprovalEntry(approval, { sourceCommit, trackId: track.trackId, sourceSummary: await summarizeSource({ root, trackId: track.trackId }) });
+  const reviewPerformed = approval?.reviewPacket?.status === "performed";
+  if (approval) validateHumanApprovalEntry(approval, { candidate, trackId: track.trackId, sourceSummary: await summarizeSource({ root, trackId: track.trackId }) });
   const samples = [];
   for (const block of [...blocks.values()].sort((a, b) => `${a.nodeId}::${a.learningBlockId}`.localeCompare(`${b.nodeId}::${b.learningBlockId}`))) {
     const sorted = [...block.records].sort((a, b) => (itemIdentity(a.item) ?? "").localeCompare(itemIdentity(b.item) ?? ""));
@@ -115,11 +117,12 @@ async function buildPacket(track, sourceCommit, humanApprovalManifest) {
     });
   }
   return {
-    schemaVersion: "patternly-human-review-packet-v1",
+    schemaVersion: "patternly-human-review-packet-v2",
+    candidateId: candidate.candidateId,
     packetId: `human-review:${track.trackId}`,
     trackId: track.trackId,
     familyId: track.familyId,
-    generatedFrom: { sourceCommit, readinessReport: "evidence/readiness/eight-track-launch-readiness.json" },
+    generatedFrom: { candidateId: candidate.candidateId, candidateManifest: "evidence/content-acceptance/candidate-manifest-v1.json", readinessReport: "evidence/readiness/candidate-readiness.json" },
     coverage: {
       sourceRoot: relative(root, sourceRoot),
       sourceFileCount: files.length,
@@ -129,14 +132,14 @@ async function buildPacket(track, sourceCommit, humanApprovalManifest) {
       nodesAndBlocks: coverage
     },
     interactionDistribution,
-    sampleStrata: { method: "first-middle-last-item-per-node-and-learning-block", samples },
+    sampleStrata: reviewPerformed ? { method: "first-middle-last-item-per-node-and-learning-block", samples } : { method: "not-performed-owner-decision-binds-full-candidate-identity", samples: [] },
     sourceFreshness: {
       contentVersions,
       taxonomyVersions,
       referencedSourceCount: urls.length,
       sourceHosts,
       httpFreshness: "not_rechecked_by_packet_generator",
-      sourceCommit
+      sourceCommit: track.source.sourceCommit
     },
     automatedFindings: [
       check("source-files-present", files.length > 0 ? "pass" : "fail", `${files.length} JSON source files discovered.`, files.length),
@@ -156,34 +159,29 @@ async function buildPacket(track, sourceCommit, humanApprovalManifest) {
       check("runtime-and-publishing-admission", "blocked", "Runtime and publishing admission remain explicitly not granted.")
     ],
     knownLimitations: [
-      approval ? "The human owner decision is recorded separately and covers only the exact source commit and item identities named in the owner manifest." : "This packet prepares review; it is not a factual, technical, editorial, or Product Owner approval.",
+      approval ? "The human owner decision is recorded separately and covers only the exact candidate source and item identities named in the owner manifest." : "This packet prepares review; it is not a factual, technical, editorial, or Product Owner approval.",
       "Source freshness is represented by the exact source commit and observed URLs; HTTP freshness is not rechecked by this generator.",
       "Runtime, publishing, package, and learner admission are outside this packet and remain blocked until their explicit evidence exists."
     ],
     approvalForm: {
-      status: approval ? "approved" : "pending",
-      reviewer: approval ? humanApprovalManifest.approver : null,
-      reviewedAt: approval ? humanApprovalManifest.confirmationDate : null,
-      disposition: approval ? humanApprovalManifest.finalDisposition : null,
-      reviewScope: { sourceCommit, sourceFileCount: files.length, canonicalItemCount: records.length, sampleCount: samples.length, automatedFindingIds: ["source-files-present", "item-identities-unique", "prompts-present", "feedback-present", "interaction-contract", "source-binding-observed"] },
-      acceptedLimitations: approval ? humanApprovalManifest.acceptedLimitations : [],
+      status: reviewPerformed ? "approved" : approval ? "not_performed" : "pending",
+      reviewer: reviewPerformed ? humanApprovalManifest.approver : null,
+      reviewedAt: reviewPerformed ? humanApprovalManifest.confirmationDate : null,
+      disposition: reviewPerformed ? humanApprovalManifest.finalDisposition : null,
+      reviewScope: { candidateId: candidate.candidateId, sourceCommit: track.source.sourceCommit, sourceFileCount: files.length, canonicalItemCount: records.length, sampleCount: reviewPerformed ? samples.length : 0, automatedFindingIds: ["source-files-present", "item-identities-unique", "prompts-present", "feedback-present", "interaction-contract", "source-binding-observed"] },
+      acceptedLimitations: reviewPerformed ? humanApprovalManifest.acceptedLimitations : [],
       recordPath: approval ? HUMAN_APPROVAL_MANIFEST_PATH : null
     }
   };
 }
 
 const readiness = JSON.parse(await readFile(readinessPath, "utf8"));
-const sourceCommit = readiness.sourceCommit;
-let humanApprovalManifest = null;
-try {
-  humanApprovalManifest = JSON.parse(await readFile(join(root, HUMAN_APPROVAL_MANIFEST_PATH), "utf8"));
-  validateHumanApprovalManifest(humanApprovalManifest, { sourceCommit, trackIds: readiness.tracks.map((track) => track.trackId) });
-} catch (error) {
-  if (error?.code !== "ENOENT") humanApprovalManifest = null;
-}
+const candidate = await loadCandidateManifest(root);
+let humanApprovalManifest = await loadHumanApprovalManifest({ root, candidate, trackIds: readiness.tracks.map((track) => track.trackId) });
+validateCandidateReadiness(readiness, { candidate, approval: humanApprovalManifest });
 await mkdir(outputRoot, { recursive: true });
 for (const track of readiness.tracks) {
-  const packet = await buildPacket(track, sourceCommit, humanApprovalManifest);
+  const packet = await buildPacket(track, candidate, humanApprovalManifest);
   const bytes = `${canonical(packet)}\n`;
   await writeFile(join(outputRoot, `${track.trackId}.json`), bytes);
   process.stdout.write(`${track.trackId} ${sha256(bytes)}\n`);

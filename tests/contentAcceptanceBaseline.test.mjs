@@ -46,7 +46,7 @@ test("ACC-01 keeps every non-Claude baseline entry bound to the human-owner appr
     assert.ok(approvalTrack, `missing human approval for ${trackId}`);
     assert.deepEqual(
       Object.fromEntries(ACC01_APPROVAL_BINDING_KEYS.map((key) => [key, baselineTrack[key]])),
-      Object.fromEntries(ACC01_APPROVAL_BINDING_KEYS.map((key) => [key, approvalTrack[key]])),
+      Object.fromEntries(ACC01_APPROVAL_BINDING_KEYS.map((key) => [key, approvalTrack.source[key]])),
       trackId
     );
   }

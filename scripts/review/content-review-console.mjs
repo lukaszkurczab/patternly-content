@@ -9,6 +9,7 @@ export const CONTENT_REVIEW_OUTCOMES = Object.freeze(["approved", "needs_change"
 export const CONTENT_REVIEW_OUTCOMES_PATH = "evidence/content-reviews/outcomes.json";
 export const LAUNCH_TRACK_IDS = Object.freeze([
   "coding-interview-dsa-problem-solving",
+  "claude-certified-architect-professional-certification",
   "backend-system-design-interview",
   "object-oriented-design-interview",
   "frontend-system-design-interview",
@@ -19,6 +20,7 @@ export const LAUNCH_TRACK_IDS = Object.freeze([
 ]);
 export const LAUNCH_TRACK_FAMILIES = Object.freeze({
   "coding-interview-dsa-problem-solving": "coding_interview",
+  "claude-certified-architect-professional-certification": "certification",
   "backend-system-design-interview": "design_interview",
   "object-oriented-design-interview": "design_interview",
   "frontend-system-design-interview": "design_interview",

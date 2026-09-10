@@ -1,51 +1,18 @@
 import assert from "node:assert/strict";
-import { readFile, readdir } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { validateSchema } from "../scripts/authoring/lib/model.mjs";
-import { summarizeSource, validateAgentReviewRecord, validateHumanApprovalEntry, validateHumanApprovalManifest } from "../scripts/review/content-approval.mjs";
-
-const root = process.cwd();
-const expectedTracks = [
-  "aws-certified-solutions-architect-associate",
-  "backend-system-design-interview",
-  "coding-interview-dsa-problem-solving",
-  "frontend-system-design-interview",
-  "google-cloud-associate-cloud-engineer",
-  "microsoft-azure-administrator-associate-az-104",
-  "microsoft-azure-ai-fundamentals-ai-901",
-  "object-oriented-design-interview"
-].sort();
-
-test("stale agent review records never become current approval", async () => {
-  const files = (await readdir(join(root, "evidence/content-approvals"))).filter((file) => file.endsWith(".json") && file !== "index.json").sort();
-  assert.deepEqual(files, expectedTracks.map((track) => `${track}.json`));
-  const readiness = JSON.parse(await readFile(join(root, "evidence/readiness/eight-track-launch-readiness.json"), "utf8"));
-  const schema = JSON.parse(await readFile(join(root, "schemas/review/content-approval-record.schema.json"), "utf8"));
-  for (const trackId of expectedTracks) {
-    const approval = JSON.parse(await readFile(join(root, "evidence/content-approvals", `${trackId}.json`), "utf8"));
-    const summary = await summarizeSource({ root, trackId });
-    await validateSchema(approval, schema, `evidence/content-approvals/${trackId}.json`);
-    assert.throws(() => validateAgentReviewRecord(approval, { sourceCommit: readiness.sourceCommit, trackId, sourceSummary: summary }), /source commit mismatch|differs from current source/);
-    assert.equal(approval.finalDisposition, "approved");
-    assert.equal(approval.reviewer.authorizationBasis, "explicit_user_authorization_in_active_task");
-    assert.equal(approval.acceptedLimitations.length, 3);
-    assert.throws(() => validateHumanApprovalManifest(approval), /Human content approval manifest/);
-  }
-});
-
-test("human owner approval stays bound to the exact current source commit", async () => {
-  const readiness = JSON.parse(await readFile(join(root, "evidence/readiness/eight-track-launch-readiness.json"), "utf8"));
-  const manifest = JSON.parse(await readFile(join(root, "evidence/human-content-approvals/manifest.json"), "utf8"));
-  const schema = JSON.parse(await readFile(join(root, "schemas/review/human-content-approval-manifest.schema.json"), "utf8"));
-  await validateSchema(manifest, schema, "evidence/human-content-approvals/manifest.json");
-  assert.doesNotThrow(() => validateHumanApprovalManifest(manifest, { sourceCommit: readiness.sourceCommit, trackIds: expectedTracks }));
-  assert.equal(manifest.approver.kind, "human_owner");
-  assert.equal(manifest.approver.id, "lukaszkurczab");
-  for (const trackId of expectedTracks) {
-    const summary = await summarizeSource({ root, trackId });
-    const approval = manifest.tracks.find((entry) => entry.trackId === trackId);
-    assert.doesNotThrow(() => validateHumanApprovalEntry(approval, { sourceCommit: readiness.sourceCommit, trackId, sourceSummary: summary }));
-    assert.equal(approval.sourceCommit, readiness.sourceCommit);
-  }
-});
+import { candidateIdFor, CANDIDATE_TRACK_IDS, loadCandidateManifest, validateCandidateAdmission, validateCandidateManifest, validateCandidateReadiness, validateRuntimeEvidence, verifyCandidateManifest, verifySourceArtifactBinding } from "../scripts/review/candidate-manifest.mjs";
+import { loadHumanApprovalManifest, validateHumanApprovalManifest } from "../scripts/review/content-approval.mjs";
+const root=process.cwd(),clone=x=>structuredClone(x);
+test("candidate manifest binds approval and readiness to exactly nine immutable artifacts",async()=>{const candidate=await loadCandidateManifest(root),verified=await verifyCandidateManifest({root,candidate}),approval=JSON.parse(await readFile("evidence/human-content-approvals/manifest.json","utf8")),readiness=JSON.parse(await readFile("evidence/readiness/candidate-readiness.json","utf8"));assert.deepEqual(candidate.tracks.map(x=>x.trackId),CANDIDATE_TRACK_IDS);assert.equal(candidate.candidateId,candidateIdFor(candidate));assert.deepEqual(verified.trackIds,CANDIDATE_TRACK_IDS);assert.equal(approval.candidateId,candidate.candidateId);assert.equal(readiness.candidateId,candidate.candidateId);assert.deepEqual(readiness.trackIds,CANDIDATE_TRACK_IDS);assert.doesNotThrow(()=>validateHumanApprovalManifest(approval,{candidate,trackIds:CANDIDATE_TRACK_IDS}));for(const entry of candidate.tracks){const ready=readiness.tracks.find(x=>x.trackId===entry.trackId);assert.deepEqual(ready.source,entry.source);assert.deepEqual(ready.artifact,entry.artifact);}});
+test("candidate validator rejects missing or extra tracks",async()=>{const value=await loadCandidateManifest(root),missing=clone(value);missing.tracks.pop();assert.throws(()=>validateCandidateManifest(missing),/exactly 9 tracks/);const extra=clone(value);extra.tracks.push(clone(extra.tracks[0]));assert.throws(()=>validateCandidateManifest(extra),/exactly 9 tracks/);});
+test("candidate validator rejects source artifact mismatch and invalid candidateId",async()=>{const value=await loadCandidateManifest(root),mismatch=clone(value);mismatch.tracks[0].artifact.trackId=mismatch.tracks[1].trackId;mismatch.candidateId=candidateIdFor(mismatch);assert.throws(()=>validateCandidateManifest(mismatch),/source\/artifact track mismatch/);const stale=clone(value);stale.candidateId="0".repeat(64);assert.throws(()=>validateCandidateManifest(stale),/does not match/);});
+test("candidate validator rejects legacy global identity",async()=>{const value=await loadCandidateManifest(root);for(const key of ["sourceCommit","releaseId"]){const legacy={...clone(value),[key]:"legacy"};assert.throws(()=>validateCandidateManifest(legacy),/legacy global/);}});
+test("runtime evidence rejects a stale candidate or frontend",async()=>{const candidate=await loadCandidateManifest(root),admission=JSON.parse(await readFile("evidence/admissions/candidate-admission.json","utf8")),runtime=JSON.parse(await readFile(admission.runtimeEvidence.path,"utf8"));assert.doesNotThrow(()=>validateRuntimeEvidence(runtime,candidate,admission.frontendCommit));assert.throws(()=>validateRuntimeEvidence({...runtime,candidateId:"0".repeat(64)},candidate,admission.frontendCommit),/stale for the current candidate/);assert.throws(()=>validateRuntimeEvidence(runtime,candidate,"0".repeat(40)),/frontend commit is stale/);});
+test("admission v2 rejects missing extra and mismatched track bindings",async()=>{const candidate=await loadCandidateManifest(root),admission=JSON.parse(await readFile("evidence/admissions/candidate-admission.json","utf8")),runtime=JSON.parse(await readFile(admission.runtimeEvidence.path,"utf8"));await assert.doesNotReject(()=>validateCandidateAdmission(admission,{root,candidate,runtimeEvidence:runtime}));for(const changed of [x=>x.tracks.pop(),x=>x.tracks.push(clone(x.tracks[0])),x=>x.tracks[0].publishing.releaseId="wrong-release",x=>x.tracks[0].publishing.checksumSha256="0".repeat(64),x=>x.tracks[0].runtime.frontendCommit="0".repeat(40),x=>x.runtimeEvidence.sha256="0".repeat(64),x=>x.sourceCommit="legacy"]){const value=clone(admission);changed(value);await assert.rejects(()=>validateCandidateAdmission(value,{root,candidate,runtimeEvidence:runtime}));}});
+test("admission v2 rejects missing tampered and stale runtime evidence",async()=>{const candidate=await loadCandidateManifest(root),admission=JSON.parse(await readFile("evidence/admissions/candidate-admission.json","utf8")),runtime=JSON.parse(await readFile(admission.runtimeEvidence.path,"utf8"));const missing=clone(admission);missing.runtimeEvidence.path="evidence/admissions/runtime/missing.json";await assert.rejects(()=>validateCandidateAdmission(missing,{root,candidate}),/ENOENT/);await assert.rejects(()=>validateCandidateAdmission(admission,{root,candidate,runtimeEvidence:{...runtime,outputSha256:"0".repeat(64)}}),/hash mismatch/);await assert.rejects(()=>validateCandidateAdmission(admission,{root,candidate,runtimeEvidence:{...runtime,candidateId:"0".repeat(64)}}),/hash mismatch/);});
+test("readiness v2 rejects nested semantic and blocker drift",async()=>{const candidate=await loadCandidateManifest(root),approval=await loadHumanApprovalManifest({root,candidate,trackIds:CANDIDATE_TRACK_IDS}),readiness=JSON.parse(await readFile("evidence/readiness/candidate-readiness.json","utf8"));assert.doesNotThrow(()=>validateCandidateReadiness(readiness,{candidate,approval}));for(const changed of [x=>x.releaseId="legacy",x=>x.extra=true,x=>x.tracks.pop(),x=>x.tracks[0].artifact.checksumSha256="0".repeat(64),x=>x.tracks[0].runtimeAdmission="banana",x=>{x.tracks[0].runtimeAdmission="not_admitted";},x=>{x.tracks[0].structuralValidation.result="failed";},x=>x.tracks[0].humanApproval.approvalId="fake",x=>x.tracks[0].currentSource.itemManifestSha256="0".repeat(64),x=>x.tracks[0].currentSource.extra=true]){const value=clone(readiness);changed(value);assert.throws(()=>validateCandidateReadiness(value,{candidate,approval}));}});
+test("approval schema-first loader rejects top-level and per-track extra fields",async()=>{const candidate=await loadCandidateManifest(root),manifest=JSON.parse(await readFile("evidence/human-content-approvals/manifest.json","utf8")),schema=await readFile("schemas/review/human-content-approval-manifest.schema.json","utf8");for(const changed of [x=>x.extra=true,x=>x.tracks[0].extra=true]){const directory=await mkdtemp(join(tmpdir(),"approval-boundary-"));try{await mkdir(join(directory,"evidence/human-content-approvals"),{recursive:true});await mkdir(join(directory,"schemas/review"),{recursive:true});const value=clone(manifest);changed(value);await writeFile(join(directory,"evidence/human-content-approvals/manifest.json"),JSON.stringify(value));await writeFile(join(directory,"schemas/review/human-content-approval-manifest.schema.json"),schema);await assert.rejects(()=>loadHumanApprovalManifest({root:directory,candidate,trackIds:CANDIDATE_TRACK_IDS}));}finally{await rm(directory,{recursive:true,force:true});}}});
+test("source artifact binding rejects a real manual source drift between commits",async()=>{const candidate=await loadCandidateManifest(root),entry=clone(candidate.tracks.find(x=>x.trackId==="claude-certified-architect-professional-certification"));entry.artifact.sourceRepositoryCommit="1e35906ccea0f3abbed6814fd828bdc6467318be";await assert.rejects(()=>verifySourceArtifactBinding(root,entry),/changes accepted source/);});

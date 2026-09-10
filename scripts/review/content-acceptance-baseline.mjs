@@ -118,12 +118,13 @@ async function validateCommittedBaselineSchema(root, baseline) {
 async function verifyHumanApprovalBindings(root, tracks) {
   const approvalManifest = JSON.parse(await readFile(join(root, HUMAN_APPROVAL_MANIFEST_PATH), "utf8"));
   try {
+    const approvalSchema = JSON.parse(await readFile(join(root, "schemas/review/human-content-approval-manifest.schema.json"), "utf8"));
+    await validateSchema(approvalManifest, approvalSchema, HUMAN_APPROVAL_MANIFEST_PATH);
     validateHumanApprovalManifest(approvalManifest, {
-      sourceCommit: ACC01_TRACK_SOURCE_COMMITS[ACC01_NON_CLAUDE_TRACK_IDS[0]],
-      trackIds: ACC01_NON_CLAUDE_TRACK_IDS
+      trackIds: ACC01_TRACK_IDS
     });
   } catch (error) {
-    throw new Error(`ACC-01 human approval manifest is not the eight-track baseline: ${error.message}`);
+    throw new Error(`ACC-01 human approval manifest is not a valid candidate-bound owner decision: ${error.message}`);
   }
   const approvalByTrack = new Map(approvalManifest.tracks.map((entry) => [entry.trackId, entry]));
   const baselineByTrack = new Map(tracks.map((entry) => [entry.trackId, entry]));
@@ -131,7 +132,15 @@ async function verifyHumanApprovalBindings(root, tracks) {
     const baseline = baselineByTrack.get(trackId);
     const approval = approvalByTrack.get(trackId);
     if (!approval) throw new Error(`ACC-01 human approval manifest is missing ${trackId}.`);
-    for (const key of ACC01_APPROVAL_BINDING_KEYS) if (baseline[key] !== approval[key]) throw new Error(`ACC-01 ${key} differs from human approval for ${trackId}.`);
+    const source = approval.source;
+    for (const key of ACC01_APPROVAL_BINDING_KEYS) {
+      const approvalValue = key === "sourceCommit" ? source?.sourceCommit
+        : key === "sourceRoot" ? source?.sourceRoot
+          : key === "sourceFileCount" ? source?.sourceFileCount
+            : key === "canonicalItemCount" ? source?.canonicalItemCount
+              : source?.[key];
+      if (baseline[key] !== approvalValue) throw new Error(`ACC-01 ${key} differs from human approval for ${trackId}.`);
+    }
   }
 }
 

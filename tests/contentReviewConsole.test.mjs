@@ -4,10 +4,10 @@ import { join } from "node:path";
 import test from "node:test";
 import { createContentReviewConsole, startContentReviewConsole, CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION, LAUNCH_TRACK_IDS } from "../scripts/review/content-review-console.mjs";
 
-test("review console exposes exactly eight launch tracks, navigable coverage, and advisory signals", async () => {
+test("review console exposes exactly nine launch tracks, navigable coverage, and advisory signals", async () => {
   const service = await createContentReviewConsole({ reviewPath: join(await mkdtemp("patternly-review-console-"), "outcomes.json") });
   const catalog = service.catalog();
-  assert.equal(catalog.launchTrackCount, 8);
+  assert.equal(catalog.launchTrackCount, 9);
   assert.deepEqual(catalog.tracks.map((track) => track.trackId), LAUNCH_TRACK_IDS);
   assert.ok(catalog.tracks.every((track) => track.itemCount > 0 && track.nodes.length > 0));
   const items = service.listItems({ trackId: LAUNCH_TRACK_IDS[0] });
@@ -43,7 +43,7 @@ test("review console serves a local UI and bounded JSON API without fabricating 
   assert.match(await page.text(), /Patternly Content Review Console/);
   const catalog = await fetch(`http://127.0.0.1:${address.port}/api/catalog`);
   assert.equal(catalog.status, 200);
-  assert.equal((await catalog.json()).launchTrackCount, 8);
+  assert.equal((await catalog.json()).launchTrackCount, 9);
   const response = await fetch(`http://127.0.0.1:${address.port}/api/reviews/batch`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ items: [], outcome: "approved", note: "No-op", reviewerId: "owner-local" }) });
   assert.equal(response.status, 400);
   await new Promise((resolve) => running.server.close(resolve));

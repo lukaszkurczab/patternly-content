@@ -37,3 +37,23 @@ There is no global `>120 questions/node` readiness rule; counts are operational
 evidence only, while content changes are targeted to demonstrated factual,
 technical, scoring, feedback, duplicate, coverage, profile, provenance, or runtime
 defects. Patternly is a decision-practice/remediation product, not a question bank.
+
+## Shared content builder (SIMP-02)
+
+The canonical v1 builder reads one track at a time from
+`content/<trackId>/<nodeId>/<mentalUnitId>.json`. Production canonical sources are
+not populated until SIMP-03; do not add empty or placeholder files. Use a temporary
+fixture workspace when exercising the builder:
+
+```sh
+npm run content:validate -- --track <trackId> --root <workspace>
+npm run content:test -- --track <trackId> --root <workspace>
+npm run content:build -- --track <trackId> --root <workspace> --output-root <dist>
+npm run content:build-all -- --root <workspace> --output-root <dist>
+```
+
+`validate`, `test` and `build` require `--track`; `build-all` requires all nine
+catalogued track sources. The builder stages deterministic `dist/<trackId>.json`
+artifacts and `dist/content-lock.json` together, validates existing lock/artifact
+integrity, and rolls back handled write/rename failures; it is not a crash-safe
+transaction. It does not import the legacy publishing pipeline.

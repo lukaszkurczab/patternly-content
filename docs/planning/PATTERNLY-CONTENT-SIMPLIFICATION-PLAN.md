@@ -2,7 +2,7 @@
 
 > **Rola po konsolidacji:** kryteria techniczne `SIMP-01–05`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
 
-**Status:** realizacja rozpoczęta; `SIMP-01` ukończony, następny `SIMP-02`
+**Status:** realizacja rozpoczęta; `SIMP-01–02` ukończone, następny `SIMP-03`
 **Cel:** repozytorium ma być prostą bazą pytań JSON, a aplikacja ma bezpośrednio konsumować jej prosty artefakt podczas buildu
 
 **Warunek poprzedzający:** naprawa zapisu decyzji akceptacyjnej `ACC-01` → `ACC-02` / ODK-E2E-099 zgodnie z `docs/planning/CONTENT-ACCEPTANCE-DECISION-PACKET.md`. Migracja musi zachować dokładne item identities związane z decyzją PO; nie może użyć model evaluation jako zastępczej akceptacji.
@@ -106,6 +106,8 @@ Akceptacja: fixture przechodzi wspólną walidację; aliasy rodzinne nie występ
 
 ### SIMP-02 — wspólny builder z dziewięcioma niezależnymi wejściami
 
+**Status:** `done` — [raport](reports/SIMP-02-REPORT.md)
+
 Zastąpić rodzinne pipeline'y jednym builderem przyjmującym `trackId`. Wynikiem jest `dist/<trackId>.json` oraz mały wpis locka: `trackId`, `contentVersion`, `questionCount`, `sha256`. Walidacja strukturalna i scoring są wspólne; test inwentarza pozostaje osobny dla każdego tracka.
 
 Akceptacja: każdy track daje się osobno walidować, testować i budować; zmiana jednego banku nie dotyka artefaktów pozostałych; pełny gate potwierdza dokładnie dziewięć wpisów.
@@ -174,4 +176,4 @@ EPIC-09 zaczyna się po uproszczeniu. Czyta zwykłe JSON-y, zapisuje raport i ko
 
 ## Następny krok
 
-Zaimplementować SIMP-02: jeden wspólny builder przyjmujący `trackId`, z dziewięcioma niezależnymi wejściami i artefaktami. Nie uruchamiać jeszcze migracji banków ani zmian aplikacji. EPIC-09 pozostaje wstrzymany do zakończenia SIMP-05.
+Zaimplementować SIMP-03: mechanicznie zmigrować dziewięć banków do wspólnego kontraktu, zachowując dokładne ID, treści i inwentarz przypiętego baseline'u. Nie zmieniać pytań ani aplikacji. EPIC-09 pozostaje wstrzymany do zakończenia SIMP-05.

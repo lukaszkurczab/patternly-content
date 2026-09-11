@@ -37,7 +37,7 @@ const QUESTION_KEYS = [
 ];
 
 const CATALOG_KEYS = ["schemaVersion", "tracks"];
-const TRACK_KEYS = ["trackId"];
+const TRACK_KEYS = ["trackId", "contentVersion"];
 const QUESTION_FIXTURE_KEYS = ["schemaVersion", "questions"];
 
 export class QuestionContractError extends Error {
@@ -362,6 +362,7 @@ export function validateCatalog(catalog) {
     const trackPath = `catalog.tracks[${index}]`;
     if (!exactKeys(track, TRACK_KEYS, trackPath, errors)) return;
     if (nonEmptyString(track.trackId, `${trackPath}.trackId`, errors)) ids.push(track.trackId);
+    nonEmptyString(track.contentVersion, `${trackPath}.contentVersion`, errors);
   });
   if (new Set(ids).size !== ids.length) addError(errors, "catalog.tracks", "track IDs must be unique");
   exactIdSet(ids, ACCEPTED_TRACK_IDS, "catalog.tracks", errors);

@@ -2,7 +2,7 @@
 
 > **Rola po konsolidacji:** kryteria techniczne `SIMP-01–05`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
 
-**Status:** podejście implementowalne; bez implementacji
+**Status:** realizacja rozpoczęta; `SIMP-01` ukończony, następny `SIMP-02`
 **Cel:** repozytorium ma być prostą bazą pytań JSON, a aplikacja ma bezpośrednio konsumować jej prosty artefakt podczas buildu
 
 **Warunek poprzedzający:** naprawa zapisu decyzji akceptacyjnej `ACC-01` → `ACC-02` / ODK-E2E-099 zgodnie z `docs/planning/CONTENT-ACCEPTANCE-DECISION-PACKET.md`. Migracja musi zachować dokładne item identities związane z decyzją PO; nie może użyć model evaluation jako zastępczej akceptacji.
@@ -98,6 +98,8 @@ Każdy `SIMP-*` jest osobnym taskiem i dziedziczy ten kontrakt wykonawczy: celem
 
 ### SIMP-01 — kanoniczny kontrakt i fixture referencyjny
 
+**Status:** `done` — [raport](reports/SIMP-01-REPORT.md)
+
 W `patternly-content` dodać jeden schemat pytania, katalog tracków i mały fixture pokrywający pięć interakcji. `questionId`, `trackId`, `nodeId` i `mentalUnitId` są obowiązkowe. `answer` oraz `feedback` mają wariant zależny wyłącznie od `interaction`.
 
 Akceptacja: fixture przechodzi wspólną walidację; aliasy rodzinne nie występują w kontrakcie; dla każdej interakcji da się policzyć wynik.
@@ -172,4 +174,4 @@ EPIC-09 zaczyna się po uproszczeniu. Czyta zwykłe JSON-y, zapisuje raport i ko
 
 ## Następny krok
 
-Po zamknięciu ACC-01/ACC-02 zaimplementować SIMP-01 jako najmniejszy pionowy kawałek: kontrakt, fixture wszystkich interakcji i jego test. Nie uruchamiać jeszcze migracji banków ani zmian aplikacji. EPIC-09 pozostaje wstrzymany do zakończenia SIMP-05.
+Zaimplementować SIMP-02: jeden wspólny builder przyjmujący `trackId`, z dziewięcioma niezależnymi wejściami i artefaktami. Nie uruchamiać jeszcze migracji banków ani zmian aplikacji. EPIC-09 pozostaje wstrzymany do zakończenia SIMP-05.

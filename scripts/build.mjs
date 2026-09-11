@@ -212,11 +212,16 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
   const questionIds = new Set();
   for (const filePath of sourceFiles) {
     const identity = sourceIdentity(filePath, sourceRoot);
-    const question = await readJson(filePath);
-    validateTrackQuestion(question, { trackId, sourceIdentity: identity, filePath, catalog });
-    if (questionIds.has(question.questionId)) fail(`Duplicate questionId in track ${trackId}: ${question.questionId}`);
-    questionIds.add(question.questionId);
-    questions.push(question);
+    const questionsInFile = await readJson(filePath);
+    if (!Array.isArray(questionsInFile) || questionsInFile.length === 0) {
+      fail(`Canonical source file must contain a non-empty question array: ${filePath}`);
+    }
+    for (const question of questionsInFile) {
+      validateTrackQuestion(question, { trackId, sourceIdentity: identity, filePath, catalog });
+      if (questionIds.has(question.questionId)) fail(`Duplicate questionId in track ${trackId}: ${question.questionId}`);
+      questionIds.add(question.questionId);
+      questions.push(question);
+    }
   }
   questions.sort((left, right) => compareStrings(left.questionId, right.questionId));
   return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions };

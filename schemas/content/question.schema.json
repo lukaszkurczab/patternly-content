@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://patternly.dev/schemas/content/question-v1.json",
   "title": "Patternly canonical question v1",
-  "description": "Family-neutral question contract. The five oneOf branches are intentionally disjoint by interaction.type.",
+  "description": "Family-neutral question contract. The five oneOf branches are disjoint by interaction.type.",
   "type": "object",
   "properties": {
     "questionId": { "$ref": "#/$defs/id" },
@@ -10,32 +10,14 @@
     "nodeId": { "$ref": "#/$defs/id" },
     "mentalUnitId": { "$ref": "#/$defs/id" },
     "prompt": { "$ref": "#/$defs/nonEmptyText" },
-    "constraints": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/nonEmptyText" }
-    },
+    "constraints": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } },
     "interaction": { "type": "object" },
     "answer": { "type": "object" },
     "feedback": { "type": "object" },
-    "difficulty": { "$ref": "#/$defs/nonEmptyText" },
-    "sourceRefs": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/nonEmptyText" }
-    }
+    "difficulty": { "anyOf": [{ "$ref": "#/$defs/nonEmptyText" }, { "type": "null" }] },
+    "sourceRefs": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } }
   },
-  "required": [
-    "questionId",
-    "trackId",
-    "nodeId",
-    "mentalUnitId",
-    "prompt",
-    "constraints",
-    "interaction",
-    "answer",
-    "feedback",
-    "difficulty",
-    "sourceRefs"
-  ],
+  "required": ["questionId", "trackId", "nodeId", "mentalUnitId", "prompt", "interaction", "answer", "feedback", "difficulty"],
   "additionalProperties": false,
   "oneOf": [
     { "$ref": "#/$defs/choiceSingleQuestion" },
@@ -55,11 +37,19 @@
       "minLength": 1,
       "pattern": "^\\S(?:[\\s\\S]*\\S)?$"
     },
+    "jsonValue": {
+      "anyOf": [
+        { "type": ["string", "number", "boolean", "null"] },
+        { "type": "array", "items": { "$ref": "#/$defs/jsonValue" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/$defs/jsonValue" } }
+      ]
+    },
     "option": {
       "type": "object",
       "properties": {
         "optionId": { "$ref": "#/$defs/id" },
-        "text": { "$ref": "#/$defs/nonEmptyText" }
+        "text": { "$ref": "#/$defs/nonEmptyText" },
+        "explanation": { "$ref": "#/$defs/nonEmptyText" }
       },
       "required": ["optionId", "text"],
       "additionalProperties": false
@@ -82,35 +72,104 @@
       "required": ["valueId", "text"],
       "additionalProperties": false
     },
+    "aliases": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": { "$ref": "#/$defs/id" }
+    },
     "dimension": {
       "type": "object",
       "properties": {
         "dimensionId": { "$ref": "#/$defs/id" },
         "label": { "$ref": "#/$defs/nonEmptyText" },
-        "values": {
-          "type": "array",
-          "minItems": 2,
-          "items": { "$ref": "#/$defs/value" }
-        },
-        "acceptedValueIds": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/id" }
-        }
+        "values": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/value" } },
+        "acceptedValueIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
       },
       "required": ["dimensionId", "label", "values", "acceptedValueIds"],
       "additionalProperties": false
     },
-    "textMap": {
+    "complexityDimension": {
       "type": "object",
-      "propertyNames": { "pattern": "^\\S(?:[\\s\\S]*\\S)?$" },
-      "additionalProperties": { "$ref": "#/$defs/nonEmptyText" }
+      "properties": {
+        "dimensionId": { "$ref": "#/$defs/id" },
+        "label": { "$ref": "#/$defs/nonEmptyText" },
+        "values": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/value" } },
+        "acceptedValueIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } },
+        "aliases": { "$ref": "#/$defs/aliases" }
+      },
+      "required": ["dimensionId", "label", "values", "acceptedValueIds"],
+      "additionalProperties": false
+    },
+    "choiceSingleInteraction": {
+      "type": "object",
+      "properties": { "type": { "const": "choice_single" }, "scoringMethod": { "const": "exact_selected_set" }, "options": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/option" } } },
+      "required": ["type", "scoringMethod", "options"],
+      "additionalProperties": false
+    },
+    "choiceMultipleInteraction": {
+      "type": "object",
+      "properties": { "type": { "const": "choice_multiple" }, "scoringMethod": { "const": "exact_selected_set" }, "options": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/option" } } },
+      "required": ["type", "scoringMethod", "options"],
+      "additionalProperties": false
+    },
+    "orderingInteraction": {
+      "type": "object",
+      "properties": { "type": { "const": "ordering" }, "scoringMethod": { "const": "adjacent_relations" }, "elements": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/element" } } },
+      "required": ["type", "scoringMethod", "elements"],
+      "additionalProperties": false
+    },
+    "complexityInteraction": {
+      "type": "object",
+      "properties": { "type": { "const": "complexity" }, "scoringMethod": { "const": "dimension_exact" }, "dimensions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/complexityDimension" } } },
+      "required": ["type", "scoringMethod", "dimensions"],
+      "additionalProperties": false
+    },
+    "decisionMatrixInteraction": {
+      "type": "object",
+      "properties": { "type": { "const": "decision_matrix" }, "scoringMethod": { "const": "dimension_exact" }, "dimensions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/dimension" } } },
+      "required": ["type", "scoringMethod", "dimensions"],
+      "additionalProperties": false
+    },
+    "choiceSingleAnswer": {
+      "type": "object",
+      "properties": { "type": { "const": "choice_single" }, "optionId": { "$ref": "#/$defs/id" } },
+      "required": ["type", "optionId"],
+      "additionalProperties": false
+    },
+    "choiceMultipleAnswer": {
+      "type": "object",
+      "properties": { "type": { "const": "choice_multiple" }, "optionIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } } },
+      "required": ["type", "optionIds"],
+      "additionalProperties": false
+    },
+    "orderingAnswer": {
+      "type": "object",
+      "properties": { "type": { "const": "ordering" }, "orderedElementIds": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } } },
+      "required": ["type", "orderedElementIds"],
+      "additionalProperties": false
     },
     "selectedValueMap": {
       "type": "object",
-      "propertyNames": { "pattern": "^\\S(?:[\\s\\S]*\\S)?$" },
-      "additionalProperties": { "$ref": "#/$defs/id" }
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/id" } }
+    },
+    "dimensionAnswer": {
+      "type": "object",
+      "properties": { "type": { "enum": ["complexity", "decision_matrix"] }, "selectedValueIdsByDimension": { "$ref": "#/$defs/selectedValueMap" } },
+      "required": ["type", "selectedValueIdsByDimension"],
+      "additionalProperties": false
+    },
+    "feedbackMessage": {
+      "type": "object",
+      "properties": { "kind": { "$ref": "#/$defs/id" }, "targetId": { "$ref": "#/$defs/id" }, "text": { "$ref": "#/$defs/nonEmptyText" } },
+      "required": ["kind", "targetId", "text"],
+      "additionalProperties": false
+    },
+    "feedback": {
+      "type": "object",
+      "properties": { "type": { "enum": ["choice_single", "choice_multiple", "ordering", "complexity", "decision_matrix"] }, "reason": { "$ref": "#/$defs/nonEmptyText" }, "details": { "$ref": "#/$defs/jsonValue" }, "messages": { "type": "array", "items": { "$ref": "#/$defs/feedbackMessage" } } },
+      "required": ["type", "reason", "details"],
+      "additionalProperties": false
     },
     "questionBase": {
       "type": "object",
@@ -120,274 +179,47 @@
         "nodeId": { "$ref": "#/$defs/id" },
         "mentalUnitId": { "$ref": "#/$defs/id" },
         "prompt": { "$ref": "#/$defs/nonEmptyText" },
-        "constraints": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/nonEmptyText" }
-        },
+        "constraints": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } },
         "interaction": { "type": "object" },
         "answer": { "type": "object" },
-        "feedback": { "type": "object" },
-        "difficulty": { "$ref": "#/$defs/nonEmptyText" },
-        "sourceRefs": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/nonEmptyText" }
-        }
+        "feedback": { "$ref": "#/$defs/feedback" },
+        "difficulty": { "anyOf": [{ "$ref": "#/$defs/nonEmptyText" }, { "type": "null" }] },
+        "sourceRefs": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyText" } }
       },
-      "required": [
-        "questionId",
-        "trackId",
-        "nodeId",
-        "mentalUnitId",
-        "prompt",
-        "constraints",
-        "interaction",
-        "answer",
-        "feedback",
-        "difficulty",
-        "sourceRefs"
-      ]
-    },
-    "choiceSingleInteraction": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "choice_single" },
-        "options": {
-          "type": "array",
-          "minItems": 2,
-          "items": { "$ref": "#/$defs/option" }
-        }
-      },
-      "required": ["type", "options"],
-      "additionalProperties": false
-    },
-    "choiceMultipleInteraction": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "choice_multiple" },
-        "options": {
-          "type": "array",
-          "minItems": 2,
-          "items": { "$ref": "#/$defs/option" }
-        }
-      },
-      "required": ["type", "options"],
-      "additionalProperties": false
-    },
-    "orderingInteraction": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "ordering" },
-        "elements": {
-          "type": "array",
-          "minItems": 2,
-          "items": { "$ref": "#/$defs/element" }
-        }
-      },
-      "required": ["type", "elements"],
-      "additionalProperties": false
-    },
-    "complexityInteraction": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "complexity" },
-        "dimensions": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "$ref": "#/$defs/dimension" }
-        }
-      },
-      "required": ["type", "dimensions"],
-      "additionalProperties": false
-    },
-    "decisionMatrixInteraction": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "decision_matrix" },
-        "dimensions": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "$ref": "#/$defs/dimension" }
-        }
-      },
-      "required": ["type", "dimensions"],
-      "additionalProperties": false
-    },
-    "choiceSingleAnswer": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "choice_single" },
-        "optionId": { "$ref": "#/$defs/id" }
-      },
-      "required": ["type", "optionId"],
-      "additionalProperties": false
-    },
-    "choiceMultipleAnswer": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "choice_multiple" },
-        "optionIds": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/id" }
-        }
-      },
-      "required": ["type", "optionIds"],
-      "additionalProperties": false
-    },
-    "orderingAnswer": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "ordering" },
-        "orderedElementIds": {
-          "type": "array",
-          "minItems": 2,
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/id" }
-        }
-      },
-      "required": ["type", "orderedElementIds"],
-      "additionalProperties": false
-    },
-    "dimensionAnswer": {
-      "type": "object",
-      "properties": {
-        "type": { "enum": ["complexity", "decision_matrix"] },
-        "selectedValueIdsByDimension": { "$ref": "#/$defs/selectedValueMap" }
-      },
-      "required": ["type", "selectedValueIdsByDimension"],
-      "additionalProperties": false
-    },
-    "choiceSingleFeedback": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "choice_single" },
-        "correct": { "$ref": "#/$defs/nonEmptyText" },
-        "incorrectByOptionId": { "$ref": "#/$defs/textMap" }
-      },
-      "required": ["type", "correct", "incorrectByOptionId"],
-      "additionalProperties": false
-    },
-    "choiceMultipleFeedback": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "choice_multiple" },
-        "correct": { "$ref": "#/$defs/nonEmptyText" },
-        "incorrectByOptionId": { "$ref": "#/$defs/textMap" },
-        "omittedByOptionId": { "$ref": "#/$defs/textMap" }
-      },
-      "required": ["type", "correct", "incorrectByOptionId", "omittedByOptionId"],
-      "additionalProperties": false
-    },
-    "orderingFeedback": {
-      "type": "object",
-      "properties": {
-        "type": { "const": "ordering" },
-        "correct": { "$ref": "#/$defs/nonEmptyText" },
-        "incorrectByElementId": { "$ref": "#/$defs/textMap" },
-        "brokenByRelationId": { "$ref": "#/$defs/textMap" }
-      },
-      "required": ["type", "correct", "incorrectByElementId", "brokenByRelationId"],
-      "additionalProperties": false
-    },
-    "dimensionFeedback": {
-      "type": "object",
-      "properties": {
-        "type": { "enum": ["complexity", "decision_matrix"] },
-        "correct": { "$ref": "#/$defs/nonEmptyText" },
-        "incorrectByDimensionIdAndValueId": { "$ref": "#/$defs/textMap" },
-        "omittedByDimensionId": { "$ref": "#/$defs/textMap" }
-      },
-      "required": ["type", "correct", "incorrectByDimensionIdAndValueId", "omittedByDimensionId"],
-      "additionalProperties": false
+      "required": ["questionId", "trackId", "nodeId", "mentalUnitId", "prompt", "interaction", "answer", "feedback", "difficulty"]
     },
     "choiceSingleQuestion": {
       "allOf": [
         { "$ref": "#/$defs/questionBase" },
-        {
-          "type": "object",
-          "properties": {
-            "interaction": { "$ref": "#/$defs/choiceSingleInteraction" },
-            "answer": { "$ref": "#/$defs/choiceSingleAnswer" },
-            "feedback": { "$ref": "#/$defs/choiceSingleFeedback" }
-          }
-        }
+        { "type": "object", "properties": { "interaction": { "$ref": "#/$defs/choiceSingleInteraction" }, "answer": { "$ref": "#/$defs/choiceSingleAnswer" }, "feedback": { "allOf": [{ "$ref": "#/$defs/feedback" }, { "properties": { "type": { "const": "choice_single" } } }] } } }
       ],
       "unevaluatedProperties": false
     },
     "choiceMultipleQuestion": {
       "allOf": [
         { "$ref": "#/$defs/questionBase" },
-        {
-          "type": "object",
-          "properties": {
-            "interaction": { "$ref": "#/$defs/choiceMultipleInteraction" },
-            "answer": { "$ref": "#/$defs/choiceMultipleAnswer" },
-            "feedback": { "$ref": "#/$defs/choiceMultipleFeedback" }
-          }
-        }
+        { "type": "object", "properties": { "interaction": { "$ref": "#/$defs/choiceMultipleInteraction" }, "answer": { "$ref": "#/$defs/choiceMultipleAnswer" }, "feedback": { "allOf": [{ "$ref": "#/$defs/feedback" }, { "properties": { "type": { "const": "choice_multiple" } } }] } } }
       ],
       "unevaluatedProperties": false
     },
     "orderingQuestion": {
       "allOf": [
         { "$ref": "#/$defs/questionBase" },
-        {
-          "type": "object",
-          "properties": {
-            "interaction": { "$ref": "#/$defs/orderingInteraction" },
-            "answer": { "$ref": "#/$defs/orderingAnswer" },
-            "feedback": { "$ref": "#/$defs/orderingFeedback" }
-          }
-        }
+        { "type": "object", "properties": { "interaction": { "$ref": "#/$defs/orderingInteraction" }, "answer": { "$ref": "#/$defs/orderingAnswer" }, "feedback": { "allOf": [{ "$ref": "#/$defs/feedback" }, { "properties": { "type": { "const": "ordering" } } }] } } }
       ],
       "unevaluatedProperties": false
     },
     "complexityQuestion": {
       "allOf": [
         { "$ref": "#/$defs/questionBase" },
-        {
-          "type": "object",
-          "properties": {
-            "interaction": { "$ref": "#/$defs/complexityInteraction" },
-            "answer": {
-              "allOf": [
-                { "$ref": "#/$defs/dimensionAnswer" },
-                { "properties": { "type": { "const": "complexity" } } }
-              ]
-            },
-            "feedback": {
-              "allOf": [
-                { "$ref": "#/$defs/dimensionFeedback" },
-                { "properties": { "type": { "const": "complexity" } } }
-              ]
-            }
-          }
-        }
+        { "type": "object", "properties": { "interaction": { "$ref": "#/$defs/complexityInteraction" }, "answer": { "allOf": [{ "$ref": "#/$defs/dimensionAnswer" }, { "properties": { "type": { "const": "complexity" } } }] }, "feedback": { "allOf": [{ "$ref": "#/$defs/feedback" }, { "properties": { "type": { "const": "complexity" } } }] } } }
       ],
       "unevaluatedProperties": false
     },
     "decisionMatrixQuestion": {
       "allOf": [
         { "$ref": "#/$defs/questionBase" },
-        {
-          "type": "object",
-          "properties": {
-            "interaction": { "$ref": "#/$defs/decisionMatrixInteraction" },
-            "answer": {
-              "allOf": [
-                { "$ref": "#/$defs/dimensionAnswer" },
-                { "properties": { "type": { "const": "decision_matrix" } } }
-              ]
-            },
-            "feedback": {
-              "allOf": [
-                { "$ref": "#/$defs/dimensionFeedback" },
-                { "properties": { "type": { "const": "decision_matrix" } } }
-              ]
-            }
-          }
-        }
+        { "type": "object", "properties": { "interaction": { "$ref": "#/$defs/decisionMatrixInteraction" }, "answer": { "allOf": [{ "$ref": "#/$defs/dimensionAnswer" }, { "properties": { "type": { "const": "decision_matrix" } } }] }, "feedback": { "allOf": [{ "$ref": "#/$defs/feedback" }, { "properties": { "type": { "const": "decision_matrix" } } }] } } }
       ],
       "unevaluatedProperties": false
     }

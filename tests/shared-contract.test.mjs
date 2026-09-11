@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import path from "node:path";
 import test from "node:test";
 import {
   ACCEPTED_TRACK_IDS,
@@ -54,6 +56,35 @@ test("schema documents five disjoint interaction branches", () => {
   assert.equal(schema.$defs.orderingInteraction.properties.type.const, "ordering");
   assert.equal(schema.$defs.complexityInteraction.properties.type.const, "complexity");
   assert.equal(schema.$defs.decisionMatrixInteraction.properties.type.const, "decision_matrix");
+  assert.equal(schema.$defs.orderingInteraction.properties.scoringMethod.const, "adjacent_relations");
+  assert.equal(schema.$defs.complexityInteraction.properties.scoringMethod.const, "dimension_exact");
+  assert.equal(schema.$defs.decisionMatrixInteraction.properties.scoringMethod.const, "dimension_exact");
+});
+
+test("Draft 2020-12 schema rejects feedback type mismatches in every variant", () => {
+  const schemaPath = path.resolve("schemas/content/question.schema.json");
+  const fixturePath = path.resolve("tests/fixtures/shared-contract-fixture.json");
+  const script = String.raw`
+import copy
+import json
+import sys
+from jsonschema import Draft202012Validator
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    schema = json.load(handle)
+with open(sys.argv[2], encoding="utf-8") as handle:
+    questions = json.load(handle)["questions"]
+validator = Draft202012Validator(schema)
+types = ["choice_single", "choice_multiple", "ordering", "complexity", "decision_matrix"]
+for question, expected_type in zip(questions, types):
+    if list(validator.iter_errors(question)):
+        raise SystemExit(f"valid {expected_type} fixture was rejected")
+    candidate = copy.deepcopy(question)
+    candidate["feedback"]["type"] = next(value for value in types if value != expected_type)
+    if not list(validator.iter_errors(candidate)):
+        raise SystemExit(f"feedback mismatch was accepted for {expected_type}")
+`;
+  assert.doesNotThrow(() => execFileSync("python3", ["-c", script, schemaPath, fixturePath], { encoding: "utf8" }));
 });
 
 test("all five correct answers are scoreable", () => {
@@ -118,7 +149,7 @@ test("ordering scores exact adjacent relations and incomplete answers", () => {
 test("complexity scores every dimension and distinguishes missing values", () => {
   const question = questionsByType.get("complexity");
   assert.equal(scoreQuestion(question, question.answer).earnedPoints, 2);
-  assert.deepEqual(scoreQuestion(question, { type: "complexity", selectedValueIdsByDimension: { time: "linear" } }), {
+  assert.deepEqual(scoreQuestion(question, { type: "complexity", selectedValueIdsByDimension: { time: ["linear"] } }), {
     status: "partial",
     earnedPoints: 1,
     maxPoints: 2,
@@ -127,14 +158,15 @@ test("complexity scores every dimension and distinguishes missing values", () =>
     missingDimensionIds: ["auxiliary-space"]
   });
   assert.equal(scoreQuestion(question, { type: "complexity", selectedValueIdsByDimension: {} }).earnedPoints, 0);
-  assert.equal(scoreQuestion(question, { type: "complexity", selectedValueIdsByDimension: { time: "quadratic", "auxiliary-space": "linear" } }).status, "incorrect");
-  assert.equal(scoreQuestion(question, { type: "complexity", selectedValueIdsByDimension: { time: "linear", extra: "constant" } }).invalidResponse, true);
+  assert.equal(scoreQuestion(question, { type: "complexity", selectedValueIdsByDimension: { time: ["quadratic"], "auxiliary-space": ["linear"] } }).status, "incorrect");
+  assert.equal(scoreQuestion(question, { type: "complexity", selectedValueIdsByDimension: { time: ["linear"], extra: ["constant"] } }).invalidResponse, true);
+  assert.equal(scoreQuestion(question, { type: "complexity", selectedValueIdsByDimension: { time: ["n-linear"], "auxiliary-space": ["constant"] } }).status, "correct");
 });
 
 test("decision_matrix scores every dimension independently", () => {
   const question = questionsByType.get("decision_matrix");
   assert.equal(scoreQuestion(question, question.answer).earnedPoints, 2);
-  const partial = scoreQuestion(question, { type: "decision_matrix", selectedValueIdsByDimension: { authority: "trusted-service" } });
+  const partial = scoreQuestion(question, { type: "decision_matrix", selectedValueIdsByDimension: { authority: ["trusted-service"] } });
   assert.deepEqual(partial, {
     status: "partial",
     earnedPoints: 1,
@@ -144,7 +176,7 @@ test("decision_matrix scores every dimension independently", () => {
     missingDimensionIds: ["failure"]
   });
   assert.equal(scoreQuestion(question, { type: "decision_matrix", selectedValueIdsByDimension: {} }).earnedPoints, 0);
-  assert.equal(scoreQuestion(question, { type: "decision_matrix", selectedValueIdsByDimension: { authority: "client-check", failure: "fail-open" } }).status, "incorrect");
+  assert.equal(scoreQuestion(question, { type: "decision_matrix", selectedValueIdsByDimension: { authority: ["client-check"], failure: ["fail-open"] } }).status, "incorrect");
 });
 
 test("validator rejects missing identity and all family aliases", () => {
@@ -184,8 +216,8 @@ test("scoring rejects additional response keys and mismatched response types for
     ["choice_single", { optionId: "service" }],
     ["choice_multiple", { optionIds: ["idempotency"] }],
     ["ordering", { orderedElementIds: ["observe", "preserve"] }],
-    ["complexity", { selectedValueIdsByDimension: { time: "linear" } }],
-    ["decision_matrix", { selectedValueIdsByDimension: { authority: "trusted-service" } }]
+    ["complexity", { selectedValueIdsByDimension: { time: ["linear"] } }],
+    ["decision_matrix", { selectedValueIdsByDimension: { authority: ["trusted-service"] } }]
   ];
   for (const [type, response] of cases) {
     const question = questionsByType.get(type);
@@ -231,8 +263,15 @@ test("validator rejects mismatched variants and foreign references", () => {
   assert.equal(validateQuestion(foreignElement).valid, false);
 
   const foreignDimensionValue = clone(questionsByType.get("decision_matrix"));
-  foreignDimensionValue.answer.selectedValueIdsByDimension.authority = "not-a-value";
+  foreignDimensionValue.answer.selectedValueIdsByDimension.authority = ["not-a-value"];
   assert.equal(validateQuestion(foreignDimensionValue).valid, false);
+});
+
+test("feedback messages are optional when no source map exists", () => {
+  const candidate = clone(questionsByType.get("choice_single"));
+  delete candidate.feedback.messages;
+  assert.deepEqual(validateQuestion(candidate), { valid: true, errors: [] });
+  assert.equal(scoreQuestion(candidate, candidate.answer).status, "correct");
 });
 
 test("fixture validator rejects a track outside the exact catalog", () => {

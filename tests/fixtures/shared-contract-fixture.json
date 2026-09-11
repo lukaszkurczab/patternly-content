@@ -10,8 +10,9 @@
       "constraints": ["Choose exactly one option.", "The owner must be authoritative."] ,
       "interaction": {
         "type": "choice_single",
+        "scoringMethod": "exact_selected_set",
         "options": [
-          { "optionId": "service", "text": "The authoritative service" },
+          { "optionId": "service", "text": "The authoritative service", "explanation": "It is the owner that can enforce durable truth." },
           { "optionId": "screen", "text": "The rendering screen" },
           { "optionId": "cache", "text": "An unverified local cache" }
         ]
@@ -22,11 +23,12 @@
       },
       "feedback": {
         "type": "choice_single",
-        "correct": "The authoritative service owns durable truth.",
-        "incorrectByOptionId": {
-          "screen": "A screen cannot be the durable owner.",
-          "cache": "An unverified cache cannot establish durable truth."
-        }
+        "reason": "The authoritative service owns durable truth.",
+        "details": {},
+        "messages": [
+          { "kind": "wrong_option", "targetId": "screen", "text": "A screen cannot be the durable owner." },
+          { "kind": "wrong_option", "targetId": "cache", "text": "An unverified cache cannot establish durable truth." }
+        ]
       },
       "difficulty": "foundational",
       "sourceRefs": ["fixture://simp-01/choice-single"]
@@ -40,6 +42,7 @@
       "constraints": ["There can be more than one correct option.", "Do not select an unsafe fallback."],
       "interaction": {
         "type": "choice_multiple",
+        "scoringMethod": "exact_selected_set",
         "options": [
           { "optionId": "idempotency", "text": "Use an idempotency key" },
           { "optionId": "bounded-retry", "text": "Use a bounded retry policy" },
@@ -53,15 +56,14 @@
       },
       "feedback": {
         "type": "choice_multiple",
-        "correct": "Safe retries need identity, a bounded policy, and a visible repair path.",
-        "incorrectByOptionId": {
-          "silent-loop": "An unbounded silent loop hides failure and can duplicate work."
-        },
-        "omittedByOptionId": {
-          "idempotency": "Without identity, a retry can duplicate the operation.",
-          "bounded-retry": "A retry needs an explicit limit and classification.",
-          "repair-state": "Users need a visible path when recovery is unavailable."
-        }
+        "reason": "Safe retries need identity, a bounded policy, and a visible repair path.",
+        "details": {},
+        "messages": [
+          { "kind": "wrong_option", "targetId": "silent-loop", "text": "An unbounded silent loop hides failure and can duplicate work." },
+          { "kind": "omitted_option", "targetId": "idempotency", "text": "Without identity, a retry can duplicate the operation." },
+          { "kind": "omitted_option", "targetId": "bounded-retry", "text": "A retry needs an explicit limit and classification." },
+          { "kind": "omitted_option", "targetId": "repair-state", "text": "Users need a visible path when recovery is unavailable." }
+        ]
       },
       "difficulty": "intermediate",
       "sourceRefs": ["fixture://simp-01/choice-multiple"]
@@ -75,6 +77,7 @@
       "constraints": ["Every element must appear exactly once.", "The sequence must expose failure before claiming success."],
       "interaction": {
         "type": "ordering",
+        "scoringMethod": "adjacent_relations",
         "elements": [
           { "elementId": "observe", "text": "Observe the current evidence" },
           { "elementId": "preserve", "text": "Preserve repairable intent" },
@@ -88,18 +91,17 @@
       },
       "feedback": {
         "type": "ordering",
-        "correct": "Evidence and intent are preserved before the repair outcome is confirmed.",
-        "incorrectByElementId": {
-          "observe": "Start by observing the boundary that failed.",
-          "preserve": "Preserve repairable intent before changing state.",
-          "expose": "Expose unavailable or partial state instead of masking it.",
-          "recover": "Confirm the resulting state after recovery."
-        },
-        "brokenByRelationId": {
-          "observe->preserve": "Observation must precede preservation of intent.",
-          "preserve->expose": "The user intent must be safe before the unavailable state is exposed.",
-          "expose->recover": "Recovery should follow an explicit unavailable state."
-        }
+        "reason": "Evidence and intent are preserved before the repair outcome is confirmed.",
+        "details": {},
+        "messages": [
+          { "kind": "wrong_element", "targetId": "observe", "text": "Start by observing the boundary that failed." },
+          { "kind": "wrong_element", "targetId": "preserve", "text": "Preserve repairable intent before changing state." },
+          { "kind": "wrong_element", "targetId": "expose", "text": "Expose unavailable or partial state instead of masking it." },
+          { "kind": "wrong_element", "targetId": "recover", "text": "Confirm the resulting state after recovery." },
+          { "kind": "broken_relation", "targetId": "observe->preserve", "text": "Observation must precede preservation of intent." },
+          { "kind": "broken_relation", "targetId": "preserve->expose", "text": "The user intent must be safe before the unavailable state is exposed." },
+          { "kind": "broken_relation", "targetId": "expose->recover", "text": "Recovery should follow an explicit unavailable state." }
+        ]
       },
       "difficulty": "intermediate",
       "sourceRefs": ["fixture://simp-01/ordering"]
@@ -113,6 +115,7 @@
       "constraints": ["The input is scanned once.", "No collection grows with the input."],
       "interaction": {
         "type": "complexity",
+        "scoringMethod": "dimension_exact",
         "dimensions": [
           {
             "dimensionId": "time",
@@ -122,7 +125,8 @@
               { "valueId": "linear", "text": "O(n)" },
               { "valueId": "quadratic", "text": "O(n^2)" }
             ],
-            "acceptedValueIds": ["linear"]
+            "acceptedValueIds": ["linear"],
+            "aliases": { "n-linear": "linear" }
           },
           {
             "dimensionId": "auxiliary-space",
@@ -139,23 +143,22 @@
       "answer": {
         "type": "complexity",
         "selectedValueIdsByDimension": {
-          "time": "linear",
-          "auxiliary-space": "constant"
+          "time": ["linear"],
+          "auxiliary-space": ["constant"]
         }
       },
       "feedback": {
         "type": "complexity",
-        "correct": "One scan is linear and constant working state is constant auxiliary space.",
-        "incorrectByDimensionIdAndValueId": {
-          "time|constant": "The scan must inspect the input, so constant time is too small.",
-          "time|quadratic": "A single scan does not perform quadratic work.",
-          "auxiliary-space|linear": "The algorithm retains only constant working state.",
-          "auxiliary-space|quadratic": "No input-sized structure is retained."
-        },
-        "omittedByDimensionId": {
-          "time": "A time choice is required to score the dimension.",
-          "auxiliary-space": "An auxiliary-space choice is required to score the dimension."
-        }
+        "reason": "One scan is linear and constant working state is constant auxiliary space.",
+        "details": {},
+        "messages": [
+          { "kind": "wrong_value", "targetId": "time|constant", "text": "The scan must inspect the input, so constant time is too small." },
+          { "kind": "wrong_value", "targetId": "time|quadratic", "text": "A single scan does not perform quadratic work." },
+          { "kind": "wrong_value", "targetId": "auxiliary-space|linear", "text": "The algorithm retains only constant working state." },
+          { "kind": "wrong_value", "targetId": "auxiliary-space|quadratic", "text": "No input-sized structure is retained." },
+          { "kind": "omitted_dimension", "targetId": "time", "text": "A time choice is required to score the dimension." },
+          { "kind": "omitted_dimension", "targetId": "auxiliary-space", "text": "An auxiliary-space choice is required to score the dimension." }
+        ]
       },
       "difficulty": "foundational",
       "sourceRefs": ["fixture://simp-01/complexity"]
@@ -169,6 +172,7 @@
       "constraints": ["Choose one value for every dimension.", "Keep authority and failure behavior explicit."],
       "interaction": {
         "type": "decision_matrix",
+        "scoringMethod": "dimension_exact",
         "dimensions": [
           {
             "dimensionId": "authority",
@@ -195,23 +199,22 @@
       "answer": {
         "type": "decision_matrix",
         "selectedValueIdsByDimension": {
-          "authority": "trusted-service",
-          "failure": "deny-and-repair"
+          "authority": ["trusted-service"],
+          "failure": ["deny-and-repair"]
         }
       },
       "feedback": {
         "type": "decision_matrix",
-        "correct": "The trusted boundary owns enforcement and exposes a repairable failure.",
-        "incorrectByDimensionIdAndValueId": {
-          "authority|hidden-control": "Hiding a control is not authorization.",
-          "authority|client-check": "A client check is not a trusted enforcement boundary.",
-          "failure|silent-retry": "Silent retries conceal the failure and have no repair budget.",
-          "failure|fail-open": "Unknown policy must not allow the protected action."
-        },
-        "omittedByDimensionId": {
-          "authority": "The enforcement owner must be explicit.",
-          "failure": "The unavailable or denied state must have a repair behavior."
-        }
+        "reason": "The trusted boundary owns enforcement and exposes a repairable failure.",
+        "details": {},
+        "messages": [
+          { "kind": "wrong_value", "targetId": "authority|hidden-control", "text": "Hiding a control is not authorization." },
+          { "kind": "wrong_value", "targetId": "authority|client-check", "text": "A client check is not a trusted enforcement boundary." },
+          { "kind": "wrong_value", "targetId": "failure|silent-retry", "text": "Silent retries conceal the failure and have no repair budget." },
+          { "kind": "wrong_value", "targetId": "failure|fail-open", "text": "Unknown policy must not allow the protected action." },
+          { "kind": "omitted_dimension", "targetId": "authority", "text": "The enforcement owner must be explicit." },
+          { "kind": "omitted_dimension", "targetId": "failure", "text": "The unavailable or denied state must have a repair behavior." }
+        ]
       },
       "difficulty": "advanced",
       "sourceRefs": ["fixture://simp-01/decision-matrix"]

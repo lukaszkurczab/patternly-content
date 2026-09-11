@@ -57,7 +57,7 @@ async function writeTrackQuestion(rootDirectory, trackId, question = questionFor
 
 async function writeQuestionFile(filePath, question) {
   await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, `${JSON.stringify(question, null, 2)}\n`, "utf8");
+  await writeFile(filePath, `${JSON.stringify([question], null, 2)}\n`, "utf8");
   return filePath;
 }
 
@@ -142,9 +142,9 @@ test("mutating one track does not rewrite another artifact or lock entry", async
   const beforeUntouchedBytes = await readFile(untouchedArtifactPath, "utf8");
   const beforeUntouchedStat = await stat(untouchedArtifactPath);
   const beforeLock = JSON.parse(await readFile(path.join(outputRoot, "content-lock.json"), "utf8"));
-  const changedQuestion = JSON.parse(await readFile(changedSourcePath, "utf8"));
+  const [changedQuestion] = JSON.parse(await readFile(changedSourcePath, "utf8"));
   changedQuestion.prompt = "Changed fixture prompt";
-  await writeFile(changedSourcePath, `${JSON.stringify(changedQuestion)}\n`, "utf8");
+  await writeFile(changedSourcePath, `${JSON.stringify([changedQuestion])}\n`, "utf8");
 
   const rebuilt = await buildAll({ rootDirectory, outputRoot });
   const afterUntouchedBytes = await readFile(untouchedArtifactPath, "utf8");
@@ -174,6 +174,18 @@ test("builder rejects missing, empty, unknown and malformed inputs", async (t) =
   t.after(() => rm(malformedCatalogRoot, { recursive: true, force: true }));
   await writeFile(path.join(malformedCatalogRoot, "content/catalog.json"), "{\n", "utf8");
   await expectBuildFailure(() => validateTrack({ rootDirectory: malformedCatalogRoot, trackId: ACCEPTED_TRACK_IDS[0] }), /Cannot load content\/catalog/);
+});
+
+test("builder requires each mental-unit source file to be a non-empty question array", async (t) => {
+  const rootDirectory = await createWorkspace();
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  const trackId = ACCEPTED_TRACK_IDS[0];
+  const filePath = path.join(rootDirectory, "content", trackId, "node-001", "mental-unit-001.json");
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, `${JSON.stringify(questionFor(trackId))}\n`, "utf8");
+  await expectBuildFailure(() => validateTrack({ rootDirectory, trackId }), /non-empty question array/);
+  await writeFile(filePath, "[]\n", "utf8");
+  await expectBuildFailure(() => validateTrack({ rootDirectory, trackId }), /non-empty question array/);
 });
 
 test("builder rejects path identity, foreign track, duplicate and invalid questions", async (t) => {
@@ -317,9 +329,9 @@ test("single-track output commit rolls back both files on an injected second ren
   const previousArtifact = await readFile(artifactPath, "utf8");
   const previousLock = await readFile(lockPath, "utf8");
   const sourcePath = path.join(rootDirectory, "content", trackId, "node-001", "mental-unit-001.json");
-  const changed = JSON.parse(await readFile(sourcePath, "utf8"));
+  const [changed] = JSON.parse(await readFile(sourcePath, "utf8"));
   changed.prompt = "Changed for rollback fixture";
-  await writeFile(sourcePath, JSON.stringify(changed), "utf8");
+  await writeFile(sourcePath, JSON.stringify([changed]), "utf8");
   let renameCalls = 0;
   const fileOps = {
     rename: async (...args) => {

@@ -2,7 +2,7 @@
 
 > **Rola po konsolidacji:** kryteria techniczne `SIMP-01–05`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
 
-**Status:** realizacja rozpoczęta; `SIMP-01–03` ukończone, następny `SIMP-04`
+**Status:** realizacja rozpoczęta; `SIMP-01–04` ukończone, następny `SIMP-05`
 **Cel:** repozytorium ma być prostą bazą pytań JSON, a aplikacja ma bezpośrednio konsumować jej prosty artefakt podczas buildu
 
 **Warunek poprzedzający:** naprawa zapisu decyzji akceptacyjnej `ACC-01` → `ACC-02` / ODK-E2E-099 zgodnie z `docs/planning/CONTENT-ACCEPTANCE-DECISION-PACKET.md`. Migracja musi zachować dokładne item identities związane z decyzją PO; nie może użyć model evaluation jako zastępczej akceptacji.
@@ -121,6 +121,8 @@ Jednorazowym konwerterem przenieść kolejno każdy track. To dziewięć niezale
 Akceptacja każdego tracka: identyczny zbiór ID i treści, poprawne przypisanie do node/mental unit, zgodne typy interakcji i liczba pytań. Akceptacja całości: 9 tracków, 117 nodów, 932 mental unity i 16 041 pytań względem przypiętego baseline'u migracji. Sześć historycznych formatów może obsłużyć wyłącznie jednorazowy kod migracyjny należący do SIMP-03; konwerter usuwa się po migracji i nie może stać się wejściem ani biblioteką EPIC-09.
 
 ### SIMP-04 — prosty konsument w aplikacji
+
+**Status:** `done` — [raport](reports/SIMP-04-REPORT.md)
 
 Zastąpić synchronizację przez historyczne commity, wygenerowany plik z zakodowanymi paczkami, trust index, rozpakowywanie oraz rodzinne walidatory bezpośrednim włączeniem dziewięciu zbudowanych JSON-ów. Wprowadzić jeden `Question` i jeden katalog runtime. Zachować osobne funkcje scoringu dla realnie różnych interakcji oraz tryby ćwiczeń jako logikę produktu, a nie część formatu banku.
 

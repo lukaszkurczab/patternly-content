@@ -1,6 +1,6 @@
 # SIMP-04 — pakiet akceptacyjny
 
-**Status:** `planned`
+**Status:** `done` — [raport](reports/SIMP-04-REPORT.md)
 **Następstwo:** `SIMP-03` `done` → `SIMP-04` → `SIMP-05`
 **Repozytoria:** implementacja w `patternly`; źródłowe artefakty w `patternly-content`
 

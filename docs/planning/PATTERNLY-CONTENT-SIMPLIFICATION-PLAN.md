@@ -130,6 +130,8 @@ Akceptacja: aplikacja uruchamia każdy track z jego osobnego artefaktu; choice, 
 
 ### SIMP-05 — migracja zapisanej tożsamości i usunięcie starego systemu
 
+**Status:** `planned` — [pakiet akceptacyjny](SIMP-05-ACCEPTANCE-PACKET.md)
+
 Nowe sesje zapisują `trackId`, `questionId`, `contentVersion` i `artifactSha256`. Przy starcie jednorazowo przekształcić istniejące `packagePin` do nowej tożsamości, zachowując stare wartości ID. Jeśli konkretnej starej paczki nie da się zmapować, istniejąca zakończona historia pozostaje widoczna, a wznowienie niedokończonej sesji pokazuje jawny komunikat zamiast używać innej wersji pytań.
 
 Po przejściu testów usunąć stare schematy, buildery, generated TS, resolver/trust index, nieużywane manifesty, evidence i ich testy. Przed usunięciem każdego obszaru sprawdzić odwołania i entry pointy.

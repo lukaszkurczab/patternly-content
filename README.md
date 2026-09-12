@@ -43,9 +43,16 @@ defects. Patternly is a decision-practice/remediation product, not a question ba
 The canonical v1 builder reads one track at a time from
 `content/<trackId>/<nodeId>/<mentalUnitId>.json`; each mental-unit file is a
 non-empty JSON array of canonical questions, and every question must repeat the
-file's `nodeId` and `mentalUnitId`. Production canonical sources are
-not populated until SIMP-03; do not add empty or placeholder files. Use a temporary
-fixture workspace when exercising the builder:
+file's `nodeId` and `mentalUnitId`. Production canonical sources contain the nine
+banks migrated in SIMP-03. A durable verifier checks their exact accepted
+inventory, identities, projections, source hashes and immutable migration evidence:
+
+```sh
+npm run verify:migration
+```
+
+Use a temporary fixture workspace when exercising the builder against synthetic
+content:
 
 ```sh
 npm run content:validate -- --track <trackId> --root <workspace>

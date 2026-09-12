@@ -2,7 +2,7 @@
 
 > **Rola po konsolidacji:** kryteria techniczne `SIMP-01–05`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
 
-**Status:** realizacja rozpoczęta; `SIMP-01–02` ukończone, następny `SIMP-03`
+**Status:** realizacja rozpoczęta; `SIMP-01–03` ukończone, następny `SIMP-04`
 **Cel:** repozytorium ma być prostą bazą pytań JSON, a aplikacja ma bezpośrednio konsumować jej prosty artefakt podczas buildu
 
 **Warunek poprzedzający:** naprawa zapisu decyzji akceptacyjnej `ACC-01` → `ACC-02` / ODK-E2E-099 zgodnie z `docs/planning/CONTENT-ACCEPTANCE-DECISION-PACKET.md`. Migracja musi zachować dokładne item identities związane z decyzją PO; nie może użyć model evaluation jako zastępczej akceptacji.
@@ -114,6 +114,8 @@ Akceptacja: każdy track daje się osobno walidować, testować i budować; zmia
 
 ### SIMP-03 — mechaniczna migracja dziewięciu banków
 
+**Status:** `done` — [raport](reports/SIMP-03-REPORT.md)
+
 Jednorazowym konwerterem przenieść kolejno każdy track. To dziewięć niezależnych porcji tego samego zadania, nie dziewięć architektur. Nie poprawiać pytań podczas migracji i nie zmieniać zamrożonych nodów.
 
 Akceptacja każdego tracka: identyczny zbiór ID i treści, poprawne przypisanie do node/mental unit, zgodne typy interakcji i liczba pytań. Akceptacja całości: 9 tracków, 117 nodów, 932 mental unity i 16 041 pytań względem przypiętego baseline'u migracji. Sześć historycznych formatów może obsłużyć wyłącznie jednorazowy kod migracyjny należący do SIMP-03; konwerter usuwa się po migracji i nie może stać się wejściem ani biblioteką EPIC-09.
@@ -176,4 +178,4 @@ EPIC-09 zaczyna się po uproszczeniu. Czyta zwykłe JSON-y, zapisuje raport i ko
 
 ## Następny krok
 
-Zaimplementować SIMP-03: mechanicznie zmigrować dziewięć banków do wspólnego kontraktu, zachowując dokładne ID, treści i inwentarz przypiętego baseline'u. Nie zmieniać pytań ani aplikacji. EPIC-09 pozostaje wstrzymany do zakończenia SIMP-05.
+Zaimplementować SIMP-04: zastąpić złożony konsument aplikacyjny bezpośrednim użyciem dziewięciu kanonicznych artefaktów, zachowując scoring i zapisane stabilne ID. EPIC-09 pozostaje wstrzymany do zakończenia SIMP-05.

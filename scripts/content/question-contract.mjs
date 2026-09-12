@@ -39,6 +39,14 @@ const CATALOG_KEYS = ["schemaVersion", "tracks"];
 const TRACK_KEYS = ["trackId", "contentVersion"];
 const QUESTION_FIXTURE_KEYS = ["schemaVersion", "questions"];
 
+// Keep this character class in sync with the JSON Schema learnerText/id
+// patterns and the temporary migration writer. It is intentionally explicit:
+// JavaScript trim() and the regex engines used by JSON Schema validators
+// disagree on a few control characters (notably U+001C/U+001F and U+FEFF).
+export const CONTRACT_WHITESPACE_CLASS = "\\u0009-\\u000D\\u001C-\\u001F\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000\\uFEFF";
+const LEARNER_TEXT_HAS_CONTENT = new RegExp(`[^${CONTRACT_WHITESPACE_CLASS}]`, "u");
+const TRIM_CLEAN_EDGE = new RegExp(`^[${CONTRACT_WHITESPACE_CLASS}]|[${CONTRACT_WHITESPACE_CLASS}]$`, "u");
+
 const SCORING_METHODS = Object.freeze({
   choice_single: "exact_selected_set",
   choice_multiple: "exact_selected_set",
@@ -86,17 +94,29 @@ function exactKeys(value, expectedKeys, pathName, errors, requiredKeys = expecte
   return true;
 }
 
-function nonEmptyString(value, pathName, errors) {
+function trimCleanString(value, pathName, errors) {
   if (typeof value !== "string") {
     addError(errors, pathName, "must be a non-empty string");
     return false;
   }
-  if (value.trim() === "") {
+  if (value.length === 0) {
     addError(errors, pathName, "must be a non-empty string");
     return false;
   }
-  if (value !== value.trim()) {
+  if (TRIM_CLEAN_EDGE.test(value)) {
     addError(errors, pathName, "must not contain surrounding whitespace");
+    return false;
+  }
+  return true;
+}
+
+function learnerTextString(value, pathName, errors) {
+  if (typeof value !== "string") {
+    addError(errors, pathName, "must be a non-empty string");
+    return false;
+  }
+  if (!LEARNER_TEXT_HAS_CONTENT.test(value)) {
+    addError(errors, pathName, "must contain a non-whitespace character");
     return false;
   }
   return true;
@@ -104,7 +124,7 @@ function nonEmptyString(value, pathName, errors) {
 
 function nullableString(value, pathName, errors) {
   if (value === null) return true;
-  return nonEmptyString(value, pathName, errors);
+  return trimCleanString(value, pathName, errors);
 }
 
 function uniqueStrings(values, pathName, errors, { minItems = 0 } = {}) {
@@ -115,7 +135,7 @@ function uniqueStrings(values, pathName, errors, { minItems = 0 } = {}) {
   if (values.length < minItems) addError(errors, pathName, `must contain at least ${minItems} item(s)`);
   const seen = new Set();
   values.forEach((value, index) => {
-    if (!nonEmptyString(value, `${pathName}[${index}]`, errors)) return;
+    if (!trimCleanString(value, `${pathName}[${index}]`, errors)) return;
     if (seen.has(value)) addError(errors, `${pathName}[${index}]`, "must not contain duplicates");
     seen.add(value);
   });
@@ -132,7 +152,8 @@ function exactIdSet(values, expectedValues, pathName, errors) {
 }
 
 function validateJsonValue(value, pathName, errors) {
-  if (value === null || typeof value === "string" || typeof value === "boolean") return true;
+  if (value === null || typeof value === "boolean") return true;
+  if (typeof value === "string") return learnerTextString(value, pathName, errors);
   if (typeof value === "number") {
     if (!Number.isFinite(value)) addError(errors, pathName, "must contain only finite JSON numbers");
     return Number.isFinite(value);
@@ -159,9 +180,9 @@ function validateOptionList(options, pathName, errors) {
   options.forEach((option, index) => {
     const optionPath = `${pathName}[${index}]`;
     if (!exactKeys(option, ["optionId", "text", "explanation"], optionPath, errors, ["optionId", "text"])) return;
-    if (nonEmptyString(option.optionId, `${optionPath}.optionId`, errors)) ids.push(option.optionId);
-    nonEmptyString(option.text, `${optionPath}.text`, errors);
-    if (Object.prototype.hasOwnProperty.call(option, "explanation")) nonEmptyString(option.explanation, `${optionPath}.explanation`, errors);
+    if (trimCleanString(option.optionId, `${optionPath}.optionId`, errors)) ids.push(option.optionId);
+    learnerTextString(option.text, `${optionPath}.text`, errors);
+    if (Object.prototype.hasOwnProperty.call(option, "explanation")) learnerTextString(option.explanation, `${optionPath}.explanation`, errors);
   });
   if (new Set(ids).size !== ids.length) addError(errors, pathName, "option IDs must be unique");
   return ids;
@@ -177,8 +198,8 @@ function validateElementList(elements, pathName, errors) {
   elements.forEach((element, index) => {
     const elementPath = `${pathName}[${index}]`;
     if (!exactKeys(element, ["elementId", "text"], elementPath, errors)) return;
-    if (nonEmptyString(element.elementId, `${elementPath}.elementId`, errors)) ids.push(element.elementId);
-    nonEmptyString(element.text, `${elementPath}.text`, errors);
+    if (trimCleanString(element.elementId, `${elementPath}.elementId`, errors)) ids.push(element.elementId);
+    learnerTextString(element.text, `${elementPath}.text`, errors);
   });
   if (new Set(ids).size !== ids.length) addError(errors, pathName, "element IDs must be unique");
   return ids;
@@ -190,9 +211,9 @@ function validateAliases(aliases, valueIds, pathName, errors) {
     return;
   }
   for (const [alias, target] of Object.entries(aliases)) {
-    nonEmptyString(alias, `${pathName}.${alias}`, errors);
+    trimCleanString(alias, `${pathName}.${alias}`, errors);
     if (valueIds.includes(alias)) addError(errors, `${pathName}.${alias}`, "must not shadow a canonical value ID");
-    if (!nonEmptyString(target, `${pathName}.${alias}`, errors) || !valueIds.includes(target)) {
+    if (!trimCleanString(target, `${pathName}.${alias}`, errors) || !valueIds.includes(target)) {
       addError(errors, `${pathName}.${alias}`, `must reference an existing value ID (${target})`);
     }
   }
@@ -210,9 +231,9 @@ function validateDimensions(dimensions, pathName, errors, type) {
     const dimensionPath = `${pathName}[${index}]`;
     const allowedKeys = type === "complexity" ? ["dimensionId", "label", "values", "acceptedValueIds", "aliases"] : ["dimensionId", "label", "values", "acceptedValueIds"];
     if (!exactKeys(dimension, allowedKeys, dimensionPath, errors, ["dimensionId", "label", "values", "acceptedValueIds"])) return;
-    const dimensionIdIsValid = nonEmptyString(dimension.dimensionId, `${dimensionPath}.dimensionId`, errors);
+    const dimensionIdIsValid = trimCleanString(dimension.dimensionId, `${dimensionPath}.dimensionId`, errors);
     if (dimensionIdIsValid) dimensionIds.push(dimension.dimensionId);
-    nonEmptyString(dimension.label, `${dimensionPath}.label`, errors);
+    learnerTextString(dimension.label, `${dimensionPath}.label`, errors);
     const values = Array.isArray(dimension.values) ? dimension.values : [];
     if (!Array.isArray(dimension.values)) addError(errors, `${dimensionPath}.values`, "must be an array");
     if (values.length < 2) addError(errors, `${dimensionPath}.values`, "must contain at least two values");
@@ -220,8 +241,8 @@ function validateDimensions(dimensions, pathName, errors, type) {
     values.forEach((value, valueIndex) => {
       const valuePath = `${dimensionPath}.values[${valueIndex}]`;
       if (!exactKeys(value, ["valueId", "text"], valuePath, errors)) return;
-      if (nonEmptyString(value.valueId, `${valuePath}.valueId`, errors)) valueIds.push(value.valueId);
-      nonEmptyString(value.text, `${valuePath}.text`, errors);
+      if (trimCleanString(value.valueId, `${valuePath}.valueId`, errors)) valueIds.push(value.valueId);
+      learnerTextString(value.text, `${valuePath}.text`, errors);
     });
     if (new Set(valueIds).size !== valueIds.length) addError(errors, `${dimensionPath}.values`, "value IDs must be unique");
     const accepted = dimension.acceptedValueIds;
@@ -249,7 +270,7 @@ function validateDimensions(dimensions, pathName, errors, type) {
 function validateFeedback(feedback, type, referenceIds, dimensions, answer, pathName, errors) {
   if (!exactKeys(feedback, ["type", "reason", "details", "messages"], pathName, errors, ["type", "reason", "details"])) return;
   if (feedback.type !== type) addError(errors, `${pathName}.type`, `must equal ${type}`);
-  nonEmptyString(feedback.reason, `${pathName}.reason`, errors);
+  learnerTextString(feedback.reason, `${pathName}.reason`, errors);
   validateJsonValue(feedback.details, `${pathName}.details`, errors);
   if (!Object.prototype.hasOwnProperty.call(feedback, "messages")) return;
   if (!Array.isArray(feedback.messages)) {
@@ -267,8 +288,8 @@ function validateFeedback(feedback, type, referenceIds, dimensions, answer, path
     const messagePath = `${pathName}.messages[${index}]`;
     if (!exactKeys(message, ["kind", "targetId", "text"], messagePath, errors)) continue;
     if (!allowedKinds.has(message.kind)) addError(errors, `${messagePath}.kind`, `must be one of ${[...allowedKinds].join(", ")}`);
-    nonEmptyString(message.targetId, `${messagePath}.targetId`, errors);
-    nonEmptyString(message.text, `${messagePath}.text`, errors);
+    trimCleanString(message.targetId, `${messagePath}.targetId`, errors);
+    learnerTextString(message.text, `${messagePath}.text`, errors);
     const validTarget = message.kind === "wrong_option" || message.kind === "omitted_option" || message.kind === "wrong_element"
       ? targetSet.has(message.targetId)
       : message.kind === "broken_relation"
@@ -307,13 +328,17 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
   const errors = [];
   if (!exactKeys(question, QUESTION_KEYS, "question", errors, REQUIRED_QUESTION_KEYS)) return errors;
 
-  for (const key of ["questionId", "trackId", "nodeId", "mentalUnitId", "prompt"]) nonEmptyString(question[key], `question.${key}`, errors);
+  for (const key of ["questionId", "trackId", "nodeId", "mentalUnitId"]) trimCleanString(question[key], `question.${key}`, errors);
+  learnerTextString(question.prompt, "question.prompt", errors);
   nullableString(question.difficulty, "question.difficulty", errors);
   if (Array.isArray(catalogTrackIds) && !catalogTrackIds.includes(question.trackId)) addError(errors, "question.trackId", `is not present in the supplied catalog (${question.trackId})`);
   for (const key of OPTIONAL_QUESTION_KEYS) {
     if (!Object.prototype.hasOwnProperty.call(question, key)) continue;
     if (!Array.isArray(question[key])) addError(errors, `question.${key}`, "must be an array");
-    else question[key].forEach((entry, index) => nonEmptyString(entry, `question.${key}[${index}]`, errors));
+    else question[key].forEach((entry, index) => {
+      const validate = key === "constraints" ? learnerTextString : trimCleanString;
+      validate(entry, `question.${key}[${index}]`, errors);
+    });
   }
 
   if (!isRecord(question.interaction)) {
@@ -335,7 +360,7 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
     if (type === "choice_single") {
       if (exactKeys(question.answer, ["type", "optionId"], "question.answer", errors)) {
         if (question.answer.type !== type) addError(errors, "question.answer.type", `must equal ${type}`);
-        if (nonEmptyString(question.answer.optionId, "question.answer.optionId", errors) && !referenceIds.includes(question.answer.optionId)) addError(errors, "question.answer.optionId", "references an option that does not exist");
+        if (trimCleanString(question.answer.optionId, "question.answer.optionId", errors) && !referenceIds.includes(question.answer.optionId)) addError(errors, "question.answer.optionId", "references an option that does not exist");
       }
     } else if (exactKeys(question.answer, ["type", "optionIds"], "question.answer", errors)) {
       if (question.answer.type !== type) addError(errors, "question.answer.type", `must equal ${type}`);
@@ -391,8 +416,8 @@ export function validateCatalog(catalog) {
   catalog.tracks.forEach((track, index) => {
     const trackPath = `catalog.tracks[${index}]`;
     if (!exactKeys(track, TRACK_KEYS, trackPath, errors)) return;
-    if (nonEmptyString(track.trackId, `${trackPath}.trackId`, errors)) ids.push(track.trackId);
-    nonEmptyString(track.contentVersion, `${trackPath}.contentVersion`, errors);
+    if (trimCleanString(track.trackId, `${trackPath}.trackId`, errors)) ids.push(track.trackId);
+    trimCleanString(track.contentVersion, `${trackPath}.contentVersion`, errors);
   });
   if (new Set(ids).size !== ids.length) addError(errors, "catalog.tracks", "track IDs must be unique");
   exactIdSet(ids, ACCEPTED_TRACK_IDS, "catalog.tracks", errors);

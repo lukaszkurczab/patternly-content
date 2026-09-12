@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   ACCEPTED_TRACK_IDS,
+  CONTRACT_WHITESPACE_CLASS,
   QUESTION_INTERACTION_TYPES,
   loadCanonicalFixture,
   scoreQuestion,
@@ -37,8 +38,8 @@ test("schema documents five disjoint interaction branches", () => {
   const schema = JSON.parse(readFileSync(new URL("../schemas/content/question.schema.json", import.meta.url), "utf8"));
   assert.equal(schema.oneOf.length, 5);
   assert.equal(schema.additionalProperties, false);
-  assert.equal(schema.$defs.nonEmptyText.pattern, "^\\S(?:[\\s\\S]*\\S)?$");
-  assert.equal(schema.$defs.id.pattern, "^\\S(?:[\\s\\S]*\\S)?$");
+  assert.equal(schema.$defs.learnerText.pattern, `^[${CONTRACT_WHITESPACE_CLASS}]*[^${CONTRACT_WHITESPACE_CLASS}][\\s\\S]*(?![\\s\\S])`);
+  assert.equal(schema.$defs.id.pattern, `^[^${CONTRACT_WHITESPACE_CLASS}](?:[\\s\\S]*[^${CONTRACT_WHITESPACE_CLASS}])?(?![\\s\\S])`);
   const branchNames = schema.oneOf.map((branch) => branch.$ref.split("/").at(-1));
   assert.deepEqual(branchNames, [
     "choiceSingleQuestion",
@@ -85,6 +86,196 @@ for question, expected_type in zip(questions, types):
         raise SystemExit(f"feedback mismatch was accepted for {expected_type}")
 `;
   assert.doesNotThrow(() => execFileSync("python3", ["-c", script, schemaPath, fixturePath], { encoding: "utf8" }));
+});
+
+test("Draft 2020-12 schema agrees with runtime on padded and whitespace-only learner text", () => {
+  const schemaPath = path.resolve("schemas/content/question.schema.json");
+  const fixturePath = path.resolve("tests/fixtures/shared-contract-fixture.json");
+  const script = String.raw`
+import copy
+import json
+import sys
+from jsonschema import Draft202012Validator
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    schema = json.load(handle)
+with open(sys.argv[2], encoding="utf-8") as handle:
+    question = json.load(handle)["questions"][0]
+validator = Draft202012Validator(schema)
+valid = lambda candidate: not list(validator.iter_errors(candidate))
+
+padded = copy.deepcopy(question)
+padded["prompt"] = " padded prompt \n"
+padded["interaction"]["options"][0]["text"] = "\t padded option  "
+padded["feedback"]["details"] = {"nested": [{"explanation": " padded detail\n"}]}
+if not valid(padded):
+    raise SystemExit("schema rejected padded learner text")
+
+padded_id = copy.deepcopy(question)
+padded_id["questionId"] = "simp01-choice-single "
+if valid(padded_id):
+    raise SystemExit("schema accepted padded identity")
+
+for mutate in [
+    lambda candidate: candidate.__setitem__("prompt", " \n\t"),
+    lambda candidate: candidate["interaction"]["options"][0].__setitem__("text", "\t"),
+    lambda candidate: candidate["feedback"].__setitem__("details", {"nested": [{"explanation": " "}]}),
+]:
+    whitespace_only = copy.deepcopy(question)
+    mutate(whitespace_only)
+    if valid(whitespace_only):
+        raise SystemExit("schema accepted whitespace-only learner text")
+`;
+  assert.doesNotThrow(() => execFileSync("python3", ["-c", script, schemaPath, fixturePath], { encoding: "utf8" }));
+});
+
+test("Draft 2020-12 schema and runtime agree on explicit learner whitespace code points", () => {
+  const schemaPath = path.resolve("schemas/content/question.schema.json");
+  const fixturePath = path.resolve("tests/fixtures/shared-contract-fixture.json");
+  const script = String.raw`
+import copy
+import json
+import sys
+from jsonschema import Draft202012Validator
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    schema = json.load(handle)
+with open(sys.argv[2], encoding="utf-8") as handle:
+    question = json.load(handle)["questions"][0]
+validator = Draft202012Validator(schema)
+valid = lambda candidate: not list(validator.iter_errors(candidate))
+cases = [
+    ("FEFF", "\ufeff"),
+    ("001C", "\u001c"),
+    ("001F", "\u001f"),
+    ("space", " "),
+    ("tab", "\t"),
+    ("LF", "\n"),
+]
+for label, whitespace in cases:
+    only = copy.deepcopy(question)
+    only["prompt"] = whitespace
+    only["feedback"]["details"] = {"nested": [{"text": whitespace}]}
+    if valid(only):
+        raise SystemExit(f"schema accepted whitespace-only {label}")
+
+    mixed = copy.deepcopy(question)
+    mixed_prompt = whitespace + "kept" + whitespace
+    mixed["prompt"] = mixed_prompt
+    mixed["feedback"]["details"] = {"nested": [{"text": whitespace + "detail" + whitespace}]}
+    if not valid(mixed) or mixed["prompt"] != mixed_prompt:
+        raise SystemExit(f"schema rejected or changed mixed {label}")
+`;
+  assert.doesNotThrow(() => execFileSync("python3", ["-c", script, schemaPath, fixturePath], { encoding: "utf8" }));
+
+  const cases = [
+    ["FEFF", "\uFEFF"],
+    ["001C", "\u001C"],
+    ["001F", "\u001F"],
+    ["space", " "],
+    ["tab", "\t"],
+    ["LF", "\n"]
+  ];
+  for (const [label, whitespace] of cases) {
+    const only = clone(questionsByType.get("choice_single"));
+    only.prompt = whitespace;
+    only.feedback.details = { nested: [{ text: whitespace }] };
+    assert.equal(validateQuestion(only).valid, false, `runtime accepted whitespace-only ${label}`);
+
+    const mixed = clone(questionsByType.get("choice_single"));
+    const mixedPrompt = `${whitespace}kept${whitespace}`;
+    const mixedDetail = `${whitespace}detail${whitespace}`;
+    mixed.prompt = mixedPrompt;
+    mixed.feedback.details = { nested: [{ text: mixedDetail }] };
+    assert.equal(validateQuestion(mixed).valid, true, `runtime rejected mixed ${label}`);
+    assert.equal(mixed.prompt, mixedPrompt, `runtime changed mixed prompt ${label}`);
+    assert.equal(mixed.feedback.details.nested[0].text, mixedDetail, `runtime changed mixed details ${label}`);
+  }
+});
+
+test("Draft 2020-12 schema and runtime keep identity metadata trim-clean for explicit whitespace", () => {
+  const schemaPath = path.resolve("schemas/content/question.schema.json");
+  const fixturePath = path.resolve("tests/fixtures/shared-contract-fixture.json");
+  const script = String.raw`
+import copy
+import json
+import sys
+from jsonschema import Draft202012Validator
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    schema = json.load(handle)
+with open(sys.argv[2], encoding="utf-8") as handle:
+    question = json.load(handle)["questions"][0]
+validator = Draft202012Validator(schema)
+valid = lambda candidate: not list(validator.iter_errors(candidate))
+
+def set_field(candidate, field, value):
+    if field == "questionId":
+        candidate["questionId"] = value
+    elif field == "difficulty":
+        candidate["difficulty"] = value
+    elif field == "sourceRefs":
+        candidate["sourceRefs"][0] = value
+    else:
+        raise AssertionError(field)
+
+cases = [
+    ("FEFF", "\ufeff"),
+    ("001C", "\u001c"),
+    ("001F", "\u001f"),
+    ("0085", "\u0085"),
+    ("space", " "),
+    ("tab", "\t"),
+    ("LF", "\n"),
+    ("CR", "\r"),
+]
+for label, whitespace in cases:
+    for field in ["questionId", "difficulty", "sourceRefs"]:
+        for edge in [whitespace + "id", "id" + whitespace]:
+            candidate = copy.deepcopy(question)
+            set_field(candidate, field, edge)
+            if valid(candidate):
+                raise SystemExit(f"schema accepted {field} with {label} at an edge")
+
+        candidate = copy.deepcopy(question)
+        mixed = "id" + whitespace + "internal"
+        set_field(candidate, field, mixed)
+        if not valid(candidate):
+            raise SystemExit(f"schema rejected internal {label} in {field}")
+`;
+  assert.doesNotThrow(() => execFileSync("python3", ["-c", script, schemaPath, fixturePath], { encoding: "utf8" }));
+
+  const cases = [
+    ["FEFF", "\uFEFF"],
+    ["001C", "\u001C"],
+    ["001F", "\u001F"],
+    ["0085", "\u0085"],
+    ["space", " "],
+    ["tab", "\t"],
+    ["LF", "\n"],
+    ["CR", "\r"]
+  ];
+  const setField = (candidate, field, value) => {
+    if (field === "questionId") candidate.questionId = value;
+    else if (field === "difficulty") candidate.difficulty = value;
+    else candidate.sourceRefs[0] = value;
+  };
+  for (const [label, whitespace] of cases) {
+    for (const field of ["questionId", "difficulty", "sourceRefs"]) {
+      for (const edge of [`${whitespace}id`, `id${whitespace}`]) {
+        const candidate = clone(questionsByType.get("choice_single"));
+        setField(candidate, field, edge);
+        assert.equal(validateQuestion(candidate).valid, false, `runtime accepted ${field} with ${label} at an edge`);
+      }
+
+      const candidate = clone(questionsByType.get("choice_single"));
+      const mixed = `id${whitespace}internal`;
+      setField(candidate, field, mixed);
+      assert.equal(validateQuestion(candidate).valid, true, `runtime rejected internal ${label} in ${field}`);
+      const actual = field === "sourceRefs" ? candidate.sourceRefs[0] : candidate[field];
+      assert.equal(actual, mixed, `runtime changed internal ${label} in ${field}`);
+    }
+  }
 });
 
 test("all five correct answers are scoreable", () => {
@@ -192,16 +383,57 @@ test("validator rejects missing identity and all family aliases", () => {
   }
 });
 
-test("validator rejects surrounding whitespace instead of only whitespace-only strings", () => {
-  for (const [path, mutate] of [
-    ["prompt", (candidate) => { candidate.prompt = " padded prompt"; }],
-    ["questionId", (candidate) => { candidate.questionId = "simp01-choice-single "; }],
-    ["option text", (candidate) => { candidate.interaction.options[0].text = " padded option"; }]
-  ]) {
+test("learner text preserves surrounding whitespace while identity stays trim-clean", () => {
+  const paddedPrompt = clone(questionsByType.get("choice_single"));
+  paddedPrompt.prompt = " padded prompt \n";
+  assert.equal(validateQuestion(paddedPrompt).valid, true);
+  assert.equal(paddedPrompt.prompt, " padded prompt \n");
+
+  const paddedOption = clone(questionsByType.get("choice_single"));
+  paddedOption.interaction.options[0].text = "\t padded option  ";
+  assert.equal(validateQuestion(paddedOption).valid, true);
+  assert.equal(paddedOption.interaction.options[0].text, "\t padded option  ");
+
+  const paddedDetails = clone(questionsByType.get("choice_single"));
+  paddedDetails.feedback.details = { explanation: " padded detail\n" };
+  assert.equal(validateQuestion(paddedDetails).valid, true);
+  assert.equal(paddedDetails.feedback.details.explanation, " padded detail\n");
+
+  const paddedNestedDetails = clone(questionsByType.get("choice_single"));
+  paddedNestedDetails.feedback.details = { nested: [{ explanation: "\t padded nested detail  " }] };
+  assert.equal(validateQuestion(paddedNestedDetails).valid, true);
+  assert.equal(paddedNestedDetails.feedback.details.nested[0].explanation, "\t padded nested detail  ");
+
+  const paddedId = clone(questionsByType.get("choice_single"));
+  paddedId.questionId = "simp01-choice-single ";
+  assert.equal(validateQuestion(paddedId).valid, false);
+});
+
+test("learner text rejects whitespace-only values in every canonical learner surface", () => {
+  const cases = [
+    ["prompt", (candidate) => { candidate.prompt = " \n\t"; }],
+    ["constraint", (candidate) => { candidate.constraints[0] = "\t "; }],
+    ["option text", (candidate) => { candidate.interaction.options[0].text = " "; }],
+    ["option explanation", (candidate) => { candidate.interaction.options[0].explanation = "\n"; }],
+    ["feedback reason", (candidate) => { candidate.feedback.reason = "\t"; }],
+    ["feedback details string", (candidate) => { candidate.feedback.details = { explanation: "\n" }; }],
+    ["feedback details nested string", (candidate) => { candidate.feedback.details = { nested: [{ explanation: "\n" }] }; }],
+    ["feedback message text", (candidate) => { candidate.feedback.messages[0].text = "  "; }]
+  ];
+  for (const [path, mutate] of cases) {
     const candidate = clone(questionsByType.get("choice_single"));
     mutate(candidate);
     assert.equal(validateQuestion(candidate).valid, false, path);
   }
+
+  const ordering = clone(questionsByType.get("ordering"));
+  ordering.interaction.elements[0].text = "\n";
+  assert.equal(validateQuestion(ordering).valid, false, "element text");
+
+  const complexity = clone(questionsByType.get("complexity"));
+  complexity.interaction.dimensions[0].label = "\t";
+  complexity.interaction.dimensions[0].values[0].text = " ";
+  assert.equal(validateQuestion(complexity).valid, false, "dimension label/value text");
 });
 
 test("validator permits internal newlines that the schema pattern explicitly permits", () => {

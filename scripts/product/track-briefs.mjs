@@ -35,7 +35,7 @@ const IMPLEMENTED_FREE_PROFILES = Object.freeze({
   }),
   "claude-certified-architect-professional-certification": Object.freeze({
     profileId: "claude-certified-architect-professional-certification-free-node-v1",
-    profileVersion: "1",
+    profileVersion: "2",
     profilePath: "config/free-node-experience-profiles/claude-certified-architect-professional-certification.json",
     modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
   }),

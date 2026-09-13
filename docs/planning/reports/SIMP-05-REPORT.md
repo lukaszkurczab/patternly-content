@@ -73,10 +73,9 @@ and canonical-evidence verification.
 
 - Application typecheck: PASS.
 - Application content-boundary gate: PASS.
-- Application full suite after identity-contract cleanup: 1,094 tests executed;
-  the only initial failures were the now-fixed ACC-02 validator dependency on
-  removed source. Focused release manifest/gate retest: 23/23 PASS. A final
-  full-suite repetition is required below before independent QA sign-off.
+- Application full suite after identity-contract cleanup and ACC-02 canonical
+  evidence cutover: 1,094/1,094 PASS. Focused release manifest/gate retest:
+  23/23 PASS.
 - Content canonical suite: 55/55 PASS; wildcard owning suite: 55/55 PASS.
 - Durable migration verifier: PASS with exact inventory 9 tracks / 117 nodes /
   932 mental units / 16,041 questions and unchanged per-track aggregate SHA-256.

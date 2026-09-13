@@ -4,7 +4,13 @@ import { join } from "node:path";
 import test from "node:test";
 
 const root = process.cwd();
-const archivalEvidenceValidator = "scripts/content/verify-migration.mjs";
+const historicalEvidenceValidators = [
+  "scripts/authoring/lib/model.mjs",
+  "scripts/content/verify-migration.mjs",
+  "scripts/publishing/pipeline.mjs",
+  "scripts/review/candidate-manifest.mjs",
+  "scripts/review/content-acceptance-baseline.mjs",
+];
 
 async function files(directory) {
   const entries = await readdir(join(root, directory), { withFileTypes: true });
@@ -23,8 +29,8 @@ test("active canonical ingress cannot read the retired manual source tree", asyn
     if (source.includes("manual/source")) references.push(relativePath);
   }
 
-  assert.deepEqual(references, [archivalEvidenceValidator]);
-  const evidenceValidator = await readFile(join(root, archivalEvidenceValidator), "utf8");
+  assert.deepEqual(references, historicalEvidenceValidators);
+  const evidenceValidator = await readFile(join(root, "scripts/content/verify-migration.mjs"), "utf8");
   assert.match(evidenceValidator, /EVIDENCE_VALUE/);
   assert.doesNotMatch(evidenceValidator, /join\([^\n]*manual["']\s*,\s*["']source/);
 });

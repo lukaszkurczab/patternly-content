@@ -144,12 +144,15 @@ async function verifyHumanApprovalBindings(root, tracks) {
   }
 }
 
-export async function verifyAcc01Baseline({ root = process.cwd(), baseline } = {}) {
+export async function verifyAcc01Baseline({ root = process.cwd(), baseline, verifyCurrentSource = true } = {}) {
   const candidateBaseline = baseline ?? await loadAcc01Baseline(root);
   await validateCommittedBaselineSchema(root, candidateBaseline);
   const checkedBaseline = validateBaselineMetadata(candidateBaseline);
   const tracks = normalizeBaselineTracks(checkedBaseline.tracks);
   await verifyHumanApprovalBindings(root, tracks);
+  if (!verifyCurrentSource) {
+    return { schemaVersion: ACC01_BASELINE_SCHEMA_VERSION, trackIds: tracks.map(({ trackId }) => trackId), summaries: tracks };
+  }
   const summaries = [];
   for (const track of tracks) {
     const actual = await summarizeSource({ root, trackId: track.trackId });

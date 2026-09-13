@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
@@ -14,6 +14,7 @@ import {
 } from "./content-acceptance-baseline.mjs";
 import { summarizeSource } from "./content-approval.mjs";
 import { verifyArtifactRecord } from "../publishing/pipeline.mjs";
+import { verifyMigration } from "../content/verify-migration.mjs";
 
 export const CANDIDATE_MANIFEST_SCHEMA_VERSION = "patternly-content-candidate-manifest-v1";
 export const CANDIDATE_MANIFEST_PATH = "evidence/content-acceptance/candidate-manifest-v1.json";
@@ -275,7 +276,9 @@ async function verifyCandidateBaseline(root, candidate) {
   validateBaselineMetadata(baseline);
   const baselineByTrack = new Map(baseline.tracks.map((track) => [track.trackId, track]));
   for (const entry of candidate.tracks) compareSourceIdentity(entry.source, baselineByTrack.get(entry.trackId));
-  await verifyAcc01Baseline({ root, baseline });
+  const legacySourceAvailable = await access(join(root, "manual", "source")).then(() => true, () => false);
+  await verifyAcc01Baseline({ root, baseline, verifyCurrentSource: legacySourceAvailable });
+  if (!legacySourceAvailable) await verifyMigration({ contentRoot: join(root, "content") });
   return baseline;
 }
 
@@ -302,6 +305,11 @@ export async function verifyCandidateManifest({ root = ROOT, candidate = undefin
 export async function verifyCandidateCurrentSource({ root = ROOT, candidate = undefined } = {}) {
   const selectedCandidate = candidate ?? await loadCandidateManifest(root);
   validateCandidateManifest(selectedCandidate);
+  const legacySourceAvailable = await access(join(root, "manual", "source")).then(() => true, () => false);
+  if (!legacySourceAvailable) {
+    await verifyMigration({ contentRoot: join(root, "content") });
+    return selectedCandidate.tracks.map((entry) => ({ trackId: entry.trackId, ...entry.source, migratedToCanonicalContent: true }));
+  }
   const summaries = [];
   for (const entry of selectedCandidate.tracks) {
     const actual = await summarizeSource({ root, trackId: entry.trackId });

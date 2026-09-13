@@ -2,7 +2,7 @@
 
 > **Rola po konsolidacji:** kryteria techniczne `SIMP-01–05`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
 
-**Status:** realizacja rozpoczęta; `SIMP-01–04` ukończone, następny `SIMP-05`
+**Status:** `done`; `SIMP-01–05` ukończone
 **Cel:** repozytorium ma być prostą bazą pytań JSON, a aplikacja ma bezpośrednio konsumować jej prosty artefakt podczas buildu
 
 **Warunek poprzedzający:** naprawa zapisu decyzji akceptacyjnej `ACC-01` → `ACC-02` / ODK-E2E-099 zgodnie z `docs/planning/CONTENT-ACCEPTANCE-DECISION-PACKET.md`. Migracja musi zachować dokładne item identities związane z decyzją PO; nie może użyć model evaluation jako zastępczej akceptacji.
@@ -130,7 +130,7 @@ Akceptacja: aplikacja uruchamia każdy track z jego osobnego artefaktu; choice, 
 
 ### SIMP-05 — migracja zapisanej tożsamości i usunięcie starego systemu
 
-**Status:** `planned` — [pakiet akceptacyjny](SIMP-05-ACCEPTANCE-PACKET.md)
+**Status:** `done` — [raport](reports/SIMP-05-REPORT.md); [pakiet akceptacyjny](SIMP-05-ACCEPTANCE-PACKET.md)
 
 Nowe sesje zapisują `trackId`, `questionId`, `contentVersion` i `artifactSha256`. Przy starcie jednorazowo przekształcić istniejące `packagePin` do nowej tożsamości, zachowując stare wartości ID. Jeśli konkretnej starej paczki nie da się zmapować, istniejąca zakończona historia pozostaje widoczna, a wznowienie niedokończonej sesji pokazuje jawny komunikat zamiast używać innej wersji pytań.
 

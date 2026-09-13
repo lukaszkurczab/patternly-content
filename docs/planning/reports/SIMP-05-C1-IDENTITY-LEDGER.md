@@ -1,6 +1,11 @@
 # SIMP-05-C1 identity ledger
 
-Status: `ROUTE_ESCALATION_REQUIRED` — no runtime cutover was applied.
+Status: `RESOLVED` — historical planning ledger; the coordinated runtime cutover was completed by SIMP-05.
+
+The blocker and intermediate evidence below describe the pre-cutover state from
+2026-09-12. They are retained as decision history, not as the current runtime
+status. The final implementation and verification are recorded in
+[`SIMP-05-REPORT.md`](SIMP-05-REPORT.md).
 
 The current repository still has a single connected runtime contract based on
 `ContentItemRef` (`itemId` + `packagePin`) and `ContentPackagePin`. A strict

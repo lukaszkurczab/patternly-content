@@ -60,22 +60,22 @@ Application (`patternly`):
   migration planning/bootstrap and canonical payloads;
 - `f2d816e`, `6547a04`, `1dad33e` — unavailable records, cloud v4 activation and
   learner-visible recovery UX;
-- `368f269`, `6d20350` — removal of runtime pin lookup and public legacy pin
-  contract.
+- `368f269`, `6d20350`, `55b0e6e` — removal of runtime pin lookup, public legacy
+  pin contract, published-bank contracts and obsolete family runtime graphs.
 
 Backend (`patternly-backend`): `f1cc174` — versioned v4 progress identity sync.
 
-Content (`patternly-content`): `2ae54f3`, `130387f`, `502c4f4` — retirement of
-the legacy source pipeline, preservation of actively owned ACC-02 validators,
-and canonical-evidence verification.
+Content (`patternly-content`): `2ae54f3`, `130387f`, `502c4f4`, `4550a88` —
+retirement of the legacy source pipeline, preservation of actively owned ACC-02
+validators, canonical-evidence verification, and isolation of the one frozen
+artifact verifier from the deleted publisher.
 
 ## Verification
 
 - Application typecheck: PASS.
 - Application content-boundary gate: PASS.
-- Application full suite after identity-contract cleanup and ACC-02 canonical
-  evidence cutover: 1,094/1,094 PASS. Focused release manifest/gate retest:
-  23/23 PASS.
+- Application full suite after final family-runtime cleanup: 1,089/1,089 PASS.
+  Focused release manifest/gate retest: 23/23 PASS.
 - Content canonical suite: 55/55 PASS; wildcard owning suite: 55/55 PASS.
 - Durable migration verifier: PASS with exact inventory 9 tracks / 117 nodes /
   932 mental units / 16,041 questions and unchanged per-track aggregate SHA-256.
@@ -99,6 +99,8 @@ Minimum: **0.82** — above the required 0.8 threshold.
 ## Final QA
 
 The first independent audit rejected the slice because the public pin contract,
-legacy source pipeline, stale ledger and incomplete boundary gate remained.
-Those findings were remediated. Final independent re-review is the last gate;
-its result is recorded in the final commit of this report.
+legacy source pipeline, stale ledger and incomplete boundary gate remained. A
+second audit found residual published-bank/family runtime contracts and a
+whole legacy publisher retained for one ACC-02 function. Both rounds were
+remediated. Final independent re-review is the last gate; its result is recorded
+in the final commit of this report.

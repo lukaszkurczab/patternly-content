@@ -1,4 +1,4 @@
-# Patternly manual content publishing and authoring
+# Patternly canonical content
 
 ## KISS — nadrzędna zasada utrzymania
 
@@ -24,13 +24,11 @@ reserved for checks that genuinely require backend evidence; the current
 runtime admission check does not require it and therefore does not introduce
 an artificial dependency.
 
-The current legacy flow is family-specific manual source → read-only validation → human review → immutable track artifact → immutable release. The target canonical flow after `SIMP-01`–`SIMP-05` uses one shared question schema and `mentalUnitId`, while retaining track-level validation, artifacts and release boundaries. Authoring readiness is a planning gate; it is separate from human approval, runtime publication, and release activation. Runtime applications import generated artifact bytes at build time; they never use this repository or a content HTTP endpoint at runtime.
+The sole learner-content ingress is `content/<trackId>/<nodeId>/<mentalUnitId>.json`, using one shared question schema and `mentalUnitId`. Each file is a non-empty JSON array of canonical questions. Runtime applications import generated artifact bytes at build time; they never use this repository or a content HTTP endpoint at runtime.
 
-Until the KISS migration is completed, `manual/source/<trackId>/` remains the legacy learner-item ingress. Do not add another source format or extend its family-specific architecture. New work should move toward `content/<trackId>/<nodeId>/<mentalUnitId>.json` and the shared `mentalUnitId` contract described in the simplification plan. Empty or placeholder JSON is forbidden.
+Historical approvals and migration records remain under `evidence/` and `content/migration-evidence/`. They describe the accepted source at the time of approval; they are not a writable or executable learner-content ingress.
 
-Run `npm test` for architecture fixtures. Run `npm run authoring:validate` to validate the registry, contracts, current catalogue, slot mapping, and existing Coding source. `npm run authoring:plan` writes the deterministic manifest; `npm run authoring:scaffold` is dry-run by default and requires `--write` to create only README and `.authoring.md` planning files. See `docs/manual-publishing-handoff.md` before adding manual source or emitting a release artifact.
-
-The current three authoring families are `coding_interview`, `certification`, and `design_interview`. Certification and Design source schemas are authoring contracts only; they do not create runtime registrations or claim unsupported case, simulation, package, or release behavior. Every authored batch remains unapproved until a human technical/editorial review record exists. Agent-prepared review records are not human approval; the current launch owner decision is stored separately in `evidence/human-content-approvals/manifest.json` and is bound to the exact source commit and item manifests it covers.
+Run `npm test` for the canonical builder, immutable migration evidence, review-console, and boundary gates. Use `npm run content:validate`, `npm run content:test`, `npm run content:build`, and `npm run content:build-all` for the shared canonical flow.
 
 The Product Owner has accepted nine banks, including Claude Certified Architect Professional. Historical eight-track readiness and review artifacts remain evidence of their original scope, not the current catalogue contract. No mass reduction, expansion, or automatic re-approval is implied.
 There is no global `>120 questions/node` readiness rule; counts are operational

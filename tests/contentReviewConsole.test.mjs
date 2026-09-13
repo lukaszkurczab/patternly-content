@@ -21,13 +21,13 @@ test("review console records one current explicit outcome and invalidates it whe
   const reviewPath = join(directory, "outcomes.json");
   const service = await createContentReviewConsole({ reviewPath, now: () => "2026-08-24T12:00:00.000Z" });
   const item = service.listItems({ trackId: "google-cloud-associate-cloud-engineer" })[0];
-  const reviewed = await service.recordOutcome({ trackId: item.trackId, itemId: item.itemId, outcome: "needs_change", note: "Clarify the boundary between the two alternatives.", reviewerId: "owner-local" });
+  const reviewed = await service.recordOutcome({ trackId: item.trackId, questionId: item.questionId, outcome: "needs_change", note: "Clarify the boundary between the two alternatives.", reviewerId: "owner-local" });
   assert.equal(reviewed.review.status, "needs_change");
   assert.match(await readFile(reviewPath, "utf8"), new RegExp(CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION));
-  const current = service.getItem(item.trackId, item.itemId);
+  const current = service.getItem(item.trackId, item.questionId);
   assert.equal(current.review.status, "needs_change");
   assert.equal(current.review.changedFields.length, 0);
-  const second = await service.recordOutcome({ trackId: item.trackId, itemId: item.itemId, outcome: "approved", note: "Rechecked the current source item.", reviewerId: "owner-local" });
+  const second = await service.recordOutcome({ trackId: item.trackId, questionId: item.questionId, outcome: "approved", note: "Rechecked the current source question.", reviewerId: "owner-local" });
   assert.equal(second.review.status, "approved");
   const store = JSON.parse(await readFile(reviewPath, "utf8"));
   assert.equal(store.reviews.length, 1);
@@ -40,7 +40,10 @@ test("review console serves a local UI and bounded JSON API without fabricating 
   const address = running.server.address();
   const page = await fetch(`http://127.0.0.1:${address.port}/`);
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /Patternly Content Review Console/);
+  const pageHtml = await page.text();
+  assert.match(pageHtml, /Patternly Content Review Console/);
+  assert.match(pageHtml, /questionId/);
+  assert.doesNotMatch(pageHtml, /itemId/);
   const catalog = await fetch(`http://127.0.0.1:${address.port}/api/catalog`);
   assert.equal(catalog.status, 200);
   assert.equal((await catalog.json()).launchTrackCount, 9);

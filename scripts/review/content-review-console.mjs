@@ -55,26 +55,17 @@ function firstDefined(...values) {
   return values.find((value) => typeof value === "string" && value.trim()) ?? null;
 }
 
-function sourceItemFingerprint(item) {
-  return typeof item.itemFingerprint === "string" && /^[a-f0-9]{64}$/.test(item.itemFingerprint)
-    ? item.itemFingerprint
-    : sha256(canonicalJson(item));
+function sourceItemFingerprint(question) {
+  return sha256(canonicalJson(question));
 }
 
-function itemId(item) {
-  return firstDefined(item.itemId, item.id, item.slotId);
-}
-
-function riskFlags(item, itemIdentity) {
+function riskFlags(question) {
   const flags = [];
-  if (!itemIdentity) flags.push("missing_identity");
-  if (!firstDefined(item.prompt, item.question)) flags.push("missing_prompt");
-  if (!item.interaction || typeof item.interaction !== "object") flags.push("missing_interaction");
-  if (!item.feedback || typeof item.feedback !== "object") flags.push("missing_feedback");
-  if (!firstDefined(item.feedback?.Reason, item.feedback?.reason)) flags.push("missing_reason");
-  if (!item.feedback?.Details || typeof item.feedback.Details !== "object") flags.push("missing_details");
-  else if (DETAIL_KEYS.some((key) => !firstDefined(item.feedback.Details[key]))) flags.push("incomplete_details");
-  if (!item.sourceBinding && !item.authoringProvenance) flags.push("missing_source_identity");
+  if (!question.questionId) flags.push("missing_identity");
+  if (!question.prompt) flags.push("missing_prompt");
+  if (!question.interaction || typeof question.interaction !== "object") flags.push("missing_interaction");
+  if (!question.feedback || typeof question.feedback !== "object") flags.push("missing_feedback");
+  if (!question.feedback?.reason) flags.push("missing_reason");
   return flags;
 }
 
@@ -90,53 +81,53 @@ function itemText(item) {
   ].filter((value) => typeof value === "string").join(" ").toLowerCase();
 }
 
-function itemKey(record) {
-  return `${record.trackId}:${record.itemId ?? record.sourceFile + "#" + record.sourceIndex}`;
+function questionKey(record) {
+  return `${record.trackId}:${record.questionId}`;
 }
 
-function sourceRecord({ trackId, sourceFile, sourceFileSha256, batch, item, sourceIndex }) {
-  const itemIdentity = itemId(item);
+function sourceRecord({ trackId, sourceFile, sourceFileSha256, question, nodeId, mentalUnitId }) {
   return {
     trackId,
-    itemId: itemIdentity,
-    itemKey: itemKey({ trackId, itemId: itemIdentity, sourceFile, sourceIndex }),
+    questionId: question.questionId,
+    questionKey: questionKey({ trackId, questionId: question.questionId }),
     sourceFile,
     sourceFileSha256,
-    sourceIndex,
-    nodeId: firstDefined(item.nodeId, batch.nodeId, sourceFile.split("/")[2]) ?? "unassigned",
-    learningBlockId: firstDefined(item.learningBlockId, item.mentalUnitId, batch.learningBlockId, batch.mentalUnitId) ?? "unassigned",
-    prompt: firstDefined(item.prompt, item.question) ?? "",
-    taxonomy: item.taxonomy ?? {},
-    itemFingerprint: sourceItemFingerprint(item),
-    item,
-    riskFlags: riskFlags(item, itemIdentity),
+    nodeId,
+    learningBlockId: mentalUnitId,
+    prompt: question.prompt,
+    taxonomy: { nodeId, mentalUnitId },
+    itemFingerprint: sourceItemFingerprint(question),
+    item: question,
+    riskFlags: riskFlags(question),
   };
 }
 
 async function readSourceRecords(root) {
   const records = [];
   for (const trackId of LAUNCH_TRACK_IDS) {
-    const sourceRoot = join(root, "manual", "source", trackId);
+    const sourceRoot = join(root, "content", trackId);
     const files = await walkJsonFiles(sourceRoot);
     for (const file of files) {
       const bytes = await readFile(file);
-      const batch = JSON.parse(bytes);
-      if (!Array.isArray(batch.items)) continue;
+      const questions = JSON.parse(bytes);
+      if (!Array.isArray(questions)) throw new Error(`Canonical source must be a question array: ${file}`);
       const sourceFile = relative(root, file);
       const sourceFileSha256 = sha256(bytes);
-      for (const [sourceIndex, item] of batch.items.entries()) {
-        records.push(sourceRecord({ trackId, sourceFile, sourceFileSha256, batch, item, sourceIndex }));
+      const [nodeId, fileName] = relative(sourceRoot, file).split(/[/\\]/);
+      const mentalUnitId = fileName?.replace(/\.json$/, "");
+      for (const question of questions) {
+        records.push(sourceRecord({ trackId, sourceFile, sourceFileSha256, question, nodeId, mentalUnitId }));
       }
     }
   }
   const identities = new Set();
   for (const record of records) {
-    if (!record.itemId) continue;
-    const identity = `${record.trackId}:${record.itemId}`;
+    if (!record.questionId) continue;
+    const identity = `${record.trackId}:${record.questionId}`;
     if (identities.has(identity)) record.riskFlags.push("duplicate_identity");
     identities.add(identity);
   }
-  return records.sort((left, right) => left.itemKey.localeCompare(right.itemKey));
+  return records.sort((left, right) => left.questionKey.localeCompare(right.questionKey));
 }
 
 async function readReviewStore(reviewPath) {
@@ -145,8 +136,8 @@ async function readReviewStore(reviewPath) {
     if (value.schemaVersion !== CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION || !Array.isArray(value.reviews)) throw new Error("Review outcomes have an invalid schema.");
     const seen = new Set();
     for (const review of value.reviews) {
-      if (!review.trackId || !review.itemId || !CONTENT_REVIEW_OUTCOMES.includes(review.outcome) || !review.itemFingerprint || !review.sourceFileSha256 || !review.note || !review.reviewerId) throw new Error("Review outcomes must contain current identity, fingerprint, outcome, note, and reviewer.");
-      const identity = `${review.trackId}:${review.itemId}`;
+      if (!review.trackId || !review.questionId || !CONTENT_REVIEW_OUTCOMES.includes(review.outcome) || !review.itemFingerprint || !review.sourceFileSha256 || !review.note || !review.reviewerId) throw new Error("Review outcomes must contain current identity, fingerprint, outcome, note, and reviewer.");
+      const identity = `${review.trackId}:${review.questionId}`;
       if (seen.has(identity)) throw new Error(`Duplicate current review outcome for ${identity}.`);
       seen.add(identity);
     }
@@ -161,7 +152,7 @@ async function writeReviewStore(reviewPath, reviews) {
   await mkdir(resolve(reviewPath, ".."), { recursive: true });
   const value = {
     schemaVersion: CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION,
-    reviews: [...reviews].sort((left, right) => `${left.trackId}:${left.itemId}`.localeCompare(`${right.trackId}:${right.itemId}`)),
+    reviews: [...reviews].sort((left, right) => `${left.trackId}:${left.questionId}`.localeCompare(`${right.trackId}:${right.questionId}`)),
   };
   await writeFile(reviewPath, `${canonicalJson(value)}\n`);
   return value;
@@ -190,11 +181,11 @@ function reviewProjection(record, review) {
 
 function toItemProjection(record, review) {
   return {
-    itemKey: record.itemKey,
+    questionKey: record.questionKey,
     trackId: record.trackId,
     nodeId: record.nodeId,
     learningBlockId: record.learningBlockId,
-    itemId: record.itemId,
+    questionId: record.questionId,
     prompt: record.prompt,
     sourceFile: record.sourceFile,
     sourceFileSha256: record.sourceFileSha256,
@@ -221,7 +212,7 @@ function buildCoverageIndex(records) {
 function withCoverage(record, reviews, coverageIndex) {
   const { nodeCounts, unitCounts } = coverageIndex;
   return {
-    ...toItemProjection(record, reviews.get(`${record.trackId}:${record.itemId}`)),
+    ...toItemProjection(record, reviews.get(`${record.trackId}:${record.questionId}`)),
     coverage: {
       nodeItemCount: nodeCounts.get(`${record.trackId}:${record.nodeId}`) ?? 0,
       learningUnitItemCount: unitCounts.get(`${record.trackId}:${record.nodeId}:${record.learningBlockId}`) ?? 0,
@@ -233,11 +224,11 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
   const records = await readSourceRecords(root);
   const coverageIndex = buildCoverageIndex(records);
   const store = await readReviewStore(reviewPath);
-  const reviews = new Map(store.reviews.map((review) => [`${review.trackId}:${review.itemId}`, review]));
+  const reviews = new Map(store.reviews.map((review) => [`${review.trackId}:${review.questionId}`, review]));
 
-  function findRecord(trackId, itemIdValue) {
-    const record = records.find((candidate) => candidate.trackId === trackId && candidate.itemId === itemIdValue);
-    if (!record) throw new Error(`Unknown launch item ${trackId}:${itemIdValue}.`);
+  function findRecord(trackId, questionId) {
+    const record = records.find((candidate) => candidate.trackId === trackId && candidate.questionId === questionId);
+    if (!record) throw new Error(`Unknown canonical question ${trackId}:${questionId}.`);
     return record;
   }
 
@@ -249,7 +240,7 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
       .filter((record) => !learningBlockId || record.learningBlockId === learningBlockId)
       .filter((record) => !normalizedQuery || itemText(record.item).includes(normalizedQuery))
       .filter((record) => !riskOnly || record.riskFlags.length > 0)
-      .filter((record) => !outcome || reviewProjection(record, reviews.get(`${record.trackId}:${record.itemId}`)).status === outcome)
+      .filter((record) => !outcome || reviewProjection(record, reviews.get(`${record.trackId}:${record.questionId}`)).status === outcome)
       .map((record) => withCoverage(record, reviews, coverageIndex));
   }
 
@@ -279,19 +270,19 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
     return { schemaVersion: CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION, launchTrackCount: tracks.length, tracks };
   }
 
-  function getItem(trackId, itemIdValue) {
-    const record = findRecord(trackId, itemIdValue);
+  function getItem(trackId, questionId) {
+    const record = findRecord(trackId, questionId);
     return withCoverage(record, reviews, coverageIndex);
   }
 
-  async function recordOutcome({ trackId, itemId: itemIdValue, outcome, note, reviewerId }) {
+  async function recordOutcome({ trackId, questionId, outcome, note, reviewerId }) {
     if (!CONTENT_REVIEW_OUTCOMES.includes(outcome)) throw new Error(`Outcome must be one of ${CONTENT_REVIEW_OUTCOMES.join(", ")}.`);
     if (typeof note !== "string" || !note.trim()) throw new Error("A review note is required.");
     if (typeof reviewerId !== "string" || !reviewerId.trim()) throw new Error("A reviewer ID is required.");
-    const record = findRecord(trackId, itemIdValue);
+    const record = findRecord(trackId, questionId);
     const next = {
       trackId,
-      itemId: record.itemId,
+      questionId: record.questionId,
       nodeId: record.nodeId,
       learningBlockId: record.learningBlockId,
       sourceFile: record.sourceFile,
@@ -303,16 +294,16 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
       reviewerId: reviewerId.trim(),
       reviewedAt: now(),
     };
-    reviews.set(`${trackId}:${record.itemId}`, next);
+    reviews.set(`${trackId}:${record.questionId}`, next);
     await writeReviewStore(reviewPath, [...reviews.values()]);
     return withCoverage(record, reviews, coverageIndex);
   }
 
   async function recordBatchOutcomes({ items, outcome, note, reviewerId }) {
     if (!Array.isArray(items) || items.length === 0 || items.length > MAX_BATCH_SIZE) throw new Error(`A review batch must contain 1-${MAX_BATCH_SIZE} items.`);
-    const resolved = items.map((entry) => findRecord(entry.trackId, entry.itemId));
+    const resolved = items.map((entry) => findRecord(entry.trackId, entry.questionId));
     const results = [];
-    for (const record of resolved) results.push(await recordOutcome({ trackId: record.trackId, itemId: record.itemId, outcome, note, reviewerId }));
+    for (const record of resolved) results.push(await recordOutcome({ trackId: record.trackId, questionId: record.questionId, outcome, note, reviewerId }));
     return results;
   }
 
@@ -336,8 +327,8 @@ function html() {
 <script>
 const $=id=>document.getElementById(id); let current=null;
 async function api(path,options){const response=await fetch(path,options);const body=await response.json();if(!response.ok)throw new Error(body.error||'Request failed');return body;}
-async function refresh(){const params=new URLSearchParams();for(const [id,key] of [['track','trackId'],['node','nodeId'],['unit','learningBlockId'],['query','query']])if($(id).value)params.set(key,$(id).value);if($('risk').checked)params.set('riskOnly','true');const body=await api('/api/items?'+params);$('count').textContent=body.items.length+' items';$('items').replaceChildren(...body.items.map(item=>{const button=document.createElement('button');button.className='item';button.onclick=()=>show(item.trackId,item.itemId);button.innerHTML='<strong>'+escapeHtml(item.itemId||item.itemKey)+'</strong><br><span class="muted">'+escapeHtml(item.nodeId)+' / '+escapeHtml(item.learningBlockId)+'</span><br>'+escapeHtml(item.prompt.slice(0,180))+'<br><span class="status '+item.review.status+'">'+item.review.status+'</span> '+(item.riskFlags.length?'<span class="risk">'+item.riskFlags.join(', ')+'</span>':'');return button;}));}
-async function show(trackId,itemId){current=await api('/api/items/'+encodeURIComponent(trackId)+'/'+encodeURIComponent(itemId));const detail=$('detail');detail.replaceChildren();const title=document.createElement('h2');title.textContent=current.itemId;detail.append(title);const meta=document.createElement('p');meta.innerHTML='<span class="status '+current.review.status+'">'+current.review.status+'</span> '+escapeHtml(current.sourceFile);detail.append(meta);for(const [label,value] of [['Prompt',current.prompt],['Taxonomy',JSON.stringify(current.taxonomy,null,2)],['Interaction',JSON.stringify(current.item.interaction||{},null,2)],['Feedback',JSON.stringify(current.item.feedback||{},null,2)],['Provenance',JSON.stringify(current.item.sourceBinding||current.item.authoringProvenance||{},null,2)],['Coverage',JSON.stringify(current.coverage,null,2)],['Advisory risks',current.riskFlags.join(', ')||'none'],['Changed fields',current.review.changedFields.join(', ')||'none']]){const block=document.createElement('div');block.className='field';const labelNode=document.createElement('label');labelNode.textContent=label;const pre=document.createElement('pre');pre.textContent=value;block.append(labelNode,pre);detail.append(block);}const form=document.createElement('form');form.innerHTML='<label>Outcome<select id="outcome"><option>approved</option><option>needs_change</option><option>rejected</option></select></label><label>Reviewer ID<input id="reviewer" required></label><label>Note<textarea id="note" required></textarea></label><button>Record current outcome</button>';form.onsubmit=async event=>{event.preventDefault();try{await api('/api/reviews',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({trackId:current.trackId,itemId:current.itemId,outcome:$('outcome').value,reviewerId:$('reviewer').value,note:$('note').value})});await refresh();await show(current.trackId,current.itemId);}catch(error){alert(error.message);}};detail.append(form);}
+async function refresh(){const params=new URLSearchParams();for(const [id,key] of [['track','trackId'],['node','nodeId'],['unit','learningBlockId'],['query','query']])if($(id).value)params.set(key,$(id).value);if($('risk').checked)params.set('riskOnly','true');const body=await api('/api/items?'+params);$('count').textContent=body.items.length+' items';$('items').replaceChildren(...body.items.map(question=>{const button=document.createElement('button');button.className='item';button.onclick=()=>show(question.trackId,question.questionId);button.innerHTML='<strong>'+escapeHtml(question.questionId||question.questionKey)+'</strong><br><span class="muted">'+escapeHtml(question.nodeId)+' / '+escapeHtml(question.learningBlockId)+'</span><br>'+escapeHtml(question.prompt.slice(0,180))+'<br><span class="status '+question.review.status+'">'+question.review.status+'</span> '+(question.riskFlags.length?'<span class="risk">'+question.riskFlags.join(', ')+'</span>':'');return button;}));}
+async function show(trackId,questionId){current=await api('/api/items/'+encodeURIComponent(trackId)+'/'+encodeURIComponent(questionId));const detail=$('detail');detail.replaceChildren();const title=document.createElement('h2');title.textContent=current.questionId;detail.append(title);const meta=document.createElement('p');meta.innerHTML='<span class="status '+current.review.status+'">'+current.review.status+'</span> '+escapeHtml(current.sourceFile);detail.append(meta);for(const [label,value] of [['Prompt',current.prompt],['Taxonomy',JSON.stringify(current.taxonomy,null,2)],['Interaction',JSON.stringify(current.item.interaction||{},null,2)],['Feedback',JSON.stringify(current.item.feedback||{},null,2)],['Coverage',JSON.stringify(current.coverage,null,2)],['Advisory risks',current.riskFlags.join(', ')||'none'],['Changed fields',current.review.changedFields.join(', ')||'none']]){const block=document.createElement('div');block.className='field';const labelNode=document.createElement('label');labelNode.textContent=label;const pre=document.createElement('pre');pre.textContent=value;block.append(labelNode,pre);detail.append(block);}const form=document.createElement('form');form.innerHTML='<label>Outcome<select id="outcome"><option>approved</option><option>needs_change</option><option>rejected</option></select></label><label>Reviewer ID<input id="reviewer" required></label><label>Note<textarea id="note" required></label><button>Record current outcome</button>';form.onsubmit=async event=>{event.preventDefault();try{await api('/api/reviews',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({trackId:current.trackId,questionId:current.questionId,outcome:$('outcome').value,reviewerId:$('reviewer').value,note:$('note').value})});await refresh();await show(current.trackId,current.questionId);}catch(error){alert(error.message);}};detail.append(form);}
 function escapeHtml(value){return String(value).replace(/[&<>\"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[character]));}
 async function init(){const catalog=await api('/api/catalog');for(const track of catalog.tracks){const option=document.createElement('option');option.value=track.trackId;option.textContent=track.trackId+' ('+track.itemCount+')';$('track').append(option);}await refresh();} $('filters').onsubmit=event=>{event.preventDefault();refresh().catch(error=>alert(error.message));};init().catch(error=>alert(error.message));
 </script></body></html>`;
@@ -428,7 +419,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     if (command === "catalog") process.stdout.write(`${JSON.stringify(service.catalog(), null, 2)}\n`);
     else if (command === "list") process.stdout.write(`${JSON.stringify(service.listItems({ trackId: values.track, nodeId: values.node, learningBlockId: values.unit, query: values.query, riskOnly: values.riskOnly === true, outcome: values.outcome }), null, 2)}\n`);
     else if (command === "item") process.stdout.write(`${JSON.stringify(service.getItem(values.track, values.item), null, 2)}\n`);
-    else if (command === "review") process.stdout.write(`${JSON.stringify(await service.recordOutcome({ trackId: values.track, itemId: values.item, outcome: values.outcome, note: values.note, reviewerId: values.reviewer }), null, 2)}\n`);
+    else if (command === "review") process.stdout.write(`${JSON.stringify(await service.recordOutcome({ trackId: values.track, questionId: values.item, outcome: values.outcome, note: values.note, reviewerId: values.reviewer }), null, 2)}\n`);
     else throw new Error("Usage: content-review-console [serve|catalog|list|item|review].");
   }
 }

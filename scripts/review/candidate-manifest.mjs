@@ -13,7 +13,7 @@ import {
   verifyAcc01Baseline,
 } from "./content-acceptance-baseline.mjs";
 import { summarizeSource } from "./content-approval.mjs";
-import { verifyArtifactRecord } from "../publishing/pipeline.mjs";
+import { verifyHistoricalArtifactEvidence } from "./historical-artifact-evidence.mjs";
 import { verifyMigration } from "../content/verify-migration.mjs";
 
 export const CANDIDATE_MANIFEST_SCHEMA_VERSION = "patternly-content-candidate-manifest-v1";
@@ -212,7 +212,7 @@ function sourceIdentityFromBaseline(track) {
 function trackFromRelease(release, trackId) {
   const artifact = (release.artifacts ?? []).find((entry) => entry?.trackId === trackId);
   if (!artifact) throw new Error(`Release ${release?.manifest?.releaseId ?? "unknown"} is missing ${trackId}.`);
-  verifyArtifactRecord(artifact);
+  verifyHistoricalArtifactEvidence(artifact);
   return artifact;
 }
 

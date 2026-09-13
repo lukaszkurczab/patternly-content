@@ -74,7 +74,7 @@ artifact verifier from the deleted publisher.
 
 - Application typecheck: PASS.
 - Application content-boundary gate: PASS.
-- Application full suite after final family-runtime cleanup: 1,089/1,089 PASS.
+- Application full suite after final family-runtime cleanup: 1,090/1,090 PASS.
   Focused release manifest/gate retest: 23/23 PASS.
 - Content canonical suite: 55/55 PASS; wildcard owning suite: 55/55 PASS.
 - Durable migration verifier: PASS with exact inventory 9 tracks / 117 nodes /

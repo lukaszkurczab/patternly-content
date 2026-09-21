@@ -1,0 +1,215 @@
+[
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The subnet is private and has no other egress path.",
+      "The gateway endpoint and its prefix-list route are configured for the VPC's current Region, us-east-1.",
+      "The requested S3 bucket is in eu-west-1 and the question concerns endpoint routing, not an S3 data-policy denial."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "A gateway endpoint supplies a route to the service prefix list for its Region; a private subnet still needs an approved egress path when traffic is destined for the service in another Region.",
+        "errorCorrection": "Adding an S3 ARN or changing a bucket policy cannot make a us-east-1 gateway route match eu-west-1 service traffic. The network design must provide a supported cross-Region path.",
+        "mechanismOrProperty": "AWS documents that gateway endpoint prefix lists are Region-specific and that traffic to the service in another Region uses an internet gateway rather than the current-Region endpoint route.",
+        "scenarioApplication": "The architect adds an approved NAT-to-internet-gateway egress path for the cross-Region public service endpoint (or redesigns regional data placement if egress is prohibited) and then verifies route and firewall controls.",
+        "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "Route-table destinations are IP prefixes, and the gateway endpoint prefix list is specific to its Region; a bucket ARN cannot extend it."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "A resource policy cannot change VPC route selection or make a Region-specific endpoint route match."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "Security-group rules do not create the missing cross-Region route."
+        }
+      ],
+      "reason": "The existing gateway route is Region-specific and cannot carry the eu-west-1 request, so the private subnet needs an approved cross-Region egress or regionalized service design.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Treat the us-east-1 gateway route as inapplicable to eu-west-1 and provide an approved NAT-to-internet-gateway path for the cross-Region request, or redesign the data placement if egress is prohibited."
+        },
+        {
+          "optionId": "B",
+          "text": "Add the eu-west-1 bucket ARN as a second destination on the us-east-1 gateway endpoint route."
+        },
+        {
+          "optionId": "C",
+          "text": "Change the bucket policy to state that the us-east-1 gateway endpoint may serve eu-west-1 traffic."
+        },
+        {
+          "optionId": "D",
+          "text": "Add only an inbound security-group rule on the instance and assume the current gateway endpoint will route the cross-Region packets."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "segmentation_routing_endpoints",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An instance in a private subnet in `us-east-1` uses an S3 gateway endpoint. Its route table has the `us-east-1` S3 prefix-list route, but it has no NAT device or internet gateway route. The application must read a bucket in `eu-west-1`. What is the first architecture correction?",
+    "questionId": "aws-saa-c03-segmentation-001-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html",
+      "https://docs.aws.amazon.com/vpc/latest/userguide/route-tables-priority.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The application must retain IPv6-capable S3 access rather than being forced to an IPv4-only service hostname.",
+      "The current gateway endpoint is IPv4-only, so only the IPv4 service prefix list is in the route table.",
+      "The subnets and VPC DNS settings can support the endpoint's documented dualstack requirements, and no policy denial is involved."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "The endpoint IP address type, route-table prefix lists, and DNS record type must agree. An IPv4 endpoint does not route IPv6 traffic returned by a dualstack service name through its IPv4 endpoint route.",
+        "errorCorrection": "Adding an IPv6 security-group rule alone does not add an endpoint route. The endpoint must be configured for dualstack with compatible subnets and both service prefix lists, and DNS must return compatible records.",
+        "mechanismOrProperty": "AWS documents that a dualstack gateway endpoint uses both IPv4 and IPv6 service prefix lists, and that IPv6 traffic from a dualstack DNS response is not routed through an IPv4-only endpoint.",
+        "scenarioApplication": "The networking team recreates or updates the gateway endpoint as Dualstack, associates the dual-stack route tables with both prefix lists, and uses a compatible dualstack DNS record type.",
+        "url": "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "Security groups do not add routes, and an IPv4 endpoint route does not match IPv6 traffic."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Gateway endpoints use the service prefix-list route and the endpoint's compatible IP address type, not an arbitrary IPv6 default route."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A bucket policy cannot change endpoint address type, DNS answers, or route-table matching."
+        }
+      ],
+      "reason": "The required IPv6 private path needs a dualstack gateway endpoint, matching IPv4 and IPv6 prefix-list routes, and compatible DNS records; an IPv4-only endpoint cannot route the AAAA traffic.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Configure the S3 gateway endpoint as Dualstack, associate the dual-stack route tables with both S3 prefix lists, and use a compatible dualstack DNS record type."
+        },
+        {
+          "optionId": "B",
+          "text": "Keep the IPv4 endpoint and add only an IPv6 security-group egress rule; security-group egress creates the missing gateway route."
+        },
+        {
+          "optionId": "C",
+          "text": "Add an IPv6 default route to the IPv4 gateway endpoint; a gateway endpoint can be the target of any IPv6 default route."
+        },
+        {
+          "optionId": "D",
+          "text": "Change only the S3 bucket policy to require IPv6, leaving the endpoint IP type and route table unchanged."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "segmentation_routing_endpoints",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An S3 gateway endpoint was created with IPv4 IP address type and its route table contains only the S3 IPv4 prefix list. The selected subnets are dual-stack, and the application must use the dualstack S3 hostname with IPv6 available. What change aligns the private path with that requirement?",
+    "questionId": "aws-saa-c03-segmentation-002-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-endpoints.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "DNS resolution has already returned the service's private address, so the investigation must cover routing and authorization layers.",
+      "The source route table contains overlapping routes and the destination subnet may use a different return path.",
+      "Security groups are stateful, network ACLs are stateless and ordered by rule number, and no application-layer error has been established."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "A packet can fail before it reaches either security control. Longest-prefix route selection and the reverse route must be established before interpreting security-group or network-ACL evidence.",
+        "errorCorrection": "Checking only the apparently open security group misses the overlapping-route and stateless-return-path failure modes. The diagnostic sequence should follow packet forwarding, then stateful filters, then both directions of stateless filters.",
+        "mechanismOrProperty": "VPC uses the most specific matching route; security groups are stateful, while network ACL rules are evaluated in number order and require explicit return-path authorization.",
+        "scenarioApplication": "The operator confirms the selected `/24` target and the destination's return route, checks both ENI security-group directions, then evaluates the lowest-number matching NACL rules for outbound and inbound traffic.",
+        "url": "https://docs.aws.amazon.com/vpc/latest/userguide/route-tables-priority.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "The more-specific route or a missing return route can fail before security-group evaluation, and security groups are not the only control."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Network ACLs are stateless, so the return direction needs its own matching rule and the destination subnet must also be checked."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "DNS has already resolved a private service address; changing it would obscure the routing and authorization diagnosis."
+        }
+      ],
+      "reason": "The most discriminating order is route selection and return reachability, then stateful security groups, then stateless network ACLs in both directions.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Verify the selected longest-prefix route and return route first, then inspect security-group rules on both sides, and finally evaluate the ordered network ACL rules in both directions."
+        },
+        {
+          "optionId": "B",
+          "text": "Start by replacing the security groups because any route that reaches subnet B makes security groups the only possible failure."
+        },
+        {
+          "optionId": "C",
+          "text": "Check only the source subnet's outbound network ACL; a stateless ACL automatically permits the return path when TCP 443 is allowed out."
+        },
+        {
+          "optionId": "D",
+          "text": "Change the service's DNS record to a public address before inspecting routes, because private DNS cannot resolve an internal service correctly."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "segmentation_routing_endpoints",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An EC2 instance in subnet A resolves an internal service in subnet B to `10.20.5.10`, but HTTPS cannot connect. The source route table has `10.20.0.0/16` through a transit gateway and a more-specific `10.20.5.0/24` through a peering connection; security groups appear to allow TCP 443, while the return route and network ACLs are unverified. Which diagnostic order best isolates the failure?",
+    "questionId": "aws-saa-c03-segmentation-003-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/vpc/latest/userguide/route-tables-priority.html",
+      "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html",
+      "https://docs.aws.amazon.com/vpc/latest/userguide/vpc-network-acls.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  }
+]

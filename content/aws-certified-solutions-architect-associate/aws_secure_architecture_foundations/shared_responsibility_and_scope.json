@@ -1,0 +1,214 @@
+[
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "An AWS Config conformance pack is currently deployed only in a central security account.",
+      "The same encryption and tagging baseline must apply to every current and future member account in the organization.",
+      "Member administrators must not be able to remove the organization-managed controls, and the requirement is about configuration governance rather than IAM maximum permissions."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "A control's scope must match the governance invariant: an organization conformance pack deploys AWS Config rules and remediation actions across member accounts, while a Config aggregator only provides a read-only view and an SCP limits IAM permissions.",
+        "errorCorrection": "Copying a local conformance pack manually misses future accounts, a Config aggregator cannot deploy rules into source accounts, and an SCP does not create or evaluate AWS Config controls.",
+        "mechanismOrProperty": "AWS Config organization conformance-pack APIs let a management account or delegated administrator centrally deploy, update, and delete a pack across member accounts; the organization deployment is also applied to accounts that join later, subject to the documented Region and recording prerequisites.",
+        "scenarioApplication": "The security team publishes the encryption and tagging template as an organization conformance pack, scopes Regions and exclusions deliberately, verifies Config recording, and monitors deployment status from the management or delegated administrator account.",
+        "url": "https://docs.aws.amazon.com/config/latest/developerguide/conformance-pack-organization-apis.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "An organization conformance pack is the AWS Config deployment mechanism for a centrally managed control set across member accounts and accounts that join later."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "A Config aggregator centralizes configuration and compliance data but is read-only; it does not deploy rules or remediations into source accounts."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "An SCP can cap IAM permissions, but it does not create the AWS Config rules needed to evaluate encryption and tagging."
+        }
+      ],
+          "reason": "The requirement expands a local configuration baseline into an organization-wide invariant, so the architect should use an AWS Config organization conformance pack rather than a read-only aggregator, an IAM SCP, or manual per-account copies.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Use an AWS Config organization conformance pack from the management or delegated administrator account to deploy the encryption and tagging controls across current and future member accounts, with deliberate Region and exclusion settings."
+        },
+        {
+          "optionId": "B",
+          "text": "Create a Config aggregator only and rely on its central read-only dashboard to deploy the rules and remediation actions into each source account."
+        },
+        {
+          "optionId": "C",
+          "text": "Attach an Organizations SCP to the OU and assume it will evaluate and remediate encryption and tagging configuration in each member account."
+        },
+        {
+          "optionId": "D",
+          "text": "Copy the local conformance pack manually into each account and leave future account deployment and control integrity to each member administrator."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "shared_responsibility_and_scope",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An AWS Config conformance pack is deployed only in a central security account. The same encryption and tagging baseline must now apply to every current and future member account, and member administrators must not be able to remove the organization-managed controls. Which design best matches?",
+    "questionId": "aws-saa-c03-shared-001-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/config/latest/developerguide/conformance-pack-organization-apis.html",
+      "https://docs.aws.amazon.com/config/latest/developerguide/config-concepts.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The function uses an AWS-managed Lambda runtime configured in Function update mode rather than a container image.",
+      "Lambda has published a security-patched runtime version, but the function has not been updated to use it.",
+      "The team can test a function update and can choose Auto mode if it cannot maintain a regular update cadence."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "Lambda curates and publishes patched managed runtimes, but applying those updates to existing functions depends on the function's runtime update mode; Function update mode leaves the update action with the customer.",
+        "errorCorrection": "Assuming that publication means every Function-mode function is already patched confuses Lambda's platform responsibility with the customer's update responsibility. Manual mode is intended for temporary rollback, and container-image functions require a rebuild and redeploy instead.",
+        "mechanismOrProperty": "Auto mode applies runtime updates to existing functions, Function update mode picks up the latest runtime when the customer updates the function, and Manual mode should be used only temporarily for compatibility rollback; container images are updated by rebuilding from the latest base image.",
+        "scenarioApplication": "The team updates and tests the function so it uses the published runtime, or switches it to Auto mode when regular customer updates cannot be maintained, while retaining a documented rollback path for incompatibility.",
+        "url": "https://docs.aws.amazon.com/lambda/latest/dg/runtime-management-shared.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "In Function update mode, the customer must update the function to pick up the published patched runtime; Lambda does not silently update that existing function."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Manual mode is intended for a temporary rollback during runtime incompatibility, not as the normal way to remain on an old runtime after a security patch."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A container-image function follows a separate customer path: rebuild and redeploy from the patched base image rather than treating it as a managed-runtime update."
+        }
+      ],
+      "reason": "Lambda publishes the patched managed runtime, but a function in Function update mode receives it only when the customer updates the function; switching to Auto is the safer alternative when regular updates cannot be maintained.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Update the function to the latest managed runtime and test it, or switch it to Auto mode if the team cannot maintain regular updates; use Manual only for a temporary compatibility rollback."
+        },
+        {
+          "optionId": "B",
+          "text": "Assume Lambda has already applied the published runtime security patch to the existing Function-mode function and take no update action."
+        },
+        {
+          "optionId": "C",
+          "text": "Set the function to Manual mode permanently so it never receives runtime changes, even after the compatibility concern is resolved."
+        },
+        {
+          "optionId": "D",
+          "text": "Treat the managed runtime like a container image and rebuild a customer image, even though this function is configured to use a Lambda-managed runtime."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "shared_responsibility_and_scope",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An AWS Lambda function uses a managed runtime configured in Function update mode. Lambda publishes a security-patched runtime version, but the function remains on the previous version until the customer updates it. What should the architect recommend?",
+    "questionId": "aws-saa-c03-shared-002-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/lambda/latest/dg/runtime-management-shared.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The guardrail must cap the maximum permissions of principals in every account of one AWS Organizations OU.",
+      "Application-specific network and resource rules remain owned by individual workload teams.",
+      "The control must not be implemented as a one-user or one-VPC exception."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "An organization-wide maximum-permissions rule has a wider scope than a VPC security group or a resource policy; local controls can remain local while the organizational guardrail caps account permissions.",
+        "errorCorrection": "A security group, bucket policy, or policy on one IAM user cannot establish a maximum-permissions boundary for every account in an OU.",
+        "mechanismOrProperty": "AWS Organizations service control policies define the maximum permissions for IAM users and roles in accounts or organizational units, but they do not grant permissions by themselves.",
+        "scenarioApplication": "The security team attaches the SCP at the OU and leaves workload, VPC, and resource-specific protections to the accounts that own those scopes.",
+        "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "A security group filters network traffic for resources in a VPC and does not cap IAM permissions across accounts."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "A bucket policy controls one bucket's principals and actions; it cannot govern all IAM principals in an OU."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "An identity policy on one user is narrower than the required account and OU scope and does not establish an organizational maximum."
+        }
+      ],
+      "reason": "An SCP is the control with the required organization and OU scope for setting a maximum-permissions guardrail; narrower workload controls remain in their own scopes.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Attach an AWS Organizations SCP at the OU to cap account permissions, and manage application, VPC, and resource controls in their local scopes."
+        },
+        {
+          "optionId": "B",
+          "text": "Create a VPC security group in one workload VPC because security groups apply to every account in the OU."
+        },
+        {
+          "optionId": "C",
+          "text": "Attach a bucket policy to the most important S3 bucket because resource policies automatically govern all accounts in the OU."
+        },
+        {
+          "optionId": "D",
+          "text": "Attach an identity policy to one security administrator because a single IAM user represents the entire OU."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "shared_responsibility_and_scope",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "A security team needs a maximum-permissions guardrail that applies to every member account in one AWS Organizations OU, while application-specific network and resource rules remain local. Which control scope fits?",
+    "questionId": "aws-saa-c03-shared-003-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html",
+      "https://docs.aws.amazon.com/wellarchitected/latest/framework/definitions.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  }
+]

@@ -1,0 +1,286 @@
+[
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "ReportsRead and the S3 bucket are in the same member account.",
+      "No identity-based or resource-based policy grants the role the stated object read.",
+      "The applicable OU SCP allows s3:GetObject, contains no explicit Deny, and no permissions boundary, session policy, or other control changes the result."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "An SCP is an organization-level maximum-permissions guardrail, not a grant. The design must keep the guardrail while supplying the permission through an applicable identity- or resource-based policy.",
+        "errorCorrection": "The SCP's Allow does not authorize ReportsRead by itself; without a matching granting policy, the request remains implicitly denied.",
+        "mechanismOrProperty": "AWS Organizations states that SCPs do not grant permissions. Effective access requires a policy that grants the action and an applicable SCP path that permits it.",
+        "scenarioApplication": "The architect adds a least-privilege identity or resource policy for the intended object prefix and leaves the OU SCP as the maximum-permissions control.",
+        "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "SCPs set the maximum permissions but do not grant permissions to a role."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "The missing permission is a granting identity or resource policy, not another SCP; removing the guardrail does not create an Allow."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A role trust policy controls who can assume the role and cannot grant the role's S3 data permission."
+        }
+      ],
+      "reason": "The request is denied because the SCP only permits the maximum; a matching identity- or resource-based Allow must still grant ReportsRead the object read.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "The request is denied; add a least-privilege identity- or resource-based Allow for the object prefix while retaining the SCP as the maximum-permissions guardrail."
+        },
+        {
+          "optionId": "B",
+          "text": "The request succeeds because an Allow in the OU SCP directly grants s3:GetObject to every role in the member account."
+        },
+        {
+          "optionId": "C",
+          "text": "Remove the SCP because an SCP Allow is meaningful only when it is replaced by a second SCP Allow at the account level."
+        },
+        {
+          "optionId": "D",
+          "text": "Add sts:AssumeRole to ReportsRead's trust policy because a trust policy converts the SCP's Allow into an S3 permission."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "organizations_cross_account_controls",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "A role named ReportsRead in a member account has no identity- or resource-based Allow for `s3:GetObject` on `arn:aws:s3:::reports-prod/summary/*`. Its OU SCP contains an Allow for `s3:GetObject` and no Deny. What should the architect conclude and change?",
+    "questionId": "aws-saa-c03-organizations-001-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html",
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The account is a member account below both the Security and Prod OUs.",
+      "The Security OU Deny and Prod OU Allow both match the requested ec2:RunInstances call.",
+      "The role identity policy allows the action and no other boundary, session policy, or explicit Deny changes the stated hierarchy."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "A child OU's Allow cannot override an explicit Deny inherited from an ancestor. The account must remain within every applicable SCP boundary in its organization path.",
+        "errorCorrection": "The Prod OU Allow and role Allow do not cancel the Security OU Deny; the remedy is to narrow or remove the ancestor Deny only after the intended organization control is reviewed.",
+        "mechanismOrProperty": "SCPs apply through the organization's hierarchy, and an explicit Deny in an applicable policy overrides an Allow. Moving an account or adding a child Allow does not bypass the matching ancestor Deny.",
+        "scenarioApplication": "The launch is denied at the Security OU boundary; the architect reviews the Security OU statement and conditions rather than treating the Prod OU Allow as an override.",
+        "url": "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "OU specificity does not override an applicable explicit Deny inherited from an ancestor."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Identity permissions cannot restore an action blocked by an applicable SCP explicit Deny."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "SCPs attached along the account's organization path can constrain the member account."
+        }
+      ],
+      "reason": "The inherited Security OU explicit Deny overrides both the Prod OU Allow and the role's identity Allow, so the launch is denied.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "The launch is denied; the Security OU's inherited explicit Deny overrides the child OU and identity-policy Allows, so that ancestor control must be narrowed or removed to permit the launch."
+        },
+        {
+          "optionId": "B",
+          "text": "The launch succeeds because the Prod OU is more specific and its Allow overrides the Security OU statement."
+        },
+        {
+          "optionId": "C",
+          "text": "The launch succeeds because identity-based permissions are evaluated after SCPs and can restore an action allowed by a child OU."
+        },
+        {
+          "optionId": "D",
+          "text": "The launch succeeds because only SCPs attached directly to the account, not OUs above it, constrain a member account."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "organizations_cross_account_controls",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An account is nested under Root → Security OU → Prod OU. The Security OU SCP explicitly denies `ec2:RunInstances`; the Prod OU SCP allows it, and the role's identity policy also allows it. What is the effective result for a launch from the Prod account?",
+    "questionId": "aws-saa-c03-organizations-002-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scps.html",
+      "https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_ous.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The role trust policy names the intended provider principal and currently requires the old external ID.",
+      "The provider's new AssumeRole request will send only customer-973-new after the cutover.",
+      "The role permissions remain unchanged, and the design must not broaden trust to unrelated customers."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "ExternalId protection works only when the trusted role condition and the provider's AssumeRole parameter use the same customer-specific value; changing either side alone causes denial or weakens isolation.",
+        "errorCorrection": "The provider's new value must be coordinated with the trust-policy condition. Removing the condition or accepting any value would discard the confused-deputy protection.",
+        "mechanismOrProperty": "AWS documents ExternalId as a value supplied in AssumeRole and checked in the role trust policy, allowing a customer to distinguish the provider's calls for that customer.",
+        "scenarioApplication": "The owner updates the VendorAudit trust condition to the new unique value at the coordinated cutover, verifies the provider sends it, and retains the narrow principal and role permissions.",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "Removing the condition eliminates the customer-specific confused-deputy protection."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "The ExternalId is supplied to AssumeRole and checked by the target role's trust policy; an identity-policy string does not satisfy that condition."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A wildcard removes customer isolation and is the opposite of a unique ExternalId safeguard."
+        }
+      ],
+      "reason": "The trust policy and provider call must agree on the new customer-specific ExternalId; synchronizing both sides preserves the confused-deputy safeguard without broadening trust.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Coordinate the cutover by changing the trust-policy ExternalId condition and the provider's AssumeRole value to customer-973-new, while retaining the narrow trusted principal and permissions."
+        },
+        {
+          "optionId": "B",
+          "text": "Remove the ExternalId condition during the cutover so the provider can use either value without an authorization failure."
+        },
+        {
+          "optionId": "C",
+          "text": "Put customer-973-new only in the caller's identity policy and leave the VendorAudit trust policy requiring customer-482-old."
+        },
+        {
+          "optionId": "D",
+          "text": "Change the trust policy to accept any ExternalId with a wildcard so future customer rotations require no coordination."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "organizations_cross_account_controls",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "A third-party SaaS provider assumes `VendorAudit` in your account for several customers. Its trust policy requires `sts:ExternalId` to equal `customer-482-old`; the provider will cut over this customer to the new unique value `customer-973-new` and will send that value in `AssumeRole`. Which change preserves the confused-deputy protection?",
+    "questionId": "aws-saa-c03-organizations-003-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_common-scenarios_third-party.html",
+      "https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The caller identity policy and target role trust policy both match the exact cross-account AssumeRole request.",
+      "The Account A permissions boundary is attached to DeployCaller and does not allow sts:AssumeRole for the target role ARN.",
+      "No SCP, session policy, or explicit Deny changes the stated result."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "A permissions boundary caps what an identity policy can grant. Cross-account role assumption still needs both the caller-side permission and the target trust, so widening either one alone cannot bypass the boundary.",
+        "errorCorrection": "The caller already has the identity Allow and the target trusts it; the missing intersection member is the DeployCaller boundary's exact sts:AssumeRole permission.",
+        "mechanismOrProperty": "AWS evaluates a role's identity permissions together with its permissions boundary, and cross-account access requires an Allow in the trusted account plus the trusting role's resource-based trust policy.",
+        "scenarioApplication": "The platform team updates or reissues only the DeployCaller boundary to allow sts:AssumeRole on the exact Account B role ARN, retaining the existing identity Allow and trust statement.",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "A target trust Allow cannot expand the caller's effective permissions beyond its boundary."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "SCPs do not grant permissions, and removing a boundary is broader than adding the exact missing action."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "An identity-policy Allow cannot bypass a permissions boundary and a wildcard grant violates least privilege."
+        }
+      ],
+      "reason": "The permissions boundary excludes the otherwise authorized AssumeRole action, so the least-privilege fix is to add that exact action/resource to the caller boundary while keeping both cross-account policy sides.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Update or reissue DeployCaller's boundary to allow sts:AssumeRole on the exact Account B role ARN, while retaining its identity Allow and the target trust statement."
+        },
+        {
+          "optionId": "B",
+          "text": "Edit only Account B's trust policy again; a target trust Allow overrides a caller-side permissions boundary."
+        },
+        {
+          "optionId": "C",
+          "text": "Attach an SCP Allow for sts:AssumeRole to Account A and remove the caller's boundary because SCPs grant the missing cross-account permission."
+        },
+        {
+          "optionId": "D",
+          "text": "Grant `*` to DeployCaller in a new identity policy so its identity permission bypasses the existing boundary."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "organizations_cross_account_controls",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "A CI role `DeployCaller` in Account A has an identity-policy Allow for `sts:AssumeRole` on the exact deployment-role ARN in Account B. Account B's deployment-role trust policy names `DeployCaller`, but Account A's permissions boundary omits `sts:AssumeRole`. The call is denied. What is the least-privilege correction?",
+    "questionId": "aws-saa-c03-organizations-004-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic-cross-account.html",
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  }
+]

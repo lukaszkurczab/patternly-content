@@ -1,0 +1,284 @@
+[
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "An Amazon S3 source bucket has an AWS Backup continuous backup with point-in-time recovery enabled in the primary Region.",
+      "The recovery plan copies the recovery points to a vault in another Region for regional isolation.",
+      "The owner requires a documented destination recovery point and RPO, not an assumption that the cross-Region copy preserves arbitrary source timestamps."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "A source continuous backup can provide PITR, while a cross-Region destination copy is a snapshot copy with the state captured when it was created. Regional isolation therefore requires a copy schedule and restore test that meet the destination RPO.",
+        "errorCorrection": "The destination copy does not inherit the source bucket's arbitrary PITR window. Enabling source PITR or changing DNS does not make a destination snapshot copy rewindable to every source timestamp.",
+        "mechanismOrProperty": "AWS Backup documents that cross-Region and cross-account destination copies of supported S3 continuous backups do not have PITR; restoring a destination copy restores the time at which that copy was created.",
+        "scenarioApplication": "Keep source PITR for local recovery, configure cross-Region copy rules at a frequency that meets the regional RPO, protect the destination vault and key, and test restoring a destination recovery point.",
+        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/point-in-time-recovery.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "A cross-Region destination copy is a snapshot copy; source PITR does not make the destination copy rewindable to an arbitrary source timestamp."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "S3 replication is a different data-copy mechanism and does not change the AWS Backup PITR behavior of the destination recovery point."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "DNS failover changes traffic routing but does not create or validate a recoverable copy in the second Region."
+        }
+      ],
+      "reason": "Cross-Region backup copies provide regional isolation but are snapshot copies rather than PITR-capable copies, so their creation frequency and restore behavior must be part of the RPO design.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Treat the destination as a snapshot copy: schedule cross-Region copies often enough to meet the regional RPO, protect the destination vault and key, and test restoring one of those copies."
+        },
+        {
+          "optionId": "B",
+          "text": "Assume the destination copy inherits the source bucket's continuous PITR window and can restore to any source timestamp without another design change."
+        },
+        {
+          "optionId": "C",
+          "text": "Replace the AWS Backup copy with S3 replication and assume replication automatically creates a point-in-time backup history for every source object."
+        },
+        {
+          "optionId": "D",
+          "text": "Configure DNS failover to the second Region and rely on routing changes to create the missing recovery point when the source fails."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "retention_backup_replication",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An Amazon S3 source bucket has AWS Backup continuous backup with point-in-time recovery in its primary Region. The recovery plan copies recovery points to a vault in another Region, but the owner assumes the destination can restore to any timestamp available at the source. What correction is required?",
+    "questionId": "aws-saa-c03-retention-001-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/aws-backup/latest/devguide/point-in-time-recovery.html",
+      "https://docs.aws.amazon.com/aws-backup/latest/devguide/point-in-time-recovery-copying.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "An AWS Backup vault is being piloted while retention rules and the designated administrators are still under review.",
+      "During the pilot, a named backup administrator must be able to remove or modify the vault lock with sufficient IAM permissions.",
+      "A separate production vault will use an approved immutable retention configuration after the review is complete."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "Governance mode supports controlled administrative changes, while Compliance mode is intended for a vault that must become immutable after its grace period. Selecting the mode depends on whether the retention policy is still changeable.",
+        "errorCorrection": "Using Compliance mode before the policy is approved would create an irreversible production boundary after the grace period. Governance mode is not permanently immutable; it remains removable by users with sufficient IAM permissions.",
+        "mechanismOrProperty": "AWS Backup Vault Lock Governance mode can be managed or removed by users with the required IAM permissions. Compliance mode has a grace period, after which the vault and lock cannot be changed or deleted while recovery points remain.",
+        "scenarioApplication": "Use Governance mode for the pilot, document and approve the retention and grace-period settings, then apply Compliance mode to the separate production vault only after the immutable policy is ready.",
+        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/vault-lock.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "Compliance mode becomes immutable after its grace period, so it is not the appropriate current mode while the pilot still requires authorized configuration changes."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Governance mode allows sufficiently privileged administrators to manage or remove the lock; it is deliberately not the permanent immutability mode."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "S3 Object Lock protects S3 object versions and does not select the mode for an AWS Backup vault holding recovery points."
+        }
+      ],
+      "reason": "The pilot still needs an approved administrator to change the lock, so Governance mode fits now; Compliance mode belongs on the finalized production vault after its grace-period settings are approved.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Use AWS Backup Vault Lock Governance mode for the pilot, then use Compliance mode on the separate production vault after the retention and grace-period settings are approved."
+        },
+        {
+          "optionId": "B",
+          "text": "Use Compliance mode immediately because an authorized administrator can change or remove the lock indefinitely while the policy is being reviewed."
+        },
+        {
+          "optionId": "C",
+          "text": "Use Governance mode and treat it as permanently immutable because no administrator can remove a governance lock after creation."
+        },
+        {
+          "optionId": "D",
+          "text": "Use S3 Object Lock on an unrelated bucket because S3 object retention automatically controls AWS Backup vault-lock behavior."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "retention_backup_replication",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An AWS Backup vault is being piloted while retention rules are still under review. A named backup administrator must be able to remove or modify the vault lock during the pilot, while a separate production vault will become immutable after its approved grace period. Which design is correct?",
+    "questionId": "aws-saa-c03-retention-002-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/aws-backup/latest/devguide/vault-lock.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "Immutable AWS Backup recovery points already exist, and the production resources must not be changed by the verification process.",
+      "The organization needs recurring evidence that selected recovery points can be restored and that restore duration remains within the recovery objective.",
+      "The organization can designate an isolated restore-test account and a validation workflow for the temporary resources."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "A successful backup job or immutable vault proves protection and retention, but not restore viability or duration. AWS Backup Restore Testing adds scheduled restores, selected recovery points, monitored job duration, and cleanup without exercising production resources.",
+        "errorCorrection": "Reading backup metadata alone cannot show that a recovery point can be restored. Increasing retention or making another copy does not measure restore duration or validate the restored resource.",
+        "mechanismOrProperty": "AWS Backup restore testing plans run periodic restore jobs from selected latest or random recovery points, monitor completion time, and delete test resources after the validation window. Optional validation can confirm test results.",
+        "scenarioApplication": "Create a restore testing plan for the isolated account, select representative recovery points and protected resources, retain the temporary result for validation, and record restore duration and validation evidence.",
+        "url": "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "A backup job status shows creation success but does not test whether a recovery point can be restored or how long the restore takes."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Copying another recovery point adds redundancy but does not validate the restore procedure or its completion time."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "Longer retention may preserve more recovery points, but it does not produce evidence that any point can be restored within the recovery objective."
+        }
+      ],
+      "reason": "Restore testing is the AWS Backup capability that periodically exercises recovery points, measures restore duration, supports validation, and cleans up temporary test resources.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Create an AWS Backup Restore Testing plan in the isolated account, select representative recovery points, validate the temporary restores, monitor duration, and retain the evidence."
+        },
+        {
+          "optionId": "B",
+          "text": "Check only that backup jobs are marked Completed because a successful backup job proves the application restore path and RTO."
+        },
+        {
+          "optionId": "C",
+          "text": "Copy the immutable recovery points to another vault and treat the second copy as proof that the restore procedure and duration work."
+        },
+        {
+          "optionId": "D",
+          "text": "Increase vault retention and skip restore tests because preserving more recovery points creates equivalent recovery evidence."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "retention_backup_replication",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "Immutable AWS Backup recovery points exist, but the organization needs recurring evidence that selected points can be restored and that restore duration stays within the recovery objective without changing production resources. Which control best fits?",
+    "questionId": "aws-saa-c03-retention-003-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing.html",
+      "https://docs.aws.amazon.com/aws-backup/latest/devguide/restore-testing-validation.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "An EC2 application needs a point-in-time copy of one EBS data volume before a risky migration.",
+      "The application runbook quiesces the filesystem before the copy, and the copy must be restorable as a separate EBS volume without recreating the instance.",
+      "The decision concerns block-volume recovery, not an instance image, cross-Region replication, or object storage."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "An EBS snapshot is a point-in-time, incremental volume backup that can restore the volume data to a new EBS volume. An AMI also describes an instance launch, while replication or S3 storage solves a different copy boundary.",
+        "errorCorrection": "Creating an AMI would add instance-image and launch configuration concerns instead of producing the requested independent volume copy. A network or S3 setting cannot create an EBS volume restore point.",
+        "mechanismOrProperty": "Amazon EBS snapshots contain the information needed to restore the volume data at the snapshot time to a new EBS volume, and snapshot data is replicated across Availability Zones in the Region.",
+        "scenarioApplication": "Create an EBS snapshot after the runbook quiesces the filesystem, restore it as a new volume in the target Availability Zone, attach it to a test instance, and verify the recovery procedure.",
+        "url": "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-snapshots.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "An AMI is an instance-launch artifact; it is broader than the requested point-in-time copy and independent restore of one EBS volume."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "A security group controls network traffic and cannot create or restore a point-in-time EBS volume copy."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "S3 versioning protects S3 objects and does not restore the requested EC2 block volume as an EBS volume."
+        }
+      ],
+      "reason": "The requirement is a tested point-in-time block-volume copy, so an EBS snapshot followed by restoration to a new EBS volume is the direct control.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Create an EBS snapshot after quiescing the filesystem, restore it to a new EBS volume, attach that volume to a test instance, and verify the recovery procedure."
+        },
+        {
+          "optionId": "B",
+          "text": "Create an AMI and use it as the only control because an instance image is the same as a point-in-time copy of one independent data volume."
+        },
+        {
+          "optionId": "C",
+          "text": "Add a security-group rule allowing the test instance because network authorization creates the required block-volume recovery point."
+        },
+        {
+          "optionId": "D",
+          "text": "Enable S3 versioning on an unrelated bucket because version history can be attached directly as a restored EBS volume."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "retention_backup_replication",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An EC2 application needs a point-in-time copy of one EBS data volume before a risky migration. The runbook quiesces the filesystem, and the copy must be restorable as a separate EBS volume without recreating the instance. Which control should the architect use and test?",
+    "questionId": "aws-saa-c03-retention-004-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/ebs/latest/userguide/ebs-snapshots.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  }
+]

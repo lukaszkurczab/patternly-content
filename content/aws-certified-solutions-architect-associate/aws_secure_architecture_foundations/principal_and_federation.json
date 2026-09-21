@@ -1,0 +1,218 @@
+[
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "Workforce offboarding uses an external identity provider connected to IAM Identity Center, with account assignments removed when an employee leaves.",
+      "A directly created IAM user and its active access key remain in the member account after the IdP and IAM Identity Center offboarding; CloudTrail shows that key making current S3 calls.",
+      "The team must stop or reduce unauthorized access while identifying any legitimate owner or workload dependency before final deletion."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "SCIM and IAM Identity Center assignments govern the federated workforce path, while a directly created IAM user and its long-lived key are a separate account-local identity lifecycle that the IdP cannot revoke.",
+        "errorCorrection": "Rerunning SCIM or removing the IAM Identity Center assignment will not disable a directly created IAM user; leaving its key active is unsafe, while blind deletion can interrupt the workload still shown in CloudTrail.",
+        "mechanismOrProperty": "IAM Identity Center users receive temporary AWS credentials through the federated path, whereas IAM users can have long-term access keys. AWS recommends reviewing recent activity before deactivation or removal and then disabling or deleting the key and user once dependencies are understood.",
+        "scenarioApplication": "The team treats the finding as a disconnected identity path: identify the owner or workload from CloudTrail, deactivate or rotate the key and migrate any verified dependency, delete the unused identity, and add direct-IAM reconciliation to offboarding.",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_remove.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "SCIM and IAM Identity Center manage the federated identity path; they do not automatically disable a directly created IAM user or its access key."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Delete only after investigating the active CloudTrail caller and migrating any verified dependency; otherwise the remediation can break the workload and miss the disconnected lifecycle defect."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "Removing the IdP assignment does not revoke the local IAM key; the key must be deactivated or rotated while the owner or workload is identified."
+        }
+      ],
+      "reason": "IdP and IAM Identity Center offboarding did not reach the directly created IAM user, so the architect must diagnose the disconnected local identity path, safely revoke or migrate its active key, and prevent the gap from recurring.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Diagnose a disconnected local identity path: identify the owner or workload from CloudTrail, deactivate or rotate the IAM key or user, migrate any verified dependency, delete the unused identity, and add direct-IAM reconciliation to offboarding."
+        },
+        {
+          "optionId": "B",
+          "text": "Rerun SCIM provisioning and wait for it to delete the directly created IAM user and access key."
+        },
+        {
+          "optionId": "C",
+          "text": "Delete the IAM user and key immediately without checking why CloudTrail still shows active S3 calls."
+        },
+        {
+          "optionId": "D",
+          "text": "Leave the local key active because disabling the IdP and removing the IAM Identity Center assignment completed offboarding."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "principal_and_federation",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An employee is disabled in the corporate IdP and removed from IAM Identity Center account assignments. Hours later, CloudTrail still shows `alice-local` making S3 calls with an active access key in the member account. The IAM user was created directly in AWS. What should the architect diagnose and do?",
+    "questionId": "aws-saa-c03-principal-001-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/singlesignon/latest/userguide/provision-automatically.html",
+      "https://docs.aws.amazon.com/singlesignon/latest/userguide/howtogetcredentials.html",
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_identity-management.html",
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_remove.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "Employees use IAM Identity Center for AWS account access through the external identity provider.",
+      "A required CodeCommit IDE cannot use git-remote-codecommit and cannot consume IAM Identity Center's temporary portal credentials for Git operations.",
+      "The exception must be limited to the repository operations that the integration actually needs."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "IAM Identity Center remains the workforce account-access control plane; a service-specific IAM user is a bounded exception only when the CodeCommit client cannot use the temporary federation path.",
+        "errorCorrection": "An IAM Identity Center assignment cannot create Git credentials or SSH keys for the user, while sharing a broad key or replacing all workforce access with IAM users expands the credential surface unnecessarily.",
+        "mechanismOrProperty": "CodeCommit documents that IAM Identity Center users do not have Git credentials or SSH keys and can use git-remote-codecommit with temporary credentials; an incompatible IDE may require a narrowly scoped IAM-user CodeCommit credential.",
+        "scenarioApplication": "The team keeps console and AWS-account access federated, creates a dedicated least-privilege IAM user only for the required CodeCommit repository operations, protects and rotates its service-specific credentials, and reviews the exception.",
+        "url": "https://docs.aws.amazon.com/singlesignon/latest/userguide/manage-your-accounts.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "IAM Identity Center is still the right workforce access path; the limited CodeCommit exception should not become a replacement for federated account access."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "IAM Identity Center users do not receive CodeCommit Git credentials or SSH keys, and the incompatible IDE cannot use the documented temporary-credential client path."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A shared administrator key is not a bounded service exception and prevents individual attribution and least-privilege scoping."
+        }
+      ],
+          "reason": "Keep workforce access federated and create only a repository-scoped IAM-user credential for the CodeCommit integration because the specified client cannot use IAM Identity Center's temporary Git path.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Keep IAM Identity Center for workforce account access, and create a dedicated least-privilege IAM user only for the required CodeCommit Git credentials or SSH key, with secure rotation and review."
+        },
+        {
+          "optionId": "B",
+          "text": "Replace IAM Identity Center for all employee access with one broad IAM user key shared across the organization."
+        },
+        {
+          "optionId": "C",
+          "text": "Embed a root access key in the IDE because it can authenticate both the AWS console and CodeCommit."
+        },
+        {
+          "optionId": "D",
+          "text": "Create a full-administrator IAM user in every account and give the IDE an unrotated key so it can use any repository."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "principal_and_federation",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "Employees use IAM Identity Center for AWS account access, but a required CodeCommit IDE cannot use git-remote-codecommit and cannot consume IAM Identity Center's temporary portal credentials for Git operations. What is the narrowest compatible design?",
+    "questionId": "aws-saa-c03-principal-002-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/codecommit/latest/userguide/auth-and-access-control.html",
+      "https://docs.aws.amazon.com/codecommit/latest/userguide/temporary-access.html",
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "An application is moving from Amazon EC2 to AWS Lambda and still needs only Amazon S3 read and CloudWatch Logs write permissions.",
+      "The migrated function must obtain temporary credentials without a human signing in.",
+      "The existing EC2 instance-profile role is trusted for the EC2 workload path, while Lambda requires its service execution-role path."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "An EC2 instance profile and a Lambda execution role are distinct workload identity paths; the migrated function needs a role trusted by Lambda and only the permissions required by the function.",
+        "errorCorrection": "An EC2 instance profile cannot be attached to a Lambda function, and copying access keys or using a human permission set would replace temporary service credentials with an inappropriate long-lived or workforce identity.",
+        "mechanismOrProperty": "Lambda automatically assumes an execution role whose trust policy includes `lambda.amazonaws.com`; the role's permissions policy grants the function temporary credentials for its AWS API calls.",
+        "scenarioApplication": "The team creates a Lambda execution role with the Lambda service principal in its trust policy, grants only the required S3 read and log actions, attaches it to the function, and retires the old EC2 role when unused.",
+        "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_use-resources.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "A role trusted for EC2 does not express the Lambda service assumption path; the function needs its own execution-role trust and least-privilege policy."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Copying an access key into Lambda introduces a long-lived secret instead of using the execution role's temporary credentials."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A workforce permission set is for human account access, not the unattended function identity described here."
+        }
+      ],
+          "reason": "After the move to Lambda, the workload identity must move to a Lambda execution role trusted by the Lambda service and scoped to the function's S3 and logging actions.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Create and attach a least-privilege Lambda execution role trusted by `lambda.amazonaws.com`, granting only the required S3 read and CloudWatch Logs actions."
+        },
+        {
+          "optionId": "B",
+          "text": "Copy the EC2 instance-profile access key into a Lambda environment variable so the function can keep the old identity."
+        },
+        {
+          "optionId": "C",
+          "text": "Assign a human IAM Identity Center permission set to the function because all AWS identities should be workforce identities."
+        },
+        {
+          "optionId": "D",
+          "text": "Attach the EC2 instance profile directly to Lambda and omit a Lambda service principal from the role trust policy."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "principal_and_federation",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An application is moving from Amazon EC2 to AWS Lambda. It still needs only Amazon S3 read and CloudWatch Logs write permissions. Which workload identity design should the architect recommend?",
+    "questionId": "aws-saa-c03-principal-003-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/lambda/latest/dg/lambda-intro-execution-role.html",
+      "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  }
+]

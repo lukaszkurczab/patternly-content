@@ -58,8 +58,8 @@ const IMPLEMENTED_FREE_PROFILES = Object.freeze({
     modeIds: Object.freeze(["certification-diagnostic-baseline", "certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
   }),
   "aws-certified-solutions-architect-associate": Object.freeze({
-    profileId: "aws-certified-solutions-architect-associate-free-node-v1",
-    profileVersion: "1",
+    profileId: "aws-certified-solutions-architect-associate-free-node-v2",
+    profileVersion: "2",
     profilePath: "config/free-node-experience-profiles/aws-certified-solutions-architect-associate.json",
     modeIds: Object.freeze(["certification-focus-practice", "certification-weak-area-review", "certification-quick-review"])
   }),

@@ -1,0 +1,214 @@
+[
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The selected AWS service supports an AWS managed KMS key for its service-integrated encryption path.",
+      "The security team needs customer-visible key metadata and CloudTrail visibility for key use, but does not need to edit the key policy, choose a rotation schedule, or schedule key deletion.",
+      "The encrypted resource remains in the same AWS account and no cross-account sharing requirement changes the key choice."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "An AWS managed key provides account-visible KMS metadata and audit visibility without making the customer operate key policy or lifecycle controls; an AWS owned key favors transparent convenience, while a customer managed key adds control that this requirement does not need.",
+        "errorCorrection": "Choosing an AWS owned key would lose customer visibility into key activity, while choosing a customer managed key would add customer lifecycle and policy work. The requirement is audit visibility without customer key administration.",
+        "mechanismOrProperty": "AWS managed keys exist in the customer account, can be viewed and audited in CloudTrail, and are managed by the AWS service. Customers cannot change their policy, rotation, or deletion lifecycle.",
+        "scenarioApplication": "Select the AWS managed key option supported by the service, then verify the service-specific encryption documentation and CloudTrail coverage for the required audit evidence.",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "An AWS owned key is managed in an AWS service account and its activity is not visible to the customer, so it does not meet the stated audit-visibility requirement."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "A customer managed key would provide policy and lifecycle control, but the scenario explicitly does not require that extra administration."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "Imported material is a customer-managed-key design for external key ownership and lifecycle responsibilities; it is not needed for visibility without custom control."
+        }
+      ],
+      "reason": "The requirement selects an AWS managed key: it is visible and auditable in the account while AWS manages its policy and lifecycle, unlike an AWS owned key or a customer managed key.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Use the AWS managed KMS key supported by the service, because it provides customer-visible metadata and CloudTrail auditability without requiring customer key-policy or lifecycle administration."
+        },
+        {
+          "optionId": "B",
+          "text": "Use an AWS owned key, because the customer can audit every operation on a service-owned key without managing the key."
+        },
+        {
+          "optionId": "C",
+          "text": "Create a customer managed key and own its rotation, policy, and deletion schedule even though none of those controls is required."
+        },
+        {
+          "optionId": "D",
+          "text": "Import external key material into a customer managed key, because imported material is required whenever CloudTrail visibility is needed."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "encryption_keys_certificates",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "A supported AWS service offers AWS owned, AWS managed, and customer managed KMS key choices. The security team requires customer-visible key metadata and CloudTrail visibility for key use, but does not need to edit key policy, choose rotation, or schedule deletion. Which key choice best matches?",
+    "questionId": "aws-saa-c03-encryption-001-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "A customer managed KMS key uses key material generated in an external HSM and imported into AWS KMS.",
+      "The imported material has an expiration configured, and the organization retains the original material outside AWS for its lifecycle and recovery process.",
+      "The requirement is to preserve the same logical KMS key for existing ciphertext; no new KMS key ID is required."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "Imported key material gives the customer responsibility for the material and its expiration while KMS retains the logical key resource. Preserving the external copy and reimporting it is different from rotating AWS-generated material or deleting the KMS key.",
+        "errorCorrection": "Automatic rotation is not a substitute for managing imported material expiration. Scheduling deletion would remove the logical key after its waiting period, and creating an alias to a new key would not preserve the original key ID or its ciphertext access.",
+        "mechanismOrProperty": "AWS KMS can set an expiration for imported material; when the material expires, cryptographic use is unavailable until the material is reimported. Automatic rotation for symmetric keys applies to AWS-generated key material, not to imported material.",
+        "scenarioApplication": "Monitor the imported-material expiration, keep the authoritative copy in the external HSM process, and reimport the required material into the same KMS key before expiration according to the approved runbook.",
+        "url": "https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "Automatic rotation creates AWS-generated material only where supported; it does not refresh customer-supplied imported material."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Scheduling KMS key deletion targets the logical key resource and does not preserve access to ciphertext through the existing key."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "An alias can point a name at another key, but it does not reimport material or make the original key ID usable after expiration."
+        }
+      ],
+      "reason": "Imported material has a customer-managed expiration lifecycle, so the same logical KMS key must be kept usable by monitoring and reimporting the retained material rather than assuming automatic rotation.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Monitor the expiration and reimport the retained external key material into the same KMS key before it expires, preserving the original key ID and ciphertext access."
+        },
+        {
+          "optionId": "B",
+          "text": "Enable automatic KMS rotation and assume AWS KMS will generate replacement material for the imported key before its expiration."
+        },
+        {
+          "optionId": "C",
+          "text": "Schedule deletion of the KMS key and create a replacement after the waiting period, because existing ciphertext will automatically follow the new key."
+        },
+        {
+          "optionId": "D",
+          "text": "Create an alias for a new KMS key and discard the external copy, because an alias rebinds old ciphertext to the replacement key."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "encryption_keys_certificates",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "A customer managed KMS key uses key material generated in an external HSM and imported into AWS KMS. The material has an expiration configured, the original remains available outside AWS, and existing ciphertext must keep using the same KMS key ID. What should the architect plan when the expiration approaches?",
+    "questionId": "aws-saa-c03-encryption-002-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/kms/latest/developerguide/importing-keys.html",
+      "https://docs.aws.amazon.com/kms/latest/developerguide/rotate-keys.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "An application encrypts large customer records before storing ciphertext in Amazon S3.",
+      "The application needs a separate symmetric data-encryption key for each object and must retain a protected copy of that key with the ciphertext.",
+      "The requirement concerns payload encryption at the application boundary, not server certificate identity for a TLS endpoint."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "Envelope encryption uses KMS to protect a data key while the application encrypts the payload locally; an ACM certificate establishes TLS identity and is not the payload-encryption key.",
+        "errorCorrection": "An ACM certificate does not replace a symmetric data key for encrypting object contents. Relying only on S3 default encryption would move encryption to the storage service instead of satisfying the stated application-side envelope-encryption boundary.",
+        "mechanismOrProperty": "GenerateDataKey returns a plaintext data key for local encryption and a copy encrypted under the specified symmetric KMS key. The encrypted data key can be stored with the encrypted object and later decrypted through KMS.",
+        "scenarioApplication": "Call GenerateDataKey with the approved symmetric KMS key, encrypt the record locally, erase the plaintext data key after use, and store the encrypted data key with the ciphertext in S3.",
+        "url": "https://docs.aws.amazon.com/kms/latest/APIReference/API_GenerateDataKey.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "An ACM certificate is for certificate-based TLS identity and does not provide the symmetric data-key workflow required to encrypt large records locally."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "A data-key design requires a symmetric KMS key and GenerateDataKey; generating an asymmetric key pair does not provide the requested plaintext-and-wrapped-symmetric-key pattern."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "S3 server-side encryption can protect objects in S3, but it does not satisfy the stated requirement that the application encrypt the records before storage."
+        }
+      ],
+      "reason": "The application needs envelope encryption: GenerateDataKey supplies a local symmetric data key and a KMS-wrapped copy, whereas ACM certificates serve TLS identity rather than object payload encryption.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Use KMS GenerateDataKey with a symmetric KMS key, encrypt each record locally with the plaintext data key, erase it after use, and store the encrypted data key with the ciphertext."
+        },
+        {
+          "optionId": "B",
+          "text": "Request an ACM public certificate and use its private key as the per-object payload-encryption key before uploading the object."
+        },
+        {
+          "optionId": "C",
+          "text": "Generate an asymmetric KMS key pair and store the public key with the object, because an asymmetric key pair is the standard envelope-encryption data-key response."
+        },
+        {
+          "optionId": "D",
+          "text": "Enable S3 default SSE-KMS and leave the application records in plaintext until S3 receives them, because server-side encryption is equivalent to client-side envelope encryption."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "encryption_keys_certificates",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An application must encrypt large customer records before storing ciphertext in Amazon S3. It needs one symmetric data-encryption key per object and a protected copy of that key with the ciphertext. An engineer proposes using an ACM certificate because it is a cryptographic object. Which design is correct?",
+    "questionId": "aws-saa-c03-encryption-003-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/kms/latest/APIReference/API_GenerateDataKey.html",
+      "https://docs.aws.amazon.com/acm/latest/userguide/acm-concepts.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  }
+]

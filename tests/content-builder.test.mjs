@@ -31,6 +31,10 @@ const builderPath = new URL("../scripts/build.mjs", import.meta.url);
 const baseQuestion = fixture.questions.find((question) => question.interaction.type === "choice_single");
 const realCatalog = loadCanonicalCatalog();
 const candidateManifest = JSON.parse(readFileSync(new URL("../evidence/content-acceptance/candidate-manifest-v1.json", import.meta.url), "utf8"));
+const historicalBaseline = JSON.parse(readFileSync(new URL("../evidence/content-acceptance/acc-01-baseline-v1.json", import.meta.url), "utf8"));
+const historicalMigrationManifest = JSON.parse(readFileSync(new URL("../content/migration-evidence/manifest.json", import.meta.url), "utf8"));
+const odk096Approval = JSON.parse(readFileSync(new URL("../evidence/canonical-content-approvals/odk-096-aws-free-node-v1.json", import.meta.url), "utf8"));
+const ODK096_CONTENT_VERSION = odk096Approval.canonicalIdentity.contentVersion;
 
 async function createWorkspace() {
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-simp02-"));
@@ -119,9 +123,39 @@ test("build-all emits exactly nine deterministic artifacts and lock entries", as
   assert.equal(await readFile(path.join(outputRoot, "content-lock.json"), "utf8"), firstLockBytes);
 });
 
-test("catalog contentVersion values match the ACC-02 Candidate Manifest evidence", () => {
-  const versions = new Map(candidateManifest.tracks.map((track) => [track.trackId, track.artifact.contentVersion]));
-  for (const track of realCatalog.tracks) assert.equal(track.contentVersion, versions.get(track.trackId), track.trackId);
+test("ACC-02 Candidate Manifest retains its exact nine-track identity against frozen baseline and migration manifest", () => {
+  const candidateTracks = [...candidateManifest.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
+  const baselineTracks = [...historicalBaseline.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
+  const migrationTracks = [...historicalMigrationManifest.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
+  assert.deepEqual(candidateTracks.map((track) => track.trackId), [...ACCEPTED_TRACK_IDS].sort());
+  assert.deepEqual(baselineTracks.map((track) => track.trackId), [...ACCEPTED_TRACK_IDS].sort());
+  assert.deepEqual(migrationTracks.map((track) => track.trackId), [...ACCEPTED_TRACK_IDS].sort());
+
+  for (const candidateTrack of candidateTracks) {
+    const baselineTrack = baselineTracks.find((track) => track.trackId === candidateTrack.trackId);
+    const migrationTrack = migrationTracks.find((track) => track.trackId === candidateTrack.trackId);
+    assert.ok(baselineTrack, candidateTrack.trackId);
+    assert.ok(migrationTrack, candidateTrack.trackId);
+    const { trackId: _baselineTrackId, ...expectedSource } = baselineTrack;
+    assert.deepEqual(candidateTrack.source, expectedSource);
+    const { artifact: migrationArtifact, ...migrationSource } = migrationTrack.source;
+    const expectedMigrationSource = Object.hasOwn(candidateTrack.source, "contentVersion")
+      ? { ...migrationSource, contentVersion: migrationArtifact.contentVersion }
+      : migrationSource;
+    assert.deepEqual(candidateTrack.source, expectedMigrationSource);
+    assert.deepEqual(candidateTrack.artifact, migrationArtifact);
+    assert.equal(candidateTrack.source.canonicalItemCount, migrationTrack.counts.questions, candidateTrack.trackId);
+  }
+
+  // Current catalog identity is intentionally checked separately from the frozen historical identity above.
+  const historicalVersions = new Map(candidateManifest.tracks.map((track) => [track.trackId, track.artifact.contentVersion]));
+  for (const track of realCatalog.tracks) {
+    if (track.trackId === "aws-certified-solutions-architect-associate") {
+      assert.equal(track.contentVersion, ODK096_CONTENT_VERSION, track.trackId);
+    } else {
+      assert.equal(track.contentVersion, historicalVersions.get(track.trackId), track.trackId);
+    }
+  }
 });
 
 test("canonical JSON sorts recursive object keys without reordering arrays", () => {

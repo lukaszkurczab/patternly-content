@@ -1,0 +1,214 @@
+[
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The public web resource is protected by Shield Advanced and has an associated AWS WAF web ACL.",
+      "The observed problem is an application-layer request flood, and the team wants Shield Advanced to manage DDoS mitigations rather than treating a generic SQLi rule as the solution.",
+      "The resource and its normal traffic baseline can be reviewed before choosing whether automatic mitigation counts or blocks detected attack requests."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "Shield Advanced automatic application-layer mitigation can create and manage WAF protections for detected DDoS traffic, but it requires a web ACL and a deliberate count or block action; normal traffic behavior and rule capacity still need review.",
+        "errorCorrection": "Shield Advanced does not make an unrelated SQL injection rule an automatic DDoS response. An associated web ACL and the automatic mitigation setting are separate from the ordinary application WAF rules.",
+        "mechanismOrProperty": "When enabled for a protected application resource, Shield Advanced maintains a rule group in the associated web ACL and can dynamically manage mitigations for requests identified as part of a DDoS attack.",
+        "scenarioApplication": "Keep the resource behind its WAF web ACL, enable the documented Shield Advanced automatic application-layer mitigation for the resource, choose Count or Block according to the approved rollout, and monitor the managed rule group's impact.",
+        "url": "https://docs.aws.amazon.com/waf/latest/developerguide/ddos-automatic-app-layer-response-config.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "A SQL injection rule addresses a request-content class; it does not configure Shield Advanced to manage an application-layer DDoS mitigation."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Shield Standard supplies baseline DDoS protection but does not provide the Shield Advanced automatic application-layer mitigation setting."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A customer rate-based rule can be useful, but it is not the documented Shield Advanced managed mitigation path being evaluated here."
+        }
+      ],
+      "reason": "The decision is about Shield Advanced's application-layer DDoS capability: the associated WAF web ACL and automatic mitigation setting create the managed response boundary.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Keep the WAF web ACL associated with the protected resource and enable Shield Advanced automatic application-layer DDoS mitigation, selecting a reviewed Count or Block action for its managed rule group."
+        },
+        {
+          "optionId": "B",
+          "text": "Add only a SQL injection managed rule; any WAF content rule automatically enables Shield Advanced to manage DDoS mitigations."
+        },
+        {
+          "optionId": "C",
+          "text": "Replace Shield Advanced with Shield Standard; Standard includes the same automatic application-layer managed rule group for a protected web ACL."
+        },
+        {
+          "optionId": "D",
+          "text": "Remove the web ACL and rely only on a customer rate-based rule because Shield Advanced cannot manage WAF mitigations."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "edge_and_application_threat_controls",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "A CloudFront distribution is protected by Shield Advanced and has an associated WAF web ACL. The service is experiencing an application-layer request flood, and the team wants Shield Advanced to manage DDoS mitigations while preserving normal WAF controls. Which design should the architect recommend?",
+    "questionId": "aws-saa-c03-edge-001-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/waf/latest/developerguide/ddos-automatic-app-layer-response-config.html",
+      "https://docs.aws.amazon.com/waf/latest/developerguide/ddos-app-layer-protections.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The service accepts a raw TCP protocol through a Network Load Balancer, not HTTP or HTTPS requests.",
+      "The proposed control must inspect the traffic at a layer that matches the protocol; no HTTP conversion requirement has been established.",
+      "The question tests a control-layer mismatch, not a choice between WAF rule statements for web traffic."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "AWS WAF is an application-layer web request control. A raw TCP service needs a control that supports its Layer 4 traffic, so forcing an HTTP control would add complexity without inspecting the original protocol.",
+        "errorCorrection": "A WAF web ACL cannot be attached to an arbitrary raw TCP path by selecting a different rule statement. Converting the protocol merely to use WAF changes the service contract and is not an automatic security fix.",
+        "mechanismOrProperty": "AWS WAF evaluates web requests at supported integrations such as CloudFront, an Application Load Balancer, or API Gateway, while a Network Load Balancer is designed for TCP, TLS, UDP, and QUIC traffic patterns.",
+        "scenarioApplication": "Reject the proposed WAF association for this raw TCP path and select a Layer 4-capable control appropriate to the threat and service boundary, while preserving the NLB protocol requirement.",
+        "url": "https://docs.aws.amazon.com/waf/latest/developerguide/how-aws-waf-works.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "A WAF web ACL inspects supported web requests; a raw TCP flow is not made inspectable by attaching the ACL to an NLB."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Changing the application protocol solely to fit an HTTP control changes the service contract and does not establish that the resulting design is appropriate."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A CloudFront WAF integration also protects web requests and does not provide arbitrary raw-TCP inspection."
+        }
+      ],
+      "reason": "The proposed enforcement layer must match the traffic protocol: WAF web inspection is not a substitute for a Layer 4 control on a raw TCP service.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Reject the WAF proposal for the raw TCP path and choose a Layer 4-capable control that matches the threat, keeping the NLB protocol unchanged."
+        },
+        {
+          "optionId": "B",
+          "text": "Attach the WAF web ACL to the Network Load Balancer; WAF will inspect the raw TCP payload as an HTTP request."
+        },
+        {
+          "optionId": "C",
+          "text": "Convert the service to HTTP only to make the WAF proposal valid, without first confirming that the application protocol can change."
+        },
+        {
+          "optionId": "D",
+          "text": "Put the raw TCP service behind a CloudFront WAF web ACL and assume the web ACL will inspect the TCP stream."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "edge_and_application_threat_controls",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "A telemetry service accepts raw TCP through a Network Load Balancer. A review proposes attaching an AWS WAF web ACL to block a byte pattern in the stream. Which correction is most accurate?",
+    "questionId": "aws-saa-c03-edge-002-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/waf/latest/developerguide/how-aws-waf-works.html",
+      "https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  },
+  {
+    "answer": {
+      "optionId": "A",
+      "type": "choice_single"
+    },
+    "constraints": [
+      "The reliable malicious signal is in one HTTP header and the matching should not depend on URI spelling.",
+      "The existing AWS WAF rule uses a string match and currently misses the same signal when its letter case changes.",
+      "The decision concerns request normalization before WAF inspection, not a rate limit or a broad allow-list exception."
+    ],
+    "difficulty": null,
+    "feedback": {
+      "details": {
+        "boundaryOrTradeoff": "A text transformation normalizes the component that the rule inspects, improving matching consistency while consuming WAF rule capacity and requiring the transformation order to be reviewed.",
+        "errorCorrection": "Changing a CloudFront viewer function or adding a rate-based rule does not configure the WAF statement to normalize the header before its match. The transformation belongs on the WAF statement that inspects the header.",
+        "mechanismOrProperty": "AWS WAF applies configured text transformations to a selected request component before inspecting it. The LOWERCASE transformation converts uppercase letters to lowercase, so configure the match pattern as lowercase `drop` and the rule can match a canonical representation.",
+        "scenarioApplication": "Inspect the single header with the WAF rule, apply LOWERCASE before the string match, and configure the match pattern as lowercase `drop`; then test the intended variants and review logs for false positives before changing the action.",
+        "url": "https://docs.aws.amazon.com/waf/latest/developerguide/waf-rule-statement-transformation.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "B",
+          "text": "A viewer-request function is a separate edge mechanism; it does not configure the WAF statement's pre-inspection transformation."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "C",
+          "text": "Count mode changes the rule action and evidence collection, but it does not make different header cases match the same string."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "D",
+          "text": "A rate-based rule limits request frequency and does not normalize the header value used by a string match."
+        }
+      ],
+      "reason": "The malicious signal moves between `DROP` and `drop`, so apply LOWERCASE and match the canonical lowercase `drop` pattern.",
+      "type": "choice_single"
+    },
+    "interaction": {
+      "options": [
+        {
+          "optionId": "A",
+          "text": "Configure the WAF string-match statement to inspect the header, apply the LOWERCASE text transformation before matching, and set the match pattern to lowercase `drop`; then test representative case variants."
+        },
+        {
+          "optionId": "B",
+          "text": "Add a CloudFront viewer-request function and leave the WAF statement unchanged; WAF will automatically inherit the function's normalization semantics."
+        },
+        {
+          "optionId": "C",
+          "text": "Change the rule action to Count; counting a request automatically normalizes the header before the string match."
+        },
+        {
+          "optionId": "D",
+          "text": "Replace the statement with a rate-based rule; request aggregation makes the header match case-insensitive."
+        }
+      ],
+      "scoringMethod": "exact_selected_set",
+      "type": "choice_single"
+    },
+    "mentalUnitId": "edge_and_application_threat_controls",
+    "nodeId": "aws_secure_architecture_foundations",
+    "prompt": "An API's reliable malicious signal is in an HTTP header. A WAF string-match rule catches `DROP` but misses the same signal as `drop`. Which WAF change should the architect make before changing the rule action?",
+    "questionId": "aws-saa-c03-edge-003-odk096",
+    "sourceRefs": [
+      "https://docs.aws.amazon.com/waf/latest/developerguide/waf-rule-statement-transformation.html"
+    ],
+    "trackId": "aws-certified-solutions-architect-associate"
+  }
+]

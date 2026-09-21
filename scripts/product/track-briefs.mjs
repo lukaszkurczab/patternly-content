@@ -65,19 +65,19 @@ const IMPLEMENTED_FREE_PROFILES = Object.freeze({
   }),
   "backend-system-design-interview": Object.freeze({
     profileId: "backend-system-design-interview-free-node-v1",
-    profileVersion: "1",
+    profileVersion: "2",
     profilePath: "config/free-node-experience-profiles/backend-system-design-interview.json",
     modeIds: Object.freeze(["design-interview-learn-framework", "design-interview-tradeoff-practice", "design-interview-weak-area-review"])
   }),
   "frontend-system-design-interview": Object.freeze({
     profileId: "frontend-system-design-interview-free-node-v1",
-    profileVersion: "1",
+    profileVersion: "2",
     profilePath: "config/free-node-experience-profiles/frontend-system-design-interview.json",
     modeIds: Object.freeze(["design-interview-learn-framework", "design-interview-tradeoff-practice", "design-interview-weak-area-review"])
   }),
   "object-oriented-design-interview": Object.freeze({
     profileId: "object-oriented-design-interview-free-node-v1",
-    profileVersion: "1",
+    profileVersion: "2",
     profilePath: "config/free-node-experience-profiles/object-oriented-design-interview.json",
     modeIds: Object.freeze(["design-interview-learn-framework", "design-interview-tradeoff-practice", "design-interview-weak-area-review"])
   })

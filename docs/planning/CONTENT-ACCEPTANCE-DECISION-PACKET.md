@@ -100,45 +100,9 @@ Po zielonych kontrolach i zamknięciu uwag PO podejmuje jedną z decyzji:
 - `changes_requested` — wskazane pozycje lub cele wracają do poprawy;
 - `rejected` — Claude pozostaje poza kandydatem mimo obecności technicznej.
 
-## Obowiązująca kolejność po decyzji PO
+## Kanoniczny zapis kandydata
 
-1. Zachować ważność wcześniejszej akceptacji ośmiu niezmienionych banków na podstawie ich dokładnych manifestów treści.
-2. Zapisać akceptację Claude udzieloną przez PO 10 września 2026 względem dokładnego manifestu 300 pozycji, bez przypisywania agentowi roli approvera.
-3. Przebudować readiness na dziewięć tracków i naprawić model dowodu tak, aby akceptacja nie była związana ze zmianami narzędziowymi całego repozytorium (`ACC-01` → `ACC-02` / ODK-E2E-099).
-4. Następnie wykonać `SIMP-01`–`SIMP-05` według `docs/planning/PATTERNLY-CONTENT-SIMPLIFICATION-PLAN.md`.
-5. Dopiero po `SIMP-05` rozpocząć zadania EPIC-09 z `docs/planning/EPIC-09-MODEL-BASED-EVALUATION-DRAFT.md`.
-6. Nie traktować próbki 114 pozycji jako zatwierdzonej metody; jest wyłącznie historyczną propozycją.
-
-## Kontrakty wykonawcze ACC
-
-### ACC-01 — przypięcie zaakceptowanego baseline'u
-
-- **Cel:** zapisać mały, wersjonowany manifest dokładnych source/item hashes dla dziewięciu banków objętych decyzją PO, bez zmiany treści pytań.
-- **Zakres i wejścia:** osiem wpisów z `evidence/human-content-approvals/manifest.json`, bank Claude `ccarp-2026.09.03`, wskazane wyżej commity, generatory manifestów i bieżące testy integralności.
-- **Poza zakresem:** przebudowa readiness, publikacja, migracja schematu, poprawki pytań i model-based evaluation.
-- **Kryteria akceptacji:** manifest jest reprodukowalny; zawiera dziewięć jednoznacznych tracków; osiem wcześniejszych item manifestów jest identycznych z zaakceptowanym baseline'em; Claude wskazuje dokładne 300 itemów i decyzję PO z 10 września 2026; żadna decyzja nie jest przypisana agentowi.
-- **Weryfikacja i evidence:** uruchomić generator/hash checks i dedykowane testy manifestu; w raporcie zapisać komendy, wyniki, count/hash/provenance każdego banku oraz diff potwierdzający brak zmian wcześniejszych ośmiu banków.
-- **Ryzyka i stop conditions:** zatrzymać pracę przy różnicy treści lub identity, nieodtwarzalnym hashu, niejasnym provenance albo potrzebie rozszerzenia decyzji PO.
-- **Raport docelowy:** `docs/planning/reports/ACC-01-REPORT.md`; wynik wymaga niezależnego QA przed rozpoczęciem ACC-02.
-
-### ACC-02 / ODK-E2E-099 — jeden kandydat dziewięciu banków
-
-- **Cel:** przepiąć readiness, review packets, human approval evidence, runtime/publishing admission i immutable artifacts na dokładny kandydat z ACC-01.
-- **Zakres i wejścia:** zaakceptowany raport ACC-01, skrypty readiness/publishing, schematy, artifacts i trzy znane czerwone testy opisane w tym pakiecie.
-- **Poza zakresem:** SIMP-01–05, poprawki merytoryczne banków, EPIC-09 i zmiana decyzji PO.
-- **Kryteria akceptacji:** wszystkie powierzchnie opisują te same dziewięć tracków i te same hashe; trzy czerwone testy przechodzą bez osłabienia asercji; runtime nie dopuszcza innego kandydata; ODK-E2E-099 ma kompletne evidence.
-- **Weryfikacja i evidence:** uruchomić pełne walidatory readiness, approval, publishing i immutable artifacts oraz testy dotkniętych kontraktów; raportować dokładne komendy, wyniki, manifesty, usunięte ścieżki ośmio-trackowe i niezależny wynik QA.
-- **Ryzyka i stop conditions:** zatrzymać pracę przy rozjeździe identity/count/hash, konieczności fałszywego przepisywania zgody, ukrytym konsumencie starego kontraktu albo regresji publikacji.
-- **Raport docelowy:** `docs/planning/reports/ACC-02-REPORT.md`; dopiero zaakceptowany wynik odblokowuje SIMP-01.
-
-## Kryterium zamknięcia ODK-E2E-099
-
-- osiem historycznie zaakceptowanych banków jest powiązanych z niezmienionymi manifestami treści;
-- Claude ma jawny wynik właściciela dla określonego zakresu i manifestu;
-- readiness obejmuje kanoniczne dziewięć tracków;
-- review packets, runtime/publishing admission oraz immutable artifacts opisują ten sam kandydat;
-- trzy obecnie czerwone testy przechodzą bez osłabienia asercji i bez fałszywego przepisania zgody;
-- raport zawiera wykonane komendy, wyniki, manifesty i decyzję PO.
+Dokładny kandydat, zgody i readiness są zapisane w `evidence/content-acceptance/candidate-manifest-v1.json`, `evidence/human-content-approvals/manifest.json` oraz `evidence/readiness/candidate-readiness.json`. Tych danych wymagają bramki contentu i wydania. Zmiana pytań wymaga ponownej oceny odpowiednich manifestów i zgód.
 
 ## Ryzyka pozostające
 

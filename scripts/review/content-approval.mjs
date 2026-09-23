@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { validateSchema } from "./schema-validation.mjs";
 
 export const AGENT_REVIEW_RECORD_SCHEMA_VERSION = "patternly-content-approval-v2";

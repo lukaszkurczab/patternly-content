@@ -257,7 +257,7 @@ function assertCanonicalHash(row, question, label) {
   }
 }
 
-function validateSourceDescriptor(source, trackId, catalogTrack) {
+function validateSourceDescriptor(source, trackId) {
   exactKeys(source, SOURCE_KEYS, `evidence.tracks[${trackId}].source`);
   assertInteger(source.canonicalItemCount, `${trackId}.source.canonicalItemCount`, { min: 1 });
   if (source.canonicalItemCount !== EXPECTED_TRACK_COUNTS[trackId].questions) fail("EVIDENCE_VALUE", `${trackId}.source.canonicalItemCount does not match the accepted baseline.`);
@@ -271,7 +271,6 @@ function validateSourceDescriptor(source, trackId, catalogTrack) {
   exactKeys(source.artifact, ARTIFACT_KEYS, `${trackId}.source.artifact`);
   assertHash(source.artifact.checksumSha256, `${trackId}.source.artifact.checksumSha256`);
   assertText(source.artifact.contentVersion, `${trackId}.source.artifact.contentVersion`);
-  if (source.artifact.contentVersion !== catalogTrack.contentVersion) fail("EVIDENCE_VALUE", `${trackId}.source.artifact.contentVersion does not match catalog.`);
   assertText(source.artifact.releaseId, `${trackId}.source.artifact.releaseId`);
   assertRelativePath(source.artifact.releasePath, `${trackId}.source.artifact.releasePath`);
   assertHash(source.artifact.sourceRepositoryCommit, `${trackId}.source.artifact.sourceRepositoryCommit`, { kind: "sha1" });
@@ -280,7 +279,7 @@ function validateSourceDescriptor(source, trackId, catalogTrack) {
   if (source.artifact.trackId !== trackId) fail("EVIDENCE_VALUE", `${trackId}.source.artifact.trackId does not match the track.`);
 }
 
-function validateEvidenceManifestShape(manifest, catalogByTrack) {
+function validateEvidenceManifestShape(manifest) {
   exactKeys(manifest, EVIDENCE_ROOT_KEYS, "evidence.manifest");
   if (manifest.schemaVersion !== SIMP03_EVIDENCE_SCHEMA_VERSION) fail("EVIDENCE_VALUE", "evidence.manifest.schemaVersion is unsupported.");
   assertHash(manifest.candidateId, "evidence.manifest.candidateId");
@@ -334,7 +333,7 @@ function validateEvidenceManifestShape(manifest, catalogByTrack) {
     }
     const mentalUnitKeys = track.mentalUnits.map((entry) => `${entry.nodeId}|${entry.mentalUnitId}`);
     if (new Set(mentalUnitKeys).size !== mentalUnitKeys.length) fail("EVIDENCE_MEMBERSHIP", `${trackId}.mentalUnits contains duplicates.`);
-    validateSourceDescriptor(track.source, trackId, catalogByTrack.get(trackId));
+    validateSourceDescriptor(track.source, trackId);
   }
   return byTrack;
 }
@@ -429,12 +428,12 @@ async function loadCanonicalContent(contentRoot) {
   return { catalog, catalogByTrack, questionsByTrack, questionLocations };
 }
 
-async function loadEvidence(contentRoot, catalogByTrack) {
+async function loadEvidence(contentRoot) {
   const evidenceRoot = path.join(contentRoot, "migration-evidence");
   const evidenceEntries = await listEntries(evidenceRoot, "content/migration-evidence");
   assertEntryNames(evidenceEntries, ["items", "manifest.json"], "content/migration-evidence");
   const manifest = await readJson(path.join(evidenceRoot, "manifest.json"), "content/migration-evidence/manifest.json");
-  const manifestTracks = validateEvidenceManifestShape(manifest, catalogByTrack);
+  const manifestTracks = validateEvidenceManifestShape(manifest);
   const itemRoot = path.join(evidenceRoot, "items");
   const itemEntries = await listEntries(itemRoot, "content/migration-evidence/items");
   assertEntryNames(itemEntries, ACCEPTED_TRACK_IDS.map((trackId) => `${trackId}.json`), "content/migration-evidence/items");
@@ -454,8 +453,9 @@ async function loadEvidence(contentRoot, catalogByTrack) {
 function compareTrackMembership(trackId, questions, rows, manifestTrack) {
   const questionById = new Map(questions.map((question) => [question.questionId, question]));
   const rowById = new Map(rows.map((row) => [row.questionId, row]));
-  assertExactSet([...rowById.keys()], [...questionById.keys()], `${trackId} evidence question IDs`);
-  for (const question of questions) {
+  const historicalQuestions = rows.map((row) => questionById.get(row.questionId));
+  if (historicalQuestions.some((question) => question === undefined)) fail("EVIDENCE_MEMBERSHIP", `${trackId} is missing a historical question.`);
+  for (const question of historicalQuestions) {
     const row = rowById.get(question.questionId);
     const label = `evidence.items.${trackId}.${question.questionId}`;
     if (!row) fail("EVIDENCE_MEMBERSHIP", `${label} is missing.`);
@@ -464,7 +464,7 @@ function compareTrackMembership(trackId, questions, rows, manifestTrack) {
     }
     assertCanonicalHash(row, question, label);
   }
-  const computed = computedTrackAggregate(trackId, questions, rows);
+  const computed = computedTrackAggregate(trackId, historicalQuestions, rows);
   compareComputedTrack(trackId, manifestTrack, computed);
   return computed;
 }
@@ -485,29 +485,85 @@ function compareGlobal(manifest, questionsByTrack) {
   return { counts, interactions };
 }
 
+async function approvedAwsAdditions(contentRoot, canonical, evidence) {
+  const trackId = "aws-certified-solutions-architect-associate";
+  const baselineIds = new Set(evidence.rowsByTrack.get(trackId).map((row) => row.questionId));
+  const questions = canonical.questionsByTrack.get(trackId);
+  const additions = questions.filter((question) => !baselineIds.has(question.questionId));
+  if (additions.length === 0) return [];
+  if (additions.length !== 36) fail("EVIDENCE_MEMBERSHIP", "Current AWS has an unapproved number of additions.");
+  const approvalPath = path.join(path.dirname(contentRoot), "evidence/canonical-content-approvals/odk-096-aws-free-node-v1.json");
+  const approval = await readJson(approvalPath, "ODK-096 canonical approval");
+  if (approval.schemaVersion !== "patternly-canonical-content-approval-addendum-v1" ||
+      approval.addendumId !== "odk-096-aws-free-node-v1" ||
+      approval.approval?.status !== "approved_pending_sync" ||
+      approval.canonicalIdentity?.trackId !== trackId ||
+      approval.canonicalIdentity?.contentVersion !== canonical.catalogByTrack.get(trackId).contentVersion) {
+    fail("EVIDENCE_VALUE", "ODK-096 approval does not bind the current AWS catalog.");
+  }
+  assertExactSet(additions.map((question) => question.questionId), approval.questionSet?.newQuestionIds, "ODK-096 approved additions");
+  if (additions.length !== approval.questionSet.newQuestionCount ||
+      additions.some((question) => question.nodeId !== approval.canonicalIdentity.nodeId)) {
+    fail("EVIDENCE_MEMBERSHIP", "ODK-096 additions differ from the approved node and count.");
+  }
+  const sorted = (values) => [...values].sort((left, right) => compare(left.questionId, right.questionId));
+  const nodeQuestions = sorted(questions.filter((question) => question.nodeId === approval.canonicalIdentity.nodeId));
+  if (nodeQuestions.length !== approval.canonicalIdentity.node.questionCount ||
+      sha256(nodeQuestions) !== approval.canonicalIdentity.node.sha256 ||
+      questions.length !== approval.canonicalIdentity.track.questionCount ||
+      sha256(sorted(questions)) !== approval.canonicalIdentity.track.sha256) {
+    fail("HASH_MISMATCH", "Current AWS questions differ from the approved ODK-096 hashes.");
+  }
+  return additions.map((question) => question.questionId);
+}
+
 export async function verifyMigration(options = {}) {
   const contentRoot = typeof options === "string" ? options : options?.contentRoot;
   if (typeof contentRoot !== "string" || contentRoot.length === 0) fail("INPUT", "contentRoot is required.");
   const resolvedContentRoot = await secureRoot(contentRoot);
   const canonical = await loadCanonicalContent(resolvedContentRoot);
-  const evidence = await loadEvidence(resolvedContentRoot, canonical.catalogByTrack);
+  const evidence = await loadEvidence(resolvedContentRoot);
+  const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence);
   const trackSummaries = [];
+  const historicalQuestionsByTrack = new Map();
   for (const trackId of ACCEPTED_TRACK_IDS) {
-    const summary = compareTrackMembership(trackId, canonical.questionsByTrack.get(trackId), evidence.rowsByTrack.get(trackId), evidence.manifestTracks.get(trackId));
+    const rows = evidence.rowsByTrack.get(trackId);
+    const questions = canonical.questionsByTrack.get(trackId);
+    const extras = trackId === "aws-certified-solutions-architect-associate" ? approvedAdditions : [];
+    assertExactSet(questions.map((question) => question.questionId), [...rows.map((row) => row.questionId), ...extras], `${trackId} current question IDs`);
+    const summary = compareTrackMembership(trackId, questions, rows, evidence.manifestTracks.get(trackId));
+    const questionById = new Map(questions.map((question) => [question.questionId, question]));
+    historicalQuestionsByTrack.set(trackId, rows.map((row) => questionById.get(row.questionId)));
     trackSummaries.push({
       trackId: summary.trackId,
-      counts: summary.counts,
-      interactions: summary.interactions,
+      historicalCounts: summary.counts,
+      currentCounts: {
+        nodes: new Set(questions.map((question) => question.nodeId)).size,
+        mentalUnits: new Set(questions.map((question) => `${question.nodeId}|${question.mentalUnitId}`)).size,
+        questions: questions.length
+      },
+      historicalInteractions: summary.interactions,
+      currentInteractions: Object.fromEntries(INTERACTION_TYPES.map((type) => [type, questions.filter((question) => question.interaction.type === type).length])),
       aggregates: summary.aggregates
     });
   }
-  const global = compareGlobal(evidence.manifest, canonical.questionsByTrack);
+  const historical = compareGlobal(evidence.manifest, historicalQuestionsByTrack);
+  const currentQuestions = ACCEPTED_TRACK_IDS.flatMap((trackId) => canonical.questionsByTrack.get(trackId));
+  const currentCounts = {
+    tracks: ACCEPTED_TRACK_IDS.length,
+    nodes: new Set(currentQuestions.map((question) => `${question.trackId}|${question.nodeId}`)).size,
+    mentalUnits: new Set(currentQuestions.map((question) => `${question.trackId}|${question.nodeId}|${question.mentalUnitId}`)).size,
+    questions: currentQuestions.length
+  };
+  const currentInteractions = Object.fromEntries(INTERACTION_TYPES.map((type) => [type, currentQuestions.filter((question) => question.interaction.type === type).length]));
   return {
     result: "passed",
     contentRoot: resolvedContentRoot,
-    counts: global.counts,
-    interactions: global.interactions,
-    tracks: trackSummaries
+    counts: currentCounts,
+    interactions: currentInteractions,
+    tracks: trackSummaries,
+    historicalCounts: historical.counts,
+    approvedAdditionCount: approvedAdditions.length
   };
 }
 

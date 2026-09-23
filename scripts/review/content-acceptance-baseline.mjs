@@ -1,18 +1,13 @@
-import { execFile as execFileCallback } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
 import { join, resolve } from "node:path";
 
-import { validateSchema } from "../authoring/lib/model.mjs";
+import { validateSchema } from "./schema-validation.mjs";
 import {
   HUMAN_APPROVAL_MANIFEST_PATH,
   canonicalJson,
-  summarizeSource,
   validateHumanApprovalManifest
 } from "./content-approval.mjs";
-
-const execFile = promisify(execFileCallback);
 
 export const ACC01_BASELINE_SCHEMA_VERSION = "patternly-content-acceptance-baseline-v1";
 export const ACC01_BASELINE_PATH = "evidence/content-acceptance/acc-01-baseline-v1.json";
@@ -46,14 +41,6 @@ export const ACC01_APPROVAL_BINDING_KEYS = Object.freeze([
   "sourceManifestSha256",
   "itemManifestSha256"
 ]);
-export const ACC01_SUMMARY_KEYS = Object.freeze([
-  "sourceRoot",
-  "sourceFileCount",
-  "canonicalItemCount",
-  "sourceManifestSha256",
-  "itemManifestSha256"
-]);
-
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const COMMIT_PATTERN = /^[a-f0-9]{40}$/;
 
@@ -85,25 +72,6 @@ export function validateBaselineMetadata(baseline) {
     if (track.trackId === "claude-certified-architect-professional-certification" && track.contentVersion !== "ccarp-2026.09.03") throw new Error("ACC-01 Claude content version is not ccarp-2026.09.03.");
   }
   return baseline;
-}
-
-export function compareTrackSummary(expected, actual) {
-  for (const key of ACC01_SUMMARY_KEYS) if (expected[key] !== actual[key]) throw new Error(`ACC-01 ${key} differs for ${expected.trackId}: expected ${expected[key]}, got ${actual[key]}.`);
-  return true;
-}
-
-async function verifySourceRootPin(root, track) {
-  try {
-    await execFile("git", ["cat-file", "-e", `${track.sourceCommit}^{commit}`], { cwd: root });
-  } catch (error) {
-    throw new Error(`ACC-01 pinned source commit is unavailable for ${track.trackId}: ${error.message}`);
-  }
-  try {
-    await execFile("git", ["diff", "--quiet", `${track.sourceCommit}..HEAD`, "--", track.sourceRoot], { cwd: root });
-  } catch (error) {
-    if (Number(error.code) === 1) throw new Error(`ACC-01 source root differs from pinned commit for ${track.trackId}.`);
-    throw new Error(`ACC-01 could not compare pinned source root for ${track.trackId}: ${error.message}`);
-  }
 }
 
 export async function loadAcc01Baseline(root = process.cwd()) {
@@ -144,23 +112,13 @@ async function verifyHumanApprovalBindings(root, tracks) {
   }
 }
 
-export async function verifyAcc01Baseline({ root = process.cwd(), baseline, verifyCurrentSource = true } = {}) {
+export async function verifyAcc01Baseline({ root = process.cwd(), baseline } = {}) {
   const candidateBaseline = baseline ?? await loadAcc01Baseline(root);
   await validateCommittedBaselineSchema(root, candidateBaseline);
   const checkedBaseline = validateBaselineMetadata(candidateBaseline);
   const tracks = normalizeBaselineTracks(checkedBaseline.tracks);
   await verifyHumanApprovalBindings(root, tracks);
-  if (!verifyCurrentSource) {
-    return { schemaVersion: ACC01_BASELINE_SCHEMA_VERSION, trackIds: tracks.map(({ trackId }) => trackId), summaries: tracks };
-  }
-  const summaries = [];
-  for (const track of tracks) {
-    const actual = await summarizeSource({ root, trackId: track.trackId });
-    compareTrackSummary(track, actual);
-    await verifySourceRootPin(root, track);
-    summaries.push({ trackId: track.trackId, ...actual });
-  }
-  return { schemaVersion: ACC01_BASELINE_SCHEMA_VERSION, trackIds: summaries.map(({ trackId }) => trackId), summaries };
+  return { schemaVersion: ACC01_BASELINE_SCHEMA_VERSION, trackIds: tracks.map(({ trackId }) => trackId), summaries: tracks };
 }
 
 if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {

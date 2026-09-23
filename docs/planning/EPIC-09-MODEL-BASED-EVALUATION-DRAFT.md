@@ -2,12 +2,12 @@
 
 > **Rola po konsolidacji:** specyfikacja i kryteria `09-A–09-H`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
 
-**Status:** `deferred` do zakończenia uproszczenia repozytorium content
+**Status:** `blocking` na 09-A do uzgodnienia nowego kandydata AWS; dalsza ewaluacja pozostaje nieblokującą wydania ścieżką jakościową
 **Charakter:** uzupełniająca ścieżka jakościowa
-**Zakres:** wszystkie 9 zaakceptowanych banków, około 16 041 pozycji według obecnych raportów i źródeł
+**Zakres:** wszystkie 9 banków; bieżące kanoniczne źródła mają 16 077 pytań, a historyczny baseline migracji obejmuje 16 041
 **Poza zakresem:** zmiana liczby, granic i znaczenia istniejących nodów
 
-**Warunek wejścia:** zakończone `SIMP-01`–`SIMP-05` z `docs/planning/PATTERNLY-CONTENT-SIMPLIFICATION-PLAN.md`. EPIC-09 ma czytać jeden kanoniczny schema i nie implementuje adapterów utrwalających sześć historycznych formatów.
+**Warunek wejścia:** `SIMP-01`–`SIMP-05` są zakończone. Przed zaliczeniem 09-A trzeba uzgodnić nowego kandydata AWS według [pakietu AWS-01](AWS-NEW-CANDIDATE-PACKET.md). EPIC-09 czyta jeden kanoniczny schema i nie implementuje adapterów utrwalających sześć historycznych formatów.
 
 ## 1. Cel
 
@@ -211,8 +211,8 @@ Każda faza `09-*` jest osobnym taskiem. Jej goal i acceptance/stop condition s�
 | Prostota | 0,90 | Warstwowy pipeline jest większy niż pojedynczy skrypt, ale czyta jeden schema; różnice pozostają wyłącznie w rubrykach interakcji. |
 | Ryzyko | 0,82 | Największe ryzyka to fałszywa precyzja 0–1, model bias i koszt; calibration/adjudication/cache ograniczają je, ale wymagają decyzji. |
 | Utrzymywalność | 0,91 | Wersjonowane rubryki, fingerprinty i jawne artefakty pozwalają powtarzać ocenę tylko dla zmian. |
-| **Wynik końcowy** | **0,82** | Minimum nadal wyznacza ryzyko. Podejście jest gotowe do rozbicia na małe taski dopiero po SIMP-05; pierwszy task to wyłącznie deterministyczny inventory contract. |
+| **Wynik końcowy** | **0,82** | Historyczna ocena projektu ewaluatora; przed skalowaniem pozostają kalibracja, pilot i koszt. |
 
-## 13. Pierwszy task wykonawczy po uproszczeniu — 09-A
+## 13. Bieżąca bramka 09-A
 
-Zbudować read-only inventory z jednego kanonicznego schema. Kryteria: dokładnie 9 tracków oraz zgodność z przypiętym baseline'em migracji (obecnie 117 node identities, 932 mental unity i 16 041 unikalnych pytań); zero `unassigned`; pełny rozkład interakcji; identyczny bajtowo manifest przy powtórzeniu; zero zmian `content/`; zero wywołań modelu. Każda rozbieżność względem raportu SIMP-03 jest jawna i blokująca. Historyczne adaptery należą wyłącznie do jednorazowej migracji SIMP-03, są usuwane najpóźniej w SIMP-05 i nie pozostają częścią evaluatora.
+Read-only inventory jest zaimplementowane i ma [raport diagnostyczny](../../reports/model-evaluation/09-a-diagnostic.md), lecz 09-A pozostaje `blocking`. Bieżące kanoniczne źródła mają 9 tracków, 117 nodów, 943 mental unity i 16 077 pytań; różnica +11/+36 pochodzi z AWS po ODK-096. Historyczne 932/16 041 pozostaje przypiętym baseline'em starej migracji, nie wynikiem nowego kandydata. Po AWS-02 należy powtórzyć inventory i właściwą weryfikację nowego kandydata: zero `unassigned`, pełny rozkład interakcji, identyczny bajtowo manifest przy powtórzeniu, zero zmian `content/` i zero wywołań modelu. Rozbieżność pozostaje jawna do czasu udokumentowanego uzgodnienia; historycznych dowodów nie przepisujemy.

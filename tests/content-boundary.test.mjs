@@ -20,6 +20,8 @@ async function files(directory) {
 test("active canonical ingress has no legacy publisher and historical references are verifier-only", async () => {
   await assert.rejects(stat(join(root, "manual", "source")), { code: "ENOENT" });
   await assert.rejects(access(join(root, "scripts", "publishing", "pipeline.mjs")), { code: "ENOENT" });
+  await assert.rejects(access(join(root, "scripts", "authoring", "lib", "model.mjs")), { code: "ENOENT" });
+  await assert.rejects(access(join(root, "schemas", "publishing")), { code: "ENOENT" });
 
   const executablePaths = ["package.json", ...await files(join("scripts", "content")), ...await files(join("scripts", "review"))];
   const references = [];
@@ -35,4 +37,8 @@ test("active canonical ingress has no legacy publisher and historical references
   const historicalArtifactValidator = await readFile(join(root, "scripts/review/historical-artifact-evidence.mjs"), "utf8");
   assert.match(historicalArtifactValidator, /verifyHistoricalArtifactEvidence/);
   assert.doesNotMatch(historicalArtifactValidator, /discoverSourceBatches|buildTrack|publishRelease|readdir|readFile/);
+  for (const relativePath of ["scripts/review/candidate-manifest.mjs", "scripts/review/content-acceptance-baseline.mjs", "scripts/review/content-approval.mjs"]) {
+    const source = await readFile(join(root, relativePath), "utf8");
+    assert.doesNotMatch(source, /summarizeSource|verifyCurrentSource|legacySourceAvailable/);
+  }
 });

@@ -1,7 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
-import { join, relative } from "node:path";
-import { validateSchema } from "../authoring/lib/model.mjs";
+import { validateSchema } from "./schema-validation.mjs";
 
 export const AGENT_REVIEW_RECORD_SCHEMA_VERSION = "patternly-content-approval-v2";
 export const HUMAN_APPROVAL_MANIFEST_SCHEMA_VERSION = "patternly-human-content-approval-manifest-v2";
@@ -13,42 +11,6 @@ export const canonicalJson = (value) => {
   return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
 };
 export const sha256 = (value) => createHash("sha256").update(value).digest("hex");
-
-export async function walkJsonFiles(directory) {
-  const entries = await readdir(directory, { withFileTypes: true });
-  const nested = await Promise.all(entries
-    .sort((left, right) => left.name.localeCompare(right.name))
-    .map((entry) => entry.isDirectory() ? walkJsonFiles(join(directory, entry.name)) : entry.name.endsWith(".json") ? [join(directory, entry.name)] : []));
-  return nested.flat().sort();
-}
-
-function itemId(item) {
-  const value = item?.id ?? item?.itemId;
-  if (typeof value !== "string" || !value.trim()) throw new Error("Every approved item must have an id or itemId.");
-  return value;
-}
-
-export async function summarizeSource({ root, trackId }) {
-  const sourceRoot = join(root, "manual", "source", trackId);
-  const files = await walkJsonFiles(sourceRoot);
-  const fileRecords = [];
-  const items = [];
-  for (const file of files) {
-    const bytes = await readFile(file);
-    const batch = JSON.parse(bytes);
-    fileRecords.push({ path: relative(root, file), sha256: sha256(bytes) });
-    for (const item of batch.items ?? []) items.push({ id: itemId(item), fingerprint: item.itemFingerprint ?? sha256(canonicalJson(item)) });
-  }
-  const sortedItems = items.sort((left, right) => left.id.localeCompare(right.id));
-  if (new Set(sortedItems.map((item) => item.id)).size !== sortedItems.length) throw new Error(`Duplicate item identity in ${trackId}.`);
-  return {
-    sourceRoot: relative(root, sourceRoot),
-    sourceFileCount: files.length,
-    canonicalItemCount: sortedItems.length,
-    sourceManifestSha256: sha256(canonicalJson(fileRecords)),
-    itemManifestSha256: sha256(canonicalJson(sortedItems)),
-  };
-}
 
 export function validateAgentReviewRecord(record, { sourceCommit, candidateId, candidate, trackId, sourceSummary } = {}) {
   if (record?.schemaVersion !== AGENT_REVIEW_RECORD_SCHEMA_VERSION || record.finalDisposition !== "approved") throw new Error("Record is not an approved Patternly agent review record.");

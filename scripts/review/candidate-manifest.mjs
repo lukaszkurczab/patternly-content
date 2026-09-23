@@ -1,18 +1,17 @@
 import { createHash } from "node:crypto";
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-import { validateSchema } from "../authoring/lib/model.mjs";
+import { validateSchema } from "./schema-validation.mjs";
 import {
   ACC01_BASELINE_PATH,
   loadAcc01Baseline,
   validateBaselineMetadata,
   verifyAcc01Baseline,
 } from "./content-acceptance-baseline.mjs";
-import { summarizeSource } from "./content-approval.mjs";
 import { verifyHistoricalArtifactEvidence } from "./historical-artifact-evidence.mjs";
 import { verifyMigration } from "../content/verify-migration.mjs";
 
@@ -276,9 +275,8 @@ async function verifyCandidateBaseline(root, candidate) {
   validateBaselineMetadata(baseline);
   const baselineByTrack = new Map(baseline.tracks.map((track) => [track.trackId, track]));
   for (const entry of candidate.tracks) compareSourceIdentity(entry.source, baselineByTrack.get(entry.trackId));
-  const legacySourceAvailable = await access(join(root, "manual", "source")).then(() => true, () => false);
-  await verifyAcc01Baseline({ root, baseline, verifyCurrentSource: legacySourceAvailable });
-  if (!legacySourceAvailable) await verifyMigration({ contentRoot: join(root, "content") });
+  await verifyAcc01Baseline({ root, baseline });
+  await verifyMigration({ contentRoot: join(root, "content") });
   return baseline;
 }
 
@@ -305,26 +303,8 @@ export async function verifyCandidateManifest({ root = ROOT, candidate = undefin
 export async function verifyCandidateCurrentSource({ root = ROOT, candidate = undefined } = {}) {
   const selectedCandidate = candidate ?? await loadCandidateManifest(root);
   validateCandidateManifest(selectedCandidate);
-  const legacySourceAvailable = await access(join(root, "manual", "source")).then(() => true, () => false);
-  if (!legacySourceAvailable) {
-    await verifyMigration({ contentRoot: join(root, "content") });
-    return selectedCandidate.tracks.map((entry) => ({ trackId: entry.trackId, ...entry.source, migratedToCanonicalContent: true }));
-  }
-  const summaries = [];
-  for (const entry of selectedCandidate.tracks) {
-    const actual = await summarizeSource({ root, trackId: entry.trackId });
-    const expected = entry.source;
-    const comparable = {
-      sourceRoot: actual.sourceRoot,
-      sourceFileCount: actual.sourceFileCount,
-      canonicalItemCount: actual.canonicalItemCount,
-      sourceManifestSha256: actual.sourceManifestSha256,
-      itemManifestSha256: actual.itemManifestSha256,
-    };
-    if (canonicalJson(comparable) !== canonicalJson({ sourceRoot: expected.sourceRoot, sourceFileCount: expected.sourceFileCount, canonicalItemCount: expected.canonicalItemCount, sourceManifestSha256: expected.sourceManifestSha256, itemManifestSha256: expected.itemManifestSha256 })) throw new Error(`Candidate current source differs for ${entry.trackId}.`);
-    summaries.push({ trackId: entry.trackId, ...actual });
-  }
-  return summaries;
+  await verifyMigration({ contentRoot: join(root, "content") });
+  return selectedCandidate.tracks.map((entry) => ({ trackId: entry.trackId, ...entry.source, migratedToCanonicalContent: true }));
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

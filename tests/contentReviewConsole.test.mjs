@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { createContentReviewConsole, startContentReviewConsole, CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION, LAUNCH_TRACK_IDS } from "../scripts/review/content-review-console.mjs";
+import { validateSchema } from "../scripts/review/schema-validation.mjs";
 
 test("review console exposes exactly nine launch tracks, navigable coverage, and advisory signals", async () => {
   const service = await createContentReviewConsole({ reviewPath: join(await mkdtemp("patternly-review-console-"), "outcomes.json") });
@@ -30,7 +31,13 @@ test("review console records one current explicit outcome and invalidates it whe
   const second = await service.recordOutcome({ trackId: item.trackId, questionId: item.questionId, outcome: "approved", note: "Rechecked the current source question.", reviewerId: "owner-local" });
   assert.equal(second.review.status, "approved");
   const store = JSON.parse(await readFile(reviewPath, "utf8"));
+  const schema = JSON.parse(await readFile(new URL("../schemas/review/content-review-outcome.schema.json", import.meta.url), "utf8"));
+  await validateSchema(store, schema, "content review outcomes");
   assert.equal(store.reviews.length, 1);
+  assert.equal(store.reviews[0].questionId, item.questionId);
+  assert.equal(store.reviews[0].mentalUnitId, item.mentalUnitId);
+  assert.equal(Object.hasOwn(store.reviews[0], "itemId"), false);
+  assert.equal(Object.hasOwn(store.reviews[0], "learningBlockId"), false);
   await rm(directory, { recursive: true, force: true });
 });
 

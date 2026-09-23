@@ -93,7 +93,7 @@ function sourceRecord({ trackId, sourceFile, sourceFileSha256, question, nodeId,
     sourceFile,
     sourceFileSha256,
     nodeId,
-    learningBlockId: mentalUnitId,
+    mentalUnitId: mentalUnitId,
     prompt: question.prompt,
     taxonomy: { nodeId, mentalUnitId },
     itemFingerprint: sourceItemFingerprint(question),
@@ -184,7 +184,7 @@ function toItemProjection(record, review) {
     questionKey: record.questionKey,
     trackId: record.trackId,
     nodeId: record.nodeId,
-    learningBlockId: record.learningBlockId,
+    mentalUnitId: record.mentalUnitId,
     questionId: record.questionId,
     prompt: record.prompt,
     sourceFile: record.sourceFile,
@@ -202,7 +202,7 @@ function buildCoverageIndex(records) {
   const unitCounts = new Map();
   for (const record of records) {
     const nodeKey = `${record.trackId}:${record.nodeId}`;
-    const unitKey = `${nodeKey}:${record.learningBlockId}`;
+    const unitKey = `${nodeKey}:${record.mentalUnitId}`;
     nodeCounts.set(nodeKey, (nodeCounts.get(nodeKey) ?? 0) + 1);
     unitCounts.set(unitKey, (unitCounts.get(unitKey) ?? 0) + 1);
   }
@@ -215,7 +215,7 @@ function withCoverage(record, reviews, coverageIndex) {
     ...toItemProjection(record, reviews.get(`${record.trackId}:${record.questionId}`)),
     coverage: {
       nodeItemCount: nodeCounts.get(`${record.trackId}:${record.nodeId}`) ?? 0,
-      learningUnitItemCount: unitCounts.get(`${record.trackId}:${record.nodeId}:${record.learningBlockId}`) ?? 0,
+      learningUnitItemCount: unitCounts.get(`${record.trackId}:${record.nodeId}:${record.mentalUnitId}`) ?? 0,
     },
   };
 }
@@ -232,12 +232,12 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
     return record;
   }
 
-  function listItems({ trackId, nodeId, learningBlockId, query, riskOnly = false, outcome } = {}) {
+  function listItems({ trackId, nodeId, mentalUnitId, query, riskOnly = false, outcome } = {}) {
     const normalizedQuery = query?.trim().toLowerCase();
     return records
       .filter((record) => !trackId || record.trackId === trackId)
       .filter((record) => !nodeId || record.nodeId === nodeId)
-      .filter((record) => !learningBlockId || record.learningBlockId === learningBlockId)
+      .filter((record) => !mentalUnitId || record.mentalUnitId === mentalUnitId)
       .filter((record) => !normalizedQuery || itemText(record.item).includes(normalizedQuery))
       .filter((record) => !riskOnly || record.riskFlags.length > 0)
       .filter((record) => !outcome || reviewProjection(record, reviews.get(`${record.trackId}:${record.questionId}`)).status === outcome)
@@ -253,9 +253,9 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
         const node = nodeMap.get(item.nodeId) ?? { nodeId: item.nodeId, itemCount: 0, riskCount: 0, units: new Map() };
         node.itemCount += 1;
         node.riskCount += item.riskFlags.length > 0 ? 1 : 0;
-        const unit = node.units.get(item.learningBlockId) ?? { learningBlockId: item.learningBlockId, itemCount: 0 };
+        const unit = node.units.get(item.mentalUnitId) ?? { mentalUnitId: item.mentalUnitId, itemCount: 0 };
         unit.itemCount += 1;
-        node.units.set(item.learningBlockId, unit);
+        node.units.set(item.mentalUnitId, unit);
         nodeMap.set(item.nodeId, node);
       }
       return {
@@ -264,7 +264,7 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
         itemCount: trackItems.length,
         riskCount: trackItems.filter((item) => item.riskFlags.length > 0).length,
         reviewCounts: Object.fromEntries(["unreviewed", "approved", "needs_change", "rejected", "stale"].map((status) => [status, trackItems.filter((item) => item.review.status === status).length])),
-        nodes: [...nodeMap.values()].sort((left, right) => left.nodeId.localeCompare(right.nodeId)).map((node) => ({ ...node, units: [...node.units.values()].sort((left, right) => left.learningBlockId.localeCompare(right.learningBlockId)) })),
+        nodes: [...nodeMap.values()].sort((left, right) => left.nodeId.localeCompare(right.nodeId)).map((node) => ({ ...node, units: [...node.units.values()].sort((left, right) => left.mentalUnitId.localeCompare(right.mentalUnitId)) })),
       };
     });
     return { schemaVersion: CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION, launchTrackCount: tracks.length, tracks };
@@ -284,7 +284,7 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
       trackId,
       questionId: record.questionId,
       nodeId: record.nodeId,
-      learningBlockId: record.learningBlockId,
+      mentalUnitId: record.mentalUnitId,
       sourceFile: record.sourceFile,
       sourceFileSha256: record.sourceFileSha256,
       itemFingerprint: record.itemFingerprint,
@@ -327,7 +327,7 @@ function html() {
 <script>
 const $=id=>document.getElementById(id); let current=null;
 async function api(path,options){const response=await fetch(path,options);const body=await response.json();if(!response.ok)throw new Error(body.error||'Request failed');return body;}
-async function refresh(){const params=new URLSearchParams();for(const [id,key] of [['track','trackId'],['node','nodeId'],['unit','learningBlockId'],['query','query']])if($(id).value)params.set(key,$(id).value);if($('risk').checked)params.set('riskOnly','true');const body=await api('/api/items?'+params);$('count').textContent=body.items.length+' items';$('items').replaceChildren(...body.items.map(question=>{const button=document.createElement('button');button.className='item';button.onclick=()=>show(question.trackId,question.questionId);button.innerHTML='<strong>'+escapeHtml(question.questionId||question.questionKey)+'</strong><br><span class="muted">'+escapeHtml(question.nodeId)+' / '+escapeHtml(question.learningBlockId)+'</span><br>'+escapeHtml(question.prompt.slice(0,180))+'<br><span class="status '+question.review.status+'">'+question.review.status+'</span> '+(question.riskFlags.length?'<span class="risk">'+question.riskFlags.join(', ')+'</span>':'');return button;}));}
+async function refresh(){const params=new URLSearchParams();for(const [id,key] of [['track','trackId'],['node','nodeId'],['unit','mentalUnitId'],['query','query']])if($(id).value)params.set(key,$(id).value);if($('risk').checked)params.set('riskOnly','true');const body=await api('/api/items?'+params);$('count').textContent=body.items.length+' items';$('items').replaceChildren(...body.items.map(question=>{const button=document.createElement('button');button.className='item';button.onclick=()=>show(question.trackId,question.questionId);button.innerHTML='<strong>'+escapeHtml(question.questionId||question.questionKey)+'</strong><br><span class="muted">'+escapeHtml(question.nodeId)+' / '+escapeHtml(question.mentalUnitId)+'</span><br>'+escapeHtml(question.prompt.slice(0,180))+'<br><span class="status '+question.review.status+'">'+question.review.status+'</span> '+(question.riskFlags.length?'<span class="risk">'+question.riskFlags.join(', ')+'</span>':'');return button;}));}
 async function show(trackId,questionId){current=await api('/api/items/'+encodeURIComponent(trackId)+'/'+encodeURIComponent(questionId));const detail=$('detail');detail.replaceChildren();const title=document.createElement('h2');title.textContent=current.questionId;detail.append(title);const meta=document.createElement('p');meta.innerHTML='<span class="status '+current.review.status+'">'+current.review.status+'</span> '+escapeHtml(current.sourceFile);detail.append(meta);for(const [label,value] of [['Prompt',current.prompt],['Taxonomy',JSON.stringify(current.taxonomy,null,2)],['Interaction',JSON.stringify(current.item.interaction||{},null,2)],['Feedback',JSON.stringify(current.item.feedback||{},null,2)],['Coverage',JSON.stringify(current.coverage,null,2)],['Advisory risks',current.riskFlags.join(', ')||'none'],['Changed fields',current.review.changedFields.join(', ')||'none']]){const block=document.createElement('div');block.className='field';const labelNode=document.createElement('label');labelNode.textContent=label;const pre=document.createElement('pre');pre.textContent=value;block.append(labelNode,pre);detail.append(block);}const form=document.createElement('form');form.innerHTML='<label>Outcome<select id="outcome"><option>approved</option><option>needs_change</option><option>rejected</option></select></label><label>Reviewer ID<input id="reviewer" required></label><label>Note<textarea id="note" required></label><button>Record current outcome</button>';form.onsubmit=async event=>{event.preventDefault();try{await api('/api/reviews',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({trackId:current.trackId,questionId:current.questionId,outcome:$('outcome').value,reviewerId:$('reviewer').value,note:$('note').value})});await refresh();await show(current.trackId,current.questionId);}catch(error){alert(error.message);}};detail.append(form);}
 function escapeHtml(value){return String(value).replace(/[&<>\"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[character]));}
 async function init(){const catalog=await api('/api/catalog');for(const track of catalog.tracks){const option=document.createElement('option');option.value=track.trackId;option.textContent=track.trackId+' ('+track.itemCount+')';$('track').append(option);}await refresh();} $('filters').onsubmit=event=>{event.preventDefault();refresh().catch(error=>alert(error.message));};init().catch(error=>alert(error.message));
@@ -366,7 +366,7 @@ export async function startContentReviewConsole({ root = ROOT, reviewPath = join
         json(response, 200, { items: service.listItems({
           trackId: url.searchParams.get("trackId") || undefined,
           nodeId: url.searchParams.get("nodeId") || undefined,
-          learningBlockId: url.searchParams.get("learningBlockId") || undefined,
+          mentalUnitId: url.searchParams.get("mentalUnitId") || undefined,
           query: url.searchParams.get("query") || undefined,
           riskOnly: url.searchParams.get("riskOnly") === "true",
           outcome: url.searchParams.get("outcome") || undefined,
@@ -417,7 +417,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   } else {
     const service = await createContentReviewConsole();
     if (command === "catalog") process.stdout.write(`${JSON.stringify(service.catalog(), null, 2)}\n`);
-    else if (command === "list") process.stdout.write(`${JSON.stringify(service.listItems({ trackId: values.track, nodeId: values.node, learningBlockId: values.unit, query: values.query, riskOnly: values.riskOnly === true, outcome: values.outcome }), null, 2)}\n`);
+    else if (command === "list") process.stdout.write(`${JSON.stringify(service.listItems({ trackId: values.track, nodeId: values.node, mentalUnitId: values.unit, query: values.query, riskOnly: values.riskOnly === true, outcome: values.outcome }), null, 2)}\n`);
     else if (command === "item") process.stdout.write(`${JSON.stringify(service.getItem(values.track, values.item), null, 2)}\n`);
     else if (command === "review") process.stdout.write(`${JSON.stringify(await service.recordOutcome({ trackId: values.track, questionId: values.item, outcome: values.outcome, note: values.note, reviewerId: values.reviewer }), null, 2)}\n`);
     else throw new Error("Usage: content-review-console [serve|catalog|list|item|review].");

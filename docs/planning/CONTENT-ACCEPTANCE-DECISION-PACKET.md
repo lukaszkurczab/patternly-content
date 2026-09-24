@@ -1,6 +1,6 @@
 # Patternly — pakiet decyzyjny akceptacji treści
 
-> **Rola po konsolidacji:** dokładne evidence decyzji i kontrakt `ACC-01/02`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
+> **Rola po konsolidacji:** dokładne evidence decyzji i kontrakt `ACC-01/02`. Kolejność programu i status tasków utrzymuje wyłącznie [aktualny plan roboczy](https://github.com/lukaszkurczab/gcp-ace-trainer/blob/main/docs/PATTERNLY-WORKING-PLAN.md).
 
 **Status:** decyzja PO podjęta; materiał jest wejściem do naprawy ODK-E2E-099
 **Data:** 10 września 2026

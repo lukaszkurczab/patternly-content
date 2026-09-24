@@ -1,6 +1,6 @@
 # EPIC-09 — model-based evaluation wszystkich banków
 
-> **Rola po konsolidacji:** specyfikacja i kryteria `09-A–09-H`. Kolejność programu i status tasków utrzymuje wyłącznie [`../../../docs/PATTERNLY-WORKING-PLAN.md`](../../../docs/PATTERNLY-WORKING-PLAN.md).
+> **Rola po konsolidacji:** specyfikacja i kryteria `09-A–09-H`. Kolejność programu i status tasków utrzymuje wyłącznie [aktualny plan roboczy](https://github.com/lukaszkurczab/gcp-ace-trainer/blob/main/docs/PATTERNLY-WORKING-PLAN.md).
 
 **Status:** `blocking` na 09-A do uzgodnienia nowego kandydata AWS; dalsza ewaluacja pozostaje nieblokującą wydania ścieżką jakościową
 **Charakter:** uzupełniająca ścieżka jakościowa

@@ -16,13 +16,13 @@ jobs:
           node-version: 22
       - run: npm ci
       - run: npm test
-      - run: npm run authoring:validate
-      - run: npm run audit:aws-workbook-source
-      - run: npm run audit:gcp:authoring
-      - run: npm run audit:ai901
-      - run: npm run validate:backend-system-design
-      - run: npm run validate:frontend-bank
-      - run: npm run validate:object-oriented-design
+      - name: Build all canonical content tracks
+        env:
+          CONTENT_BUILD_OUTPUT: ${{ runner.temp }}/content-build
+        run: npm run content:build-all -- --root . --output-root "$CONTENT_BUILD_OUTPUT"
+      - name: Score canonical answers for every catalog track
+        run: |
+          node --input-type=module -e 'import { readFileSync } from "node:fs"; import { spawnSync } from "node:child_process"; const { tracks } = JSON.parse(readFileSync("content/catalog.json", "utf8")); for (const { trackId } of tracks) { const result = spawnSync("npm", ["run", "content:test", "--", "--track", trackId, "--root", "."], { stdio: "inherit" }); if (result.error) throw result.error; if (result.status !== 0) process.exit(result.status ?? 1); }'
       - run: npm run generate:candidate-readiness
       - run: git diff --exit-code -- evidence/readiness/candidate-readiness.json
       - run: npm run generate:review-packets

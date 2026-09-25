@@ -16,7 +16,18 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
-      - name: Coding Interview validate hard gate
-        run: npm run validate:real:coding-interview
-      - name: Build isolated release candidate
-        run: node scripts/publishing/ci-release-gate.mjs
+      - run: npm test
+      - run: npm run verify:migration
+      - name: Rebuild exact candidate draft
+        run: npm run candidate:draft-v2
+      - name: Regenerate readiness from the delegated decision
+        run: npm run candidate:readiness-v2
+      - name: Require committed candidate and decision-bound readiness evidence
+        run: |
+          git diff --exit-code -- reports/candidate-reconciliation/AWS-02-DRAFT evidence/readiness/candidate-readiness-v2.json
+          if test -n "$(git ls-files --others --exclude-standard -- reports/candidate-reconciliation/AWS-02-DRAFT evidence/readiness/candidate-readiness-v2.json)"; then
+            echo "Candidate or readiness evidence contains untracked files."
+            exit 1
+          fi
+      - name: Stop until publishing and runtime admission are granted
+        run: npm run candidate:release-gate-v2

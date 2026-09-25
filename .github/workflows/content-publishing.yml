@@ -23,11 +23,16 @@ jobs:
       - name: Score canonical answers for every catalog track
         run: |
           node --input-type=module -e 'import { readFileSync } from "node:fs"; import { spawnSync } from "node:child_process"; const { tracks } = JSON.parse(readFileSync("content/catalog.json", "utf8")); for (const { trackId } of tracks) { const result = spawnSync("npm", ["run", "content:test", "--", "--track", trackId, "--root", "."], { stdio: "inherit" }); if (result.error) throw result.error; if (result.status !== 0) process.exit(result.status ?? 1); }'
-      - run: npm run generate:candidate-readiness
-      - run: git diff --exit-code -- evidence/readiness/candidate-readiness.json
-      - run: npm run generate:review-packets
-      - run: git diff --exit-code -- evidence/review-packets
-      - name: Validate bundled Free nodes
+      - name: Rebuild exact candidate draft
+        run: npm run candidate:draft-v2
+      - name: Regenerate readiness from the delegated decision
+        run: npm run candidate:readiness-v2
+      - name: Require committed candidate and decision-bound readiness evidence
         run: |
-          node --input-type=module -e 'import { readFile } from "node:fs/promises"; import { validateBundledFreeNode } from "./scripts/product/bundled-free-node.mjs"; const configuration = JSON.parse(await readFile("config/bundled-free-node-packages.json", "utf8")); for (const entry of configuration.packages) await validateBundledFreeNode({ bundledFreeNodePath: `artifacts/bundled-free-nodes/${entry.trackId}/${entry.packageVersion}/package.json` });'
-      - run: node scripts/publishing/ci-release-gate.mjs
+          git diff --exit-code -- reports/candidate-reconciliation/AWS-02-DRAFT evidence/readiness/candidate-readiness-v2.json
+          if test -n "$(git ls-files --others --exclude-standard -- reports/candidate-reconciliation/AWS-02-DRAFT evidence/readiness/candidate-readiness-v2.json)"; then
+            echo "Candidate or readiness evidence contains untracked files."
+            exit 1
+          fi
+      - name: Validate configured bundled Free-node packages
+        run: npm run validate:bundled-free-nodes

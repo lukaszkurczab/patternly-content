@@ -64,7 +64,7 @@ export async function validateCandidateDecisionV2(decision, { root = ROOT, candi
   return decision;
 }
 
-export async function buildCandidateReadinessV2({ root = ROOT, decisionPath = DECISION_PATH, outputPath = READINESS_PATH } = {}) {
+export async function createCandidateReadinessV2({ root = ROOT, decisionPath = DECISION_PATH } = {}) {
   const candidate = await json(root, CANDIDATE_PATH);
   const release = await json(root, RELEASE_PATH);
   const bindings = trackBindings(candidate, release);
@@ -91,6 +91,11 @@ export async function buildCandidateReadinessV2({ root = ROOT, decisionPath = DE
   };
   const schema = await json(root, READINESS_SCHEMA_PATH);
   await validateSchema(readiness, schema, READINESS_PATH);
+  return readiness;
+}
+
+export async function buildCandidateReadinessV2({ root = ROOT, decisionPath = DECISION_PATH, outputPath = READINESS_PATH } = {}) {
+  const readiness = await createCandidateReadinessV2({ root, decisionPath });
   await writeFile(path.join(root, outputPath), canonicalJsonBytes(readiness));
   return readiness;
 }

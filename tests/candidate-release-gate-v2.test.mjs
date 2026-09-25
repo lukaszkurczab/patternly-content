@@ -10,6 +10,7 @@ import { gzipSync, gunzipSync } from "node:zlib";
 import { BUNDLED_FREE_NODE_LIMITS, validateBundledFreeNode, validateConfiguredBundledFreeNodes } from "../scripts/product/validate-bundled-free-nodes.mjs";
 import { CANDIDATE_PATH, DECISION_PATH, READINESS_PATH, RELEASE_PATH } from "../scripts/review/candidate-readiness-v2.mjs";
 import { runCandidateReleaseGate, verifyCandidateReleaseEvidence } from "../scripts/review/candidate-release-gate-v2.mjs";
+import { ADMISSION_PATH } from "../scripts/review/candidate-admission-v3.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const DRAFT_ROOT = "reports/candidate-reconciliation/AWS-02-DRAFT";
@@ -85,11 +86,11 @@ async function makeCandidateFixture() {
   return root;
 }
 
-test("release gate verifies exact decision-bound evidence and stops on not_granted", async () => {
+test("release gate verifies exact decision-bound evidence and requires separate admission", async () => {
   const root = await makeCandidateFixture();
   try {
     const { candidate } = await verifyCandidateReleaseEvidence({ root });
-    await assert.rejects(runCandidateReleaseGate({ root }), new RegExp(`RELEASE_BLOCKED candidateId=${candidate.candidateId}; reason=publishingAdmission=not_granted, runtimeAdmission=not_granted`));
+    await assert.rejects(runCandidateReleaseGate({ root }), new RegExp(`RELEASE_BLOCKED candidateId=${candidate.candidateId}; reason=admission_missing`));
 
     const readinessPath = path.join(root, READINESS_PATH);
     const readinessOriginal = await readFile(readinessPath);
@@ -125,6 +126,21 @@ test("release gate verifies exact decision-bound evidence and stops on not_grant
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test("release gate accepts the exact v3 admission without mutating readiness v2", async () => {
+  const root = await makeCandidateFixture();
+  try {
+    const admission = JSON.parse(await readFile(path.join(ROOT, ADMISSION_PATH), "utf8"));
+    const runtimeSource = path.join(ROOT, admission.runtimeEvidence.path);
+    const runtimeTarget = path.join(root, admission.runtimeEvidence.path);
+    await mkdir(path.dirname(runtimeTarget), { recursive: true });
+    await cp(runtimeSource, runtimeTarget);
+    await mkdir(path.dirname(path.join(root, ADMISSION_PATH)), { recursive: true });
+    await writeFile(path.join(root, ADMISSION_PATH), `${JSON.stringify(admission)}\n`);
+    const candidate = await runCandidateReleaseGate({ root });
+    assert.equal(candidate.candidateId, admission.candidateId);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("bundled Free-node control validates pinned source items and bounds decompression", async () => {

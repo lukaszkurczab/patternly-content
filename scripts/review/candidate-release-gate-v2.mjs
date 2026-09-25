@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CANDIDATE_PATH, DECISION_PATH, READINESS_PATH, RELEASE_PATH, createCandidateReadinessV2 } from "./candidate-readiness-v2.mjs";
+import { ADMISSION_PATH, validateCandidateAdmissionV3 } from "./candidate-admission-v3.mjs";
 import { candidateIdFor, canonicalJson, canonicalJsonBytes } from "./candidate-manifest.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../../", import.meta.url)));
@@ -48,12 +49,12 @@ export async function verifyCandidateReleaseEvidence({ root = ROOT } = {}) {
 
 export async function runCandidateReleaseGate({ root = ROOT } = {}) {
   const { candidate, readiness } = await verifyCandidateReleaseEvidence({ root });
-  const blockers = [];
-  if (readiness.publishingAdmission !== "granted") blockers.push(`publishingAdmission=${readiness.publishingAdmission}`);
-  if (readiness.runtimeAdmission !== "granted") blockers.push(`runtimeAdmission=${readiness.runtimeAdmission}`);
-  if (blockers.length) {
-    throw new Error(`RELEASE_BLOCKED candidateId=${candidate.candidateId}; reason=${blockers.join(", ")}; delegated candidate approval grants readiness only.`);
-  }
+  if (readiness.publishingAdmission !== "not_granted" || readiness.runtimeAdmission !== "not_granted" || readiness.appReleaseLockUpdated !== false) throw new Error("Candidate readiness v2 boundaries were mutated instead of preserving the separate admission authority.");
+  let admission;
+  try { admission = await readJson(root, ADMISSION_PATH); }
+  catch { throw new Error(`RELEASE_BLOCKED candidateId=${candidate.candidateId}; reason=admission_missing; delegated candidate approval grants readiness only.`); }
+  await validateCandidateAdmissionV3(admission, { root });
+  if (admission.candidateId !== candidate.candidateId || admission.release.checksumSha256 !== candidate.release.checksumSha256) throw new Error("Candidate admission is stale for the exact release.");
   return candidate;
 }
 

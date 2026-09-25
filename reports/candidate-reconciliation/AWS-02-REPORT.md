@@ -1,45 +1,47 @@
-# AWS-02 — szkic nowego kandydata v2
+# AWS-02/CANDIDATE — exact candidate approval and readiness v2
 
-**Status:** `partial` — lokalny draft dziewięciu artefaktów i deterministyczny candidate ID są gotowe. Nowy kandydat nie ma zgody PO, readiness, publishing/runtime admission ani app release lock.
+**Status:** `candidate-approved / admission-not-granted`. Candidate approval is a delegated Codex decision for the exact v2 candidate. Publishing admission, runtime admission, and app release-lock changes remain ungranted.
 
-## Cel, dopasowanie i ocena
+## Decision and scope
 
-Przygotować odtwarzalny, nieopublikowany szkic nowego kandydata z bieżącego kanonicznego źródła i AWS po ODK-096, bez zmiany historycznego v1 lub stanu aplikacji.
+The delegated decision in `evidence/candidate-decisions/aws-02-codex-decision-v2.json` approves this exact candidate for readiness:
 
-Ocena przed implementacją: zgodność/architektura **0,95**, prostota **0,85**, ryzyko **0,90**, utrzymywalność **0,90**, minimum **0,85**. Briefing przeszedł niezależną walidację Luna High bez redesignu. Zastosowano wersjonowane v2 dla nowej draftowej koperty i manifestu; v1 pozostał źródłem historycznych dowodów.
+- Candidate ID: `11d56baa82f897482a6def37d2af6bd90977b855a2fd5ddcb151838c7108a5f1`.
+- Canonical content source snapshot: `79060003a30146fc2eb79df09426499a451783b1`.
+- Release ID: `patternly-candidate-79060003a301`.
+- Release envelope SHA-256: `617f2216a0e23c6267a46b1d2fca528cf88d919e8094c97b65a5517492b8fac0`.
+- Nine track IDs, each question-set hash, artifact path, and artifact SHA-256 are recorded in the decision and checked against the release envelope.
+- Readiness v2 is `evidence/readiness/candidate-readiness-v2.json`; it hashes and references the separate Codex decision.
 
-## Wynik
+The decision authority is the user's active delegation in `patternly/docs/PATTERNLY-WORKING-PLAN.md` (§ DEC-23-CONTENT and AWS-02/CANDIDATE). It is recorded as `delegated_codex`; it does not claim a human-owner approval. Existing v1 candidate evidence, human approvals, historical release/readiness/admission evidence, and the app `release.lock` were not changed.
 
-- Candidate ID: `95de91e8a0a9ff6d713c1c64ae8c8a7ebae651a2c60a0f59f608e58b5f705be4`.
-- Status manifestu: `draft_not_admitted`.
-- Source commit: `340cc4df9bb9c90b2f1d41f8e5eac3f639b4acf5`.
-- Draft manifest: `reports/candidate-reconciliation/AWS-02-DRAFT/candidate/manifest.json`.
-- Release envelope: `reports/candidate-reconciliation/AWS-02-DRAFT/release/release.json`.
-- Release envelope SHA-256: `172c20786d79fdba607086cff9cead47940ea7e8d9af73864e08e8bcb1542d52`.
-- Pakiet zawiera dziewięć canonical artifacts. Wszystkie ich bajty i rozmiary ponownie sprawdzono z wpisami koperty; nie znaleziono rozbieżności.
-- AWS ma 2 604 pytań, contentVersion `aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096`, artifact SHA-256 `c86dd81635ebc51771e493729d487432519465f50c55ddcfc5ff71dd546560f9` oraz canonical question-set SHA-256 `46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45`.
-- Draft jawnie wiąże ODK-096: node `aws_secure_architecture_foundations` (40 pytań, SHA-256 `8dd16df1d7c6741b373026547c35255aea97869542bbb8897a4f36c73730bc33`) i 36 additive question ID. Jest to ograniczenie lokalnej admisji producer'a, nie globalne zatwierdzenie.
+## Canonical source and snapshot identity
 
-## Zmiany
+The release previously used repository `HEAD` as `sourceRepositoryCommit`. Committing generated evidence would advance `HEAD`, making the evidence point to a different commit on regeneration. The v2 generator now anchors that field to the last commit that changed canonical `content/` and verifies both staged and unstaged content match that committed snapshot. Builder, decision, and report commits therefore do not self-reference or rotate the source SHA. Any canonical-source drift blocks draft generation until committed and reviewed.
 
-- Dodano generator `scripts/review/candidate-draft-v2.mjs`, używający kanonicznego `buildAll` i deterministycznego candidate ID.
-- Dodano schematy `schemas/review/content-candidate-draft-v2.schema.json` i `schemas/review/content-release-envelope-v2.schema.json`.
-- Rozszerzono `scripts/review/schema-validation.mjs` o standardowe `maxItems`, `allOf`, `contains`, `minContains` i `maxContains`, tak by oba schematy wymagały dokładnie jednego wystąpienia każdego z 9 kanonicznych ID tracków.
-- Dodano test `tests/candidate-draft-v2.test.mjs` i komendy `candidate:draft-v2`, `test:candidate-draft-v2`; negatywne przypadki odrzucają duplikaty, nieznane ID i więcej niż 9 tracków w obu schematach.
-- Dla szkicu dodano jawny wyjątek w `reports/.gitignore`; artefakty są w odseparowanej ścieżce `AWS-02-DRAFT`, poza `artifacts/releases`.
-- Historyczny candidate manifest v1, baseline, release records, approval/readiness/admission, migration evidence i aplikacyjny `release.lock` nie zostały zmienione.
-- Zachowano zastane niezwiązane zmiany: `reports/.gitignore` zawierało już wcześniejszy wyjątek AWS-01, a `docs/planning/AUD-12-REPORT.md` pozostaje nietknięte.
+The nine artifacts were regenerated from the current canonical producer. AWS has 2,604 questions, including the exact ODK-096 additive node; the other eight banks retain their current counts and identities. ODK-096 remains scoped to that AWS producer identity and does not grant downstream admission.
 
-## Weryfikacja
+## Readiness boundary
 
-- Briefing: niezależna ocena zgodności 0,95 / prostoty 0,85 / ryzyka 0,90 / utrzymywalności 0,90; minimum 0,85, zaakceptowany.
-- `npm run test:candidate-draft-v2`: PASS; dwie niezależne generacje dały identyczny manifest, candidate ID i bajty wszystkich dziewięciu artefaktów. Oba schematy odrzucają też duplikaty, nieznane i nadmiarowe tracki.
-- `npm test`: PASS, 60/60 testów repozytorium po rozszerzeniu wspólnego walidatora schematów.
-- `npm run candidate:draft-v2`: PASS; utworzono szkic w lokalnej kwarantannie.
-- Ręczne sprawdzenie koperty i plików: 9 artefaktów, envelope hash zgodny z manifestem, rozmiary i checksumy wszystkich plików zgodne, `artifactErrors=[]`.
-- Testy aplikacyjne, symulator/emulatory i Maestro nie dotyczą tego zadania: zmiana obejmuje wyłącznie tooling i content release metadata, bez UI.
-- Pierwszy niezależny QA: `FAIL`, bo pierwotne schematy przyjmowały dziewięć powtórzonych/nieznanych ID, a plan był nieaktualny. Dodano dokładny kontrakt zestawu i negatywne testy; zaktualizowano plan. Niezależny retest: `PASS`.
+Readiness v2 records `candidateApproval.status=approved` with the exact decision ID, path, and SHA-256. It separately records `publishingAdmission=not_granted`, `runtimeAdmission=not_granted`, and `appReleaseLockUpdated=false`, both globally and per track. This does not upgrade the old v1 readiness or reuse historical human approvals for the new candidate.
 
-## Pozostałe bramki i następny krok
+The decision and readiness validators reject stale candidate IDs, missing fields, unknown tracks, changed artifact hashes, non-v2/v1 candidate paths, and unsupported keys. The release verifier checks envelope checksum plus each artifact's bytes, size, and checksum.
 
-Nie ma dowodu zgody PO dla dokładnego nowego candidate ID. Historyczne akceptacje banków nie zostały automatycznie skopiowane na nową tożsamość; ODK-096 dopuszcza tylko AWS do lokalnego producenta. Nie generować zielonego readiness ani admission na podstawie tego szkicu. Potrzebna jest decyzja PO dla dokładnego dziewięciobankowego manifestu, a potem osobne evidence readiness, publishing/runtime admission i zatwierdzona integracja z app `release.lock`. Do tego czasu AWS-02 pozostaje `partial`.
+## Verification
+
+- Independent pre-change briefing: consistency 0.94, simplicity 0.84, risk 0.84, maintainability 0.84; minimum 0.84, approved without redesign.
+- `npm run test:candidate-draft-v2`: PASS; repeated drafts produce the same candidate identity and bytes.
+- `npm run test:candidate-readiness-v2`: PASS; exact binding and stale/missing/unknown/hash/v1-path negatives.
+- `npm run candidate:draft-v2`: PASS; candidate ID and source snapshot above.
+- `npm run candidate:readiness-v2`: PASS; readiness binds the decision and leaves publishing/runtime admission ungranted.
+- `npm test`: PASS, 63/63 tests.
+- `npm run verify:migration`: PASS; 9 tracks, 117 nodes, 943 mental units, 16,077 questions, with 36 approved AWS additions over the historical 16,041-question baseline.
+- `git diff --check`: PASS.
+
+The first independent QA returned `FAIL`: the source snapshot guard used `git diff`, which omitted a valid untracked question file and could have changed the candidate while retaining the old source SHA. The guard now compares every committed and working `content/` path, Git blob hash, and file mode, including untracked and ignored files, before building. An isolated temporary-Git test confirms that adding a valid untracked mental-unit JSON is rejected; it does not mutate the shared repository. The regenerated candidate ID and all release/artifact checksums remain unchanged. Independent briefing scores: consistency 0.94, simplicity 0.84, risk 0.84, maintainability 0.84; minimum 0.84.
+
+Independent re-review: **PASS WITH ISSUES**. The implementation and evidence meet
+the candidate criteria; the remaining issue was a stale sentence in the
+cross-repository working plan, corrected during final plan synchronization.
+
+No deployment, publishing action, runtime admission, or app lock update occurred. Next, any distribution or active-runtime change requires its own evidence and consumer checks under AWS-02/ADMISSION.

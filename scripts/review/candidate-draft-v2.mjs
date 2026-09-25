@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,9 +23,56 @@ const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const awsTrackId = "aws-certified-solutions-architect-associate";
 const awsNodeId = "aws_secure_architecture_foundations";
 
-async function gitHead(root) {
-  const { stdout } = await exec("git", ["rev-parse", "HEAD"], { cwd: root });
+async function canonicalSourceCommit(root) {
+  const { stdout } = await exec("git", ["log", "-1", "--format=%H", "--", "content"], { cwd: root });
   return stdout.trim();
+}
+
+export async function assertCanonicalSourceSnapshot(root, sourceCommit) {
+  const contentRoot = path.join(root, "content");
+  const { stdout: treeOutput } = await exec("git", ["ls-tree", "-r", "-z", sourceCommit, "--", "content"], { cwd: root });
+  const treeEntries = new Map();
+  for (const record of treeOutput.split("\0").filter(Boolean)) {
+    const tab = record.indexOf("\t");
+    const [mode, type, objectId] = record.slice(0, tab).split(" ");
+    treeEntries.set(record.slice(tab + 1), { mode, type, objectId });
+  }
+
+  const { stdout: objectFormat } = await exec("git", ["rev-parse", "--show-object-format"], { cwd: root });
+  const digestName = objectFormat.trim();
+  if (!["sha1", "sha256"].includes(digestName)) throw new Error(`Unsupported Git object format: ${digestName}.`);
+  const workingEntries = new Map();
+  async function visit(directory) {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const absolutePath = path.join(directory, entry.name);
+      const relativePath = path.relative(root, absolutePath).split(path.sep).join("/");
+      const info = await lstat(absolutePath);
+      if (info.isSymbolicLink()) throw new Error(`Canonical content contains a symlink: ${relativePath}.`);
+      if (info.isDirectory()) {
+        await visit(absolutePath);
+        continue;
+      }
+      if (!info.isFile()) throw new Error(`Canonical content contains a non-file entry: ${relativePath}.`);
+      const bytes = await readFile(absolutePath);
+      const mode = (info.mode & 0o111) === 0 ? "100644" : "100755";
+      const objectId = createHash(digestName).update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+      workingEntries.set(relativePath, { mode, objectId });
+    }
+  }
+
+  try {
+    await visit(contentRoot);
+  } catch (error) {
+    if (error?.code === "ENOENT") throw new Error("Canonical content differs from its committed source snapshot: content directory is missing.");
+    throw error;
+  }
+
+  const samePaths = treeEntries.size === workingEntries.size && [...treeEntries.keys()].every((relativePath) => workingEntries.has(relativePath));
+  const sameObjects = samePaths && [...treeEntries].every(([relativePath, committed]) => {
+    const working = workingEntries.get(relativePath);
+    return committed.type === "blob" && committed.mode === working.mode && committed.objectId === working.objectId;
+  });
+  if (!sameObjects) throw new Error("Canonical content paths or bytes differ from the committed source snapshot; commit or reconcile content before drafting.");
 }
 
 async function readJson(filePath) {
@@ -70,8 +117,10 @@ export async function buildCandidateDraft({ root = ROOT, outputDirectory } = {})
 
   const tmpRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-candidate-build-"));
   try {
+    const sourceRepositoryCommit = await canonicalSourceCommit(sourceRoot);
+    if (!/^[a-f0-9]{40}$/.test(sourceRepositoryCommit)) throw new Error("Canonical content source snapshot commit is unavailable.");
+    await assertCanonicalSourceSnapshot(sourceRoot, sourceRepositoryCommit);
     const built = await buildAll({ rootDirectory: sourceRoot, outputRoot: tmpRoot });
-    const sourceRepositoryCommit = await gitHead(sourceRoot);
     const approval = await readJson(path.join(sourceRoot, ODK096_APPROVAL_PATH));
     const releaseId = `patternly-candidate-${sourceRepositoryCommit.slice(0, 12)}`;
     const artifacts = [];

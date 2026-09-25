@@ -1,14 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 
-import { buildCandidateDraft, CANDIDATE_DRAFT_SCHEMA_PATH, CANDIDATE_RELEASE_SCHEMA_PATH } from "../scripts/review/candidate-draft-v2.mjs";
+import { assertCanonicalSourceSnapshot, buildCandidateDraft, CANDIDATE_DRAFT_SCHEMA_PATH, CANDIDATE_RELEASE_SCHEMA_PATH } from "../scripts/review/candidate-draft-v2.mjs";
+import { CANDIDATE_TRACK_IDS } from "../scripts/review/candidate-manifest.mjs";
+import { validateQuestion } from "../scripts/content/question-contract.mjs";
 import { validateSchema } from "../scripts/review/schema-validation.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
+const exec = promisify(execFile);
 
 test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AWS identity deterministically", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "patternly-candidate-draft-test-"));
@@ -21,6 +26,7 @@ test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AW
     const releaseSchema = JSON.parse(await readFile(path.join(ROOT, CANDIDATE_RELEASE_SCHEMA_PATH), "utf8"));
     assert.equal(first.manifest.candidateId, second.manifest.candidateId);
     assert.deepEqual(first.manifest, second.manifest);
+    assert.equal(first.manifest.release.sourceRepositoryCommit, second.manifest.release.sourceRepositoryCommit);
     assert.equal(first.manifest.tracks.length, 9);
     assert.equal(first.manifest.status, "draft_not_admitted");
     assert.deepEqual(first.manifest.review, {
@@ -45,6 +51,39 @@ test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AW
     await assert.rejects(validateSchema({ ...first.release, artifacts: Array(9).fill(first.release.artifacts[0]) }, releaseSchema));
     await assert.rejects(validateSchema({ ...first.release, artifacts: [{ ...first.release.artifacts[0], trackId: "unknown-track" }, ...first.release.artifacts.slice(1)] }, releaseSchema));
     await assert.rejects(validateSchema({ ...first.release, artifacts: [...first.release.artifacts, first.release.artifacts[0]] }, releaseSchema));
+  } finally {
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
+test("canonical source snapshot rejects a valid untracked mental-unit JSON in an isolated Git fixture", async () => {
+  const base = await mkdtemp(path.join(os.tmpdir(), "patternly-content-snapshot-test-"));
+  const root = path.join(base, "repo");
+  const trackedRelativePath = "content/aws-certified-solutions-architect-associate/database_performance_access_patterns_caching_and_replication/dynamodb_partition_and_capacity_behavior.json";
+  const untrackedRelativePath = "content/aws-certified-solutions-architect-associate/database_performance_access_patterns_caching_and_replication/candidate_added_from_maestro.json";
+  try {
+    await mkdir(path.dirname(path.join(root, trackedRelativePath)), { recursive: true });
+    await exec("git", ["init", "-q"], { cwd: root });
+    await exec("git", ["config", "user.name", "Snapshot Test"], { cwd: root });
+    await exec("git", ["config", "user.email", "snapshot-test@example.invalid"], { cwd: root });
+    const trackedBytes = await readFile(path.join(ROOT, trackedRelativePath));
+    await writeFile(path.join(root, trackedRelativePath), trackedBytes);
+    await exec("git", ["add", "content"], { cwd: root });
+    await exec("git", ["commit", "-qm", "fixture source snapshot"], { cwd: root });
+    const { stdout } = await exec("git", ["rev-parse", "HEAD"], { cwd: root });
+    const sourceCommit = stdout.trim();
+
+    await assertCanonicalSourceSnapshot(root, sourceCommit);
+
+    const validQuestionSet = JSON.parse(trackedBytes.toString("utf8")).map((question) => ({
+      ...question,
+      mentalUnitId: "candidate_added_from_maestro",
+      questionId: `${question.questionId}-untracked`,
+    }));
+    assert.ok(validQuestionSet.length > 0);
+    assert.ok(validQuestionSet.every((question) => validateQuestion(question, { catalogTrackIds: CANDIDATE_TRACK_IDS }).valid));
+    await writeFile(path.join(root, untrackedRelativePath), `${JSON.stringify(validQuestionSet)}\n`);
+    await assert.rejects(assertCanonicalSourceSnapshot(root, sourceCommit), /paths or bytes differ/);
   } finally {
     await rm(base, { recursive: true, force: true });
   }

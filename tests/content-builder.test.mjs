@@ -129,21 +129,25 @@ test("GCP simulation profile binds a complete unambiguous node map to the same-v
   const validated = await validateTrack({ rootDirectory, trackId: "google-cloud-associate-cloud-engineer" });
   const profile = validated.simulationProfiles?.[0];
   assert.ok(profile);
-  assert.equal(profile.schemaVersion, "patternly-simulation-profile-v1");
-  assert.equal(profile.durationMinutes, 120);
-  assert.deepEqual(profile.questionCount, { kind: "range", minimum: 50, maximum: 60 });
-  assert.deepEqual(profile.blueprint.sections.map(({ contentDomainId, weightPercent }) => [contentDomainId, weightPercent]), [
+  assert.equal(profile.schemaVersion, "patternly-simulation-profile-envelope-v1");
+  assert.equal(profile.familyId, "certification");
+  assert.equal(profile.modeId, "certification-exam-simulation");
+  const familyConfig = profile.familyConfig;
+  assert.equal(familyConfig.schemaVersion, "patternly-certification-simulation-config-v1");
+  assert.equal(familyConfig.durationMinutes, 120);
+  assert.deepEqual(familyConfig.questionCount, { kind: "range", minimum: 50, maximum: 60 });
+  assert.deepEqual(familyConfig.blueprint.sections.map(({ contentDomainId, weightPercent }) => [contentDomainId, weightPercent]), [
     ["gcp-ace-standard-domain-1", 20],
     ["gcp-ace-standard-domain-2", 30],
     ["gcp-ace-standard-domain-3", 30],
     ["gcp-ace-standard-domain-4", 20]
   ]);
 
-  const publishedPath = path.join(rootDirectory, profile.nodeDomainMapEvidence.artifactPath);
+  const publishedPath = path.join(rootDirectory, familyConfig.nodeDomainMapEvidence.artifactPath);
   const publishedWrapper = JSON.parse(readFileSync(publishedPath, "utf8"));
   const published = JSON.parse(publishedWrapper.artifactBytes);
   assert.equal(published.contentVersion, validated.track.contentVersion);
-  assert.equal(published.bank.items.length, profile.nodeDomainMapEvidence.itemCount);
+  assert.equal(published.bank.items.length, familyConfig.nodeDomainMapEvidence.itemCount);
   const domainsByNode = new Map();
   for (const item of published.bank.items) {
     const domains = domainsByNode.get(item.nodeId) ?? new Set();
@@ -153,7 +157,7 @@ test("GCP simulation profile binds a complete unambiguous node map to the same-v
   assert.equal(domainsByNode.size, 20);
   assert.equal([...domainsByNode.values()].filter((domains) => domains.size !== 1).length, 0);
   const evidencedMap = Object.fromEntries([...domainsByNode].map(([nodeId, domains]) => [nodeId, [...domains][0]]).sort(([left], [right]) => left.localeCompare(right)));
-  assert.deepEqual(profile.nodeDomainMap, evidencedMap);
+  assert.deepEqual(familyConfig.nodeDomainMap, evidencedMap);
 
   const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-profile-build-"));
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
@@ -178,6 +182,38 @@ test("malformed present GCP simulation profile fails closed on incomplete node c
   await assert.rejects(
     loadGcpSimulationProfiles({ rootDirectory, track: validated.track, questions: validated.questions }),
     /nodeDomainMap has an invalid shape/u
+  );
+});
+
+test("existing GCP artifact rejects malformed profile even when its lock SHA is recomputed", async (t) => {
+  const rootDirectory = path.resolve(".");
+  const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-profile-existing-"));
+  t.after(() => rm(outputRoot, { recursive: true, force: true }));
+  const trackId = "google-cloud-associate-cloud-engineer";
+  await buildTrack({ rootDirectory, outputRoot, trackId });
+
+  const artifactPath = path.join(outputRoot, `${trackId}.json`);
+  const legacyArtifact = JSON.parse(await readFile(artifactPath, "utf8"));
+  delete legacyArtifact.simulationProfiles;
+  const legacyBytes = canonicalJson(legacyArtifact);
+  await writeFile(artifactPath, legacyBytes, "utf8");
+  const lockPath = path.join(outputRoot, "content-lock.json");
+  const legacyLock = JSON.parse(await readFile(lockPath, "utf8"));
+  legacyLock.tracks.find((entry) => entry.trackId === trackId).sha256 = sha256(legacyBytes);
+  await writeFile(lockPath, canonicalJson(legacyLock), "utf8");
+  await buildTrack({ rootDirectory, outputRoot, trackId });
+
+  const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
+  artifact.simulationProfiles[0].familyConfig.durationMinutes = 121;
+  const artifactBytes = canonicalJson(artifact);
+  await writeFile(artifactPath, artifactBytes, "utf8");
+  const lock = JSON.parse(await readFile(lockPath, "utf8"));
+  lock.tracks.find((entry) => entry.trackId === trackId).sha256 = sha256(artifactBytes);
+  await writeFile(lockPath, canonicalJson(lock), "utf8");
+
+  await expectBuildFailure(
+    () => buildTrack({ rootDirectory, outputRoot, trackId }),
+    /malformed or differ from authoritative config/u
   );
 });
 

@@ -201,7 +201,9 @@ function validateTrackQuestion(question, { trackId, sourceIdentity: identity, fi
 }
 
 const GCP_TRACK_ID = "google-cloud-associate-cloud-engineer";
-const SIMULATION_PROFILE_SCHEMA_VERSION = "patternly-simulation-profile-v1";
+const SIMULATION_PROFILE_SCHEMA_VERSION = "patternly-simulation-profile-envelope-v1";
+const GCP_EXAM_PROFILE_ID = "google-cloud-associate-cloud-engineer-certification-exam-v1";
+const GCP_SOURCE_PROFILE_ID = "google-cloud-associate-cloud-engineer-patternly-practice-v1";
 const GCP_DOMAIN_IDS = Object.freeze([
   "gcp-ace-standard-domain-1",
   "gcp-ace-standard-domain-2",
@@ -236,7 +238,7 @@ export async function loadGcpSimulationProfiles({ rootDirectory, track, question
 
   const profile = config.profile;
   exactKeys(profile, ["schemaVersion", "profileId", "profileVersion", "source", "durationMinutes", "questionCount", "blueprint", "interactionPolicy", "nodeDomainMap", "nodeDomainMapEvidence"], "GCP simulation profile");
-  if (profile.schemaVersion !== "exam-experience-profile-v2" || !nonEmptyString(profile.profileId) || profile.profileVersion !== "1") fail("GCP simulation profile identity is invalid");
+  if (profile.schemaVersion !== "exam-experience-profile-v2" || profile.profileId !== GCP_SOURCE_PROFILE_ID || profile.profileVersion !== "1") fail("GCP simulation profile identity is invalid");
   exactKeys(profile.source, ["url", "checkedDate", "guideVersion"], "GCP simulation profile source");
   if (typeof profile.source.url !== "string" || typeof profile.source.checkedDate !== "string" || typeof profile.source.guideVersion !== "string") fail("GCP simulation profile source is invalid");
   if (profile.durationMinutes !== 120) fail("GCP simulation profile duration must be 120 minutes");
@@ -266,7 +268,24 @@ export async function loadGcpSimulationProfiles({ rootDirectory, track, question
   exactKeys(profile.nodeDomainMapEvidence, ["artifactPath", "contentVersion", "itemCount", "nodeCount", "ambiguousNodeCount"], "GCP nodeDomainMap evidence");
   if (profile.nodeDomainMapEvidence.artifactPath !== `artifacts/tracks/${GCP_TRACK_ID}/${track.contentVersion}/track-artifact.json` || profile.nodeDomainMapEvidence.contentVersion !== track.contentVersion || profile.nodeDomainMapEvidence.itemCount !== 2981 || profile.nodeDomainMapEvidence.nodeCount !== nodeIds.length || profile.nodeDomainMapEvidence.ambiguousNodeCount !== 0) fail("GCP nodeDomainMap evidence does not match the current published artifact identity");
 
-  return [Object.freeze({ ...profile, schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION })];
+  const familyConfig = Object.freeze({
+    schemaVersion: "patternly-certification-simulation-config-v1",
+    source: profile.source,
+    durationMinutes: profile.durationMinutes,
+    questionCount: profile.questionCount,
+    blueprint: profile.blueprint,
+    interactionPolicy: profile.interactionPolicy,
+    nodeDomainMap: profile.nodeDomainMap,
+    nodeDomainMapEvidence: profile.nodeDomainMapEvidence
+  });
+  return [Object.freeze({
+    schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION,
+    profileId: GCP_EXAM_PROFILE_ID,
+    profileVersion: profile.profileVersion,
+    familyId: "certification",
+    modeId: "certification-exam-simulation",
+    familyConfig
+  })];
 }
 
 export async function validateTrack({ rootDirectory, root, trackId } = {}) {
@@ -433,16 +452,25 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
   return artifact;
 }
 
-async function verifyExistingArtifact(outputRoot, entry, catalog) {
+async function verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory) {
   const filePath = path.join(outputRoot, `${entry.trackId}.json`);
   const bytes = await readRegularFile(filePath, "existing artifact");
   if (sha256(bytes) !== entry.sha256) fail(`Existing artifact checksum mismatch: ${filePath}`);
   const artifact = jsonText(bytes, filePath);
   if (canonicalJson(artifact) !== bytes) fail(`Existing artifact is not canonical: ${filePath}`);
-  return validateArtifactShape(artifact, { entry, catalog, filePath });
+  const validated = validateArtifactShape(artifact, { entry, catalog, filePath });
+  if (Object.hasOwn(validated, "simulationProfiles")) {
+    const expectedProfiles = entry.trackId === GCP_TRACK_ID
+      ? await loadGcpSimulationProfiles({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
+      : undefined;
+    if (!expectedProfiles || canonicalJson(validated.simulationProfiles) !== canonicalJson(expectedProfiles)) {
+      fail(`Existing simulationProfiles are malformed or differ from authoritative config: ${filePath}`);
+    }
+  }
+  return validated;
 }
 
-async function loadExistingLock(outputRoot, catalog) {
+async function loadExistingLock(outputRoot, catalog, rootDirectory) {
   const lockPath = path.join(outputRoot, LOCK_FILE_NAME);
   let lockInfo;
   try {
@@ -455,7 +483,7 @@ async function loadExistingLock(outputRoot, catalog) {
   if (!lockInfo.isFile()) fail(`Content lock is not a regular file: ${lockPath}`);
   const lock = await readJson(lockPath);
   const validLock = strictLock(lock, catalog);
-  for (const entry of validLock.tracks) await verifyExistingArtifact(outputRoot, entry, catalog);
+  for (const entry of validLock.tracks) await verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory);
   return validLock;
 }
 
@@ -598,7 +626,7 @@ function mergeLock(existingLock, entry) {
 export async function buildTrack(options = {}) {
   const validated = await validateTrack(options);
   const outputRoot = resolveOutputRoot(options);
-  const existingLock = await loadExistingLock(outputRoot, validated.catalog);
+  const existingLock = await loadExistingLock(outputRoot, validated.catalog, validated.rootDirectory);
   await verifyExistingOutputSet(outputRoot, validated.catalog, existingLock);
   const artifact = artifactFor(validated);
   const artifactBytes = canonicalJson(artifact);
@@ -619,7 +647,7 @@ export async function buildAll({ rootDirectory, root, outputRoot, outputDirector
   const resolvedRoot = resolveRoot({ rootDirectory, root });
   const resolvedOutputRoot = resolveOutputRoot({ rootDirectory: resolvedRoot, outputRoot, outputDirectory });
   const catalog = await loadValidatedCatalog(resolvedRoot);
-  const existingLock = await loadExistingLock(resolvedOutputRoot, catalog);
+  const existingLock = await loadExistingLock(resolvedOutputRoot, catalog, resolvedRoot);
   await verifyExistingOutputSet(resolvedOutputRoot, catalog, existingLock);
   const validatedTracks = [];
   for (const track of catalog.tracks) {

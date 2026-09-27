@@ -188,10 +188,12 @@ test("Coding Interview simulation profile emits the blueprint and exact checksum
   assert.equal(familyConfig.poolId, "algorithms-interview-simulation-v1");
   assert.equal(familyConfig.eligibleQuestionIds.length, 40);
   assert.equal(new Set(familyConfig.eligibleQuestionIds).size, 40);
-  const publishedWrapper = JSON.parse(readFileSync(path.join(rootDirectory, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion, "track-artifact.json"), "utf8"));
-  const published = JSON.parse(publishedWrapper.artifactBytes);
-  assert.deepEqual(familyConfig.eligibleQuestionIds, published.bank.simulationPools[0].itemIds);
-  assert.deepEqual(familyConfig.eligibleQuestionIds, published.bank.items.filter((item) => familyConfig.eligibleQuestionIds.includes(item.id)).map((item) => item.id));
+  const trackConfig = JSON.parse(readFileSync(path.join(rootDirectory, "config/tracks/coding-interview-dsa-problem-solving.json"), "utf8"));
+  assert.deepEqual(familyConfig.eligibleQuestionIds, trackConfig.modeConfiguration.simulationBlueprint.eligibleQuestionIds);
+  const selectedTypes = new Set(familyConfig.eligibleQuestionIds.map((id) => validated.questions.find((question) => question.questionId === id)?.interaction.type));
+  const activeTypes = new Set(validated.questions.map((question) => question.interaction.type));
+  assert.deepEqual([...selectedTypes].sort(), [...activeTypes].sort());
+  assert.ok(selectedTypes.has("choice_multiple"));
 
   const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-coding-profile-build-"));
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
@@ -209,11 +211,68 @@ test("malformed Coding Interview simulation blueprint fails closed", async (t) =
   const config = JSON.parse(await readFile(configPath, "utf8"));
   config.modeConfiguration.simulationBlueprint.durationMinutes = 46;
   await mkdir(path.join(rootDirectory, "config/tracks"), { recursive: true });
-  await mkdir(path.join(rootDirectory, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion), { recursive: true });
+  await mkdir(path.join(rootDirectory, "config/taxonomy"), { recursive: true });
   await writeFile(path.join(rootDirectory, "config/tracks/coding-interview-dsa-problem-solving.json"), JSON.stringify(config));
-  const artifactPath = path.join(sourceRoot, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion, "track-artifact.json");
-  await writeFile(path.join(rootDirectory, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion, "track-artifact.json"), await readFile(artifactPath));
+  await writeFile(path.join(rootDirectory, config.taxonomyPath), await readFile(path.join(sourceRoot, config.taxonomyPath)));
   await expectBuildFailure(loadCodingSimulationProfiles({ rootDirectory, track: validated.track, questions: validated.questions }), /blueprint identity or behavior/u);
+});
+
+test("Coding Interview simulation selection policies reject stale pools and invalid identities", async (t) => {
+  const sourceRoot = path.resolve(".");
+  const validated = await validateTrack({ rootDirectory: sourceRoot, trackId: "coding-interview-dsa-problem-solving" });
+  const sourceConfig = JSON.parse(await readFile(path.join(sourceRoot, "config/tracks/coding-interview-dsa-problem-solving.json"), "utf8"));
+  const oldWrapper = JSON.parse(await readFile(path.join(sourceRoot, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion, "track-artifact.json"), "utf8"));
+  const oldPool = JSON.parse(oldWrapper.artifactBytes).bank.simulationPools[0].itemIds;
+  const taxonomyBytes = await readFile(path.join(sourceRoot, sourceConfig.taxonomyPath));
+  const withConfig = async (mutateConfig, mutateQuestions = (questions) => questions, mutateTaxonomy = (taxonomy) => taxonomy) => {
+    const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-coding-policy-"));
+    t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+    const config = structuredClone(sourceConfig);
+    mutateConfig(config);
+    await mkdir(path.join(rootDirectory, "config/tracks"), { recursive: true });
+    await mkdir(path.join(rootDirectory, "config/taxonomy"), { recursive: true });
+    await writeFile(path.join(rootDirectory, "config/tracks/coding-interview-dsa-problem-solving.json"), JSON.stringify(config));
+    const taxonomy = mutateTaxonomy(JSON.parse(taxonomyBytes));
+    await writeFile(path.join(rootDirectory, config.taxonomyPath), JSON.stringify(taxonomy));
+    const questions = mutateQuestions(structuredClone(validated.questions));
+    return { rootDirectory, questions };
+  };
+  const rejects = async (mutateConfig, pattern, mutateQuestions, mutateTaxonomy) => {
+    const { rootDirectory, questions } = await withConfig(mutateConfig, mutateQuestions, mutateTaxonomy);
+    await expectBuildFailure(loadCodingSimulationProfiles({ rootDirectory, track: validated.track, questions }), pattern);
+  };
+
+  await rejects((config) => { config.modeConfiguration.simulationBlueprint.eligibleQuestionIds = oldPool; }, /does not represent every active interaction type/u);
+  await rejects((config) => { config.modeConfiguration.simulationBlueprint.eligibleQuestionIds[0] = "missing-fallback-question"; }, /outside current canonical source/u);
+  await rejects((config) => { config.modeConfiguration.simulationBlueprint.eligibleQuestionIds[1] = config.modeConfiguration.simulationBlueprint.eligibleQuestionIds[0]; }, /duplicate question identities/u);
+  for (const policyKey of Object.keys(sourceConfig.modeConfiguration.simulationBlueprint.selectionPolicy)) {
+    await rejects((config) => { config.modeConfiguration.simulationBlueprint.selectionPolicy[policyKey] = false; }, /selection policy must keep/u);
+  }
+
+  const firstId = sourceConfig.modeConfiguration.simulationBlueprint.eligibleQuestionIds[0];
+  const firstUnit = validated.questions.find((question) => question.questionId === firstId).mentalUnitId;
+  const sameUnitAlternative = validated.questions.find((question) => question.mentalUnitId === firstUnit && question.questionId !== firstId && !sourceConfig.modeConfiguration.simulationBlueprint.eligibleQuestionIds.includes(question.questionId));
+  assert.ok(sameUnitAlternative);
+  await rejects((config) => { config.modeConfiguration.simulationBlueprint.eligibleQuestionIds[1] = sameUnitAlternative.questionId; }, /consecutive items from the same mental unit/u);
+  await rejects(() => {}, /duplicate content identities/u, (questions) => {
+    const ids = sourceConfig.modeConfiguration.simulationBlueprint.eligibleQuestionIds;
+    const duplicate = structuredClone(questions.find((question) => question.questionId === ids[0]));
+    duplicate.questionId = ids.at(-1);
+    return questions.map((question) => question.questionId === ids.at(-1) ? duplicate : question);
+  });
+  await rejects(() => {}, /widens beyond declared track taxonomy/u, (questions) => {
+    const id = sourceConfig.modeConfiguration.simulationBlueprint.eligibleQuestionIds[0];
+    return questions.map((question) => question.questionId === id ? { ...question, nodeId: "undeclared-node" } : question);
+  });
+  await rejects(() => {}, /multiple mental units/u, (questions) => {
+    const ids = new Set(sourceConfig.modeConfiguration.simulationBlueprint.eligibleQuestionIds);
+    const firstNode = validated.questions.find((question) => question.mentalUnitId === firstUnit).nodeId;
+    return questions.map((question) => ids.has(question.questionId) ? { ...question, mentalUnitId: firstUnit, nodeId: firstNode } : question);
+  });
+  await rejects(() => {}, /multiple pattern families/u, undefined, (taxonomy) => {
+    for (const unit of taxonomy.mentalUnits) unit.primaryPatternFamilyId = taxonomy.mentalUnits[0].primaryPatternFamilyId;
+    return taxonomy;
+  });
 });
 
 test("malformed present GCP simulation profile fails closed on incomplete node coverage", async (t) => {

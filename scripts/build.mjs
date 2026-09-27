@@ -212,6 +212,16 @@ const GCP_DOMAIN_IDS = Object.freeze([
 ]);
 const CODING_TRACK_ID = "coding-interview-dsa-problem-solving";
 const CODING_PROFILE_ID = "algorithms-interview-simulation-v1";
+const DESIGN_TRACK_IDS = Object.freeze([
+  "backend-system-design-interview",
+  "frontend-system-design-interview",
+  "object-oriented-design-interview"
+]);
+const DESIGN_SIMULATION_MODE_ID = "design-interview-simulation";
+const DESIGN_SIMULATION_STAGE_IDS = Object.freeze(["requirements", "architecture", "tradeoffs", "final_answer"]);
+const DESIGN_SIMULATION_RUBRIC_DIMENSION_IDS = Object.freeze([
+  "requirements_clarity", "architecture_coherence", "tradeoff_reasoning", "communication_completeness"
+]);
 const CODING_SIMULATION_POLICY_KEYS = Object.freeze([
   "requireUniqueItemIds", "requireDeclaredSimulationEligibility", "requireMultipleMentalUnits",
   "requireMultiplePatternFamilies", "requireEveryActiveInteractionTypeRepresented",
@@ -409,6 +419,90 @@ export async function loadCodingSimulationProfiles(options) {
   return (await loadCodingSimulationProfileData(options)).simulationProfiles;
 }
 
+async function loadDesignSimulationProfileData({ rootDirectory, track }) {
+  if (!DESIGN_TRACK_IDS.includes(track.trackId)) return undefined;
+  const configPath = path.join(rootDirectory, "config", "simulation-profiles", "design-interview.json");
+  let configInfo;
+  try { configInfo = await lstat(configPath); }
+  catch (error) { if (error?.code === "ENOENT") return undefined; fail(`Cannot inspect Design Interview simulation profile config ${configPath}: ${error.message}`); }
+  if (!configInfo.isFile() || configInfo.isSymbolicLink()) fail(`Design Interview simulation profile config must be a regular file: ${configPath}`);
+  await assertSecurePath(rootDirectory, configPath, "Design Interview simulation profile config");
+  const config = await readJson(configPath);
+  exactKeys(config, ["schemaVersion", "familyId", "modeId", "timer", "stages", "outcomeEvaluation", "rubric", "cases"], "Design Interview simulation source");
+  if (config.schemaVersion !== "design-interview-simulation-source-v1" || config.familyId !== "design_interview" || config.modeId !== DESIGN_SIMULATION_MODE_ID) fail("Design Interview simulation source identity is invalid");
+  exactKeys(config.timer, ["kind", "durationSeconds"], "Design Interview simulation timer");
+  if (config.timer.kind !== "absolute_deadline" || !Number.isInteger(config.timer.durationSeconds) || config.timer.durationSeconds <= 0) fail("Design Interview simulation timer must use a positive absolute deadline");
+  if (!Array.isArray(config.stages) || canonicalJson(config.stages.map((stage) => stage?.stageId)) !== canonicalJson(DESIGN_SIMULATION_STAGE_IDS)) fail("Design Interview simulation stages must be ordered requirements, architecture, tradeoffs, final_answer");
+  for (const [index, stage] of config.stages.entries()) {
+    exactKeys(stage, ["stageId", "title", "response"], `Design Interview simulation stage ${index}`);
+    if (!nonEmptyString(stage.title)) fail(`Design Interview simulation stage ${index} title is invalid`);
+    exactKeys(stage.response, ["type", "required", "minimumCharacters"], `Design Interview simulation stage ${index} response`);
+    if (stage.response.type !== "text" || stage.response.required !== true || stage.response.minimumCharacters !== 1) fail(`Design Interview simulation stage ${index} must require a non-empty text response`);
+  }
+  exactKeys(config.outcomeEvaluation, ["machineEvaluable", "semanticScoring"], "Design Interview simulation outcome evaluation");
+  if (canonicalJson(config.outcomeEvaluation.machineEvaluable) !== canonicalJson(["response_completeness"]) || config.outcomeEvaluation.semanticScoring !== "not_evaluated") fail("Design Interview simulation outcome evaluation may evaluate completeness only");
+  exactKeys(config.rubric, ["kind", "dimensions"], "Design Interview simulation rubric");
+  if (config.rubric.kind !== "self_assessment_reference_only" || !Array.isArray(config.rubric.dimensions) || canonicalJson(config.rubric.dimensions.map((dimension) => dimension?.dimensionId)) !== canonicalJson(DESIGN_SIMULATION_RUBRIC_DIMENSION_IDS)) fail("Design Interview simulation rubric dimensions or use are invalid");
+  for (const [index, dimension] of config.rubric.dimensions.entries()) {
+    exactKeys(dimension, ["dimensionId", "title", "levels"], `Design Interview simulation rubric dimension ${index}`);
+    if (!nonEmptyString(dimension.title) || !Array.isArray(dimension.levels) || dimension.levels.length !== 4) fail(`Design Interview simulation rubric dimension ${index} must define four levels`);
+    dimension.levels.forEach((level, levelIndex) => {
+      exactKeys(level, ["level", "label", "description"], `Design Interview simulation rubric level ${index}.${levelIndex}`);
+      if (level.level !== levelIndex + 1 || !nonEmptyString(level.label) || !nonEmptyString(level.description)) fail(`Design Interview simulation rubric level ${index}.${levelIndex} is invalid`);
+    });
+  }
+  if (!Array.isArray(config.cases) || config.cases.length !== DESIGN_TRACK_IDS.length) fail("Design Interview simulation source must define exactly one case per Design track");
+  const casesByTrack = new Map();
+  const caseIds = new Set();
+  const profileIds = new Set();
+  for (const [index, designCase] of config.cases.entries()) {
+    exactKeys(designCase, ["trackId", "profileId", "profileVersion", "caseId", "caseVersion", "title", "brief", "reviewCriteria"], `Design Interview simulation case ${index}`);
+    if (!DESIGN_TRACK_IDS.includes(designCase.trackId) || casesByTrack.has(designCase.trackId)) fail(`Design Interview simulation case ${index} has a missing, unknown, or duplicate track identity`);
+    if (!nonEmptyString(designCase.profileId) || designCase.profileVersion !== "1" || !nonEmptyString(designCase.caseId) || designCase.caseVersion !== "1" || !nonEmptyString(designCase.title) || !nonEmptyString(designCase.brief)) fail(`Design Interview simulation case ${index} identity or prompt is invalid`);
+    if (caseIds.has(designCase.caseId) || profileIds.has(designCase.profileId)) fail(`Design Interview simulation case ${index} has a duplicate stable identity`);
+    caseIds.add(designCase.caseId);
+    profileIds.add(designCase.profileId);
+    if (!Array.isArray(designCase.reviewCriteria) || designCase.reviewCriteria.length !== DESIGN_SIMULATION_STAGE_IDS.length) fail(`Design Interview simulation case ${index} must define one review criterion per stage`);
+    const criterionIds = new Set();
+    for (const [criterionIndex, criterion] of designCase.reviewCriteria.entries()) {
+      exactKeys(criterion, ["criterionId", "stageId", "description"], `Design Interview simulation case ${index} review criterion ${criterionIndex}`);
+      if (!nonEmptyString(criterion.criterionId) || criterionIds.has(criterion.criterionId) || !DESIGN_SIMULATION_STAGE_IDS.includes(criterion.stageId) || !nonEmptyString(criterion.description)) fail(`Design Interview simulation case ${index} review criterion ${criterionIndex} is invalid`);
+      criterionIds.add(criterion.criterionId);
+    }
+    if (canonicalJson(designCase.reviewCriteria.map((criterion) => criterion.stageId)) !== canonicalJson(DESIGN_SIMULATION_STAGE_IDS)) fail(`Design Interview simulation case ${index} review criteria must follow the stage order`);
+    casesByTrack.set(designCase.trackId, designCase);
+  }
+  if (DESIGN_TRACK_IDS.some((trackId) => !casesByTrack.has(trackId))) fail("Design Interview simulation source must cover every Design track");
+
+  const designCase = casesByTrack.get(track.trackId);
+  const familyConfig = Object.freeze({
+    schemaVersion: "patternly-design-interview-simulation-config-v1",
+    caseId: designCase.caseId,
+    caseVersion: designCase.caseVersion,
+    title: designCase.title,
+    brief: designCase.brief,
+    timer: config.timer,
+    stages: config.stages,
+    reviewCriteria: designCase.reviewCriteria,
+    rubric: config.rubric,
+    outcomeEvaluation: config.outcomeEvaluation
+  });
+  return {
+    simulationProfiles: [Object.freeze({
+      schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION,
+      profileId: designCase.profileId,
+      profileVersion: designCase.profileVersion,
+      familyId: "design_interview",
+      modeId: DESIGN_SIMULATION_MODE_ID,
+      familyConfig
+    })]
+  };
+}
+
+export async function loadDesignSimulationProfiles(options) {
+  return (await loadDesignSimulationProfileData(options)).simulationProfiles;
+}
+
 export async function validateTrack({ rootDirectory, root, trackId } = {}) {
   if (!nonEmptyString(trackId)) fail("trackId is required");
   const resolvedRoot = resolveRoot({ rootDirectory, root });
@@ -435,7 +529,9 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
   questions.sort((left, right) => compareStrings(left.questionId, right.questionId));
   const profileData = trackId === GCP_TRACK_ID
     ? await loadGcpSimulationProfileData({ rootDirectory: resolvedRoot, track, questions })
-    : trackId === CODING_TRACK_ID ? await loadCodingSimulationProfileData({ rootDirectory: resolvedRoot, track, questions }) : undefined;
+    : trackId === CODING_TRACK_ID
+      ? await loadCodingSimulationProfileData({ rootDirectory: resolvedRoot, track, questions })
+      : DESIGN_TRACK_IDS.includes(trackId) ? await loadDesignSimulationProfileData({ rootDirectory: resolvedRoot, track }) : undefined;
   const artifactQuestions = profileData?.questionDomains
     ? questions.map((question) => ({ ...question, contentDomainId: profileData.questionDomains[question.questionId] }))
     : questions;
@@ -592,7 +688,9 @@ async function verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory)
       ? await loadGcpSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
       : entry.trackId === CODING_TRACK_ID
         ? await loadCodingSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
-        : undefined;
+        : DESIGN_TRACK_IDS.includes(entry.trackId)
+          ? await loadDesignSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId) })
+          : undefined;
     if (!profileData || canonicalJson(validated.simulationProfiles) !== canonicalJson(profileData.simulationProfiles) || (profileData.questionDomains && validated.questions.some((question) => question.contentDomainId !== profileData.questionDomains[question.questionId]))) {
       fail(`Existing simulationProfiles are malformed or differ from authoritative config: ${filePath}`);
     }

@@ -20,6 +20,7 @@ import {
   buildTrack,
   canonicalJson,
   loadCodingSimulationProfiles,
+  loadDesignSimulationProfiles,
   loadGcpSimulationProfiles,
   parseArgs,
   sha256,
@@ -273,6 +274,89 @@ test("Coding Interview simulation selection policies reject stale pools and inva
     for (const unit of taxonomy.mentalUnits) unit.primaryPatternFamilyId = taxonomy.mentalUnits[0].primaryPatternFamilyId;
     return taxonomy;
   });
+});
+
+test("Design Interview simulation profiles emit one strict text-response case per track", async (t) => {
+  const rootDirectory = path.resolve(".");
+  const trackIds = ["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"];
+  const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-design-profile-build-"));
+  t.after(() => rm(outputRoot, { recursive: true, force: true }));
+
+  for (const trackId of trackIds) {
+    const validated = await validateTrack({ rootDirectory, trackId });
+    const [profile] = validated.simulationProfiles ?? [];
+    assert.ok(profile);
+    assert.equal(profile.schemaVersion, "patternly-simulation-profile-envelope-v1");
+    assert.equal(profile.familyId, "design_interview");
+    assert.equal(profile.modeId, "design-interview-simulation");
+    assert.equal(profile.profileVersion, "1");
+    assert.equal(profile.familyConfig.schemaVersion, "patternly-design-interview-simulation-config-v1");
+    assert.equal(profile.familyConfig.timer.kind, "absolute_deadline");
+    assert.equal(profile.familyConfig.timer.durationSeconds, 2700);
+    assert.deepEqual(profile.familyConfig.stages.map((stage) => stage.stageId), ["requirements", "architecture", "tradeoffs", "final_answer"]);
+    assert.ok(profile.familyConfig.stages.every((stage) => stage.response.type === "text" && stage.response.required));
+    assert.equal(profile.familyConfig.rubric.kind, "self_assessment_reference_only");
+    assert.deepEqual(profile.familyConfig.outcomeEvaluation.machineEvaluable, ["response_completeness"]);
+    assert.equal(profile.familyConfig.outcomeEvaluation.semanticScoring, "not_evaluated");
+
+    const built = await buildTrack({ rootDirectory, outputRoot, trackId });
+    assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
+    assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+  }
+});
+
+test("Design simulation availability requires the canonical text profile and does not imply question-bank capacity", async () => {
+  const rootDirectory = path.resolve(".");
+  const familyConfig = JSON.parse(await readFile(path.join(rootDirectory, "config/families/design_interview.json"), "utf8"));
+  const familyMode = familyConfig.modes.find((mode) => mode.modeId === "design-interview-simulation");
+  assert.equal(familyMode.contractStatus, "profile_backed_text_simulation_available");
+  assert.equal(familyMode.currentExecutableCapacity, 1);
+  assert.deepEqual(familyMode.firstBatchEligibleItemCapacityAfterAuthoringByTrack, {
+    "backend-system-design-interview": 0,
+    "frontend-system-design-interview": 0,
+    "object-oriented-design-interview": 0
+  });
+
+  for (const trackId of ["backend-system-design-interview", "frontend-system-design-interview", "object-oriented-design-interview"]) {
+    const curriculum = JSON.parse(await readFile(path.join(rootDirectory, `config/curricula/${trackId}.json`), "utf8"));
+    const feasibility = new Map(curriculum.modeFeasibility.map((mode) => [mode.modeId, mode]));
+    const simulation = feasibility.get("design-interview-simulation");
+    const [profile] = await loadDesignSimulationProfiles({ rootDirectory, track: { trackId } });
+    assert.ok(profile);
+    assert.equal(simulation.contractStatus, familyMode.contractStatus);
+    assert.equal(simulation.executableCapacity, 1);
+    assert.equal(simulation.firstBatchEligibleItemCapacityAfterAuthoring, 0);
+    for (const unsupportedModeId of ["design-interview-guided-case", "design-interview-independent-case"]) {
+      assert.equal(feasibility.get(unsupportedModeId).contractStatus, "blocked");
+    }
+    assert.equal(feasibility.get("design-interview-requirements-practice").contractStatus, "choice_compatible_for_requirement_slots_only");
+    assert.equal(feasibility.get("design-interview-requirements-practice").executableCapacity, 0);
+  }
+});
+
+test("malformed Design Interview simulation sources fail closed", async (t) => {
+  const sourceRoot = path.resolve(".");
+  const track = realCatalog.tracks.find((candidate) => candidate.trackId === "backend-system-design-interview");
+  const sourcePath = path.join(sourceRoot, "config/simulation-profiles/design-interview.json");
+  const original = JSON.parse(await readFile(sourcePath, "utf8"));
+  const rejects = async (mutate, pattern) => {
+    const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-design-profile-invalid-"));
+    t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+    const config = structuredClone(original);
+    mutate(config);
+    const configPath = path.join(rootDirectory, "config/simulation-profiles/design-interview.json");
+    await mkdir(path.dirname(configPath), { recursive: true });
+    await writeFile(configPath, JSON.stringify(config));
+    await expectBuildFailure(loadDesignSimulationProfiles({ rootDirectory, track }), pattern);
+  };
+
+  await rejects((config) => { config.timer.kind = "foreground_countdown"; }, /absolute deadline/u);
+  await rejects((config) => { config.stages[1].response.type = "choice"; }, /require a non-empty text response/u);
+  await rejects((config) => { config.stages.reverse(); }, /ordered requirements/u);
+  await rejects((config) => { config.outcomeEvaluation.machineEvaluable.push("semantic_quality"); }, /evaluate completeness only/u);
+  await rejects((config) => { config.cases[1].trackId = config.cases[0].trackId; }, /duplicate track identity/u);
+  await rejects((config) => { config.cases[0].reviewCriteria.pop(); }, /one review criterion per stage/u);
+  await rejects((config) => { config.rubric.kind = "machine_scored"; }, /rubric dimensions or use/u);
 });
 
 test("malformed present GCP simulation profile fails closed on incomplete node coverage", async (t) => {

@@ -210,6 +210,14 @@ const GCP_DOMAIN_IDS = Object.freeze([
   "gcp-ace-standard-domain-3",
   "gcp-ace-standard-domain-4"
 ]);
+const CODING_TRACK_ID = "coding-interview-dsa-problem-solving";
+const CODING_PROFILE_ID = "algorithms-interview-simulation-v1";
+const CODING_SIMULATION_POLICY_KEYS = Object.freeze([
+  "requireUniqueItemIds", "requireDeclaredSimulationEligibility", "requireMultipleMentalUnits",
+  "requireMultiplePatternFamilies", "requireEveryActiveInteractionTypeRepresented",
+  "prohibitConsecutiveSameMentalUnitWhenAlternativeExists", "prohibitDuplicateContentIdentity",
+  "prohibitTaxonomyWidening", "prohibitFallbackItems"
+]);
 
 function exactKeys(value, expected, label) {
   if (!isRecord(value) || canonicalJson(Object.keys(value).sort()) !== canonicalJson([...expected].sort())) {
@@ -323,6 +331,79 @@ export async function loadGcpSimulationProfiles(options) {
   return (await loadGcpSimulationProfileData(options)).simulationProfiles;
 }
 
+async function loadCodingSimulationProfileData({ rootDirectory, track, questions }) {
+  const trackConfigPath = path.join(rootDirectory, "config", "tracks", `${CODING_TRACK_ID}.json`);
+  let configInfo;
+  try { configInfo = await lstat(trackConfigPath); }
+  catch (error) { if (error?.code === "ENOENT") return undefined; fail(`Cannot inspect Coding Interview simulation profile config ${trackConfigPath}: ${error.message}`); }
+  if (!configInfo.isFile() || configInfo.isSymbolicLink()) fail(`Coding Interview simulation profile config must be a regular file: ${trackConfigPath}`);
+  const config = await readJson(trackConfigPath);
+  exactKeys(config, ["schemaVersion", "trackId", "familyId", "taxonomyVersion", "taxonomyPath", "freeNodeExperienceProfilePath", "modeConfiguration"], "Coding Interview track config");
+  if (config.schemaVersion !== "track-config-v1" || config.trackId !== CODING_TRACK_ID || config.familyId !== "coding_interview" || !nonEmptyString(config.taxonomyVersion)) fail("Coding Interview track config identity or version is invalid");
+  exactKeys(config.modeConfiguration, ["schemaVersion", "practiceBlueprints", "simulationBlueprint", "userModeMappings"], "Coding Interview mode configuration");
+  if (config.modeConfiguration.schemaVersion !== "coding-interview-track-mode-config-v1") fail("Coding Interview mode configuration schema is invalid");
+
+  const blueprint = config.modeConfiguration.simulationBlueprint;
+  exactKeys(blueprint, ["blueprintId", "blueprintVersion", "modeId", "profileId", "profileVersion", "requestedLength", "actualLength", "shorteningPolicy", "uniqueItemsRequired", "timerKind", "durationMinutes", "navigationPolicy", "answerChangePolicy", "reinsertPolicy", "feedbackTiming", "learningStages", "selectionPolicy"], "Coding Interview simulation blueprint");
+  if (blueprint.blueprintId !== "coding-interview-interview-simulation-v1" || blueprint.blueprintVersion !== "1" || blueprint.modeId !== "coding-interview-simulation" || blueprint.profileId !== CODING_PROFILE_ID || blueprint.profileVersion !== "1" || blueprint.requestedLength !== 40 || blueprint.actualLength !== 40 || blueprint.shorteningPolicy !== "prohibited" || blueprint.uniqueItemsRequired !== 40 || blueprint.timerKind !== "foreground_countdown" || blueprint.durationMinutes !== 45 || blueprint.navigationPolicy !== "free_navigation" || blueprint.answerChangePolicy !== "editable_until_finalization" || blueprint.reinsertPolicy !== "disabled" || blueprint.feedbackTiming !== "after_verified_finalization" || canonicalJson(blueprint.learningStages) !== canonicalJson(["simulation"])) fail("Coding Interview simulation blueprint identity or behavior is invalid");
+  exactKeys(blueprint.selectionPolicy, CODING_SIMULATION_POLICY_KEYS, "Coding Interview simulation selection policy");
+  if (CODING_SIMULATION_POLICY_KEYS.some((key) => blueprint.selectionPolicy[key] !== true)) fail("Coding Interview simulation selection policy must keep every declared constraint enabled");
+
+  const publishedPath = path.resolve(rootDirectory, "artifacts", "tracks", CODING_TRACK_ID, track.contentVersion, "track-artifact.json");
+  await assertSecurePath(rootDirectory, publishedPath, "Coding Interview verified simulation pool artifact");
+  const wrapper = await readJson(publishedPath);
+  exactKeys(wrapper, ["artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"], "Coding Interview published artifact wrapper");
+  if (wrapper.trackId !== CODING_TRACK_ID || wrapper.contentVersion !== track.contentVersion || wrapper.familyId !== "coding_interview" || wrapper.taxonomyVersion !== config.taxonomyVersion || typeof wrapper.artifactBytes !== "string" || wrapper.checksumSha256 !== sha256(wrapper.artifactBytes)) fail("Coding Interview verified simulation pool artifact checksum or identity is invalid");
+  const published = jsonText(wrapper.artifactBytes, publishedPath);
+  exactKeys(published, ["bank", "contentVersion", "envelopeVersion", "schemaVersion", "taxonomyVersion"], "Coding Interview published artifact");
+  if (published.contentVersion !== track.contentVersion || published.envelopeVersion !== 1 || published.taxonomyVersion !== config.taxonomyVersion || published.bank?.trackId !== CODING_TRACK_ID || published.bank?.familyId !== "coding_interview" || published.bank?.contentVersion !== track.contentVersion) fail("Coding Interview published artifact identity is invalid");
+  const bank = published.bank;
+  exactKeys(bank, ["compatibilitySets", "contentVersion", "contrastSets", "familyId", "feedbackAssets", "formatVersion", "interleavedScopes", "items", "practiceBlueprints", "recognitionSets", "simulationPools", "simulationProfiles", "trackId"], "Coding Interview published bank");
+  const pools = bank.simulationPools;
+  if (!Array.isArray(pools) || pools.length !== 1) fail("Coding Interview published bank must declare exactly one simulation pool");
+  exactKeys(pools[0], ["poolId", "poolVersion", "itemIds"], "Coding Interview declared simulation pool");
+  const pool = pools[0];
+  if (pool.poolId !== CODING_PROFILE_ID || pool.poolVersion !== "1" || !Array.isArray(pool.itemIds) || pool.itemIds.length !== 40 || new Set(pool.itemIds).size !== 40 || pool.itemIds.some((id) => !nonEmptyString(id))) fail("Coding Interview declared simulation pool must contain 40 unique identities");
+  const declaredProfiles = bank.simulationProfiles;
+  if (!Array.isArray(declaredProfiles) || declaredProfiles.length !== 1) fail("Coding Interview published bank must declare exactly one simulation profile");
+  exactKeys(declaredProfiles[0], ["distributions", "foregroundDurationMs", "poolId", "profileId", "profileKind", "profileVersion", "selectionPolicy", "totalOccurrences"], "Coding Interview published simulation profile");
+  const declaredProfile = declaredProfiles[0];
+  exactKeys(declaredProfile.selectionPolicy, ["algorithmVersion", "deterministic", "replacement", "uniqueItems"], "Coding Interview verified selection policy");
+  if (!Array.isArray(declaredProfile.distributions) || !isRecord(declaredProfile.selectionPolicy) || declaredProfile.profileId !== blueprint.profileId || declaredProfile.profileVersion !== blueprint.profileVersion || declaredProfile.poolId !== pool.poolId || declaredProfile.profileKind !== "internal_learning_profile" || declaredProfile.foregroundDurationMs !== blueprint.durationMinutes * 60_000 || declaredProfile.totalOccurrences !== blueprint.actualLength || declaredProfile.distributions.length !== 0 || declaredProfile.selectionPolicy.algorithmVersion !== "sha256-ranked-constraints-v1" || declaredProfile.selectionPolicy.deterministic !== true || declaredProfile.selectionPolicy.replacement !== false || declaredProfile.selectionPolicy.uniqueItems !== true) fail("Coding Interview verified simulation profile does not match the authoritative blueprint");
+  const publishedIds = new Set();
+  for (const item of bank.items) {
+    if (!isRecord(item) || !nonEmptyString(item.id) || publishedIds.has(item.id)) fail("Coding Interview published bank contains malformed or duplicate item identities");
+    publishedIds.add(item.id);
+  }
+  const sourceById = new Map(questions.map((question) => [question.questionId, question]));
+  if (pool.itemIds.some((id) => !sourceById.has(id) || !publishedIds.has(id))) fail("Coding Interview simulation pool references an item outside the current verified source and artifact");
+  const familyConfig = Object.freeze({
+    schemaVersion: "patternly-coding-interview-simulation-config-v1",
+    blueprintId: blueprint.blueprintId,
+    blueprintVersion: blueprint.blueprintVersion,
+    requestedLength: blueprint.requestedLength,
+    actualLength: blueprint.actualLength,
+    shorteningPolicy: blueprint.shorteningPolicy,
+    uniqueItemsRequired: blueprint.uniqueItemsRequired,
+    timerKind: blueprint.timerKind,
+    durationMinutes: blueprint.durationMinutes,
+    navigationPolicy: blueprint.navigationPolicy,
+    answerChangePolicy: blueprint.answerChangePolicy,
+    reinsertPolicy: blueprint.reinsertPolicy,
+    feedbackTiming: blueprint.feedbackTiming,
+    learningStages: blueprint.learningStages,
+    selectionPolicy: blueprint.selectionPolicy,
+    poolId: pool.poolId,
+    poolVersion: pool.poolVersion,
+    eligibleQuestionIds: pool.itemIds
+  });
+  return { simulationProfiles: [Object.freeze({ schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION, profileId: blueprint.profileId, profileVersion: blueprint.profileVersion, familyId: config.familyId, modeId: blueprint.modeId, familyConfig })] };
+}
+
+export async function loadCodingSimulationProfiles(options) {
+  return (await loadCodingSimulationProfileData(options)).simulationProfiles;
+}
+
 export async function validateTrack({ rootDirectory, root, trackId } = {}) {
   if (!nonEmptyString(trackId)) fail("trackId is required");
   const resolvedRoot = resolveRoot({ rootDirectory, root });
@@ -347,8 +428,10 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
     }
   }
   questions.sort((left, right) => compareStrings(left.questionId, right.questionId));
-  const profileData = trackId === GCP_TRACK_ID ? await loadGcpSimulationProfileData({ rootDirectory: resolvedRoot, track, questions }) : undefined;
-  const artifactQuestions = profileData
+  const profileData = trackId === GCP_TRACK_ID
+    ? await loadGcpSimulationProfileData({ rootDirectory: resolvedRoot, track, questions })
+    : trackId === CODING_TRACK_ID ? await loadCodingSimulationProfileData({ rootDirectory: resolvedRoot, track, questions }) : undefined;
+  const artifactQuestions = profileData?.questionDomains
     ? questions.map((question) => ({ ...question, contentDomainId: profileData.questionDomains[question.questionId] }))
     : questions;
   return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions, artifactQuestions, simulationProfiles: profileData?.simulationProfiles };
@@ -502,8 +585,10 @@ async function verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory)
   if (Object.hasOwn(validated, "simulationProfiles")) {
     const profileData = entry.trackId === GCP_TRACK_ID
       ? await loadGcpSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
-      : undefined;
-    if (!profileData || canonicalJson(validated.simulationProfiles) !== canonicalJson(profileData.simulationProfiles) || validated.questions.some((question) => question.contentDomainId !== profileData.questionDomains[question.questionId])) {
+      : entry.trackId === CODING_TRACK_ID
+        ? await loadCodingSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
+        : undefined;
+    if (!profileData || canonicalJson(validated.simulationProfiles) !== canonicalJson(profileData.simulationProfiles) || (profileData.questionDomains && validated.questions.some((question) => question.contentDomainId !== profileData.questionDomains[question.questionId]))) {
       fail(`Existing simulationProfiles are malformed or differ from authoritative config: ${filePath}`);
     }
   }

@@ -19,6 +19,7 @@ import {
   buildAll,
   buildTrack,
   canonicalJson,
+  loadCodingSimulationProfiles,
   loadGcpSimulationProfiles,
   parseArgs,
   sha256,
@@ -167,6 +168,52 @@ test("GCP simulation profile binds a complete unambiguous node map to the same-v
   const questionDomains = new Map(built.artifact.questions.map((question) => [question.questionId, question.contentDomainId]));
   assert.ok(published.bank.items.every((item) => questionDomains.get(item.id) === item.domain));
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+});
+
+test("Coding Interview simulation profile emits the blueprint and exact checksum-verified pool identities", async (t) => {
+  const rootDirectory = path.resolve(".");
+  const validated = await validateTrack({ rootDirectory, trackId: "coding-interview-dsa-problem-solving" });
+  const profile = validated.simulationProfiles?.[0];
+  assert.ok(profile);
+  assert.equal(profile.schemaVersion, "patternly-simulation-profile-envelope-v1");
+  assert.equal(profile.profileId, "algorithms-interview-simulation-v1");
+  assert.equal(profile.profileVersion, "1");
+  assert.equal(profile.familyId, "coding_interview");
+  assert.equal(profile.modeId, "coding-interview-simulation");
+  const familyConfig = profile.familyConfig;
+  assert.equal(familyConfig.schemaVersion, "patternly-coding-interview-simulation-config-v1");
+  assert.equal(familyConfig.timerKind, "foreground_countdown");
+  assert.equal(familyConfig.durationMinutes, 45);
+  assert.equal(familyConfig.actualLength, 40);
+  assert.equal(familyConfig.poolId, "algorithms-interview-simulation-v1");
+  assert.equal(familyConfig.eligibleQuestionIds.length, 40);
+  assert.equal(new Set(familyConfig.eligibleQuestionIds).size, 40);
+  const publishedWrapper = JSON.parse(readFileSync(path.join(rootDirectory, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion, "track-artifact.json"), "utf8"));
+  const published = JSON.parse(publishedWrapper.artifactBytes);
+  assert.deepEqual(familyConfig.eligibleQuestionIds, published.bank.simulationPools[0].itemIds);
+  assert.deepEqual(familyConfig.eligibleQuestionIds, published.bank.items.filter((item) => familyConfig.eligibleQuestionIds.includes(item.id)).map((item) => item.id));
+
+  const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-coding-profile-build-"));
+  t.after(() => rm(outputRoot, { recursive: true, force: true }));
+  const built = await buildTrack({ rootDirectory, outputRoot, trackId: "coding-interview-dsa-problem-solving" });
+  assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
+  assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+});
+
+test("malformed Coding Interview simulation blueprint fails closed", async (t) => {
+  const sourceRoot = path.resolve(".");
+  const validated = await validateTrack({ rootDirectory: sourceRoot, trackId: "coding-interview-dsa-problem-solving" });
+  const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-coding-profile-invalid-"));
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  const configPath = path.join(sourceRoot, "config/tracks/coding-interview-dsa-problem-solving.json");
+  const config = JSON.parse(await readFile(configPath, "utf8"));
+  config.modeConfiguration.simulationBlueprint.durationMinutes = 46;
+  await mkdir(path.join(rootDirectory, "config/tracks"), { recursive: true });
+  await mkdir(path.join(rootDirectory, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion), { recursive: true });
+  await writeFile(path.join(rootDirectory, "config/tracks/coding-interview-dsa-problem-solving.json"), JSON.stringify(config));
+  const artifactPath = path.join(sourceRoot, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion, "track-artifact.json");
+  await writeFile(path.join(rootDirectory, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion, "track-artifact.json"), await readFile(artifactPath));
+  await expectBuildFailure(loadCodingSimulationProfiles({ rootDirectory, track: validated.track, questions: validated.questions }), /blueprint identity or behavior/u);
 });
 
 test("malformed present GCP simulation profile fails closed on incomplete node coverage", async (t) => {

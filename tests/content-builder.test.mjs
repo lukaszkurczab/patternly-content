@@ -19,6 +19,7 @@ import {
   buildAll,
   buildTrack,
   canonicalJson,
+  loadGcpSimulationProfiles,
   parseArgs,
   sha256,
   testTrack,
@@ -121,6 +122,63 @@ test("build-all emits exactly nine deterministic artifacts and lock entries", as
     assert.equal(entry.sha256, sha256(bytes));
   }
   assert.equal(await readFile(path.join(outputRoot, "content-lock.json"), "utf8"), firstLockBytes);
+});
+
+test("GCP simulation profile binds a complete unambiguous node map to the same-version published artifact", async (t) => {
+  const rootDirectory = path.resolve(".");
+  const validated = await validateTrack({ rootDirectory, trackId: "google-cloud-associate-cloud-engineer" });
+  const profile = validated.simulationProfiles?.[0];
+  assert.ok(profile);
+  assert.equal(profile.schemaVersion, "patternly-simulation-profile-v1");
+  assert.equal(profile.durationMinutes, 120);
+  assert.deepEqual(profile.questionCount, { kind: "range", minimum: 50, maximum: 60 });
+  assert.deepEqual(profile.blueprint.sections.map(({ contentDomainId, weightPercent }) => [contentDomainId, weightPercent]), [
+    ["gcp-ace-standard-domain-1", 20],
+    ["gcp-ace-standard-domain-2", 30],
+    ["gcp-ace-standard-domain-3", 30],
+    ["gcp-ace-standard-domain-4", 20]
+  ]);
+
+  const publishedPath = path.join(rootDirectory, profile.nodeDomainMapEvidence.artifactPath);
+  const publishedWrapper = JSON.parse(readFileSync(publishedPath, "utf8"));
+  const published = JSON.parse(publishedWrapper.artifactBytes);
+  assert.equal(published.contentVersion, validated.track.contentVersion);
+  assert.equal(published.bank.items.length, profile.nodeDomainMapEvidence.itemCount);
+  const domainsByNode = new Map();
+  for (const item of published.bank.items) {
+    const domains = domainsByNode.get(item.nodeId) ?? new Set();
+    domains.add(item.domain);
+    domainsByNode.set(item.nodeId, domains);
+  }
+  assert.equal(domainsByNode.size, 20);
+  assert.equal([...domainsByNode.values()].filter((domains) => domains.size !== 1).length, 0);
+  const evidencedMap = Object.fromEntries([...domainsByNode].map(([nodeId, domains]) => [nodeId, [...domains][0]]).sort(([left], [right]) => left.localeCompare(right)));
+  assert.deepEqual(profile.nodeDomainMap, evidencedMap);
+
+  const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-profile-build-"));
+  t.after(() => rm(outputRoot, { recursive: true, force: true }));
+  const built = await buildTrack({ rootDirectory, outputRoot, trackId: "google-cloud-associate-cloud-engineer" });
+  assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
+  assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+});
+
+test("malformed present GCP simulation profile fails closed on incomplete node coverage", async (t) => {
+  const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-profile-invalid-"));
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  const sourceRoot = path.resolve(".");
+  const validated = await validateTrack({ rootDirectory: sourceRoot, trackId: "google-cloud-associate-cloud-engineer" });
+  const configPath = path.join(sourceRoot, "config/tracks/google-cloud-associate-cloud-engineer.json");
+  const config = JSON.parse(await readFile(configPath, "utf8"));
+  delete config.profile.nodeDomainMap[Object.keys(config.profile.nodeDomainMap)[0]];
+  await mkdir(path.join(rootDirectory, "config/tracks"), { recursive: true });
+  await mkdir(path.join(rootDirectory, "config/taxonomy"), { recursive: true });
+  await writeFile(path.join(rootDirectory, "config/tracks/google-cloud-associate-cloud-engineer.json"), JSON.stringify(config));
+  const taxonomy = await readFile(path.join(sourceRoot, config.taxonomyPath), "utf8");
+  await writeFile(path.join(rootDirectory, config.taxonomyPath), taxonomy);
+  await assert.rejects(
+    loadGcpSimulationProfiles({ rootDirectory, track: validated.track, questions: validated.questions }),
+    /nodeDomainMap has an invalid shape/u
+  );
 });
 
 test("ACC-02 Candidate Manifest retains its exact nine-track identity against frozen baseline and migration manifest", () => {

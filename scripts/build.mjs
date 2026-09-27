@@ -200,6 +200,75 @@ function validateTrackQuestion(question, { trackId, sourceIdentity: identity, fi
   return question;
 }
 
+const GCP_TRACK_ID = "google-cloud-associate-cloud-engineer";
+const SIMULATION_PROFILE_SCHEMA_VERSION = "patternly-simulation-profile-v1";
+const GCP_DOMAIN_IDS = Object.freeze([
+  "gcp-ace-standard-domain-1",
+  "gcp-ace-standard-domain-2",
+  "gcp-ace-standard-domain-3",
+  "gcp-ace-standard-domain-4"
+]);
+
+function exactKeys(value, expected, label) {
+  if (!isRecord(value) || canonicalJson(Object.keys(value).sort()) !== canonicalJson([...expected].sort())) {
+    fail(`${label} has an invalid shape`);
+  }
+}
+
+export async function loadGcpSimulationProfiles({ rootDirectory, track, questions }) {
+  const trackConfigPath = path.join(rootDirectory, "config", "tracks", `${GCP_TRACK_ID}.json`);
+  let info;
+  try { info = await lstat(trackConfigPath); }
+  catch (error) { if (error?.code === "ENOENT") return undefined; fail(`Cannot inspect simulation profile config ${trackConfigPath}: ${error.message}`); }
+  if (!info.isFile() || info.isSymbolicLink()) fail(`Simulation profile config must be a regular file: ${trackConfigPath}`);
+
+  const config = await readJson(trackConfigPath);
+  exactKeys(config, ["schemaVersion", "trackId", "familyId", "taxonomyVersion", "taxonomyPath", "freeNodeExperienceProfilePath", "modeConfiguration", "profile"], "GCP track config");
+  if (config.schemaVersion !== "track-config-v1" || config.trackId !== GCP_TRACK_ID || config.familyId !== "certification" || config.taxonomyVersion !== "2026.08.11") fail("GCP track config identity or version is invalid");
+  if (!isRecord(config.profile)) fail("GCP simulation profile must be an object when present");
+
+  const taxonomyPath = path.resolve(rootDirectory, config.taxonomyPath);
+  if (!isWithin(rootDirectory, taxonomyPath)) fail("GCP taxonomy path escapes the producer root");
+  const taxonomy = await readJson(taxonomyPath);
+  exactKeys(taxonomy, ["schemaVersion", "trackId", "taxonomyVersion", "axes", "cloudDomains", "nodeIds", "tags"], "GCP taxonomy config");
+  if (taxonomy.schemaVersion !== "taxonomy-config-v1" || taxonomy.trackId !== GCP_TRACK_ID || taxonomy.taxonomyVersion !== config.taxonomyVersion) fail("GCP taxonomy identity or version is invalid");
+  if (!Array.isArray(taxonomy.cloudDomains) || canonicalJson(taxonomy.cloudDomains) !== canonicalJson(GCP_DOMAIN_IDS)) fail("GCP taxonomy cloud domains are invalid");
+
+  const profile = config.profile;
+  exactKeys(profile, ["schemaVersion", "profileId", "profileVersion", "source", "durationMinutes", "questionCount", "blueprint", "interactionPolicy", "nodeDomainMap", "nodeDomainMapEvidence"], "GCP simulation profile");
+  if (profile.schemaVersion !== "exam-experience-profile-v2" || !nonEmptyString(profile.profileId) || profile.profileVersion !== "1") fail("GCP simulation profile identity is invalid");
+  exactKeys(profile.source, ["url", "checkedDate", "guideVersion"], "GCP simulation profile source");
+  if (typeof profile.source.url !== "string" || typeof profile.source.checkedDate !== "string" || typeof profile.source.guideVersion !== "string") fail("GCP simulation profile source is invalid");
+  if (profile.durationMinutes !== 120) fail("GCP simulation profile duration must be 120 minutes");
+  exactKeys(profile.questionCount, ["kind", "minimum", "maximum"], "GCP simulation profile questionCount");
+  if (profile.questionCount.kind !== "range" || profile.questionCount.minimum !== 50 || profile.questionCount.maximum !== 60) fail("GCP simulation profile question range must be 50–60");
+
+  exactKeys(profile.blueprint, ["kind", "sections"], "GCP simulation profile blueprint");
+  if (profile.blueprint.kind !== "weighted_sections" || !Array.isArray(profile.blueprint.sections) || profile.blueprint.sections.length !== 4) fail("GCP simulation profile blueprint must contain four weighted sections");
+  const sectionWeights = new Map();
+  for (const [index, section] of profile.blueprint.sections.entries()) {
+    exactKeys(section, ["id", "contentDomainId", "weightPercent"], `GCP simulation profile blueprint section ${index}`);
+    if (typeof section.id !== "string" || typeof section.contentDomainId !== "string" || !Number.isInteger(section.weightPercent)) fail(`GCP simulation profile blueprint section ${index} is invalid`);
+    if (sectionWeights.has(section.contentDomainId)) fail(`GCP simulation profile has duplicate domain ${section.contentDomainId}`);
+    sectionWeights.set(section.contentDomainId, section.weightPercent);
+  }
+  const expectedWeights = new Map([[GCP_DOMAIN_IDS[0], 20], [GCP_DOMAIN_IDS[1], 30], [GCP_DOMAIN_IDS[2], 30], [GCP_DOMAIN_IDS[3], 20]]);
+  if (canonicalJson([...sectionWeights].sort()) !== canonicalJson([...expectedWeights].sort())) fail("GCP simulation profile domain weights must be 20/30/30/20");
+
+  const policy = profile.interactionPolicy;
+  exactKeys(policy, ["schemaVersion", "policyId", "policyVersion", "owner", "navigation", "answerChanges", "flagging", "navigator", "sections", "timeout", "feedbackTiming"], "GCP simulation interaction policy");
+  if (policy.schemaVersion !== "patternly-certification-simulation-policy-v1" || policy.policyVersion !== "1" || policy.owner !== "patternly_product" || policy.navigation !== "free" || policy.answerChanges !== "until_final_submission" || policy.flagging !== "available" || policy.navigator !== "available" || policy.sections !== "blueprint_visible" || policy.timeout !== "absolute_deadline" || policy.feedbackTiming !== "after_verified_finalization") fail("GCP simulation interaction policy v1 is invalid");
+
+  const nodeIds = [...new Set(questions.map((question) => question.nodeId))].sort(compareStrings);
+  if (!Array.isArray(taxonomy.nodeIds) || canonicalJson([...taxonomy.nodeIds].sort(compareStrings)) !== canonicalJson(nodeIds)) fail("GCP taxonomy nodes do not exactly match canonical question nodes");
+  exactKeys(profile.nodeDomainMap, nodeIds, "GCP simulation profile nodeDomainMap");
+  for (const [nodeId, domainId] of Object.entries(profile.nodeDomainMap)) if (!GCP_DOMAIN_IDS.includes(domainId)) fail(`GCP nodeDomainMap contains unknown domain for ${nodeId}`);
+  exactKeys(profile.nodeDomainMapEvidence, ["artifactPath", "contentVersion", "itemCount", "nodeCount", "ambiguousNodeCount"], "GCP nodeDomainMap evidence");
+  if (profile.nodeDomainMapEvidence.artifactPath !== `artifacts/tracks/${GCP_TRACK_ID}/${track.contentVersion}/track-artifact.json` || profile.nodeDomainMapEvidence.contentVersion !== track.contentVersion || profile.nodeDomainMapEvidence.itemCount !== 2981 || profile.nodeDomainMapEvidence.nodeCount !== nodeIds.length || profile.nodeDomainMapEvidence.ambiguousNodeCount !== 0) fail("GCP nodeDomainMap evidence does not match the current published artifact identity");
+
+  return [Object.freeze({ ...profile, schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION })];
+}
+
 export async function validateTrack({ rootDirectory, root, trackId } = {}) {
   if (!nonEmptyString(trackId)) fail("trackId is required");
   const resolvedRoot = resolveRoot({ rootDirectory, root });
@@ -224,7 +293,8 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
     }
   }
   questions.sort((left, right) => compareStrings(left.questionId, right.questionId));
-  return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions };
+  const simulationProfiles = trackId === GCP_TRACK_ID ? await loadGcpSimulationProfiles({ rootDirectory: resolvedRoot, track, questions }) : undefined;
+  return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions, simulationProfiles };
 }
 
 export async function testTrack(options = {}) {
@@ -279,12 +349,14 @@ export function sha256(value) {
 }
 
 function artifactFor(validated) {
-  return {
+  const artifact = {
     schemaVersion: ARTIFACT_SCHEMA_VERSION,
     trackId: validated.trackId,
     contentVersion: validated.track.contentVersion,
     questions: validated.questions
   };
+  if (validated.simulationProfiles) artifact.simulationProfiles = validated.simulationProfiles;
+  return artifact;
 }
 
 function strictLockEntry(entry, catalog, index) {
@@ -334,8 +406,9 @@ async function readRegularFile(filePath, label) {
 }
 
 function validateArtifactShape(artifact, { entry, catalog, filePath }) {
-  const expectedKeys = ["schemaVersion", "trackId", "contentVersion", "questions"];
-  if (!isRecord(artifact) || canonicalJson(Object.keys(artifact).sort()) !== canonicalJson([...expectedKeys].sort())) {
+  const requiredKeys = ["schemaVersion", "trackId", "contentVersion", "questions"];
+  const allowedKeys = [...requiredKeys, "simulationProfiles"];
+  if (!isRecord(artifact) || requiredKeys.some((key) => !Object.hasOwn(artifact, key)) || Object.keys(artifact).some((key) => !allowedKeys.includes(key))) {
     fail(`Artifact has an invalid shape: ${filePath}`);
   }
   if (artifact.schemaVersion !== ARTIFACT_SCHEMA_VERSION) fail(`Artifact schemaVersion mismatch: ${filePath}`);
@@ -356,6 +429,7 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
     questionIds.add(question.questionId);
     previousQuestionId = question.questionId;
   });
+  if (Object.hasOwn(artifact, "simulationProfiles") && (!Array.isArray(artifact.simulationProfiles) || artifact.simulationProfiles.length === 0)) fail(`Artifact simulationProfiles must be a non-empty array when present: ${filePath}`);
   return artifact;
 }
 

@@ -163,6 +163,9 @@ test("GCP simulation profile binds a complete unambiguous node map to the same-v
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
   const built = await buildTrack({ rootDirectory, outputRoot, trackId: "google-cloud-associate-cloud-engineer" });
   assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
+  assert.equal(built.artifact.questions.length, published.bank.items.length);
+  const questionDomains = new Map(built.artifact.questions.map((question) => [question.questionId, question.contentDomainId]));
+  assert.ok(published.bank.items.every((item) => questionDomains.get(item.id) === item.domain));
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
 });
 
@@ -195,6 +198,7 @@ test("existing GCP artifact rejects malformed profile even when its lock SHA is 
   const artifactPath = path.join(outputRoot, `${trackId}.json`);
   const legacyArtifact = JSON.parse(await readFile(artifactPath, "utf8"));
   delete legacyArtifact.simulationProfiles;
+  for (const question of legacyArtifact.questions) delete question.contentDomainId;
   const legacyBytes = canonicalJson(legacyArtifact);
   await writeFile(artifactPath, legacyBytes, "utf8");
   const lockPath = path.join(outputRoot, "content-lock.json");
@@ -215,6 +219,26 @@ test("existing GCP artifact rejects malformed profile even when its lock SHA is 
     () => buildTrack({ rootDirectory, outputRoot, trackId }),
     /malformed or differ from authoritative config/u
   );
+});
+
+test("existing GCP artifact rejects a legal but source-inconsistent node domain when its lock SHA is recomputed", async (t) => {
+  const rootDirectory = path.resolve(".");
+  const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-domain-tamper-"));
+  t.after(() => rm(outputRoot, { recursive: true, force: true }));
+  const trackId = "google-cloud-associate-cloud-engineer";
+  await buildTrack({ rootDirectory, outputRoot, trackId });
+  const artifactPath = path.join(outputRoot, `${trackId}.json`);
+  const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
+  const nodeId = Object.entries(artifact.simulationProfiles[0].familyConfig.nodeDomainMap).find(([, domainId]) => domainId === "gcp-ace-standard-domain-3")?.[0];
+  assert.ok(nodeId);
+  artifact.simulationProfiles[0].familyConfig.nodeDomainMap[nodeId] = "gcp-ace-standard-domain-2";
+  const artifactBytes = canonicalJson(artifact);
+  await writeFile(artifactPath, artifactBytes, "utf8");
+  const lockPath = path.join(outputRoot, "content-lock.json");
+  const lock = JSON.parse(await readFile(lockPath, "utf8"));
+  lock.tracks.find((entry) => entry.trackId === trackId).sha256 = sha256(artifactBytes);
+  await writeFile(lockPath, canonicalJson(lock), "utf8");
+  await expectBuildFailure(() => buildTrack({ rootDirectory, outputRoot, trackId }), /malformed or differ from authoritative config/u);
 });
 
 test("ACC-02 Candidate Manifest retains its exact nine-track identity against frozen baseline and migration manifest", () => {

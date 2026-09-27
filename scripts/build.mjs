@@ -217,7 +217,7 @@ function exactKeys(value, expected, label) {
   }
 }
 
-export async function loadGcpSimulationProfiles({ rootDirectory, track, questions }) {
+async function loadGcpSimulationProfileData({ rootDirectory, track, questions }) {
   const trackConfigPath = path.join(rootDirectory, "config", "tracks", `${GCP_TRACK_ID}.json`);
   let info;
   try { info = await lstat(trackConfigPath); }
@@ -268,6 +268,34 @@ export async function loadGcpSimulationProfiles({ rootDirectory, track, question
   exactKeys(profile.nodeDomainMapEvidence, ["artifactPath", "contentVersion", "itemCount", "nodeCount", "ambiguousNodeCount"], "GCP nodeDomainMap evidence");
   if (profile.nodeDomainMapEvidence.artifactPath !== `artifacts/tracks/${GCP_TRACK_ID}/${track.contentVersion}/track-artifact.json` || profile.nodeDomainMapEvidence.contentVersion !== track.contentVersion || profile.nodeDomainMapEvidence.itemCount !== 2981 || profile.nodeDomainMapEvidence.nodeCount !== nodeIds.length || profile.nodeDomainMapEvidence.ambiguousNodeCount !== 0) fail("GCP nodeDomainMap evidence does not match the current published artifact identity");
 
+  const publishedPath = path.resolve(rootDirectory, profile.nodeDomainMapEvidence.artifactPath);
+  await assertSecurePath(rootDirectory, publishedPath, "GCP published attribution artifact");
+  const wrapper = await readJson(publishedPath);
+  exactKeys(wrapper, ["artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"], "GCP published artifact wrapper");
+  if (wrapper.trackId !== GCP_TRACK_ID || wrapper.contentVersion !== track.contentVersion || wrapper.familyId !== "certification" || typeof wrapper.artifactBytes !== "string" || wrapper.checksumSha256 !== sha256(wrapper.artifactBytes)) fail("GCP published artifact checksum or identity is invalid");
+  const published = jsonText(wrapper.artifactBytes, publishedPath);
+  if (!isRecord(published) || published.contentVersion !== track.contentVersion || !isRecord(published.bank) || published.bank.trackId !== GCP_TRACK_ID || published.bank.contentVersion !== track.contentVersion || !Array.isArray(published.bank.items)) fail("GCP published artifact content identity or item inventory is invalid");
+  if (published.bank.items.length !== profile.nodeDomainMapEvidence.itemCount) fail("GCP published artifact item count does not match profile evidence");
+
+  const canonicalById = new Map(questions.map((question) => [question.questionId, question]));
+  const questionDomains = Object.create(null);
+  const domainsByNode = new Map();
+  const publishedIds = new Set();
+  for (const item of published.bank.items) {
+    if (!isRecord(item) || !nonEmptyString(item.id) || !nonEmptyString(item.nodeId) || !GCP_DOMAIN_IDS.includes(item.domain) || publishedIds.has(item.id)) fail("GCP published artifact contains malformed or duplicate item attribution");
+    publishedIds.add(item.id);
+    const question = canonicalById.get(item.id);
+    if (!question || question.nodeId !== item.nodeId) fail(`GCP published attribution does not exactly match canonical question ${item.id}`);
+    questionDomains[item.id] = item.domain;
+    const domains = domainsByNode.get(item.nodeId) ?? new Set();
+    domains.add(item.domain);
+    domainsByNode.set(item.nodeId, domains);
+  }
+  if (publishedIds.size !== canonicalById.size || [...canonicalById.keys()].some((questionId) => !publishedIds.has(questionId))) fail("GCP published attribution does not cover the canonical question inventory");
+  if (domainsByNode.size !== nodeIds.length || [...domainsByNode.values()].some((domains) => domains.size !== 1)) fail("GCP published attribution has missing or ambiguous node domains");
+  const evidencedMap = Object.fromEntries([...domainsByNode].map(([nodeId, domains]) => [nodeId, [...domains][0]]).sort(([left], [right]) => compareStrings(left, right)));
+  if (canonicalJson(profile.nodeDomainMap) !== canonicalJson(evidencedMap)) fail("GCP nodeDomainMap differs from same-version published question attribution");
+
   const familyConfig = Object.freeze({
     schemaVersion: "patternly-certification-simulation-config-v1",
     source: profile.source,
@@ -278,14 +306,21 @@ export async function loadGcpSimulationProfiles({ rootDirectory, track, question
     nodeDomainMap: profile.nodeDomainMap,
     nodeDomainMapEvidence: profile.nodeDomainMapEvidence
   });
-  return [Object.freeze({
+  return {
+    questionDomains,
+    simulationProfiles: [Object.freeze({
     schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION,
     profileId: GCP_EXAM_PROFILE_ID,
     profileVersion: profile.profileVersion,
     familyId: "certification",
     modeId: "certification-exam-simulation",
     familyConfig
-  })];
+    })]
+  };
+}
+
+export async function loadGcpSimulationProfiles(options) {
+  return (await loadGcpSimulationProfileData(options)).simulationProfiles;
 }
 
 export async function validateTrack({ rootDirectory, root, trackId } = {}) {
@@ -312,8 +347,11 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
     }
   }
   questions.sort((left, right) => compareStrings(left.questionId, right.questionId));
-  const simulationProfiles = trackId === GCP_TRACK_ID ? await loadGcpSimulationProfiles({ rootDirectory: resolvedRoot, track, questions }) : undefined;
-  return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions, simulationProfiles };
+  const profileData = trackId === GCP_TRACK_ID ? await loadGcpSimulationProfileData({ rootDirectory: resolvedRoot, track, questions }) : undefined;
+  const artifactQuestions = profileData
+    ? questions.map((question) => ({ ...question, contentDomainId: profileData.questionDomains[question.questionId] }))
+    : questions;
+  return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions, artifactQuestions, simulationProfiles: profileData?.simulationProfiles };
 }
 
 export async function testTrack(options = {}) {
@@ -372,7 +410,7 @@ function artifactFor(validated) {
     schemaVersion: ARTIFACT_SCHEMA_VERSION,
     trackId: validated.trackId,
     contentVersion: validated.track.contentVersion,
-    questions: validated.questions
+    questions: validated.artifactQuestions ?? validated.questions
   };
   if (validated.simulationProfiles) artifact.simulationProfiles = validated.simulationProfiles;
   return artifact;
@@ -440,8 +478,10 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
   const questionIds = new Set();
   let previousQuestionId;
   artifact.questions.forEach((question, index) => {
-    const result = validateQuestion(question, { catalogTrackIds });
+    const { contentDomainId, ...questionContract } = question;
+    const result = validateQuestion(questionContract, { catalogTrackIds });
     if (!result.valid) fail(`Artifact question ${index} is invalid: ${filePath}`, result.errors);
+    if (contentDomainId !== undefined && (entry.trackId !== GCP_TRACK_ID || !Object.hasOwn(artifact, "simulationProfiles") || !GCP_DOMAIN_IDS.includes(contentDomainId))) fail(`Artifact question ${index} has invalid source-derived GCP domain attribution: ${filePath}`);
     if (question.trackId !== entry.trackId) fail(`Artifact question trackId mismatch: ${filePath}`);
     if (questionIds.has(question.questionId)) fail(`Artifact contains duplicate questionId ${question.questionId}: ${filePath}`);
     if (previousQuestionId !== undefined && previousQuestionId >= question.questionId) fail(`Artifact questions are not sorted by questionId: ${filePath}`);
@@ -460,10 +500,10 @@ async function verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory)
   if (canonicalJson(artifact) !== bytes) fail(`Existing artifact is not canonical: ${filePath}`);
   const validated = validateArtifactShape(artifact, { entry, catalog, filePath });
   if (Object.hasOwn(validated, "simulationProfiles")) {
-    const expectedProfiles = entry.trackId === GCP_TRACK_ID
-      ? await loadGcpSimulationProfiles({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
+    const profileData = entry.trackId === GCP_TRACK_ID
+      ? await loadGcpSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
       : undefined;
-    if (!expectedProfiles || canonicalJson(validated.simulationProfiles) !== canonicalJson(expectedProfiles)) {
+    if (!profileData || canonicalJson(validated.simulationProfiles) !== canonicalJson(profileData.simulationProfiles) || validated.questions.some((question) => question.contentDomainId !== profileData.questionDomains[question.questionId])) {
       fail(`Existing simulationProfiles are malformed or differ from authoritative config: ${filePath}`);
     }
   }

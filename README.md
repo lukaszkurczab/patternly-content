@@ -13,7 +13,7 @@ To repozytorium ma być przede wszystkim prostą bazą pytań JSON używaną pod
 - Model evaluation i review są dodatkami czytającymi kanoniczne dane. Nie mogą komplikować zwykłej edycji i buildu contentu ani automatycznie zatwierdzać lub publikować pytań.
 - Gdy obecna architektura jest bardziej złożona niż te zasady, najpierw upraszczaj; nie buduj kolejnych adapterów utrwalających historyczną złożoność.
 
-Plan przejścia do prostego modelu opisuje `docs/planning/PATTERNLY-CONTENT-SIMPLIFICATION-PLAN.md`.
+Plan dalszej pracy w aplikacji opisuje [`patternly/docs/PATTERNLY-WORKING-PLAN.md`](../patternly/docs/PATTERNLY-WORKING-PLAN.md). Zakres i kryteria kolejnych etapów upraszczania contentu opisują pakiety [SIMP-01](docs/planning/SIMP-01-ACCEPTANCE-PACKET.md), [SIMP-02](docs/planning/SIMP-02-ACCEPTANCE-PACKET.md) i [SIMP-03](docs/planning/SIMP-03-ACCEPTANCE-PACKET.md), a szczegóły migracji SIMP-03 zawiera [macierz mapowania](docs/planning/SIMP-03-MAPPING-MATRIX.md).
 
 The content repository is an authoring and immutable publishing system. It is
 not a runtime API and has no dependency on the backend for content admission.

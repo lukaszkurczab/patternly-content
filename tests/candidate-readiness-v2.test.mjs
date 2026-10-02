@@ -42,6 +42,11 @@ test("Codex candidate decision v2 binds exact candidate, source snapshot, releas
       boundaries: { publishingAdmission: "not_granted", runtimeAdmission: "not_granted", appReleaseLockUpdated: false },
     };
     await validateCandidateDecisionV2(decision, { root: ROOT, candidate: manifest, release, bindings });
+    const bizqDecision = { ...decision, taskId: "BIZQ-01/CANDIDATE" };
+    await validateCandidateDecisionV2(bizqDecision, { root: ROOT, candidate: manifest, release, bindings });
+    await assert.rejects(validateCandidateDecisionV2({ ...bizqDecision, taskId: "BIZQ-02/CANDIDATE" }, { root: ROOT, candidate: manifest, release, bindings }), /another task/);
+    await assert.rejects(validateCandidateDecisionV2({ ...bizqDecision, decisionAuthority: "human_owner" }, { root: ROOT, candidate: manifest, release, bindings }), /delegated Codex/);
+    await assert.rejects(validateCandidateDecisionV2({ ...bizqDecision, boundaries: { ...bizqDecision.boundaries, runtimeAdmission: "granted" } }, { root: ROOT, candidate: manifest, release, bindings }), /cannot grant/);
 
     const stale = structuredClone(decision);
     stale.candidateId = "0".repeat(64);

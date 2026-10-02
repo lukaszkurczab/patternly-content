@@ -33,7 +33,8 @@ function assertExactTrackBindings(candidate, release, appLock, contentLock) {
   }
 }
 
-export async function createCandidateAdmissionV3({ root = ROOT, appRoot = path.resolve(ROOT, "../patternly") } = {}) {
+export async function createCandidateAdmissionV3({ root = ROOT, appRoot = path.resolve(ROOT, "../patternly"), taskId = "AWS-02/ADMISSION" } = {}) {
+  if (!["AWS-02/ADMISSION", "BIZQ-01/ADMISSION"].includes(taskId)) throw new Error("Candidate admission task is unsupported.");
   const [candidate, release, appLockBytes, contentLockBytes, runtimeTestBytes] = await Promise.all([
     json(root, CANDIDATE_PATH), json(root, RELEASE_PATH),
     readFile(path.join(appRoot, APP_LOCK_PATH)), readFile(path.join(appRoot, APP_CONTENT_LOCK_PATH)), readFile(path.join(appRoot, RUNTIME_TEST_PATH)),
@@ -68,7 +69,7 @@ export async function createCandidateAdmissionV3({ root = ROOT, appRoot = path.r
   const runtimeBytes = canonicalJsonBytes(runtimeEvidence);
   const admission = {
     schemaVersion: "patternly-candidate-admission-v3",
-    taskId: "AWS-02/ADMISSION",
+    taskId,
     candidateId: candidate.candidateId,
     candidatePath: CANDIDATE_PATH,
     release: { releaseId: release.manifest.releaseId, releasePath: RELEASE_PATH, checksumSha256: sha256(canonicalJsonBytes(release)), boundary: "local_verified_artifacts_no_deployment" },
@@ -84,7 +85,7 @@ export async function createCandidateAdmissionV3({ root = ROOT, appRoot = path.r
 }
 
 export async function validateCandidateAdmissionV3(admission, { root = ROOT } = {}) {
-  if (admission.schemaVersion !== "patternly-candidate-admission-v3" || admission.taskId !== "AWS-02/ADMISSION" || !HASH.test(admission.candidateId ?? "") || !COMMIT.test(admission.application?.frontendCommit ?? "")) throw new Error("Candidate admission identity is invalid.");
+  if (admission.schemaVersion !== "patternly-candidate-admission-v3" || !["AWS-02/ADMISSION", "BIZQ-01/ADMISSION"].includes(admission.taskId) || !HASH.test(admission.candidateId ?? "") || !COMMIT.test(admission.application?.frontendCommit ?? "")) throw new Error("Candidate admission identity is invalid.");
   if (admission.publishingAdmission !== "granted" || admission.runtimeAdmission !== "granted" || admission.appReleaseLockUpdated !== true) throw new Error("Candidate admission is not granted.");
   if (admission.release?.boundary !== "local_verified_artifacts_no_deployment") throw new Error("Candidate admission must preserve the no-deployment boundary.");
   if (canonicalJson(admission.trackIds) !== canonicalJson(CANDIDATE_TRACK_IDS) || canonicalJson(admission.tracks?.map((item) => item.trackId)) !== canonicalJson(CANDIDATE_TRACK_IDS)) throw new Error("Candidate admission track scope is invalid.");
@@ -113,5 +114,5 @@ export async function recordCandidateAdmissionV3(options = {}) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  recordCandidateAdmissionV3().then(({ admission }) => process.stdout.write(`ADMISSION_READY candidateId=${admission.candidateId}; boundary=${admission.release.boundary}\n`)).catch((error) => { process.stderr.write(`${error.message}\n`); process.exitCode = 1; });
+  recordCandidateAdmissionV3({ taskId: process.argv[2] ?? "AWS-02/ADMISSION" }).then(({ admission }) => process.stdout.write(`ADMISSION_READY candidateId=${admission.candidateId}; boundary=${admission.release.boundary}\n`)).catch((error) => { process.stderr.write(`${error.message}\n`); process.exitCode = 1; });
 }

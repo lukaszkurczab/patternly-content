@@ -13,6 +13,7 @@ export const DECISION_PATH = "evidence/candidate-decisions/aws-02-codex-decision
 export const READINESS_PATH = "evidence/readiness/candidate-readiness-v2.json";
 export const DECISION_SCHEMA_PATH = "schemas/review/content-candidate-decision-v2.schema.json";
 export const READINESS_SCHEMA_PATH = "schemas/review/content-candidate-readiness-v2.schema.json";
+const AUTHORIZED_CANDIDATE_TASKS = new Set(["AWS-02/CANDIDATE", "BIZQ-01/CANDIDATE"]);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const exactKeys = (value, expected, label) => {
   const actual = Object.keys(value ?? {}).sort();
@@ -51,7 +52,7 @@ export async function validateCandidateDecisionV2(decision, { root = ROOT, candi
   exactKeys(decision, ["schemaVersion", "decisionId", "decisionAuthority", "taskId", "decision", "decisionRationale", "candidatePath", "candidateId", "sourceRepositoryCommit", "release", "trackIds", "tracks", "basis", "boundaries"], "Codex candidate decision");
   if (decision.schemaVersion !== "patternly-content-candidate-decision-v2") throw new Error("Candidate decision must use version 2; legacy v1 paths are not accepted.");
   if (decision.decisionAuthority !== "delegated_codex" || decision.decision !== "approved_for_candidate_readiness") throw new Error("Candidate decision is not the delegated Codex candidate approval.");
-  if (decision.taskId !== "AWS-02/CANDIDATE" || typeof decision.decisionRationale !== "string" || !decision.decisionRationale.trim() || canonicalJson(decision.basis) !== canonicalJson({ odk096: "passed", nineTrackBuild: "passed", repositoryTests: "passed", migrationVerification: "passed" })) throw new Error("Candidate decision basis is incomplete or belongs to another task.");
+  if (!AUTHORIZED_CANDIDATE_TASKS.has(decision.taskId) || typeof decision.decisionRationale !== "string" || !decision.decisionRationale.trim() || canonicalJson(decision.basis) !== canonicalJson({ odk096: "passed", nineTrackBuild: "passed", repositoryTests: "passed", migrationVerification: "passed" })) throw new Error("Candidate decision basis is incomplete or belongs to another task.");
   if (decision.candidatePath !== CANDIDATE_PATH || decision.candidateId !== candidate.candidateId || candidateIdFor(candidate) !== candidate.candidateId) throw new Error("Candidate decision is missing, stale, or bound to the wrong candidate path/ID.");
   if (decision.decisionId !== `codex-content-candidate-review-v2:${candidate.candidateId}`) throw new Error("Candidate decision ID does not bind the exact candidate.");
   if (decision.sourceRepositoryCommit !== candidate.release.sourceRepositoryCommit) throw new Error("Candidate decision source snapshot is stale.");

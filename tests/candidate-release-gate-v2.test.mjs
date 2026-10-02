@@ -140,6 +140,9 @@ test("release gate accepts the exact v3 admission without mutating readiness v2"
     await writeFile(path.join(root, ADMISSION_PATH), `${JSON.stringify(admission)}\n`);
     const candidate = await runCandidateReleaseGate({ root });
     assert.equal(candidate.candidateId, admission.candidateId);
+    admission.taskId = admission.taskId === "BIZQ-01/ADMISSION" ? "AWS-02/ADMISSION" : "BIZQ-01/ADMISSION";
+    await writeFile(path.join(root, ADMISSION_PATH), `${JSON.stringify(admission)}\n`);
+    await assert.rejects(runCandidateReleaseGate({ root }), /task differs/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 

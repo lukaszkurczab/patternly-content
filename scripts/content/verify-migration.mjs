@@ -76,6 +76,35 @@ const COUNT_KEYS = ["mentalUnits", "nodes", "questions"];
 const SOURCE_KEYS = ["artifact", "canonicalItemCount", "itemManifestSha256", "sourceCommit", "sourceFileCount", "sourceManifestSha256", "sourceRoot"];
 const ARTIFACT_KEYS = ["checksumSha256", "contentVersion", "releaseId", "releasePath", "sourceRepositoryCommit", "taxonomyVersion", "trackId"];
 const BASELINE_KEYS = ["path", "sha256"];
+const BIZQ01_PROOF = Object.freeze({
+  path: "evidence/business-quality/bizq-01-besd-slice-01.json",
+  schemaVersion: "patternly-bizq-source-batch-v1",
+  trackId: "backend-system-design-interview",
+  beforeProducerCommit: "78ba999098ea12704b74fe9de2eecdf89578e885",
+  beforeContentVersion: "backend-system-design-interview-candidate-v2026.08.15",
+  contentVersion: "backend-system-design-interview-authoring-v2026.10.02-bizq01-01",
+  questionSetSha256: "e4bdc6e7d213d03ad079d8c21b552fe89946e15a2ee99560512067c2c60c5d41",
+  replacements: Object.freeze([
+    Object.freeze({
+      beforeQuestionId: "besd-n02-b01-i002",
+      questionId: "besd-n02-b01-i017",
+      mentalUnitId: "BESD-N02-B01",
+      sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json",
+      beforeSourceSha256: "690a75db38ddc7c80166a29a6c7122e80598c7c283e78d392812bc80940972dd",
+      sourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d"
+    }),
+    Object.freeze({
+      beforeQuestionId: "besd-n04-b01-i002",
+      questionId: "besd-n04-b01-i019",
+      mentalUnitId: "BESD-N04-B01",
+      sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json",
+      beforeSourceSha256: "58ebf8c3db902f382ec42a419b966fe1ab96cb13a2b8a9b64b0ebfb1aeb1d888",
+      sourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15"
+    })
+  ])
+});
+const BIZQ01_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "items", "questionSetSha256"];
+const BIZQ01_ITEM_KEYS = ["sourceFile", "beforeQuestionId", "questionId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeSourceSha256", "sourceSha256", "beforeQuestion"];
 
 export class MigrationVerificationError extends Error {
   constructor(code, message, details = []) {
@@ -469,6 +498,101 @@ function compareTrackMembership(trackId, questions, rows, manifestTrack) {
   return computed;
 }
 
+async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, BIZQ01_PROOF.path);
+  const info = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect BIZQ-01 replacement proof: ${error.message}`);
+  });
+  if (!info) return undefined;
+  await rejectSymlinkAncestors(proofPath, "BIZQ-01 replacement proof");
+  const manifest = await readJson(proofPath, "BIZQ-01 replacement proof");
+  exactKeys(manifest, BIZQ01_ROOT_KEYS, "BIZQ-01 replacement proof");
+  if (manifest.schemaVersion !== BIZQ01_PROOF.schemaVersion ||
+      manifest.scope !== "BIZQ-01 source slice 01, not full bank acceptance" ||
+      manifest.trackId !== BIZQ01_PROOF.trackId ||
+      manifest.beforeProducerCommit !== BIZQ01_PROOF.beforeProducerCommit ||
+      manifest.beforeContentVersion !== BIZQ01_PROOF.beforeContentVersion ||
+      manifest.contentVersion !== BIZQ01_PROOF.contentVersion ||
+      manifest.questionSetSha256 !== BIZQ01_PROOF.questionSetSha256) {
+    fail("EVIDENCE_VALUE", "BIZQ-01 replacement proof does not match the accepted bounded batch identity.");
+  }
+  assertHash(manifest.questionSetSha256, "BIZQ-01 replacement proof.questionSetSha256");
+  if (canonical.catalogByTrack.get(BIZQ01_PROOF.trackId)?.contentVersion !== BIZQ01_PROOF.contentVersion) {
+    fail("EVIDENCE_VALUE", "BIZQ-01 replacement proof contentVersion does not match the current catalog.");
+  }
+
+  if (!Array.isArray(manifest.items) || manifest.items.length !== BIZQ01_PROOF.replacements.length) {
+    fail("EVIDENCE_MEMBERSHIP", "BIZQ-01 replacement proof must contain exactly the two accepted replacements.");
+  }
+  const trackQuestions = canonical.questionsByTrack.get(BIZQ01_PROOF.trackId);
+  const actualTrackHash = sha256([...trackQuestions].sort((left, right) => compare(left.questionId, right.questionId)));
+  if (actualTrackHash !== BIZQ01_PROOF.questionSetSha256) {
+    fail("HASH_MISMATCH", "Current BIZQ-01 track question set differs from the accepted replacement proof.");
+  }
+
+  const rowsById = new Map(evidence.rowsByTrack.get(BIZQ01_PROOF.trackId).map((row) => [row.questionId, row]));
+  const currentById = new Map(trackQuestions.map((question) => [question.questionId, question]));
+  const replacements = [];
+  for (const [index, accepted] of BIZQ01_PROOF.replacements.entries()) {
+    const entry = manifest.items[index];
+    const label = `BIZQ-01 replacement proof.items[${index}]`;
+    exactKeys(entry, BIZQ01_ITEM_KEYS, label);
+    for (const key of ["sourceFile", "beforeQuestionId", "questionId", "mentalUnitId", "beforeSourceSha256", "sourceSha256"]) {
+      if (entry[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} does not match the accepted replacement pair.`);
+    }
+    assertRelativePath(entry.sourceFile, `${label}.sourceFile`, { suffix: ".json" });
+    assertHash(entry.beforeSourceSha256, `${label}.beforeSourceSha256`);
+    assertHash(entry.sourceSha256, `${label}.sourceSha256`);
+
+    const oldQuestion = entry.beforeQuestion;
+    const newQuestion = currentById.get(accepted.questionId);
+    if (!newQuestion || currentById.has(accepted.beforeQuestionId)) {
+      fail("EVIDENCE_MEMBERSHIP", `${label} does not identify one present replacement and one removed historical item.`);
+    }
+    const oldRow = rowsById.get(accepted.beforeQuestionId);
+    if (!oldRow) fail("EVIDENCE_MEMBERSHIP", `${label} historical item is not present in immutable migration evidence.`);
+    assertCanonicalQuestion(oldQuestion, `${label}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+    if (oldQuestion.questionId !== accepted.beforeQuestionId || oldQuestion.trackId !== BIZQ01_PROOF.trackId ||
+        oldQuestion.mentalUnitId !== accepted.mentalUnitId) {
+      fail("EVIDENCE_MEMBERSHIP", `${label}.beforeQuestion identity does not match the accepted historical item.`);
+    }
+    if (newQuestion.trackId !== oldQuestion.trackId || newQuestion.nodeId !== oldQuestion.nodeId ||
+        newQuestion.mentalUnitId !== oldQuestion.mentalUnitId || newQuestion.mentalUnitId !== accepted.mentalUnitId ||
+        newQuestion.interaction.type !== oldQuestion.interaction.type) {
+      fail("EVIDENCE_MEMBERSHIP", `${label} changes taxonomy or interaction identity.`);
+    }
+    for (const key of ["trackId", "nodeId", "mentalUnitId"]) {
+      if (oldRow[key] !== oldQuestion[key]) fail("EVIDENCE_MEMBERSHIP", `${label} historical evidence ${key} differs from the old question.`);
+    }
+    assertCanonicalHash(oldRow, oldQuestion, `${label}.beforeQuestion`);
+
+    const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
+    await rejectSymlinkAncestors(sourcePath, `${label}.sourceFile`);
+    await regularPath(sourcePath, `${label}.sourceFile`, "file");
+    const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
+    if (sha256(sourceBytes) !== accepted.sourceSha256) fail("HASH_MISMATCH", `${label}.sourceFile does not match the accepted current source hash.`);
+    let sourceQuestions;
+    try {
+      sourceQuestions = JSON.parse(sourceBytes.toString("utf8"));
+    } catch (error) {
+      fail("INVALID_JSON", `${label}.sourceFile is not valid JSON: ${error.message}`);
+    }
+    if (!Array.isArray(sourceQuestions) || sourceQuestions.filter((question) => question?.questionId === accepted.questionId).length !== 1) {
+      fail("EVIDENCE_MEMBERSHIP", `${label}.sourceFile must contain exactly one current replacement item.`);
+    }
+    const authoredQuestion = sourceQuestions.find((question) => question?.questionId === accepted.questionId);
+    if (canonicalJson(authoredQuestion) !== canonicalJson(newQuestion)) fail("HASH_MISMATCH", `${label} current source item differs from canonical content.`);
+    const canonicalLocation = canonical.questionLocations.get(accepted.questionId);
+    if (!canonicalLocation || path.relative(projectRoot, canonicalLocation.path).split(path.sep).join("/") !== accepted.sourceFile) {
+      fail("CANONICAL_MEMBERSHIP", `${label} current source item is not at its accepted identity location.`);
+    }
+    replacements.push({ oldQuestion, newQuestion, beforeQuestionId: accepted.beforeQuestionId, questionId: accepted.questionId });
+  }
+  return { trackId: BIZQ01_PROOF.trackId, replacements };
+}
+
 function compareGlobal(manifest, questionsByTrack) {
   const allQuestions = ACCEPTED_TRACK_IDS.flatMap((trackId) => questionsByTrack.get(trackId));
   const counts = {
@@ -523,6 +647,7 @@ export async function verifyMigration(options = {}) {
   const resolvedContentRoot = await secureRoot(contentRoot);
   const canonical = await loadCanonicalContent(resolvedContentRoot);
   const evidence = await loadEvidence(resolvedContentRoot);
+  const replacementProof = await loadBizq01ReplacementProof(resolvedContentRoot, canonical, evidence);
   const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence);
   const trackSummaries = [];
   const historicalQuestionsByTrack = new Map();
@@ -530,9 +655,17 @@ export async function verifyMigration(options = {}) {
     const rows = evidence.rowsByTrack.get(trackId);
     const questions = canonical.questionsByTrack.get(trackId);
     const extras = trackId === "aws-certified-solutions-architect-associate" ? approvedAdditions : [];
-    assertExactSet(questions.map((question) => question.questionId), [...rows.map((row) => row.questionId), ...extras], `${trackId} current question IDs`);
-    const summary = compareTrackMembership(trackId, questions, rows, evidence.manifestTracks.get(trackId));
-    const questionById = new Map(questions.map((question) => [question.questionId, question]));
+    const replacements = replacementProof?.trackId === trackId ? replacementProof.replacements : [];
+    const replacedHistoricalIds = new Set(replacements.map((replacement) => replacement.beforeQuestionId));
+    const currentIds = [...rows.map((row) => row.questionId).filter((questionId) => !replacedHistoricalIds.has(questionId)), ...extras, ...replacements.map((replacement) => replacement.questionId)];
+    assertExactSet(questions.map((question) => question.questionId), currentIds, `${trackId} current question IDs`);
+    const replacedCurrentIds = new Set(replacements.map((replacement) => replacement.questionId));
+    const reconstructedQuestions = [
+      ...questions.filter((question) => !replacedCurrentIds.has(question.questionId)),
+      ...replacements.map((replacement) => replacement.oldQuestion)
+    ];
+    const summary = compareTrackMembership(trackId, reconstructedQuestions, rows, evidence.manifestTracks.get(trackId));
+    const questionById = new Map(reconstructedQuestions.map((question) => [question.questionId, question]));
     historicalQuestionsByTrack.set(trackId, rows.map((row) => questionById.get(row.questionId)));
     trackSummaries.push({
       trackId: summary.trackId,
@@ -563,7 +696,11 @@ export async function verifyMigration(options = {}) {
     interactions: currentInteractions,
     tracks: trackSummaries,
     historicalCounts: historical.counts,
-    approvedAdditionCount: approvedAdditions.length
+    approvedAdditionCount: approvedAdditions.length,
+    replacementProof: replacementProof ? {
+      trackId: replacementProof.trackId,
+      replacements: replacementProof.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId }))
+    } : undefined
   };
 }
 

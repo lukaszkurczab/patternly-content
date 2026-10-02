@@ -54,6 +54,8 @@ export async function runCandidateReleaseGate({ root = ROOT } = {}) {
   try { admission = await readJson(root, ADMISSION_PATH); }
   catch { throw new Error(`RELEASE_BLOCKED candidateId=${candidate.candidateId}; reason=admission_missing; delegated candidate approval grants readiness only.`); }
   await validateCandidateAdmissionV3(admission, { root });
+  const decision = await readJson(root, DECISION_PATH);
+  if (admission.taskId !== decision.taskId.replace("/CANDIDATE", "/ADMISSION")) throw new Error("Candidate admission task differs from its decision.");
   if (admission.candidateId !== candidate.candidateId || admission.release.checksumSha256 !== candidate.release.checksumSha256) throw new Error("Candidate admission is stale for the exact release.");
   return candidate;
 }

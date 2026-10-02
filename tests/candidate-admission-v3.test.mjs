@@ -8,7 +8,9 @@ const root = path.resolve(import.meta.dirname, "..");
 const appRoot = path.resolve(root, "../patternly");
 
 test("admission binds verified local publishing bytes, app lock, and runtime test", async () => {
-  const { admission, runtimeEvidence } = await createCandidateAdmissionV3({ root, appRoot });
+  const current = JSON.parse(await readFile(path.join(root, ADMISSION_PATH), "utf8"));
+  const { admission, runtimeEvidence } = await createCandidateAdmissionV3({ root, appRoot, taskId: current.taskId });
+  assert.equal(admission.taskId, current.taskId);
   assert.equal(admission.publishingAdmission, "granted");
   assert.equal(admission.runtimeAdmission, "granted");
   assert.equal(admission.appReleaseLockUpdated, true);
@@ -20,6 +22,8 @@ test("admission binds verified local publishing bytes, app lock, and runtime tes
 test("committed admission and runtime evidence remain hash-bound", async () => {
   const admission = JSON.parse(await readFile(path.join(root, ADMISSION_PATH), "utf8"));
   await validateCandidateAdmissionV3(admission, { root });
+  const unsupported = { ...admission, taskId: "BIZQ-02/ADMISSION" };
+  await assert.rejects(validateCandidateAdmissionV3(unsupported, { root }), /identity is invalid/);
   const changed = structuredClone(admission);
   changed.release.boundary = "deployed";
   await assert.rejects(validateCandidateAdmissionV3(changed, { root }), /no-deployment boundary/);

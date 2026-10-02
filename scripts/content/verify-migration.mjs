@@ -103,6 +103,24 @@ const BIZQ01_PROOF = Object.freeze({
     })
   ])
 });
+const BIZQ01_COPY_PROOF = Object.freeze({
+  path: "evidence/business-quality/bizq-01-coding-source-copy-04.json",
+  schemaVersion: "patternly-bizq-wording-correction-v1",
+  scope: "BIZQ-01 source-copy04, not full bank acceptance",
+  trackId: "coding-interview-dsa-problem-solving",
+  nodeId: "contrast_binary_search_vs_linear_scan",
+  mentalUnitId: "correctness_before_asymptotic_speed",
+  questionId: "alg-contrast-binary-scan-correctness-006",
+  sourceFile: "content/coding-interview-dsa-problem-solving/contrast_binary_search_vs_linear_scan/correctness_before_asymptotic_speed.json",
+  beforeProducerCommit: "ddd45c83f47a77d425dd016f949f58e9dad0d3a9",
+  beforeContentVersion: "coding-interview-dsa-problem-solving-0004",
+  contentVersion: "coding-interview-dsa-problem-solving-authoring-v2026.10.02-bizq01-04",
+  questionSetSha256: "cf941d1ea96f24110ea67dc7a112b2a1093848086ef5f14840ef0bf5da50d9ab",
+  beforeSourceSha256: "55f0d7cb8974bdf9a30389646b9af8c90184c91d2fe6f31376a7295686ec8d52",
+  sourceSha256: "192843ea43e1a2ed6a1b2963f9521c505c7614ddc73ed896a20ce13624a28e64"
+});
+const BIZQ01_COPY_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256", "sourceFile", "sourceSha256", "beforeSourceSha256", "questionId", "mentalUnitId", "beforeQuestion", "wording", "sources"];
+
 const BIZQ01_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "items", "questionSetSha256"];
 const BIZQ01_ITEM_KEYS = ["sourceFile", "beforeQuestionId", "questionId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeSourceSha256", "sourceSha256", "beforeQuestion"];
 
@@ -593,6 +611,55 @@ async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
   return { trackId: BIZQ01_PROOF.trackId, replacements };
 }
 
+async function loadBizq01WordingProof(contentRoot, canonical, evidence) {
+  const accepted = BIZQ01_COPY_PROOF;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, accepted.path);
+  const info = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect BIZQ-01 wording proof: ${error.message}`);
+  });
+  if (!info) return undefined;
+  await rejectSymlinkAncestors(proofPath, "BIZQ-01 wording proof");
+  const proof = await readJson(proofPath, "BIZQ-01 wording proof");
+  exactKeys(proof, BIZQ01_COPY_KEYS, "BIZQ-01 wording proof");
+  for (const key of BIZQ01_COPY_KEYS.filter((key) => !["beforeQuestion", "wording", "sources"].includes(key))) {
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `BIZQ-01 wording proof.${key} differs from the accepted batch.`);
+  }
+  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) fail("EVIDENCE_VALUE", "BIZQ-01 wording proof contentVersion differs from current catalog.");
+  const questions = canonical.questionsByTrack.get(accepted.trackId);
+  if (sha256([...questions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) fail("HASH_MISMATCH", "Current Coding questions differ from the accepted wording batch.");
+  const oldQuestion = proof.beforeQuestion;
+  const newQuestion = questions.find((question) => question.questionId === accepted.questionId);
+  const oldRow = evidence.rowsByTrack.get(accepted.trackId).find((row) => row.questionId === accepted.questionId);
+  if (!newQuestion || !oldRow) fail("EVIDENCE_MEMBERSHIP", "BIZQ-01 wording correction requires the same current and historical question ID.");
+  assertCanonicalQuestion(oldQuestion, "BIZQ-01 wording proof.beforeQuestion", ACCEPTED_TRACK_IDS);
+  for (const key of ["trackId", "nodeId", "mentalUnitId", "questionId"]) {
+    if (oldQuestion[key] !== accepted[key] || newQuestion[key] !== accepted[key] || oldRow[key] !== accepted[key]) fail("EVIDENCE_MEMBERSHIP", `BIZQ-01 wording correction changes ${key}.`);
+  }
+  assertCanonicalHash(oldRow, oldQuestion, "BIZQ-01 wording proof.beforeQuestion");
+  exactKeys(proof.wording, ["prompt", "detailsParagraph1", "detailsParagraph3"], "BIZQ-01 wording proof.wording");
+  if (Object.values(proof.wording).some((value) => typeof value !== "string" || !value.trim())) fail("EVIDENCE_VALUE", "BIZQ-01 wording texts must be nonempty strings.");
+  if (newQuestion.prompt !== proof.wording.prompt || newQuestion.feedback.details?.blocks?.[1]?.text !== proof.wording.detailsParagraph1 || newQuestion.feedback.details?.blocks?.[3]?.text !== proof.wording.detailsParagraph3) fail("HASH_MISMATCH", "Current wording differs from the proven three texts.");
+  const reconstructed = structuredClone(newQuestion);
+  reconstructed.prompt = oldQuestion.prompt;
+  reconstructed.feedback.details.blocks[1].text = oldQuestion.feedback.details.blocks[1].text;
+  reconstructed.feedback.details.blocks[3].text = oldQuestion.feedback.details.blocks[3].text;
+  if (canonicalJson(reconstructed) !== canonicalJson(oldQuestion)) fail("EVIDENCE_VALUE", "BIZQ-01 wording correction changes fields outside the three permitted texts.");
+  const sourcePath = path.resolve(projectRoot, ...proof.sourceFile.split("/"));
+  await rejectSymlinkAncestors(sourcePath, "BIZQ-01 wording source");
+  await regularPath(sourcePath, "BIZQ-01 wording source", "file");
+  const bytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read wording source: ${error.message}`));
+  if (sha256(bytes) !== accepted.sourceSha256) fail("HASH_MISMATCH", "BIZQ-01 wording source file differs from the accepted hash.");
+  let sourceQuestions;
+  try { sourceQuestions = JSON.parse(bytes.toString("utf8")); } catch (error) { fail("INVALID_JSON", `BIZQ-01 wording source is invalid JSON: ${error.message}`); }
+  if (!Array.isArray(sourceQuestions) || sourceQuestions.filter((question) => question?.questionId === accepted.questionId).length !== 1 || canonicalJson(sourceQuestions.find((question) => question.questionId === accepted.questionId)) !== canonicalJson(newQuestion)) fail("HASH_MISMATCH", "BIZQ-01 wording source does not contain the exact corrected item.");
+  const location = canonical.questionLocations.get(accepted.questionId);
+  if (!location || path.relative(projectRoot, location.path).split(path.sep).join("/") !== accepted.sourceFile) fail("CANONICAL_MEMBERSHIP", "BIZQ-01 wording item is not at its accepted source location.");
+  if (canonicalJson(proof.sources) !== canonicalJson(["https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/BinarySearch.html", "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/Merge.html"])) fail("EVIDENCE_VALUE", "BIZQ-01 wording sources differ from the two reviewed primary pages.");
+  return { trackId: accepted.trackId, replacements: [{ oldQuestion, newQuestion, beforeQuestionId: accepted.questionId, questionId: accepted.questionId }] };
+}
+
 function compareGlobal(manifest, questionsByTrack) {
   const allQuestions = ACCEPTED_TRACK_IDS.flatMap((trackId) => questionsByTrack.get(trackId));
   const counts = {
@@ -648,6 +715,7 @@ export async function verifyMigration(options = {}) {
   const canonical = await loadCanonicalContent(resolvedContentRoot);
   const evidence = await loadEvidence(resolvedContentRoot);
   const replacementProof = await loadBizq01ReplacementProof(resolvedContentRoot, canonical, evidence);
+  const correctionProof = await loadBizq01WordingProof(resolvedContentRoot, canonical, evidence);
   const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence);
   const trackSummaries = [];
   const historicalQuestionsByTrack = new Map();
@@ -655,7 +723,7 @@ export async function verifyMigration(options = {}) {
     const rows = evidence.rowsByTrack.get(trackId);
     const questions = canonical.questionsByTrack.get(trackId);
     const extras = trackId === "aws-certified-solutions-architect-associate" ? approvedAdditions : [];
-    const replacements = replacementProof?.trackId === trackId ? replacementProof.replacements : [];
+    const replacements = [replacementProof, correctionProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.replacements);
     const replacedHistoricalIds = new Set(replacements.map((replacement) => replacement.beforeQuestionId));
     const currentIds = [...rows.map((row) => row.questionId).filter((questionId) => !replacedHistoricalIds.has(questionId)), ...extras, ...replacements.map((replacement) => replacement.questionId)];
     assertExactSet(questions.map((question) => question.questionId), currentIds, `${trackId} current question IDs`);
@@ -697,6 +765,7 @@ export async function verifyMigration(options = {}) {
     tracks: trackSummaries,
     historicalCounts: historical.counts,
     approvedAdditionCount: approvedAdditions.length,
+    wordingCorrectionProof: correctionProof ? { trackId: correctionProof.trackId, questionIds: correctionProof.replacements.map(({ questionId }) => questionId) } : undefined,
     replacementProof: replacementProof ? {
       trackId: replacementProof.trackId,
       replacements: replacementProof.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId }))

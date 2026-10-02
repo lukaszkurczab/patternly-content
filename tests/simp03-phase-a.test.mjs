@@ -26,6 +26,8 @@ function referenceScore(question, response) {
     if (response?.type !== type || !Array.isArray(selected) || new Set(selected).size !== selected.length || selected.some((id) => !options.includes(id))) return { earnedPoints: 0, maxPoints: options.length };
     const selectedSet = new Set(selected);
     const accepted = new Set(question.answer.optionIds);
+    // Current docs17/scoring02: empty direct call or any wrong option earns zero.
+    if (selected.length === 0 || selected.some((id) => !accepted.has(id))) return { earnedPoints: 0, maxPoints: options.length };
     const earnedPoints = options.filter((id) => selectedSet.has(id) === accepted.has(id)).length;
     return { earnedPoints, maxPoints: options.length };
   }

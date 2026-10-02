@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,6 +49,7 @@ before(async () => {
   await cp(path.join(contentRepositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
   await mkdir(path.join(fixtureRoot, "evidence", "business-quality"), { recursive: true });
   await cp(path.join(contentRepositoryRoot, "evidence", "business-quality", path.basename(proofRelativePath)), path.join(fixtureRoot, proofRelativePath), { recursive: true });
+  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-coding-source-copy-04.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-coding-source-copy-04.json"));
   await cp(path.join(contentRepositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
   noProofFixture = await createCanonicalFixture("bizq01-no-proof-");
   noProofFixtureParent = noProofFixture.parent;
@@ -116,4 +117,76 @@ test("rejects changes to an unrelated item in the proven current track", async (
     questions.find((question) => question.questionId === "besd-n02-b01-i001").prompt += " changed";
     return questions;
   }, () => assertRejected("HASH_MISMATCH"));
+});
+
+const wordingProofPath = "evidence/business-quality/bizq-01-coding-source-copy-04.json";
+const wordingSourcePath = "content/coding-interview-dsa-problem-solving/contrast_binary_search_vs_linear_scan/correctness_before_asymptotic_speed.json";
+const wordingQuestionId = "alg-contrast-binary-scan-correctness-006";
+
+test("accepts only the real same-ID Coding wording correction alongside the unchanged BESD proof", async () => {
+  const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
+  assert.deepEqual(result.wordingCorrectionProof, { trackId: "coding-interview-dsa-problem-solving", questionIds: [wordingQuestionId] });
+  assert.equal(result.replacementProof.replacements.length, 2);
+  assert.equal(result.counts.questions, 16077);
+  assert.equal(result.historicalCounts.questions, 16041);
+});
+
+test("rejects the same-ID correction without its proof and rejects tampered frozen old objects", async () => {
+  const target = path.join(fixtureRoot, wordingProofPath), bytes = await readFile(target);
+  try {
+    await rm(target);
+    await assertRejected("HASH_MISMATCH");
+  } finally { await writeFile(target, bytes); }
+  await withJsonMutation(wordingProofPath, (proof) => {
+    proof.beforeQuestion.feedback.reason += " changed";
+    return proof;
+  }, () => assertRejected("HASH_MISMATCH"));
+});
+
+test("rejects unapproved wording, answer, options, feedback and taxonomy changes in the corrected source", async () => {
+  for (const mutate of [
+    (question) => { question.prompt += " changed"; },
+    (question) => { question.answer.optionId = "sort_binary"; },
+    (question) => { question.interaction.options[0].text += " changed"; },
+    (question) => { question.feedback.reason += " changed"; },
+    (question) => { question.feedback.messages[0].text += " changed"; },
+    (question) => { question.feedback.details.blocks[4].text += " changed"; },
+  ]) await withJsonMutation(wordingSourcePath, (questions) => {
+    mutate(questions.find((question) => question.questionId === wordingQuestionId));
+    return questions;
+  }, () => assertRejected("HASH_MISMATCH"));
+  await withJsonMutation(wordingProofPath, (proof) => {
+    proof.mentalUnitId = "other_unit"; return proof;
+  }, () => assertRejected("EVIDENCE_VALUE"));
+});
+
+test("rejects stale Coding version, proof identity/hashes/source location and unexpected proof fields", async () => {
+  await withJsonMutation("content/catalog.json", (catalog) => {
+    catalog.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving").contentVersion = "stale-version";
+    return catalog;
+  }, () => assertRejected("EVIDENCE_VALUE"));
+  for (const field of ["questionSetSha256", "sourceSha256", "beforeSourceSha256", "sourceFile", "questionId"]) {
+    await withJsonMutation(wordingProofPath, (proof) => { proof[field] = "unapproved"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
+  }
+  await withJsonMutation(wordingProofPath, (proof) => {
+    proof.wording.detailsParagraph3 += " changed"; return proof;
+  }, () => assertRejected("HASH_MISMATCH"));
+  await withJsonMutation(wordingProofPath, (proof) => {
+    proof.wording.extraText = "unexpected"; return proof;
+  }, () => assertRejected("EVIDENCE_SHAPE"));
+});
+
+test("rejects a corrected source moved away from its canonical mental-unit filename", async () => {
+  const original = path.join(fixtureRoot, wordingSourcePath);
+  const moved = path.join(path.dirname(original), "unapproved_location.json");
+  await rename(original, moved);
+  try { await assertRejected("CANONICAL_MEMBERSHIP"); }
+  finally { await rename(moved, original); }
+});
+
+test("rejects unreviewed primary-source pages even under the same publisher domain", async () => {
+  await withJsonMutation(wordingProofPath, (proof) => {
+    proof.sources[0] = "https://algs4.cs.princeton.edu/code/javadoc/edu/princeton/cs/algs4/Unrelated.html";
+    return proof;
+  }, () => assertRejected("EVIDENCE_VALUE"));
 });

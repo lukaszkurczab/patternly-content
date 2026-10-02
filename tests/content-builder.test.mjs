@@ -38,6 +38,7 @@ const historicalBaseline = JSON.parse(readFileSync(new URL("../evidence/content-
 const historicalMigrationManifest = JSON.parse(readFileSync(new URL("../content/migration-evidence/manifest.json", import.meta.url), "utf8"));
 const odk096Approval = JSON.parse(readFileSync(new URL("../evidence/canonical-content-approvals/odk-096-aws-free-node-v1.json", import.meta.url), "utf8"));
 const ODK096_CONTENT_VERSION = odk096Approval.canonicalIdentity.contentVersion;
+const bizq01Copy = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-coding-source-copy-04.json", import.meta.url), "utf8"));
 const bizq01Batch = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-besd-slice-01.json", import.meta.url), "utf8"));
 
 async function createWorkspace() {
@@ -223,7 +224,7 @@ test("Coding Interview simulation selection policies reject stale pools and inva
   const sourceRoot = path.resolve(".");
   const validated = await validateTrack({ rootDirectory: sourceRoot, trackId: "coding-interview-dsa-problem-solving" });
   const sourceConfig = JSON.parse(await readFile(path.join(sourceRoot, "config/tracks/coding-interview-dsa-problem-solving.json"), "utf8"));
-  const oldWrapper = JSON.parse(await readFile(path.join(sourceRoot, "artifacts/tracks/coding-interview-dsa-problem-solving", validated.track.contentVersion, "track-artifact.json"), "utf8"));
+  const oldWrapper = JSON.parse(await readFile(path.join(sourceRoot, "artifacts/tracks/coding-interview-dsa-problem-solving", candidateManifest.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving").artifact.contentVersion, "track-artifact.json"), "utf8"));
   const oldPool = JSON.parse(oldWrapper.artifactBytes).bank.simulationPools[0].itemIds;
   const taxonomyBytes = await readFile(path.join(sourceRoot, sourceConfig.taxonomyPath));
   const withConfig = async (mutateConfig, mutateQuestions = (questions) => questions, mutateTaxonomy = (taxonomy) => taxonomy) => {
@@ -461,6 +462,8 @@ test("ACC-02 Candidate Manifest retains its exact nine-track identity against fr
   for (const track of realCatalog.tracks) {
     if (track.trackId === "aws-certified-solutions-architect-associate") {
       assert.equal(track.contentVersion, ODK096_CONTENT_VERSION, track.trackId);
+    } else if (track.trackId === bizq01Copy.trackId) {
+      assert.equal(track.contentVersion, bizq01Copy.contentVersion, track.trackId);
     } else if (track.trackId === bizq01Batch.trackId) {
       assert.equal(track.contentVersion, bizq01Batch.contentVersion, track.trackId);
     } else {

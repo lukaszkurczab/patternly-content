@@ -300,7 +300,7 @@ test("choice_single scores correct, wrong and empty responses", () => {
   assert.equal(scoreQuestion(question, { type: "choice_single" }).status, "incorrect");
 });
 
-test("choice_multiple scores per correctly selected accepted option", () => {
+test("choice_multiple preserves valid partial points and gives zero for any wrong selection", () => {
   const question = questionsByType.get("choice_multiple");
   const partial = scoreQuestion(question, { type: "choice_multiple", optionIds: ["idempotency"] });
   assert.deepEqual(partial, {
@@ -313,13 +313,27 @@ test("choice_multiple scores per correctly selected accepted option", () => {
     omittedOptionIds: ["bounded-retry", "repair-state"]
   });
   assert.equal(scoreQuestion(question, { type: "choice_multiple", optionIds: ["silent-loop"] }).earnedPoints, 0);
-  assert.equal(scoreQuestion(question, { type: "choice_multiple", optionIds: [] }).earnedPoints, 1);
+  assert.equal(scoreQuestion(question, { type: "choice_multiple", optionIds: [] }).earnedPoints, 0);
   assert.equal(scoreQuestion(question, { type: "choice_multiple" }).status, "incorrect");
   const allAcceptedPlusWrong = scoreQuestion(question, { type: "choice_multiple", optionIds: ["idempotency", "bounded-retry", "repair-state", "silent-loop"] });
-  assert.equal(allAcceptedPlusWrong.status, "partial");
-  assert.equal(allAcceptedPlusWrong.earnedPoints, 3);
+  assert.equal(allAcceptedPlusWrong.status, "incorrect");
+  assert.equal(allAcceptedPlusWrong.earnedPoints, 0);
   assert.equal(allAcceptedPlusWrong.maxPoints, 4);
   assert.equal(scoreQuestion(question, { type: "choice_multiple", optionIds: ["unknown"] }).invalidResponse, true);
+});
+
+test("multiple-choice wrong selections and empty response earn zero independently of app parity", () => {
+  const question = questionsByType.get("choice_multiple");
+  const optionIds = question.interaction.options.map((option) => option.optionId);
+  for (let mask = 0; mask < 2 ** optionIds.length; mask += 1) {
+    const selected = optionIds.filter((_, index) => mask & (1 << index));
+    if (selected.length > 0 && selected.every((id) => question.answer.optionIds.includes(id))) continue;
+    const score = scoreQuestion(question, { type: "choice_multiple", optionIds: selected });
+    assert.deepEqual([score.status, score.earnedPoints, score.maxPoints], ["incorrect", 0, optionIds.length], selected.join(","));
+    assert.deepEqual(score.correctOptionIds, selected.filter((id) => question.answer.optionIds.includes(id)));
+    assert.deepEqual(score.incorrectOptionIds, selected.filter((id) => !question.answer.optionIds.includes(id)));
+    assert.deepEqual(score.omittedOptionIds, question.answer.optionIds.filter((id) => !selected.includes(id)));
+  }
 });
 
 test("ordering scores exact adjacent relations and incomplete answers", () => {

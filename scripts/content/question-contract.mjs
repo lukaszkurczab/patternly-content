@@ -564,7 +564,8 @@ export function scoreQuestion(question, response) {
     const incorrectOptionIds = selected.filter((id) => !expectedSet.has(id));
     const omittedOptionIds = expected.filter((id) => !selectedSet.has(id));
     const correctlyResolvedOptionIds = optionIds.filter((id) => expectedSet.has(id) ? selectedSet.has(id) : !selectedSet.has(id));
-    return scoreResult(optionIds.length, correctlyResolvedOptionIds.length, { correctlyResolvedOptionIds, correctOptionIds, incorrectOptionIds, omittedOptionIds });
+    const earnedPoints = selected.length === 0 || incorrectOptionIds.length > 0 ? 0 : correctlyResolvedOptionIds.length;
+    return scoreResult(optionIds.length, earnedPoints, { correctlyResolvedOptionIds, correctOptionIds, incorrectOptionIds, omittedOptionIds });
   }
 
   if (type === "ordering") {

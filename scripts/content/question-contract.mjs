@@ -36,7 +36,8 @@ const REQUIRED_QUESTION_KEYS = [
 const OPTIONAL_QUESTION_KEYS = ["constraints", "sourceRefs"];
 const QUESTION_KEYS = [...REQUIRED_QUESTION_KEYS, ...OPTIONAL_QUESTION_KEYS];
 const CATALOG_KEYS = ["schemaVersion", "tracks"];
-const TRACK_KEYS = ["trackId", "contentVersion"];
+const TRACK_KEYS = ["trackId", "contentVersion", "completionRule"];
+const REQUIRED_TRACK_KEYS = ["trackId", "contentVersion"];
 const QUESTION_FIXTURE_KEYS = ["schemaVersion", "questions"];
 
 // Keep this character class in sync with the JSON Schema learnerText/id
@@ -415,12 +416,32 @@ export function validateCatalog(catalog) {
   const ids = [];
   catalog.tracks.forEach((track, index) => {
     const trackPath = `catalog.tracks[${index}]`;
-    if (!exactKeys(track, TRACK_KEYS, trackPath, errors)) return;
+    if (!exactKeys(track, TRACK_KEYS, trackPath, errors, REQUIRED_TRACK_KEYS)) return;
     if (trimCleanString(track.trackId, `${trackPath}.trackId`, errors)) ids.push(track.trackId);
     trimCleanString(track.contentVersion, `${trackPath}.contentVersion`, errors);
+    if (Object.hasOwn(track, "completionRule")) {
+      errors.push(...validatePackageCompletionRule(track.completionRule, `${trackPath}.completionRule`).errors);
+    }
   });
   if (new Set(ids).size !== ids.length) addError(errors, "catalog.tracks", "track IDs must be unique");
   exactIdSet(ids, ACCEPTED_TRACK_IDS, "catalog.tracks", errors);
+  return { valid: errors.length === 0, errors };
+}
+
+export function validatePackageCompletionRule(rule, pathName = "completionRule") {
+  const errors = [];
+  const keys = ["ruleVersion", "minimumAttemptCount", "rollingWindowSize", "qualityThreshold"];
+  if (!exactKeys(rule, keys, pathName, errors)) return { valid: false, errors };
+  if (rule.ruleVersion !== 1) addError(errors, `${pathName}.ruleVersion`, "must equal 1");
+  for (const key of ["minimumAttemptCount", "rollingWindowSize"]) {
+    if (!Number.isSafeInteger(rule[key]) || rule[key] <= 0) addError(errors, `${pathName}.${key}`, "must be a positive safe integer");
+  }
+  if (Number.isSafeInteger(rule.minimumAttemptCount) && Number.isSafeInteger(rule.rollingWindowSize) && rule.minimumAttemptCount < rule.rollingWindowSize) {
+    addError(errors, `${pathName}.minimumAttemptCount`, "must be greater than or equal to rollingWindowSize");
+  }
+  if (typeof rule.qualityThreshold !== "number" || !Number.isFinite(rule.qualityThreshold) || rule.qualityThreshold < 0 || rule.qualityThreshold > 1) {
+    addError(errors, `${pathName}.qualityThreshold`, "must be a finite number from 0 to 1");
+  }
   return { valid: errors.length === 0, errors };
 }
 

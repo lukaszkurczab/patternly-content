@@ -15,6 +15,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   loadCanonicalCatalog,
   scoreQuestion,
+  validatePackageCompletionRule,
   validateCatalog,
   validateQuestion
 } from "./content/question-contract.mjs";
@@ -596,6 +597,7 @@ function artifactFor(validated) {
     contentVersion: validated.track.contentVersion,
     questions: validated.artifactQuestions ?? validated.questions
   };
+  if (Object.hasOwn(validated.track, "completionRule")) artifact.completionRule = validated.track.completionRule;
   if (validated.simulationProfiles) artifact.simulationProfiles = validated.simulationProfiles;
   return artifact;
 }
@@ -648,13 +650,22 @@ async function readRegularFile(filePath, label) {
 
 function validateArtifactShape(artifact, { entry, catalog, filePath }) {
   const requiredKeys = ["schemaVersion", "trackId", "contentVersion", "questions"];
-  const allowedKeys = [...requiredKeys, "simulationProfiles"];
+  const allowedKeys = [...requiredKeys, "simulationProfiles", "completionRule"];
   if (!isRecord(artifact) || requiredKeys.some((key) => !Object.hasOwn(artifact, key)) || Object.keys(artifact).some((key) => !allowedKeys.includes(key))) {
     fail(`Artifact has an invalid shape: ${filePath}`);
   }
   if (artifact.schemaVersion !== ARTIFACT_SCHEMA_VERSION) fail(`Artifact schemaVersion mismatch: ${filePath}`);
   if (artifact.trackId !== entry.trackId) fail(`Artifact trackId mismatch: ${filePath}`);
   if (artifact.contentVersion !== entry.contentVersion) fail(`Artifact contentVersion mismatch: ${filePath}`);
+  const catalogEntry = catalogTrack(catalog, entry.trackId);
+  if (Object.hasOwn(artifact, "completionRule")) {
+    const ruleResult = validatePackageCompletionRule(artifact.completionRule, "artifact.completionRule");
+    if (!ruleResult.valid) fail(`Artifact completionRule is invalid: ${filePath}`, ruleResult.errors);
+  }
+  if (Object.hasOwn(artifact, "completionRule") !== Object.hasOwn(catalogEntry, "completionRule") ||
+      (Object.hasOwn(catalogEntry, "completionRule") && canonicalJson(artifact.completionRule) !== canonicalJson(catalogEntry.completionRule))) {
+    fail(`Artifact completionRule does not match authoritative catalog: ${filePath}`);
+  }
   if (!Array.isArray(artifact.questions) || artifact.questions.length !== entry.questionCount) {
     fail(`Artifact questionCount mismatch: ${filePath}`);
   }

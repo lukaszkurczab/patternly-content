@@ -30,6 +30,18 @@ Historical approvals and migration records remain under `evidence/` and `content
 
 Run `npm test` for the canonical builder, immutable migration evidence, review-console, and boundary gates. Use `npm run content:validate`, `npm run content:test`, `npm run content:build`, and `npm run content:build-all` for the shared canonical flow.
 
+## BIZQ-01 advisory constraint review
+
+The existing `review:console` lists source constraints in item details and marks
+a constraint beginning with `the primary decision is` (case/whitespace insensitive)
+with `author_instruction_in_constraints`. `riskOnly` includes those items. This is
+a narrow editorial warning, not structural rejection or proof of semantic quality;
+a legitimate named worked example is not rejected merely for naming a technique.
+The warning never changes source questions, explicit review outcomes, admission,
+artifacts or app locks. The sole BIZQ queue is the application's working plan;
+[BIZQ-01](https://github.com/lukaszkurczab/gcp-ace-trainer/blob/main/docs/specs/business-quality/01-BIZQ-01-JAKOSC-PYTAN-I-OBJASNIEN.md)
+defines the wider source-repair and runtime acceptance work still to perform.
+
 The Product Owner has accepted nine banks, including Claude Certified Architect Professional. Historical eight-track readiness and review artifacts remain evidence of their original scope, not the current catalogue contract. No mass reduction, expansion, or automatic re-approval is implied.
 There is no global `>120 questions/node` readiness rule; counts are operational
 evidence only, while content changes are targeted to demonstrated factual,

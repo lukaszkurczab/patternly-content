@@ -1,9 +1,63 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { tmpdir } from "node:os";
 import test from "node:test";
 import { createContentReviewConsole, startContentReviewConsole, CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION, LAUNCH_TRACK_IDS } from "../scripts/review/content-review-console.mjs";
 import { validateSchema } from "../scripts/review/schema-validation.mjs";
+import { validateQuestion } from "../scripts/content/question-contract.mjs";
+
+const AUTHOR_CONSTRAINT_RISK = "author_instruction_in_constraints";
+
+test("review console surfaces the current BESD constraint disclosure without recording an outcome", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "bizq-review-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const reviewPath = join(directory, "outcomes.json");
+  const service = await createContentReviewConsole({ reviewPath });
+  const item = service.getItem("backend-system-design-interview", "besd-n04-b01-i002");
+  assert.ok(item.item.constraints.some((constraint) => constraint.startsWith("The primary decision is")));
+  assert.ok(item.riskFlags.includes(AUTHOR_CONSTRAINT_RISK));
+  assert.equal(item.review.status, "unreviewed");
+  assert.ok(service.listItems({ trackId: item.trackId, riskOnly: true }).some((candidate) => candidate.questionId === item.questionId));
+  await assert.rejects(readFile(reviewPath), { code: "ENOENT" });
+});
+
+test("constraint warning is advisory across interactions and does not flag ordinary worked examples or feedback", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "bizq-review-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const source = await createContentReviewConsole({ reviewPath: join(directory, "unused.json") });
+  const records = source.listItems();
+  const files = new Map();
+  const add = (record, suffix, constraints, feedbackOnly = false) => {
+    const question = structuredClone(record.item);
+    question.questionId += suffix;
+    if (constraints === undefined) delete question.constraints;
+    else question.constraints = constraints;
+    if (feedbackOnly) question.feedback.reason = "The primary decision is explained after submission.";
+    const valid = validateQuestion(question);
+    assert.equal(valid.valid, true, valid.errors.join("\n"));
+    const path = join(directory, record.sourceFile);
+    files.set(path, [...(files.get(path) ?? []), question]);
+    return { trackId: record.trackId, questionId: question.questionId };
+  };
+  // Tiny real-shape fixture: one item per registered track and each interaction.
+  const clean = LAUNCH_TRACK_IDS.map((trackId) => add(records.find((record) => record.trackId === trackId), "-clean", ["Use binary search on the sorted array; identify the lower bound."], true));
+  const warned = [...new Set(records.map((record) => record.item.interaction.type))].map((type) => add(records.find((record) => record.item.interaction.type === type), "-warning", ["  tHe\n PRIMARY   decision IS to choose the accepted mechanism."]));
+  const repeated = add(records[0], "-repeated", ["The primary decision is x.", "The primary decision is y."]);
+  const absent = add(records[0], "-absent", undefined);
+  for (const [path, questions] of files) {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, JSON.stringify(questions));
+  }
+  const service = await createContentReviewConsole({ root: directory });
+  for (const item of [...clean, absent]) assert.ok(!service.getItem(item.trackId, item.questionId).riskFlags.includes(AUTHOR_CONSTRAINT_RISK));
+  for (const item of [...warned, repeated]) {
+    const projected = service.getItem(item.trackId, item.questionId);
+    assert.equal(projected.riskFlags.filter((flag) => flag === AUTHOR_CONSTRAINT_RISK).length, 1);
+    assert.equal(projected.review.status, "unreviewed");
+  }
+  assert.equal(service.listItems({ riskOnly: true }).length, warned.length + 1);
+});
 
 test("review console exposes exactly nine launch tracks, navigable coverage, and advisory signals", async () => {
   const service = await createContentReviewConsole({ reviewPath: join(await mkdtemp("patternly-review-console-"), "outcomes.json") });
@@ -51,6 +105,16 @@ test("review console serves a local UI and bounded JSON API without fabricating 
   assert.match(pageHtml, /Patternly Content Review Console/);
   assert.match(pageHtml, /questionId/);
   assert.doesNotMatch(pageHtml, /itemId/);
+  const detail = await fetch(`http://127.0.0.1:${address.port}/api/items/backend-system-design-interview/besd-n04-b01-i002`);
+  assert.equal(detail.status, 200);
+  const item = await detail.json();
+  assert.ok(item.riskFlags.includes(AUTHOR_CONSTRAINT_RISK));
+  assert.ok(item.item.constraints.some((constraint) => constraint.startsWith("The primary decision is")));
+  assert.match(pageHtml, /\['Constraints',/);
+  const risks = await fetch(`http://127.0.0.1:${address.port}/api/items?trackId=backend-system-design-interview&riskOnly=true`);
+  assert.equal(risks.status, 200);
+  assert.ok((await risks.json()).items.some((candidate) => candidate.questionId === item.questionId));
+  await assert.rejects(readFile(join(directory, "outcomes.json")), { code: "ENOENT" });
   const catalog = await fetch(`http://127.0.0.1:${address.port}/api/catalog`);
   assert.equal(catalog.status, 200);
   assert.equal((await catalog.json()).launchTrackCount, 9);

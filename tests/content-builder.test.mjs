@@ -38,6 +38,7 @@ const historicalBaseline = JSON.parse(readFileSync(new URL("../evidence/content-
 const historicalMigrationManifest = JSON.parse(readFileSync(new URL("../content/migration-evidence/manifest.json", import.meta.url), "utf8"));
 const odk096Approval = JSON.parse(readFileSync(new URL("../evidence/canonical-content-approvals/odk-096-aws-free-node-v1.json", import.meta.url), "utf8"));
 const ODK096_CONTENT_VERSION = odk096Approval.canonicalIdentity.contentVersion;
+const bizq01Batch = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-besd-slice-01.json", import.meta.url), "utf8"));
 
 async function createWorkspace() {
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-simp02-"));
@@ -460,6 +461,8 @@ test("ACC-02 Candidate Manifest retains its exact nine-track identity against fr
   for (const track of realCatalog.tracks) {
     if (track.trackId === "aws-certified-solutions-architect-associate") {
       assert.equal(track.contentVersion, ODK096_CONTENT_VERSION, track.trackId);
+    } else if (track.trackId === bizq01Batch.trackId) {
+      assert.equal(track.contentVersion, bizq01Batch.contentVersion, track.trackId);
     } else {
       assert.equal(track.contentVersion, historicalVersions.get(track.trackId), track.trackId);
     }

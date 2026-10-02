@@ -9,12 +9,12 @@ import { validateQuestion } from "../scripts/content/question-contract.mjs";
 
 const AUTHOR_CONSTRAINT_RISK = "author_instruction_in_constraints";
 
-test("review console surfaces the current BESD constraint disclosure without recording an outcome", async (t) => {
+test("review console surfaces a remaining BESD constraint disclosure without recording an outcome", async (t) => {
   const directory = await mkdtemp(join(tmpdir(), "bizq-review-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const reviewPath = join(directory, "outcomes.json");
   const service = await createContentReviewConsole({ reviewPath });
-  const item = service.getItem("backend-system-design-interview", "besd-n04-b01-i002");
+  const item = service.getItem("backend-system-design-interview", "besd-n04-b01-i003");
   assert.ok(item.item.constraints.some((constraint) => constraint.startsWith("The primary decision is")));
   assert.ok(item.riskFlags.includes(AUTHOR_CONSTRAINT_RISK));
   assert.equal(item.review.status, "unreviewed");
@@ -104,8 +104,9 @@ test("review console serves a local UI and bounded JSON API without fabricating 
   const pageHtml = await page.text();
   assert.match(pageHtml, /Patternly Content Review Console/);
   assert.match(pageHtml, /questionId/);
+  assert.match(pageHtml, /<textarea id="note" required><\/textarea><\/label><button>Record current outcome<\/button>/);
   assert.doesNotMatch(pageHtml, /itemId/);
-  const detail = await fetch(`http://127.0.0.1:${address.port}/api/items/backend-system-design-interview/besd-n04-b01-i002`);
+  const detail = await fetch(`http://127.0.0.1:${address.port}/api/items/backend-system-design-interview/besd-n04-b01-i003`);
   assert.equal(detail.status, 200);
   const item = await detail.json();
   assert.ok(item.riskFlags.includes(AUTHOR_CONSTRAINT_RISK));

@@ -1,0 +1,71 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+import { buildTrack, canonicalJson, sha256 } from "../scripts/build.mjs";
+import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
+import { createContentReviewConsole } from "../scripts/review/content-review-console.mjs";
+
+const root = new URL("../", import.meta.url);
+const batch = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-slice-01.json", root), "utf8"));
+const sourceItems = batch.items.map((entry) => {
+  const bytes = readFileSync(new URL(entry.sourceFile, root));
+  assert.equal(sha256(bytes), entry.sourceSha256, "batch must bind the actual changed source");
+  const questions = JSON.parse(bytes);
+  assert.ok(!questions.some((question) => question.questionId === entry.beforeQuestionId), "replaced identities must not be aliased");
+  const question = questions.find((question) => question.questionId === entry.questionId);
+  assert.ok(question, entry.questionId);
+  return { entry, question };
+});
+
+test("BIZQ-01 changed items keep concrete learner constraints and one scoreable authored answer", () => {
+  for (const { entry, question } of sourceItems) {
+    const validation = validateQuestion(question);
+    assert.equal(validation.valid, true, validation.errors.join("\n"));
+    assert.equal(question.mentalUnitId, entry.mentalUnitId);
+    assert.equal(question.answer.optionId, entry.acceptedOptionId);
+    assert.deepEqual(question.sourceRefs, entry.sourceRefs);
+    assert.ok(question.constraints.length > 0);
+    assert.ok(question.constraints.every((constraint) => !/^\s*the\s+primary\s+decision\s+is\b/i.test(constraint)));
+    assert.ok(question.constraints.every((constraint) => !constraint.includes(question.interaction.options.find((option) => option.optionId === question.answer.optionId).text)));
+    const wrongIds = question.interaction.options.filter((option) => option.optionId !== question.answer.optionId).map((option) => option.optionId);
+    assert.deepEqual(question.feedback.messages.map((message) => message.targetId).sort(), wrongIds.sort());
+    assert.equal(new Set(question.feedback.messages.map((message) => message.text)).size, wrongIds.length);
+    for (const option of question.interaction.options) {
+      const score = scoreQuestion(question, { type: "choice_single", optionId: option.optionId });
+      assert.equal(score.status, option.optionId === entry.acceptedOptionId ? "correct" : "incorrect");
+      assert.equal(score.earnedPoints, option.optionId === entry.acceptedOptionId ? 1 : 0);
+    }
+    assert.equal(scoreQuestion(question, { type: "choice_single", optionId: "primary_decision" }).status, "incorrect");
+    assert.equal(typeof question.feedback.details, "string");
+    assert.ok(question.feedback.details.includes("\n\n"), "authored Details must explain mechanism and boundary");
+  }
+});
+
+test("BIZQ-01 canonical builder carries the exact batch and new content identity", async (t) => {
+  const outputRoot = await mkdtemp(join(tmpdir(), "patternly-bizq01-build-"));
+  t.after(() => rm(outputRoot, { recursive: true, force: true }));
+  const built = await buildTrack({ trackId: batch.trackId, outputRoot });
+  assert.equal(built.artifact.contentVersion, batch.contentVersion);
+  assert.equal(built.artifact.questions.length, 1569);
+  assert.equal(sha256(canonicalJson(built.questions)), batch.questionSetSha256);
+  for (const { entry, question } of sourceItems) {
+    assert.deepEqual(built.artifact.questions.find((item) => item.questionId === entry.questionId), question);
+    assert.ok(!built.artifact.questions.some((item) => item.questionId === entry.beforeQuestionId));
+  }
+  assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+});
+
+test("BIZQ-01 advisory console distinguishes corrected batch from remaining warnings", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "patternly-bizq01-review-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const service = await createContentReviewConsole({ reviewPath: join(directory, "outcomes.json") });
+  for (const { entry } of sourceItems) {
+    const item = service.getItem(batch.trackId, entry.questionId);
+    assert.ok(!item.riskFlags.includes("author_instruction_in_constraints"));
+    assert.equal(item.review.status, "unreviewed", "a source repair does not fabricate review outcomes");
+  }
+  assert.ok(service.listItems({ trackId: batch.trackId, riskOnly: true }).length > 0, "unreviewed remainder must not be hidden");
+});

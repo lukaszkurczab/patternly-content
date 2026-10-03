@@ -52,6 +52,7 @@ before(async () => {
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-coding-source-copy-04.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-coding-source-copy-04.json"));
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-source-11.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-source-11.json"));
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-source-12.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-source-12.json"));
+  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-unit-cohort-13.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-unit-cohort-13.json"));
   await cp(path.join(contentRepositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
   noProofFixture = await createCanonicalFixture("bizq01-no-proof-");
   noProofFixtureParent = noProofFixture.parent;

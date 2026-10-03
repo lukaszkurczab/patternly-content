@@ -40,7 +40,7 @@ const odk096Approval = JSON.parse(readFileSync(new URL("../evidence/canonical-co
 const ODK096_CONTENT_VERSION = odk096Approval.canonicalIdentity.contentVersion;
 const bizq01Copy = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-coding-source-copy-04.json", import.meta.url), "utf8"));
 const bizq01Batch = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-besd-slice-01.json", import.meta.url), "utf8"));
-const bizq01OodReplacement = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-ood-source-12.json", import.meta.url), "utf8"));
+const bizq01OodReplacement = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-ood-unit-cohort-13.json", import.meta.url), "utf8"));
 
 async function createWorkspace() {
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-simp02-"));

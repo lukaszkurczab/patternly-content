@@ -182,6 +182,44 @@ const BIZQ01_OOD_SUCCESSOR_PROOF = Object.freeze({
     sourceRefs: Object.freeze(["https://www.omg.org/spec/UML/2.5.1/PDF"])
   })
 });
+const BIZQ01_OOD_COHORT13_PROOF = Object.freeze({
+  path: "evidence/business-quality/bizq-01-ood-unit-cohort-13.json",
+  schemaVersion: "patternly-bizq-semantic-replacement-v1",
+  scope: "BIZQ-01 OOD source13, fixed fifteen-question unit cohort; not full-unit or full-bank acceptance",
+  trackId: "object-oriented-design-interview",
+  beforeProducerCommit: "cc47728b33d8c4c531cd130ca5dba29887fb26bd",
+  beforeContentVersion: "object-oriented-design-interview-authoring-v2026.10.03-bizq01-12",
+  contentVersion: "object-oriented-design-interview-authoring-v2026.10.03-bizq01-13",
+  questionSetSha256: "d2d7c6fa93658a8f38d18bb3fd65c0ca192dc04ded9a8f19aeda25f9cf576edc",
+  sourceFile: "content/object-oriented-design-interview/requirements_use_cases_domain_vocabulary_and_model_boundaries/OOD-N01-B01.json",
+  beforeSourceSha256: "46e72823ccc000657a4070193c4ef0bf7604f6508d9432208237471395657379",
+  sourceSha256: "224c0d2d9fd5c367a0c8a7a8c0e139ca827d308d7d60fdce7d18c627ba1dbfa0",
+  nodeId: "requirements_use_cases_domain_vocabulary_and_model_boundaries",
+  mentalUnitId: "OOD-N01-B01",
+  confirmedDefects: Object.freeze([
+    "The current item repeats the unit-wide owner/invariant answer instead of testing a distinct actor, goal, use-case, or subject-boundary decision.",
+    "Its distractors and feedback do not diagnose credible alternative models for the scenario."
+  ]),
+  identityAction: "replace_question_with_new_id",
+  identityReason: "The primary instructional decision and answer meanings change; the replacement uses a new question identity and new option identities.",
+  replacements: Object.freeze([
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i003", questionId: "ood-n01-b01-i020", learningObjective: "Distinguish the initiating business role from the individual person/account that happens to occupy that role.", acceptedOptionId: "coordinator_exchange_subject" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i004", questionId: "ood-n01-b01-i021", learningObjective: "Model one person acting in two distinct external roles with separate goals as two actor-goal/use-case mappings, rather than treating one account as one actor goal.", acceptedOptionId: "sam_two_roles_two_goals" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i005", questionId: "ood-n01-b01-i022", learningObjective: "Separate the actor whose goal defines a clerk-facing request from its beneficiary and a responding external participant.", acceptedOptionId: "clerk_requests_interlibrary" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i006", questionId: "ood-n01-b01-i023", learningObjective: "Express a use case as the actor’s meaningful outcome rather than a sequence of interface operations.", acceptedOptionId: "end_subscription_at_boundary" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i007", questionId: "ood-n01-b01-i024", learningObjective: "Classify an external scheduler as an actor when it sends a signal across the stated subject boundary.", acceptedOptionId: "calendar_service_actor" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i008", questionId: "ood-n01-b01-i025", learningObjective: "Choose the actor by the external role interacting with a system, not by the human operator behind an external organization.", acceptedOptionId: "gateway_reconcile_actor" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i009", questionId: "ood-n01-b01-i026", learningObjective: "Keep an external payment provider outside the booking subject when modeling a customer-facing booking outcome.", acceptedOptionId: "traveler_book_staybook" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i010", questionId: "ood-n01-b01-i027", learningObjective: "Select the use-case goal that expresses a user-visible domain result rather than a hidden implementation action.", acceptedOptionId: "issue_certified_copy" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i011", questionId: "ood-n01-b01-i028", learningObjective: "Recognize when different external actor roles share one use-case goal and contract, rather than splitting the use case by person or channel.", acceptedOptionId: "shared_fault_report_roles" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i012", questionId: "ood-n01-b01-i029", learningObjective: "Distinguish a stakeholder who sets a requirement from an actor who actually interacts with the subject.", acceptedOptionId: "supervisor_readiness_stakeholder" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i013", questionId: "ood-n01-b01-i030", learningObjective: "Identify the primary actor from the role whose goal the use case is scoped to, while recognizing a supporting external participant.", acceptedOptionId: "dispatcher_publish_plan" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i014", questionId: "ood-n01-b01-i031", learningObjective: "Re-evaluate actor status when the modeled subject boundary changes, even if the external service name stays the same.", acceptedOptionId: "boundary_relative_roles" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i015", questionId: "ood-n01-b01-i032", learningObjective: "Model a policy-dependent request around the actor’s goal and stated decision outcome, not around an internal authorization mechanism.", acceptedOptionId: "registrar_request_access" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i016", questionId: "ood-n01-b01-i033", learningObjective: "Recognize an external actor that only receives a one-way notification from the subject, even though it sends no command.", acceptedOptionId: "dispatch_receives_warning" }),
+    Object.freeze({ beforeQuestionId: "ood-n01-b01-i017", questionId: "ood-n01-b01-i034", learningObjective: "Scope a use case to one coherent actor goal instead of bundling adjacent administrative capabilities into a feature list.", acceptedOptionId: "reschedule_appointment" })
+  ])
+});
 const BIZQ01_OOD_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256", "replacements"];
 const BIZQ01_OOD_ITEM_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeQuestion", "currentQuestion"];
 
@@ -782,14 +820,158 @@ async function validateBizq01OodSemanticProof(contentRoot, canonical, evidence, 
   };
 }
 
+async function validateBizq01OodCohort13Proof(contentRoot, canonical, evidence) {
+  const accepted = BIZQ01_OOD_COHORT13_PROOF;
+  const label = accepted.scope;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, accepted.path);
+  const proofInfo = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect ${label}: ${error.message}`);
+  });
+  if (!proofInfo) return undefined;
+  await rejectSymlinkAncestors(proofPath, label);
+  const proof = await readJson(proofPath, label);
+  exactKeys(proof, BIZQ01_OOD_ROOT_KEYS, label);
+  for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256"]) {
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the accepted batch identity.`);
+  }
+  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
+    fail("EVIDENCE_VALUE", `${label} contentVersion does not match the current catalog.`);
+  }
+  if (!Array.isArray(proof.replacements) || proof.replacements.length !== accepted.replacements.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must contain exactly the accepted fifteen replacements.`);
+  }
+  const questions = canonical.questionsByTrack.get(accepted.trackId);
+  if (sha256([...questions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
+    fail("HASH_MISMATCH", `${label} current track question set differs from the accepted proof.`);
+  }
+  const currentById = new Map(questions.map((question) => [question.questionId, question]));
+  const oldIds = new Set(accepted.replacements.map((item) => item.beforeQuestionId));
+  const sourcePath = path.resolve(projectRoot, ...accepted.sourceFile.split("/"));
+  await rejectSymlinkAncestors(sourcePath, `${label}.sourceFile`);
+  await regularPath(sourcePath, `${label}.sourceFile`, "file");
+  const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
+  if (sha256(sourceBytes) !== accepted.sourceSha256) fail("HASH_MISMATCH", `${label}.sourceFile does not match the accepted current source hash.`);
+  let sourceQuestions;
+  try { sourceQuestions = JSON.parse(sourceBytes.toString("utf8")); }
+  catch (error) { fail("INVALID_JSON", `${label}.sourceFile is not valid JSON: ${error.message}`); }
+  if (!Array.isArray(sourceQuestions) || sourceQuestions.length !== questions.filter((q) => q.mentalUnitId === accepted.mentalUnitId).length ||
+      accepted.replacements.some((item) => sourceQuestions.filter((q) => q?.questionId === item.questionId).length !== 1 || sourceQuestions.some((q) => q?.questionId === item.beforeQuestionId))) {
+    fail("EVIDENCE_MEMBERSHIP", `${label}.sourceFile must contain every current cohort item once and omit every historical identity.`);
+  }
 
-async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
+  const replacements = [];
+  for (const [index, item] of accepted.replacements.entries()) {
+    const entry = proof.replacements[index];
+    const itemLabel = `${label}.replacements[${index}]`;
+    exactKeys(entry, BIZQ01_OOD_ITEM_KEYS, itemLabel);
+    for (const key of ["sourceFile", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "beforeSourceSha256", "sourceSha256", "learningObjective", "identityAction", "identityReason", "acceptedOptionId"]) {
+      const value = key === "sourceFile" ? accepted.sourceFile
+        : key === "beforeSourceSha256" ? accepted.beforeSourceSha256
+          : key === "sourceSha256" ? accepted.sourceSha256
+            : key === "nodeId" ? accepted.nodeId
+              : key === "mentalUnitId" ? accepted.mentalUnitId
+                : key === "identityAction" ? accepted.identityAction
+                  : key === "identityReason" ? accepted.identityReason
+                    : item[key];
+      if (entry[key] !== value) fail("EVIDENCE_VALUE", `${itemLabel}.${key} differs from the accepted cohort descriptor.`);
+    }
+    if (canonicalJson(entry.confirmedDefects) !== canonicalJson(accepted.confirmedDefects) ||
+        canonicalJson(entry.sourceRefs) !== canonicalJson(["https://www.omg.org/spec/UML/2.5.1/PDF"])) {
+      fail("EVIDENCE_VALUE", `${itemLabel} defects or primary references differ from the accepted cohort descriptor.`);
+    }
+    const oldQuestion = entry.beforeQuestion;
+    const currentQuestion = currentById.get(item.questionId);
+    const oldRow = evidence.rowsByTrack.get(accepted.trackId).find((row) => row.questionId === item.beforeQuestionId);
+    if (!oldQuestion || !currentQuestion || !oldRow || currentById.has(item.beforeQuestionId)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} must bind one frozen historical item to one current replacement.`);
+    }
+    assertCanonicalQuestion(oldQuestion, `${itemLabel}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+    assertCanonicalQuestion(entry.currentQuestion, `${itemLabel}.currentQuestion`, ACCEPTED_TRACK_IDS);
+    if (oldQuestion.questionId !== item.beforeQuestionId || oldQuestion.trackId !== accepted.trackId ||
+        oldQuestion.nodeId !== accepted.nodeId || oldQuestion.mentalUnitId !== accepted.mentalUnitId ||
+        currentQuestion.questionId !== item.questionId || currentQuestion.trackId !== accepted.trackId ||
+        currentQuestion.nodeId !== accepted.nodeId || currentQuestion.mentalUnitId !== accepted.mentalUnitId ||
+        canonicalJson(entry.currentQuestion) !== canonicalJson(currentQuestion)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes the reviewed taxonomy or current authored object.`);
+    }
+    for (const key of ["trackId", "nodeId", "mentalUnitId"]) {
+      if (oldRow[key] !== oldQuestion[key]) fail("EVIDENCE_MEMBERSHIP", `${itemLabel} historical evidence ${key} differs from the old question.`);
+    }
+    assertCanonicalHash(oldRow, oldQuestion, `${itemLabel}.beforeQuestion`);
+    if (currentQuestion.interaction.type !== "choice_single" || currentQuestion.interaction.scoringMethod !== "exact_selected_set" ||
+        currentQuestion.answer.type !== "choice_single" || currentQuestion.answer.optionId !== item.acceptedOptionId ||
+        currentQuestion.interaction.options.length !== 4 || currentQuestion.interaction.options.some((option) => oldQuestion.interaction.options.some((old) => old.optionId === option.optionId)) ||
+        canonicalJson(currentQuestion.sourceRefs) !== canonicalJson(["https://www.omg.org/spec/UML/2.5.1/PDF"])) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes the reviewed interaction, scoring, accepted answer, option identity, or primary reference.`);
+    }
+    if (canonicalJson(sourceQuestions.find((question) => question?.questionId === item.questionId)) !== canonicalJson(currentQuestion)) {
+      fail("HASH_MISMATCH", `${itemLabel} source object differs from current canonical content.`);
+    }
+    const location = canonical.questionLocations.get(item.questionId);
+    if (!location || path.relative(projectRoot, location.path).split(path.sep).join("/") !== accepted.sourceFile) {
+      fail("CANONICAL_MEMBERSHIP", `${itemLabel} current item is not at its accepted source location.`);
+    }
+    replacements.push({ oldQuestion, newQuestion: currentQuestion, beforeQuestionId: item.beforeQuestionId, questionId: item.questionId });
+  }
+  if (accepted.replacements.some((item) => !oldIds.has(item.beforeQuestionId))) fail("EVIDENCE_MEMBERSHIP", `${label} descriptor is internally inconsistent.`);
+  return { trackId: accepted.trackId, replacements };
+}
+
+
+async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, privateHistoricalSourceBytes) {
   const version = canonical.catalogByTrack.get(BIZQ01_OOD_PROOF.trackId)?.contentVersion;
   if (version === BIZQ01_OOD_PROOF.contentVersion) {
     return validateBizq01OodSemanticProof(contentRoot, canonical, evidence, BIZQ01_OOD_PROOF, 5);
   }
+  if (version === BIZQ01_OOD_COHORT13_PROOF.contentVersion) {
+    const cohort = await validateBizq01OodCohort13Proof(contentRoot, canonical, evidence);
+    if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source13 OOD version requires its fixed fifteen-question cohort proof.");
+    const accepted = BIZQ01_OOD_COHORT13_PROOF;
+    const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
+    const replacedIds = new Set(accepted.replacements.map((item) => item.questionId));
+    const reconstructedUnitQuestions = currentTrackQuestions
+      .filter((question) => question.mentalUnitId === accepted.mentalUnitId && !replacedIds.has(question.questionId))
+      .concat(cohort.replacements.map((item) => item.oldQuestion))
+      .sort((left, right) => compare(left.questionId, right.questionId));
+    const reconstructedTrackQuestions = currentTrackQuestions
+      .filter((question) => !replacedIds.has(question.questionId))
+      .concat(cohort.replacements.map((item) => item.oldQuestion))
+      .sort((left, right) => compare(left.questionId, right.questionId));
+    const reconstructedSourceBytes = Buffer.from(`${JSON.stringify(reconstructedUnitQuestions)}\n`, "utf8");
+    if (sha256(reconstructedSourceBytes) !== accepted.beforeSourceSha256) {
+      fail("HASH_MISMATCH", "The source13 cohort does not reconstruct the exact accepted source12 predecessor bytes.");
+    }
+    const predecessorCatalog = {
+      ...canonical.catalog,
+      tracks: canonical.catalog.tracks.map((track) => track.trackId === accepted.trackId
+        ? { ...track, contentVersion: accepted.beforeContentVersion }
+        : track)
+    };
+    const predecessorLocations = new Map(canonical.questionLocations);
+    for (const item of accepted.replacements) {
+      predecessorLocations.delete(item.questionId);
+      predecessorLocations.set(item.beforeQuestionId, {
+        trackId: accepted.trackId,
+        nodeId: accepted.nodeId,
+        mentalUnitId: accepted.mentalUnitId,
+        path: path.resolve(path.dirname(contentRoot), ...accepted.sourceFile.split("/"))
+      });
+    }
+    const predecessorCanonical = {
+      ...canonical,
+      catalog: predecessorCatalog,
+      catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
+      questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
+      questionLocations: predecessorLocations
+    };
+    const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, reconstructedSourceBytes);
+    if (!predecessor) fail("EVIDENCE_MEMBERSHIP", "The source13 cohort requires both immutable source12 and source11 proofs for predecessor verification.");
+    return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...cohort.replacements] };
+  }
   if (version !== BIZQ01_OOD_SUCCESSOR_PROOF.contentVersion) {
-    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path];
+    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path, BIZQ01_OOD_COHORT13_PROOF.path];
     for (const relativePath of proofPaths) {
       const info = await lstat(path.join(path.dirname(contentRoot), relativePath)).catch((error) => {
         if (error?.code === "ENOENT") return undefined;
@@ -800,12 +982,12 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
     return undefined;
   }
 
-  const successor = await validateBizq01OodSemanticProof(contentRoot, canonical, evidence, BIZQ01_OOD_SUCCESSOR_PROOF, 4);
+  const successor = await validateBizq01OodSemanticProof(contentRoot, canonical, evidence, BIZQ01_OOD_SUCCESSOR_PROOF, 4, privateHistoricalSourceBytes);
   if (!successor) fail("EVIDENCE_MEMBERSHIP", "The source12 OOD version requires its fixed successor proof.");
   const successorReplacement = successor.replacements[0];
   const acceptedCurrent = BIZQ01_OOD_SUCCESSOR_PROOF.replacement;
   const sourcePath = path.resolve(path.dirname(contentRoot), ...acceptedCurrent.sourceFile.split("/"));
-  const currentSourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read source12 predecessor input: ${error.message}`));
+  const currentSourceBytes = privateHistoricalSourceBytes ?? await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read source12 predecessor input: ${error.message}`));
   let sourceQuestions;
   try {
     sourceQuestions = JSON.parse(currentSourceBytes.toString("utf8"));

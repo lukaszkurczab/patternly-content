@@ -54,15 +54,21 @@ before(async () => {
   }
   await cp(path.join(repositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
 
-  // Exercise the frozen source11 state independently by reconstructing it from the reviewed source12 proof.
+  // Reconstruct source12 from the cohort13 frozen objects, then source11 from
+  // the reviewed source12 proof. This keeps the historical fixture exact.
+  const source13Proof = JSON.parse(await readFile(path.join(repositoryRoot, "evidence/business-quality/bizq-01-ood-unit-cohort-13.json"), "utf8"));
   const source12Proof = JSON.parse(await readFile(path.join(repositoryRoot, "evidence/business-quality/bizq-01-ood-source-12.json"), "utf8"));
   const sourceFile = path.join(fixtureRoot, sourcePath);
   const sourceQuestions = JSON.parse(await readFile(sourceFile, "utf8"));
-  const predecessorQuestions = sourceQuestions
+  const source12Questions = sourceQuestions
+    .filter((question) => !source13Proof.replacements.some((replacement) => replacement.questionId === question.questionId))
+    .concat(source13Proof.replacements.map((replacement) => replacement.beforeQuestion))
+    .sort((left, right) => left.questionId.localeCompare(right.questionId));
+  const source11Questions = source12Questions
     .filter((question) => question.questionId !== source12Proof.replacements[0].questionId)
     .concat(source12Proof.replacements[0].beforeQuestion)
     .sort((left, right) => left.questionId.localeCompare(right.questionId));
-  await writeFile(sourceFile, `${JSON.stringify(predecessorQuestions)}\n`, "utf8");
+  await writeFile(sourceFile, `${JSON.stringify(source11Questions)}\n`, "utf8");
   const catalogPath = path.join(fixtureRoot, "content/catalog.json");
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
   catalog.tracks.find((track) => track.trackId === trackId).contentVersion = "object-oriented-design-interview-authoring-v2026.10.03-bizq01-11";
@@ -158,7 +164,7 @@ test("rejects stale catalog or track hashes, duplicate mappings, and an absent n
 
 test("rejects changes to an unaffected OOD item and unapproved proof fields", async () => {
   await withJsonMutation(sourcePath, (questions) => {
-    questions.find((question) => question.questionId === "ood-n01-b01-i002").prompt += " changed";
+    questions.find((question) => question.questionId === "ood-n01-b01-i003").prompt += " changed";
     return questions;
   }, () => assertRejected("HASH_MISMATCH"));
   await withJsonMutation(proofPath, (proof) => {

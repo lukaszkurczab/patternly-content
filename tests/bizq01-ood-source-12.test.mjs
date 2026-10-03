@@ -13,6 +13,7 @@ const trackId = "object-oriented-design-interview";
 const sourcePath = "content/object-oriented-design-interview/requirements_use_cases_domain_vocabulary_and_model_boundaries/OOD-N01-B01.json";
 const proof12Path = "evidence/business-quality/bizq-01-ood-source-12.json";
 const proof11Path = "evidence/business-quality/bizq-01-ood-source-11.json";
+const proof13Path = "evidence/business-quality/bizq-01-ood-unit-cohort-13.json";
 const questionId = "ood-n01-b01-i019";
 const removedQuestionId = "ood-n01-b01-i002";
 let fixtureRoot;
@@ -50,18 +51,37 @@ before(async () => {
     await cp(path.join(repositoryRoot, "evidence", "business-quality", name), path.join(fixtureRoot, "evidence", "business-quality", name));
   }
   await cp(path.join(repositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
+
+  // Reconstruct the byte-exact source12 predecessor so this historical fixture
+  // continues to test its original fixed proof generation after source13 ships.
+  const source13Proof = JSON.parse(await readFile(path.join(repositoryRoot, proof13Path), "utf8"));
+  const sourceFile = path.join(fixtureRoot, sourcePath);
+  const sourceQuestions = JSON.parse(await readFile(sourceFile, "utf8"));
+  const predecessorQuestions = sourceQuestions
+    .filter((question) => !source13Proof.replacements.some((replacement) => replacement.questionId === question.questionId))
+    .concat(source13Proof.replacements.map((replacement) => replacement.beforeQuestion))
+    .sort((left, right) => left.questionId.localeCompare(right.questionId));
+  await writeFile(sourceFile, `${JSON.stringify(predecessorQuestions)}\n`, "utf8");
+  const catalogPath = path.join(fixtureRoot, "content/catalog.json");
+  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  catalog.tracks.find((track) => track.trackId === trackId).contentVersion = "object-oriented-design-interview-authoring-v2026.10.03-bizq01-12";
+  await writeFile(catalogPath, `${JSON.stringify(catalog)}\n`, "utf8");
 });
 
 after(async () => {
   await rm(fixtureRoot, { recursive: true, force: true });
 });
 
-test("validates source12 as an exact successor while preserving both OOD replacements", async () => {
+test("validates current source13 while preserving every historical and cohort replacement", async () => {
   const result = await verifyMigration({ contentRoot: path.join(repositoryRoot, "content") });
   assert.equal(result.result, "passed");
   assert.deepEqual(result.semanticReplacementProof.replacements, [
     { beforeQuestionId: "ood-n01-b01-i001", questionId: "ood-n01-b01-i018" },
-    { beforeQuestionId: removedQuestionId, questionId }
+    { beforeQuestionId: removedQuestionId, questionId },
+    ...Array.from({ length: 15 }, (_, index) => ({
+      beforeQuestionId: `ood-n01-b01-i${String(index + 3).padStart(3, "0")}`,
+      questionId: `ood-n01-b01-i${String(index + 20).padStart(3, "0")}`
+    }))
   ]);
   assert.equal(result.counts.questions, 16077);
   assert.equal(result.historicalCounts.questions, 16041);

@@ -7,3 +7,5 @@ Independent combined OOD/migration tests17/17 before added test, final OOD tests
 Reviewed one fixed replacement binds old frozen whole object/hash, current catalog version/fullOODhash, current question/source bytes/location, five new option IDs and refs. Missing proof fails existing current-ID reconstruction. Existing BESD/Coding constants and frozen history remain intact. The path-specific negative gap was closed before checkpoint.
 
 Precommit whole-suite failures are executor-reported committed-source-snapshot guard failures, not root-run full-suite evidence. Root actual checks at this point are24/24 related plus addedpath1/1, actual migration, canonicalanswerstest1413/build and source preservation952files+untouched16objects. Full canonical suite must rerun after committing the reviewed source to satisfy the existing gate; this PASS does not waive that gate.
+
+Root follow-up: initial executor failure classification was incomplete; actual post-source-checkpoint108/109 exposed a stale ACC current-version assertion. Exact current-proof branch fixed only the test, independently reviewed1/1PASS; root full109/109PASS. Frozen history/source/proof unchanged.

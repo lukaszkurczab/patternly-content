@@ -30,15 +30,15 @@ const DESIGN_TRACKS = Object.freeze([
     trackId: "object-oriented-design-interview",
     profileId: "object-oriented-design-interview-free-node-v1",
     freeNodeId: "requirements_use_cases_domain_vocabulary_and_model_boundaries",
-    contentVersion: "object-oriented-design-interview-authoring-v2026.10.03-bizq01-11",
+    contentVersion: "object-oriented-design-interview-authoring-v2026.10.03-bizq01-12",
     tradeoffConfigurationId: "object-oriented-design-interview-free-tradeoff-practice-v2",
     reviewConfigurationId: "object-oriented-design-interview-free-weak-area-review-v2",
     nodeCount: 136,
-    nodeSha256: "52cf2eb59642abdf7d1f0cce9a5602dff9f70f0b005b7ba3fa51c5a44869c366",
+    nodeSha256: "5d39092fbbcafe9cb4bfecc8564f3295fafa2d43611990b8c700fef78a0a0226",
     trackCount: 1413,
-    // The bounded source11 replacement updates only the current source pin;
+    // The bounded source12 successor updates only the current source pin;
     // historical ODK-097 admission artifacts and unchanged profile inputs stay frozen.
-    trackSha256: "b63ff169d69d5271f9f32f0155cbd0a6401c6b4443d4d4f3132c31273d3dd5a3",
+    trackSha256: "9731d76b930d3882958d89ea188cad9bcbc4eb3c51284b39765b38b0a788399f",
   },
   {
     trackId: "frontend-system-design-interview",

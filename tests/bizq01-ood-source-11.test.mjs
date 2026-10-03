@@ -53,6 +53,20 @@ before(async () => {
     await cp(path.join(repositoryRoot, "evidence", "business-quality", name), path.join(fixtureRoot, "evidence", "business-quality", name));
   }
   await cp(path.join(repositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
+
+  // Exercise the frozen source11 state independently by reconstructing it from the reviewed source12 proof.
+  const source12Proof = JSON.parse(await readFile(path.join(repositoryRoot, "evidence/business-quality/bizq-01-ood-source-12.json"), "utf8"));
+  const sourceFile = path.join(fixtureRoot, sourcePath);
+  const sourceQuestions = JSON.parse(await readFile(sourceFile, "utf8"));
+  const predecessorQuestions = sourceQuestions
+    .filter((question) => question.questionId !== source12Proof.replacements[0].questionId)
+    .concat(source12Proof.replacements[0].beforeQuestion)
+    .sort((left, right) => left.questionId.localeCompare(right.questionId));
+  await writeFile(sourceFile, `${JSON.stringify(predecessorQuestions)}\n`, "utf8");
+  const catalogPath = path.join(fixtureRoot, "content/catalog.json");
+  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  catalog.tracks.find((track) => track.trackId === trackId).contentVersion = "object-oriented-design-interview-authoring-v2026.10.03-bizq01-11";
+  await writeFile(catalogPath, `${JSON.stringify(catalog)}\n`, "utf8");
 });
 
 after(async () => {
@@ -60,7 +74,7 @@ after(async () => {
 });
 
 test("accepts the exact OOD source11 replacement and retains historical inventory", async () => {
-  const result = await verifyMigration({ contentRoot: path.join(repositoryRoot, "content") });
+  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
   assert.equal(result.semanticReplacementProof.trackId, trackId);
   assert.deepEqual(result.semanticReplacementProof.replacements, [
@@ -73,7 +87,7 @@ test("accepts the exact OOD source11 replacement and retains historical inventor
 });
 
 test("replacement uses the authored single-choice scoring and feedback contract", async () => {
-  const source = JSON.parse(await readFile(path.join(repositoryRoot, sourcePath), "utf8"));
+  const source = JSON.parse(await readFile(path.join(fixtureRoot, sourcePath), "utf8"));
   const historicalSource = JSON.parse(execFileSync("git", ["show", `570eb490eaf194fa61ad380155cfd16c0377aaf2:${sourcePath}`], { cwd: repositoryRoot, encoding: "utf8" }));
   const question = source.find((item) => item.questionId === questionId);
   assert.deepEqual(source.filter((item) => item.questionId !== questionId), historicalSource.filter((item) => item.questionId !== removedQuestionId));

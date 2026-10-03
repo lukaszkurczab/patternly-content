@@ -152,6 +152,36 @@ const BIZQ01_OOD_PROOF = Object.freeze({
     ])
   })
 });
+const BIZQ01_OOD_SUCCESSOR_PROOF = Object.freeze({
+  path: "evidence/business-quality/bizq-01-ood-source-12.json",
+  schemaVersion: "patternly-bizq-semantic-replacement-v1",
+  scope: "BIZQ-01 OOD source12, single semantic successor; not full-unit acceptance",
+  trackId: "object-oriented-design-interview",
+  beforeProducerCommit: "237c14349d8bbe26aaed6d83ce58103b20761dd0",
+  beforeContentVersion: "object-oriented-design-interview-authoring-v2026.10.03-bizq01-11",
+  contentVersion: "object-oriented-design-interview-authoring-v2026.10.03-bizq01-12",
+  questionSetSha256: "9731d76b930d3882958d89ea188cad9bcbc4eb3c51284b39765b38b0a788399f",
+  replacement: Object.freeze({
+    beforeQuestionId: "ood-n01-b01-i002",
+    questionId: "ood-n01-b01-i019",
+    nodeId: "requirements_use_cases_domain_vocabulary_and_model_boundaries",
+    mentalUnitId: "OOD-N01-B01",
+    sourceFile: "content/object-oriented-design-interview/requirements_use_cases_domain_vocabulary_and_model_boundaries/OOD-N01-B01.json",
+    beforeSourceSha256: "276dd399625cf56c95bbd6c595cd08f21d387742ff44650bc1c35de70e11d6ad",
+    sourceSha256: "46e72823ccc000657a4070193c4ef0bf7604f6508d9432208237471395657379",
+    learningObjective: "Identify an actor-facing use case’s completed success and explicit retryable failure, distinguishing them from request acceptance, provider readiness, and an exposed internal protocol.",
+    confirmedDefects: Object.freeze([
+      "The accepted answer combines actor-goal/system-boundary classification with invariant ownership rather than defining the completed actor-facing use-case outcome.",
+      "The caption-provider switch scenario omits a clear distinction between request acceptance, provider readiness, and completed activation.",
+      "The coordinator distractor feedback is malformed, and the constraints contain a duplicated article.",
+      "The generic coordinator, inheritance, representation-leak, and speculative-indirection distractors do not diagnose the decision about completed success and retryable failure."
+    ]),
+    identityAction: "replace_question_with_new_id",
+    identityReason: "The primary decision changes to defining the use case’s observable completed success and retryable failure rather than the former mixed owner-preserves-contract decision; all four option meanings change.",
+    acceptedOptionId: "completed_switch_outcomes",
+    sourceRefs: Object.freeze(["https://www.omg.org/spec/UML/2.5.1/PDF"])
+  })
+});
 const BIZQ01_OOD_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256", "replacements"];
 const BIZQ01_OOD_ITEM_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeQuestion", "currentQuestion"];
 
@@ -645,8 +675,8 @@ async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
   return { trackId: BIZQ01_PROOF.trackId, replacements };
 }
 
-async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
-  const accepted = BIZQ01_OOD_PROOF;
+async function validateBizq01OodSemanticProof(contentRoot, canonical, evidence, accepted, optionCount, sourceBytesOverride) {
+  const labelPrefix = accepted.scope;
   const projectRoot = path.dirname(contentRoot);
   const proofPath = path.join(projectRoot, accepted.path);
   const info = await lstat(proofPath).catch((error) => {
@@ -654,11 +684,11 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
     fail("PATH_ERROR", `Cannot inspect BIZQ-01 OOD semantic proof: ${error.message}`);
   });
   if (!info) return undefined;
-  await rejectSymlinkAncestors(proofPath, "BIZQ-01 OOD semantic proof");
-  const proof = await readJson(proofPath, "BIZQ-01 OOD semantic proof");
-  exactKeys(proof, BIZQ01_OOD_ROOT_KEYS, "BIZQ-01 OOD semantic proof");
+  await rejectSymlinkAncestors(proofPath, labelPrefix);
+  const proof = await readJson(proofPath, labelPrefix);
+  exactKeys(proof, BIZQ01_OOD_ROOT_KEYS, labelPrefix);
   for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256"]) {
-    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `BIZQ-01 OOD semantic proof.${key} differs from the accepted batch identity.`);
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${labelPrefix}.${key} differs from the accepted batch identity.`);
   }
   assertHash(proof.questionSetSha256, "BIZQ-01 OOD semantic proof.questionSetSha256");
   if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
@@ -685,7 +715,7 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
 
   const trackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   const currentTrackHash = sha256([...trackQuestions].sort((left, right) => compare(left.questionId, right.questionId)));
-  if (currentTrackHash !== accepted.questionSetSha256) fail("HASH_MISMATCH", "Current OOD track question set differs from the accepted source11 proof.");
+  if (currentTrackHash !== accepted.questionSetSha256) fail("HASH_MISMATCH", `${labelPrefix} current track question set differs from the accepted proof.`);
   const currentById = new Map(trackQuestions.map((question) => [question.questionId, question]));
   const currentQuestion = currentById.get(replacement.questionId);
   if (!currentQuestion || currentById.has(replacement.beforeQuestionId)) {
@@ -717,9 +747,9 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
   }
   const currentOptionIds = currentQuestion.interaction.options.map((option) => option.optionId);
   const oldOptionIds = new Set(oldQuestion.interaction.options.map((option) => option.optionId));
-  if (currentOptionIds.length !== 5 || new Set(currentOptionIds).size !== 5 ||
+  if (currentOptionIds.length !== optionCount || new Set(currentOptionIds).size !== optionCount ||
       currentOptionIds.some((optionId) => oldOptionIds.has(optionId))) {
-    fail("EVIDENCE_MEMBERSHIP", `${label} must use five unique, new option identities for the changed decision.`);
+    fail("EVIDENCE_MEMBERSHIP", `${label} must use ${optionCount} unique, new option identities for the changed decision.`);
   }
   if (canonicalJson(currentQuestion.sourceRefs) !== canonicalJson(replacement.sourceRefs)) {
     fail("EVIDENCE_VALUE", `${label} source references differ from the reviewed primary sources.`);
@@ -728,7 +758,7 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
   const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
   await rejectSymlinkAncestors(sourcePath, `${label}.sourceFile`);
   await regularPath(sourcePath, `${label}.sourceFile`, "file");
-  const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
+  const sourceBytes = sourceBytesOverride ?? await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
   if (sha256(sourceBytes) !== replacement.sourceSha256) fail("HASH_MISMATCH", `${label}.sourceFile does not match the accepted current source hash.`);
   let sourceQuestions;
   try {
@@ -749,6 +779,88 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
   return {
     trackId: accepted.trackId,
     replacements: [{ oldQuestion, newQuestion: currentQuestion, beforeQuestionId: replacement.beforeQuestionId, questionId: replacement.questionId }]
+  };
+}
+
+
+async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
+  const version = canonical.catalogByTrack.get(BIZQ01_OOD_PROOF.trackId)?.contentVersion;
+  if (version === BIZQ01_OOD_PROOF.contentVersion) {
+    return validateBizq01OodSemanticProof(contentRoot, canonical, evidence, BIZQ01_OOD_PROOF, 5);
+  }
+  if (version !== BIZQ01_OOD_SUCCESSOR_PROOF.contentVersion) {
+    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path];
+    for (const relativePath of proofPaths) {
+      const info = await lstat(path.join(path.dirname(contentRoot), relativePath)).catch((error) => {
+        if (error?.code === "ENOENT") return undefined;
+        fail("PATH_ERROR", `Cannot inspect OOD semantic proof: ${error.message}`);
+      });
+      if (info) fail("EVIDENCE_VALUE", `OOD contentVersion ${version} has a fixed semantic proof for a different version.`);
+    }
+    return undefined;
+  }
+
+  const successor = await validateBizq01OodSemanticProof(contentRoot, canonical, evidence, BIZQ01_OOD_SUCCESSOR_PROOF, 4);
+  if (!successor) fail("EVIDENCE_MEMBERSHIP", "The source12 OOD version requires its fixed successor proof.");
+  const successorReplacement = successor.replacements[0];
+  const acceptedCurrent = BIZQ01_OOD_SUCCESSOR_PROOF.replacement;
+  const sourcePath = path.resolve(path.dirname(contentRoot), ...acceptedCurrent.sourceFile.split("/"));
+  const currentSourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read source12 predecessor input: ${error.message}`));
+  let sourceQuestions;
+  try {
+    sourceQuestions = JSON.parse(currentSourceBytes.toString("utf8"));
+  } catch (error) {
+    fail("INVALID_JSON", `Cannot parse source12 predecessor input: ${error.message}`);
+  }
+  const reconstructedSourceQuestions = sourceQuestions
+    .filter((question) => question.questionId !== acceptedCurrent.questionId)
+    .concat(successorReplacement.oldQuestion)
+    .sort((left, right) => compare(left.questionId, right.questionId));
+  const reconstructedSourceBytes = Buffer.from(`${JSON.stringify(reconstructedSourceQuestions)}\n`, "utf8");
+  if (sha256(reconstructedSourceBytes) !== BIZQ01_OOD_PROOF.replacement.sourceSha256 ||
+      sha256(reconstructedSourceBytes) !== acceptedCurrent.beforeSourceSha256) {
+    fail("HASH_MISMATCH", "The source12 proof does not reconstruct the exact accepted source11 predecessor bytes.");
+  }
+
+  const trackId = BIZQ01_OOD_PROOF.trackId;
+  const currentTrackQuestions = canonical.questionsByTrack.get(trackId);
+  const predecessorQuestions = currentTrackQuestions
+    .filter((question) => question.questionId !== acceptedCurrent.questionId)
+    .concat(successorReplacement.oldQuestion)
+    .sort((left, right) => compare(left.questionId, right.questionId));
+  const predecessorCatalog = {
+    ...canonical.catalog,
+    tracks: canonical.catalog.tracks.map((track) => track.trackId === trackId
+      ? { ...track, contentVersion: BIZQ01_OOD_PROOF.contentVersion }
+      : track)
+  };
+  const predecessorLocations = new Map(canonical.questionLocations);
+  predecessorLocations.delete(acceptedCurrent.questionId);
+  predecessorLocations.set(acceptedCurrent.beforeQuestionId, {
+    trackId,
+    nodeId: acceptedCurrent.nodeId,
+    mentalUnitId: acceptedCurrent.mentalUnitId,
+    path: sourcePath
+  });
+  const predecessorCanonical = {
+    ...canonical,
+    catalog: predecessorCatalog,
+    catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
+    questionsByTrack: new Map(canonical.questionsByTrack).set(trackId, predecessorQuestions),
+    questionLocations: predecessorLocations
+  };
+  const predecessor = await validateBizq01OodSemanticProof(
+    contentRoot,
+    predecessorCanonical,
+    evidence,
+    BIZQ01_OOD_PROOF,
+    5,
+    reconstructedSourceBytes
+  );
+  if (!predecessor) fail("EVIDENCE_MEMBERSHIP", "The source12 successor requires the immutable source11 proof for predecessor verification.");
+  return {
+    trackId,
+    replacements: [...predecessor.replacements, ...successor.replacements]
   };
 }
 

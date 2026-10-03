@@ -7,6 +7,7 @@ import test, { after, before } from "node:test";
 
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
+import { restoreOodSource13Fixture } from "./ood-cohort16-historical-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const trackId = "object-oriented-design-interview";
@@ -47,11 +48,13 @@ before(async () => {
     "bizq-01-besd-seed-cohort-14.json",
     "bizq-01-coding-source-copy-04.json",
     "bizq-01-ood-source-11.json",
-    "bizq-01-ood-source-12.json"
+    "bizq-01-ood-source-12.json",
+    "bizq-01-ood-node-closure-16.json"
   ]) {
     await cp(path.join(repositoryRoot, "evidence", "business-quality", name), path.join(fixtureRoot, "evidence", "business-quality", name));
   }
   await cp(path.join(repositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
+  await restoreOodSource13Fixture(repositoryRoot, fixtureRoot);
 
   // Reconstruct the byte-exact source12 predecessor so this historical fixture
   // continues to test its original fixed proof generation after source13 ships.
@@ -73,16 +76,12 @@ after(async () => {
   await rm(fixtureRoot, { recursive: true, force: true });
 });
 
-test("validates current source13 while preserving every historical and cohort replacement", async () => {
-  const result = await verifyMigration({ contentRoot: path.join(repositoryRoot, "content") });
+test("validates the exact source12 fixture and preserves its source11 predecessor", async () => {
+  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
   assert.deepEqual(result.semanticReplacementProof.replacements, [
     { beforeQuestionId: "ood-n01-b01-i001", questionId: "ood-n01-b01-i018" },
-    { beforeQuestionId: removedQuestionId, questionId },
-    ...Array.from({ length: 15 }, (_, index) => ({
-      beforeQuestionId: `ood-n01-b01-i${String(index + 3).padStart(3, "0")}`,
-      questionId: `ood-n01-b01-i${String(index + 20).padStart(3, "0")}`
-    }))
+    { beforeQuestionId: removedQuestionId, questionId }
   ]);
   assert.equal(result.counts.questions, 16077);
   assert.equal(result.historicalCounts.questions, 16041);

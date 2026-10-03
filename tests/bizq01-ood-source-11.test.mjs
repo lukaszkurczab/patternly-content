@@ -8,6 +8,7 @@ import test, { after, before } from "node:test";
 
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
+import { restoreOodSource13Fixture } from "./ood-cohort16-historical-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const trackId = "object-oriented-design-interview";
@@ -49,11 +50,13 @@ before(async () => {
     "bizq-01-besd-slice-01.json",
     "bizq-01-besd-seed-cohort-14.json",
     "bizq-01-coding-source-copy-04.json",
-    "bizq-01-ood-source-11.json"
+    "bizq-01-ood-source-11.json",
+    "bizq-01-ood-node-closure-16.json"
   ]) {
     await cp(path.join(repositoryRoot, "evidence", "business-quality", name), path.join(fixtureRoot, "evidence", "business-quality", name));
   }
   await cp(path.join(repositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
+  await restoreOodSource13Fixture(repositoryRoot, fixtureRoot);
 
   // Reconstruct source12 from the cohort13 frozen objects, then source11 from
   // the reviewed source12 proof. This keeps the historical fixture exact.

@@ -7,6 +7,7 @@ import test, { after, before } from "node:test";
 
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
+import { restoreOodSource13Fixture } from "./ood-cohort16-historical-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const trackId = "object-oriented-design-interview";
@@ -47,11 +48,13 @@ before(async () => {
     "bizq-01-coding-source-copy-04.json",
     "bizq-01-ood-source-11.json",
     "bizq-01-ood-source-12.json",
-    "bizq-01-ood-unit-cohort-13.json"
+    "bizq-01-ood-unit-cohort-13.json",
+    "bizq-01-ood-node-closure-16.json"
   ]) {
     await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(fixtureRoot, "evidence/business-quality", name));
   }
   await cp(path.join(repositoryRoot, "evidence/canonical-content-approvals"), path.join(fixtureRoot, "evidence/canonical-content-approvals"), { recursive: true });
+  await restoreOodSource13Fixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
@@ -59,7 +62,7 @@ after(async () => {
 });
 
 test("validates the fixed source13 cohort and reconstructs immutable source12 and source11 predecessors", async () => {
-  const result = await verifyMigration({ contentRoot: path.join(repositoryRoot, "content") });
+  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
   assert.deepEqual(result.semanticReplacementProof.replacements, [
     { beforeQuestionId: "ood-n01-b01-i001", questionId: "ood-n01-b01-i018" },

@@ -43,6 +43,7 @@ before(async () => {
   await mkdir(path.join(fixtureRoot, "evidence", "business-quality"), { recursive: true });
   for (const name of [
     "bizq-01-besd-slice-01.json",
+    "bizq-01-besd-seed-cohort-14.json",
     "bizq-01-coding-source-copy-04.json",
     "bizq-01-ood-source-11.json",
     "bizq-01-ood-source-12.json",

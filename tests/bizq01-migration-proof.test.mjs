@@ -11,6 +11,7 @@ import { MigrationVerificationError, verifyMigration } from "../scripts/content/
 const contentRepositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const backendTrack = "backend-system-design-interview";
 const proofRelativePath = "evidence/business-quality/bizq-01-besd-slice-01.json";
+const cohort14ProofPath = "evidence/business-quality/bizq-01-besd-seed-cohort-14.json";
 const oldSourcePath = "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json";
 const newQuestionId = "besd-n02-b01-i017";
 
@@ -49,6 +50,7 @@ before(async () => {
   await cp(path.join(contentRepositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
   await mkdir(path.join(fixtureRoot, "evidence", "business-quality"), { recursive: true });
   await cp(path.join(contentRepositoryRoot, "evidence", "business-quality", path.basename(proofRelativePath)), path.join(fixtureRoot, proofRelativePath), { recursive: true });
+  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-besd-seed-cohort-14.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-besd-seed-cohort-14.json"));
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-coding-source-copy-04.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-coding-source-copy-04.json"));
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-source-11.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-source-11.json"));
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-source-12.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-source-12.json"));
@@ -69,10 +71,13 @@ test("accepts the real BIZQ-01 replacement proof while preserving current and hi
   assert.deepEqual(result.counts, { tracks: 9, nodes: 117, mentalUnits: 943, questions: 16077 });
   assert.deepEqual(result.historicalCounts, { tracks: 9, nodes: 117, mentalUnits: 932, questions: 16041 });
   assert.equal(result.approvedAdditionCount, 36);
+  const cohort14 = JSON.parse(await readFile(path.join(contentRepositoryRoot, cohort14ProofPath), "utf8"));
   assert.deepEqual(result.replacementProof.replacements, [
     { beforeQuestionId: "besd-n02-b01-i002", questionId: "besd-n02-b01-i017" },
-    { beforeQuestionId: "besd-n04-b01-i002", questionId: "besd-n04-b01-i019" }
+    { beforeQuestionId: "besd-n04-b01-i002", questionId: "besd-n04-b01-i019" },
+    ...cohort14.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId }))
   ]);
+  assert.equal(result.replacementProof.replacements.length, 34);
 });
 
 test("keeps the original migration verifier behavior when no BIZQ proof is present", async () => {
@@ -117,7 +122,7 @@ test("rejects stale batch identity, duplicate mappings, and a missing replacemen
 test("rejects changes to an unrelated item in the proven current track", async () => {
   const relativePath = "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json";
   await withJsonMutation(relativePath, (questions) => {
-    questions.find((question) => question.questionId === "besd-n02-b01-i001").prompt += " changed";
+    questions.find((question) => question.questionId === "besd-n02-b01-i017").prompt += " changed";
     return questions;
   }, () => assertRejected("HASH_MISMATCH"));
 });
@@ -129,7 +134,7 @@ const wordingQuestionId = "alg-contrast-binary-scan-correctness-006";
 test("accepts only the real same-ID Coding wording correction alongside the unchanged BESD proof", async () => {
   const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
   assert.deepEqual(result.wordingCorrectionProof, { trackId: "coding-interview-dsa-problem-solving", questionIds: [wordingQuestionId] });
-  assert.equal(result.replacementProof.replacements.length, 2);
+  assert.equal(result.replacementProof.replacements.length, 34);
   assert.equal(result.counts.questions, 16077);
   assert.equal(result.historicalCounts.questions, 16041);
 });

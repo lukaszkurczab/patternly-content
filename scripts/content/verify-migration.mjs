@@ -103,6 +103,60 @@ const BIZQ01_PROOF = Object.freeze({
     })
   ])
 });
+const BIZQ01_BESD_COHORT14_PROOF = Object.freeze({
+  path: "evidence/business-quality/bizq-01-besd-seed-cohort-14.json",
+  schemaVersion: "patternly-bizq-semantic-replacement-v1",
+  scope: "BIZQ-01 BESD source14, fixed two-unit cohort of 32 semantic replacements; not full-unit or full-bank acceptance",
+  trackId: "backend-system-design-interview",
+  beforeProducerCommit: "c272a4bfdcd419d5185e5b00e1fd3022772f073c",
+  beforeContentVersion: "backend-system-design-interview-authoring-v2026.10.02-bizq01-01",
+  contentVersion: "backend-system-design-interview-authoring-v2026.10.03-bizq01-14",
+  questionSetSha256: "1d19b932b4552fa65e37640bba63f0e0c8f52ba42f10259edca808cb265ef7ef",
+  identityAction: "replace_question_with_new_id",
+  identityReason: "The replacement changes the item’s primary learning objective and the meanings of its answer choices; the historical question and its options remain only in immutable migration evidence.",
+  confirmedDefects: Object.freeze(["The source01 preflight identified a learner-visible primary-decision instruction in the original constraints.","The original option and feedback template did not test the replacement’s distinct declared learning objective."]),
+  sources: Object.freeze([
+    Object.freeze({ sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", preservedQuestionId: "besd-n02-b01-i017" }),
+    Object.freeze({ sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", preservedQuestionId: "besd-n04-b01-i019" })
+  ]),
+  replacements: Object.freeze([
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i001", questionId: "besd-n02-b01-i018", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Choose a resource representation that exposes bounded freshness and distinguishes an absent asset from a temporarily unavailable metadata read.", acceptedOptionId: "besd-n02-b01-i018_asset_resource_read", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9110.html","https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i003", questionId: "besd-n02-b01-i019", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Define an event identity and application ordering field so receivers can suppress redelivery and reject older shipment state without treating delivery order as guaranteed.", acceptedOptionId: "besd-n02-b01-i019_shipment_event_identity_revision", sourceRefs: Object.freeze(["https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i004", questionId: "besd-n02-b01-i020", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Use a representation version as a write precondition so concurrent document edits produce a visible conflict rather than silent last-write-wins.", acceptedOptionId: "besd-n02-b01-i020_conditional_document_update", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9110.html","https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i005", questionId: "besd-n02-b01-i021", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Place the stock invariant in one atomic reserve command at the inventory authority, not in a preceding availability query.", acceptedOptionId: "besd-n02-b01-i021_atomic_stock_reservation", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9110.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i006", questionId: "besd-n02-b01-i022", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Model one-time module completion as an idempotent desired-state resource rather than an incrementing submission counter.", acceptedOptionId: "besd-n02-b01-i022_completion_state_resource", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9110.html","https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i007", questionId: "besd-n02-b01-i023", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Pin each checkout quote to an immutable price revision so a retry cannot silently substitute a newer price.", acceptedOptionId: "besd-n02-b01-i023_quote_pinned_price_revision", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9110.html","https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i008", questionId: "besd-n02-b01-i024", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Define when a credential revocation response is success, given that copied credentials may still be presented to the service.", acceptedOptionId: "besd-n02-b01-i024_revocation_epoch_contract", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9110.html","https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i009", questionId: "besd-n02-b01-i025", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Propagate a caller deadline through synchronous route computation and stop work when the caller no longer needs the result.", acceptedOptionId: "besd-n02-b01-i025_propagated_route_deadline", sourceRefs: Object.freeze(["https://grpc.io/docs/guides/deadlines/"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i010", questionId: "besd-n02-b01-i026", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Return a rollout decision without requiring each mobile client to implement the changing cohort rule.", acceptedOptionId: "besd-n02-b01-i026_server_evaluated_feature_decision", sourceRefs: Object.freeze(["https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i011", questionId: "besd-n02-b01-i027", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Specify time-window boundaries and timezone offsets in the appointment search contract so adjacent slots are not duplicated or skipped.", acceptedOptionId: "besd-n02-b01-i027_half_open_offset_interval", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9110.html","https://www.rfc-editor.org/rfc/rfc3339.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i012", questionId: "besd-n02-b01-i028", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Bind search pagination to one query snapshot so records changing between page requests do not create duplicates or gaps.", acceptedOptionId: "besd-n02-b01-i028_snapshot_bound_search_cursor", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9110.html","https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i013", questionId: "besd-n02-b01-i029", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Apply per-tenant concurrency admission to expensive route solves and return a retryable capacity outcome instead of silently queueing unbounded work.", acceptedOptionId: "besd-n02-b01-i029_bounded_tenant_admission", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc6585.html#section-4","https://www.rfc-editor.org/rfc/rfc9457.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i014", questionId: "besd-n02-b01-i030", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Define machine-readable problem types for invalid payment input, a definitive issuer decline, and temporary capacity rejection without making clients parse human text.", acceptedOptionId: "besd-n02-b01-i030_typed_payment_problem", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9457.html","https://www.rfc-editor.org/rfc/rfc9110.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i015", questionId: "besd-n02-b01-i031", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Evolve the fraud-case response additively while old and new workers coexist, preserving existing enum meanings and required fields.", acceptedOptionId: "besd-n02-b01-i031_additive_case_schema", sourceRefs: Object.freeze(["https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n02-b01-i016", questionId: "besd-n02-b01-i032", sourceFile: "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json", beforeSourceSha256: "164b3221fe641c16353339c0ef99772793f8866e195ea3cff976a633344e7e6d", sourceSha256: "f73d88f77618599892473b17848e9e01947277ab56304795343abaa188713a89", nodeId: "api_contracts_service_boundaries_and_request_flows", mentalUnitId: "BESD-N02-B01", learningObjective: "Address an export by an immutable snapshot that pins the payroll period, source watermark, and rules revision used to produce it.", acceptedOptionId: "besd-n02-b01-i032_pinned_payroll_export_snapshot", sourceRefs: Object.freeze(["https://spec.openapis.org/oas/v3.1.1.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i001", questionId: "besd-n04-b01-i020", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Keep a short-lived copy of low-sensitivity notification preferences in the signed-in client because local reuse is sufficient and cross-device sharing is not required.", acceptedOptionId: "besd-n04-b01-i020_private_client_preference_cache", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i003", questionId: "besd-n04-b01-i021", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Prevent a pre-update cache fill from restoring stale parcel state after an acknowledged update.", acceptedOptionId: "besd-n04-b01-i021_revision_fence", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i004", questionId: "besd-n04-b01-i022", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Reuse immutable extraction output by a key that includes the input digest and extractor version, while keeping tenant-private documents isolated.", acceptedOptionId: "besd-n04-b01-i022_content_version_tenant_cache", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i005", questionId: "besd-n04-b01-i023", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Cache immutable venue layout separately from exact seat availability so static traffic does not freeze a changing inventory fact.", acceptedOptionId: "besd-n04-b01-i023_versioned_layout_live_availability", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i006", questionId: "besd-n04-b01-i024", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Cache only tenant-scoped candidate case IDs and recheck each case’s current per-agent authorization before returning case content.", acceptedOptionId: "besd-n04-b01-i024_candidate_cache_reauthorize_content", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i007", questionId: "besd-n04-b01-i025", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Use conditional revalidation for frequently updated public metadata so edge copies can be reused briefly without presenting a representation beyond its freshness bound.", acceptedOptionId: "besd-n04-b01-i025_short_cache_validator_recheck", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i008", questionId: "besd-n04-b01-i026", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Cache immutable device capability manifests by model and firmware build, while fetching each device’s current operational state from its owning service.", acceptedOptionId: "besd-n04-b01-i026_firmware_manifest_shared_cache", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i009", questionId: "besd-n04-b01-i027", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Keep unsent document edits in a client-local draft cache, but identify the server revision they were based on before attempting to publish them.", acceptedOptionId: "besd-n04-b01-i027_local_draft_with_base_revision", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html","https://www.rfc-editor.org/rfc/rfc9110.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i010", questionId: "besd-n04-b01-i028", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Keep immutable topology and changing restrictions separately identified, with response provenance that lets a route reviewer verify both inputs.", acceptedOptionId: "besd-n04-b01-i028_versioned_graph_separate_closures", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i011", questionId: "besd-n04-b01-i029", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Meet the planner response bound by reusing a forecast keyed to its dimensions and rules revision, while exposing its source watermark.", acceptedOptionId: "besd-n04-b01-i029_scoped_versioned_forecast_cache", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i012", questionId: "besd-n04-b01-i030", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Cache a course outline under its immutable release identity, while resolving the current course alias and reading learner progress separately.", acceptedOptionId: "besd-n04-b01-i030_versioned_catalog_private_progress", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i013", questionId: "besd-n04-b01-i031", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Publish public prices under immutable revision URLs and keep checkout on the authoritative current-price path for final acceptance.", acceptedOptionId: "besd-n04-b01-i031_edge_price_revision_checkout_revalidate", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i014", questionId: "besd-n04-b01-i032", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Bound any authorization cache from a non-lagging identity source by the five-second revocation objective, and fail closed when current state cannot be established.", acceptedOptionId: "besd-n04-b01-i032_bounded_fail_closed_auth_cache", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i015", questionId: "besd-n04-b01-i033", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Cache transcoded artifacts by immutable input digest and complete encoding recipe so a changed source or codec setting cannot reuse the wrong output.", acceptedOptionId: "besd-n04-b01-i033_content_addressed_transcode_cache", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i016", questionId: "besd-n04-b01-i034", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Use a bounded edge cache for rollout configuration and make the emergency disable path meet the same 15-second staleness limit under failed invalidation.", acceptedOptionId: "besd-n04-b01-i034_bounded_edge_config_ttl", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i017", questionId: "besd-n04-b01-i035", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Cache read-only appointment availability by provider and time window, but invalidate on schedule changes and recheck the authoritative slot when confirming a booking.", acceptedOptionId: "besd-n04-b01-i035_provider_window_availability_cache", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) }),
+    Object.freeze({ beforeQuestionId: "besd-n04-b01-i018", questionId: "besd-n04-b01-i036", sourceFile: "content/backend-system-design-interview/caching_read_scaling_search_and_content_delivery/BESD-N04-B01.json", beforeSourceSha256: "b8d9874fe7ff4dbcecf05519857aa57e9b828ec1eb4ba37a7ff8f789e2829c15", sourceSha256: "95196e344ef05a68b1b0ee2a8c27271a753edda62ec64b0b31bf9ae58a67e223", nodeId: "caching_read_scaling_search_and_content_delivery", mentalUnitId: "BESD-N04-B01", learningObjective: "Coalesce concurrent refreshes for the same expensive public query while serving a bounded stale result during one refresh.", acceptedOptionId: "besd-n04-b01-i036_per_key_refresh_coalescing", sourceRefs: Object.freeze(["https://www.rfc-editor.org/rfc/rfc9111.html"]) })
+  ])
+});
+const BIZQ01_BESD_COHORT14_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256", "replacements"];
+const BIZQ01_BESD_COHORT14_ITEM_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeQuestion", "currentQuestion"];
+
 const BIZQ01_COPY_PROOF = Object.freeze({
   path: "evidence/business-quality/bizq-01-coding-source-copy-04.json",
   schemaVersion: "patternly-bizq-wording-correction-v1",
@@ -618,7 +672,7 @@ function compareTrackMembership(trackId, questions, rows, manifestTrack) {
   return computed;
 }
 
-async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
+async function validateBizq01Source01Proof(contentRoot, canonical, evidence, privateSourceBytesOverrides) {
   const projectRoot = path.dirname(contentRoot);
   const proofPath = path.join(projectRoot, BIZQ01_PROOF.path);
   const info = await lstat(proofPath).catch((error) => {
@@ -691,7 +745,7 @@ async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
     const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
     await rejectSymlinkAncestors(sourcePath, `${label}.sourceFile`);
     await regularPath(sourcePath, `${label}.sourceFile`, "file");
-    const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
+    const sourceBytes = privateSourceBytesOverrides?.get(accepted.sourceFile) ?? await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
     if (sha256(sourceBytes) !== accepted.sourceSha256) fail("HASH_MISMATCH", `${label}.sourceFile does not match the accepted current source hash.`);
     let sourceQuestions;
     try {
@@ -711,6 +765,169 @@ async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
     replacements.push({ oldQuestion, newQuestion, beforeQuestionId: accepted.beforeQuestionId, questionId: accepted.questionId });
   }
   return { trackId: BIZQ01_PROOF.trackId, replacements };
+}
+
+async function validateBizq01BesdCohort14Proof(contentRoot, canonical, evidence) {
+  const accepted = BIZQ01_BESD_COHORT14_PROOF;
+  const label = accepted.scope;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, accepted.path);
+  const info = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect ${label}: ${error.message}`);
+  });
+  if (!info) fail("EVIDENCE_MEMBERSHIP", `${label} requires its fixed cohort proof.`);
+  await rejectSymlinkAncestors(proofPath, label);
+  await regularPath(proofPath, label, "file");
+  const proof = await readJson(proofPath, label);
+  exactKeys(proof, BIZQ01_BESD_COHORT14_ROOT_KEYS, label);
+  for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256"]) {
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
+  }
+  assertHash(proof.questionSetSha256, `${label}.questionSetSha256`);
+  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
+    fail("EVIDENCE_VALUE", `${label} contentVersion does not match the current catalog.`);
+  }
+  if (!Array.isArray(proof.replacements) || proof.replacements.length !== accepted.replacements.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must contain exactly the fixed thirty-two replacements.`);
+  }
+  const trackQuestions = canonical.questionsByTrack.get(accepted.trackId);
+  const currentTrackHash = sha256([...trackQuestions].sort((left, right) => compare(left.questionId, right.questionId)));
+  if (currentTrackHash !== accepted.questionSetSha256) fail("HASH_MISMATCH", `${label} current track question set differs from the fixed cohort descriptor.`);
+
+  const sourceQuestionsByPath = new Map();
+  for (const source of accepted.sources) {
+    const sourcePath = path.resolve(projectRoot, ...source.sourceFile.split("/"));
+    await rejectSymlinkAncestors(sourcePath, `${label}.sourceFile`);
+    await regularPath(sourcePath, `${label}.sourceFile`, "file");
+    const bytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
+    if (sha256(bytes) !== source.sourceSha256) fail("HASH_MISMATCH", `${label}.sourceFile does not match its fixed current hash.`);
+    let questions;
+    try { questions = JSON.parse(bytes.toString("utf8")); }
+    catch (error) { fail("INVALID_JSON", `${label}.sourceFile is not valid JSON: ${error.message}`); }
+    if (!Array.isArray(questions)) fail("EVIDENCE_MEMBERSHIP", `${label}.sourceFile must contain a question array.`);
+    const expectedIds = accepted.replacements.filter((item) => item.sourceFile === source.sourceFile).map((item) => item.questionId).concat(source.preservedQuestionId);
+    assertExactSet(questions.map((question) => question?.questionId), expectedIds, `${label} source membership`);
+    const location = canonical.questionLocations.get(source.preservedQuestionId);
+    if (!location || path.relative(projectRoot, location.path).split(path.sep).join("/") !== source.sourceFile) {
+      fail("CANONICAL_MEMBERSHIP", `${label} preserved item is not at its fixed source location.`);
+    }
+    for (const item of accepted.replacements.filter((replacement) => replacement.sourceFile === source.sourceFile)) {
+      const currentQuestion = trackQuestions.find((question) => question.questionId === item.questionId);
+      const sourceQuestion = questions.find((question) => question?.questionId === item.questionId);
+      const currentLocation = canonical.questionLocations.get(item.questionId);
+      if (!currentQuestion || !sourceQuestion || !currentLocation ||
+          path.relative(projectRoot, currentLocation.path).split(path.sep).join("/") !== source.sourceFile ||
+          canonicalJson(sourceQuestion) !== canonicalJson(currentQuestion)) {
+        fail("CANONICAL_MEMBERSHIP", `${label} current item ${item.questionId} differs from its fixed source location or canonical object.`);
+      }
+    }
+    sourceQuestionsByPath.set(source.sourceFile, questions);
+  }
+
+  const currentById = new Map(trackQuestions.map((question) => [question.questionId, question]));
+  const replacements = [];
+  for (const [index, descriptor] of accepted.replacements.entries()) {
+    const itemLabel = `${label}.replacements[${index}]`;
+    const entry = proof.replacements[index];
+    exactKeys(entry, BIZQ01_BESD_COHORT14_ITEM_KEYS, itemLabel);
+    for (const key of ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "acceptedOptionId"]) {
+      if (entry[key] !== descriptor[key]) fail("EVIDENCE_VALUE", `${itemLabel}.${key} differs from the fixed cohort mapping.`);
+    }
+    if (canonicalJson(entry.confirmedDefects) !== canonicalJson(accepted.confirmedDefects) ||
+        entry.identityAction !== accepted.identityAction || entry.identityReason !== accepted.identityReason ||
+        canonicalJson(entry.sourceRefs) !== canonicalJson(descriptor.sourceRefs)) {
+      fail("EVIDENCE_VALUE", `${itemLabel} defects, identity rationale, or primary references differ from the fixed cohort review.`);
+    }
+    assertRelativePath(entry.sourceFile, `${itemLabel}.sourceFile`, { suffix: ".json" });
+    assertHash(entry.beforeSourceSha256, `${itemLabel}.beforeSourceSha256`);
+    assertHash(entry.sourceSha256, `${itemLabel}.sourceSha256`);
+    const oldQuestion = entry.beforeQuestion;
+    const currentQuestion = currentById.get(descriptor.questionId);
+    const oldRow = evidence.rowsByTrack.get(accepted.trackId).find((row) => row.questionId === descriptor.beforeQuestionId);
+    if (!oldQuestion || !currentQuestion || !oldRow || currentById.has(descriptor.beforeQuestionId)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} must bind one frozen historical object to one current replacement.`);
+    }
+    assertCanonicalQuestion(oldQuestion, `${itemLabel}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+    assertCanonicalQuestion(entry.currentQuestion, `${itemLabel}.currentQuestion`, ACCEPTED_TRACK_IDS);
+    if (oldQuestion.questionId !== descriptor.beforeQuestionId || oldQuestion.trackId !== accepted.trackId ||
+        oldQuestion.nodeId !== descriptor.nodeId || oldQuestion.mentalUnitId !== descriptor.mentalUnitId ||
+        currentQuestion.questionId !== descriptor.questionId || currentQuestion.trackId !== accepted.trackId ||
+        currentQuestion.nodeId !== descriptor.nodeId || currentQuestion.mentalUnitId !== descriptor.mentalUnitId ||
+        canonicalJson(entry.currentQuestion) !== canonicalJson(currentQuestion)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} historical/current object identity or taxonomy differs from the fixed cohort.`);
+    }
+    for (const key of ["trackId", "nodeId", "mentalUnitId"]) {
+      if (oldRow[key] !== oldQuestion[key]) fail("EVIDENCE_MEMBERSHIP", `${itemLabel} historical evidence ${key} differs from its old question.`);
+    }
+    assertCanonicalHash(oldRow, oldQuestion, `${itemLabel}.beforeQuestion`);
+    if (currentQuestion.interaction.type !== "choice_single" || currentQuestion.interaction.scoringMethod !== "exact_selected_set" ||
+        currentQuestion.answer.type !== "choice_single" || currentQuestion.answer.optionId !== descriptor.acceptedOptionId ||
+        currentQuestion.interaction.options.some((option) => oldQuestion.interaction.options.some((old) => old.optionId === option.optionId)) ||
+        canonicalJson(currentQuestion.sourceRefs) !== canonicalJson(descriptor.sourceRefs)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes the reviewed interaction, scoring, answer, option identity, or source references.`);
+    }
+    const sourceQuestion = sourceQuestionsByPath.get(descriptor.sourceFile).find((question) => question.questionId === descriptor.questionId);
+    if (canonicalJson(sourceQuestion) !== canonicalJson(currentQuestion)) fail("HASH_MISMATCH", `${itemLabel} source object differs from current canonical content.`);
+    replacements.push({ oldQuestion, newQuestion: currentQuestion, beforeQuestionId: descriptor.beforeQuestionId, questionId: descriptor.questionId });
+  }
+
+  const predecessorSourceBytes = new Map();
+  for (const source of accepted.sources) {
+    const cohortIds = new Set(accepted.replacements.filter((item) => item.sourceFile === source.sourceFile).map((item) => item.questionId));
+    const oldQuestions = replacements.filter((item) => cohortIds.has(item.questionId)).map((item) => item.oldQuestion);
+    const predecessorQuestions = sourceQuestionsByPath.get(source.sourceFile)
+      .filter((question) => !cohortIds.has(question.questionId))
+      .concat(oldQuestions)
+      .sort((left, right) => compare(left.questionId, right.questionId));
+    const bytes = Buffer.from(canonicalJson(predecessorQuestions), "utf8");
+    if (sha256(bytes) !== source.beforeSourceSha256) {
+      fail("HASH_MISMATCH", `${label} does not reconstruct the exact source01 predecessor bytes for ${source.sourceFile}.`);
+    }
+    predecessorSourceBytes.set(source.sourceFile, bytes);
+  }
+
+  const cohortIds = new Set(accepted.replacements.map((item) => item.questionId));
+  const historicalTrackQuestions = trackQuestions
+    .filter((question) => !cohortIds.has(question.questionId))
+    .concat(replacements.map((item) => item.oldQuestion))
+    .sort((left, right) => compare(left.questionId, right.questionId));
+  const predecessorCatalog = {
+    ...canonical.catalog,
+    tracks: canonical.catalog.tracks.map((track) => track.trackId === accepted.trackId
+      ? { ...track, contentVersion: accepted.beforeContentVersion }
+      : track)
+  };
+  const predecessorLocations = new Map(canonical.questionLocations);
+  for (const item of accepted.replacements) {
+    predecessorLocations.delete(item.questionId);
+    predecessorLocations.set(item.beforeQuestionId, {
+      trackId: accepted.trackId,
+      nodeId: item.nodeId,
+      mentalUnitId: item.mentalUnitId,
+      path: path.resolve(projectRoot, ...item.sourceFile.split("/"))
+    });
+  }
+  const predecessorCanonical = {
+    ...canonical,
+    catalog: predecessorCatalog,
+    catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
+    questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, historicalTrackQuestions),
+    questionLocations: predecessorLocations
+  };
+  const source01Proof = await validateBizq01Source01Proof(contentRoot, predecessorCanonical, evidence, predecessorSourceBytes);
+  if (!source01Proof || source01Proof.replacements.length !== BIZQ01_PROOF.replacements.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged source01 proof to validate against its exact reconstructed predecessor.`);
+  }
+  return { trackId: accepted.trackId, replacements: [...source01Proof.replacements, ...replacements] };
+}
+
+async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
+  const version = canonical.catalogByTrack.get(BIZQ01_PROOF.trackId)?.contentVersion;
+  if (version === BIZQ01_BESD_COHORT14_PROOF.contentVersion) {
+    return validateBizq01BesdCohort14Proof(contentRoot, canonical, evidence);
+  }
+  return validateBizq01Source01Proof(contentRoot, canonical, evidence);
 }
 
 async function validateBizq01OodSemanticProof(contentRoot, canonical, evidence, accepted, optionCount, sourceBytesOverride) {

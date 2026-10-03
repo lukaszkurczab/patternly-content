@@ -120,6 +120,40 @@ const BIZQ01_COPY_PROOF = Object.freeze({
   sourceSha256: "192843ea43e1a2ed6a1b2963f9521c505c7614ddc73ed896a20ce13624a28e64"
 });
 const BIZQ01_COPY_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256", "sourceFile", "sourceSha256", "beforeSourceSha256", "questionId", "mentalUnitId", "beforeQuestion", "wording", "sources"];
+const BIZQ01_OOD_PROOF = Object.freeze({
+  path: "evidence/business-quality/bizq-01-ood-source-11.json",
+  schemaVersion: "patternly-bizq-semantic-replacement-v1",
+  scope: "BIZQ-01 OOD source11, single semantic replacement; not full-unit acceptance",
+  trackId: "object-oriented-design-interview",
+  beforeProducerCommit: "570eb490eaf194fa61ad380155cfd16c0377aaf2",
+  beforeContentVersion: "object-oriented-design-interview-candidate-v2026.08.15",
+  contentVersion: "object-oriented-design-interview-authoring-v2026.10.03-bizq01-11",
+  questionSetSha256: "b63ff169d69d5271f9f32f0155cbd0a6401c6b4443d4d4f3132c31273d3dd5a3",
+  replacement: Object.freeze({
+    beforeQuestionId: "ood-n01-b01-i001",
+    questionId: "ood-n01-b01-i018",
+    nodeId: "requirements_use_cases_domain_vocabulary_and_model_boundaries",
+    mentalUnitId: "OOD-N01-B01",
+    sourceFile: "content/object-oriented-design-interview/requirements_use_cases_domain_vocabulary_and_model_boundaries/OOD-N01-B01.json",
+    beforeSourceSha256: "402e3bf668d0dbcfee94a65e09be8772d3c4e101e6af9d01827f1c8c15e13fce",
+    sourceSha256: "276dd399625cf56c95bbd6c595cd08f21d387742ff44650bc1c35de70e11d6ad",
+    learningObjective: "Given an explicit system scope, identify the primary external business actor, its observable goal and system subject, and distinguish internal collaborators or passive domain assets from external actors relative to that subject.",
+    confirmedDefects: Object.freeze([
+      "The former answer combines actor-goal classification with invariant ownership rather than asking the stated actor/goal/subject decision.",
+      "The former prompt and feedback include an editorial constraint and expose a malformed coordinator-option explanation.",
+      "The former generic distractors do not distinguish the primary actor, observable goal and subject boundary."
+    ]),
+    identityAction: "replace_question_with_new_id",
+    identityReason: "The accepted primary decision changes to explicit external actor, observable goal and system-subject classification; all five option meanings also change.",
+    acceptedOptionId: "operator_requests_reservation",
+    sourceRefs: Object.freeze([
+      "https://www.omg.org/spec/UML/2.5.1/PDF",
+      "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+    ])
+  })
+});
+const BIZQ01_OOD_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256", "replacements"];
+const BIZQ01_OOD_ITEM_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeQuestion", "currentQuestion"];
 
 const BIZQ01_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "items", "questionSetSha256"];
 const BIZQ01_ITEM_KEYS = ["sourceFile", "beforeQuestionId", "questionId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeSourceSha256", "sourceSha256", "beforeQuestion"];
@@ -611,6 +645,113 @@ async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
   return { trackId: BIZQ01_PROOF.trackId, replacements };
 }
 
+async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence) {
+  const accepted = BIZQ01_OOD_PROOF;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, accepted.path);
+  const info = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect BIZQ-01 OOD semantic proof: ${error.message}`);
+  });
+  if (!info) return undefined;
+  await rejectSymlinkAncestors(proofPath, "BIZQ-01 OOD semantic proof");
+  const proof = await readJson(proofPath, "BIZQ-01 OOD semantic proof");
+  exactKeys(proof, BIZQ01_OOD_ROOT_KEYS, "BIZQ-01 OOD semantic proof");
+  for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256"]) {
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `BIZQ-01 OOD semantic proof.${key} differs from the accepted batch identity.`);
+  }
+  assertHash(proof.questionSetSha256, "BIZQ-01 OOD semantic proof.questionSetSha256");
+  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
+    fail("EVIDENCE_VALUE", "BIZQ-01 OOD semantic proof contentVersion does not match the current catalog.");
+  }
+  if (!Array.isArray(proof.replacements) || proof.replacements.length !== 1) {
+    fail("EVIDENCE_MEMBERSHIP", "BIZQ-01 OOD semantic proof must contain exactly the accepted one-question replacement.");
+  }
+
+  const entry = proof.replacements[0];
+  const label = "BIZQ-01 OOD semantic proof.replacements[0]";
+  exactKeys(entry, BIZQ01_OOD_ITEM_KEYS, label);
+  const replacement = accepted.replacement;
+  for (const key of ["sourceFile", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "beforeSourceSha256", "sourceSha256", "learningObjective", "identityAction", "identityReason", "acceptedOptionId"]) {
+    if (entry[key] !== replacement[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the accepted replacement identity.`);
+  }
+  if (canonicalJson(entry.confirmedDefects) !== canonicalJson(replacement.confirmedDefects) ||
+      canonicalJson(entry.sourceRefs) !== canonicalJson(replacement.sourceRefs)) {
+    fail("EVIDENCE_VALUE", `${label} defect or source references differ from the accepted review.`);
+  }
+  assertRelativePath(entry.sourceFile, `${label}.sourceFile`, { suffix: ".json" });
+  assertHash(entry.beforeSourceSha256, `${label}.beforeSourceSha256`);
+  assertHash(entry.sourceSha256, `${label}.sourceSha256`);
+
+  const trackQuestions = canonical.questionsByTrack.get(accepted.trackId);
+  const currentTrackHash = sha256([...trackQuestions].sort((left, right) => compare(left.questionId, right.questionId)));
+  if (currentTrackHash !== accepted.questionSetSha256) fail("HASH_MISMATCH", "Current OOD track question set differs from the accepted source11 proof.");
+  const currentById = new Map(trackQuestions.map((question) => [question.questionId, question]));
+  const currentQuestion = currentById.get(replacement.questionId);
+  if (!currentQuestion || currentById.has(replacement.beforeQuestionId)) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must identify one current item and one removed historical item.`);
+  }
+
+  const oldRow = evidence.rowsByTrack.get(accepted.trackId).find((row) => row.questionId === replacement.beforeQuestionId);
+  if (!oldRow) fail("EVIDENCE_MEMBERSHIP", `${label} old question is absent from immutable migration evidence.`);
+  const oldQuestion = entry.beforeQuestion;
+  assertCanonicalQuestion(oldQuestion, `${label}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+  if (oldQuestion.questionId !== replacement.beforeQuestionId || oldQuestion.trackId !== accepted.trackId ||
+      oldQuestion.nodeId !== replacement.nodeId || oldQuestion.mentalUnitId !== replacement.mentalUnitId) {
+    fail("EVIDENCE_MEMBERSHIP", `${label}.beforeQuestion does not match the frozen OOD identity.`);
+  }
+  for (const key of ["trackId", "nodeId", "mentalUnitId"]) {
+    if (oldRow[key] !== oldQuestion[key]) fail("EVIDENCE_MEMBERSHIP", `${label} frozen evidence ${key} differs from the old question.`);
+  }
+  assertCanonicalHash(oldRow, oldQuestion, `${label}.beforeQuestion`);
+
+  assertCanonicalQuestion(entry.currentQuestion, `${label}.currentQuestion`, ACCEPTED_TRACK_IDS);
+  if (canonicalJson(entry.currentQuestion) !== canonicalJson(currentQuestion)) {
+    fail("HASH_MISMATCH", `${label}.currentQuestion does not exactly match current canonical content.`);
+  }
+  if (currentQuestion.questionId !== replacement.questionId || currentQuestion.trackId !== accepted.trackId ||
+      currentQuestion.nodeId !== replacement.nodeId || currentQuestion.mentalUnitId !== replacement.mentalUnitId ||
+      currentQuestion.interaction.type !== "choice_single" || currentQuestion.interaction.scoringMethod !== "exact_selected_set" ||
+      currentQuestion.answer.type !== "choice_single" || currentQuestion.answer.optionId !== replacement.acceptedOptionId) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} changes the reviewed OOD track, taxonomy, interaction, scoring or accepted option identity.`);
+  }
+  const currentOptionIds = currentQuestion.interaction.options.map((option) => option.optionId);
+  const oldOptionIds = new Set(oldQuestion.interaction.options.map((option) => option.optionId));
+  if (currentOptionIds.length !== 5 || new Set(currentOptionIds).size !== 5 ||
+      currentOptionIds.some((optionId) => oldOptionIds.has(optionId))) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must use five unique, new option identities for the changed decision.`);
+  }
+  if (canonicalJson(currentQuestion.sourceRefs) !== canonicalJson(replacement.sourceRefs)) {
+    fail("EVIDENCE_VALUE", `${label} source references differ from the reviewed primary sources.`);
+  }
+
+  const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
+  await rejectSymlinkAncestors(sourcePath, `${label}.sourceFile`);
+  await regularPath(sourcePath, `${label}.sourceFile`, "file");
+  const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
+  if (sha256(sourceBytes) !== replacement.sourceSha256) fail("HASH_MISMATCH", `${label}.sourceFile does not match the accepted current source hash.`);
+  let sourceQuestions;
+  try {
+    sourceQuestions = JSON.parse(sourceBytes.toString("utf8"));
+  } catch (error) {
+    fail("INVALID_JSON", `${label}.sourceFile is not valid JSON: ${error.message}`);
+  }
+  if (!Array.isArray(sourceQuestions) || sourceQuestions.filter((question) => question?.questionId === replacement.questionId).length !== 1 ||
+      sourceQuestions.some((question) => question?.questionId === replacement.beforeQuestionId)) {
+    fail("EVIDENCE_MEMBERSHIP", `${label}.sourceFile must contain the new item exactly once and omit its historical identity.`);
+  }
+  const authoredQuestion = sourceQuestions.find((question) => question?.questionId === replacement.questionId);
+  if (canonicalJson(authoredQuestion) !== canonicalJson(currentQuestion)) fail("HASH_MISMATCH", `${label} source item differs from current canonical content.`);
+  const location = canonical.questionLocations.get(replacement.questionId);
+  if (!location || path.relative(projectRoot, location.path).split(path.sep).join("/") !== replacement.sourceFile) {
+    fail("CANONICAL_MEMBERSHIP", `${label} current item is not at its accepted canonical source location.`);
+  }
+  return {
+    trackId: accepted.trackId,
+    replacements: [{ oldQuestion, newQuestion: currentQuestion, beforeQuestionId: replacement.beforeQuestionId, questionId: replacement.questionId }]
+  };
+}
+
 async function loadBizq01WordingProof(contentRoot, canonical, evidence) {
   const accepted = BIZQ01_COPY_PROOF;
   const projectRoot = path.dirname(contentRoot);
@@ -715,6 +856,7 @@ export async function verifyMigration(options = {}) {
   const canonical = await loadCanonicalContent(resolvedContentRoot);
   const evidence = await loadEvidence(resolvedContentRoot);
   const replacementProof = await loadBizq01ReplacementProof(resolvedContentRoot, canonical, evidence);
+  const oodSemanticProof = await loadBizq01OodSemanticProof(resolvedContentRoot, canonical, evidence);
   const correctionProof = await loadBizq01WordingProof(resolvedContentRoot, canonical, evidence);
   const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence);
   const trackSummaries = [];
@@ -723,7 +865,7 @@ export async function verifyMigration(options = {}) {
     const rows = evidence.rowsByTrack.get(trackId);
     const questions = canonical.questionsByTrack.get(trackId);
     const extras = trackId === "aws-certified-solutions-architect-associate" ? approvedAdditions : [];
-    const replacements = [replacementProof, correctionProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.replacements);
+    const replacements = [replacementProof, oodSemanticProof, correctionProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.replacements);
     const replacedHistoricalIds = new Set(replacements.map((replacement) => replacement.beforeQuestionId));
     const currentIds = [...rows.map((row) => row.questionId).filter((questionId) => !replacedHistoricalIds.has(questionId)), ...extras, ...replacements.map((replacement) => replacement.questionId)];
     assertExactSet(questions.map((question) => question.questionId), currentIds, `${trackId} current question IDs`);
@@ -765,6 +907,10 @@ export async function verifyMigration(options = {}) {
     tracks: trackSummaries,
     historicalCounts: historical.counts,
     approvedAdditionCount: approvedAdditions.length,
+    semanticReplacementProof: oodSemanticProof ? {
+      trackId: oodSemanticProof.trackId,
+      replacements: oodSemanticProof.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId }))
+    } : undefined,
     wordingCorrectionProof: correctionProof ? { trackId: correctionProof.trackId, questionIds: correctionProof.replacements.map(({ questionId }) => questionId) } : undefined,
     replacementProof: replacementProof ? {
       trackId: replacementProof.trackId,

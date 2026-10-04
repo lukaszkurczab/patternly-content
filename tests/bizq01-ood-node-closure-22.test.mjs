@@ -8,17 +8,17 @@ import test, { after, before } from "node:test";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { sha256 } from "../scripts/build.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
-import { restoreOodSource20Fixture } from "./ood-cohort16-historical-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contentRoot = path.join(repositoryRoot, "content");
 const trackId = "object-oriented-design-interview";
-const version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-20";
-const proofPath = "evidence/business-quality/bizq-01-ood-node-closure-20.json";
-const units = Array.from({ length: 9 }, (_, index) => `B${String(index + 1).padStart(2, "0")}`);
-const sourceDirectory = "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility";
+const version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-22";
+const proofPath = "evidence/business-quality/bizq-01-ood-node-closure-22.json";
+const sourceDirectory = "content/object-oriented-design-interview/behavior_state_commands_events_and_workflows";
 const requiredProofs = [
   proofPath,
+  "evidence/business-quality/bizq-01-ood-node-closure-21.json",
+  "evidence/business-quality/bizq-01-ood-node-closure-20.json",
   "evidence/business-quality/bizq-01-ood-reason-amendment-19a.json",
   "evidence/business-quality/bizq-01-ood-node-closure-19.json",
   "evidence/business-quality/bizq-01-ood-node-closure-17.json",
@@ -71,45 +71,46 @@ async function assertRejected(code) {
 }
 
 before(async () => {
-  fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-closure-20-")));
+  fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-closure-22-")));
   await cp(contentRoot, path.join(fixtureRoot, "content"), { recursive: true });
   await copyProofs(fixtureRoot);
-  await restoreOodSource20Fixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
   await rm(fixtureRoot, { recursive: true, force: true });
 });
 
-test("accepts the fixed N04 package and reconstructs 19a→19→17→16→13→12→11", async () => {
+test("accepts the fixed N06 same-ID package and reconstructs 22→21→20→19a→19→17→16→13→12→11", async () => {
   const proofBytes = await readFile(path.join(repositoryRoot, proofPath));
   const proof = JSON.parse(proofBytes.toString("utf8"));
-  assert.equal(sha256(proofBytes), "cb087c42a24d7a7f6ddbd922b05f379efab8f68e991587b30ee8bf51f0e1298d");
+  assert.equal(sha256(proofBytes), "5987128d427d0362b2fe83f6ab62bf2483169374c51941bf23fc3b192f0e089c");
   assert.equal(proof.contentVersion, version);
-  assert.equal(proof.replacements.length, 144);
-  assert.equal(proof.sameIdCorrections.length, 18);
+  assert.equal(proof.replacements.length, 0);
+  assert.equal(proof.sameIdCorrections.length, 180);
 
   const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
   assert.equal(result.counts.questions, 16077);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.semanticReplacementProof.replacements.length, 594);
-  assert.deepEqual(result.semanticReplacementProof.replacements.slice(-144), proof.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId })));
+  assert.equal(result.sameIdCorrectionProof.questionIds.length, 351);
+  assert.deepEqual(result.sameIdCorrectionProof.questionIds.slice(-180), proof.sameIdCorrections.map(({ questionId }) => questionId));
   assert.equal(result.reasonAmendmentProof.questionIds.length, 25);
-  assert.deepEqual(result.sameIdCorrectionProof.questionIds, proof.sameIdCorrections.map(({ questionId }) => questionId));
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);
 
+  let scoredCases = 0;
   for (const source of proof.sourceFiles) {
     const bytes = await readFile(path.join(fixtureRoot, source.sourceFile));
     assert.equal(sha256(bytes), source.sourceSha256, `${source.mentalUnitId} exact raw source hash`);
     const questions = JSON.parse(bytes.toString("utf8"));
     assert.equal(questions.length, 18, source.mentalUnitId);
-    const expected = [...proof.replacements, ...proof.sameIdCorrections]
-      .filter((item) => item.sourceFile === source.sourceFile).map((item) => item.questionId);
+    const expected = proof.sameIdCorrections.filter((item) => item.sourceFile === source.sourceFile).map((item) => item.questionId);
     assert.deepEqual(questions.map(({ questionId }) => questionId), expected, `${source.mentalUnitId} fixed source membership`);
     for (const question of questions) {
       assert.equal(validateQuestion(question).valid, true, question.questionId);
+      assert.equal(question.answer.optionId, proof.sameIdCorrections.find((item) => item.questionId === question.questionId).acceptedOptionId);
       const optionIds = question.interaction.options.map(({ optionId }) => optionId);
+      assert.ok(optionIds.length === 4 || optionIds.length === 5, question.questionId);
       assert.equal(new Set(optionIds).size, optionIds.length, question.questionId);
       const expectedWrong = optionIds.filter((optionId) => optionId !== question.answer.optionId).sort();
       assert.deepEqual(question.feedback.messages.filter((message) => message.kind === "wrong_option").map(({ targetId }) => targetId).sort(), expectedWrong, question.questionId);
@@ -120,13 +121,15 @@ test("accepts the fixed N04 package and reconstructs 19a→19→17→16→13→1
           const scored = scoreQuestion(candidate, { type: "choice_single", optionId });
           assert.equal(scored.status, accepted ? "correct" : "incorrect", `${question.questionId}/${optionId}`);
           assert.equal(scored.earnedPoints, accepted ? 1 : 0, `${question.questionId}/${optionId}`);
+          scoredCases += 1;
         }
       }
     }
   }
+  assert.equal(scoredCases, 1656);
 });
 
-test("requires every fixed proof in the source20 predecessor chain", async () => {
+test("requires every fixed proof in the source22 predecessor chain", async () => {
   for (const relativePath of requiredProofs) {
     const target = path.join(fixtureRoot, relativePath);
     const original = await readFile(target);
@@ -139,48 +142,54 @@ test("requires every fixed proof in the source20 predecessor chain", async () =>
   }
 });
 
-test("rejects tampered fixed proof objects, membership, identity and source hashes", async () => {
-  await withJsonMutation(proofPath, (proof) => { proof.extra = true; return proof; }, () => assertRejected("HASH_MISMATCH"));
-  await withJsonMutation(proofPath, (proof) => { proof.replacements[0].currentQuestion.prompt += " changed"; return proof; }, () => assertRejected("HASH_MISMATCH"));
-  await withJsonMutation(proofPath, (proof) => { proof.sameIdCorrections[0].beforeQuestion.prompt += " changed"; return proof; }, () => assertRejected("HASH_MISMATCH"));
-  await withJsonMutation(proofPath, (proof) => { proof.replacements.pop(); return proof; }, () => assertRejected("HASH_MISMATCH"));
-  await withJsonMutation(proofPath, (proof) => { proof.replacements[1] = structuredClone(proof.replacements[0]); return proof; }, () => assertRejected("HASH_MISMATCH"));
-  await withJsonMutation(proofPath, (proof) => { proof.sameIdCorrections[0].questionId = "ood-n04-b05-i099"; return proof; }, () => assertRejected("HASH_MISMATCH"));
-  await withJsonMutation(proofPath, (proof) => { proof.sourceFiles[0].sourceSha256 = "0".repeat(64); return proof; }, () => assertRejected("HASH_MISMATCH"));
+test("rejects tampered proof identity, objects, membership, source hashes, and accepted keys", async () => {
+  const cases = [
+    ["extra field", (proof) => { proof.extra = true; }],
+    ["before object", (proof) => { proof.sameIdCorrections[0].beforeQuestion.prompt += " changed"; }],
+    ["current object", (proof) => { proof.sameIdCorrections[0].currentQuestion.prompt += " changed"; }],
+    ["missing item", (proof) => { proof.sameIdCorrections.pop(); }],
+    ["duplicate item", (proof) => { proof.sameIdCorrections[1] = structuredClone(proof.sameIdCorrections[0]); }],
+    ["changed question identity", (proof) => { proof.sameIdCorrections[0].questionId = "ood-n06-b01-i099"; }],
+    ["wrong accepted option", (proof) => { proof.sameIdCorrections[0].acceptedOptionId = "n06b01_unaccepted"; }],
+    ["source hash", (proof) => { proof.sourceFiles[0].sourceSha256 = "0".repeat(64); }],
+    ["source path", (proof) => { proof.sourceFiles[0].sourceFile = "../outside.json"; }]
+  ];
+  for (const [label, mutate] of cases) {
+    await withJsonMutation(proofPath, (proof) => { mutate(proof); return proof; }, () => assertRejected("HASH_MISMATCH"));
+  }
 });
 
-test("rejects missing or extra source membership and source-content changes", async () => {
-  const sourcePath = `${sourceDirectory}/OOD-N04-B01.json`;
+test("rejects current-source, catalog-version, and missing-v21-predecessor changes", async () => {
+  const sourcePath = `${sourceDirectory}/OOD-N06-B01.json`;
   await withJsonMutation(sourcePath, (questions) => { questions.pop(); return questions; }, () => assertRejected("HASH_MISMATCH"));
-  await withJsonMutation(sourcePath, (questions) => { questions.push({ ...questions.at(-1), questionId: "ood-n04-b01-i099" }); return questions; }, () => assertRejected("HASH_MISMATCH"));
   await withJsonMutation(sourcePath, (questions) => { questions[0].prompt += " changed"; return questions; }, () => assertRejected("HASH_MISMATCH"));
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === trackId).contentVersion += "-wrong";
     return catalog;
   }, () => assertRejected("EVIDENCE_VALUE"));
+
+  const predecessorPath = path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-21.json");
+  const predecessor = await readFile(predecessorPath);
+  try {
+    await rm(predecessorPath);
+    await assertRejected("EVIDENCE_MEMBERSHIP");
+  } finally {
+    await writeFile(predecessorPath, predecessor);
+  }
 });
 
-
-test("rejects symlinked fixed proof and source paths", async () => {
-  const proofTarget = path.join(fixtureRoot, proofPath);
-  const proofHeld = `${proofTarget}.held`;
-  await rename(proofTarget, proofHeld);
-  try {
-    await symlink(path.basename(proofHeld), proofTarget);
-    await assertRejected("SYMLINK_PATH");
-  } finally {
-    await rm(proofTarget, { force: true });
-    await rename(proofHeld, proofTarget);
-  }
-
-  const sourceTarget = path.join(fixtureRoot, `${sourceDirectory}/OOD-N04-B01.json`);
-  const sourceHeld = `${sourceTarget}.held`;
-  await rename(sourceTarget, sourceHeld);
-  try {
-    await symlink(path.basename(sourceHeld), sourceTarget);
-    await assertRejected("SYMLINK_PATH");
-  } finally {
-    await rm(sourceTarget, { force: true });
-    await rename(sourceHeld, sourceTarget);
+test("rejects symlink substitution for fixed proof and source paths", async () => {
+  const sourcePath = `${sourceDirectory}/OOD-N06-B01.json`;
+  for (const relativePath of [proofPath, sourcePath]) {
+    const target = path.join(fixtureRoot, relativePath);
+    const held = `${target}.held`;
+    await rename(target, held);
+    try {
+      await symlink(path.basename(held), target);
+      await assertRejected("SYMLINK_PATH");
+    } finally {
+      await rm(target, { force: true });
+      await rename(held, target);
+    }
   }
 });

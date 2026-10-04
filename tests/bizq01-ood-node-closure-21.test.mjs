@@ -8,6 +8,7 @@ import test, { after, before } from "node:test";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { sha256 } from "../scripts/build.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
+import { restoreOodSource21Fixture } from "./ood-cohort16-historical-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contentRoot = path.join(repositoryRoot, "content");
@@ -42,7 +43,8 @@ async function copyProofs(destination) {
     "bizq-01-ood-node-closure-19.json",
     "bizq-01-ood-reason-amendment-19a.json",
     "bizq-01-ood-node-closure-20.json",
-    "bizq-01-ood-node-closure-21.json"
+    "bizq-01-ood-node-closure-21.json",
+    "bizq-01-ood-node-closure-22.json"
   ]) {
     await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(destination, "evidence/business-quality", name));
   }
@@ -72,6 +74,7 @@ before(async () => {
   fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-closure-21-")));
   await cp(contentRoot, path.join(fixtureRoot, "content"), { recursive: true });
   await copyProofs(fixtureRoot);
+  await restoreOodSource21Fixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
@@ -86,7 +89,7 @@ test("accepts the fixed N05 same-ID package and reconstructs 20→19a→19→17�
   assert.equal(proof.replacements.length, 0);
   assert.equal(proof.sameIdCorrections.length, 153);
 
-  const result = await verifyMigration({ contentRoot });
+  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
   assert.equal(result.counts.questions, 16077);
   assert.equal(result.historicalCounts.questions, 16041);
@@ -98,7 +101,7 @@ test("accepts the fixed N05 same-ID package and reconstructs 20→19a→19→17�
 
   let scoredCases = 0;
   for (const source of proof.sourceFiles) {
-    const bytes = await readFile(path.join(repositoryRoot, source.sourceFile));
+    const bytes = await readFile(path.join(fixtureRoot, source.sourceFile));
     assert.equal(sha256(bytes), source.sourceSha256, `${source.mentalUnitId} exact raw source hash`);
     const questions = JSON.parse(bytes.toString("utf8"));
     assert.equal(questions.length, 17, source.mentalUnitId);

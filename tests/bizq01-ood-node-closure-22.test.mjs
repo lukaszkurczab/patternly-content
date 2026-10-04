@@ -8,6 +8,7 @@ import test, { after, before } from "node:test";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { sha256 } from "../scripts/build.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
+import { restoreOodSource22Fixture } from "./ood-cohort16-historical-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contentRoot = path.join(repositoryRoot, "content");
@@ -44,7 +45,8 @@ async function copyProofs(destination) {
     "bizq-01-ood-reason-amendment-19a.json",
     "bizq-01-ood-node-closure-20.json",
     "bizq-01-ood-node-closure-21.json",
-    "bizq-01-ood-node-closure-22.json"
+    "bizq-01-ood-node-closure-22.json",
+    "bizq-01-ood-node-closure-23.json"
   ]) {
     await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(destination, "evidence/business-quality", name));
   }
@@ -74,6 +76,7 @@ before(async () => {
   fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-closure-22-")));
   await cp(contentRoot, path.join(fixtureRoot, "content"), { recursive: true });
   await copyProofs(fixtureRoot);
+  await restoreOodSource22Fixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {

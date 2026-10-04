@@ -40,7 +40,7 @@ const odk096Approval = JSON.parse(readFileSync(new URL("../evidence/canonical-co
 const ODK096_CONTENT_VERSION = odk096Approval.canonicalIdentity.contentVersion;
 const bizq01Copy = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-coding-source-copy-04.json", import.meta.url), "utf8"));
 const bizq01BesdCohort14 = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-besd-seed-cohort-14.json", import.meta.url), "utf8"));
-const bizq01OodCohort20 = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-ood-node-closure-20.json", import.meta.url), "utf8"));
+const bizq01OodCohort21 = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-ood-node-closure-21.json", import.meta.url), "utf8"));
 
 async function createWorkspace() {
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-simp02-"));
@@ -467,8 +467,8 @@ test("ACC-02 Candidate Manifest retains its exact nine-track identity against fr
       assert.equal(track.contentVersion, bizq01Copy.contentVersion, track.trackId);
     } else if (track.trackId === bizq01BesdCohort14.trackId) {
       assert.equal(track.contentVersion, bizq01BesdCohort14.contentVersion, track.trackId);
-    } else if (track.trackId === bizq01OodCohort20.trackId) {
-      assert.equal(track.contentVersion, bizq01OodCohort20.contentVersion, track.trackId);
+    } else if (track.trackId === bizq01OodCohort21.trackId) {
+      assert.equal(track.contentVersion, bizq01OodCohort21.contentVersion, track.trackId);
     } else {
       assert.equal(track.contentVersion, historicalVersions.get(track.trackId), track.trackId);
     }

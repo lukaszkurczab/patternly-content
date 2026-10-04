@@ -7,7 +7,7 @@ import test, { after, before } from "node:test";
 
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
-import { restoreOodSource19Fixture } from "./ood-cohort16-historical-fixture.mjs";
+import { restoreOodSource19aFixture } from "./ood-cohort16-historical-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const proofPath = "evidence/business-quality/bizq-01-ood-node-closure-19.json";
@@ -37,7 +37,8 @@ async function copyProofs(destination) {
     "bizq-01-ood-node-closure-16.json",
     "bizq-01-ood-node-closure-17.json",
     "bizq-01-ood-node-closure-19.json",
-    "bizq-01-ood-reason-amendment-19a.json"
+    "bizq-01-ood-reason-amendment-19a.json",
+    "bizq-01-ood-node-closure-20.json"
   ]) {
     await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(destination, "evidence/business-quality", name));
   }
@@ -67,7 +68,7 @@ before(async () => {
   fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-closure-19-")));
   await cp(contentRoot, path.join(fixtureRoot, "content"), { recursive: true });
   await copyProofs(fixtureRoot);
-  await restoreOodSource19Fixture(repositoryRoot, fixtureRoot);
+  await restoreOodSource19aFixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
@@ -75,7 +76,7 @@ after(async () => {
 });
 
 test("accepts the fixed 162-item package and reconstructs the immutable v17→16→13→12→11 predecessor chain", async () => {
-  const result = await verifyMigration({ contentRoot });
+  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
   assert.equal(result.reasonAmendmentProof.questionIds.length, 25);
   assert.deepEqual(result.semanticReplacementProof.replacements.slice(-162), units.flatMap((unit) =>

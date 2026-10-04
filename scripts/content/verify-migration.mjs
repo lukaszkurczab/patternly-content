@@ -6427,6 +6427,3296 @@ const BIZQ01_OOD_COHORT19_PROOF = Object.freeze({
   "path": "evidence/business-quality/bizq-01-ood-node-closure-19.json"
 });
 
+const BIZQ01_OOD_COHORT20_PROOF = Object.freeze({
+  path: "evidence/business-quality/bizq-01-ood-node-closure-20.json",
+  sha256: "cb087c42a24d7a7f6ddbd922b05f379efab8f68e991587b30ee8bf51f0e1298d",
+  descriptor: {
+    "schemaVersion": "patternly-bizq-semantic-replacement-v1",
+    "scope": "BIZQ-01 OOD source20, fixed nine-unit N04 cohort; 144 semantic replacements and 18 same-ID corrections; not full-bank acceptance",
+    "trackId": "object-oriented-design-interview",
+    "beforeProducerCommit": "98a7d0519005290cd2c0380d04b08a7b1bdebcde",
+    "beforeContentVersion": "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19a",
+    "contentVersion": "object-oriented-design-interview-authoring-v2026.10.04-bizq01-20",
+    "beforeQuestionSetSha256": "6f493ddd0ebfbbd5fa7acf98e17de69420360925f498791a683aca5f1d7f1f53",
+    "questionSetSha256": "5b552f935cc3fa8bb142ccd38dc747a19a57823a8c7c8fd243fc786d43f0fe72",
+    "sourceFiles": [
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01"
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02"
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03"
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04"
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05"
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06"
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07"
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08"
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09"
+      }
+    ],
+    "replacements": [
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i001",
+        "questionId": "ood-n04-b01-i019",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Separate caller capabilities when two workflows share identity reads but only one may change an assignment, while keeping storage replaceable.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old item was a generic owner slogan. This replacement asks which operations each of two specified clients may call while the persistence adapter remains replaceable.",
+        "acceptedOptionId": "n04b01_01v2_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i002",
+        "questionId": "ood-n04-b01-i020",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Keep consent checking and summary construction at the dispatch boundary while separating the desk’s submit capability from audit history access.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_02_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i003",
+        "questionId": "ood-n04-b01-i021",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Submission should capture the versions once, and later readers should observe them without write access. An immutable command/result boundary keeps scoring separate from historical storage.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_03_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i004",
+        "questionId": "ood-n04-b01-i022",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Preparation and approval are different capabilities. The approve operation can check the named actor and controls, while callers read status without assigning it.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_04_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i005",
+        "questionId": "ood-n04-b01-i023",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Choose a stable public data projection that decouples clients from persistence fields and row layout.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The new primary decision is a stable projection versus exposing a persistence record/shape; it no longer tests the accepted annotation-replacement outcome.",
+        "acceptedOptionId": "n04b01_05v2_projection",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i006",
+        "questionId": "ood-n04-b01-i024",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Keep a resource screen’s access query separate from grant-management authority, including the explicit prohibition on extending expiry.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_06_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i007",
+        "questionId": "ood-n04-b01-i025",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "The operation must bind the signer’s confirmation to a specific immutable revision and report mismatch without sealing. The caller should not manipulate revision bytes or storage.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_07_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i008",
+        "questionId": "ood-n04-b01-i026",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Represent distinct payout statuses and their case-specific reference in a read-only lookup result without giving an observer transfer authority.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The learner now designs an observation result for a reconciliation screen: preserve distinct outcomes and the release reference. The accepted N01 payout item instead decides what a repeated command returns after a payout already exists.",
+        "acceptedOptionId": "n04b01_08v2_query",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i009",
+        "questionId": "ood-n04-b01-i027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Passenger displays need derived answers, while the controller alone appends corrections. Query and command operations communicate those distinct needs without exposing the notice collection.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_09_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i010",
+        "questionId": "ood-n04-b01-i028",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Expose stable search criteria as the caller contract and hide each replaceable index’s query syntax and field names behind the archive adapter.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The primary decision changes from advertising a subset-only search capability to hiding vendor query representation behind a stable criteria contract; the revised options use new IDs because their meanings changed.",
+        "acceptedOptionId": "n04b01_10v4_criteria",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i011",
+        "questionId": "ood-n04-b01-i029",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Both providers already meet the same input, output, and error shape, so a shared contract allows the stream to use either without provider-specific branches.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_11_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i012",
+        "questionId": "ood-n04-b01-i030",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Expose a joint assignment swap as one operation and return the specific assignment that blocks it.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old question was generic; this keeps the same swap decision but makes its alternatives concrete and changes their option meanings.",
+        "acceptedOptionId": "n04b01_12v2_swap",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i013",
+        "questionId": "ood-n04-b01-i031",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "The route owner must decide whether the parent revision is still current and return both identities on conflict. The caller should submit intent, not replace geometry storage.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_13_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i014",
+        "questionId": "ood-n04-b01-i032",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "The page needs to request a claim and display its result; the evaluator owns interpretation of current campaign state. The contract also prevents the claim path from editing quest completion.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_14_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i015",
+        "questionId": "ood-n04-b01-i033",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Enforce the conditional carrier handoff and return enough failure detail for the dispatcher to request the needed correction.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_15_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i016",
+        "questionId": "ood-n04-b01-i034",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Preview and posting have different observable effects, so the interface should name them separately. The posting operation can validate allocations without exposing balance storage.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old key was a generic owner maxim; this item now tests a case-specific public contract and its observable outcome, so the primary learner decision and option meanings change.",
+        "acceptedOptionId": "n04b01_16_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i017",
+        "questionId": "ood-n04-b01-i035",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Use a common polymorphic operation to process a mixed collection of extension-defined elements while preserving caller-owned sequence order.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "This replacement changes the learner decision from a completed-match rejection contract to polymorphic dispatch across extension-defined shapes; all answer choices express new meanings.",
+        "acceptedOptionId": "n04b01_17v3_dispatch",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B01.json",
+        "beforeSourceSha256": "3f7bfd0223ac5f8b67d343b8ec379240607e97cabd6f01afb6215aad9678fad6",
+        "sourceSha256": "14689bf58bc6b5fc92e19b58f3ea6c030d0d876b9d7f7d0226639f1078b1a3ab",
+        "beforeQuestionId": "ood-n04-b01-i018",
+        "questionId": "ood-n04-b01-i036",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B01",
+        "learningObjective": "Hide a changing pagination mechanism behind an opaque continuation value so callers can traverse large data without depending on storage position.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "This replacement changes the primary decision from segregating inspection and refund policy to hiding a changing pagination protocol behind an opaque cursor; all option meanings change.",
+        "acceptedOptionId": "n04b01_18v3_cursor",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i001",
+        "questionId": "ood-n04-b02-i019",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The policy varies per reservation while the caller’s operation stays constant. Delegating through the selected policy lets the corresponding implementation determine the transfer behavior.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_01_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i002",
+        "questionId": "ood-n04-b02-i020",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The catalog has already selected a pricing policy, and both policies share the same input and output contract. Dispatching that operation on the selected policy keeps callers uniform.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_02_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i003",
+        "questionId": "ood-n04-b02-i021",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "Both connector kinds answer the same question but use different rules. A polymorphic query lets the actual connector supply the validity behavior.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_03_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i004",
+        "questionId": "ood-n04-b02-i022",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The sources have a common import operation but different source representations. Letting each implementation normalize its own fields keeps the pipeline stable and the archive record uniform.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_04_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i005",
+        "questionId": "ood-n04-b02-i023",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The same usage facts are evaluated under a selected rule set, and the result has a shared shape. Dispatching evaluate on ClearancePolicy represents exactly that variation.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_05_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i006",
+        "questionId": "ood-n04-b02-i024",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The job already calls one compatibility operation and the battery implementations differ only in the accepted mounts. Overriding that operation supplies behavior without a model branch.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_06_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i007",
+        "questionId": "ood-n04-b02-i025",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "Both destinations accept the same summary and share an outcome contract. The destination object can handle its own transport while keeping the navigator’s call stable.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_07_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i008",
+        "questionId": "ood-n04-b02-i026",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The attempt provides the same captured inputs while the selected policy changes only the scoring behavior. A common score operation on the policy keeps the result screen uniform.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_08_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i009",
+        "questionId": "ood-n04-b02-i027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "Both rules share the same input and output but evaluate it differently. Dispatch on a selected ApprovalRule keeps the queue from implementing policy branches.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_09_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i010",
+        "questionId": "ood-n04-b02-i028",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The source format is the only varying behavior and the mapper already depends on a common decoded result. A selected decoder isolates format handling before the shared workflow.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_10_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i011",
+        "questionId": "ood-n04-b02-i029",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The grants share a query but define effectiveness differently. Implementing that query per grant keeps the access checker independent of grant kind and representation.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_11_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i012",
+        "questionId": "ood-n04-b02-i030",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The signing request and reconciliation outcomes have a common contract even though transports differ. A Signer operation lets the workflow reconcile Unknown without parsing provider internals.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_12_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i013",
+        "questionId": "ood-n04-b02-i031",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "Both processors accept the same stable payout identity and produce a common outcome. A selected processor can encapsulate the provider-specific request details.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_13_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i014",
+        "questionId": "ood-n04-b02-i032",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The notice variants share an application operation but have different effects on the board. Dispatching that operation by notice subtype keeps passenger callers uniform.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_14_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i015",
+        "questionId": "ood-n04-b02-i033",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "Both meters answer the same capability question but support different interval forms. A common query can return the required available/unsupported outcome through runtime dispatch.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_15_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i016",
+        "questionId": "ood-n04-b02-i034",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The provider’s request format varies, while the stream caller’s chunk/result expectation stays fixed. Translation belongs inside the selected provider implementation.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_16_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i017",
+        "questionId": "ood-n04-b02-i035",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "The swap operation is common but eligibility has one subtype-specific condition. Dispatching the check on the assignment preserves the manager’s single call and the specialized rule.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_17_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B02.json",
+        "beforeSourceSha256": "39dc806cd5ad144ae86cd60b9c312d211fe9edb34dc93385a8e2d1ec0c8499b6",
+        "sourceSha256": "07dc546ab1fe0b27faf59b90415dce6d19c5f84fb3d9e0b5d9b9367089540027",
+        "beforeQuestionId": "ood-n04-b02-i018",
+        "questionId": "ood-n04-b02-i036",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B02",
+        "learningObjective": "Both routes share the same edit/result contract; the constrained subtype adds a specific acceptance condition. Implementing that condition in apply keeps the map client uniform.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic ownership maxim is replaced by a specific shared operation and implementation-variation decision; the primary meaning and all option meanings change.",
+        "acceptedOptionId": "n04b02_18_dispatch",
+        "sourceRefs": [
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html#jls-15.12",
+          "https://docs.oracle.com/javase/tutorial/java/IandI/polymorphism.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i001",
+        "questionId": "ood-n04-b03-i019",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "A caller that obeys ReportSource’s valid-interval contract must not need a subtype-specific range check. The archive subtype should accept that same input range and preserve the promised outcome.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_01_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i002",
+        "questionId": "ood-n04-b03-i020",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Queue callers rely on FIFO removal and the defined Empty result. A priority-based behavior changes the core postcondition and should use a distinct contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_02_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i003",
+        "questionId": "ood-n04-b03-i021",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Saved is a caller-visible guarantee of durability at return time. A subtype must not weaken that guarantee by acknowledging before it holds.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_03_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i004",
+        "questionId": "ood-n04-b03-i022",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "The base contract scopes removal to one stable ID and reports completion. A remote implementation must preserve that scope despite its provider’s broader operation.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_04_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i005",
+        "questionId": "ood-n04-b03-i023",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "The base defines a stable repeat-call outcome and no state change. The legacy implementation must report that same ordinary result instead of throwing.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_05_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i006",
+        "questionId": "ood-n04-b03-i024",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "The caller is entitled to request a quote without changing account or order state. A premium implementation must preserve that no-side-effect guarantee.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_06_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i007",
+        "questionId": "ood-n04-b03-i025",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "The contract ties RetryableFailure to a retained message and a retry path. Swallowing failure as Delivered misreports the externally observable outcome.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_07_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i008",
+        "questionId": "ood-n04-b03-i026",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Each open has a per-reader initial-position and independence guarantee. A shared mutable cursor allows later opens to change an existing reader’s observable state.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_08_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i009",
+        "questionId": "ood-n04-b03-i027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "ClockSource promises a monotone sequence to its callers, not a raw wall reading. The replacement must preserve that guarantee even when the underlying source moves backward.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_09_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i010",
+        "questionId": "ood-n04-b03-i028",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "The base accepts all positive quantities, so a subtype cannot impose a minimum threshold. It must preserve the accepted input domain and defined stock result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_10_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i011",
+        "questionId": "ood-n04-b03-i029",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Callers rely on both the total and its reconcilable jurisdiction lines. The flat-rate implementation must preserve that result structure and equality invariant.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_11_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i012",
+        "questionId": "ood-n04-b03-i030",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "The contract covers supported text-only documents and requires rendered output. The compact renderer cannot turn absence of images into an unsupported or empty result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_12_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i013",
+        "questionId": "ood-n04-b03-i031",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Closed means the session will not accept later edits, and pending work must be accounted for. The autosaving subtype cannot make the terminal state provisional.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_13_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i014",
+        "questionId": "ood-n04-b03-i032",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Weight can affect whether a carrier is available, but it does not make a base-valid shipment invalid. The subtype should return the defined unavailable outcome rather than reject the call.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_14_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i015",
+        "questionId": "ood-n04-b03-i033",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Preserve both the complete-acceptance and no-commit retry postconditions when a chunk upload cannot fit.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_15_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i016",
+        "questionId": "ood-n04-b03-i034",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Stored guarantees that the newly supplied value is what a subsequent read returns. A write-once variant cannot report that outcome when it silently keeps an earlier value.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_16_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i017",
+        "questionId": "ood-n04-b03-i035",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Preserve a batch method’s one-result-per-input, order, and identity postconditions when replacing its implementation.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "This replaces the stable-request retry decision with a distinct batch substitutability decision about one-to-one ordered outputs; the new choices carry different semantics.",
+        "acceptedOptionId": "n04b03_17v2_cardinality",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B03.json",
+        "beforeSourceSha256": "0db38c86bde7d00ee5d8740deb9f81b5a269ed17848dd050a953cce88ea3d2e9",
+        "sourceSha256": "df3d74abef8658fe3a038af2975644dea70240e549da3c84d0b6358dc27cd770",
+        "beforeQuestionId": "ood-n04-b03-i018",
+        "questionId": "ood-n04-b03-i036",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B03",
+        "learningObjective": "Predict is specified as a read-like operation over fixed model state. Online learning is a distinct behavior and should not be added invisibly to a subtype implementation.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The old generic owner response is replaced by a concrete contract comparison; its accepted decision and option meanings change.",
+        "acceptedOptionId": "n04b03_18_contract",
+        "sourceRefs": [
+          "https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html#jls-8.4.5"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i001",
+        "questionId": "ood-n04-b04-i019",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "The three clients need distinct operations and have explicit authority boundaries. Role-specific interfaces let each depend only on the methods it actually uses.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_01_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i002",
+        "questionId": "ood-n04-b04-i020",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "The administrator changes grants; the door only asks for an active-status answer. Separate contracts make the door’s dependency read-only.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_02_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i003",
+        "questionId": "ood-n04-b04-i021",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Creation and tracking have different permitted operations. Separate the creation command from the read-only tracking query so tracking cannot change the record.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_03_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i004",
+        "questionId": "ood-n04-b04-i022",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "The scheduler decides and commits a move; the worker sends a confirmation afterward. Separate operation contracts keep scheduling independent of provider details.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_04_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i005",
+        "questionId": "ood-n04-b04-i023",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "The operator needs command authority, while the monitor only observes. Distinct interfaces preserve the controller’s safety check and make monitoring read-only.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_05_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i006",
+        "questionId": "ood-n04-b04-i024",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Editors change published content; learners read the active revision and record progress. Separate client-facing interfaces avoid giving either role unrelated methods.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_06_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i007",
+        "questionId": "ood-n04-b04-i025",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Editing and export have separate permissions and responsibilities. The exporter reads a stable snapshot while the editor controls changes and close.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_07_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i008",
+        "questionId": "ood-n04-b04-i026",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Agents need internal commands; customers need a limited public view. Separate those contracts so private notes and management operations do not leak to readers.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_08_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i009",
+        "questionId": "ood-n04-b04-i027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "The seller owns draft changes and publication; the storefront only reads published results. Distinct interfaces make that capability boundary explicit.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_09_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i010",
+        "questionId": "ood-n04-b04-i028",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Fulfillment needs a state-changing split operation; the customer only needs a public projection. The interfaces should reflect that difference without exposing vendor allocation to the portal.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_10_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i011",
+        "questionId": "ood-n04-b04-i029",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "The transfer has distinct initiator and recipient actions with different authority. Separate capabilities let the recipient make only its decision without editing plot state.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_11_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i012",
+        "questionId": "ood-n04-b04-i030",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Catalog editing and checkout consumption are distinct roles. Publishing is the boundary that exposes a computed read-only version to checkout.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_12_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i013",
+        "questionId": "ood-n04-b04-i031",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Separate the operator’s reservation commands from analytics’ aggregate-count query and keep individual reservation records outside the analytics contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_13_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i014",
+        "questionId": "ood-n04-b04-i032",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Curators change metadata and provenance; search clients consume only approved identity and tags. Separate contracts preserve the editing boundary and limit what search depends on.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_14_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i015",
+        "questionId": "ood-n04-b04-i033",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Analysts make approvals; downloads consume the authorization result. Separate mutation and query interfaces stop download code from becoming an approval client.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_15_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i016",
+        "questionId": "ood-n04-b04-i034",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Technicians perform replacement; planners only need a compatibility decision. Separate interfaces reflect those roles while the maintenance owner controls assignment changes.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_16_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i017",
+        "questionId": "ood-n04-b04-i035",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "The navigator owns consent-checked dispatch, while the specialist needs only the transmitted summary and an acknowledgement. Separate contracts prevent the recipient from gaining internal referral access.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_17_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B04.json",
+        "beforeSourceSha256": "7bb3641b4c6f351012823e1e46dc41150a53741849b962263a1e377376f7c9fb",
+        "sourceSha256": "111104dbb3d8b2c1d09c49d824a23719808a194bd4d53842cc573724df003f55",
+        "beforeQuestionId": "ood-n04-b04-i018",
+        "questionId": "ood-n04-b04-i036",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B04",
+        "learningObjective": "Editors version content and policy; learners create attempts and consume results. Separate contracts keep learner actions from changing the rules they are scored under.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The former generic owner maxim is replaced by a concrete client-contract partition; the primary decision and option meanings change.",
+        "acceptedOptionId": "n04b04_18_roles",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces",
+          "https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i001",
+        "questionId": "ood-n04-b06-i019",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i001_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i002",
+        "questionId": "ood-n04-b06-i020",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i002_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i003",
+        "questionId": "ood-n04-b06-i021",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i003_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i004",
+        "questionId": "ood-n04-b06-i022",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i004_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i005",
+        "questionId": "ood-n04-b06-i023",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i005_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i006",
+        "questionId": "ood-n04-b06-i024",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i006_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i007",
+        "questionId": "ood-n04-b06-i025",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i007_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i008",
+        "questionId": "ood-n04-b06-i026",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i008_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i009",
+        "questionId": "ood-n04-b06-i027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i009_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i010",
+        "questionId": "ood-n04-b06-i028",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i010_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i011",
+        "questionId": "ood-n04-b06-i029",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i011_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i012",
+        "questionId": "ood-n04-b06-i030",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i012_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i013",
+        "questionId": "ood-n04-b06-i031",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i013_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i014",
+        "questionId": "ood-n04-b06-i032",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i014_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i015",
+        "questionId": "ood-n04-b06-i033",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i015_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i016",
+        "questionId": "ood-n04-b06-i034",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i016_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i017",
+        "questionId": "ood-n04-b06-i035",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i017_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B06.json",
+        "beforeSourceSha256": "2477b13c36100959c64b312ffe2c29ffe45c75f4d18a5abd5a404a59b7c15108",
+        "sourceSha256": "ae0a8306d017225a899a8aa7b4038eca836550c51c702a9c9e3c49fd1c30eef0",
+        "beforeQuestionId": "ood-n04-b06-i018",
+        "questionId": "ood-n04-b06-i036",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B06",
+        "learningObjective": "Design a focused extension, callback, or registration boundary that preserves the stable state owner and the case’s replacement, failure, scope, or lifecycle contract.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to where an extension varies, how registration/callback lifecycle works, and which authority retains state transitions.",
+        "acceptedOptionId": "n04b06_i018_extension_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i001",
+        "questionId": "ood-n04-b07-i019",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i001_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/creating-variant-generic-interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i002",
+        "questionId": "ood-n04-b07-i020",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i002_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i003",
+        "questionId": "ood-n04-b07-i021",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i003_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i004",
+        "questionId": "ood-n04-b07-i022",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i004_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/creating-variant-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i005",
+        "questionId": "ood-n04-b07-i023",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i005_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i006",
+        "questionId": "ood-n04-b07-i024",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i006_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i007",
+        "questionId": "ood-n04-b07-i025",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i007_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i008",
+        "questionId": "ood-n04-b07-i026",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i008_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i009",
+        "questionId": "ood-n04-b07-i027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i009_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i010",
+        "questionId": "ood-n04-b07-i028",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i010_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i011",
+        "questionId": "ood-n04-b07-i029",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i011_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i012",
+        "questionId": "ood-n04-b07-i030",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i012_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i013",
+        "questionId": "ood-n04-b07-i031",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i013_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i014",
+        "questionId": "ood-n04-b07-i032",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i014_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i015",
+        "questionId": "ood-n04-b07-i033",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i015_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/creating-variant-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i016",
+        "questionId": "ood-n04-b07-i034",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i016_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/constraints-on-type-parameters"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i017",
+        "questionId": "ood-n04-b07-i035",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select C# generic variance or type constraints from the actual type-parameter positions, required operations, and stated caller compatibility.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen source asks the learner to place an ordinary domain invariant in an owner/coordinator. This candidate instead asks for a C# generic variance/bound decision over explicitly stated typed contracts, which changes the primary decision and answer archetype.",
+        "acceptedOptionId": "n04b07_i017_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/creating-variant-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B07.json",
+        "beforeSourceSha256": "0f617c1b70947c885f267fc6c6d8e72514f5f56e6deb3b27fff099252745593c",
+        "sourceSha256": "17e336e71bc3690f9c2bf6d0783099261662fb5551f8e2d942df22948bee217f",
+        "beforeQuestionId": "ood-n04-b07-i018",
+        "questionId": "ood-n04-b07-i036",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B07",
+        "learningObjective": "Select independent variance directions for generic type parameters from their distinct input and output positions.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to independent C# variance directions for two interface type parameters.",
+        "acceptedOptionId": "n04b07_i018_typed_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/creating-variant-generic-interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/covariance-contravariance/variance-in-generic-interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i001",
+        "questionId": "ood-n04-b08-i019",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i001_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i002",
+        "questionId": "ood-n04-b08-i020",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i002_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i003",
+        "questionId": "ood-n04-b08-i021",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i003_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i004",
+        "questionId": "ood-n04-b08-i022",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i004_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i005",
+        "questionId": "ood-n04-b08-i023",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i005_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i006",
+        "questionId": "ood-n04-b08-i024",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i006_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i007",
+        "questionId": "ood-n04-b08-i025",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i007_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i008",
+        "questionId": "ood-n04-b08-i026",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i008_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i009",
+        "questionId": "ood-n04-b08-i027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i009_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i010",
+        "questionId": "ood-n04-b08-i028",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i010_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i011",
+        "questionId": "ood-n04-b08-i029",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i011_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i012",
+        "questionId": "ood-n04-b08-i030",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i012_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i013",
+        "questionId": "ood-n04-b08-i031",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i013_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i014",
+        "questionId": "ood-n04-b08-i032",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i014_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i015",
+        "questionId": "ood-n04-b08-i033",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i015_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i016",
+        "questionId": "ood-n04-b08-i034",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to selecting the scope and shape of a capability/marker contract, with explicit caller data and operation semantics.",
+        "acceptedOptionId": "n04b08_i016_capability_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i017",
+        "questionId": "ood-n04-b08-i035",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks how inspection evidence relates to refund eligibility. This candidate changes the decision to exposing an optional pair-specific copy operation while keeping the shared storage contract usable by unchanged CPU-only adapters.",
+        "acceptedOptionId": "n04b08_i035_capability",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B08.json",
+        "beforeSourceSha256": "65c6a41268a5811228653ce540d77069b9a5247ca98742f6fa55a07e6ea0977a",
+        "sourceSha256": "431555e485c0362703faa4bcd660ad8627774bd6d02619d12520d35d53caf183",
+        "beforeQuestionId": "ood-n04-b08-i018",
+        "questionId": "ood-n04-b08-i036",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B08",
+        "learningObjective": "Distinguish a type-category marker from a behavioral capability by matching the interface contract to the caller’s actual decision, authority, inputs, and result.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks how published experiment snapshots retain source provenance. This candidate changes the decision to reporting cancellation versus already-published completion when an asynchronous export races its commit, with cleanup owned by the job worker.",
+        "acceptedOptionId": "n04b08_i036_capability",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i001",
+        "questionId": "ood-n04-b09-i019",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i001_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i002",
+        "questionId": "ood-n04-b09-i020",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i002_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i003",
+        "questionId": "ood-n04-b09-i021",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i003_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i004",
+        "questionId": "ood-n04-b09-i022",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i004_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i005",
+        "questionId": "ood-n04-b09-i023",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i005_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i006",
+        "questionId": "ood-n04-b09-i024",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i006_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/interface-implementation/default-interface-methods-versions",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i007",
+        "questionId": "ood-n04-b09-i025",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i007_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i008",
+        "questionId": "ood-n04-b09-i026",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i008_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i009",
+        "questionId": "ood-n04-b09-i027",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i009_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i010",
+        "questionId": "ood-n04-b09-i028",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i010_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i011",
+        "questionId": "ood-n04-b09-i029",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i011_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/interface-implementation/default-interface-methods-versions"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i012",
+        "questionId": "ood-n04-b09-i030",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i012_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i013",
+        "questionId": "ood-n04-b09-i031",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i013_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i014",
+        "questionId": "ood-n04-b09-i032",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i014_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i015",
+        "questionId": "ood-n04-b09-i033",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i015_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/interface-implementation/default-interface-methods-versions",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i016",
+        "questionId": "ood-n04-b09-i034",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i016_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i017",
+        "questionId": "ood-n04-b09-i035",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i017_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B09.json",
+        "beforeSourceSha256": "0bd009721c5ee62baeac7655e204fbcf852c3222c956feb8b286dc9594b63461",
+        "sourceSha256": "f51418182cf1beee23a947de3f67771bddfd023a5e6599350c6be63e9b15a87c",
+        "beforeQuestionId": "ood-n04-b09-i018",
+        "questionId": "ood-n04-b09-i036",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B09",
+        "learningObjective": "Choose an abstract base, interface capability, or default member from the actual shared state/behavior, hierarchy constraints, and safe fallback available to current clients.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "replace_question_with_new_id",
+        "identityReason": "The frozen item asks for an ordinary domain invariant to be assigned to an owner. This candidate changes the primary decision to choosing a type-contract implementation/evolution mechanism from explicit class hierarchy, shared state, compatibility, and default-behavior facts.",
+        "acceptedOptionId": "n04b09_i018_type_tradeoff",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/classes-and-structs/inheritance",
+          "https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/language-specification/interfaces"
+        ]
+      }
+    ],
+    "sameIdCorrections": [
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i001",
+        "questionId": "ood-n04-b05-i001",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Two payment gateways return different response classes and error enums; either gateway can be selected by deployment, while the renewal rule changes only with subscription policy.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_001_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i002",
+        "questionId": "ood-n04-b05-i002",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (A bureau SDK is being replaced and each bureau names income verification differently; the threshold and denial meaning remain fixed across both providers.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_002_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i003",
+        "questionId": "ood-n04-b05-i003",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Two carrier APIs encode arrival states and timestamps differently; the delivery rule uses the same comparison for both carriers and may not inspect raw payloads.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_003_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i004",
+        "questionId": "ood-n04-b05-i004",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (The clinic directory can be local or hosted, and both return a provider-specific specialty code; the rule’s two checks are unchanged.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_004_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i005",
+        "questionId": "ood-n04-b05-i005",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (A new ledger vendor changes its decimal and line-item classes; the approval invariant and rounding policy stay owned by the billing team.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_005_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i006",
+        "questionId": "ood-n04-b05-i006",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Notice records arrive from two content platforms with different field names; the required-notice list is release policy and remains identical.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_006_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i007",
+        "questionId": "ood-n04-b05-i007",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (The policy limit is reviewed with insurance terms; the carrier’s package and currency types are replaced next quarter, while carrier adapters already normalize currency.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_007_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i008",
+        "questionId": "ood-n04-b05-i008",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Two scoring vendors use unrelated response classes and band labels; both adapters can map their documented bands to the same policy vocabulary.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_008_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i009",
+        "questionId": "ood-n04-b05-i009",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (One deployment reads retention dates from a local file and another from a settings service; the policy calendar and deletion rule do not vary by deployment.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_009_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i010",
+        "questionId": "ood-n04-b05-i010",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Availability comes from either a venue database or a partner inventory API; both can return occupied intervals, while booking owns overlap semantics.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_010_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i011",
+        "questionId": "ood-n04-b05-i011",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (The moderation SDK is being replaced; SDK labels differ, but the editorial team owns the prohibited labels and both adapters can map reviewed outcomes.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_011_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i012",
+        "questionId": "ood-n04-b05-i012",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Verification comes from an internal reviewer tool or an external document service; each reports document kinds differently, while grant requirements are fixed by the program.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_012_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i013",
+        "questionId": "ood-n04-b05-i013",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Two policy-administration systems use different date and status enums; the coverage interval semantics are set by the insurer and remain the same.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_013_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i014",
+        "questionId": "ood-n04-b05-i014",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Retail systems use different product-category codes; warranty terms are fixed by the manufacturer, and each retailer can map its codes to the manufacturer’s family list.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_014_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i015",
+        "questionId": "ood-n04-b05-i015",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Income and debt values come from two finance connectors with distinct DTOs; the loan product defines the ratio and both connectors expose the same dated amounts after conversion.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_015_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i016",
+        "questionId": "ood-n04-b05-i016",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Credential timestamps arrive from two badge vendors; the security policy defines expiry as a timestamp comparison and vendor adapters can normalize timestamps to UTC.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_016_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i017",
+        "questionId": "ood-n04-b05-i017",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (One settlement service reports a status enum and another reports event records; both adapters can produce the two facts, and payout policy owns the release rule.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_017_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      },
+      {
+        "sourceFile": "content/object-oriented-design-interview/interfaces_polymorphism_substitution_and_extensibility/OOD-N04-B05.json",
+        "beforeSourceSha256": "1f617f0282d8284dfcef1569f7504efb200ce040722c36c7f64425d063294a75",
+        "sourceSha256": "87d3159243ad32fcf4739799478a69b2f8d9eb22994a9a2b701ecaa2752e5950",
+        "beforeQuestionId": "ood-n04-b05-i018",
+        "questionId": "ood-n04-b05-i018",
+        "nodeId": "interfaces_polymorphism_substitution_and_extensibility",
+        "mentalUnitId": "OOD-N04-B05",
+        "learningObjective": "Choose dependency direction and contract ownership so stable policy depends on policy-meaningful inputs while volatile mechanisms translate their own representations.",
+        "confirmedDefects": [
+          "Visible case facts do not establish the declared unit decision; generic alternatives and feedback (preflight whole-object review)."
+        ],
+        "identityAction": "preserve_question_id",
+        "identityReason": "The frozen lens still asks for the dependency boundary; these facts now make the same policy-versus-mechanism decision concrete (Consent records are stored in either a regional database or a hosted consent service; both are translated to the same purpose and decision time, while the privacy rule owns purpose matching.). New option identities bind this item-specific wording.",
+        "acceptedOptionId": "n04b05_018_policy_contract",
+        "sourceRefs": [
+          "https://learn.microsoft.com/en-us/dotnet/standard/modern-web-apps-azure/architectural-principles"
+        ]
+      }
+    ]
+  }
+});
+
 const BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF = Object.freeze({
   path: "evidence/business-quality/bizq-01-ood-reason-amendment-19a.json",
   sha256: "4d964e0a09690ba4b12382b11e9d9a5917069bbb6bbfe953f157aab5c1b7debb",
@@ -6472,6 +9762,9 @@ const BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF = Object.freeze({
   ])
 });
 
+const BIZQ01_OOD_COHORT20_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "replacements", "sameIdCorrections"];
+const BIZQ01_OOD_COHORT20_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
+const BIZQ01_OOD_COHORT20_ITEM_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeQuestion", "currentQuestion"];
 const BIZQ01_OOD_REASON_AMENDMENT_19A_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "replacements"];
 const BIZQ01_OOD_REASON_AMENDMENT_19A_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
 const BIZQ01_OOD_REASON_AMENDMENT_19A_ITEM_KEYS = ["sourceFile", "questionId", "mentalUnitId", "beforeReason", "reason", "beforeQuestionSha256", "questionSha256"];
@@ -7058,8 +10351,211 @@ async function validateBizq01OodReasonAmendment19a(contentRoot, canonical, evide
   };
 }
 
+async function validateBizq01OodCohort20Proof(contentRoot, canonical, evidence) {
+  const accepted = BIZQ01_OOD_COHORT20_PROOF.descriptor;
+  const label = accepted.scope;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, BIZQ01_OOD_COHORT20_PROOF.path);
+  const proofInfo = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect ${label}: ${error.message}`);
+  });
+  if (!proofInfo) return undefined;
+  await rejectSymlinkAncestors(proofPath, label);
+  await regularPath(proofPath, label, "file");
+  const proofBytes = await readFile(proofPath).catch((error) => fail("READ_ERROR", `Cannot read ${label}: ${error.message}`));
+  if (sha256(proofBytes) !== BIZQ01_OOD_COHORT20_PROOF.sha256) fail("HASH_MISMATCH", `${label} differs from its fixed proof bytes.`);
+  let proof;
+  try { proof = JSON.parse(proofBytes.toString("utf8")); }
+  catch (error) { fail("INVALID_JSON", `${label} is not valid JSON: ${error.message}`); }
+  exactKeys(proof, BIZQ01_OOD_COHORT20_ROOT_KEYS, label);
+  for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256"]) {
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
+  }
+  for (const key of ["beforeQuestionSetSha256", "questionSetSha256"]) assertHash(proof[key], `${label}.${key}`);
+  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
+    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
+  }
+  const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
+  if (!currentTrackQuestions || sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
+    fail("HASH_MISMATCH", `${label} current OOD question set differs from its fixed descriptor.`);
+  }
+  if (!Array.isArray(proof.sourceFiles) || proof.sourceFiles.length !== accepted.sourceFiles.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must identify exactly the ${accepted.sourceFiles.length} fixed source files.`);
+  }
+  const sourcesByPath = new Map();
+  for (const [index, source] of accepted.sourceFiles.entries()) {
+    const entry = proof.sourceFiles[index];
+    const sourceLabel = `${label}.sourceFiles[${index}]`;
+    exactKeys(entry, BIZQ01_OOD_COHORT20_SOURCE_KEYS, sourceLabel);
+    for (const key of BIZQ01_OOD_COHORT20_SOURCE_KEYS) {
+      if (entry[key] !== source[key]) fail("EVIDENCE_VALUE", `${sourceLabel}.${key} differs from the fixed cohort descriptor.`);
+    }
+    assertRelativePath(entry.sourceFile, `${sourceLabel}.sourceFile`, { suffix: ".json" });
+    assertHash(entry.beforeSourceSha256, `${sourceLabel}.beforeSourceSha256`);
+    assertHash(entry.sourceSha256, `${sourceLabel}.sourceSha256`);
+    const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
+    await rejectSymlinkAncestors(sourcePath, `${sourceLabel}.sourceFile`);
+    await regularPath(sourcePath, `${sourceLabel}.sourceFile`, "file");
+    const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    if (sha256(sourceBytes) !== source.sourceSha256) fail("HASH_MISMATCH", `${sourceLabel}.sourceFile does not match the fixed current source hash.`);
+    let questions;
+    try { questions = JSON.parse(sourceBytes.toString("utf8")); }
+    catch (error) { fail("INVALID_JSON", `${sourceLabel}.sourceFile is not valid JSON: ${error.message}`); }
+    const expectedItems = [...accepted.replacements, ...accepted.sameIdCorrections].filter((item) => item.sourceFile === source.sourceFile);
+    const expectedIds = expectedItems.map((item) => item.questionId);
+    if (!Array.isArray(questions) || questions.length !== expectedIds.length) {
+      fail("EVIDENCE_MEMBERSHIP", `${sourceLabel}.sourceFile must contain exactly the fixed ${expectedIds.length} current questions.`);
+    }
+    assertExactSet(questions.map((question) => question?.questionId), expectedIds, `${sourceLabel}.source question IDs`);
+    const sourceById = new Map(questions.map((question) => [question.questionId, question]));
+    for (const question of questions) {
+      const location = canonical.questionLocations.get(question.questionId);
+      if (!location || path.relative(projectRoot, location.path).split(path.sep).join("/") !== source.sourceFile) {
+        fail("CANONICAL_MEMBERSHIP", `${sourceLabel} includes an item outside its fixed canonical source location.`);
+      }
+      if (question.trackId !== accepted.trackId || question.nodeId !== source.nodeId || question.mentalUnitId !== source.mentalUnitId) {
+        fail("EVIDENCE_MEMBERSHIP", `${sourceLabel} contains an item with a different fixed taxonomy.`);
+      }
+      const canonicalQuestion = currentTrackQuestions.find((current) => current.questionId === question.questionId);
+      if (!canonicalQuestion || canonicalJson(canonicalQuestion) !== canonicalJson(question)) {
+        fail("HASH_MISMATCH", `${sourceLabel} source item differs from current canonical content.`);
+      }
+    }
+    sourcesByPath.set(source.sourceFile, { sourcePath, questions, sourceById });
+  }
+
+  const proofGroups = [
+    ["replacements", accepted.replacements],
+    ["sameIdCorrections", accepted.sameIdCorrections]
+  ];
+  const currentById = new Map(currentTrackQuestions.map((question) => [question.questionId, question]));
+  const oldRowsById = new Map(evidence.rowsByTrack.get(accepted.trackId).map((row) => [row.questionId, row]));
+  const beforeByCurrentId = new Map();
+  const oldIds = new Set();
+  const newIds = new Set();
+  const oldOptionIds = new Set();
+  const currentOptionIds = new Set();
+  const replacements = [];
+  const sameIdCorrections = [];
+  for (const [groupName, descriptors] of proofGroups) {
+    const entries = proof[groupName];
+    if (!Array.isArray(entries) || entries.length !== descriptors.length) {
+      fail("EVIDENCE_MEMBERSHIP", `${label}.${groupName} must contain exactly the fixed ${descriptors.length} items.`);
+    }
+    for (const [index, item] of descriptors.entries()) {
+      const entry = entries[index];
+      const itemLabel = `${label}.${groupName}[${index}]`;
+      exactKeys(entry, BIZQ01_OOD_COHORT20_ITEM_KEYS, itemLabel);
+      for (const key of ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "identityAction", "identityReason", "acceptedOptionId"]) {
+        if (entry[key] !== item[key]) fail("EVIDENCE_VALUE", `${itemLabel}.${key} differs from the fixed cohort map.`);
+      }
+      if (canonicalJson(entry.confirmedDefects) !== canonicalJson(item.confirmedDefects) || canonicalJson(entry.sourceRefs) !== canonicalJson(item.sourceRefs)) {
+        fail("EVIDENCE_VALUE", `${itemLabel} defect record or source references differ from the fixed review.`);
+      }
+      const source = accepted.sourceFiles.find((candidate) => candidate.sourceFile === item.sourceFile);
+      if (!source || item.beforeSourceSha256 !== source.beforeSourceSha256 || item.sourceSha256 !== source.sourceSha256) {
+        fail("EVIDENCE_VALUE", `${itemLabel} source hashes do not match the fixed source descriptor.`);
+      }
+      const oldQuestion = entry.beforeQuestion;
+      const currentQuestion = currentById.get(item.questionId);
+      const oldRow = oldRowsById.get(item.beforeQuestionId);
+      const sourceData = sourcesByPath.get(item.sourceFile);
+      const isSameId = groupName === "sameIdCorrections";
+      if (!oldQuestion || !currentQuestion || !oldRow || !sourceData || currentById.has(item.beforeQuestionId) !== isSameId) {
+        fail("EVIDENCE_MEMBERSHIP", `${itemLabel} does not bind the fixed historical item to its current item.`);
+      }
+      if (isSameId ? item.beforeQuestionId !== item.questionId : item.beforeQuestionId === item.questionId) {
+        fail("EVIDENCE_MEMBERSHIP", `${itemLabel} has an invalid fixed identity action.`);
+      }
+      if (oldIds.has(item.beforeQuestionId) || newIds.has(item.questionId)) fail("EVIDENCE_MEMBERSHIP", `${itemLabel} duplicates a historical or current identity.`);
+      oldIds.add(item.beforeQuestionId);
+      newIds.add(item.questionId);
+      assertCanonicalQuestion(oldQuestion, `${itemLabel}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+      assertCanonicalQuestion(entry.currentQuestion, `${itemLabel}.currentQuestion`, ACCEPTED_TRACK_IDS);
+      if (oldQuestion.questionId !== item.beforeQuestionId || oldQuestion.trackId !== accepted.trackId || oldQuestion.nodeId !== item.nodeId || oldQuestion.mentalUnitId !== item.mentalUnitId ||
+          currentQuestion.questionId !== item.questionId || currentQuestion.trackId !== accepted.trackId || currentQuestion.nodeId !== item.nodeId || currentQuestion.mentalUnitId !== item.mentalUnitId ||
+          canonicalJson(entry.currentQuestion) !== canonicalJson(currentQuestion)) {
+        fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes the fixed taxonomy or current authored object.`);
+      }
+      for (const key of ["trackId", "nodeId", "mentalUnitId"]) {
+        if (oldRow[key] !== oldQuestion[key]) fail("EVIDENCE_MEMBERSHIP", `${itemLabel} historical evidence ${key} differs from the old question.`);
+      }
+      assertCanonicalHash(oldRow, oldQuestion, `${itemLabel}.beforeQuestion`);
+      if (currentQuestion.interaction.type !== "choice_single" || currentQuestion.interaction.scoringMethod !== "exact_selected_set" ||
+          currentQuestion.answer.type !== "choice_single" || currentQuestion.answer.optionId !== item.acceptedOptionId || canonicalJson(currentQuestion.sourceRefs) !== canonicalJson(item.sourceRefs)) {
+        fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes the fixed interaction, scoring, accepted answer, or primary references.`);
+      }
+      const priorOptionIds = new Set(oldQuestion.interaction.options.map((option) => option.optionId));
+      const currentItemOptionIds = currentQuestion.interaction.options.map((option) => option.optionId);
+      if (new Set(currentItemOptionIds).size !== currentItemOptionIds.length || currentItemOptionIds.some((optionId) => currentOptionIds.has(optionId))) {
+        fail("EVIDENCE_MEMBERSHIP", `${itemLabel} uses duplicate current option identities.`);
+      }
+      if (!isSameId && currentItemOptionIds.some((optionId) => priorOptionIds.has(optionId))) {
+        fail("EVIDENCE_MEMBERSHIP", `${itemLabel} reuses an option identity from its retired item.`);
+      }
+      for (const option of oldQuestion.interaction.options) oldOptionIds.add(option.optionId);
+      for (const optionId of currentItemOptionIds) currentOptionIds.add(optionId);
+      const sourceQuestion = sourceData.sourceById.get(item.questionId);
+      if (!sourceQuestion || canonicalJson(sourceQuestion) !== canonicalJson(currentQuestion)) fail("HASH_MISMATCH", `${itemLabel} source item differs from current canonical content.`);
+      if (beforeByCurrentId.has(item.questionId)) fail("EVIDENCE_MEMBERSHIP", `${itemLabel} has more than one predecessor object.`);
+      beforeByCurrentId.set(item.questionId, oldQuestion);
+      if (isSameId) sameIdCorrections.push({ questionId: item.questionId, oldQuestion, newQuestion: currentQuestion });
+      else replacements.push({ oldQuestion, newQuestion: currentQuestion, beforeQuestionId: item.beforeQuestionId, questionId: item.questionId });
+    }
+  }
+  if ([...currentOptionIds].some((optionId) => oldOptionIds.has(optionId))) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} reuses an option identity from the retired cohort.`);
+  }
+  for (const source of accepted.sourceFiles) {
+    const sourceData = sourcesByPath.get(source.sourceFile);
+    const predecessorQuestions = sourceData.questions.map((question) => beforeByCurrentId.get(question.questionId) ?? question)
+      .sort((left, right) => compare(left.questionId, right.questionId));
+    const predecessorBytes = Buffer.from(JSON.stringify(predecessorQuestions), "utf8");
+    if (sha256(predecessorBytes) !== source.beforeSourceSha256) fail("HASH_MISMATCH", `${label} does not reconstruct byte-exact ${accepted.beforeContentVersion} source ${source.sourceFile}.`);
+  }
+  const reconstructedTrackQuestions = currentTrackQuestions.map((question) => beforeByCurrentId.get(question.questionId) ?? question)
+    .sort((left, right) => compare(left.questionId, right.questionId));
+  if (sha256(reconstructedTrackQuestions) !== accepted.beforeQuestionSetSha256) fail("HASH_MISMATCH", `${label} does not reconstruct the immutable predecessor OOD question set.`);
+  const predecessorCatalog = {
+    ...canonical.catalog,
+    tracks: canonical.catalog.tracks.map((track) => track.trackId === accepted.trackId ? { ...track, contentVersion: accepted.beforeContentVersion } : track)
+  };
+  const predecessorLocations = new Map(canonical.questionLocations);
+  for (const item of replacements) {
+    const descriptor = accepted.replacements.find((candidate) => candidate.questionId === item.questionId);
+    predecessorLocations.delete(item.questionId);
+    predecessorLocations.set(item.beforeQuestionId, {
+      trackId: accepted.trackId,
+      nodeId: item.oldQuestion.nodeId,
+      mentalUnitId: item.oldQuestion.mentalUnitId,
+      path: sourcesByPath.get(descriptor.sourceFile).sourcePath
+    });
+  }
+  const predecessorCanonical = {
+    ...canonical,
+    catalog: predecessorCatalog,
+    catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
+    questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
+    questionLocations: predecessorLocations
+  };
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed 19a predecessor proof chain.`);
+  return {
+    trackId: accepted.trackId,
+    replacements: [...predecessor.replacements, ...replacements],
+    sameIdCorrections: [...(predecessor.sameIdCorrections ?? []), ...sameIdCorrections],
+    reasonAmendmentQuestionIds: predecessor.reasonAmendmentQuestionIds
+  };
+}
+
 async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, privateHistoricalSourceBytes) {
   const version = canonical.catalogByTrack.get(BIZQ01_OOD_PROOF.trackId)?.contentVersion;
+  if (version === BIZQ01_OOD_COHORT20_PROOF.descriptor.contentVersion) {
+    const cohort = await validateBizq01OodCohort20Proof(contentRoot, canonical, evidence);
+    if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source20 OOD version requires its fixed nine-unit N04 proof.");
+    return cohort;
+  }
   if (version === BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF.contentVersion) {
     const amendment = await validateBizq01OodReasonAmendment19a(contentRoot, canonical, evidence);
     if (!amendment) fail("EVIDENCE_MEMBERSHIP", "The source19a OOD version requires its fixed 25-item Reason-only amendment proof.");
@@ -7129,7 +10625,7 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, priv
     return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...cohort.replacements] };
   }
   if (version !== BIZQ01_OOD_SUCCESSOR_PROOF.contentVersion) {
-    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path, BIZQ01_OOD_COHORT13_PROOF.path, BIZQ01_OOD_COHORT16_PROOF.path, BIZQ01_OOD_COHORT17_PROOF.path, BIZQ01_OOD_COHORT19_PROOF.path, BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF.path];
+    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path, BIZQ01_OOD_COHORT13_PROOF.path, BIZQ01_OOD_COHORT16_PROOF.path, BIZQ01_OOD_COHORT17_PROOF.path, BIZQ01_OOD_COHORT19_PROOF.path, BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF.path, BIZQ01_OOD_COHORT20_PROOF.path];
     for (const relativePath of proofPaths) {
       const info = await lstat(path.join(path.dirname(contentRoot), relativePath)).catch((error) => {
         if (error?.code === "ENOENT") return undefined;
@@ -7318,6 +10814,8 @@ export async function verifyMigration(options = {}) {
     const questions = canonical.questionsByTrack.get(trackId);
     const extras = trackId === "aws-certified-solutions-architect-associate" ? approvedAdditions : [];
     const replacements = [replacementProof, oodSemanticProof, correctionProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.replacements);
+    const sameIdCorrections = oodSemanticProof?.trackId === trackId ? (oodSemanticProof.sameIdCorrections ?? []) : [];
+    const sameIdCorrectionById = new Map(sameIdCorrections.map((correction) => [correction.questionId, correction]));
     const replacedHistoricalIds = new Set(replacements.map((replacement) => replacement.beforeQuestionId));
     const currentIds = [...rows.map((row) => row.questionId).filter((questionId) => !replacedHistoricalIds.has(questionId)), ...extras, ...replacements.map((replacement) => replacement.questionId)];
     assertExactSet(questions.map((question) => question.questionId), currentIds, `${trackId} current question IDs`);
@@ -7325,7 +10823,7 @@ export async function verifyMigration(options = {}) {
     const reconstructedQuestions = [
       ...questions.filter((question) => !replacedCurrentIds.has(question.questionId)),
       ...replacements.map((replacement) => replacement.oldQuestion)
-    ];
+    ].map((question) => sameIdCorrectionById.get(question.questionId)?.oldQuestion ?? question);
     const summary = compareTrackMembership(trackId, reconstructedQuestions, rows, evidence.manifestTracks.get(trackId));
     const questionById = new Map(reconstructedQuestions.map((question) => [question.questionId, question]));
     historicalQuestionsByTrack.set(trackId, rows.map((row) => questionById.get(row.questionId)));
@@ -7366,6 +10864,10 @@ export async function verifyMigration(options = {}) {
     reasonAmendmentProof: oodSemanticProof?.reasonAmendmentQuestionIds ? {
       trackId: oodSemanticProof.trackId,
       questionIds: oodSemanticProof.reasonAmendmentQuestionIds
+    } : undefined,
+    sameIdCorrectionProof: oodSemanticProof?.sameIdCorrections?.length ? {
+      trackId: oodSemanticProof.trackId,
+      questionIds: oodSemanticProof.sameIdCorrections.map(({ questionId }) => questionId)
     } : undefined,
     wordingCorrectionProof: correctionProof ? { trackId: correctionProof.trackId, questionIds: correctionProof.replacements.map(({ questionId }) => questionId) } : undefined,
     replacementProof: replacementProof ? {

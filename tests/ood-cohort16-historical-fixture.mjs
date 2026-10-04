@@ -5,8 +5,46 @@ import { sha256 } from "../scripts/build.mjs";
 
 const proofRelativePath = "evidence/business-quality/bizq-01-ood-node-closure-16.json";
 
+/** Restore accepted source17 bytes before exercising its immutable historical guards. */
+export async function restoreOodSource17Fixture(repositoryRoot, fixtureRoot) {
+  const catalogPath = path.join(fixtureRoot, "content/catalog.json");
+  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  const track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
+  const source17Version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-17";
+  if (track.contentVersion === source17Version) return;
+  assert.equal(track.contentVersion, "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19");
+  const source19ProofPath = "evidence/business-quality/bizq-01-ood-node-closure-19.json";
+  const proof = JSON.parse(await readFile(path.join(repositoryRoot, source19ProofPath), "utf8"));
+  assert.equal(proof.beforeContentVersion, source17Version);
+  assert.equal(proof.contentVersion, track.contentVersion);
+  assert.equal(proof.sourceFiles.length, 9);
+  assert.equal(proof.replacements.length, 162);
+  for (const source of proof.sourceFiles) {
+    const target = path.join(fixtureRoot, source.sourceFile);
+    const currentBytes = await readFile(target);
+    assert.equal(sha256(currentBytes), source.sourceSha256, `${source.sourceFile} exact source19 input`);
+    const current = JSON.parse(currentBytes);
+    const replacements = proof.replacements.filter((item) => item.sourceFile === source.sourceFile);
+    assert.equal(replacements.length, 18);
+    const replacedIds = new Set(replacements.map((item) => item.questionId));
+    const predecessor = current.filter((question) => !replacedIds.has(question.questionId))
+      .concat(replacements.map((item) => item.beforeQuestion))
+      .sort((left, right) => left.questionId.localeCompare(right.questionId));
+    const bytes = Buffer.from(JSON.stringify(predecessor), "utf8");
+    assert.equal(sha256(bytes), source.beforeSourceSha256, `${source.sourceFile} byte-exact source17 predecessor`);
+    await writeFile(target, bytes);
+  }
+  track.contentVersion = source17Version;
+  await writeFile(catalogPath, `${JSON.stringify(catalog)}\n`, "utf8");
+  await rm(path.join(fixtureRoot, source19ProofPath), { force: true });
+}
+
 /** Restore accepted source16 before exercising its immutable historical guards. */
 export async function restoreOodSource16Fixture(repositoryRoot, fixtureRoot) {
+  const currentCatalog = JSON.parse(await readFile(path.join(fixtureRoot, "content/catalog.json"), "utf8"));
+  if (currentCatalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview").contentVersion === "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19") {
+    await restoreOodSource17Fixture(repositoryRoot, fixtureRoot);
+  }
   const catalogPath = path.join(fixtureRoot, "content/catalog.json");
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
   const track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");

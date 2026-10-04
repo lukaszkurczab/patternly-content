@@ -7,16 +7,16 @@ import test, { after, before } from "node:test";
 
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
-import { restoreOodSource17Fixture } from "./ood-cohort16-historical-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const proofPath = "evidence/business-quality/bizq-01-ood-node-closure-17.json";
+const proofPath = "evidence/business-quality/bizq-01-ood-node-closure-19.json";
 const contentRoot = path.join(repositoryRoot, "content");
 const trackId = "object-oriented-design-interview";
-const version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-17";
-const units = ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08"];
-const sourceDirectory = "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants";
+const version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19";
+const units = ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B09"];
+const sourceDirectory = "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies";
 const oldProofs = [
+  "evidence/business-quality/bizq-01-ood-node-closure-17.json",
   "evidence/business-quality/bizq-01-ood-node-closure-16.json",
   "evidence/business-quality/bizq-01-ood-unit-cohort-13.json",
   "evidence/business-quality/bizq-01-ood-source-12.json",
@@ -34,7 +34,8 @@ async function copyProofs(destination) {
     "bizq-01-ood-source-12.json",
     "bizq-01-ood-unit-cohort-13.json",
     "bizq-01-ood-node-closure-16.json",
-    "bizq-01-ood-node-closure-17.json"
+    "bizq-01-ood-node-closure-17.json",
+    "bizq-01-ood-node-closure-19.json"
   ]) {
     await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(destination, "evidence/business-quality", name));
   }
@@ -61,43 +62,42 @@ async function assertRejected(code) {
 }
 
 before(async () => {
-  fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-closure-17-")));
+  fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-closure-19-")));
   await cp(contentRoot, path.join(fixtureRoot, "content"), { recursive: true });
   await copyProofs(fixtureRoot);
-  await restoreOodSource17Fixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
   await rm(fixtureRoot, { recursive: true, force: true });
 });
 
-test("accepts the fixed 152-item package and reconstructs the immutable v16→13→12→11 predecessor chain", async () => {
-  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
+test("accepts the fixed 162-item package and reconstructs the immutable v17→16→13→12→11 predecessor chain", async () => {
+  const result = await verifyMigration({ contentRoot });
   assert.equal(result.result, "passed");
-  assert.deepEqual(result.semanticReplacementProof.replacements.slice(-152), units.flatMap((unit) =>
-    Array.from({ length: 19 }, (_, index) => ({
-      beforeQuestionId: `ood-n02-${unit.toLowerCase()}-i${String(index + 1).padStart(3, "0")}`,
-      questionId: `ood-n02-${unit.toLowerCase()}-i${String(index + 20).padStart(3, "0")}`
+  assert.deepEqual(result.semanticReplacementProof.replacements.slice(-162), units.flatMap((unit) =>
+    Array.from({ length: 18 }, (_, index) => ({
+      beforeQuestionId: `ood-n03-${unit.toLowerCase()}-i${String(index + 1).padStart(3, "0")}`,
+      questionId: `ood-n03-${unit.toLowerCase()}-i${String(index + 19).padStart(3, "0")}`
     }))
   ));
-  assert.equal(result.semanticReplacementProof.replacements.length, 288);
+  assert.equal(result.semanticReplacementProof.replacements.length, 450);
   assert.equal(result.counts.questions, 16077);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);
   for (const unit of units) {
-    const questions = JSON.parse(await readFile(path.join(contentRoot, `${sourceDirectory.replace(/^content\//u, "")}/OOD-N02-${unit}.json`), "utf8"));
-    assert.equal(questions.length, 19, unit);
-    assert.deepEqual(questions.map((question) => question.questionId), Array.from({ length: 19 }, (_, index) => `ood-n02-${unit.toLowerCase()}-i${String(index + 20).padStart(3, "0")}`));
+    const questions = JSON.parse(await readFile(path.join(contentRoot, `${sourceDirectory.replace(/^content\//u, "")}/OOD-N03-${unit}.json`), "utf8"));
+    assert.equal(questions.length, 18, unit);
+    assert.deepEqual(questions.map((question) => question.questionId), Array.from({ length: 18 }, (_, index) => `ood-n03-${unit.toLowerCase()}-i${String(index + 19).padStart(3, "0")}`));
   }
 });
 
 test("validates, scores, and binds targeted feedback for every replacement option", async () => {
   const proof = JSON.parse(await readFile(path.join(repositoryRoot, proofPath), "utf8"));
   assert.equal(proof.contentVersion, version);
-  assert.equal(proof.replacements.length, 152);
+  assert.equal(proof.replacements.length, 162);
   for (const source of proof.sourceFiles) {
     const questions = JSON.parse(await readFile(path.join(repositoryRoot, source.sourceFile), "utf8"));
-    assert.equal(questions.length, 19, source.mentalUnitId);
+    assert.equal(questions.length, 18, source.mentalUnitId);
     for (const question of questions) {
       assert.equal(validateQuestion(question).valid, true, question.questionId);
       assert.equal(question.prompt.includes("_a"), false, `${question.questionId} prompt has no authoring placeholder`);
@@ -118,7 +118,7 @@ test("validates, scores, and binds targeted feedback for every replacement optio
   }
 });
 
-test("requires every fixed OOD generation proof in the v17 predecessor chain", async () => {
+test("requires every fixed OOD generation proof in the v19 predecessor chain", async () => {
   for (const relativePath of [proofPath, ...oldProofs]) {
     const target = path.join(fixtureRoot, relativePath);
     const original = await readFile(target);
@@ -133,10 +133,13 @@ test("requires every fixed OOD generation proof in the v17 predecessor chain", a
 
 test("rejects changed identities, hashes, object bindings, membership, and unsupported fields", async () => {
   await withJsonMutation(proofPath, (proof) => { proof.extraField = true; return proof; }, () => assertRejected("EVIDENCE_SHAPE"));
+  await withJsonMutation(proofPath, (proof) => { proof.replacements[0].identityAction = "preserve_question_id"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
+  await withJsonMutation(proofPath, (proof) => { proof.replacements[0].identityReason = proof.identityReason; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
+  await withJsonMutation(proofPath, (proof) => { proof.replacements[0].currentQuestion.prompt += " changed"; return proof; }, () => assertRejected("EVIDENCE_MEMBERSHIP"));
   await withJsonMutation(proofPath, (proof) => { proof.contentVersion += "-wrong"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
   await withJsonMutation(proofPath, (proof) => { proof.sourceFiles[0].sourceSha256 = "0".repeat(64); return proof; }, () => assertRejected("EVIDENCE_VALUE"));
   await withJsonMutation(proofPath, (proof) => { proof.sourceFiles[0].sourceFile = "../other.json"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
-  await withJsonMutation(proofPath, (proof) => { proof.replacements[0].questionId = "ood-n02-b02-i099"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
+  await withJsonMutation(proofPath, (proof) => { proof.replacements[0].questionId = "ood-n03-b02-i099"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
   await withJsonMutation(proofPath, (proof) => { proof.replacements[0].beforeQuestion.prompt += " changed"; return proof; }, () => assertRejected("HASH_MISMATCH"));
   await withJsonMutation(proofPath, (proof) => { proof.replacements[0].currentQuestion.prompt += " changed"; return proof; }, () => assertRejected("EVIDENCE_MEMBERSHIP"));
   await withJsonMutation(proofPath, (proof) => { proof.replacements[0].beforeQuestion = null; return proof; }, () => assertRejected("EVIDENCE_MEMBERSHIP"));
@@ -146,9 +149,9 @@ test("rejects changed identities, hashes, object bindings, membership, and unsup
 });
 
 test("rejects changed canonical source membership and unsupported catalog versions", async () => {
-  const sourcePath = `${sourceDirectory}/OOD-N02-B02.json`;
+  const sourcePath = `${sourceDirectory}/OOD-N03-B02.json`;
   await withJsonMutation(sourcePath, (questions) => { questions[0].prompt += " changed"; return questions; }, () => assertRejected("HASH_MISMATCH"));
-  await withJsonMutation(sourcePath, (questions) => { questions.push({ ...questions.at(-1), questionId: "ood-n02-b02-i039" }); return questions; }, () => assertRejected("HASH_MISMATCH"));
+  await withJsonMutation(sourcePath, (questions) => { questions.push({ ...questions.at(-1), questionId: "ood-n03-b02-i039" }); return questions; }, () => assertRejected("HASH_MISMATCH"));
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === trackId).contentVersion = "object-oriented-design-interview-authoring-v2026.10.03-bizq01-15";
     return catalog;
@@ -169,7 +172,7 @@ test("rejects a symlinked fixed proof path", async () => {
 });
 
 test("rejects a symlinked current source path", async () => {
-  const target = path.join(fixtureRoot, `${sourceDirectory}/OOD-N02-B02.json`);
+  const target = path.join(fixtureRoot, `${sourceDirectory}/OOD-N03-B02.json`);
   const backup = `${target}.held`;
   await rename(target, backup);
   try {

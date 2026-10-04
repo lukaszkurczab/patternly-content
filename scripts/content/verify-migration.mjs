@@ -6427,6 +6427,56 @@ const BIZQ01_OOD_COHORT19_PROOF = Object.freeze({
   "path": "evidence/business-quality/bizq-01-ood-node-closure-19.json"
 });
 
+const BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF = Object.freeze({
+  path: "evidence/business-quality/bizq-01-ood-reason-amendment-19a.json",
+  sha256: "4d964e0a09690ba4b12382b11e9d9a5917069bbb6bbfe953f157aab5c1b7debb",
+  schemaVersion: "patternly-bizq01-ood-reason-amendment-v1",
+  scope: "bizq-01-ood-reason-amendment-19a",
+  trackId: "object-oriented-design-interview",
+  beforeProducerCommit: "1d024bb62328bdb81490d713dc41a6f7d155e9b6",
+  beforeContentVersion: "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19",
+  contentVersion: "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19a",
+  beforeQuestionSetSha256: "b3198cffb61cad65233b0dee7bf308830d53a6adbf0cd6ceac00ffff5fb665a5",
+  questionSetSha256: "6f493ddd0ebfbbd5fa7acf98e17de69420360925f498791a683aca5f1d7f1f53",
+  sourceFiles: Object.freeze([
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", beforeSourceSha256: "c578f0d66d3bbbf0c3f76da302ad27c3f6339573bca6fdff3e3a1f00041859f3", sourceSha256: "30a103966dbfd6fb44271b1b15f09f1c71248b213d8a4c4b3ad89d98ab28c597", nodeId: "relationships_composition_ownership_lifecycle_and_dependencies", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", beforeSourceSha256: "ba18ba56cfbacee3a5f27bde8261e7398074b1ff506b1b6100a1e1f9f1ac6ed5", sourceSha256: "2af1b7be2536fd420022e0c50e6d01935a9206990529f603db3f7e48ab13e62c", nodeId: "relationships_composition_ownership_lifecycle_and_dependencies", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B08.json", beforeSourceSha256: "fc5e6d5a64bc34054bedfd0a6d6ba9b6689a5d99f43d7b640bc14832970853e8", sourceSha256: "bdbab1f296a2816fdc91d64dca06d38b982d001365e27ec3f7bbef3ff5fbb0c1", nodeId: "relationships_composition_ownership_lifecycle_and_dependencies", mentalUnitId: "OOD-N03-B08" })
+  ]),
+  replacements: Object.freeze([
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i019", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i020", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i021", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i022", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i023", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i024", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i025", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i026", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i027", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i028", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i029", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i030", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i031", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i033", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i034", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B02.json", questionId: "ood-n03-b02-i036", mentalUnitId: "OOD-N03-B02" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", questionId: "ood-n03-b03-i019", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", questionId: "ood-n03-b03-i020", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", questionId: "ood-n03-b03-i021", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", questionId: "ood-n03-b03-i023", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", questionId: "ood-n03-b03-i028", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", questionId: "ood-n03-b03-i030", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", questionId: "ood-n03-b03-i032", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B03.json", questionId: "ood-n03-b03-i033", mentalUnitId: "OOD-N03-B03" }),
+    Object.freeze({ sourceFile: "content/object-oriented-design-interview/relationships_composition_ownership_lifecycle_and_dependencies/OOD-N03-B08.json", questionId: "ood-n03-b08-i021", mentalUnitId: "OOD-N03-B08" })
+  ])
+});
+
+const BIZQ01_OOD_REASON_AMENDMENT_19A_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "replacements"];
+const BIZQ01_OOD_REASON_AMENDMENT_19A_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
+const BIZQ01_OOD_REASON_AMENDMENT_19A_ITEM_KEYS = ["sourceFile", "questionId", "mentalUnitId", "beforeReason", "reason", "beforeQuestionSha256", "questionSha256"];
+const OOD_REASON_AMENDMENT_19A_PRIVATE_CONTEXT = Symbol("fixed OOD reason amendment 19a historical source context");
+
 const BIZQ01_OOD_COHORT17_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "identityAction", "identityReason", "confirmedDefects", "replacements"];
 const BIZQ01_OOD_COHORT17_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
 
@@ -6636,9 +6686,20 @@ async function validateBizq01OodCohort17Proof(contentRoot, canonical, evidence) 
 }
 
 // Closed reviewed descriptor only: proof input cannot select approval scope or mappings.
-async function validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, accepted) {
+async function validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, accepted, privateHistoricalSourceBytes, privateContext) {
   if (accepted !== BIZQ01_OOD_COHORT17_PROOF && accepted !== BIZQ01_OOD_COHORT19_PROOF) {
     fail("EVIDENCE_VALUE", "Unsupported private OOD cohort descriptor.");
+  }
+  if (privateHistoricalSourceBytes !== undefined) {
+    if (accepted !== BIZQ01_OOD_COHORT19_PROOF || privateContext !== OOD_REASON_AMENDMENT_19A_PRIVATE_CONTEXT ||
+        !(privateHistoricalSourceBytes instanceof Map) ||
+        canonicalJson([...privateHistoricalSourceBytes.keys()].sort(compare)) !== canonicalJson(
+          BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF.sourceFiles.map((source) => source.sourceFile).sort(compare)
+        )) {
+      fail("EVIDENCE_VALUE", "Private historical bytes are allowed only for the fixed closed-v19 reason amendment.");
+    }
+  } else if (privateContext !== undefined) {
+    fail("EVIDENCE_VALUE", "A private historical context requires its fixed source buffers.");
   }
   const label = accepted.scope;
   const projectRoot = path.dirname(contentRoot);
@@ -6683,7 +6744,8 @@ async function validateBizq01OodClosedCohortProof(contentRoot, canonical, eviden
     const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
     await rejectSymlinkAncestors(sourcePath, `${sourceLabel}.sourceFile`);
     await regularPath(sourcePath, `${sourceLabel}.sourceFile`, "file");
-    const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    const diskSourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    const sourceBytes = privateHistoricalSourceBytes?.get(source.sourceFile) ?? diskSourceBytes;
     if (sha256(sourceBytes) !== source.sourceSha256) fail("HASH_MISMATCH", `${sourceLabel}.sourceFile does not match the fixed current source hash.`);
     let questions;
     try { questions = JSON.parse(sourceBytes.toString("utf8")); }
@@ -6835,8 +6897,174 @@ async function validateBizq01OodClosedCohortProof(contentRoot, canonical, eviden
   return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...replacements] };
 }
 
+async function validateBizq01OodReasonAmendment19a(contentRoot, canonical, evidence) {
+  const accepted = BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF;
+  const label = accepted.scope;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, accepted.path);
+  const proofInfo = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect ${label}: ${error.message}`);
+  });
+  if (!proofInfo) return undefined;
+  await rejectSymlinkAncestors(proofPath, label);
+  await regularPath(proofPath, label, "file");
+  const proofBytes = await readFile(proofPath).catch((error) => fail("READ_ERROR", `Cannot read ${label}: ${error.message}`));
+  if (sha256(proofBytes) !== accepted.sha256) fail("HASH_MISMATCH", `${label} differs from its fixed proof bytes.`);
+  let proof;
+  try { proof = JSON.parse(proofBytes.toString("utf8")); }
+  catch (error) { fail("INVALID_JSON", `${label} is not valid JSON: ${error.message}`); }
+  exactKeys(proof, BIZQ01_OOD_REASON_AMENDMENT_19A_ROOT_KEYS, label);
+  for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256"]) {
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed amendment identity.`);
+  }
+  assertHash(proof.beforeQuestionSetSha256, `${label}.beforeQuestionSetSha256`);
+  assertHash(proof.questionSetSha256, `${label}.questionSetSha256`);
+  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
+    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
+  }
+
+  const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
+  const currentQuestionSetSha256 = sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId)));
+  if (currentQuestionSetSha256 !== accepted.questionSetSha256) {
+    fail("HASH_MISMATCH", `${label} current OOD question set differs from its fixed descriptor.`);
+  }
+  if (!Array.isArray(proof.sourceFiles) || proof.sourceFiles.length !== accepted.sourceFiles.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must identify exactly the three fixed source files.`);
+  }
+  const sourceByPath = new Map();
+  const privateHistoricalSourceBytes = new Map();
+  const predecessorById = new Map();
+
+  if (!Array.isArray(proof.replacements) || proof.replacements.length !== accepted.replacements.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must contain exactly the fixed ${accepted.replacements.length} reason-only corrections.`);
+  }
+  for (const [index, item] of accepted.replacements.entries()) {
+    const entry = proof.replacements[index];
+    const itemLabel = `${label}.replacements[${index}]`;
+    exactKeys(entry, BIZQ01_OOD_REASON_AMENDMENT_19A_ITEM_KEYS, itemLabel);
+    for (const key of ["sourceFile", "questionId", "mentalUnitId"]) {
+      if (entry[key] !== item[key]) fail("EVIDENCE_VALUE", `${itemLabel}.${key} differs from the fixed correction map.`);
+    }
+    if (typeof entry.beforeReason !== "string" || entry.beforeReason.length === 0 ||
+        typeof entry.reason !== "string" || entry.reason.length === 0 || entry.beforeReason === entry.reason) {
+      fail("EVIDENCE_VALUE", `${itemLabel} must bind distinct nonempty before/current Reason text.`);
+    }
+    assertHash(entry.beforeQuestionSha256, `${itemLabel}.beforeQuestionSha256`);
+    assertHash(entry.questionSha256, `${itemLabel}.questionSha256`);
+  }
+
+  for (const [index, source] of accepted.sourceFiles.entries()) {
+    const entry = proof.sourceFiles[index];
+    const sourceLabel = `${label}.sourceFiles[${index}]`;
+    exactKeys(entry, BIZQ01_OOD_REASON_AMENDMENT_19A_SOURCE_KEYS, sourceLabel);
+    for (const key of BIZQ01_OOD_REASON_AMENDMENT_19A_SOURCE_KEYS) {
+      if (entry[key] !== source[key]) fail("EVIDENCE_VALUE", `${sourceLabel}.${key} differs from the fixed amendment descriptor.`);
+    }
+    assertRelativePath(entry.sourceFile, `${sourceLabel}.sourceFile`, { suffix: ".json" });
+    assertHash(entry.beforeSourceSha256, `${sourceLabel}.beforeSourceSha256`);
+    assertHash(entry.sourceSha256, `${sourceLabel}.sourceSha256`);
+    const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
+    await rejectSymlinkAncestors(sourcePath, `${sourceLabel}.sourceFile`);
+    await regularPath(sourcePath, `${sourceLabel}.sourceFile`, "file");
+    const currentSourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    if (sha256(currentSourceBytes) !== source.sourceSha256) {
+      fail("HASH_MISMATCH", `${sourceLabel}.sourceFile does not match the fixed current 19a source hash.`);
+    }
+    let questions;
+    try { questions = JSON.parse(currentSourceBytes.toString("utf8")); }
+    catch (error) { fail("INVALID_JSON", `${sourceLabel}.sourceFile is not valid JSON: ${error.message}`); }
+    const expectedIds = BIZQ01_OOD_COHORT19_PROOF.replacements
+      .filter((item) => item.sourceFile === source.sourceFile)
+      .map((item) => item.questionId);
+    if (!Array.isArray(questions) || questions.length !== expectedIds.length) {
+      fail("EVIDENCE_MEMBERSHIP", `${sourceLabel}.sourceFile must contain exactly the fixed ${expectedIds.length} current questions.`);
+    }
+    assertExactSet(questions.map((question) => question?.questionId), expectedIds, `${sourceLabel}.source question IDs`);
+    const sourceByIdMap = new Map(questions.map((question) => [question.questionId, question]));
+    for (const question of questions) {
+      const location = canonical.questionLocations.get(question.questionId);
+      if (!location || path.relative(projectRoot, location.path).split(path.sep).join("/") !== source.sourceFile) {
+        fail("CANONICAL_MEMBERSHIP", `${sourceLabel} includes a question outside its fixed canonical source location.`);
+      }
+      if (question.trackId !== accepted.trackId || question.nodeId !== source.nodeId || question.mentalUnitId !== source.mentalUnitId) {
+        fail("EVIDENCE_MEMBERSHIP", `${sourceLabel} contains a question with different fixed taxonomy.`);
+      }
+      const canonicalQuestion = currentTrackQuestions.find((current) => current.questionId === question.questionId);
+      if (!canonicalQuestion || canonicalJson(canonicalQuestion) !== canonicalJson(question)) {
+        fail("HASH_MISMATCH", `${sourceLabel} source question differs from current canonical content.`);
+      }
+    }
+    sourceByPath.set(source.sourceFile, { questions, sourceById: sourceByIdMap });
+  }
+
+  for (const [index, entry] of proof.replacements.entries()) {
+    const item = accepted.replacements[index];
+    const itemLabel = `${label}.replacements[${index}]`;
+    const current = sourceByPath.get(item.sourceFile)?.sourceById.get(item.questionId);
+    if (!current || current.feedback?.reason !== entry.reason || sha256(current) !== entry.questionSha256) {
+      fail("HASH_MISMATCH", `${itemLabel} current whole question or Reason differs from its fixed binding.`);
+    }
+    const predecessor = {
+      ...current,
+      feedback: { ...current.feedback, reason: entry.beforeReason }
+    };
+    if (sha256(predecessor) !== entry.beforeQuestionSha256) {
+      fail("HASH_MISMATCH", `${itemLabel} does not reconstruct the immutable v19 whole question by changing Reason only.`);
+    }
+    predecessorById.set(item.questionId, predecessor);
+  }
+
+  for (const source of accepted.sourceFiles) {
+    const current = sourceByPath.get(source.sourceFile);
+    const reconstructedQuestions = current.questions.map((question) => predecessorById.get(question.questionId) ?? question);
+    const reconstructedSourceBytes = Buffer.from(JSON.stringify(reconstructedQuestions), "utf8");
+    if (sha256(reconstructedSourceBytes) !== source.beforeSourceSha256) {
+      fail("HASH_MISMATCH", `${label} does not reconstruct the byte-exact immutable v19 source ${source.sourceFile}.`);
+    }
+    privateHistoricalSourceBytes.set(source.sourceFile, reconstructedSourceBytes);
+  }
+
+  const reconstructedTrackQuestions = currentTrackQuestions
+    .map((question) => predecessorById.get(question.questionId) ?? question)
+    .sort((left, right) => compare(left.questionId, right.questionId));
+  if (sha256(reconstructedTrackQuestions) !== accepted.beforeQuestionSetSha256) {
+    fail("HASH_MISMATCH", `${label} does not reconstruct the immutable v19 OOD question set.`);
+  }
+  const predecessorCatalog = {
+    ...canonical.catalog,
+    tracks: canonical.catalog.tracks.map((track) => track.trackId === accepted.trackId
+      ? { ...track, contentVersion: accepted.beforeContentVersion }
+      : track)
+  };
+  const predecessorCanonical = {
+    ...canonical,
+    catalog: predecessorCatalog,
+    catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
+    questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions)
+  };
+  const semanticProof = await validateBizq01OodClosedCohortProof(
+    contentRoot,
+    predecessorCanonical,
+    evidence,
+    BIZQ01_OOD_COHORT19_PROOF,
+    privateHistoricalSourceBytes,
+    OOD_REASON_AMENDMENT_19A_PRIVATE_CONTEXT
+  );
+  if (!semanticProof) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v19 predecessor proof.`);
+  return {
+    ...semanticProof,
+    reasonAmendmentQuestionIds: accepted.replacements.map((item) => item.questionId)
+  };
+}
+
 async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, privateHistoricalSourceBytes) {
   const version = canonical.catalogByTrack.get(BIZQ01_OOD_PROOF.trackId)?.contentVersion;
+  if (version === BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF.contentVersion) {
+    const amendment = await validateBizq01OodReasonAmendment19a(contentRoot, canonical, evidence);
+    if (!amendment) fail("EVIDENCE_MEMBERSHIP", "The source19a OOD version requires its fixed 25-item Reason-only amendment proof.");
+    return amendment;
+  }
   if (version === BIZQ01_OOD_COHORT19_PROOF.contentVersion) {
     const cohort = await validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, BIZQ01_OOD_COHORT19_PROOF);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source19 OOD version requires its fixed 162-question closure proof.");
@@ -6901,7 +7129,7 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, priv
     return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...cohort.replacements] };
   }
   if (version !== BIZQ01_OOD_SUCCESSOR_PROOF.contentVersion) {
-    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path, BIZQ01_OOD_COHORT13_PROOF.path, BIZQ01_OOD_COHORT16_PROOF.path, BIZQ01_OOD_COHORT17_PROOF.path, BIZQ01_OOD_COHORT19_PROOF.path];
+    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path, BIZQ01_OOD_COHORT13_PROOF.path, BIZQ01_OOD_COHORT16_PROOF.path, BIZQ01_OOD_COHORT17_PROOF.path, BIZQ01_OOD_COHORT19_PROOF.path, BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF.path];
     for (const relativePath of proofPaths) {
       const info = await lstat(path.join(path.dirname(contentRoot), relativePath)).catch((error) => {
         if (error?.code === "ENOENT") return undefined;
@@ -7134,6 +7362,10 @@ export async function verifyMigration(options = {}) {
     semanticReplacementProof: oodSemanticProof ? {
       trackId: oodSemanticProof.trackId,
       replacements: oodSemanticProof.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId }))
+    } : undefined,
+    reasonAmendmentProof: oodSemanticProof?.reasonAmendmentQuestionIds ? {
+      trackId: oodSemanticProof.trackId,
+      questionIds: oodSemanticProof.reasonAmendmentQuestionIds
     } : undefined,
     wordingCorrectionProof: correctionProof ? { trackId: correctionProof.trackId, questionIds: correctionProof.replacements.map(({ questionId }) => questionId) } : undefined,
     replacementProof: replacementProof ? {

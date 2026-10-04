@@ -51,7 +51,8 @@ before(async () => {
     "bizq-01-ood-unit-cohort-13.json",
     "bizq-01-ood-node-closure-16.json",
     "bizq-01-ood-node-closure-17.json",
-    "bizq-01-ood-node-closure-19.json"
+    "bizq-01-ood-node-closure-19.json",
+    "bizq-01-ood-reason-amendment-19a.json"
   ]) {
     await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(fixtureRoot, "evidence/business-quality", name));
   }

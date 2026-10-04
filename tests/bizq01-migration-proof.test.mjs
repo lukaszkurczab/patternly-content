@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,7 @@ const contentRepositoryRoot = path.resolve(path.dirname(fileURLToPath(import.met
 const backendTrack = "backend-system-design-interview";
 const proofRelativePath = "evidence/business-quality/bizq-01-besd-slice-01.json";
 const cohort14ProofPath = "evidence/business-quality/bizq-01-besd-seed-cohort-14.json";
+const oodReasonAmendment19aProofPath = "evidence/business-quality/bizq-01-ood-reason-amendment-19a.json";
 const oldSourcePath = "content/backend-system-design-interview/api_contracts_service_boundaries_and_request_flows/BESD-N02-B01.json";
 const newQuestionId = "besd-n02-b01-i017";
 
@@ -58,6 +59,7 @@ before(async () => {
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-16.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-16.json"));
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-17.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-17.json"));
   await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-19.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-19.json"));
+  await cp(path.join(contentRepositoryRoot, oodReasonAmendment19aProofPath), path.join(fixtureRoot, oodReasonAmendment19aProofPath));
   await cp(path.join(contentRepositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
   noProofFixture = await createCanonicalFixture("bizq01-no-proof-");
   noProofFixtureParent = noProofFixture.parent;
@@ -100,6 +102,91 @@ test("rejects changes to a current replacement and its frozen old object", async
     proof.items[0].beforeQuestion.prompt += " changed";
     return proof;
   }, () => assertRejected("HASH_MISMATCH"));
+});
+
+test("requires and binds the fixed 19a reason-only amendment proof", async () => {
+  const proofFile = path.join(fixtureRoot, oodReasonAmendment19aProofPath);
+  const original = await readFile(proofFile);
+  try {
+    await rm(proofFile);
+    await assertRejected("EVIDENCE_MEMBERSHIP");
+  } finally {
+    await writeFile(proofFile, original);
+  }
+  await withJsonMutation(oodReasonAmendment19aProofPath, (proof) => {
+    proof.replacements[0].reason += " changed";
+    return proof;
+  }, () => assertRejected("HASH_MISMATCH"));
+});
+
+test("binds 19a to exact IDs, before/current Reasons, hashes, and closed membership", async () => {
+  const cases = [
+    ["before Reason", (proof) => { proof.replacements[0].beforeReason += " changed"; }],
+    ["current Reason", (proof) => { proof.replacements[0].reason += " changed"; }],
+    ["predecessor object hash", (proof) => { proof.replacements[0].beforeQuestionSha256 = "0".repeat(64); }],
+    ["current object hash", (proof) => { proof.replacements[0].questionSha256 = "0".repeat(64); }],
+    ["current version", (proof) => { proof.contentVersion += "-stale"; }],
+    ["source path", (proof) => { proof.sourceFiles[0].sourceFile = "../outside.json"; }],
+    ["duplicate ID", (proof) => { proof.replacements[1] = structuredClone(proof.replacements[0]); }],
+    ["missing ID", (proof) => { proof.replacements.pop(); }],
+    ["extra ID", (proof) => { proof.replacements.push(structuredClone(proof.replacements[0])); }],
+    ["out-of-scope ID", (proof) => { proof.replacements[0].questionId = "ood-n03-b02-i999"; }]
+  ];
+  for (const [label, mutate] of cases) {
+    await withJsonMutation(oodReasonAmendment19aProofPath, (proof) => { mutate(proof); return proof; }, () =>
+      assert.rejects(verifyMigration({ contentRoot: path.join(fixtureRoot, "content") }), (error) => {
+        assert.ok(error instanceof MigrationVerificationError, label);
+        assert.equal(error.code, "HASH_MISMATCH", label);
+        return true;
+      })
+    );
+  }
+});
+
+test("rejects every non-Reason edit in an amended source object", async () => {
+  const proof = JSON.parse(await readFile(path.join(fixtureRoot, oodReasonAmendment19aProofPath), "utf8"));
+  const changed = proof.replacements[0];
+  const sourcePath = changed.sourceFile;
+  const cases = [
+    ["prompt", "HASH_MISMATCH", (question) => { question.prompt += " changed"; }],
+    ["answer", "HASH_MISMATCH", (question) => { question.answer.optionId = question.interaction.options[1].optionId; }],
+    ["option text", "HASH_MISMATCH", (question) => { question.interaction.options[0].text += " changed"; }],
+    ["Details", "HASH_MISMATCH", (question) => { question.feedback.details.mechanismOrProperty += " changed"; }],
+    ["feedback message", "HASH_MISMATCH", (question) => { question.feedback.messages[0].text += " changed"; }],
+    ["scoring contract", "CANONICAL_INVALID", (question) => { question.interaction.scoringMethod = "different"; }],
+    ["taxonomy", "CANONICAL_MEMBERSHIP", (question) => { question.mentalUnitId = "OOD-N03-B09"; }],
+    ["Reason", "HASH_MISMATCH", (question) => { question.feedback.reason += " changed"; }]
+  ];
+  for (const [label, expectedCode, mutate] of cases) {
+    await withJsonMutation(sourcePath, (questions) => {
+      mutate(questions.find((question) => question.questionId === changed.questionId));
+      return questions;
+    }, () => assert.rejects(verifyMigration({ contentRoot: path.join(fixtureRoot, "content") }), (error) => {
+      assert.ok(error instanceof MigrationVerificationError, label);
+      assert.equal(error.code, expectedCode, label);
+      return true;
+    }));
+  }
+});
+
+test("binds the catalog version and rejects symlink substitution for the 19a proof and source", async () => {
+  await withJsonMutation("content/catalog.json", (catalog) => {
+    catalog.tracks.find((track) => track.trackId === "object-oriented-design-interview").contentVersion += "-stale";
+    return catalog;
+  }, () => assertRejected("EVIDENCE_VALUE"));
+
+  for (const relativePath of [oodReasonAmendment19aProofPath, JSON.parse(await readFile(path.join(fixtureRoot, oodReasonAmendment19aProofPath), "utf8")).sourceFiles[0].sourceFile]) {
+    const target = path.join(fixtureRoot, relativePath);
+    const backup = `${target}.held`;
+    await rename(target, backup);
+    try {
+      await symlink(path.basename(backup), target);
+      await assertRejected("SYMLINK_PATH");
+    } finally {
+      await rm(target, { force: true });
+      await rename(backup, target);
+    }
+  }
 });
 
 test("rejects stale batch identity, duplicate mappings, and a missing replacement", async () => {

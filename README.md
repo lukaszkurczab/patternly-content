@@ -48,6 +48,17 @@ evidence only, while content changes are targeted to demonstrated factual,
 technical, scoring, feedback, duplicate, coverage, profile, provenance, or runtime
 defects. Patternly is a decision-practice/remediation product, not a question bank.
 
+## Content review store
+
+`review:console` stores explicit human outcomes in
+`evidence/content-reviews/outcomes.json` by default. Each write rereads the
+latest validated file under a sidecar lock, then atomically replaces it; batches
+keep their sequential per-item commit behavior. A busy or stale lock is never
+removed automatically. If the console reports that an outcome was saved but
+the lock remains, the outcome is already committed: verify no writer is active
+for that store before manually removing the sidecar `.lock` file. Atomic rename
+protects handled write failures; it is not a power-loss transaction guarantee.
+
 ## Shared content builder (SIMP-02)
 
 The canonical v1 builder reads one track at a time from

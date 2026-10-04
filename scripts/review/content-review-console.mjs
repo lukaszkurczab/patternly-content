@@ -1,8 +1,10 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createServer } from "node:http";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { mkdir, open, readFile, readdir, realpath, rename, stat, lstat, unlink } from "node:fs/promises";
+import { basename, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { hostname } from "node:os";
+import { validateSchema } from "./schema-validation.mjs";
 
 export const CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION = "patternly-content-review-outcome-v1";
 export const CONTENT_REVIEW_OUTCOMES = Object.freeze(["approved", "needs_change", "rejected"]);
@@ -31,8 +33,18 @@ export const LAUNCH_TRACK_FAMILIES = Object.freeze({
 });
 
 const ROOT = resolve(fileURLToPath(new URL("../../", import.meta.url)));
+const REVIEW_OUTCOME_SCHEMA_URL = new URL("../../schemas/review/content-review-outcome.schema.json", import.meta.url);
 const MAX_BATCH_SIZE = 50;
-const DETAIL_KEYS = ["mechanismOrProperty", "scenarioApplication", "errorCorrection", "boundaryOrTradeoff", "transfer"];
+const reviewMutationQueues = new Map();
+const defaultReviewStoreFs = Object.freeze({ mkdir, open, readFile, realpath, rename, stat, lstat, unlink });
+
+class ReviewStoreError extends Error {
+  constructor(message, code = "review_store_error", options = {}) {
+    super(message, options);
+    this.name = "ReviewStoreError";
+    this.code = code;
+  }
+}
 
 export const canonicalJson = (value) => {
   if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
@@ -49,10 +61,6 @@ async function walkJsonFiles(directory) {
       ? walkJsonFiles(join(directory, entry.name))
       : entry.name.endsWith(".json") ? [join(directory, entry.name)] : []));
   return nested.flat().sort();
-}
-
-function firstDefined(...values) {
-  return values.find((value) => typeof value === "string" && value.trim()) ?? null;
 }
 
 function sourceItemFingerprint(question) {
@@ -154,32 +162,156 @@ async function readSourceRecords(root) {
   return records.sort((left, right) => left.questionKey.localeCompare(right.questionKey));
 }
 
-async function readReviewStore(reviewPath) {
-  try {
-    const value = JSON.parse(await readFile(reviewPath, "utf8"));
-    if (value.schemaVersion !== CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION || !Array.isArray(value.reviews)) throw new Error("Review outcomes have an invalid schema.");
-    const seen = new Set();
-    for (const review of value.reviews) {
-      if (!review.trackId || !review.questionId || !CONTENT_REVIEW_OUTCOMES.includes(review.outcome) || !review.itemFingerprint || !review.sourceFileSha256 || !review.note || !review.reviewerId) throw new Error("Review outcomes must contain current identity, fingerprint, outcome, note, and reviewer.");
-      const identity = `${review.trackId}:${review.questionId}`;
-      if (seen.has(identity)) throw new Error(`Duplicate current review outcome for ${identity}.`);
-      seen.add(identity);
+function isReviewTimestamp(value) {
+  const match = typeof value === "string"
+    ? /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?([Zz]|([+-])(\d{2}):(\d{2}))$/u.exec(value)
+    : null;
+  if (!match || !Number.isFinite(Date.parse(value))) return false;
+  const [, , , , hour, minute, second, , , offsetHour, offsetMinute] = match;
+  if (Number(hour) > 23 || Number(minute) > 59 || Number(second) > 59) return false;
+  if (offsetHour !== undefined && (Number(offsetHour) > 23 || Number(offsetMinute) > 59)) return false;
+  const [, year, month, day] = /^(\d{4})-(\d{2})-(\d{2})/u.exec(value) ?? [];
+  const calendarDate = new Date(0);
+  calendarDate.setUTCFullYear(Number(year), Number(month) - 1, Number(day));
+  return calendarDate.getUTCFullYear() === Number(year)
+    && calendarDate.getUTCMonth() + 1 === Number(month)
+    && calendarDate.getUTCDate() === Number(day);
+}
+
+async function validateReviewStore(value) {
+  const schema = JSON.parse(await readFile(REVIEW_OUTCOME_SCHEMA_URL, "utf8"));
+  await validateSchema(value, schema, "content review outcomes");
+  const seen = new Set();
+  for (const review of value.reviews) {
+    if (!/^[a-f0-9]{64}$/u.test(review.sourceFileSha256) || !/^[a-f0-9]{64}$/u.test(review.itemFingerprint)) {
+      throw new Error("Review outcomes contain an invalid SHA-256 fingerprint.");
     }
-    return value;
+    if (!isReviewTimestamp(review.reviewedAt)) throw new Error("Review outcomes contain an invalid reviewedAt date-time.");
+    const identity = `${review.trackId}:${review.questionId}`;
+    if (seen.has(identity)) throw new Error(`Duplicate current review outcome for ${identity}.`);
+    seen.add(identity);
+  }
+  return value;
+}
+
+async function readReviewStore(reviewPath, fileSystem = defaultReviewStoreFs) {
+  let serialized;
+  try {
+    serialized = await fileSystem.readFile(reviewPath, "utf8");
   } catch (error) {
     if (error?.code === "ENOENT") return { schemaVersion: CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION, reviews: [] };
     throw error;
   }
+  return validateReviewStore(JSON.parse(serialized));
 }
 
-async function writeReviewStore(reviewPath, reviews) {
-  await mkdir(resolve(reviewPath, ".."), { recursive: true });
-  const value = {
+async function canonicalReviewStorePath(reviewPath, fileSystem) {
+  const absolutePath = resolve(reviewPath);
+  const parentPath = resolve(absolutePath, "..");
+  await fileSystem.mkdir(parentPath, { recursive: true });
+  try {
+    const canonicalPath = await fileSystem.realpath(absolutePath);
+    const metadata = await fileSystem.stat(canonicalPath);
+    if (!metadata.isFile()) throw new ReviewStoreError("Review store path must identify a regular file.", "review_store_invalid_path");
+    if (metadata.nlink > 1) throw new ReviewStoreError("Review store hard links are unsupported; use one canonical file path.", "review_store_hardlink_unsupported");
+    return canonicalPath;
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    try {
+      const entry = await fileSystem.lstat(absolutePath);
+      if (entry.isSymbolicLink()) throw new ReviewStoreError("Review store is a dangling symlink; repair its target before writing.", "review_store_dangling_symlink");
+      if (!entry.isFile()) throw new ReviewStoreError("Review store path must identify a regular file.", "review_store_invalid_path");
+    } catch (entryError) {
+      if (entryError.code !== "ENOENT") throw entryError;
+    }
+    return join(await fileSystem.realpath(parentPath), basename(absolutePath));
+  }
+}
+
+function enqueueReviewMutation(path, operation) {
+  const previous = reviewMutationQueues.get(path) ?? Promise.resolve();
+  const current = previous.catch(() => {}).then(operation);
+  reviewMutationQueues.set(path, current);
+  return current.finally(() => {
+    if (reviewMutationQueues.get(path) === current) reviewMutationQueues.delete(path);
+  });
+}
+
+async function acquireReviewStoreLock(reviewPath, fileSystem = defaultReviewStoreFs) {
+  const lockPath = `${reviewPath}.lock`;
+  const owner = { hostname: hostname(), pid: process.pid, token: randomUUID(), acquiredAt: new Date().toISOString() };
+  let handle;
+  try {
+    handle = await fileSystem.open(lockPath, "wx", 0o600);
+  } catch (error) {
+    if (error.code !== "EEXIST") throw error;
+    let visibleOwner = "owner details unavailable";
+    try {
+      const existing = JSON.parse(await fileSystem.readFile(lockPath, "utf8"));
+      if (typeof existing.hostname === "string" && Number.isSafeInteger(existing.pid)) visibleOwner = `${existing.hostname} PID ${existing.pid}`;
+    } catch {}
+    throw new ReviewStoreError(`Review store is busy or has a stale lock (${visibleOwner}). Verify no writer is active before removing ${lockPath}.`, "review_store_busy");
+  }
+  try {
+    await handle.writeFile(`${JSON.stringify(owner)}\n`, "utf8");
+  } catch (error) {
+    const released = await releaseReviewStoreLock({ lockPath, handle, owner }, fileSystem);
+    if (!released.removed) error.message = `${error.message} The review-store lock remains; verify no writer is active before removing it.`;
+    throw error;
+  }
+  return { lockPath, handle, owner };
+}
+
+async function releaseReviewStoreLock(lock, fileSystem = defaultReviewStoreFs) {
+  let unlinkError;
+  let removed = false;
+  try {
+    const held = await lock.handle.stat();
+    const current = await fileSystem.lstat(lock.lockPath);
+    if (current.dev === held.dev && current.ino === held.ino) {
+      await fileSystem.unlink(lock.lockPath);
+      removed = true;
+    } else {
+      unlinkError = new ReviewStoreError("Review store lock ownership changed before release.", "review_store_lock_owner_changed");
+    }
+  } catch (error) {
+    if (error.code === "ENOENT") removed = true;
+    else unlinkError = error;
+  }
+  try { await lock.handle.close(); } catch (error) { unlinkError ??= error; }
+  return { removed, error: unlinkError };
+}
+
+async function writeReviewStore(reviewPath, reviews, fileSystem = defaultReviewStoreFs) {
+  const value = await validateReviewStore({
     schemaVersion: CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION,
     reviews: [...reviews].sort((left, right) => `${left.trackId}:${left.questionId}`.localeCompare(`${right.trackId}:${right.questionId}`)),
-  };
-  await writeFile(reviewPath, `${canonicalJson(value)}\n`);
-  return value;
+  });
+  let mode = 0o600;
+  try {
+    const metadata = await fileSystem.stat(reviewPath);
+    if (!metadata.isFile()) throw new ReviewStoreError("Review store path must identify a regular file.", "review_store_invalid_path");
+    if (metadata.nlink > 1) throw new ReviewStoreError("Review store hard links are unsupported; use one canonical file path.", "review_store_hardlink_unsupported");
+    mode = metadata.mode & 0o777;
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  const temporaryPath = `${reviewPath}.${process.pid}.${randomUUID()}.tmp`;
+  let handle;
+  let ownsTemporaryPath = false;
+  try {
+    handle = await fileSystem.open(temporaryPath, "wx", mode);
+    ownsTemporaryPath = true;
+    await handle.writeFile(`${canonicalJson(value)}\n`, "utf8");
+    await handle.close();
+    handle = null;
+    await fileSystem.rename(temporaryPath, reviewPath);
+    return value;
+  } catch (error) {
+    if (handle) try { await handle.close(); } catch {}
+    if (ownsTemporaryPath) try { await fileSystem.unlink(temporaryPath); } catch {}
+    throw error;
+  }
 }
 
 function changedFields(previousSnapshot, currentItem) {
@@ -244,11 +376,11 @@ function withCoverage(record, reviews, coverageIndex) {
   };
 }
 
-export async function createContentReviewConsole({ root = ROOT, reviewPath = join(root, CONTENT_REVIEW_OUTCOMES_PATH), now = () => new Date().toISOString() } = {}) {
+export async function createContentReviewConsole({ root = ROOT, reviewPath = join(root, CONTENT_REVIEW_OUTCOMES_PATH), now = () => new Date().toISOString(), reviewStoreFs = defaultReviewStoreFs } = {}) {
   const records = await readSourceRecords(root);
   const coverageIndex = buildCoverageIndex(records);
-  const store = await readReviewStore(reviewPath);
-  const reviews = new Map(store.reviews.map((review) => [`${review.trackId}:${review.questionId}`, review]));
+  const store = await readReviewStore(reviewPath, reviewStoreFs);
+  let reviews = new Map(store.reviews.map((review) => [`${review.trackId}:${review.questionId}`, review]));
 
   function findRecord(trackId, questionId) {
     const record = records.find((candidate) => candidate.trackId === trackId && candidate.questionId === questionId);
@@ -299,6 +431,35 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
     return withCoverage(record, reviews, coverageIndex);
   }
 
+  async function commitOutcome(record, next) {
+    const canonicalPath = await canonicalReviewStorePath(reviewPath, reviewStoreFs);
+    return enqueueReviewMutation(canonicalPath, async () => {
+      const lock = await acquireReviewStoreLock(canonicalPath, reviewStoreFs);
+      let committedItem;
+      let commitError;
+      try {
+        const latest = await readReviewStore(canonicalPath, reviewStoreFs);
+        const candidateMap = new Map(latest.reviews.map((review) => [`${review.trackId}:${review.questionId}`, review]));
+        candidateMap.set(`${next.trackId}:${next.questionId}`, next);
+        const committed = await writeReviewStore(canonicalPath, [...candidateMap.values()], reviewStoreFs);
+        // Atomic rename is the commit point. Swap the whole map only afterward.
+        reviews = new Map(committed.reviews.map((review) => [`${review.trackId}:${review.questionId}`, review]));
+        committedItem = withCoverage(record, reviews, coverageIndex);
+      } catch (error) {
+        commitError = error;
+      }
+      const released = await releaseReviewStoreLock(lock, reviewStoreFs);
+      if (commitError) {
+        if (!released.removed) commitError.message = `${commitError.message} The review-store lock remains; verify no writer is active before removing it.`;
+        throw commitError;
+      }
+      if (!released.removed) {
+        committedItem = { ...committedItem, warning: "Outcome saved, but its store lock remains. Verify no writer is active before removing the lock; further writes are blocked." };
+      }
+      return committedItem;
+    });
+  }
+
   async function recordOutcome({ trackId, questionId, outcome, note, reviewerId }) {
     if (!CONTENT_REVIEW_OUTCOMES.includes(outcome)) throw new Error(`Outcome must be one of ${CONTENT_REVIEW_OUTCOMES.join(", ")}.`);
     if (typeof note !== "string" || !note.trim()) throw new Error("A review note is required.");
@@ -318,9 +479,7 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
       reviewerId: reviewerId.trim(),
       reviewedAt: now(),
     };
-    reviews.set(`${trackId}:${record.questionId}`, next);
-    await writeReviewStore(reviewPath, [...reviews.values()]);
-    return withCoverage(record, reviews, coverageIndex);
+    return commitOutcome(record, next);
   }
 
   async function recordBatchOutcomes({ items, outcome, note, reviewerId }) {
@@ -352,7 +511,7 @@ function html() {
 const $=id=>document.getElementById(id); let current=null;
 async function api(path,options){const response=await fetch(path,options);const body=await response.json();if(!response.ok)throw new Error(body.error||'Request failed');return body;}
 async function refresh(){const params=new URLSearchParams();for(const [id,key] of [['track','trackId'],['node','nodeId'],['unit','mentalUnitId'],['query','query']])if($(id).value)params.set(key,$(id).value);if($('risk').checked)params.set('riskOnly','true');const body=await api('/api/items?'+params);$('count').textContent=body.items.length+' items';$('items').replaceChildren(...body.items.map(question=>{const button=document.createElement('button');button.className='item';button.onclick=()=>show(question.trackId,question.questionId);button.innerHTML='<strong>'+escapeHtml(question.questionId||question.questionKey)+'</strong><br><span class="muted">'+escapeHtml(question.nodeId)+' / '+escapeHtml(question.mentalUnitId)+'</span><br>'+escapeHtml(question.prompt.slice(0,180))+'<br><span class="status '+question.review.status+'">'+question.review.status+'</span> '+(question.riskFlags.length?'<span class="risk">'+question.riskFlags.join(', ')+'</span>':'');return button;}));}
-async function show(trackId,questionId){current=await api('/api/items/'+encodeURIComponent(trackId)+'/'+encodeURIComponent(questionId));const detail=$('detail');detail.replaceChildren();const title=document.createElement('h2');title.textContent=current.questionId;detail.append(title);const meta=document.createElement('p');meta.innerHTML='<span class="status '+current.review.status+'">'+current.review.status+'</span> '+escapeHtml(current.sourceFile);detail.append(meta);for(const [label,value] of [['Prompt',current.prompt],['Constraints',(current.item.constraints||[]).join('\\n')],['Taxonomy',JSON.stringify(current.taxonomy,null,2)],['Interaction',JSON.stringify(current.item.interaction||{},null,2)],['Feedback',JSON.stringify(current.item.feedback||{},null,2)],['Coverage',JSON.stringify(current.coverage,null,2)],['Advisory risks',current.riskFlags.join(', ')||'none'],['Changed fields',current.review.changedFields.join(', ')||'none']]){const block=document.createElement('div');block.className='field';const labelNode=document.createElement('label');labelNode.textContent=label;const pre=document.createElement('pre');pre.textContent=value;block.append(labelNode,pre);detail.append(block);}const form=document.createElement('form');form.innerHTML='<label>Outcome<select id="outcome"><option>approved</option><option>needs_change</option><option>rejected</option></select></label><label>Reviewer ID<input id="reviewer" required></label><label>Note<textarea id="note" required></textarea></label><button>Record current outcome</button>';form.onsubmit=async event=>{event.preventDefault();try{await api('/api/reviews',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({trackId:current.trackId,questionId:current.questionId,outcome:$('outcome').value,reviewerId:$('reviewer').value,note:$('note').value})});await refresh();await show(current.trackId,current.questionId);}catch(error){alert(error.message);}};detail.append(form);}
+async function show(trackId,questionId){current=await api('/api/items/'+encodeURIComponent(trackId)+'/'+encodeURIComponent(questionId));const detail=$('detail');detail.replaceChildren();const title=document.createElement('h2');title.textContent=current.questionId;detail.append(title);const meta=document.createElement('p');meta.innerHTML='<span class="status '+current.review.status+'">'+current.review.status+'</span> '+escapeHtml(current.sourceFile);detail.append(meta);for(const [label,value] of [['Prompt',current.prompt],['Constraints',(current.item.constraints||[]).join('\\n')],['Taxonomy',JSON.stringify(current.taxonomy,null,2)],['Interaction',JSON.stringify(current.item.interaction||{},null,2)],['Feedback',JSON.stringify(current.item.feedback||{},null,2)],['Coverage',JSON.stringify(current.coverage,null,2)],['Advisory risks',current.riskFlags.join(', ')||'none'],['Changed fields',current.review.changedFields.join(', ')||'none']]){const block=document.createElement('div');block.className='field';const labelNode=document.createElement('label');labelNode.textContent=label;const pre=document.createElement('pre');pre.textContent=value;block.append(labelNode,pre);detail.append(block);}const form=document.createElement('form');form.innerHTML='<label>Outcome<select id="outcome"><option>approved</option><option>needs_change</option><option>rejected</option></select></label><label>Reviewer ID<input id="reviewer" required></label><label>Note<textarea id="note" required></textarea></label><button>Record current outcome</button>';form.onsubmit=async event=>{event.preventDefault();try{const trackId=current.trackId;const questionId=current.questionId;const result=await api('/api/reviews',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({trackId,questionId,outcome:$('outcome').value,reviewerId:$('reviewer').value,note:$('note').value})});if(result.warning)alert(result.warning);await refresh();await show(trackId,questionId);}catch(error){alert(error.message);}};detail.append(form);}
 function escapeHtml(value){return String(value).replace(/[&<>\"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[character]));}
 async function init(){const catalog=await api('/api/catalog');for(const track of catalog.tracks){const option=document.createElement('option');option.value=track.trackId;option.textContent=track.trackId+' ('+track.itemCount+')';$('track').append(option);}await refresh();} $('filters').onsubmit=event=>{event.preventDefault();refresh().catch(error=>alert(error.message));};init().catch(error=>alert(error.message));
 </script></body></html>`;
@@ -372,8 +531,8 @@ function json(response, status, value) {
   response.end(JSON.stringify(value));
 }
 
-export async function startContentReviewConsole({ root = ROOT, reviewPath = join(root, CONTENT_REVIEW_OUTCOMES_PATH), host = "127.0.0.1", port = 4173 } = {}) {
-  const service = await createContentReviewConsole({ root, reviewPath });
+export async function startContentReviewConsole({ root = ROOT, reviewPath = join(root, CONTENT_REVIEW_OUTCOMES_PATH), host = "127.0.0.1", port = 4173, reviewStoreFs = defaultReviewStoreFs } = {}) {
+  const service = await createContentReviewConsole({ root, reviewPath, reviewStoreFs });
   const server = createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? "/", `http://${host}`);

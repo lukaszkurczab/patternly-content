@@ -1284,6 +1284,2367 @@ async function validateBizq01OodCohort13Proof(contentRoot, canonical, evidence) 
 }
 
 
+const BIZQ01_OOD_COHORT17_PROOF = Object.freeze({
+  "schemaVersion": "patternly-bizq-semantic-replacement-v1",
+  "scope": "BIZQ-01 OOD source17, fixed eight-unit cohort of 152 semantic replacements; not full-bank acceptance",
+  "trackId": "object-oriented-design-interview",
+  "beforeProducerCommit": "c2112775a1a9e8173202b921c027b9b43f754d74",
+  "beforeContentVersion": "object-oriented-design-interview-authoring-v2026.10.03-bizq01-16",
+  "contentVersion": "object-oriented-design-interview-authoring-v2026.10.04-bizq01-17",
+  "beforeQuestionSetSha256": "533d11db8cbbe0a314359eb08c38b78193415da51d7594486f8082fcd485ecfe",
+  "questionSetSha256": "4cf59f42c9e257118e1c2b1d4358753b67c80328f34c6c8350274baff7ffcbcc",
+  "identityAction": "replace_question_with_new_id",
+  "identityReason": "The primary learning decision and answer meanings change; each retired item remains only in immutable migration evidence, and the authored replacement receives new question and option identities.",
+  "confirmedDefects": Object.freeze([
+    "The former learner-facing constraints stated the primary decision directly instead of presenting it as a question to infer.",
+    "The former repeated invariant-owner answer and generic coordinator feedback failed to assess the distinct declared objective of each mental unit."
+  ]),
+  "path": "evidence/business-quality/bizq-01-ood-node-closure-17.json",
+  "sourceFiles": Object.freeze([
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01"
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02"
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03"
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04"
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05"
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06"
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07"
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08"
+    })
+  ]),
+  "replacements": Object.freeze([
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i001",
+      "questionId": "ood-n02-b01-i020",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose where billable-mass calculation belongs when callers must share one result derived from shipment measures and carrier class.",
+      "acceptedOptionId": "b01_i020_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i002",
+      "questionId": "ood-n02-b01-i021",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how the session should report remaining places when confirmation status changes.",
+      "acceptedOptionId": "b01_i021_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i003",
+      "questionId": "ood-n02-b01-i022",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how an issued line should calculate its amount after catalog prices change.",
+      "acceptedOptionId": "b01_i022_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i004",
+      "questionId": "ood-n02-b01-i023",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose where scaling belongs so one batch can change without altering the master recipe.",
+      "acceptedOptionId": "b01_i023_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i005",
+      "questionId": "ood-n02-b01-i024",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how the playlist should expose its total runtime when tracks are reordered or replaced.",
+      "acceptedOptionId": "b01_i024_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i006",
+      "questionId": "ood-n02-b01-i025",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how a historical corrected value should be obtained after the device is recalibrated.",
+      "acceptedOptionId": "b01_i025_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i007",
+      "questionId": "ood-n02-b01-i026",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how the allowance should expose its remaining accepted balance.",
+      "acceptedOptionId": "b01_i026_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i008",
+      "questionId": "ood-n02-b01-i027",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how bounds validation should stay consistent across preview and export.",
+      "acceptedOptionId": "b01_i027_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i009",
+      "questionId": "ood-n02-b01-i028",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how meeting duration should be calculated for attendees in different zones.",
+      "acceptedOptionId": "b01_i028_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i010",
+      "questionId": "ood-n02-b01-i029",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how the stay should report its number of nights.",
+      "acceptedOptionId": "b01_i029_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i011",
+      "questionId": "ood-n02-b01-i030",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how boundary membership should be evaluated consistently wherever bands are used.",
+      "acceptedOptionId": "b01_i030_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i012",
+      "questionId": "ood-n02-b01-i031",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how the board should determine the number of ready tasks after a dependency is edited.",
+      "acceptedOptionId": "b01_i031_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i013",
+      "questionId": "ood-n02-b01-i032",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how the risk band should stay aligned with reviewer edits to severity and likelihood.",
+      "acceptedOptionId": "b01_i032_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i014",
+      "questionId": "ood-n02-b01-i033",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how to keep itinerary travel time accurate when one leg is rebooked.",
+      "acceptedOptionId": "b01_i033_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i015",
+      "questionId": "ood-n02-b01-i034",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how the activation screen should display the deadline after a permitted edit.",
+      "acceptedOptionId": "b01_i034_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i016",
+      "questionId": "ood-n02-b01-i035",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how to show proposed ingredient quantities without changing stored batch state.",
+      "acceptedOptionId": "b01_i035_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i017",
+      "questionId": "ood-n02-b01-i036",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how an existing case should continue to report its due instant after policy changes.",
+      "acceptedOptionId": "b01_i036_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i018",
+      "questionId": "ood-n02-b01-i037",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how a new temperature reading should affect the zone’s heating state near the target.",
+      "acceptedOptionId": "b01_i037_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B01.json",
+      "beforeSourceSha256": "0fdcd70fa6df580662c77a3b163f714f54633471577130acddd0234ec1786b46",
+      "sourceSha256": "8d858a2491ea8c320d687efc7d427fa469df6bc227fd238b02fc19af0f8fcddf",
+      "beforeQuestionId": "ood-n02-b01-i019",
+      "questionId": "ood-n02-b01-i038",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B01",
+      "learningObjective": "Choose how the preview should recalculate sheets after paper or duplex settings change.",
+      "acceptedOptionId": "b01_i038_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i001",
+      "questionId": "ood-n02-b02-i020",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose the retirement transition that preserves the stated enrollment and progress behavior.",
+      "acceptedOptionId": "b02_i020_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i002",
+      "questionId": "ood-n02-b02-i021",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose how a room move should handle one accepted input and one rejected input.",
+      "acceptedOptionId": "b02_i021_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i003",
+      "questionId": "ood-n02-b02-i022",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose the transition after an export attempt reports a failure.",
+      "acceptedOptionId": "b02_i022_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i004",
+      "questionId": "ood-n02-b02-i023",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Apply an asynchronous acceptance only to the exact proposal that is still pending; preserve the active package and newer proposal after a stale response.",
+      "acceptedOptionId": "b02_i023_request_correlation",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i005",
+      "questionId": "ood-n02-b02-i024",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose the publish behavior when the stock count is negative.",
+      "acceptedOptionId": "b02_i024_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i006",
+      "questionId": "ood-n02-b02-i025",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose what approval should do when one requested quantity exceeds delivery.",
+      "acceptedOptionId": "b02_i025_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i007",
+      "questionId": "ood-n02-b02-i026",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose how to respond when Plot B becomes occupied before the transfer commits.",
+      "acceptedOptionId": "b02_i026_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i008",
+      "questionId": "ood-n02-b02-i027",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose what activation should do if the third component is no longer active.",
+      "acceptedOptionId": "b02_i027_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i009",
+      "questionId": "ood-n02-b02-i028",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose the state when the expiry instant passes and no vehicle connected.",
+      "acceptedOptionId": "b02_i028_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i010",
+      "questionId": "ood-n02-b02-i029",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose how to commit the merge without losing the source descriptions.",
+      "acceptedOptionId": "b02_i029_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i011",
+      "questionId": "ood-n02-b02-i030",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose how to handle a request to change the territory of an approved permit.",
+      "acceptedOptionId": "b02_i030_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i012",
+      "questionId": "ood-n02-b02-i031",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose the result when the proposed replacement is incompatible.",
+      "acceptedOptionId": "b02_i031_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i013",
+      "questionId": "ood-n02-b02-i032",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose the transition after consent has been revoked but before dispatch.",
+      "acceptedOptionId": "b02_i032_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i014",
+      "questionId": "ood-n02-b02-i033",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose how a late submission should be recorded.",
+      "acceptedOptionId": "b02_i033_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i015",
+      "questionId": "ood-n02-b02-i034",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose what a delegate’s approval action should do.",
+      "acceptedOptionId": "b02_i034_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i016",
+      "questionId": "ood-n02-b02-i035",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose the booking state while the refund provider is still processing.",
+      "acceptedOptionId": "b02_i035_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i017",
+      "questionId": "ood-n02-b02-i036",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose how denial should affect the pending grant.",
+      "acceptedOptionId": "b02_i036_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i018",
+      "questionId": "ood-n02-b02-i037",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose what to do when the document changes after confirmation but before sealing.",
+      "acceptedOptionId": "b02_i037_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B02.json",
+      "beforeSourceSha256": "1db97e9e36b24e19f53d70509de137b1f987c19a47f0cd2c9243e40a1d2f8042",
+      "sourceSha256": "03fa49cfcb122f03241f16b826716c8221fd809b3ff5e21706927245208f54f3",
+      "beforeQuestionId": "ood-n02-b02-i019",
+      "questionId": "ood-n02-b02-i038",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B02",
+      "learningObjective": "Choose how to handle a timeout when the release outcome is not yet visible to the caller.",
+      "acceptedOptionId": "b02_i038_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i001",
+      "questionId": "ood-n02-b03-i020",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how the caller should request the reorder.",
+      "acceptedOptionId": "b03_i020_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i002",
+      "questionId": "ood-n02-b03-i021",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose where the extension eligibility decision should be made.",
+      "acceptedOptionId": "b03_i021_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i003",
+      "questionId": "ood-n02-b03-i022",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how a work-order caller should obtain the labor plan.",
+      "acceptedOptionId": "b03_i022_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i004",
+      "questionId": "ood-n02-b03-i023",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose where the joint move eligibility decision belongs.",
+      "acceptedOptionId": "b03_i023_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i005",
+      "questionId": "ood-n02-b03-i024",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how both panels should submit commands.",
+      "acceptedOptionId": "b03_i024_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i006",
+      "questionId": "ood-n02-b03-i025",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how the caller should initiate retirement.",
+      "acceptedOptionId": "b03_i025_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i007",
+      "questionId": "ood-n02-b03-i026",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose a case operation that prevents callers from applying only part of reassignment.",
+      "acceptedOptionId": "b03_i026_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i008",
+      "questionId": "ood-n02-b03-i027",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how publication should be invoked so every entry point enforces the same rule.",
+      "acceptedOptionId": "b03_i027_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i009",
+      "questionId": "ood-n02-b03-i028",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how a caller should request readiness.",
+      "acceptedOptionId": "b03_i028_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i010",
+      "questionId": "ood-n02-b03-i029",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how to make the merge decision and resulting update consistent.",
+      "acceptedOptionId": "b03_i029_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i011",
+      "questionId": "ood-n02-b03-i030",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how a permit should answer a usage request.",
+      "acceptedOptionId": "b03_i030_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i012",
+      "questionId": "ood-n02-b03-i031",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Place a replacement operation with the maintenance job that owns the current aircraft assignment and has the compatibility facts needed to change it safely.",
+      "acceptedOptionId": "b03_i031_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i013",
+      "questionId": "ood-n02-b03-i032",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how dispatch should be expressed.",
+      "acceptedOptionId": "b03_i032_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i014",
+      "questionId": "ood-n02-b03-i033",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how scoring should be shared across result and export paths.",
+      "acceptedOptionId": "b03_i033_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i015",
+      "questionId": "ood-n02-b03-i034",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how the exception should handle an approval attempt.",
+      "acceptedOptionId": "b03_i034_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i016",
+      "questionId": "ood-n02-b03-i035",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how a replacement should be applied.",
+      "acceptedOptionId": "b03_i035_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i017",
+      "questionId": "ood-n02-b03-i036",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how permission access should be requested.",
+      "acceptedOptionId": "b03_i036_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i018",
+      "questionId": "ood-n02-b03-i037",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose the model operation that best expresses the seal action.",
+      "acceptedOptionId": "b03_i037_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B03.json",
+      "beforeSourceSha256": "57493bbfa63bf607ed2d1026f346e2e1c991fe22b46d7e557c685924c2b0e0c1",
+      "sourceSha256": "6a1ce440ba1ce098ebeb4decd991d8d270dd275c0c4f51bf78403ac9d77d89b1",
+      "beforeQuestionId": "ood-n02-b03-i019",
+      "questionId": "ood-n02-b03-i038",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B03",
+      "learningObjective": "Choose how to prevent different callers from deriving different release amounts.",
+      "acceptedOptionId": "b03_i038_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i001",
+      "questionId": "ood-n02-b04-i020",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Keep the reservation and capacity hold under one booking lifecycle because they change atomically under the same rule; isolate independently changing email delivery.",
+      "acceptedOptionId": "b04_i020_reservation_lifecycle",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i002",
+      "questionId": "ood-n02-b04-i021",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to isolate the independent time-source change.",
+      "acceptedOptionId": "b04_i021_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i003",
+      "questionId": "ood-n02-b04-i022",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to keep a camera replacement from changing return classification behavior.",
+      "acceptedOptionId": "b04_i022_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i004",
+      "questionId": "ood-n02-b04-i023",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose the boundary that preserves scientific meaning across a renderer update.",
+      "acceptedOptionId": "b04_i023_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i005",
+      "questionId": "ood-n02-b04-i024",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to isolate the mail-provider revision.",
+      "acceptedOptionId": "b04_i024_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i006",
+      "questionId": "ood-n02-b04-i025",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to limit changes caused by a new offline transport protocol.",
+      "acceptedOptionId": "b04_i025_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i007",
+      "questionId": "ood-n02-b04-i026",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to handle a partner layout revision.",
+      "acceptedOptionId": "b04_i026_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i008",
+      "questionId": "ood-n02-b04-i027",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose a boundary for the new lock vendor integration.",
+      "acceptedOptionId": "b04_i027_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i009",
+      "questionId": "ood-n02-b04-i028",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose what should change when a carrier adds a required label field.",
+      "acceptedOptionId": "b04_i028_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i010",
+      "questionId": "ood-n02-b04-i029",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to respond to a new localized time format.",
+      "acceptedOptionId": "b04_i029_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i011",
+      "questionId": "ood-n02-b04-i030",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Keep grant fields under one lifecycle responsibility when they change only through the same reviewed revision, rather than splitting by field name.",
+      "acceptedOptionId": "b04_i030_grant_lifecycle",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i012",
+      "questionId": "ood-n02-b04-i031",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to accommodate a streaming vendor API change.",
+      "acceptedOptionId": "b04_i031_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i013",
+      "questionId": "ood-n02-b04-i032",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to prepare for a new archive schema.",
+      "acceptedOptionId": "b04_i032_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i014",
+      "questionId": "ood-n02-b04-i033",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to isolate a messaging vendor replacement.",
+      "acceptedOptionId": "b04_i033_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i015",
+      "questionId": "ood-n02-b04-i034",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose a design that accommodates a new thumbnail format without moving listing eligibility rules.",
+      "acceptedOptionId": "b04_i034_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i016",
+      "questionId": "ood-n02-b04-i035",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how a clearing-network field addition should affect repayment allocation.",
+      "acceptedOptionId": "b04_i035_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i017",
+      "questionId": "ood-n02-b04-i036",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to accommodate a new map-tile provider.",
+      "acceptedOptionId": "b04_i036_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i018",
+      "questionId": "ood-n02-b04-i037",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose a boundary for the catalog search schema revision.",
+      "acceptedOptionId": "b04_i037_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B04.json",
+      "beforeSourceSha256": "8873e113b42716532352589e8bf896e4896b0580b1adc57f8c7513d48f197e9a",
+      "sourceSha256": "17d4027ea20cab4946d0a10508798ed4db3f9cc264769f3bafb75bdbe44ab622",
+      "beforeQuestionId": "ood-n02-b04-i019",
+      "questionId": "ood-n02-b04-i038",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B04",
+      "learningObjective": "Choose how to respond to a billing-provider API change.",
+      "acceptedOptionId": "b04_i038_cohesion",
+      "sourceRefs": Object.freeze([
+        "https://docs.oracle.com/javase/tutorial/java/concepts/",
+        "https://learn.microsoft.com/dotnet/standard/modern-web-apps-azure-architecture/architectural-principles"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i001",
+      "questionId": "ood-n02-b05-i020",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Capture one coherent provider configuration per stream while later streams receive a published replacement.",
+      "acceptedOptionId": "b05_i020_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i002",
+      "questionId": "ood-n02-b05-i021",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Copy a mutable nested assignment graph so editing a draft cannot alter a submitted proposal.",
+      "acceptedOptionId": "b05_i021_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i003",
+      "questionId": "ood-n02-b05-i022",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Keep an accepted route revision as a conflict baseline while editing a separate pending value.",
+      "acceptedOptionId": "b05_i022_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i004",
+      "questionId": "ood-n02-b05-i023",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Capture the minimal immutable inputs for a transient calculation without turning it into permanent history.",
+      "acceptedOptionId": "b05_i023_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i005",
+      "questionId": "ood-n02-b05-i024",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Safely share an immutable child value while replacing the coupled plan that must be validated as a whole.",
+      "acceptedOptionId": "b05_i024_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i006",
+      "questionId": "ood-n02-b05-i025",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Model a composite amount as a value whose currency and minor units both determine equivalence.",
+      "acceptedOptionId": "b05_i025_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i007",
+      "questionId": "ood-n02-b05-i026",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Represent a correction as a new immutable record linked to the finalized result it supersedes.",
+      "acceptedOptionId": "b05_i026_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i008",
+      "questionId": "ood-n02-b05-i027",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Freeze submitted condition facts while keeping a later eligibility decision in its own lifecycle.",
+      "acceptedOptionId": "b05_i027_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i009",
+      "questionId": "ood-n02-b05-i028",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Retain exact immutable input-version references on a published computation for later audit.",
+      "acceptedOptionId": "b05_i028_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i010",
+      "questionId": "ood-n02-b05-i029",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Separate the immutable accepted comment from delivery state that changes during retries.",
+      "acceptedOptionId": "b05_i029_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i011",
+      "questionId": "ood-n02-b05-i030",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Retry the exact submitted payload rather than rebuilding it from a subsequently edited draft.",
+      "acceptedOptionId": "b05_i030_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i012",
+      "questionId": "ood-n02-b05-i031",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Keep each invoice issue’s timestamp and exact inputs fixed when a corrected issue is created.",
+      "acceptedOptionId": "b05_i031_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i013",
+      "questionId": "ood-n02-b05-i032",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Validate related command rules together and publish one immutable set only when no cross-entry conflict remains.",
+      "acceptedOptionId": "b05_i032_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i014",
+      "questionId": "ood-n02-b05-i033",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Apply only the service’s stated normalization rules when constructing a postal value.",
+      "acceptedOptionId": "b05_i033_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i015",
+      "questionId": "ood-n02-b05-i034",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Review a proposed booking against the exact room and attendee facts captured for that proposal.",
+      "acceptedOptionId": "b05_i034_proposal_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i016",
+      "questionId": "ood-n02-b05-i035",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Break a mutable caller alias when accepting input into a published immutable collection.",
+      "acceptedOptionId": "b05_i035_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i017",
+      "questionId": "ood-n02-b05-i036",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Return a new immutable progress-set value so a later completion does not mutate a snapshot already held by report readers.",
+      "acceptedOptionId": "b05_i036_copy_progress",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i018",
+      "questionId": "ood-n02-b05-i037",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Capture all fields needed for a coherent export from one board revision.",
+      "acceptedOptionId": "b05_i037_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B05.json",
+      "beforeSourceSha256": "a91532674af030117f673fd934ffbdc383569300bc790a8c6109ea2811a0c2a0",
+      "sourceSha256": "17907deacb33b6f1d6dac02c33e30625feef5f13fcf2f8ab2225f5160dc48f1e",
+      "beforeQuestionId": "ood-n02-b05-i019",
+      "questionId": "ood-n02-b05-i038",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B05",
+      "learningObjective": "Keep transfer-time owner and deadline facts fixed while the support case continues to change.",
+      "acceptedOptionId": "b05_i038_snapshot",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.collections.immutable?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i001",
+      "questionId": "ood-n02-b06-i020",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep a temporary authorization record addressable while its role and expiry change.",
+      "acceptedOptionId": "b06_i020_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i002",
+      "questionId": "ood-n02-b06-i021",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Distinguish separate seal records even when they cover the same immutable document.",
+      "acceptedOptionId": "b06_i021_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i003",
+      "questionId": "ood-n02-b06-i022",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Make retries resolve to the same payout record without merging equal-valued payouts.",
+      "acceptedOptionId": "b06_i022_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i004",
+      "questionId": "ood-n02-b06-i023",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Preserve superseded notices as distinct audit records.",
+      "acceptedOptionId": "b06_i023_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i005",
+      "questionId": "ood-n02-b06-i024",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep a reservation addressable when its interval is corrected or it is cancelled.",
+      "acceptedOptionId": "b06_i024_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i006",
+      "questionId": "ood-n02-b06-i025",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep session identity stable across provider-configuration history.",
+      "acceptedOptionId": "b06_i025_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i007",
+      "questionId": "ood-n02-b06-i026",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Preserve assignment identity when volunteers are swapped between assignments.",
+      "acceptedOptionId": "b06_i026_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i008",
+      "questionId": "ood-n02-b06-i027",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep independent edit submissions reviewable even when their geometry matches.",
+      "acceptedOptionId": "b06_i027_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i009",
+      "questionId": "ood-n02-b06-i028",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep character identity stable while quest progress changes.",
+      "acceptedOptionId": "b06_i028_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i010",
+      "questionId": "ood-n02-b06-i029",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep a shipment hash key stable across carrier reassignment.",
+      "acceptedOptionId": "b06_i029_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i011",
+      "questionId": "ood-n02-b06-i030",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Distinguish separately reversible allocations with equal account and amount.",
+      "acceptedOptionId": "b06_i030_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i012",
+      "questionId": "ood-n02-b06-i031",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep one match addressable through status transitions while events remain separate.",
+      "acceptedOptionId": "b06_i031_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i013",
+      "questionId": "ood-n02-b06-i032",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep physical-item identity stable through inspection corrections.",
+      "acceptedOptionId": "b06_i032_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i014",
+      "questionId": "ood-n02-b06-i033",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Distinguish executions even when outputs are byte-identical.",
+      "acceptedOptionId": "b06_i033_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i015",
+      "questionId": "ood-n02-b06-i034",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Retain separate comments with same text/revision and different authors.",
+      "acceptedOptionId": "b06_i034_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i016",
+      "questionId": "ood-n02-b06-i035",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Resolve the same submission across sync retries and status changes.",
+      "acceptedOptionId": "b06_i035_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i017",
+      "questionId": "ood-n02-b06-i036",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Differentiate re-delivery retry of one invoice issue from a new corrected issue.",
+      "acceptedOptionId": "b06_i036_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i018",
+      "questionId": "ood-n02-b06-i037",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Keep a revoked badge record distinct from its owner and any replacement badge.",
+      "acceptedOptionId": "b06_i037_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B06.json",
+      "beforeSourceSha256": "aa4e039351ff6bf2d4903889e642fbba88469141542d61add8ccda69a26f5e70",
+      "sourceSha256": "ed0c5d818f351713fd891c0c470927e1515f120342be2a6e1d12491cb87be638",
+      "beforeQuestionId": "ood-n02-b06-i019",
+      "questionId": "ood-n02-b06-i038",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B06",
+      "learningObjective": "Preserve separate print records even when labels show the same address.",
+      "acceptedOptionId": "b06_i038_identity",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/api/system.object.gethashcode?view=net-10.0",
+        "https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/statements-expressions-operators/how-to-define-value-equality-for-a-type"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i001",
+      "questionId": "ood-n02-b07-i020",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Validate stable request identifiers at construction, but check changing fleet exclusivity at commit.",
+      "acceptedOptionId": "b07_i020_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i002",
+      "questionId": "ood-n02-b07-i021",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Require complete referral facts without treating stored consent evidence as current send authorization.",
+      "acceptedOptionId": "b07_i021_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i003",
+      "questionId": "ood-n02-b07-i022",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Validate the completed-attempt score as an integer from zero through one hundred.",
+      "acceptedOptionId": "b07_i022_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i004",
+      "questionId": "ood-n02-b07-i023",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Require approval evidence and bounded scope before constructing an exception record.",
+      "acceptedOptionId": "b07_i023_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i005",
+      "questionId": "ood-n02-b07-i024",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Reject two annotation segments that map to the same replacement segment ID.",
+      "acceptedOptionId": "b07_i024_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i006",
+      "questionId": "ood-n02-b07-i025",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Enforce grant field and expiry invariants while consuming already-checked approval evidence.",
+      "acceptedOptionId": "b07_i025_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i007",
+      "questionId": "ood-n02-b07-i026",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Bind a seal to the exact immutable document revision supplied at creation.",
+      "acceptedOptionId": "b07_i026_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i008",
+      "questionId": "ood-n02-b07-i027",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Take payout amount and currency from the settled order’s final values.",
+      "acceptedOptionId": "b07_i027_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i009",
+      "questionId": "ood-n02-b07-i028",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Allow equal route effective times and recheck the nondecreasing predicate at acceptance.",
+      "acceptedOptionId": "b07_i028_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i010",
+      "questionId": "ood-n02-b07-i029",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Validate interval shape at value creation and defer changing schedule overlap to commit.",
+      "acceptedOptionId": "b07_i029_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i011",
+      "questionId": "ood-n02-b07-i030",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Create a provider configuration only when language and timing support the stream contract.",
+      "acceptedOptionId": "b07_i030_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i012",
+      "questionId": "ood-n02-b07-i031",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Reject swaps that repeat an assignment ID and recheck changing availability at execution.",
+      "acceptedOptionId": "b07_i031_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i013",
+      "questionId": "ood-n02-b07-i032",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Capture a route edit’s parent revision so a stale submission remains an explicit branch.",
+      "acceptedOptionId": "b07_i032_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i014",
+      "questionId": "ood-n02-b07-i033",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Construct a reward claim only from eligibility tied to the campaign revision used.",
+      "acceptedOptionId": "b07_i033_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i015",
+      "questionId": "ood-n02-b07-i034",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Require both temperature compatibility and custody acknowledgement before carrier reassignment.",
+      "acceptedOptionId": "b07_i034_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i016",
+      "questionId": "ood-n02-b07-i035",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Validate an allocation against its stated balance snapshot and recheck at posting.",
+      "acceptedOptionId": "b07_i035_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i017",
+      "questionId": "ood-n02-b07-i036",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Check timeout and active state when creating a forfeit decision, then recheck before commit.",
+      "acceptedOptionId": "b07_i036_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i018",
+      "questionId": "ood-n02-b07-i037",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Require an allowed condition category without putting a later refund outcome into the report.",
+      "acceptedOptionId": "b07_i037_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B07.json",
+      "beforeSourceSha256": "bfe5b9062b4c33f042b6c6cda31909d1780a82232ff0d5e75b3fdee56612f82e",
+      "sourceSha256": "e71e17e0366922a268d536518917c9e6a8692a495b30cc88c4a9c042d0fab14f",
+      "beforeQuestionId": "ood-n02-b07-i019",
+      "questionId": "ood-n02-b07-i038",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B07",
+      "learningObjective": "Construct a published result only from a succeeded run with terminal output.",
+      "acceptedOptionId": "b07_i038_creation",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/net-core-microservice-domain-model"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i001",
+      "questionId": "ood-n02-b08-i020",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Represent a confirmed missing reservation separately from a failed lookup.",
+      "acceptedOptionId": "b08_i020_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i002",
+      "questionId": "ood-n02-b08-i021",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Keep a valid zero quote distinct from missing required component pricing.",
+      "acceptedOptionId": "b08_i021_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i003",
+      "questionId": "ood-n02-b08-i022",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Distinguish no available charger from inability to read the schedule.",
+      "acceptedOptionId": "b08_i022_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i004",
+      "questionId": "ood-n02-b08-i023",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Preserve the difference between absent caption metadata and intentionally blank text.",
+      "acceptedOptionId": "b08_i023_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i005",
+      "questionId": "ood-n02-b08-i024",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Return actionable validation errors for missing required licensing inputs.",
+      "acceptedOptionId": "b08_i024_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i006",
+      "questionId": "ood-n02-b08-i025",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Distinguish an unknown battery from a known battery that is already assigned.",
+      "acceptedOptionId": "b08_i025_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i007",
+      "questionId": "ood-n02-b08-i026",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Keep not-recorded, denied, and granted consent distinguishable; only granted permits sending.",
+      "acceptedOptionId": "b08_i026_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i008",
+      "questionId": "ood-n02-b08-i027",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Keep a valid zero score distinct from no score and its timeout status.",
+      "acceptedOptionId": "b08_i027_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i009",
+      "questionId": "ood-n02-b08-i028",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Represent approval lifecycle states, missing requests, and query failure distinctly.",
+      "acceptedOptionId": "b08_i028_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i010",
+      "questionId": "ood-n02-b08-i029",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Preserve omitted, explicit-null, and supplied-value intents in a partial update.",
+      "acceptedOptionId": "b08_i029_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i011",
+      "questionId": "ood-n02-b08-i030",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Distinguish no grant record from an existing expired grant.",
+      "acceptedOptionId": "b08_i030_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i012",
+      "questionId": "ood-n02-b08-i031",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Separate named verification outcomes from verifier unavailability.",
+      "acceptedOptionId": "b08_i031_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i013",
+      "questionId": "ood-n02-b08-i032",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Distinguish confirmed absence of a payout from unknown status during ledger failure.",
+      "acceptedOptionId": "b08_i032_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i014",
+      "questionId": "ood-n02-b08-i033",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Keep empty notice history separate from an unknown route and read failure.",
+      "acceptedOptionId": "b08_i033_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i015",
+      "questionId": "ood-n02-b08-i034",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Use the continuation marker, not the current page length, to determine whether a filtered search is complete.",
+      "acceptedOptionId": "b08_i034_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i016",
+      "questionId": "ood-n02-b08-i035",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Preserve the working provider on inconclusive discovery; report confirmed incompatibility separately from a registry timeout.",
+      "acceptedOptionId": "b08_i035_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i017",
+      "questionId": "ood-n02-b08-i036",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Return specific missing-reference and availability-conflict errors for a swap.",
+      "acceptedOptionId": "b08_i036_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i018",
+      "questionId": "ood-n02-b08-i037",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Separate malformed geometry from a valid stale branch that must be retained.",
+      "acceptedOptionId": "b08_i037_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    }),
+    Object.freeze({
+      "sourceFile": "content/object-oriented-design-interview/objects_responsibilities_encapsulation_and_invariants/OOD-N02-B08.json",
+      "beforeSourceSha256": "4021e846165b3418bdf6dcdf1ee4771a43d6ece7d845dbb37f559385a0fcaa8b",
+      "sourceSha256": "a7187fd7159997b338285a732eb436cf799953d78a527ef1ce45b2612ed8e4b1",
+      "beforeQuestionId": "ood-n02-b08-i019",
+      "questionId": "ood-n02-b08-i038",
+      "nodeId": "objects_responsibilities_encapsulation_and_invariants",
+      "mentalUnitId": "OOD-N02-B08",
+      "learningObjective": "Distinguish confirmed ineligibility from a missing character and failed evaluation.",
+      "acceptedOptionId": "b08_i038_contract",
+      "sourceRefs": Object.freeze([
+        "https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/null-safety/nullable-reference-types",
+        "https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/domain-model-layer-validations"
+      ])
+    })
+  ])
+});
+
+const BIZQ01_OOD_COHORT17_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "identityAction", "identityReason", "confirmedDefects", "replacements"];
+const BIZQ01_OOD_COHORT17_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
+
 const BIZQ01_OOD_COHORT16_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "identityAction", "identityReason", "confirmedDefects", "replacements"];
 const BIZQ01_OOD_COHORT16_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
 
@@ -1484,8 +3845,211 @@ async function validateBizq01OodCohort16Proof(contentRoot, canonical, evidence) 
   return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...replacements] };
 }
 
+
+async function validateBizq01OodCohort17Proof(contentRoot, canonical, evidence) {
+  const accepted = BIZQ01_OOD_COHORT17_PROOF;
+  const label = accepted.scope;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, accepted.path);
+  const proofInfo = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect ${label}: ${error.message}`);
+  });
+  if (!proofInfo) return undefined;
+  await rejectSymlinkAncestors(proofPath, label);
+  const proof = await readJson(proofPath, label);
+  exactKeys(proof, BIZQ01_OOD_COHORT17_ROOT_KEYS, label);
+  for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "identityAction", "identityReason"]) {
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
+  }
+  if (canonicalJson(proof.confirmedDefects) !== canonicalJson(accepted.confirmedDefects)) {
+    fail("EVIDENCE_VALUE", `${label}.confirmedDefects differ from the fixed cohort descriptor.`);
+  }
+  assertHash(proof.beforeQuestionSetSha256, `${label}.beforeQuestionSetSha256`);
+  assertHash(proof.questionSetSha256, `${label}.questionSetSha256`);
+  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
+    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
+  }
+  const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
+  if (sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
+    fail("HASH_MISMATCH", `${label} current OOD question set differs from the fixed cohort descriptor.`);
+  }
+  if (!Array.isArray(proof.sourceFiles) || proof.sourceFiles.length !== accepted.sourceFiles.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must identify exactly the eight fixed source files.`);
+  }
+  const sourcesByPath = new Map();
+  for (const [index, source] of accepted.sourceFiles.entries()) {
+    const entry = proof.sourceFiles[index];
+    const sourceLabel = `${label}.sourceFiles[${index}]`;
+    exactKeys(entry, BIZQ01_OOD_COHORT17_SOURCE_KEYS, sourceLabel);
+    for (const key of BIZQ01_OOD_COHORT17_SOURCE_KEYS) {
+      if (entry[key] !== source[key]) fail("EVIDENCE_VALUE", `${sourceLabel}.${key} differs from the fixed cohort descriptor.`);
+    }
+    assertRelativePath(entry.sourceFile, `${sourceLabel}.sourceFile`, { suffix: ".json" });
+    assertHash(entry.beforeSourceSha256, `${sourceLabel}.beforeSourceSha256`);
+    assertHash(entry.sourceSha256, `${sourceLabel}.sourceSha256`);
+    const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
+    await rejectSymlinkAncestors(sourcePath, `${sourceLabel}.sourceFile`);
+    await regularPath(sourcePath, `${sourceLabel}.sourceFile`, "file");
+    const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    if (sha256(sourceBytes) !== source.sourceSha256) fail("HASH_MISMATCH", `${sourceLabel}.sourceFile does not match the fixed current source hash.`);
+    let questions;
+    try { questions = JSON.parse(sourceBytes.toString("utf8")); }
+    catch (error) { fail("INVALID_JSON", `${sourceLabel}.sourceFile is not valid JSON: ${error.message}`); }
+    const descriptorItems = accepted.replacements.filter((item) => item.sourceFile === source.sourceFile);
+    const expectedIds = descriptorItems.map((item) => item.questionId);
+    if (!Array.isArray(questions) || questions.length !== expectedIds.length) {
+      fail("EVIDENCE_MEMBERSHIP", `${sourceLabel}.sourceFile must contain exactly the 19 fixed current questions.`);
+    }
+    assertExactSet(questions.map((question) => question?.questionId), expectedIds, `${sourceLabel}.source question IDs`);
+    const sourceById = new Map(questions.map((question) => [question.questionId, question]));
+    for (const question of questions) {
+      const location = canonical.questionLocations.get(question.questionId);
+      if (!location || path.relative(projectRoot, location.path).split(path.sep).join("/") !== source.sourceFile) {
+        fail("CANONICAL_MEMBERSHIP", `${sourceLabel} includes an item outside its fixed canonical source location.`);
+      }
+      if (question.trackId !== accepted.trackId || question.nodeId !== source.nodeId || question.mentalUnitId !== source.mentalUnitId) {
+        fail("EVIDENCE_MEMBERSHIP", `${sourceLabel} contains a question with a different fixed taxonomy.`);
+      }
+      const canonicalQuestion = currentTrackQuestions.find((current) => current.questionId === question.questionId);
+      if (!canonicalQuestion || canonicalJson(canonicalQuestion) !== canonicalJson(question)) {
+        fail("HASH_MISMATCH", `${sourceLabel} source question differs from current canonical content.`);
+      }
+    }
+    sourcesByPath.set(source.sourceFile, { sourcePath, questions, sourceById });
+  }
+  if (!Array.isArray(proof.replacements) || proof.replacements.length !== accepted.replacements.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must contain exactly the fixed 152 replacements.`);
+  }
+  const currentById = new Map(currentTrackQuestions.map((question) => [question.questionId, question]));
+  const oldRowsById = new Map(evidence.rowsByTrack.get(accepted.trackId).map((row) => [row.questionId, row]));
+  const oldIds = new Set();
+  const newIds = new Set();
+  const oldOptionIds = new Set();
+  const currentOptionIds = new Set();
+  const replacements = [];
+  for (const [index, item] of accepted.replacements.entries()) {
+    const entry = proof.replacements[index];
+    const itemLabel = `${label}.replacements[${index}]`;
+    exactKeys(entry, BIZQ01_OOD_ITEM_KEYS, itemLabel);
+    for (const key of ["sourceFile", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "acceptedOptionId"]) {
+      if (entry[key] !== item[key]) fail("EVIDENCE_VALUE", `${itemLabel}.${key} differs from the fixed replacement map.`);
+    }
+    const source = accepted.sourceFiles.find((candidate) => candidate.sourceFile === item.sourceFile);
+    if (!source || entry.beforeSourceSha256 !== source.beforeSourceSha256 || entry.sourceSha256 !== source.sourceSha256) {
+      fail("EVIDENCE_VALUE", `${itemLabel} source hashes do not match the fixed source file.`);
+    }
+    if (entry.identityAction !== accepted.identityAction || entry.identityReason !== accepted.identityReason ||
+        canonicalJson(entry.confirmedDefects) !== canonicalJson(accepted.confirmedDefects) ||
+        canonicalJson(entry.sourceRefs) !== canonicalJson(item.sourceRefs)) {
+      fail("EVIDENCE_VALUE", `${itemLabel} identity action, defect record, or source references differ from the fixed review.`);
+    }
+    const oldQuestion = entry.beforeQuestion;
+    const currentQuestion = currentById.get(item.questionId);
+    const oldRow = oldRowsById.get(item.beforeQuestionId);
+    const sourceData = sourcesByPath.get(item.sourceFile);
+    if (!oldQuestion || !currentQuestion || !oldRow || !sourceData || currentById.has(item.beforeQuestionId)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} must bind a removed historical item to one current replacement.`);
+    }
+    if (oldIds.has(item.beforeQuestionId) || newIds.has(item.questionId)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} duplicates a historical or current replacement identity.`);
+    }
+    oldIds.add(item.beforeQuestionId);
+    newIds.add(item.questionId);
+    assertCanonicalQuestion(oldQuestion, `${itemLabel}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+    assertCanonicalQuestion(entry.currentQuestion, `${itemLabel}.currentQuestion`, ACCEPTED_TRACK_IDS);
+    if (oldQuestion.questionId !== item.beforeQuestionId || oldQuestion.trackId !== accepted.trackId ||
+        oldQuestion.nodeId !== item.nodeId || oldQuestion.mentalUnitId !== item.mentalUnitId ||
+        currentQuestion.questionId !== item.questionId || currentQuestion.trackId !== accepted.trackId ||
+        currentQuestion.nodeId !== item.nodeId || currentQuestion.mentalUnitId !== item.mentalUnitId ||
+        canonicalJson(entry.currentQuestion) !== canonicalJson(currentQuestion)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes the fixed taxonomy or current authored object.`);
+    }
+    for (const key of ["trackId", "nodeId", "mentalUnitId"]) {
+      if (oldRow[key] !== oldQuestion[key]) fail("EVIDENCE_MEMBERSHIP", `${itemLabel} historical evidence ${key} differs from the old question.`);
+    }
+    assertCanonicalHash(oldRow, oldQuestion, `${itemLabel}.beforeQuestion`);
+    if (currentQuestion.interaction.type !== "choice_single" || currentQuestion.interaction.scoringMethod !== "exact_selected_set" ||
+        currentQuestion.answer.type !== "choice_single" || currentQuestion.answer.optionId !== item.acceptedOptionId ||
+        canonicalJson(currentQuestion.sourceRefs) !== canonicalJson(item.sourceRefs)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes the fixed interaction, scoring, accepted option, or primary references.`);
+    }
+    const priorOptionIds = new Set(oldQuestion.interaction.options.map((option) => option.optionId));
+    const newQuestionOptionIds = currentQuestion.interaction.options.map((option) => option.optionId);
+    if (new Set(newQuestionOptionIds).size !== newQuestionOptionIds.length || newQuestionOptionIds.some((optionId) => priorOptionIds.has(optionId))) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} must use unique option identities that were not assigned to its retired item.`);
+    }
+    for (const option of oldQuestion.interaction.options) oldOptionIds.add(option.optionId);
+    for (const optionId of newQuestionOptionIds) currentOptionIds.add(optionId);
+    const sourceQuestion = sourceData.sourceById.get(item.questionId);
+    if (!sourceQuestion || canonicalJson(sourceQuestion) !== canonicalJson(currentQuestion)) {
+      fail("HASH_MISMATCH", `${itemLabel} source item differs from current canonical content.`);
+    }
+    replacements.push({ oldQuestion, newQuestion: currentQuestion, beforeQuestionId: item.beforeQuestionId, questionId: item.questionId });
+  }
+  if ([...currentOptionIds].some((optionId) => oldOptionIds.has(optionId))) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} reuses an option identity from the retired cohort.`);
+  }
+
+  for (const source of accepted.sourceFiles) {
+    const sourceData = sourcesByPath.get(source.sourceFile);
+    const sourceReplacements = replacements.filter((item) => {
+      const descriptor = accepted.replacements.find((candidate) => candidate.questionId === item.questionId);
+      return descriptor?.sourceFile === source.sourceFile;
+    });
+    const currentSourceIds = new Set(sourceReplacements.map((item) => item.questionId));
+    const predecessorQuestions = sourceData.questions
+      .filter((question) => !currentSourceIds.has(question.questionId))
+      .concat(sourceReplacements.map((item) => item.oldQuestion))
+      .sort((left, right) => compare(left.questionId, right.questionId));
+    const predecessorBytes = Buffer.from(JSON.stringify(predecessorQuestions), "utf8");
+    if (sha256(predecessorBytes) !== source.beforeSourceSha256) {
+      fail("HASH_MISMATCH", `${label} does not reconstruct the byte-exact v16 predecessor source ${source.sourceFile}.`);
+    }
+  }
+  const reconstructedTrackQuestions = currentTrackQuestions
+    .filter((question) => !newIds.has(question.questionId))
+    .concat(replacements.map((item) => item.oldQuestion))
+    .sort((left, right) => compare(left.questionId, right.questionId));
+  if (reconstructedTrackQuestions.length !== currentTrackQuestions.length ||
+      sha256(reconstructedTrackQuestions) !== accepted.beforeQuestionSetSha256) {
+    fail("HASH_MISMATCH", `${label} does not reconstruct the fixed v16 OOD question set.`);
+  }
+  const predecessorCatalog = {
+    ...canonical.catalog,
+    tracks: canonical.catalog.tracks.map((track) => track.trackId === accepted.trackId
+      ? { ...track, contentVersion: accepted.beforeContentVersion }
+      : track)
+  };
+  const predecessorLocations = new Map(canonical.questionLocations);
+  for (const item of replacements) {
+    predecessorLocations.delete(item.questionId);
+    predecessorLocations.set(item.beforeQuestionId, {
+      trackId: accepted.trackId,
+      nodeId: item.oldQuestion.nodeId,
+      mentalUnitId: item.oldQuestion.mentalUnitId,
+      path: sourcesByPath.get(accepted.replacements.find((candidate) => candidate.questionId === item.questionId).sourceFile).sourcePath
+    });
+  }
+  const predecessorCanonical = {
+    ...canonical,
+    catalog: predecessorCatalog,
+    catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
+    questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
+    questionLocations: predecessorLocations
+  };
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged source16, source13, source12, and source11 proofs for historical validation.`);
+  return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...replacements] };
+}
+
 async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, privateHistoricalSourceBytes) {
   const version = canonical.catalogByTrack.get(BIZQ01_OOD_PROOF.trackId)?.contentVersion;
+  if (version === BIZQ01_OOD_COHORT17_PROOF.contentVersion) {
+    const cohort = await validateBizq01OodCohort17Proof(contentRoot, canonical, evidence);
+    if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source17 OOD version requires its fixed 152-question closure proof.");
+    return cohort;
+  }
   if (version === BIZQ01_OOD_COHORT16_PROOF.contentVersion) {
     const cohort = await validateBizq01OodCohort16Proof(contentRoot, canonical, evidence);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source16 OOD version requires its fixed 119-question closure proof.");
@@ -1540,7 +4104,7 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, priv
     return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...cohort.replacements] };
   }
   if (version !== BIZQ01_OOD_SUCCESSOR_PROOF.contentVersion) {
-    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path, BIZQ01_OOD_COHORT13_PROOF.path, BIZQ01_OOD_COHORT16_PROOF.path];
+    const proofPaths = [BIZQ01_OOD_PROOF.path, BIZQ01_OOD_SUCCESSOR_PROOF.path, BIZQ01_OOD_COHORT13_PROOF.path, BIZQ01_OOD_COHORT16_PROOF.path, BIZQ01_OOD_COHORT17_PROOF.path];
     for (const relativePath of proofPaths) {
       const info = await lstat(path.join(path.dirname(contentRoot), relativePath)).catch((error) => {
         if (error?.code === "ENOENT") return undefined;

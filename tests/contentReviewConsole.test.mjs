@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import test from "node:test";
 import { createContentReviewConsole, startContentReviewConsole, CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION, LAUNCH_TRACK_IDS } from "../scripts/review/content-review-console.mjs";
 import { validateSchema } from "../scripts/review/schema-validation.mjs";
-import { validateQuestion } from "../scripts/content/question-contract.mjs";
+import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 
 const AUTHOR_CONSTRAINT_RISK = "author_instruction_in_constraints";
 const BESD_UNIT_COHORT14_URL = new URL("../evidence/business-quality/bizq-01-besd-seed-cohort-14.json", import.meta.url);
@@ -64,7 +64,125 @@ test("constraint warning is advisory across interactions and does not flag ordin
     assert.equal(projected.riskFlags.filter((flag) => flag === AUTHOR_CONSTRAINT_RISK).length, 1);
     assert.equal(projected.review.status, "unreviewed");
   }
-  assert.equal(service.listItems({ riskOnly: true }).length, warned.length + 1);
+  assert.equal(service.listItems({ riskOnly: true }).filter((item) => item.riskFlags.includes(AUTHOR_CONSTRAINT_RISK)).length, warned.length + 1);
+});
+
+test("Q14 flags a valid sole-longest correct choice for human review without changing scoring", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "bizq-q14-review-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const source = await createContentReviewConsole({ reviewPath: join(directory, "unused.json") });
+  const records = source.listItems();
+  const files = new Map();
+  for (const trackId of LAUNCH_TRACK_IDS) {
+    const record = records.find((candidate) => candidate.trackId === trackId && candidate.item.interaction.type === "choice_single" && candidate.item.answer.type === "choice_single");
+    assert.ok(record, `single-choice fixture available for ${trackId}`);
+    const question = structuredClone(record.item);
+    question.questionId = `q14-fixture-${trackId}`;
+    if (trackId === "coding-interview-dsa-problem-solving") {
+      const correctId = question.answer.optionId;
+      question.prompt = "A sorted random-access list is searched for the first value meeting a threshold. The search must use O(log n) comparisons without re-sorting the list. Which algorithm satisfies these requirements?";
+      question.constraints = [];
+      question.interaction.options = question.interaction.options.map((option) => ({
+        ...option,
+        text: option.optionId === correctId
+          ? "Use binary search to find the lower bound, preserving the sorted-order invariant and narrowing the candidate interval at each comparison until the first qualifying position is identified."
+          : ["Scan from the start.", "Sort the list again.", "Return the final element."][question.interaction.options.findIndex((candidate) => candidate.optionId === option.optionId) % 3],
+      }));
+      question.answer = { type: "choice_single", optionId: correctId };
+      assert.equal(validateQuestion(question).valid, true);
+    }
+    const path = join(directory, record.sourceFile);
+    files.set(path, [...(files.get(path) ?? []), question]);
+  }
+  const codingRecord = records.find((candidate) => candidate.trackId === "coding-interview-dsa-problem-solving" && candidate.item.interaction.type === "choice_single" && candidate.item.answer.type === "choice_single");
+  const addSingleControl = (suffix, correctText, wrongTexts, malformed = false) => {
+    const question = structuredClone(codingRecord.item);
+    question.questionId = `q14-fixture-${suffix}`;
+    question.constraints = [];
+    if (malformed) question.interaction.options = null;
+    else {
+      let wrongIndex = 0;
+      question.interaction.options = question.interaction.options.map((option) => ({
+        ...option,
+        text: option.optionId === question.answer.optionId ? correctText : wrongTexts[wrongIndex++ % wrongTexts.length],
+      }));
+    }
+    if (!malformed) assert.equal(validateQuestion(question).valid, true);
+    const path = join(directory, codingRecord.sourceFile);
+    files.set(path, [...(files.get(path) ?? []), question]);
+    return question.questionId;
+  };
+  const tiedId = addSingleControl("tied", "Keep the current valid state", ["Keep the prior valid state", "Use a cache", "Retry later"]);
+  const longWrongId = addSingleControl("long-wrong", "Use binary search", ["This incorrect alternative is intentionally much longer than the keyed choice so it must not produce the correct-option length advisory.", "Sort again", "Read the first value"]);
+  const malformedId = addSingleControl("malformed", "Ignored malformed text", [], true);
+  const missingKey = structuredClone(codingRecord.item);
+  missingKey.questionId = "q14-fixture-missing-key";
+  missingKey.constraints = [];
+  missingKey.answer.optionId = "not-an-authored-option";
+  const duplicateOption = structuredClone(codingRecord.item);
+  duplicateOption.questionId = "q14-fixture-duplicate-option-id";
+  duplicateOption.constraints = [];
+  duplicateOption.interaction.options[1].optionId = duplicateOption.interaction.options[0].optionId;
+  const invalidKeyControls = ["", "   ", " padded-key "].map((invalidId, index) => {
+    const question = structuredClone(codingRecord.item);
+    question.questionId = `q14-fixture-invalid-key-${index}`;
+    question.constraints = [];
+    const oldKey = question.answer.optionId;
+    question.answer.optionId = invalidId;
+    question.interaction.options = question.interaction.options.map((option) => ({
+      ...option,
+      optionId: option.optionId === oldKey ? invalidId : option.optionId,
+      text: option.optionId === oldKey ? "This keyed text is intentionally much longer than every other short alternative in this schema-invalid identity control." : "Short alternative",
+    }));
+    assert.equal(validateQuestion(question).valid, false, `invalid authored ID ${index}`);
+    return question;
+  });
+  const codingPath = join(directory, codingRecord.sourceFile);
+  files.set(codingPath, [...(files.get(codingPath) ?? []), missingKey, duplicateOption, ...invalidKeyControls]);
+  const multiRecord = records.find((candidate) => candidate.item.interaction.type === "choice_multiple" && candidate.item.answer.type === "choice_multiple");
+  assert.ok(multiRecord, "multi-choice control available");
+  const multi = structuredClone(multiRecord.item);
+  multi.questionId = "q14-fixture-multi-control";
+  multi.constraints = [];
+  assert.equal(validateQuestion(multi).valid, true);
+  const multiPath = join(directory, multiRecord.sourceFile);
+  files.set(multiPath, [...(files.get(multiPath) ?? []), multi]);
+  for (const [path, questions] of files) {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, JSON.stringify(questions));
+  }
+
+  const syntheticTrack = "coding-interview-dsa-problem-solving";
+  const syntheticId = `q14-fixture-${syntheticTrack}`;
+  const service = await createContentReviewConsole({ root: directory, reviewPath: join(directory, "outcomes.json") });
+  const question = service.getItem(syntheticTrack, syntheticId);
+  assert.equal(question.riskFlags.filter((flag) => flag === "correct_option_sole_longest").length, 1);
+  assert.equal(question.review.status, "unreviewed");
+  assert.ok(service.listItems({ trackId: syntheticTrack, riskOnly: true }).some((item) => item.questionId === syntheticId));
+  for (const controlRef of [
+    { trackId: syntheticTrack, questionId: tiedId },
+    { trackId: syntheticTrack, questionId: longWrongId },
+    { trackId: syntheticTrack, questionId: malformedId },
+    { trackId: syntheticTrack, questionId: missingKey.questionId },
+    { trackId: syntheticTrack, questionId: duplicateOption.questionId },
+    ...invalidKeyControls.map((control) => ({ trackId: syntheticTrack, questionId: control.questionId })),
+    { trackId: multiRecord.trackId, questionId: multi.questionId },
+  ]) {
+    const control = service.getItem(controlRef.trackId, controlRef.questionId);
+    assert.ok(!control.riskFlags.includes("correct_option_sole_longest"), controlRef.questionId);
+  }
+  await assert.rejects(readFile(join(directory, "outcomes.json")), { code: "ENOENT" });
+
+  const correctId = question.item.answer.optionId;
+  const options = question.item.interaction.options;
+  assert.equal(validateQuestion(question.item).valid, true);
+  for (const candidate of [question.item, { ...question.item, interaction: { ...question.item.interaction, options: [...options].reverse() } }]) {
+    for (const option of options) {
+      const score = scoreQuestion(candidate, { type: "choice_single", optionId: option.optionId });
+      assert.equal(score.earnedPoints, option.optionId === correctId ? 1 : 0, option.optionId);
+      assert.equal(score.status, option.optionId === correctId ? "correct" : "incorrect", option.optionId);
+    }
+  }
 });
 
 test("review console exposes exactly nine launch tracks, navigable coverage, and advisory signals", async () => {

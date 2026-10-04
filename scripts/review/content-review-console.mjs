@@ -71,6 +71,25 @@ function riskFlags(question) {
   if (Array.isArray(question.constraints) && question.constraints.some((constraint) => typeof constraint === "string" && /^\s*the\s+primary\s+decision\s+is\b/i.test(constraint))) {
     flags.push("author_instruction_in_constraints");
   }
+  const interaction = question.interaction;
+  const answer = question.answer;
+  const options = interaction?.options;
+  if (
+    interaction?.type === "choice_single" &&
+    answer?.type === "choice_single" &&
+    typeof answer.optionId === "string" && answer.optionId.length > 0 && answer.optionId.trim() === answer.optionId &&
+    Array.isArray(options) &&
+    options.length >= 2 &&
+    options.every((option) => option && typeof option.optionId === "string" && option.optionId.length > 0 && option.optionId.trim() === option.optionId && typeof option.text === "string" && option.text.trim().length > 0) &&
+    new Set(options.map((option) => option.optionId)).size === options.length
+  ) {
+    const keyed = options.filter((option) => option.optionId === answer.optionId);
+    const wordCount = (text) => text.trim().split(/\s+/u).length;
+    if (keyed.length === 1 && options.filter((option) => option !== keyed[0]).every((option) => wordCount(keyed[0].text) > wordCount(option.text))) {
+      // Advisory only: option shape can invite review but never changes scoring or outcome.
+      flags.push("correct_option_sole_longest");
+    }
+  }
   return flags;
 }
 

@@ -6,15 +6,42 @@ on:
 jobs:
   release-candidate:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: patternly-content
     steps:
       - uses: actions/checkout@v4
         with:
+          path: patternly-content
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: patternly-content/package-lock.json
+      - name: Read admitted application commit
+        id: admitted-app
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFile, readFile } from "node:fs/promises";
+
+          const admission = JSON.parse(await readFile("evidence/admissions/candidate-admission-v3.json", "utf8"));
+          const frontendCommit = admission.application?.frontendCommit;
+          if (typeof frontendCommit !== "string" || !/^[a-f0-9]{40}$/u.test(frontendCommit)) {
+            throw new Error("Candidate admission application commit is missing or malformed.");
+          }
+          if (!process.env.GITHUB_OUTPUT) throw new Error("GitHub Actions output file is unavailable.");
+          await appendFile(process.env.GITHUB_OUTPUT, `frontend_commit=${frontendCommit}\n`, "utf8");
+          NODE
+      - uses: actions/checkout@v4
+        with:
+          repository: lukaszkurczab/gcp-ace-trainer
+          ref: ${{ steps.admitted-app.outputs.frontend_commit }}
+          path: patternly
+          fetch-depth: 0
+      - name: Install admitted application dependencies
+        run: npm ci
+        working-directory: patternly
       - run: npm ci
       - run: npm test
       - run: npm run verify:migration

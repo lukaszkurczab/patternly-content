@@ -40,6 +40,7 @@ async function copyProofs(destination) {
     "bizq-01-ood-node-closure-21.json",
     "bizq-01-ood-node-closure-22.json",
     "bizq-01-ood-node-closure-23.json",
+    "bizq-01-ood-node-closure-24.json",
   ]) {
     await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(destination, "evidence/business-quality", name));
   }

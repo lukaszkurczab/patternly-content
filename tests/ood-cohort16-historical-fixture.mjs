@@ -9,10 +9,12 @@ const ood20ProofPath = "evidence/business-quality/bizq-01-ood-node-closure-20.js
 const ood21ProofPath = "evidence/business-quality/bizq-01-ood-node-closure-21.json";
 const ood22ProofPath = "evidence/business-quality/bizq-01-ood-node-closure-22.json";
 const ood23ProofPath = "evidence/business-quality/bizq-01-ood-node-closure-23.json";
+const ood24ProofPath = "evidence/business-quality/bizq-01-ood-node-closure-24.json";
 const ood20Version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-20";
 const ood21Version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-21";
 const ood22Version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-22";
 const ood23Version = "object-oriented-design-interview-authoring-v2026.10.05-bizq01-23";
+const ood24Version = "object-oriented-design-interview-authoring-v2026.10.05-bizq01-24";
 const ood19Version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19";
 const ood19aVersion = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19a";
 
@@ -22,10 +24,13 @@ export async function restoreOodSource22Fixture(repositoryRoot, fixtureRoot) {
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
   const track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
   if (track.contentVersion === ood22Version) return;
-  assert.equal(track.contentVersion, ood23Version);
+  if (track.contentVersion === ood24Version) await restoreOodSource23Fixture(repositoryRoot, fixtureRoot);
+  const v23Catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  const v23Track = v23Catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
+  assert.equal(v23Track.contentVersion, ood23Version);
   const proof = JSON.parse(await readFile(path.join(repositoryRoot, ood23ProofPath), "utf8"));
   assert.equal(proof.beforeContentVersion, ood22Version);
-  assert.equal(proof.contentVersion, track.contentVersion);
+  assert.equal(proof.contentVersion, v23Track.contentVersion);
   assert.equal(proof.sourceFiles.length, 8);
   assert.equal(proof.replacements.length, 34);
   assert.equal(proof.sameIdCorrections.length, 110);
@@ -52,13 +57,49 @@ export async function restoreOodSource22Fixture(repositoryRoot, fixtureRoot) {
   await rm(path.join(fixtureRoot, ood23ProofPath), { force: true });
 }
 
+/** Restore exact v23 source bytes when historical tests start from the live v24 generation. */
+export async function restoreOodSource23Fixture(repositoryRoot, fixtureRoot) {
+  const catalogPath = path.join(fixtureRoot, "content/catalog.json");
+  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  const track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
+  if (track.contentVersion === ood23Version) return;
+  assert.equal(track.contentVersion, ood24Version);
+  const proof = JSON.parse(await readFile(path.join(repositoryRoot, ood24ProofPath), "utf8"));
+  assert.equal(proof.beforeContentVersion, ood23Version);
+  assert.equal(proof.contentVersion, track.contentVersion);
+  assert.equal(proof.sourceFiles.length, 18);
+  assert.equal(proof.replacements.length, 36);
+  assert.equal(proof.sameIdCorrections.length, 288);
+  for (const source of proof.sourceFiles) {
+    const target = path.join(fixtureRoot, source.sourceFile);
+    const currentBytes = await readFile(target);
+    assert.equal(sha256(currentBytes), source.sourceSha256, `${source.sourceFile} exact source24 input`);
+    const current = JSON.parse(currentBytes);
+    const previousByCurrentId = new Map();
+    for (const item of [...proof.replacements, ...proof.sameIdCorrections].filter((candidate) => candidate.sourceFile === source.sourceFile)) {
+      const question = current.find((candidate) => candidate.questionId === item.questionId);
+      assert.ok(question, `${item.questionId} exists in source24`);
+      assert.equal(JSON.stringify(question), JSON.stringify(item.currentQuestion), `${item.questionId} exact source24 object`);
+      previousByCurrentId.set(item.questionId, item.beforeQuestion);
+    }
+    const predecessor = current.map((question) => previousByCurrentId.get(question.questionId) ?? question)
+      .sort((left, right) => left.questionId.localeCompare(right.questionId));
+    const bytes = Buffer.from(JSON.stringify(predecessor), "utf8");
+    assert.equal(sha256(bytes), source.beforeSourceSha256, `${source.sourceFile} byte-exact v23 predecessor`);
+    await writeFile(target, bytes);
+  }
+  track.contentVersion = ood23Version;
+  await writeFile(catalogPath, `${JSON.stringify(catalog)}\n`, "utf8");
+  await rm(path.join(fixtureRoot, ood24ProofPath), { force: true });
+}
+
 /** Restore exact v21 source bytes when historical tests start from the live v22 generation. */
 export async function restoreOodSource21Fixture(repositoryRoot, fixtureRoot) {
   const catalogPath = path.join(fixtureRoot, "content/catalog.json");
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
   const track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
   if (track.contentVersion === ood21Version) return;
-  if (track.contentVersion === ood23Version) await restoreOodSource22Fixture(repositoryRoot, fixtureRoot);
+  if (track.contentVersion === ood23Version || track.contentVersion === ood24Version) await restoreOodSource22Fixture(repositoryRoot, fixtureRoot);
   const currentCatalog = JSON.parse(await readFile(catalogPath, "utf8"));
   const currentTrack = currentCatalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
   assert.equal(currentTrack.contentVersion, ood22Version);
@@ -98,7 +139,7 @@ export async function restoreOodSource20Fixture(repositoryRoot, fixtureRoot) {
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
   const track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
   if (track.contentVersion === ood20Version) return;
-  if (track.contentVersion === ood23Version || track.contentVersion === ood22Version) await restoreOodSource21Fixture(repositoryRoot, fixtureRoot);
+  if (track.contentVersion === ood24Version || track.contentVersion === ood23Version || track.contentVersion === ood22Version) await restoreOodSource21Fixture(repositoryRoot, fixtureRoot);
   const currentCatalog = JSON.parse(await readFile(catalogPath, "utf8"));
   const currentTrack = currentCatalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
   assert.equal(currentTrack.contentVersion, ood21Version);
@@ -138,7 +179,7 @@ export async function restoreOodSource19aFixture(repositoryRoot, fixtureRoot) {
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
   const track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
   if (track.contentVersion === "object-oriented-design-interview-authoring-v2026.10.04-bizq01-19a") return;
-  if (track.contentVersion === ood21Version || track.contentVersion === ood22Version || track.contentVersion === ood23Version) {
+  if (track.contentVersion === ood21Version || track.contentVersion === ood22Version || track.contentVersion === ood23Version || track.contentVersion === ood24Version) {
     await restoreOodSource20Fixture(repositoryRoot, fixtureRoot);
   }
   const restoredCatalog = JSON.parse(await readFile(catalogPath, "utf8"));
@@ -179,7 +220,7 @@ export async function restoreOodSource19Fixture(repositoryRoot, fixtureRoot) {
   let catalog = JSON.parse(await readFile(catalogPath, "utf8"));
   let track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
   if (track.contentVersion === ood19Version) return;
-  if (track.contentVersion === ood20Version || track.contentVersion === ood21Version || track.contentVersion === ood22Version || track.contentVersion === ood23Version) {
+  if (track.contentVersion === ood20Version || track.contentVersion === ood21Version || track.contentVersion === ood22Version || track.contentVersion === ood23Version || track.contentVersion === ood24Version) {
     await restoreOodSource19aFixture(repositoryRoot, fixtureRoot);
     catalog = JSON.parse(await readFile(catalogPath, "utf8"));
     track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
@@ -224,7 +265,7 @@ export async function restoreOodSource17Fixture(repositoryRoot, fixtureRoot) {
   const track = catalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview");
   const source17Version = "object-oriented-design-interview-authoring-v2026.10.04-bizq01-17";
   if (track.contentVersion === source17Version) return;
-  if (track.contentVersion === ood19aVersion || track.contentVersion === ood20Version || track.contentVersion === ood21Version || track.contentVersion === ood22Version || track.contentVersion === ood23Version) {
+  if (track.contentVersion === ood19aVersion || track.contentVersion === ood20Version || track.contentVersion === ood21Version || track.contentVersion === ood22Version || track.contentVersion === ood23Version || track.contentVersion === ood24Version) {
     await restoreOodSource19Fixture(repositoryRoot, fixtureRoot);
   }
   const after19aCatalog = JSON.parse(await readFile(catalogPath, "utf8"));
@@ -260,7 +301,7 @@ export async function restoreOodSource17Fixture(repositoryRoot, fixtureRoot) {
 export async function restoreOodSource16Fixture(repositoryRoot, fixtureRoot) {
   const currentCatalog = JSON.parse(await readFile(path.join(fixtureRoot, "content/catalog.json"), "utf8"));
   const currentVersion = currentCatalog.tracks.find((entry) => entry.trackId === "object-oriented-design-interview").contentVersion;
-  if (currentVersion === ood23Version || currentVersion === ood22Version || currentVersion === ood21Version || currentVersion === ood20Version || currentVersion === ood19aVersion || currentVersion === ood19Version) {
+  if (currentVersion === ood24Version || currentVersion === ood23Version || currentVersion === ood22Version || currentVersion === ood21Version || currentVersion === ood20Version || currentVersion === ood19aVersion || currentVersion === ood19Version) {
     await restoreOodSource17Fixture(repositoryRoot, fixtureRoot);
   }
   const catalogPath = path.join(fixtureRoot, "content/catalog.json");

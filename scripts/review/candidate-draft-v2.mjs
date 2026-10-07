@@ -22,6 +22,7 @@ export const QUARANTINE_OUTPUT_PATH = "reports/candidate-reconciliation/AWS-02-D
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const awsTrackId = "aws-certified-solutions-architect-associate";
 const awsNodeId = "aws_secure_architecture_foundations";
+const odk096AddendumId = "odk-096-aws-free-node-v1";
 
 async function canonicalSourceCommit(root) {
   const { stdout } = await exec("git", ["log", "-1", "--format=%H", "--", "content"], { cwd: root });
@@ -77,6 +78,31 @@ export async function assertCanonicalSourceSnapshot(root, sourceCommit) {
 
 async function readJson(filePath) {
   return JSON.parse(await readFile(filePath, "utf8"));
+}
+
+export function createOdk096CanonicalApprovalBinding(artifact, approval) {
+  const expected = approval.canonicalIdentity;
+  if (artifact.trackId !== awsTrackId || expected.trackId !== awsTrackId || expected.nodeId !== awsNodeId || approval.addendumId !== odk096AddendumId) {
+    throw new Error("ODK-096 approval is outside its fixed AWS free-node scope.");
+  }
+  const approvedNodeQuestions = artifact.questions.filter((question) => question.nodeId === awsNodeId);
+  if (artifact.questions.length !== expected.track.questionCount || sha256(canonicalJson(artifact.questions)) !== expected.track.sha256) {
+    throw new Error("Current AWS source does not match the exact ODK-096 track binding.");
+  }
+  if (approvedNodeQuestions.length !== expected.node.questionCount || sha256(canonicalJson(approvedNodeQuestions)) !== expected.node.sha256) {
+    throw new Error("Current AWS free node does not match the exact ODK-096 node binding.");
+  }
+  const ids = new Set(artifact.questions.map((question) => question.questionId));
+  for (const id of approval.questionSet.newQuestionIds) if (!ids.has(id)) throw new Error(`ODK-096 question is missing from current AWS source: ${id}`);
+  return {
+    addendumId: approval.addendumId,
+    approvalPath: ODK096_APPROVAL_PATH,
+    scope: "aws_local_canonical_producer_only",
+    trackSha256: expected.track.sha256,
+    nodeId: awsNodeId,
+    nodeSha256: expected.node.sha256,
+    newQuestionIds: [...approval.questionSet.newQuestionIds].sort(),
+  };
 }
 
 function assertCanonicalTrackSet(entries, label) {
@@ -143,25 +169,7 @@ export async function buildCandidateDraft({ root = ROOT, outputDirectory } = {})
         checksumSha256: sha256(bytes),
       };
       if (trackId === awsTrackId) {
-        const expected = approval.canonicalIdentity;
-        const approvedNodeQuestions = artifact.questions.filter((question) => question.nodeId === awsNodeId);
-        if (artifact.track.contentVersion !== expected.contentVersion || artifact.questions.length !== expected.track.questionCount || sha256(canonicalJson(artifact.questions)) !== expected.track.sha256) {
-          throw new Error("Current AWS source does not match the exact ODK-096 track binding.");
-        }
-        if (approvedNodeQuestions.length !== expected.node.questionCount || sha256(canonicalJson(approvedNodeQuestions)) !== expected.node.sha256) {
-          throw new Error("Current AWS free node does not match the exact ODK-096 node binding.");
-        }
-        const ids = new Set(artifact.questions.map((question) => question.questionId));
-        for (const id of approval.questionSet.newQuestionIds) if (!ids.has(id)) throw new Error(`ODK-096 question is missing from current AWS source: ${id}`);
-        entry.canonicalApprovalBinding = {
-          addendumId: approval.addendumId,
-          approvalPath: ODK096_APPROVAL_PATH,
-          scope: "aws_local_canonical_producer_only",
-          trackSha256: expected.track.sha256,
-          nodeId: awsNodeId,
-          nodeSha256: expected.node.sha256,
-          newQuestionIds: [...approval.questionSet.newQuestionIds].sort(),
-        };
+        entry.canonicalApprovalBinding = createOdk096CanonicalApprovalBinding(artifact, approval);
       }
       artifacts.push(entry);
       outputArtifacts.push({ path: artifactPath, bytes });

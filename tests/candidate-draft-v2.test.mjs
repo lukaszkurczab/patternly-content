@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -7,13 +8,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { assertCanonicalSourceSnapshot, buildCandidateDraft, CANDIDATE_DRAFT_SCHEMA_PATH, CANDIDATE_RELEASE_SCHEMA_PATH } from "../scripts/review/candidate-draft-v2.mjs";
-import { CANDIDATE_TRACK_IDS } from "../scripts/review/candidate-manifest.mjs";
+import { assertCanonicalSourceSnapshot, buildCandidateDraft, createOdk096CanonicalApprovalBinding, CANDIDATE_DRAFT_SCHEMA_PATH, CANDIDATE_RELEASE_SCHEMA_PATH, ODK096_APPROVAL_PATH } from "../scripts/review/candidate-draft-v2.mjs";
+import { canonicalJson, CANDIDATE_TRACK_IDS } from "../scripts/review/candidate-manifest.mjs";
+import { buildAll } from "../scripts/build.mjs";
 import { validateQuestion } from "../scripts/content/question-contract.mjs";
 import { validateSchema } from "../scripts/review/schema-validation.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const exec = promisify(execFile);
+const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
 test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AWS identity deterministically", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "patternly-candidate-draft-test-"));
@@ -37,7 +40,7 @@ test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AW
     });
     const aws = first.manifest.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate");
     assert.equal(aws.questionCount, 2604);
-    assert.equal(aws.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096");
+    assert.equal(aws.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2");
     assert.equal(aws.questionSetSha256, "46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45");
     assert.equal(aws.canonicalApprovalBinding.newQuestionIds.length, 36);
     for (const relativePath of ["release/release.json", "candidate/manifest.json", ...first.release.artifacts.map((entry) => `release/${entry.artifactPath}`)]) {
@@ -51,6 +54,42 @@ test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AW
     await assert.rejects(validateSchema({ ...first.release, artifacts: Array(9).fill(first.release.artifacts[0]) }, releaseSchema));
     await assert.rejects(validateSchema({ ...first.release, artifacts: [{ ...first.release.artifacts[0], trackId: "unknown-track" }, ...first.release.artifacts.slice(1)] }, releaseSchema));
     await assert.rejects(validateSchema({ ...first.release, artifacts: [...first.release.artifacts, first.release.artifacts[0]] }, releaseSchema));
+  } finally {
+    await rm(base, { recursive: true, force: true });
+  }
+});
+
+test("ODK-096 approval remains historically pinned, preserves fixed scope, and rejects content drift", async () => {
+  const base = await mkdtemp(path.join(os.tmpdir(), "patternly-odk096-policy-bump-test-"));
+  try {
+    const approval = JSON.parse(await readFile(path.join(ROOT, ODK096_APPROVAL_PATH), "utf8"));
+    const built = await buildAll({ rootDirectory: ROOT, outputRoot: path.join(base, "built") });
+    const aws = built.artifacts.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate");
+    assert.ok(aws);
+    assert.equal(approval.canonicalIdentity.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096");
+    assert.equal(aws.track.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2");
+    assert.notEqual(aws.track.contentVersion, approval.canonicalIdentity.contentVersion);
+    const binding = createOdk096CanonicalApprovalBinding(aws, approval);
+    assert.equal(binding.addendumId, approval.addendumId);
+    assert.equal(binding.trackSha256, approval.canonicalIdentity.track.sha256);
+    assert.equal(binding.nodeSha256, approval.canonicalIdentity.node.sha256);
+    assert.deepEqual(binding.newQuestionIds, [...approval.questionSet.newQuestionIds].sort());
+
+    const changedApprovalNode = structuredClone(approval);
+    changedApprovalNode.canonicalIdentity.nodeId = aws.questions.find((question) => question.nodeId !== "aws_secure_architecture_foundations").nodeId;
+    assert.throws(() => createOdk096CanonicalApprovalBinding(aws, changedApprovalNode), /fixed AWS free-node scope/u);
+
+    const changedTrack = structuredClone(aws);
+    changedTrack.questions[0].prompt += " changed";
+    assert.throws(() => createOdk096CanonicalApprovalBinding(changedTrack, approval), /exact ODK-096 track binding/u);
+
+    const changedApprovedNode = structuredClone(aws);
+    const approvedQuestion = changedApprovedNode.questions.find((question) => question.nodeId === approval.canonicalIdentity.nodeId);
+    assert.ok(approvedQuestion);
+    approvedQuestion.prompt += " changed";
+    const changedTrackBinding = structuredClone(approval);
+    changedTrackBinding.canonicalIdentity.track.sha256 = sha256(canonicalJson(changedApprovedNode.questions));
+    assert.throws(() => createOdk096CanonicalApprovalBinding(changedApprovedNode, changedTrackBinding), /exact ODK-096 node binding/u);
   } finally {
     await rm(base, { recursive: true, force: true });
   }

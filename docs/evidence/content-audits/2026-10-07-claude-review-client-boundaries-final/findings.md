@@ -1,7 +1,0 @@
-# Independent acceptance findings: v4 client-boundary practice item
-
-**PASS.** The v4 revision resolves the metric wording issue: both consumers now have explicit p95 ceilings, and the measured p95 routes can be compared directly against them. The arithmetic is 12 ms ≤ 20 ms, 45 ms > 20 ms, and 45 ms ≤ 200 ms. Thus the dashboard stays on its typed API, while the MCP-only client can use the same authoritative inventory service through MCP. The feedback consistently describes the dashboard threshold as a p95 ceiling and does not generalize this adapter's latency to MCP as a whole.
-
-The current registered MCP architecture source and registered Anthropic tool-use reference support the protocol-boundary reasoning; the latency values and client constraints are explicit scenario premises. The single-choice exact-set contract, all three separate causal distractor explanations, and the changed-evidence same-unit practice all pass. Compared with `CCARP-D03-O07-diagnosis`, v4 adds measured route tradeoffs and an MCP-only consumer; compared with `CCARP-D03-O07-expansion-3`, it concerns interactive service access rather than high-volume batch transfer.
-
-Canonical SHA-256 matches the manifest: `31eeea73e09b89d5a92550c3e1391aa19f6d7451e7c986121c645deafbab5c96`. This model review grants no human editorial approval, admission, activation, publication, runtime acceptance, release readiness, or exam-blueprint authority.

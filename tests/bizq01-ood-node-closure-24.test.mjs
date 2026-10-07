@@ -94,7 +94,7 @@ test("accepts the fixed N08/N09 package and reconstructs 24→23→22→21→20�
 
   const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
-  assert.equal(result.counts.questions, 16077);
+  assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.semanticReplacementProof.replacements.length, 664);
   assert.equal(result.sameIdCorrectionProof.questionIds.length, 749);

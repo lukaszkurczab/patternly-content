@@ -77,7 +77,7 @@ test("validates the fixed source13 cohort and reconstructs immutable source12 an
     { beforeQuestionId: "ood-n01-b01-i002", questionId: "ood-n01-b01-i019" },
     ...historicalIds.map((beforeQuestionId, index) => ({ beforeQuestionId, questionId: replacementIds[index] }))
   ]);
-  assert.equal(result.counts.questions, 16077);
+  assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);
 });

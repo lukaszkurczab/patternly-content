@@ -55,6 +55,22 @@ const EXPECTED_TRACK_INTERACTIONS = Object.freeze({
   "object-oriented-design-interview": Object.freeze({ choice_multiple: 0, choice_single: 1413, complexity: 0, decision_matrix: 0, ordering: 0 })
 });
 
+const CLAUDE_HISTORICAL_BASELINE = Object.freeze({
+  path: "evidence/canonical-content-approvals/claude-20261007-historical-questions.json",
+  schemaVersion: "patternly-claude-historical-question-baseline-v1",
+  trackId: "claude-certified-architect-professional-certification",
+  contentVersion: "ccarp-2026.09.03",
+  sourceRepositoryCommit: "cf119c3f8e8ebfce3e5bdbcd3d5f4e4c7c5dd509",
+  questionCount: 300,
+  questionSetSha256: "713f1709b438430773ad56ccb71fa50cc59473afd1cbfa3b208496b4b1d38a09"
+});
+
+const CLAUDE_CURRENT_BANK = Object.freeze({
+  contentVersion: "ccarp-2026.10.07",
+  questionCount: 845,
+  questionSetSha256: "717b995fd9f9bda5d25161c516a248eb80b3a78cf23c69d1641c2ed95add8b9a"
+});
+
 const EXPECTED_ENVELOPE_COUNTS = Object.freeze({
   "backend-system-design-interview-candidate-source-v1": 89,
   "certification-manual-source-v2": 402,
@@ -12484,6 +12500,47 @@ async function approvedAwsAdditions(contentRoot, canonical, evidence) {
   return additions.map((question) => question.questionId);
 }
 
+async function claudeHistoricalAndCurrentQuestions(contentRoot, canonical, evidence) {
+  const { path: relativePath, ...expected } = CLAUDE_HISTORICAL_BASELINE;
+  const baselinePath = path.join(path.dirname(contentRoot), relativePath);
+  await rejectSymlinkAncestors(baselinePath, "Claude historical baseline");
+  const baseline = await readJson(baselinePath, "Claude historical baseline");
+  exactKeys(baseline, ["schemaVersion", "trackId", "contentVersion", "sourceRepositoryCommit", "questionCount", "questionSetSha256", "questions"], "Claude historical baseline");
+  for (const key of ["schemaVersion", "trackId", "contentVersion", "sourceRepositoryCommit", "questionCount", "questionSetSha256"]) {
+    if (baseline[key] !== expected[key]) fail("EVIDENCE_VALUE", `Claude historical baseline ${key} differs from the fixed predecessor identity.`);
+  }
+  if (!Array.isArray(baseline.questions) || baseline.questions.length !== expected.questionCount) fail("EVIDENCE_MEMBERSHIP", "Claude historical baseline must contain exactly the frozen 300 predecessor questions.");
+  const historicalQuestions = [...baseline.questions].sort((left, right) => compare(left?.questionId, right?.questionId));
+  for (const [index, question] of historicalQuestions.entries()) {
+    assertCanonicalQuestion(question, `Claude historical baseline questions[${index}]`, ACCEPTED_TRACK_IDS);
+    if (question.trackId !== expected.trackId) fail("EVIDENCE_MEMBERSHIP", `Claude historical baseline questions[${index}] belongs to another track.`);
+  }
+  if (new Set(historicalQuestions.map((question) => question.questionId)).size !== expected.questionCount ||
+      sha256(historicalQuestions) !== expected.questionSetSha256) {
+    fail("HASH_MISMATCH", "Claude historical baseline differs from its fixed 300-question predecessor hash.");
+  }
+
+  const rows = evidence.rowsByTrack.get(expected.trackId);
+  assertExactSet(historicalQuestions.map((question) => question.questionId), rows.map((row) => row.questionId), "Claude historical question IDs");
+  const historicalSummary = compareTrackMembership(expected.trackId, historicalQuestions, rows, evidence.manifestTracks.get(expected.trackId));
+
+  const currentTrack = canonical.catalogByTrack.get(expected.trackId);
+  const currentQuestions = canonical.questionsByTrack.get(expected.trackId);
+  if (currentTrack.contentVersion !== CLAUDE_CURRENT_BANK.contentVersion ||
+      currentQuestions.length !== CLAUDE_CURRENT_BANK.questionCount) {
+    fail("EVIDENCE_VALUE", "Current Claude content version or question count differs from the fixed accepted bank.");
+  }
+  const sortedCurrentQuestions = [...currentQuestions].sort((left, right) => compare(left.questionId, right.questionId));
+  if (sha256(sortedCurrentQuestions) !== CLAUDE_CURRENT_BANK.questionSetSha256) {
+    fail("HASH_MISMATCH", "Current Claude questions differ from the fixed accepted 845-question bank.");
+  }
+  const currentIds = new Set(currentQuestions.map((question) => question.questionId));
+  if (historicalQuestions.some((question) => !currentIds.has(question.questionId))) {
+    fail("EVIDENCE_MEMBERSHIP", "Current Claude content is missing a question from its frozen historical baseline.");
+  }
+  return { historicalQuestions, historicalSummary };
+}
+
 export async function verifyMigration(options = {}) {
   const contentRoot = typeof options === "string" ? options : options?.contentRoot;
   if (typeof contentRoot !== "string" || contentRoot.length === 0) fail("INPUT", "contentRoot is required.");
@@ -12494,6 +12551,10 @@ export async function verifyMigration(options = {}) {
   const oodSemanticProof = await loadBizq01OodSemanticProof(resolvedContentRoot, canonical, evidence);
   const correctionProof = await loadBizq01WordingProof(resolvedContentRoot, canonical, evidence);
   const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence);
+  const claudeTrackId = "claude-certified-architect-professional-certification";
+  const claudeCurrentProof = canonical.catalogByTrack.get(claudeTrackId)?.contentVersion === CLAUDE_CURRENT_BANK.contentVersion
+    ? await claudeHistoricalAndCurrentQuestions(resolvedContentRoot, canonical, evidence)
+    : undefined;
   const trackSummaries = [];
   const historicalQuestionsByTrack = new Map();
   for (const trackId of ACCEPTED_TRACK_IDS) {
@@ -12504,15 +12565,22 @@ export async function verifyMigration(options = {}) {
     const sameIdCorrections = oodSemanticProof?.trackId === trackId ? (oodSemanticProof.sameIdCorrections ?? []) : [];
     const sameIdCorrectionById = new Map(sameIdCorrections.map((correction) => [correction.questionId, correction]));
     const replacedHistoricalIds = new Set(replacements.map((replacement) => replacement.beforeQuestionId));
-    const currentIds = [...rows.map((row) => row.questionId).filter((questionId) => !replacedHistoricalIds.has(questionId)), ...extras, ...replacements.map((replacement) => replacement.questionId)];
-    assertExactSet(questions.map((question) => question.questionId), currentIds, `${trackId} current question IDs`);
+    if (trackId !== claudeTrackId || !claudeCurrentProof) {
+      const currentIds = [...rows.map((row) => row.questionId).filter((questionId) => !replacedHistoricalIds.has(questionId)), ...extras, ...replacements.map((replacement) => replacement.questionId)];
+      assertExactSet(questions.map((question) => question.questionId), currentIds, `${trackId} current question IDs`);
+    }
     const replacedCurrentIds = new Set(replacements.map((replacement) => replacement.questionId));
     const reconstructedQuestions = [
       ...questions.filter((question) => !replacedCurrentIds.has(question.questionId)),
       ...replacements.map((replacement) => replacement.oldQuestion)
     ].map((question) => sameIdCorrectionById.get(question.questionId)?.oldQuestion ?? question);
-    const summary = compareTrackMembership(trackId, reconstructedQuestions, rows, evidence.manifestTracks.get(trackId));
-    const questionById = new Map(reconstructedQuestions.map((question) => [question.questionId, question]));
+    const historicalTrackQuestions = trackId === claudeTrackId && claudeCurrentProof
+      ? claudeCurrentProof.historicalQuestions
+      : reconstructedQuestions;
+    const summary = trackId === claudeTrackId && claudeCurrentProof
+      ? claudeCurrentProof.historicalSummary
+      : compareTrackMembership(trackId, historicalTrackQuestions, rows, evidence.manifestTracks.get(trackId));
+    const questionById = new Map(historicalTrackQuestions.map((question) => [question.questionId, question]));
     historicalQuestionsByTrack.set(trackId, rows.map((row) => questionById.get(row.questionId)));
     trackSummaries.push({
       trackId: summary.trackId,

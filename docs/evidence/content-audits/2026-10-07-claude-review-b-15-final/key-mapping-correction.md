@@ -1,9 +1,0 @@
-# Cause and repair note
-
-The immediate defect was a mismatched question-ID-to-answer mapping in the answer-shortening pass. In `author-b-depth/balance_keys.py`, the hard-coded `SHORT` table assigns text by `questionId`; several values describe another item’s decision. For example, `CCARP-D03-O04-depth-21` is mapped to latency-distribution instrumentation even though its frozen prompt is about a committed first attempt and a duplicate-denied retry. `CCARP-D04-O06-depth-56` is mapped to overlap deduplication even though its frozen prompt is an HTTP 200 followed by an incomplete-JSON parse failure. This is consistent with a stale or misaligned ID/answer association in that table. The evidence identifies the proximate cause; it does not establish which earlier authoring step introduced the bad association.
-
-The repair does not run that mapping pass again. Each repaired answer, three distractors, reason, five detail fields, source reference, and peer/value entry in this directory is authored against the exact frozen question ID and its exact stem. The 12 fixable objects preserve the frozen prompt and taxonomy. The three REMOVE drafts are retired; replacements use new IDs and materially different evidence/application: per-slice chunk qualification, resource-content subscription notification, and tenant-scoped prompt-cache isolation.
-
-All materially changed choices receive new text-derived option IDs, and each wrong-option feedback target is rebuilt from the final displayed options. This avoids carrying the old key/distractor identities into a different decision. MCP tools/resources source records are proposed locally in `proposed-source-records.json` for the root owner to register after primary-source verification; no canonical registry or content file is edited here.
-
-This package is a repaired authoring draft. It has not received the root's fresh independent acceptance review, and it is not publication or runtime admission evidence.

@@ -98,7 +98,7 @@ test("accepts the exact OOD source11 replacement and retains historical inventor
   assert.deepEqual(result.semanticReplacementProof.replacements, [
     { beforeQuestionId: removedQuestionId, questionId }
   ]);
-  assert.equal(result.counts.questions, 16077);
+  assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.approvedAdditionCount, 36);
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);

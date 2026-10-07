@@ -91,7 +91,7 @@ test("validates the exact source12 fixture and preserves its source11 predecesso
     { beforeQuestionId: "ood-n01-b01-i001", questionId: "ood-n01-b01-i018" },
     { beforeQuestionId: removedQuestionId, questionId }
   ]);
-  assert.equal(result.counts.questions, 16077);
+  assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);
 });

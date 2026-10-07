@@ -1,12 +1,22 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
+import { canonicalJson, sha256 } from '../scripts/build.mjs';
 import { scoreQuestion } from '../scripts/content/question-contract.mjs';
 const root = new URL('../content/claude-certified-architect-professional-certification/', import.meta.url);
 const questions = readdirSync(root).flatMap(node => readdirSync(new URL(`${node}/`, root)).filter(file => file.endsWith('.json')).flatMap(file => JSON.parse(readFileSync(new URL(`${node}/${file}`, root), 'utf8'))));
 const byId = new Map(questions.map(q => [q.questionId, q]));
 const get = id => { assert.ok(byId.has(id), id); return byId.get(id); };
 const message = (q, id, kind = 'wrong_option') => q.feedback.messages.find(m => m.targetId === id && m.kind === kind).text;
+
+test('current Claude bank matches its frozen version and exact accepted question set', () => {
+  const catalog = JSON.parse(readFileSync(new URL('../content/catalog.json', import.meta.url), 'utf8'));
+  const track = catalog.tracks.find(entry => entry.trackId === 'claude-certified-architect-professional-certification');
+  const sorted = [...questions].sort((left, right) => left.questionId === right.questionId ? 0 : left.questionId < right.questionId ? -1 : 1);
+  assert.equal(track.contentVersion, 'ccarp-2026.10.07');
+  assert.equal(sorted.length, 845);
+  assert.equal(sha256(canonicalJson(sorted)), '717b995fd9f9bda5d25161c516a248eb80b3a78cf23c69d1641c2ed95add8b9a');
+});
 
 test('historical evaluator scores retain provenance and require comparable reruns', () => {
   const q = get('CCARP-D04-O01-scenario-04');

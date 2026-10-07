@@ -5,7 +5,7 @@ import test from "node:test";
 import { ADMISSION_PATH, createCandidateAdmissionV3, validateCandidateAdmissionV3 } from "../scripts/review/candidate-admission-v3.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
-const appRoot = path.resolve(root, "../patternly");
+const appRoot = path.resolve(process.env.PATTERNLY_FRONTEND_ROOT ?? path.join(root, "../patternly"));
 
 test("admission binds verified local publishing bytes, app lock, and runtime test", async () => {
   const current = JSON.parse(await readFile(path.join(root, ADMISSION_PATH), "utf8"));

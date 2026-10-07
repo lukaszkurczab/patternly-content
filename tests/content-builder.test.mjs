@@ -469,6 +469,8 @@ test("ACC-02 Candidate Manifest retains its exact nine-track identity against fr
       assert.equal(track.contentVersion, bizq01BesdCohort14.contentVersion, track.trackId);
     } else if (track.trackId === bizq01OodCohort24.trackId) {
       assert.equal(track.contentVersion, bizq01OodCohort24.contentVersion, track.trackId);
+    } else if (track.trackId === "claude-certified-architect-professional-certification") {
+      assert.equal(track.contentVersion, "ccarp-2026.10.07", track.trackId);
     } else {
       assert.equal(track.contentVersion, historicalVersions.get(track.trackId), track.trackId);
     }

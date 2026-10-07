@@ -93,7 +93,7 @@ test("accepts the fixed N04 package and reconstructs 19a→19→17→16→13→1
 
   const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
-  assert.equal(result.counts.questions, 16077);
+  assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.semanticReplacementProof.replacements.length, 594);
   assert.deepEqual(result.semanticReplacementProof.replacements.slice(-144), proof.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId })));

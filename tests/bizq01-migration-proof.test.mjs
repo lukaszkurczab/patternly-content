@@ -78,9 +78,13 @@ after(async () => {
 test("accepts the real BIZQ-01 replacement proof while preserving current and historical counts", async () => {
   const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
   assert.equal(result.result, "passed");
-  assert.deepEqual(result.counts, { tracks: 9, nodes: 117, mentalUnits: 943, questions: 16077 });
+  assert.deepEqual(result.counts, { tracks: 9, nodes: 117, mentalUnits: 943, questions: 16622 });
   assert.deepEqual(result.historicalCounts, { tracks: 9, nodes: 117, mentalUnits: 932, questions: 16041 });
   assert.equal(result.approvedAdditionCount, 36);
+  const claude = result.tracks.find(({ trackId }) => trackId === "claude-certified-architect-professional-certification");
+  assert.equal(claude.historicalCounts.questions, 300);
+  assert.equal(claude.currentCounts.questions, 845);
+  assert.equal(Object.values(claude.historicalInteractions).reduce((sum, count) => sum + count, 0), 300);
   const cohort14 = JSON.parse(await readFile(path.join(contentRepositoryRoot, cohort14ProofPath), "utf8"));
   assert.deepEqual(result.replacementProof.replacements, [
     { beforeQuestionId: "besd-n02-b01-i002", questionId: "besd-n02-b01-i017" },
@@ -88,6 +92,22 @@ test("accepts the real BIZQ-01 replacement proof while preserving current and hi
     ...cohort14.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId }))
   ]);
   assert.equal(result.replacementProof.replacements.length, 34);
+});
+
+test("rejects a changed frozen Claude predecessor object", async () => {
+  const baselinePath = "evidence/canonical-content-approvals/claude-20261007-historical-questions.json";
+  await withJsonMutation(baselinePath, (baseline) => {
+    baseline.questions[0].prompt += " changed";
+    return baseline;
+  }, () => assertRejected("HASH_MISMATCH"));
+});
+
+test("rejects a changed Claude item from the exact accepted current bank", async () => {
+  const currentRelativePath = "content/claude-certified-architect-professional-certification/solution_design_and_architecture/CCARP-D01-O01.json";
+  await withJsonMutation(currentRelativePath, (questions) => {
+    questions[0].prompt += " changed";
+    return questions;
+  }, () => assertRejected("HASH_MISMATCH"));
 });
 
 test("keeps the original migration verifier behavior when no BIZQ proof is present", async () => {
@@ -230,7 +250,7 @@ test("accepts only the real same-ID Coding wording correction alongside the unch
   const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
   assert.deepEqual(result.wordingCorrectionProof, { trackId: "coding-interview-dsa-problem-solving", questionIds: [wordingQuestionId] });
   assert.equal(result.replacementProof.replacements.length, 34);
-  assert.equal(result.counts.questions, 16077);
+  assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
 });
 

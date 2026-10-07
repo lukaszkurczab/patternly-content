@@ -90,7 +90,7 @@ test("accepts the fixed 162-item package and reconstructs the immutable v17→16
     }))
   ));
   assert.equal(result.semanticReplacementProof.replacements.length, 450);
-  assert.equal(result.counts.questions, 16077);
+  assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);
   for (const unit of units) {

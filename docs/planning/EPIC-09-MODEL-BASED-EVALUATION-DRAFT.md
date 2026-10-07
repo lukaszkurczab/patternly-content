@@ -2,12 +2,12 @@
 
 > **Rola po konsolidacji:** specyfikacja i kryteria `09-A–09-H`. Kolejność programu i status tasków utrzymuje wyłącznie [aktualny plan roboczy](https://github.com/lukaszkurczab/gcp-ace-trainer/blob/main/docs/PATTERNLY-WORKING-PLAN.md).
 
-**Status:** `blocking` na 09-A do uzgodnienia nowego kandydata AWS; dalsza ewaluacja pozostaje nieblokującą wydania ścieżką jakościową
+**Rola:** specyfikacja przyszłego narzędzia; status i priorytet wyłącznie w planie głównym. Candidate/admission AWS-02 i canonical migration są wdrożone; dawne AWS-01/SIMP nie są otwartymi zależnościami.
 **Charakter:** uzupełniająca ścieżka jakościowa
-**Zakres:** wszystkie 9 banków; bieżące kanoniczne źródła mają 16 077 pytań, a historyczny baseline migracji obejmuje 16 041
+**Zakres:** wszystkie 9 banków; bazę wyznacza inventory z przypiętego source; bieżący bundled catalog07.10 ma 16622 pytań, a immutable historyczny baseline migracji jest odrębnym wejściem
 **Poza zakresem:** zmiana liczby, granic i znaczenia istniejących nodów
 
-**Warunek wejścia:** `SIMP-01`–`SIMP-05` są zakończone. Przed zaliczeniem 09-A trzeba uzgodnić nowego kandydata AWS według [pakietu AWS-01](AWS-NEW-CANDIDATE-PACKET.md). EPIC-09 czyta jeden kanoniczny schema i nie implementuje adapterów utrwalających sześć historycznych formatów.
+**Wejście:** jeden canonical question schema i aktualny inventory/candidate z istniejącego builder/admission. Zamknięta migracja nie wymaga odtwarzania pakietów SIMP ani AWS-01. Nie implementować adapterów dawnych formatów ani drugiej władzy admission. Parametry oceny poniżej są kontraktem tego narzędzia, nie nową blokadą wydania aplikacji.
 
 ## 1. Cel
 
@@ -213,6 +213,8 @@ Każda faza `09-*` jest osobnym taskiem. Jej goal i acceptance/stop condition s�
 | Utrzymywalność | 0,91 | Wersjonowane rubryki, fingerprinty i jawne artefakty pozwalają powtarzać ocenę tylko dla zmian. |
 | **Wynik końcowy** | **0,82** | Historyczna ocena projektu ewaluatora; przed skalowaniem pozostają kalibracja, pilot i koszt. |
 
-## 13. Bieżąca bramka 09-A
+## 13. Pozostały kontrakt09-A
 
-Read-only inventory jest zaimplementowane i ma [raport diagnostyczny](../../reports/model-evaluation/09-a-diagnostic.md), lecz 09-A pozostaje `blocking`. Bieżące kanoniczne źródła mają 9 tracków, 117 nodów, 943 mental unity i 16 077 pytań; różnica +11/+36 pochodzi z AWS po ODK-096. Historyczne 932/16 041 pozostaje przypiętym baseline'em starej migracji, nie wynikiem nowego kandydata. Po AWS-02 należy powtórzyć inventory i właściwą weryfikację nowego kandydata: zero `unassigned`, pełny rozkład interakcji, identyczny bajtowo manifest przy powtórzeniu, zero zmian `content/` i zero wywołań modelu. Rozbieżność pozostaje jawna do czasu udokumentowanego uzgodnienia; historycznych dowodów nie przepisujemy.
+Istniejący read-only inventory runner działa na dziewięciu kanonicznych bankach. Bieżący odczyt07.10 wykazał117 nodów,943 mental unity i16622 pytania. `blocked_baseline` jest zamierzonym porównaniem ze stałym migration baseline932/16041: AWS dodał11unitów/36pytań, Claude545pytań, razem+11/+581. Nie jest blokadą przyjętego candidate/admission ani wydania aplikacji.
+
+09-A nadal wymaga uzgodnienia i udokumentowania wejściowego zakresu EPIC z tym immutable baseline; późniejsze fazy EPIC nie mogą przyjąć nieuzgodnionego scope. Nie przepisywać frozen migration evidence. AC: zero unassigned/ambiguous IDs, pełny rozkład interakcji, byte-identyczny inventory po powtórzeniu, jawne accepted current identities i wyjaśnione różnice, zero zmian contentu i zero wywołań modelu. Raport jest regenerowalny. Istnienie runnera nie oznacza odbioru09-A ani pełnego audytu pytań. Priorytet całego EPIC pozostaje odroczony w planie głównym.

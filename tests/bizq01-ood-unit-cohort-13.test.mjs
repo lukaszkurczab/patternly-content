@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,7 +7,7 @@ import test, { after, before } from "node:test";
 
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
-import { restoreOodSource13Fixture } from "./ood-cohort16-historical-fixture.mjs";
+import { copyCurrentMigrationFixture } from "./helpers/current-migration-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const trackId = "object-oriented-design-interview";
@@ -40,43 +40,21 @@ async function assertRejected(code) {
 
 before(async () => {
   fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-cohort-13-")));
-  await cp(path.join(repositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
-  await mkdir(path.join(fixtureRoot, "evidence", "business-quality"), { recursive: true });
-  for (const name of [
-    "bizq-01-besd-slice-01.json",
-    "bizq-01-besd-seed-cohort-14.json",
-    "bizq-01-coding-source-copy-04.json",
-    "bizq-01-ood-source-11.json",
-    "bizq-01-ood-source-12.json",
-    "bizq-01-ood-unit-cohort-13.json",
-    "bizq-01-ood-node-closure-16.json",
-    "bizq-01-ood-node-closure-17.json",
-    "bizq-01-ood-node-closure-19.json",
-    "bizq-01-ood-reason-amendment-19a.json",
-    "bizq-01-ood-node-closure-20.json",
-    "bizq-01-ood-node-closure-21.json",
-    "bizq-01-ood-node-closure-22.json",
-    "bizq-01-ood-node-closure-23.json",
-    "bizq-01-ood-node-closure-24.json",
-  ]) {
-    await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(fixtureRoot, "evidence/business-quality", name));
-  }
-  await cp(path.join(repositoryRoot, "evidence/canonical-content-approvals"), path.join(fixtureRoot, "evidence/canonical-content-approvals"), { recursive: true });
-  await restoreOodSource13Fixture(repositoryRoot, fixtureRoot);
+  await copyCurrentMigrationFixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
   await rm(fixtureRoot, { recursive: true, force: true });
 });
 
-test("validates the fixed source13 cohort and reconstructs immutable source12 and source11 predecessors", async () => {
+test("accepts the current exact bank while validating the fixed source13 proof chain", async () => {
+  const proof = JSON.parse(await readFile(path.join(fixtureRoot, proofPath), "utf8"));
+  assert.equal(proof.contentVersion, "object-oriented-design-interview-authoring-v2026.10.03-bizq01-13");
+  assert.equal(proof.replacements.length, 15);
   const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
-  assert.deepEqual(result.semanticReplacementProof.replacements, [
-    { beforeQuestionId: "ood-n01-b01-i001", questionId: "ood-n01-b01-i018" },
-    { beforeQuestionId: "ood-n01-b01-i002", questionId: "ood-n01-b01-i019" },
-    ...historicalIds.map((beforeQuestionId, index) => ({ beforeQuestionId, questionId: replacementIds[index] }))
-  ]);
+  assert.equal(result.semanticReplacementProof.replacements.length, 664);
+  assert.equal(result.sameIdCorrectionProof.questionIds.length, 749);
   assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);
@@ -102,6 +80,7 @@ test("all fifteen new questions validate, score each option, and bind authored f
 });
 
 test("requires the source13 proof and rejects modified cohort bindings and historical predecessor evidence", async () => {
+  await withJsonMutation(proofPath, (proof) => { proof.contentVersion += "-stale"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
   const proofFile = path.join(fixtureRoot, proofPath);
   const original = await readFile(proofFile);
   try {

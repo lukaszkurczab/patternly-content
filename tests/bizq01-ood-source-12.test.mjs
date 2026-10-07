@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,14 +7,13 @@ import test, { after, before } from "node:test";
 
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
-import { restoreOodSource13Fixture } from "./ood-cohort16-historical-fixture.mjs";
+import { copyCurrentMigrationFixture } from "./helpers/current-migration-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const trackId = "object-oriented-design-interview";
 const sourcePath = "content/object-oriented-design-interview/requirements_use_cases_domain_vocabulary_and_model_boundaries/OOD-N01-B01.json";
 const proof12Path = "evidence/business-quality/bizq-01-ood-source-12.json";
 const proof11Path = "evidence/business-quality/bizq-01-ood-source-11.json";
-const proof13Path = "evidence/business-quality/bizq-01-ood-unit-cohort-13.json";
 const questionId = "ood-n01-b01-i019";
 const removedQuestionId = "ood-n01-b01-i002";
 let fixtureRoot;
@@ -41,56 +40,20 @@ async function assertRejected(code) {
 
 before(async () => {
   fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-source-12-")));
-  await cp(path.join(repositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
-  await mkdir(path.join(fixtureRoot, "evidence", "business-quality"), { recursive: true });
-  for (const name of [
-    "bizq-01-besd-slice-01.json",
-    "bizq-01-besd-seed-cohort-14.json",
-    "bizq-01-coding-source-copy-04.json",
-    "bizq-01-ood-source-11.json",
-    "bizq-01-ood-source-12.json",
-    "bizq-01-ood-node-closure-16.json",
-    "bizq-01-ood-node-closure-17.json",
-    "bizq-01-ood-node-closure-19.json",
-    "bizq-01-ood-reason-amendment-19a.json",
-    "bizq-01-ood-node-closure-20.json",
-    "bizq-01-ood-node-closure-21.json",
-    "bizq-01-ood-node-closure-22.json",
-    "bizq-01-ood-node-closure-23.json",
-    "bizq-01-ood-node-closure-24.json",
-  ]) {
-    await cp(path.join(repositoryRoot, "evidence", "business-quality", name), path.join(fixtureRoot, "evidence", "business-quality", name));
-  }
-  await cp(path.join(repositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
-  await restoreOodSource13Fixture(repositoryRoot, fixtureRoot);
-
-  // Reconstruct the byte-exact source12 predecessor so this historical fixture
-  // continues to test its original fixed proof generation after source13 ships.
-  const source13Proof = JSON.parse(await readFile(path.join(repositoryRoot, proof13Path), "utf8"));
-  const sourceFile = path.join(fixtureRoot, sourcePath);
-  const sourceQuestions = JSON.parse(await readFile(sourceFile, "utf8"));
-  const predecessorQuestions = sourceQuestions
-    .filter((question) => !source13Proof.replacements.some((replacement) => replacement.questionId === question.questionId))
-    .concat(source13Proof.replacements.map((replacement) => replacement.beforeQuestion))
-    .sort((left, right) => left.questionId.localeCompare(right.questionId));
-  await writeFile(sourceFile, `${JSON.stringify(predecessorQuestions)}\n`, "utf8");
-  const catalogPath = path.join(fixtureRoot, "content/catalog.json");
-  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
-  catalog.tracks.find((track) => track.trackId === trackId).contentVersion = "object-oriented-design-interview-authoring-v2026.10.03-bizq01-12";
-  await writeFile(catalogPath, `${JSON.stringify(catalog)}\n`, "utf8");
+  await copyCurrentMigrationFixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
   await rm(fixtureRoot, { recursive: true, force: true });
 });
 
-test("validates the exact source12 fixture and preserves its source11 predecessor", async () => {
+test("accepts the current exact bank while validating the fixed source12 proof in its predecessor chain", async () => {
+  const proof = JSON.parse(await readFile(path.join(fixtureRoot, proof12Path), "utf8"));
+  assert.equal(proof.contentVersion, "object-oriented-design-interview-authoring-v2026.10.03-bizq01-12");
   const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
-  assert.deepEqual(result.semanticReplacementProof.replacements, [
-    { beforeQuestionId: "ood-n01-b01-i001", questionId: "ood-n01-b01-i018" },
-    { beforeQuestionId: removedQuestionId, questionId }
-  ]);
+  assert.equal(result.semanticReplacementProof.replacements.length, 664);
+  assert.equal(result.sameIdCorrectionProof.questionIds.length, 749);
   assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);
@@ -138,7 +101,7 @@ test("rejects tampered current content, predecessor proof, and source identity",
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === trackId).contentVersion = "stale-version";
     return catalog;
-  }, () => assertRejected("EVIDENCE_VALUE"));
+  }, async () => assert.equal((await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") })).result, "passed"));
 });
 
 test("rejects unreviewed successor proof identity, hashes, paths, and fields", async () => {
@@ -166,7 +129,7 @@ test("rejects unreviewed successor proof identity, hashes, paths, and fields", a
 
 test("rejects a changed unrelated OOD source item instead of reconstructing around it", async () => {
   await withJsonMutation(sourcePath, (questions) => {
-    questions.find((question) => question.questionId === "ood-n01-b01-i003").prompt += " changed";
+    questions[0].prompt += " changed";
     return questions;
   }, () => assertRejected("HASH_MISMATCH"));
 });

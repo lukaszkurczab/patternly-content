@@ -11,6 +11,7 @@ import { scoreQuestion, validateQuestion } from "../scripts/content/question-con
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const proof = JSON.parse(readFileSync(path.join(root, "evidence/business-quality/bizq-01-coding-source-copy-04.json")));
+const CURRENT_CONTENT_VERSION = "coding-interview-dsa-problem-solving-authoring-v2026.10.02-bizq01-04-bizq02-v2";
 const sourceBytes = readFileSync(path.join(root, proof.sourceFile));
 const questions = JSON.parse(sourceBytes);
 const question = questions.find((question) => question.questionId === proof.questionId);
@@ -48,7 +49,8 @@ test("canonical single-track builder carries the exact corrected object and new 
   const outputRoot = await mkdtemp(path.join(tmpdir(), "bizq01-source-copy-build-"));
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
   const built = await buildTrack({ root, trackId: proof.trackId, outputRoot });
-  assert.equal(built.artifact.contentVersion, proof.contentVersion);
+  assert.equal(proof.contentVersion, "coding-interview-dsa-problem-solving-authoring-v2026.10.02-bizq01-04");
+  assert.equal(built.artifact.contentVersion, CURRENT_CONTENT_VERSION);
   assert.equal(built.artifact.questions.length, 3404);
   assert.equal(sha256(canonicalJson(built.questions)), proof.questionSetSha256);
   assert.deepEqual(built.artifact.questions.find((item) => item.questionId === proof.questionId), question);

@@ -6,6 +6,7 @@ import { canonicalJson, sha256, validateTrack } from "../scripts/build.mjs";
 const TRACK_ID = "aws-certified-solutions-architect-associate";
 const NODE_ID = "aws_secure_architecture_foundations";
 const CONTENT_VERSION = "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096";
+const CURRENT_CONTENT_VERSION = `${CONTENT_VERSION}-bizq02-v2`;
 const NODE_SHA256 = "8dd16df1d7c6741b373026547c35255aea97869542bbb8897a4f36c73730bc33";
 const TRACK_SHA256 = "46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45";
 const ORIGINAL_IDS = [
@@ -101,7 +102,7 @@ test("ODK-096 approval binds one AWS Free node to exact canonical hashes and IDs
     },
   });
 
-  assert.equal(validated.track.contentVersion, CONTENT_VERSION);
+  assert.equal(validated.track.contentVersion, CURRENT_CONTENT_VERSION);
   assert.equal(approval.canonicalIdentity.trackId, TRACK_ID);
   assert.equal(approval.canonicalIdentity.nodeId, NODE_ID);
   assert.equal(approval.canonicalIdentity.contentVersion, CONTENT_VERSION);

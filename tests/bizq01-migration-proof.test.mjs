@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test, { after, before } from "node:test";
 
 import { createCanonicalFixture } from "./helpers/simp03-canonical-fixture.mjs";
+import { copyCurrentMigrationFixture } from "./helpers/current-migration-fixture.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
 
 const contentRepositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -48,24 +49,7 @@ async function assertRejected(code) {
 before(async () => {
   fixtureParent = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-migration-proof-")));
   fixtureRoot = path.join(fixtureParent, "repo");
-  await cp(path.join(contentRepositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
-  await mkdir(path.join(fixtureRoot, "evidence", "business-quality"), { recursive: true });
-  await cp(path.join(contentRepositoryRoot, "evidence", "business-quality", path.basename(proofRelativePath)), path.join(fixtureRoot, proofRelativePath), { recursive: true });
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-besd-seed-cohort-14.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-besd-seed-cohort-14.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-coding-source-copy-04.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-coding-source-copy-04.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-source-11.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-source-11.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-source-12.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-source-12.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-unit-cohort-13.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-unit-cohort-13.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-16.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-16.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-17.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-17.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-19.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-19.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-20.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-20.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-21.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-21.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-22.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-22.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-23.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-23.json"));
-  await cp(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-ood-node-closure-24.json"), path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-24.json"));
-  await cp(path.join(contentRepositoryRoot, oodReasonAmendment19aProofPath), path.join(fixtureRoot, oodReasonAmendment19aProofPath));
-  await cp(path.join(contentRepositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
+  await copyCurrentMigrationFixture(contentRepositoryRoot, fixtureRoot);
   noProofFixture = await createCanonicalFixture("bizq01-no-proof-");
   noProofFixtureParent = noProofFixture.parent;
 });
@@ -110,10 +94,12 @@ test("rejects a changed Claude item from the exact accepted current bank", async
   }, () => assertRejected("HASH_MISMATCH"));
 });
 
-test("keeps the original migration verifier behavior when no BIZQ proof is present", async () => {
-  const result = await verifyMigration({ contentRoot: noProofFixture.root });
-  assert.equal(result.result, "passed");
-  assert.equal(result.replacementProof, undefined);
+test("rejects a synthetic bank without the fixed accepted producer proofs", async () => {
+  await assert.rejects(verifyMigration({ contentRoot: noProofFixture.root }), (error) => {
+    assert.ok(error instanceof MigrationVerificationError);
+    assert.equal(error.code, "HASH_MISMATCH");
+    return true;
+  });
 });
 
 test("rejects changes to a current replacement and its frozen old object", async () => {
@@ -194,11 +180,14 @@ test("rejects every non-Reason edit in an amended source object", async () => {
   }
 });
 
-test("binds the catalog version and rejects symlink substitution for the 19a proof and source", async () => {
+test("accepts a policy-only OOD version change and rejects symlink substitution for the 19a proof and source", async () => {
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === "object-oriented-design-interview").contentVersion += "-stale";
     return catalog;
-  }, () => assertRejected("EVIDENCE_VALUE"));
+  }, async () => {
+    const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
+    assert.equal(result.result, "passed");
+  });
 
   for (const relativePath of [oodReasonAmendment19aProofPath, JSON.parse(await readFile(path.join(fixtureRoot, oodReasonAmendment19aProofPath), "utf8")).sourceFiles[0].sourceFile]) {
     const target = path.join(fixtureRoot, relativePath);
@@ -214,11 +203,14 @@ test("binds the catalog version and rejects symlink substitution for the 19a pro
   }
 });
 
-test("rejects stale batch identity, duplicate mappings, and a missing replacement", async () => {
+test("accepts a policy-only BESD version change and rejects stale proof identity, duplicate mappings, and missing replacement", async () => {
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === backendTrack).contentVersion = "stale-version";
     return catalog;
-  }, () => assertRejected("EVIDENCE_VALUE"));
+  }, async () => {
+    const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
+    assert.equal(result.result, "passed");
+  });
 
   await withJsonMutation(proofRelativePath, (proof) => {
     proof.questionSetSha256 = "0".repeat(64);
@@ -283,11 +275,12 @@ test("rejects unapproved wording, answer, options, feedback and taxonomy changes
   }, () => assertRejected("EVIDENCE_VALUE"));
 });
 
-test("rejects stale Coding version, proof identity/hashes/source location and unexpected proof fields", async () => {
+test("accepts a policy-only Coding version and rejects proof identity/hashes/source location and unexpected fields", async () => {
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving").contentVersion = "stale-version";
     return catalog;
-  }, () => assertRejected("EVIDENCE_VALUE"));
+  }, async () => assert.equal((await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") })).result, "passed"));
+  await withJsonMutation(wordingProofPath, (proof) => { proof.contentVersion += "-stale"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
   for (const field of ["questionSetSha256", "sourceSha256", "beforeSourceSha256", "sourceFile", "questionId"]) {
     await withJsonMutation(wordingProofPath, (proof) => { proof[field] = "unapproved"; return proof; }, () => assertRejected("EVIDENCE_VALUE"));
   }

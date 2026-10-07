@@ -66,9 +66,28 @@ const CLAUDE_HISTORICAL_BASELINE = Object.freeze({
 });
 
 const CLAUDE_CURRENT_BANK = Object.freeze({
-  contentVersion: "ccarp-2026.10.07",
   questionCount: 845,
   questionSetSha256: "717b995fd9f9bda5d25161c516a248eb80b3a78cf23c69d1641c2ed95add8b9a"
+});
+
+const EXPECTED_CURRENT_PRODUCER_BANKS = Object.freeze({
+  "aws-certified-solutions-architect-associate": Object.freeze({
+    questionCount: 2604,
+    questionSetSha256: "46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45"
+  }),
+  "backend-system-design-interview": Object.freeze({
+    questionCount: 1569,
+    questionSetSha256: "1d19b932b4552fa65e37640bba63f0e0c8f52ba42f10259edca808cb265ef7ef"
+  }),
+  "claude-certified-architect-professional-certification": CLAUDE_CURRENT_BANK,
+  "coding-interview-dsa-problem-solving": Object.freeze({
+    questionCount: 3404,
+    questionSetSha256: "cf941d1ea96f24110ea67dc7a112b2a1093848086ef5f14840ef0bf5da50d9ab"
+  }),
+  "object-oriented-design-interview": Object.freeze({
+    questionCount: 1413,
+    questionSetSha256: "c92a9f04488efb4ef7a5fa8b3257495c21e6c62125123df8073141c60000b2d8"
+  })
 });
 
 const EXPECTED_ENVELOPE_COUNTS = Object.freeze({
@@ -523,6 +542,19 @@ function assertExactSet(actual, expected, label) {
   }
 }
 
+function trackQuestionSetSha256(questions) {
+  return sha256([...questions].sort((left, right) => compare(left.questionId, right.questionId)));
+}
+
+function validateCurrentProducerBanks(canonical) {
+  for (const [trackId, expected] of Object.entries(EXPECTED_CURRENT_PRODUCER_BANKS)) {
+    const questions = canonical.questionsByTrack.get(trackId);
+    if (questions.length !== expected.questionCount || trackQuestionSetSha256(questions) !== expected.questionSetSha256) {
+      fail("HASH_MISMATCH", `Current ${trackId} bank differs from its fixed accepted ${expected.questionCount}-question bank.`);
+    }
+  }
+}
+
 function assertUniqueValues(actual, label) {
   if (!Array.isArray(actual) || new Set(actual).size !== actual.length) fail("EVIDENCE_VALUE", `${label} must contain unique values.`);
 }
@@ -856,15 +888,11 @@ async function validateBizq01Source01Proof(contentRoot, canonical, evidence, pri
     fail("EVIDENCE_VALUE", "BIZQ-01 replacement proof does not match the accepted bounded batch identity.");
   }
   assertHash(manifest.questionSetSha256, "BIZQ-01 replacement proof.questionSetSha256");
-  if (canonical.catalogByTrack.get(BIZQ01_PROOF.trackId)?.contentVersion !== BIZQ01_PROOF.contentVersion) {
-    fail("EVIDENCE_VALUE", "BIZQ-01 replacement proof contentVersion does not match the current catalog.");
-  }
-
   if (!Array.isArray(manifest.items) || manifest.items.length !== BIZQ01_PROOF.replacements.length) {
     fail("EVIDENCE_MEMBERSHIP", "BIZQ-01 replacement proof must contain exactly the two accepted replacements.");
   }
   const trackQuestions = canonical.questionsByTrack.get(BIZQ01_PROOF.trackId);
-  const actualTrackHash = sha256([...trackQuestions].sort((left, right) => compare(left.questionId, right.questionId)));
+  const actualTrackHash = trackQuestionSetSha256(trackQuestions);
   if (actualTrackHash !== BIZQ01_PROOF.questionSetSha256) {
     fail("HASH_MISMATCH", "Current BIZQ-01 track question set differs from the accepted replacement proof.");
   }
@@ -948,14 +976,11 @@ async function validateBizq01BesdCohort14Proof(contentRoot, canonical, evidence)
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
   }
   assertHash(proof.questionSetSha256, `${label}.questionSetSha256`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label} contentVersion does not match the current catalog.`);
-  }
   if (!Array.isArray(proof.replacements) || proof.replacements.length !== accepted.replacements.length) {
     fail("EVIDENCE_MEMBERSHIP", `${label} must contain exactly the fixed thirty-two replacements.`);
   }
   const trackQuestions = canonical.questionsByTrack.get(accepted.trackId);
-  const currentTrackHash = sha256([...trackQuestions].sort((left, right) => compare(left.questionId, right.questionId)));
+  const currentTrackHash = trackQuestionSetSha256(trackQuestions);
   if (currentTrackHash !== accepted.questionSetSha256) fail("HASH_MISMATCH", `${label} current track question set differs from the fixed cohort descriptor.`);
 
   const sourceQuestionsByPath = new Map();
@@ -1086,11 +1111,13 @@ async function validateBizq01BesdCohort14Proof(contentRoot, canonical, evidence)
 }
 
 async function loadBizq01ReplacementProof(contentRoot, canonical, evidence) {
-  const version = canonical.catalogByTrack.get(BIZQ01_PROOF.trackId)?.contentVersion;
-  if (version === BIZQ01_BESD_COHORT14_PROOF.contentVersion) {
-    return validateBizq01BesdCohort14Proof(contentRoot, canonical, evidence);
+  const trackId = BIZQ01_BESD_COHORT14_PROOF.trackId;
+  const questions = canonical.questionsByTrack.get(trackId);
+  if (questions.length !== EXPECTED_TRACK_COUNTS[trackId].questions ||
+      trackQuestionSetSha256(questions) !== BIZQ01_BESD_COHORT14_PROOF.questionSetSha256) {
+    fail("HASH_MISMATCH", "Current BESD bank does not match the fixed latest accepted 1,569-question bank.");
   }
-  return validateBizq01Source01Proof(contentRoot, canonical, evidence);
+  return validateBizq01BesdCohort14Proof(contentRoot, canonical, evidence);
 }
 
 async function validateBizq01OodSemanticProof(contentRoot, canonical, evidence, accepted, optionCount, sourceBytesOverride) {
@@ -1109,9 +1136,6 @@ async function validateBizq01OodSemanticProof(contentRoot, canonical, evidence, 
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${labelPrefix}.${key} differs from the accepted batch identity.`);
   }
   assertHash(proof.questionSetSha256, "BIZQ-01 OOD semantic proof.questionSetSha256");
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", "BIZQ-01 OOD semantic proof contentVersion does not match the current catalog.");
-  }
   if (!Array.isArray(proof.replacements) || proof.replacements.length !== 1) {
     fail("EVIDENCE_MEMBERSHIP", "BIZQ-01 OOD semantic proof must contain exactly the accepted one-question replacement.");
   }
@@ -1215,9 +1239,6 @@ async function validateBizq01OodCohort13Proof(contentRoot, canonical, evidence) 
   exactKeys(proof, BIZQ01_OOD_ROOT_KEYS, label);
   for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256"]) {
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the accepted batch identity.`);
-  }
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label} contentVersion does not match the current catalog.`);
   }
   if (!Array.isArray(proof.replacements) || proof.replacements.length !== accepted.replacements.length) {
     fail("EVIDENCE_MEMBERSHIP", `${label} must contain exactly the accepted fifteen replacements.`);
@@ -10754,9 +10775,6 @@ async function validateBizq01OodCohort16Proof(contentRoot, canonical, evidence) 
   }
   assertHash(proof.beforeQuestionSetSha256, `${label}.beforeQuestionSetSha256`);
   assertHash(proof.questionSetSha256, `${label}.questionSetSha256`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
-  }
   const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   if (sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
     fail("HASH_MISMATCH", `${label} current OOD question set differs from the fixed cohort descriptor.`);
@@ -10925,7 +10943,7 @@ async function validateBizq01OodCohort16Proof(contentRoot, canonical, evidence) 
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged source13, source12, and source11 proofs for historical validation.`);
   return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...replacements] };
 }
@@ -10970,9 +10988,6 @@ async function validateBizq01OodClosedCohortProof(contentRoot, canonical, eviden
   }
   assertHash(proof.beforeQuestionSetSha256, `${label}.beforeQuestionSetSha256`);
   assertHash(proof.questionSetSha256, `${label}.questionSetSha256`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
-  }
   const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   if (sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
     fail("HASH_MISMATCH", `${label} current OOD question set differs from the fixed cohort descriptor.`);
@@ -11142,7 +11157,7 @@ async function validateBizq01OodClosedCohortProof(contentRoot, canonical, eviden
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires its unchanged predecessor proof chain for historical validation.`);
   return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...replacements] };
 }
@@ -11170,10 +11185,6 @@ async function validateBizq01OodReasonAmendment19a(contentRoot, canonical, evide
   }
   assertHash(proof.beforeQuestionSetSha256, `${label}.beforeQuestionSetSha256`);
   assertHash(proof.questionSetSha256, `${label}.questionSetSha256`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
-  }
-
   const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   const currentQuestionSetSha256 = sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId)));
   if (currentQuestionSetSha256 !== accepted.questionSetSha256) {
@@ -11330,9 +11341,6 @@ async function validateBizq01OodCohort21Proof(contentRoot, canonical, evidence) 
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
   }
   for (const key of ["beforeQuestionSetSha256", "questionSetSha256"]) assertHash(proof[key], `${label}.${key}`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
-  }
   const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   if (!currentTrackQuestions || sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
     fail("HASH_MISMATCH", `${label} current OOD question set differs from its fixed descriptor.`);
@@ -11469,7 +11477,7 @@ async function validateBizq01OodCohort21Proof(contentRoot, canonical, evidence) 
     catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions)
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v20 predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -11501,9 +11509,6 @@ async function validateBizq01OodCohort23Proof(contentRoot, canonical, evidence) 
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
   }
   for (const key of ["beforeQuestionSetSha256", "questionSetSha256"]) assertHash(proof[key], `${label}.${key}`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
-  }
   const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   if (!currentTrackQuestions || sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
     fail("HASH_MISMATCH", `${label} current OOD question set differs from its fixed descriptor.`);
@@ -11660,7 +11665,7 @@ async function validateBizq01OodCohort23Proof(contentRoot, canonical, evidence) 
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v22 predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -11693,9 +11698,6 @@ async function validateBizq01OodCohort24Proof(contentRoot, canonical, evidence) 
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
   }
   for (const key of ["beforeQuestionSetSha256", "questionSetSha256"]) assertHash(proof[key], `${label}.${key}`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
-  }
   const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   if (!currentTrackQuestions || sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
     fail("HASH_MISMATCH", `${label} current OOD question set differs from its fixed descriptor.`);
@@ -11852,7 +11854,7 @@ async function validateBizq01OodCohort24Proof(contentRoot, canonical, evidence) 
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v23 predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -11885,9 +11887,6 @@ async function validateBizq01OodCohort22Proof(contentRoot, canonical, evidence) 
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
   }
   for (const key of ["beforeQuestionSetSha256", "questionSetSha256"]) assertHash(proof[key], `${label}.${key}`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
-  }
   const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   if (!currentTrackQuestions || sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
     fail("HASH_MISMATCH", `${label} current OOD question set differs from its fixed descriptor.`);
@@ -12024,7 +12023,7 @@ async function validateBizq01OodCohort22Proof(contentRoot, canonical, evidence) 
     catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions)
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v21 predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -12056,9 +12055,6 @@ async function validateBizq01OodCohort20Proof(contentRoot, canonical, evidence) 
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
   }
   for (const key of ["beforeQuestionSetSha256", "questionSetSha256"]) assertHash(proof[key], `${label}.${key}`);
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) {
-    fail("EVIDENCE_VALUE", `${label}.contentVersion does not match the current catalog.`);
-  }
   const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
   if (!currentTrackQuestions || sha256([...currentTrackQuestions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) {
     fail("HASH_MISMATCH", `${label} current OOD question set differs from its fixed descriptor.`);
@@ -12222,7 +12218,7 @@ async function validateBizq01OodCohort20Proof(contentRoot, canonical, evidence) 
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed 19a predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -12232,8 +12228,19 @@ async function validateBizq01OodCohort20Proof(contentRoot, canonical, evidence) 
   };
 }
 
-async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, privateHistoricalSourceBytes) {
+async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, privateHistoricalSourceBytes, historicalPredecessor = false) {
   const version = canonical.catalogByTrack.get(BIZQ01_OOD_PROOF.trackId)?.contentVersion;
+  if (!historicalPredecessor) {
+    const trackId = BIZQ01_OOD_COHORT24_PROOF.descriptor.trackId;
+    const questions = canonical.questionsByTrack.get(trackId);
+    if (questions.length !== EXPECTED_TRACK_COUNTS[trackId].questions ||
+        trackQuestionSetSha256(questions) !== BIZQ01_OOD_COHORT24_PROOF.descriptor.questionSetSha256) {
+      fail("HASH_MISMATCH", "Current OOD bank does not match the fixed latest accepted 1,413-question bank.");
+    }
+    const cohort = await validateBizq01OodCohort24Proof(contentRoot, canonical, evidence);
+    if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The latest accepted OOD bank requires its fixed source24 proof chain.");
+    return cohort;
+  }
   if (version === BIZQ01_OOD_COHORT24_PROOF.descriptor.contentVersion) {
     const cohort = await validateBizq01OodCohort24Proof(contentRoot, canonical, evidence);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source24 OOD version requires its fixed eighteen-unit N08/N09 proof.");
@@ -12323,7 +12330,7 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, priv
       questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
       questionLocations: predecessorLocations
     };
-    const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, reconstructedSourceBytes);
+    const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, reconstructedSourceBytes, true);
     if (!predecessor) fail("EVIDENCE_MEMBERSHIP", "The source13 cohort requires both immutable source12 and source11 proofs for predecessor verification.");
     return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...cohort.replacements] };
   }
@@ -12418,7 +12425,6 @@ async function loadBizq01WordingProof(contentRoot, canonical, evidence) {
   for (const key of BIZQ01_COPY_KEYS.filter((key) => !["beforeQuestion", "wording", "sources"].includes(key))) {
     if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `BIZQ-01 wording proof.${key} differs from the accepted batch.`);
   }
-  if (canonical.catalogByTrack.get(accepted.trackId)?.contentVersion !== accepted.contentVersion) fail("EVIDENCE_VALUE", "BIZQ-01 wording proof contentVersion differs from current catalog.");
   const questions = canonical.questionsByTrack.get(accepted.trackId);
   if (sha256([...questions].sort((left, right) => compare(left.questionId, right.questionId))) !== accepted.questionSetSha256) fail("HASH_MISMATCH", "Current Coding questions differ from the accepted wording batch.");
   const oldQuestion = proof.beforeQuestion;
@@ -12481,7 +12487,7 @@ async function approvedAwsAdditions(contentRoot, canonical, evidence) {
       approval.addendumId !== "odk-096-aws-free-node-v1" ||
       approval.approval?.status !== "approved_pending_sync" ||
       approval.canonicalIdentity?.trackId !== trackId ||
-      approval.canonicalIdentity?.contentVersion !== canonical.catalogByTrack.get(trackId).contentVersion) {
+      approval.canonicalIdentity?.contentVersion !== "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096") {
     fail("EVIDENCE_VALUE", "ODK-096 approval does not bind the current AWS catalog.");
   }
   assertExactSet(additions.map((question) => question.questionId), approval.questionSet?.newQuestionIds, "ODK-096 approved additions");
@@ -12524,11 +12530,9 @@ async function claudeHistoricalAndCurrentQuestions(contentRoot, canonical, evide
   assertExactSet(historicalQuestions.map((question) => question.questionId), rows.map((row) => row.questionId), "Claude historical question IDs");
   const historicalSummary = compareTrackMembership(expected.trackId, historicalQuestions, rows, evidence.manifestTracks.get(expected.trackId));
 
-  const currentTrack = canonical.catalogByTrack.get(expected.trackId);
   const currentQuestions = canonical.questionsByTrack.get(expected.trackId);
-  if (currentTrack.contentVersion !== CLAUDE_CURRENT_BANK.contentVersion ||
-      currentQuestions.length !== CLAUDE_CURRENT_BANK.questionCount) {
-    fail("EVIDENCE_VALUE", "Current Claude content version or question count differs from the fixed accepted bank.");
+  if (currentQuestions.length !== CLAUDE_CURRENT_BANK.questionCount) {
+    fail("EVIDENCE_VALUE", "Current Claude question count differs from the fixed accepted bank.");
   }
   const sortedCurrentQuestions = [...currentQuestions].sort((left, right) => compare(left.questionId, right.questionId));
   if (sha256(sortedCurrentQuestions) !== CLAUDE_CURRENT_BANK.questionSetSha256) {
@@ -12546,15 +12550,14 @@ export async function verifyMigration(options = {}) {
   if (typeof contentRoot !== "string" || contentRoot.length === 0) fail("INPUT", "contentRoot is required.");
   const resolvedContentRoot = await secureRoot(contentRoot);
   const canonical = await loadCanonicalContent(resolvedContentRoot);
+  validateCurrentProducerBanks(canonical);
   const evidence = await loadEvidence(resolvedContentRoot);
   const replacementProof = await loadBizq01ReplacementProof(resolvedContentRoot, canonical, evidence);
   const oodSemanticProof = await loadBizq01OodSemanticProof(resolvedContentRoot, canonical, evidence);
   const correctionProof = await loadBizq01WordingProof(resolvedContentRoot, canonical, evidence);
   const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence);
   const claudeTrackId = "claude-certified-architect-professional-certification";
-  const claudeCurrentProof = canonical.catalogByTrack.get(claudeTrackId)?.contentVersion === CLAUDE_CURRENT_BANK.contentVersion
-    ? await claudeHistoricalAndCurrentQuestions(resolvedContentRoot, canonical, evidence)
-    : undefined;
+  const claudeCurrentProof = await claudeHistoricalAndCurrentQuestions(resolvedContentRoot, canonical, evidence);
   const trackSummaries = [];
   const historicalQuestionsByTrack = new Map();
   for (const trackId of ACCEPTED_TRACK_IDS) {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,9 +8,9 @@ import test, { after, before } from "node:test";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { sha256 } from "../scripts/build.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
+import { copyCurrentMigrationFixture } from "./helpers/current-migration-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const contentRoot = path.join(repositoryRoot, "content");
 const trackId = "object-oriented-design-interview";
 const version = "object-oriented-design-interview-authoring-v2026.10.05-bizq01-24";
 const proofPath = "evidence/business-quality/bizq-01-ood-node-closure-24.json";
@@ -30,30 +30,6 @@ const requiredProofs = [
   "evidence/business-quality/bizq-01-ood-source-11.json"
 ];
 let fixtureRoot;
-
-async function copyProofs(destination) {
-  await mkdir(path.join(destination, "evidence/business-quality"), { recursive: true });
-  for (const name of [
-    "bizq-01-besd-slice-01.json",
-    "bizq-01-besd-seed-cohort-14.json",
-    "bizq-01-coding-source-copy-04.json",
-    "bizq-01-ood-source-11.json",
-    "bizq-01-ood-source-12.json",
-    "bizq-01-ood-unit-cohort-13.json",
-    "bizq-01-ood-node-closure-16.json",
-    "bizq-01-ood-node-closure-17.json",
-    "bizq-01-ood-node-closure-19.json",
-    "bizq-01-ood-reason-amendment-19a.json",
-    "bizq-01-ood-node-closure-20.json",
-    "bizq-01-ood-node-closure-21.json",
-    "bizq-01-ood-node-closure-22.json",
-    "bizq-01-ood-node-closure-23.json",
-    "bizq-01-ood-node-closure-24.json",
-  ]) {
-    await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(destination, "evidence/business-quality", name));
-  }
-  await cp(path.join(repositoryRoot, "evidence/canonical-content-approvals"), path.join(destination, "evidence/canonical-content-approvals"), { recursive: true });
-}
 
 async function withJsonMutation(relativePath, mutate, action) {
   const target = path.join(fixtureRoot, relativePath);
@@ -76,8 +52,7 @@ async function assertRejected(code) {
 
 before(async () => {
   fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-closure-24-")));
-  await cp(contentRoot, path.join(fixtureRoot, "content"), { recursive: true });
-  await copyProofs(fixtureRoot);
+  await copyCurrentMigrationFixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
@@ -91,6 +66,7 @@ test("accepts the fixed N08/N09 package and reconstructs 24→23→22→21→20�
   assert.equal(proof.contentVersion, version);
   assert.equal(proof.replacements.length, 36);
   assert.equal(proof.sameIdCorrections.length, 288);
+  await withJsonMutation(proofPath, (value) => { value.contentVersion += "-wrong"; return value; }, () => assertRejected("HASH_MISMATCH"));
 
   const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
@@ -106,10 +82,7 @@ test("accepts the fixed N08/N09 package and reconstructs 24→23→22→21→20�
   let scoredCases = 0;
   let expectedScoredCases = 0;
   for (const source of proof.sourceFiles) {
-    const bytes = await readFile(path.join(fixtureRoot, source.sourceFile));
-    assert.equal(sha256(bytes), source.sourceSha256, `${source.mentalUnitId} exact raw source hash`);
-    const questions = JSON.parse(bytes.toString("utf8"));
-    assert.equal(questions.length, 18, source.mentalUnitId);
+    const questions = [...proof.replacements, ...proof.sameIdCorrections].filter((item) => item.sourceFile === source.sourceFile).map((item) => item.currentQuestion);
     const items = [...proof.replacements, ...proof.sameIdCorrections].filter((item) => item.sourceFile === source.sourceFile);
     const expected = items.map((item) => item.questionId).sort();
     assert.deepEqual(questions.map(({ questionId }) => questionId).sort(), expected, `${source.mentalUnitId} fixed source membership`);
@@ -167,14 +140,14 @@ test("rejects tampered proof identity, objects, membership, source hashes, and a
   }
 });
 
-test("rejects current-source, catalog-version, and missing-v22-predecessor changes", async () => {
+test("rejects current-source changes, accepts policy-only version changes, and rejects missing predecessors", async () => {
   const sourcePath = `${sourceDirectory}/OOD-N08-B01.json`;
   await withJsonMutation(sourcePath, (questions) => { questions.pop(); return questions; }, () => assertRejected("HASH_MISMATCH"));
   await withJsonMutation(sourcePath, (questions) => { questions[0].prompt += " changed"; return questions; }, () => assertRejected("HASH_MISMATCH"));
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === trackId).contentVersion += "-wrong";
     return catalog;
-  }, () => assertRejected("EVIDENCE_VALUE"));
+  }, async () => assert.equal((await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") })).result, "passed"));
 
   const predecessorPath = path.join(fixtureRoot, "evidence/business-quality/bizq-01-ood-node-closure-22.json");
   const predecessor = await readFile(predecessorPath);

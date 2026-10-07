@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test, { after, before } from "node:test";
 
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
+import { copyCurrentMigrationFixture } from "./helpers/current-migration-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const contentRoot = path.join(repositoryRoot, "content");
@@ -40,23 +41,7 @@ async function assertRejected(code) {
 before(async () => {
   fixtureParent = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-besd-cohort-14-")));
   fixtureRoot = path.join(fixtureParent, "repo");
-  await cp(path.join(repositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
-  await mkdir(path.join(fixtureRoot, "evidence", "business-quality"), { recursive: true });
-  for (const name of [
-    "bizq-01-besd-slice-01.json",
-    "bizq-01-besd-seed-cohort-14.json",
-    "bizq-01-coding-source-copy-04.json",
-    "bizq-01-ood-source-11.json",
-    "bizq-01-ood-source-12.json",
-    "bizq-01-ood-unit-cohort-13.json",
-    "bizq-01-ood-node-closure-16.json",
-    "bizq-01-ood-node-closure-17.json",
-    "bizq-01-ood-node-closure-19.json",
-    "bizq-01-ood-reason-amendment-19a.json"
-  ]) {
-    await cp(path.join(repositoryRoot, "evidence/business-quality", name), path.join(fixtureRoot, "evidence/business-quality", name));
-  }
-  await cp(path.join(repositoryRoot, "evidence/canonical-content-approvals"), path.join(fixtureRoot, "evidence/canonical-content-approvals"), { recursive: true });
+  await copyCurrentMigrationFixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
@@ -109,7 +94,10 @@ test("rejects changed current source items, old/current proof objects, source by
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === "backend-system-design-interview").contentVersion = "stale-version";
     return catalog;
-  }, () => assertRejected("EVIDENCE_VALUE"));
+  }, async () => {
+    const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
+    assert.equal(result.result, "passed");
+  });
   await withJsonMutation(proofPath, (proof) => {
     proof.replacements[0].identityAction = "keep_question_id";
     return proof;

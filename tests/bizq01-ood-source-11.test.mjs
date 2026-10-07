@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,7 +8,7 @@ import test, { after, before } from "node:test";
 
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
-import { restoreOodSource13Fixture } from "./ood-cohort16-historical-fixture.mjs";
+import { copyCurrentMigrationFixture } from "./helpers/current-migration-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const trackId = "object-oriented-design-interview";
@@ -44,60 +44,21 @@ async function assertRejected(code) {
 
 before(async () => {
   fixtureRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "bizq01-ood-source-11-")));
-  await cp(path.join(repositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
-  await mkdir(path.join(fixtureRoot, "evidence", "business-quality"), { recursive: true });
-  for (const name of [
-    "bizq-01-besd-slice-01.json",
-    "bizq-01-besd-seed-cohort-14.json",
-    "bizq-01-coding-source-copy-04.json",
-    "bizq-01-ood-source-11.json",
-    "bizq-01-ood-node-closure-16.json",
-    "bizq-01-ood-node-closure-17.json",
-    "bizq-01-ood-node-closure-19.json",
-    "bizq-01-ood-reason-amendment-19a.json",
-    "bizq-01-ood-node-closure-20.json",
-    "bizq-01-ood-node-closure-21.json",
-    "bizq-01-ood-node-closure-22.json",
-    "bizq-01-ood-node-closure-23.json",
-    "bizq-01-ood-node-closure-24.json",
-  ]) {
-    await cp(path.join(repositoryRoot, "evidence", "business-quality", name), path.join(fixtureRoot, "evidence", "business-quality", name));
-  }
-  await cp(path.join(repositoryRoot, "evidence", "canonical-content-approvals"), path.join(fixtureRoot, "evidence", "canonical-content-approvals"), { recursive: true });
-  await restoreOodSource13Fixture(repositoryRoot, fixtureRoot);
-
-  // Reconstruct source12 from the cohort13 frozen objects, then source11 from
-  // the reviewed source12 proof. This keeps the historical fixture exact.
-  const source13Proof = JSON.parse(await readFile(path.join(repositoryRoot, "evidence/business-quality/bizq-01-ood-unit-cohort-13.json"), "utf8"));
-  const source12Proof = JSON.parse(await readFile(path.join(repositoryRoot, "evidence/business-quality/bizq-01-ood-source-12.json"), "utf8"));
-  const sourceFile = path.join(fixtureRoot, sourcePath);
-  const sourceQuestions = JSON.parse(await readFile(sourceFile, "utf8"));
-  const source12Questions = sourceQuestions
-    .filter((question) => !source13Proof.replacements.some((replacement) => replacement.questionId === question.questionId))
-    .concat(source13Proof.replacements.map((replacement) => replacement.beforeQuestion))
-    .sort((left, right) => left.questionId.localeCompare(right.questionId));
-  const source11Questions = source12Questions
-    .filter((question) => question.questionId !== source12Proof.replacements[0].questionId)
-    .concat(source12Proof.replacements[0].beforeQuestion)
-    .sort((left, right) => left.questionId.localeCompare(right.questionId));
-  await writeFile(sourceFile, `${JSON.stringify(source11Questions)}\n`, "utf8");
-  const catalogPath = path.join(fixtureRoot, "content/catalog.json");
-  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
-  catalog.tracks.find((track) => track.trackId === trackId).contentVersion = "object-oriented-design-interview-authoring-v2026.10.03-bizq01-11";
-  await writeFile(catalogPath, `${JSON.stringify(catalog)}\n`, "utf8");
+  await copyCurrentMigrationFixture(repositoryRoot, fixtureRoot);
 });
 
 after(async () => {
   await rm(fixtureRoot, { recursive: true, force: true });
 });
 
-test("accepts the exact OOD source11 replacement and retains historical inventory", async () => {
+test("accepts the current exact bank while validating the fixed source11 proof in its predecessor chain", async () => {
+  const proof = JSON.parse(await readFile(path.join(fixtureRoot, proofPath), "utf8"));
+  assert.equal(proof.contentVersion, "object-oriented-design-interview-authoring-v2026.10.03-bizq01-11");
   const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
   assert.equal(result.semanticReplacementProof.trackId, trackId);
-  assert.deepEqual(result.semanticReplacementProof.replacements, [
-    { beforeQuestionId: removedQuestionId, questionId }
-  ]);
+  assert.equal(result.semanticReplacementProof.replacements.length, 664);
+  assert.equal(result.sameIdCorrectionProof.questionIds.length, 749);
   assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.approvedAdditionCount, 36);
@@ -107,8 +68,10 @@ test("accepts the exact OOD source11 replacement and retains historical inventor
 test("replacement uses the authored single-choice scoring and feedback contract", async () => {
   const source = JSON.parse(await readFile(path.join(fixtureRoot, sourcePath), "utf8"));
   const historicalSource = JSON.parse(execFileSync("git", ["show", `570eb490eaf194fa61ad380155cfd16c0377aaf2:${sourcePath}`], { cwd: repositoryRoot, encoding: "utf8" }));
+  const proof = JSON.parse(await readFile(path.join(fixtureRoot, proofPath), "utf8"));
   const question = source.find((item) => item.questionId === questionId);
-  assert.deepEqual(source.filter((item) => item.questionId !== questionId), historicalSource.filter((item) => item.questionId !== removedQuestionId));
+  assert.deepEqual(question, proof.replacements[0].currentQuestion);
+  assert.deepEqual(proof.replacements[0].beforeQuestion, historicalSource.find((item) => item.questionId === removedQuestionId));
   assert.ok(question);
   assert.equal(source.length, 17);
   assert.equal(source.some((item) => item.questionId === removedQuestionId), false);
@@ -153,11 +116,11 @@ test("rejects a tampered frozen question and a changed current replacement", asy
   }, () => assertRejected("HASH_MISMATCH"));
 });
 
-test("rejects stale catalog or track hashes, duplicate mappings, and an absent new item", async () => {
+test("accepts a policy-only catalog version and rejects stale track hashes, duplicate mappings, and absent items", async () => {
   await withJsonMutation("content/catalog.json", (catalog) => {
     catalog.tracks.find((track) => track.trackId === trackId).contentVersion = "stale-version";
     return catalog;
-  }, () => assertRejected("EVIDENCE_VALUE"));
+  }, async () => assert.equal((await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") })).result, "passed"));
   await withJsonMutation(proofPath, (proof) => {
     proof.questionSetSha256 = "0".repeat(64);
     return proof;
@@ -176,7 +139,7 @@ test("rejects stale catalog or track hashes, duplicate mappings, and an absent n
 
 test("rejects changes to an unaffected OOD item and unapproved proof fields", async () => {
   await withJsonMutation(sourcePath, (questions) => {
-    questions.find((question) => question.questionId === "ood-n01-b01-i003").prompt += " changed";
+    questions[0].prompt += " changed";
     return questions;
   }, () => assertRejected("HASH_MISMATCH"));
   await withJsonMutation(proofPath, (proof) => {

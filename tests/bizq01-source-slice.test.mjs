@@ -11,6 +11,7 @@ import { createContentReviewConsole } from "../scripts/review/content-review-con
 const root = new URL("../", import.meta.url);
 const source01 = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-slice-01.json", root), "utf8"));
 const batch = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-seed-cohort-14.json", root), "utf8"));
+const CURRENT_CONTENT_VERSION = "backend-system-design-interview-authoring-v2026.10.03-bizq01-14-bizq02-v2";
 const sourceItems = batch.replacements.map((entry) => {
   const bytes = readFileSync(new URL(entry.sourceFile, root));
   assert.equal(sha256(bytes), entry.sourceSha256, "fixed cohort must bind the actual changed source");
@@ -106,7 +107,8 @@ test("BIZQ-01 canonical builder carries the exact cohort and new content identit
   const outputRoot = await mkdtemp(join(tmpdir(), "patternly-bizq01-build-"));
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
   const built = await buildTrack({ trackId: batch.trackId, outputRoot });
-  assert.equal(built.artifact.contentVersion, batch.contentVersion);
+  assert.equal(batch.contentVersion, "backend-system-design-interview-authoring-v2026.10.03-bizq01-14");
+  assert.equal(built.artifact.contentVersion, CURRENT_CONTENT_VERSION);
   assert.equal(built.artifact.questions.length, 1569);
   assert.equal(sha256(canonicalJson(built.questions)), batch.questionSetSha256);
   for (const { entry, question } of sourceItems) {

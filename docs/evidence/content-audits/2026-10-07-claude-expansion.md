@@ -14,7 +14,7 @@ Nowe źródła MCP dotyczą określonych mechanizmów i nie dziedziczą claimów
 
 Przypadkowy `pnpm exec tsx --version` w app checkout uruchomił instalację nowych zależności. Proces już nie działa. Dwa wygenerowane pliki pnpm odłożono odwracalnie do `/private/tmp/patternly-claude-expansion-20261007/dependency-probe-recovery`; standardowe `npm ci` przywróciło istniejący npm lock. Potwierdzono pierwotne expo57.0.17,tsx4.21.0,react-native0.86.3,typescript6.0.3 i brak grafu pnpm. Finalne runtime/scoring probes ponowiono po przywróceniu. Żadne cudze zmiany kodu/app lock nie zostały dołączone do tej pracy.
 
-Pozostały gates wydania: historyczny migration verifier wymaga dokładnego starego membership300/approval, dlatego nie przyznaje admission nowemu bankowi. Nie zmieniono historycznych approvals, pinned runtime, publishing ani głównego BIZQ ownera. Installowany bundle nadal ma300. Źródła będą utrwalone lokalnie do normalnego candidate draft; jego wynik i pełny test suite zostaną zapisane niżej. Brak push/publikacji/importu.
+Pozostały gates wydania: historyczny migration verifier wymaga dokładnego starego membership300/approval, dlatego nie przyznaje admission nowemu bankowi. Nie zmieniono historycznych approvals, pinned runtime, publishing ani głównego BIZQ ownera. Installowany bundle nadal ma300. Źródła utrwalono lokalnie w commit `f00041eda3cadc367138cfbe0233d4882e8a24e3`. Normalny candidate draft utworzono z dokładnego committed source; pełny test suite zakończył się181 PASS /16 FAIL, wyłącznie na nieprzyznanym historycznym membership/version binding nowego banku (szczegóły niżej). Brak push/publikacji/importu.
 
 PO 07.10.2026 polecił znaleźć odłożone zadanie BIZQ i kontynuować do zadowalającego banku, oczekując >840 pytań. Found: [BIZQ-01 §7](../../../../patternly/docs/specs/business-quality/01-BIZQ-01-JAKOSC-PYTAN-I-OBJASNIEN.md:182), [kanoniczna kolejka FCA-EDIT Claude](../../../../patternly/docs/PATTERNLY-WORKING-PLAN.md:1717). Wytyczne: jawna decyzja, realistyczne distractory, Reason/Details wyjaśniające mechanizm i granicę, 13 wymiarów review każdego zmienionego itemu, aktualne primary sources, nowe wersjonowanie i normalny builder/candidate/admission bez fałszowania historycznych approval. Obecne zlecenie PO reaktywuje maintenance tego banku i jawnie dopuszcza jego rozbudowę; starszy zakaz masowego rozszerzania launch baseline nie unieważnia tej dyspozycji. Pozostałe banki i główny BIZQ runner pozostają u swoich owners.
 
@@ -79,3 +79,29 @@ Stan tabeli to implementacja/adjudication, nie końcowy independent semantic app
 ## Independent coverage review — zaakceptowana korekta
 
 [Coverage design review](2026-10-07-claude-coverage-design-review.md): PASS WITH GAPS, minimum0,80 (fit0,92/simple0,90/risk0,80/maintainability0,88). Przyjęto decision-family ledger zamiast mechanism-presence closure. B ma konkretne błędy source/feedback/objective; nie wolno integrować go na podstawie schema PASS. Pierwszy medium B zakończył na12 dodatkach mimo dalszego wymaganego zakresu; kontynuację14celów powierzono Luna high po tym udokumentowanym ograniczeniu. AHigh i CMedium kontynuują practice-depth batches; żadna jednostka nie ma fixedquota. Root singlecanonicalwriter.
+
+## Finalne źródła i candidate
+
+- Source commit:`f00041eda3cadc367138cfbe0233d4882e8a24e3`; baseline:`cf119c3f8e8ebfce3e5bdbcd3d5f4e4c7c5dd509`.
+- ContentVersion:`ccarp-2026.10.07`;845 pytań,38 units,7 domains; original300 IDs retained;545 added /37 corrected.
+- Question-set SHA-256:`717b995fd9f9bda5d25161c516a248eb80b3a78cf23c69d1641c2ed95add8b9a`.
+- Normal built Claude artifact SHA-256:`e7d38e0c5ce6ce825937a1c131bd284836028a9cb1d33eac1bc20ea1234f9ba4` (2418120 bytes).
+- [Candidate manifest](2026-10-07-claude-candidate-manifest.json),[release envelope](2026-10-07-claude-candidate-release.json):9 tracks,16622 total questions;candidateId:`946d3589abf9bfb205b382e7ebb9205786c3e42e18fe733c3607ad836a6a80a4`. Status:`draft_not_admitted`;candidate/publishing/runtime approvals:`not_granted`;app release lock untouched. Actual quarantined artifacts:`/private/tmp/patternly-claude-expansion-20261007/candidate-845/release/artifacts`.
+- Exact whole-object evidence checker:[845 matches](2026-10-07-claude-review-evidence-match.json),259 historical unchanged +586 current;0 missing/non-PASS.
+- Nowy przypadek dwóch klientów MCP używa aktualnego źródła architektury; przypadki2025 jawnie pinują profil. Dane scenariuszy nie są gwarancją wydajności providera.
+
+### Reprodukowanie kontroli
+
+Z producer root: `node scripts/build.mjs validate --track claude-certified-architect-professional-certification`, `node scripts/build.mjs test --track claude-certified-architect-professional-certification`, `node scripts/content/verify-claude-maintenance-review.mjs`; `node scripts/build.mjs build-all --output-root <fresh isolated directory>`; `node scripts/review/candidate-draft-v2.mjs <fresh quarantine outside repository>`. Candidate requires exact committed content snapshot; it does not grant readiness/admission.
+
+App compatibility: set `PATTERNLY_FRONTEND_ROOT` to the existing app checkout and use its installed `node_modules/tsx/dist/loader.mjs` with `node --import`. Run `scripts/content/verify-claude-runtime-ingress.mjs <built Claude artifact> <built content-lock>` and `scripts/content/verify-claude-feedback-presentation.mjs`. These only replace Claude in memory alongside the current eight app artifacts; they do not install or import it.
+
+Targeted tests: `node --test tests/shared-contract.test.mjs tests/odk123-claude-focus-feedback.test.mjs tests/claude-content-audit-20261007.test.mjs tests/model-evaluation-inventory.test.mjs`:34/34 PASS. Existing inventory test now checks the actual845 Claude count and still asserts `blocked_baseline`; neither historical baseline nor approval was changed to force success.
+
+## Wynik pełnego suite i granica wydania
+
+`npm run test:canonical`:197 testów,181 PASS /16 FAIL, exit1. [Pełny log](2026-10-07-claude-canonical-suite.log),[strukturalny wynik wszystkich kontroli](2026-10-07-claude-verification.json). Piętnaście failures dotyczy historycznego migration verifier: nowy Claude membership845 nie ma frozen addendum dla pierwotnego300 oraz37 same-ID corrections. Jeden failure to ACC-02 frozen manifest porównujący catalog version `ccarp-2026.09.03` z nowym `ccarp-2026.10.07`. Nie zmieniono immutable migration evidence, ACC-02 manifest, historycznych approvals ani oczekiwanych pinów, aby ukryć tę niezgodność.
+
+Po source commit przeszły normalne candidate-draft-v2 oraz jego hermetic readiness/release-contract tests. Ich testowe decyzje nie są rzeczywistą zgodą na ten candidate. Nie utworzono rzeczywistego approval/readiness/admission dokumentu z fałszywym `migrationVerification:passed`.
+
+Bank źródłowy jest ukończony dla bieżących38 celów i ma niezależnie potwierdzone pełne pokrycie; pakiet jest draftem do odbioru wydania. Następny etap wydania wymaga rzeczywistego addendum z dokładnymi before/after hashes, odtworzeniem300 baseline i obsługą37 istniejących IDs oraz545 nowych; następnie aktualizacji właściwych bindings przez istniejący proces BIZQ/admission. To gate wydania, nie brak treści ani powód dopisywania pytań. Po admission można wykonać normalny app import i jego runtime checks. Nie uruchomiono tego etapu w równoległym checkout aktualnego ownera.

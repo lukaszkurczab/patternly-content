@@ -285,15 +285,16 @@ async function loadGcpSimulationProfileData({ rootDirectory, track, questions })
   exactKeys(profile.nodeDomainMap, nodeIds, "GCP simulation profile nodeDomainMap");
   for (const [nodeId, domainId] of Object.entries(profile.nodeDomainMap)) if (!GCP_DOMAIN_IDS.includes(domainId)) fail(`GCP nodeDomainMap contains unknown domain for ${nodeId}`);
   exactKeys(profile.nodeDomainMapEvidence, ["artifactPath", "contentVersion", "itemCount", "nodeCount", "ambiguousNodeCount"], "GCP nodeDomainMap evidence");
-  if (profile.nodeDomainMapEvidence.artifactPath !== `artifacts/tracks/${GCP_TRACK_ID}/${track.contentVersion}/track-artifact.json` || profile.nodeDomainMapEvidence.contentVersion !== track.contentVersion || profile.nodeDomainMapEvidence.itemCount !== 2981 || profile.nodeDomainMapEvidence.nodeCount !== nodeIds.length || profile.nodeDomainMapEvidence.ambiguousNodeCount !== 0) fail("GCP nodeDomainMap evidence does not match the current published artifact identity");
+  const evidenceContentVersion = profile.nodeDomainMapEvidence.contentVersion;
+  if (typeof evidenceContentVersion !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(evidenceContentVersion) || profile.nodeDomainMapEvidence.artifactPath !== `artifacts/tracks/${GCP_TRACK_ID}/${evidenceContentVersion}/track-artifact.json` || profile.nodeDomainMapEvidence.itemCount !== 2981 || profile.nodeDomainMapEvidence.nodeCount !== nodeIds.length || profile.nodeDomainMapEvidence.ambiguousNodeCount !== 0) fail("GCP nodeDomainMap evidence does not match its pinned published artifact identity");
 
   const publishedPath = path.resolve(rootDirectory, profile.nodeDomainMapEvidence.artifactPath);
   await assertSecurePath(rootDirectory, publishedPath, "GCP published attribution artifact");
   const wrapper = await readJson(publishedPath);
   exactKeys(wrapper, ["artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"], "GCP published artifact wrapper");
-  if (wrapper.trackId !== GCP_TRACK_ID || wrapper.contentVersion !== track.contentVersion || wrapper.familyId !== "certification" || typeof wrapper.artifactBytes !== "string" || wrapper.checksumSha256 !== sha256(wrapper.artifactBytes)) fail("GCP published artifact checksum or identity is invalid");
+  if (wrapper.trackId !== GCP_TRACK_ID || wrapper.contentVersion !== evidenceContentVersion || wrapper.familyId !== "certification" || typeof wrapper.artifactBytes !== "string" || wrapper.checksumSha256 !== sha256(wrapper.artifactBytes)) fail("GCP published artifact checksum or pinned identity is invalid");
   const published = jsonText(wrapper.artifactBytes, publishedPath);
-  if (!isRecord(published) || published.contentVersion !== track.contentVersion || !isRecord(published.bank) || published.bank.trackId !== GCP_TRACK_ID || published.bank.contentVersion !== track.contentVersion || !Array.isArray(published.bank.items)) fail("GCP published artifact content identity or item inventory is invalid");
+  if (!isRecord(published) || published.contentVersion !== evidenceContentVersion || !isRecord(published.bank) || published.bank.trackId !== GCP_TRACK_ID || published.bank.contentVersion !== evidenceContentVersion || !Array.isArray(published.bank.items)) fail("GCP published artifact content identity or item inventory is invalid");
   if (published.bank.items.length !== profile.nodeDomainMapEvidence.itemCount) fail("GCP published artifact item count does not match profile evidence");
 
   const canonicalById = new Map(questions.map((question) => [question.questionId, question]));
@@ -528,6 +529,10 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
     }
   }
   questions.sort((left, right) => compareStrings(left.questionId, right.questionId));
+  if (Object.hasOwn(track, "completionRule")) {
+    const completion = validatePackageCompletionRule(track.completionRule, `catalog.tracks.${trackId}.completionRule`, questions);
+    if (!completion.valid) fail(`Chapter completion rule does not match canonical source questions for ${trackId}`, completion.errors);
+  }
   const profileData = trackId === GCP_TRACK_ID
     ? await loadGcpSimulationProfileData({ rootDirectory: resolvedRoot, track, questions })
     : trackId === CODING_TRACK_ID
@@ -668,6 +673,10 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
   }
   if (!Array.isArray(artifact.questions) || artifact.questions.length !== entry.questionCount) {
     fail(`Artifact questionCount mismatch: ${filePath}`);
+  }
+  if (Object.hasOwn(artifact, "completionRule")) {
+    const ruleResult = validatePackageCompletionRule(artifact.completionRule, "artifact.completionRule", artifact.questions);
+    if (!ruleResult.valid) fail(`Artifact completionRule does not match its complete questions: ${filePath}`, ruleResult.errors);
   }
   const catalogTrackIds = catalog.tracks.map((track) => track.trackId);
   const questionIds = new Set();

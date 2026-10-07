@@ -428,19 +428,44 @@ export function validateCatalog(catalog) {
   return { valid: errors.length === 0, errors };
 }
 
-export function validatePackageCompletionRule(rule, pathName = "completionRule") {
+export function validatePackageCompletionRule(rule, pathName = "completionRule", questions) {
   const errors = [];
-  const keys = ["ruleVersion", "minimumAttemptCount", "rollingWindowSize", "qualityThreshold"];
-  if (!exactKeys(rule, keys, pathName, errors)) return { valid: false, errors };
-  if (rule.ruleVersion !== 1) addError(errors, `${pathName}.ruleVersion`, "must equal 1");
-  for (const key of ["minimumAttemptCount", "rollingWindowSize"]) {
-    if (!Number.isSafeInteger(rule[key]) || rule[key] <= 0) addError(errors, `${pathName}.${key}`, "must be a positive safe integer");
+  if (!exactKeys(rule, ["ruleVersion", "chapters"], pathName, errors)) return { valid: false, errors };
+  if (rule.ruleVersion !== 2) addError(errors, `${pathName}.ruleVersion`, "must equal 2");
+  if (!Array.isArray(rule.chapters) || rule.chapters.length === 0) {
+    addError(errors, `${pathName}.chapters`, "must be a non-empty complete chapter inventory");
+    return { valid: false, errors };
   }
-  if (Number.isSafeInteger(rule.minimumAttemptCount) && Number.isSafeInteger(rule.rollingWindowSize) && rule.minimumAttemptCount < rule.rollingWindowSize) {
-    addError(errors, `${pathName}.minimumAttemptCount`, "must be greater than or equal to rollingWindowSize");
+  const nodeIds = new Set();
+  for (const [index, chapter] of rule.chapters.entries()) {
+    const chapterPath = `${pathName}.chapters[${index}]`;
+    if (!exactKeys(chapter, ["nodeId", "mentalUnitCount", "minimumAttemptCount", "rollingWindowSize", "qualityThreshold"], chapterPath, errors)) continue;
+    trimCleanString(chapter.nodeId, `${chapterPath}.nodeId`, errors);
+    if (typeof chapter.nodeId === "string" && nodeIds.has(chapter.nodeId)) addError(errors, `${chapterPath}.nodeId`, "must be unique");
+    if (typeof chapter.nodeId === "string") nodeIds.add(chapter.nodeId);
+    if (!Number.isSafeInteger(chapter.mentalUnitCount) || chapter.mentalUnitCount <= 0) addError(errors, `${chapterPath}.mentalUnitCount`, "must be a positive safe integer");
+    if (chapter.rollingWindowSize !== 20) addError(errors, `${chapterPath}.rollingWindowSize`, "must equal 20");
+    if (chapter.qualityThreshold !== 0.8) addError(errors, `${chapterPath}.qualityThreshold`, "must equal 0.8");
+    if (Number.isSafeInteger(chapter.mentalUnitCount) && chapter.mentalUnitCount > 0) {
+      const required = Math.max(20, Math.ceil((4 * chapter.mentalUnitCount) / 20) * 20);
+      if (!Number.isSafeInteger(required) || chapter.minimumAttemptCount !== required) addError(errors, `${chapterPath}.minimumAttemptCount`, "does not match the approved per-chapter minimum");
+    }
   }
-  if (typeof rule.qualityThreshold !== "number" || !Number.isFinite(rule.qualityThreshold) || rule.qualityThreshold < 0 || rule.qualityThreshold > 1) {
-    addError(errors, `${pathName}.qualityThreshold`, "must be a finite number from 0 to 1");
+  if (questions !== undefined && Array.isArray(questions)) {
+    const unitsByNode = new Map();
+    for (const question of questions) {
+      if (!isRecord(question) || !trimCleanString(question.nodeId, `${pathName}.artifactQuestion.nodeId`, errors) || !trimCleanString(question.mentalUnitId, `${pathName}.artifactQuestion.mentalUnitId`, errors)) continue;
+      const units = unitsByNode.get(question.nodeId) ?? new Set();
+      units.add(question.mentalUnitId);
+      unitsByNode.set(question.nodeId, units);
+    }
+    if (unitsByNode.size !== nodeIds.size || [...unitsByNode.keys()].some((nodeId) => !nodeIds.has(nodeId))) {
+      addError(errors, `${pathName}.chapters`, "must exactly match the complete artifact node inventory");
+    }
+    for (const chapter of rule.chapters) {
+      const units = unitsByNode.get(chapter?.nodeId);
+      if (!units || units.size !== chapter?.mentalUnitCount) addError(errors, `${pathName}.chapters`, `mental-unit count does not match artifact node ${chapter?.nodeId}`);
+    }
   }
   return { valid: errors.length === 0, errors };
 }

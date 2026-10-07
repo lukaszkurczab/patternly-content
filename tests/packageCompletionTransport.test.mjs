@@ -8,10 +8,8 @@ import { loadCanonicalCatalog, loadCanonicalFixture, validateCatalog } from "../
 import { ContentBuildError, buildTrack, canonicalJson, sha256 } from "../scripts/build.mjs";
 
 const rule = Object.freeze({
-  ruleVersion: 1,
-  minimumAttemptCount: 8,
-  rollingWindowSize: 5,
-  qualityThreshold: 0.8
+  ruleVersion: 2,
+  chapters: Object.freeze([{ nodeId: "node-001", mentalUnitCount: 1, minimumAttemptCount: 20, rollingWindowSize: 20, qualityThreshold: 0.8 }])
 });
 const trackId = "aws-certified-solutions-architect-associate";
 
@@ -30,18 +28,18 @@ async function workspace(t) {
   return { root, catalog };
 }
 
-test("catalog accepts a valid optional package completion rule and rejects malformed or null rules", () => {
+test("catalog accepts a valid chapter rule and rejects malformed rules", () => {
   const catalog = loadCanonicalCatalog();
   const track = catalog.tracks.find((entry) => entry.trackId === trackId);
   track.completionRule = { ...rule };
   assert.equal(validateCatalog(catalog).valid, true);
-  for (const invalid of [null, { ...rule, ruleVersion: 2 }, { ...rule, minimumAttemptCount: 4 }, { ...rule, qualityThreshold: 1.1 }, { ...rule, extra: true }]) {
+  for (const invalid of [null, { ...rule, ruleVersion: 1 }, { ...rule, chapters: [] }, { ...rule, chapters: [{ ...rule.chapters[0], minimumAttemptCount: 40 }] }, { ...rule, chapters: [{ ...rule.chapters[0], nodeId: "" }] }, { ...rule, extra: true }]) {
     track.completionRule = invalid;
     assert.equal(validateCatalog(catalog).valid, false);
   }
 });
 
-test("builder transports the exact source rule, hashes it, and omits it when absent", async (t) => {
+test("builder transports the exact complete chapter rule, hashes it, and omits it when absent", async (t) => {
   const { root, catalog } = await workspace(t);
   const track = catalog.tracks.find((entry) => entry.trackId === trackId);
   track.completionRule = { ...rule };
@@ -50,10 +48,28 @@ test("builder transports the exact source rule, hashes it, and omits it when abs
   assert.deepEqual(built.artifact.completionRule, rule);
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
 
+  for (const invalid of [
+    { ...rule, chapters: [{ ...rule.chapters[0], nodeId: "foreign-node" }] },
+    { ...rule, chapters: [{ ...rule.chapters[0], mentalUnitCount: 2 }] },
+    { ...rule, chapters: [rule.chapters[0], rule.chapters[0]] }
+  ]) {
+    track.completionRule = invalid;
+    await writeFile(path.join(root, "content", "catalog.json"), `${canonicalJson(catalog)}\n`);
+    await assert.rejects(buildTrack({ rootDirectory: root, trackId }), (error) => {
+      assert.ok(error instanceof ContentBuildError);
+      assert.match(error.message, /completionRule|canonical (catalog )?contract|chapter completion rule/i);
+      return true;
+    });
+  }
+  track.completionRule = { ...rule, chapters: [{ ...rule.chapters[0], mentalUnitCount: Number.MAX_SAFE_INTEGER }] };
+  await writeFile(path.join(root, "content", "catalog.json"), `${canonicalJson(catalog)}\n`);
+  await assert.rejects(buildTrack({ rootDirectory: root, trackId }), /completionRule|canonical (catalog )?contract|chapter completion rule/i);
+
   const absentRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-bizq02-absent-"));
   t.after(() => rm(absentRoot, { recursive: true, force: true }));
   await mkdir(path.join(absentRoot, "content", trackId, "node-001"), { recursive: true });
   const absentCatalog = loadCanonicalCatalog();
+  delete absentCatalog.tracks.find((entry) => entry.trackId === trackId).completionRule;
   await writeFile(path.join(absentRoot, "content", "catalog.json"), `${canonicalJson(absentCatalog)}\n`);
   const absentQuestion = structuredClone(loadCanonicalFixture().fixture.questions[0]);
   absentQuestion.questionId = `${trackId}-q-001`;
@@ -76,7 +92,7 @@ test("existing artifact rule must agree with catalog even after checksum is reco
   for (const tamper of [
     (artifact) => { delete artifact.completionRule; },
     (artifact) => { artifact.completionRule = null; },
-    (artifact) => { artifact.completionRule = { ...rule, qualityThreshold: 0.7 }; }
+    (artifact) => { artifact.completionRule = { ...rule, chapters: [{ ...rule.chapters[0], qualityThreshold: 0.7 }] }; }
   ]) {
     const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
     tamper(artifact);

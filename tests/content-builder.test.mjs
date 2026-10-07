@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { mkdtemp, readFile, readdir, rename as fsRename, stat, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, readdir, rename as fsRename, stat, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -36,16 +36,15 @@ const realCatalog = loadCanonicalCatalog();
 const candidateManifest = JSON.parse(readFileSync(new URL("../evidence/content-acceptance/candidate-manifest-v1.json", import.meta.url), "utf8"));
 const historicalBaseline = JSON.parse(readFileSync(new URL("../evidence/content-acceptance/acc-01-baseline-v1.json", import.meta.url), "utf8"));
 const historicalMigrationManifest = JSON.parse(readFileSync(new URL("../content/migration-evidence/manifest.json", import.meta.url), "utf8"));
-const odk096Approval = JSON.parse(readFileSync(new URL("../evidence/canonical-content-approvals/odk-096-aws-free-node-v1.json", import.meta.url), "utf8"));
-const ODK096_CONTENT_VERSION = odk096Approval.canonicalIdentity.contentVersion;
-const bizq01Copy = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-coding-source-copy-04.json", import.meta.url), "utf8"));
-const bizq01BesdCohort14 = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-besd-seed-cohort-14.json", import.meta.url), "utf8"));
-const bizq01OodCohort24 = JSON.parse(readFileSync(new URL("../evidence/business-quality/bizq-01-ood-node-closure-24.json", import.meta.url), "utf8"));
+const completionCsvRows = readFileSync(new URL("../../patternly/docs/specs/business-quality/02-BIZQ-02-CHAPTER-COMPLETION.csv", import.meta.url), "utf8").trim().split(/\r?\n/u).slice(1).map((line) => line.split(","));
+const completionBaselineVersions = new Map(completionCsvRows.map(([trackId, _nodeId, baselineContentVersion]) => [trackId, baselineContentVersion]));
 
 async function createWorkspace() {
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-simp02-"));
   await mkdir(path.join(rootDirectory, "content"), { recursive: true });
-  await writeFile(path.join(rootDirectory, "content/catalog.json"), `${canonicalJson(realCatalog)}\n`, "utf8");
+  const fixtureCatalog = structuredClone(realCatalog);
+  for (const track of fixtureCatalog.tracks) delete track.completionRule;
+  await writeFile(path.join(rootDirectory, "content/catalog.json"), `${canonicalJson(fixtureCatalog)}\n`, "utf8");
   return rootDirectory;
 }
 
@@ -129,7 +128,7 @@ test("build-all emits exactly nine deterministic artifacts and lock entries", as
   assert.equal(await readFile(path.join(outputRoot, "content-lock.json"), "utf8"), firstLockBytes);
 });
 
-test("GCP simulation profile binds a complete unambiguous node map to the same-version published artifact", async (t) => {
+test("GCP simulation profile binds a complete unambiguous node map to its pinned published artifact", async (t) => {
   const rootDirectory = path.resolve(".");
   const validated = await validateTrack({ rootDirectory, trackId: "google-cloud-associate-cloud-engineer" });
   const profile = validated.simulationProfiles?.[0];
@@ -151,7 +150,8 @@ test("GCP simulation profile binds a complete unambiguous node map to the same-v
   const publishedPath = path.join(rootDirectory, familyConfig.nodeDomainMapEvidence.artifactPath);
   const publishedWrapper = JSON.parse(readFileSync(publishedPath, "utf8"));
   const published = JSON.parse(publishedWrapper.artifactBytes);
-  assert.equal(published.contentVersion, validated.track.contentVersion);
+  assert.equal(published.contentVersion, familyConfig.nodeDomainMapEvidence.contentVersion);
+  assert.notEqual(validated.track.contentVersion, familyConfig.nodeDomainMapEvidence.contentVersion, "the approved chapter-rule metadata bump must not relabel historical attribution evidence");
   assert.equal(published.bank.items.length, familyConfig.nodeDomainMapEvidence.itemCount);
   const domainsByNode = new Map();
   for (const item of published.bank.items) {
@@ -172,6 +172,62 @@ test("GCP simulation profile binds a complete unambiguous node map to the same-v
   const questionDomains = new Map(built.artifact.questions.map((question) => [question.questionId, question.contentDomainId]));
   assert.ok(published.bank.items.every((item) => questionDomains.get(item.id) === item.domain));
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+});
+
+test("GCP historical attribution pin rejects tampered provenance and incomplete or contradictory inventories", async (t) => {
+  const sourceRoot = path.resolve(".");
+  const trackId = "google-cloud-associate-cloud-engineer";
+  const validated = await validateTrack({ rootDirectory: sourceRoot, trackId });
+  const configPath = path.join(sourceRoot, "config/tracks", `${trackId}.json`);
+  const sourceConfig = JSON.parse(await readFile(configPath, "utf8"));
+  const taxonomyPath = path.join(sourceRoot, sourceConfig.taxonomyPath);
+  const sourceTaxonomy = await readFile(taxonomyPath, "utf8");
+  const evidence = sourceConfig.profile.nodeDomainMapEvidence;
+  const sourceArtifactPath = path.join(sourceRoot, evidence.artifactPath);
+  const sourceWrapper = JSON.parse(await readFile(sourceArtifactPath, "utf8"));
+  const sourceArtifact = JSON.parse(sourceWrapper.artifactBytes);
+  const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-evidence-negative-"));
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  await mkdir(path.join(rootDirectory, "config/tracks"), { recursive: true });
+  await mkdir(path.dirname(path.join(rootDirectory, sourceConfig.taxonomyPath)), { recursive: true });
+  await mkdir(path.dirname(path.join(rootDirectory, evidence.artifactPath)), { recursive: true });
+
+  const assertRejected = async (name, mutateConfig = () => {}, mutateWrapper = () => {}) => {
+    const config = structuredClone(sourceConfig);
+    const wrapper = structuredClone(sourceWrapper);
+    mutateConfig(config);
+    mutateWrapper(wrapper);
+    await writeFile(path.join(rootDirectory, `config/tracks/${trackId}.json`), canonicalJson(config), "utf8");
+    await writeFile(path.join(rootDirectory, sourceConfig.taxonomyPath), sourceTaxonomy, "utf8");
+    await writeFile(path.join(rootDirectory, evidence.artifactPath), canonicalJson(wrapper), "utf8");
+    await assert.rejects(loadGcpSimulationProfiles({ rootDirectory, track: validated.track, questions: validated.questions }), undefined, name);
+  };
+
+  await loadGcpSimulationProfiles({ rootDirectory: sourceRoot, track: validated.track, questions: validated.questions });
+  await assertRejected("changed evidence path", config => { config.profile.nodeDomainMapEvidence.artifactPath = `artifacts/tracks/${trackId}/other/track-artifact.json`; });
+  await assertRejected("wrapper version mismatch", () => {}, wrapper => { wrapper.contentVersion = `${evidence.contentVersion}-other`; });
+  await assertRejected("wrapper checksum mismatch", () => {}, wrapper => { wrapper.checksumSha256 = "0".repeat(64); });
+
+  const mutateItems = async (name, mutate) => assertRejected(name, () => {}, wrapper => {
+    const artifact = structuredClone(sourceArtifact);
+    mutate(artifact.bank.items);
+    wrapper.artifactBytes = canonicalJson(artifact);
+    wrapper.checksumSha256 = sha256(wrapper.artifactBytes);
+  });
+  await mutateItems("missing pinned question id", items => { items.pop(); });
+  await mutateItems("extra pinned question id", items => { items.push({ ...items[0], id: `${items[0].id}-extra` }); });
+  await mutateItems("duplicate pinned question id", items => { items[1] = structuredClone(items[0]); });
+  await mutateItems("question moved to a different node", items => { items[0].nodeId = items.find(item => item.nodeId !== items[0].nodeId).nodeId; });
+  await mutateItems("question with unknown domain", items => { items[0].domain = "gcp-ace-unknown-domain"; });
+  await mutateItems("ambiguous mixed domains within one node", items => {
+    const first = items[0];
+    const conflicting = items.find(item => item.nodeId === first.nodeId && item.domain === first.domain);
+    conflicting.domain = "gcp-ace-standard-domain-2";
+  });
+  await assertRejected("current node map disagrees with pinned attribution", config => {
+    const [nodeId] = Object.entries(config.profile.nodeDomainMap).find(([, domainId]) => domainId === "gcp-ace-standard-domain-1");
+    config.profile.nodeDomainMap[nodeId] = "gcp-ace-standard-domain-2";
+  });
 });
 
 test("Coding Interview simulation profile emits the blueprint and exact checksum-verified pool identities", async (t) => {
@@ -434,7 +490,7 @@ test("existing GCP artifact rejects a legal but source-inconsistent node domain 
   await expectBuildFailure(() => buildTrack({ rootDirectory, outputRoot, trackId }), /malformed or differ from authoritative config/u);
 });
 
-test("ACC-02 Candidate Manifest retains its exact nine-track identity against frozen baseline and migration manifest", () => {
+test("ACC-02 historical manifests retain identity while current versions include the approved rule metadata bump", () => {
   const candidateTracks = [...candidateManifest.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
   const baselineTracks = [...historicalBaseline.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
   const migrationTracks = [...historicalMigrationManifest.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
@@ -458,22 +514,9 @@ test("ACC-02 Candidate Manifest retains its exact nine-track identity against fr
     assert.equal(candidateTrack.source.canonicalItemCount, migrationTrack.counts.questions, candidateTrack.trackId);
   }
 
-  // Current catalog identity is intentionally checked separately from the frozen historical identity above.
-  const historicalVersions = new Map(candidateManifest.tracks.map((track) => [track.trackId, track.artifact.contentVersion]));
+  // Historical candidate and migration identities remain frozen above. The current catalog is a policy metadata revision.
   for (const track of realCatalog.tracks) {
-    if (track.trackId === "aws-certified-solutions-architect-associate") {
-      assert.equal(track.contentVersion, ODK096_CONTENT_VERSION, track.trackId);
-    } else if (track.trackId === bizq01Copy.trackId) {
-      assert.equal(track.contentVersion, bizq01Copy.contentVersion, track.trackId);
-    } else if (track.trackId === bizq01BesdCohort14.trackId) {
-      assert.equal(track.contentVersion, bizq01BesdCohort14.contentVersion, track.trackId);
-    } else if (track.trackId === bizq01OodCohort24.trackId) {
-      assert.equal(track.contentVersion, bizq01OodCohort24.contentVersion, track.trackId);
-    } else if (track.trackId === "claude-certified-architect-professional-certification") {
-      assert.equal(track.contentVersion, "ccarp-2026.10.07", track.trackId);
-    } else {
-      assert.equal(track.contentVersion, historicalVersions.get(track.trackId), track.trackId);
-    }
+    assert.equal(track.contentVersion, `${completionBaselineVersions.get(track.trackId)}-bizq02-v2`, track.trackId);
   }
 });
 

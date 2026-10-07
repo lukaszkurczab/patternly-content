@@ -1,0 +1,69 @@
+[
+  {
+    "questionId": "CCARP-D03-O07-practice-client-boundaries",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O07",
+    "prompt": "One inventory service has a stable typed API. A legacy dashboard requires p95 for complete lookups at or below 20 ms; measured p95 is 12 ms directly and 45 ms through the tested MCP adapter. An unmodified new client connects only to a compatible MCP server and accepts a 200 ms p95 ceiling. Its owner will not maintain a custom client translation layer. Both need the same authoritative inventory operation. Which integration fits these demonstrated requirements?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "migrate-all",
+          "text": "Move both clients to the tested MCP adapter for one shared protocol, and ask the dashboard team to relax its latency requirement."
+        },
+        {
+          "optionId": "parallel-implementations",
+          "text": "Build a separate inventory implementation for the MCP client, then synchronize its business rules with the typed service."
+        },
+        {
+          "optionId": "direct-only",
+          "text": "Keep only the typed API for both clients, and translate the new client’s MCP tool requests inside its own custom client code."
+        },
+        {
+          "optionId": "shared-backend-two-boundaries",
+          "text": "Keep the dashboard on the typed API and expose the same service through MCP for the new client; validate both boundaries."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "shared-backend-two-boundaries"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The consumers have different demonstrated boundaries: the tested MCP route misses the dashboard’s p95 ceiling, while the new client explicitly needs MCP. Reuse one authoritative service behind a direct API and a client-appropriate protocol adapter.",
+      "details": {
+        "mechanismOrProperty": "A shared business operation can support different consumer interfaces without duplicating its implementation. Protocol choice must fit each consumer’s interoperability and complete-route latency requirements.",
+        "scenarioApplication": "The direct 12 ms route meets the dashboard’s 20 ms p95 ceiling; the tested 45 ms MCP adapter does not. The new client has an explicit MCP interface requirement and a 200 ms p95 ceiling.",
+        "errorCorrection": "A universal protocol migration violates one proven constraint, while a duplicate business implementation creates drift. Retain one service and validate its two transport/contract boundaries.",
+        "boundaryOrTradeoff": "If a revised adapter later meets the dashboard’s p95 ceiling, consolidation can be reevaluated. Current measurements support the split, not a permanent claim that MCP is always slower.",
+        "transfer": "Separate shared domain behavior from consumer-specific interface requirements and compare end-to-end measurements before standardizing every client.",
+        "url": "https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "migrate-all",
+          "text": "The measured 45 ms adapter route exceeds the dashboard’s explicit 20 ms p95 ceiling; protocol uniformity does not justify changing that requirement."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "parallel-implementations",
+          "text": "Both clients need the same authoritative operation. A second inventory implementation adds rule synchronization and drift without meeting a distinct domain need."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "direct-only",
+          "text": "The new client requires a compatible MCP tool surface. A custom client translation layer shifts that missing protocol implementation into the client rather than providing the required supported boundary."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-mcp-architecture",
+      "ccarp-doc-82747c62f33e"
+    ]
+  }
+]

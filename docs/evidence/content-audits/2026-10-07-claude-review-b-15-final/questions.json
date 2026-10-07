@@ -1,0 +1,992 @@
+[
+  {
+    "questionId": "CCARP-D03-O04-depth-21",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O04",
+    "prompt": "A tool call is retried after a timeout. The first attempt actually committed the action, but its response was lost; the retry is denied as a duplicate. Current traces label the whole operation ‘failed’. What should be changed?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_033338c41b00",
+          "text": "Keep the operation marked failed because its latest attempt was denied, then ask the caller to retry with a new operation ID if it still needs the action."
+        },
+        {
+          "optionId": "opt_cfcef376e1e1",
+          "text": "Link both calls to one operation. Record the first durable commit as its outcome, keep the duplicate denial as a retry event, and retrieve the original result through idempotency status."
+        },
+        {
+          "optionId": "opt_97a57cde2073",
+          "text": "Mark success at the first dispatch and collapse later attempts into that result, since the retry denial did not change the durable state."
+        },
+        {
+          "optionId": "opt_d04e80bb20bf",
+          "text": "Treat the retry as a second successful operation because its request was accepted, while keeping the first timeout as a separate trace failure."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_cfcef376e1e1"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "A timeout leaves an attempt outcome uncertain until an authoritative record resolves it. Here the first attempt committed, while the retry was denied; trace both attempts and report the durable logical outcome.",
+      "details": {
+        "mechanismOrProperty": "One logical operation may have multiple attempts, and dispatch, commit, timeout, and duplicate suppression are distinct events.",
+        "scenarioApplication": "Link both attempts to the same operation identifier; show the first commit as operation success and the later duplicate denial as an attempt-level event.",
+        "errorCorrection": "Dispatch, durable commit, and duplicate denial are separate events; a later denial cannot undo the first commit or make the retry a second success.",
+        "boundaryOrTradeoff": "Do not retry a consequential action with a new identity to escape duplicate detection; reconcile through the service’s idempotency or status contract.",
+        "transfer": "Separate attempt telemetry from logical-operation state whenever responses can be lost after a side effect.",
+        "url": "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_033338c41b00",
+          "text": "The later denial does not undo the already committed first attempt; a new ID could repeat the side effect."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_97a57cde2073",
+          "text": "Dispatch alone is not commit evidence, and suppressing the retry hides a relevant duplicate-attempt outcome."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_d04e80bb20bf",
+          "text": "An accepted request envelope is not a second committed operation; the service denied the retry as a duplicate."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-aws-idempotent-retries"
+    ]
+  },
+  {
+    "questionId": "CCARP-D03-O04-depth-23",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O04",
+    "prompt": "A release changes prompt wording and retriever ranking together. Grounded-answer rate falls, but all traces contain only a combined ‘release version’ and no component versions. What minimum change enables useful attribution next time?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_c3e44dc1de15",
+          "text": "Add model and provider request IDs to each trace, then roll back the prompt and retriever together whenever grounded-answer rate falls again."
+        },
+        {
+          "optionId": "opt_a3c23e69e8da",
+          "text": "Collect more redacted failed examples under the same combined release label, then ask reviewers to infer which component most likely changed the evidence."
+        },
+        {
+          "optionId": "opt_c71bc1a49602",
+          "text": "Record prompt and retriever/index versions with each outcome, then compare groundedness by those component versions on the same query cohort."
+        },
+        {
+          "optionId": "opt_e497702ca871",
+          "text": "Add a free-text incident field for an engineer to name the suspected component after reviewing examples, and use that label for the next rollback."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_c71bc1a49602"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "When prompt and retrieval change together, a combined release label confounds their effects. Record each artifact version beside the quality outcome so the next comparison can isolate the failing component.",
+      "details": {
+        "mechanismOrProperty": "Causal diagnosis depends on observing the independently changing artifacts that produced an outcome.",
+        "scenarioApplication": "Add prompt and retriever/index version fields to the request and evaluation record, then slice groundedness results by both.",
+        "errorCorrection": "More examples, operator guesses, or a joint rollback do not attribute the regression; link each quality outcome to both independently changed artifacts.",
+        "boundaryOrTradeoff": "Keep version metadata separate from conversation content; do not broaden content retention to solve an attribution gap.",
+        "transfer": "Make each independently deployable quality-affecting artifact observable with its outcome.",
+        "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_c3e44dc1de15",
+          "text": "The model did not change, and a joint rollback still cannot attribute the loss between prompt wording and retrieval ranking."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_a3c23e69e8da",
+          "text": "More examples do not separate independently changed artifacts while each trace carries only one combined version."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_e497702ca871",
+          "text": "Retrospective guesses do not provide consistent request-level links between outcomes and the independently changed artifacts."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-6727386d515f"
+    ]
+  },
+  {
+    "questionId": "CCARP-D03-O05-depth-60",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O05",
+    "prompt": "A corpus has 2 million tokens of product manuals. Most questions identify a product and version; only a minority need a multi-section repair procedure. The current retriever embeds every paragraph in one flat namespace. What design is a useful next test?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_6d19b018a99f",
+          "text": "Search across all manuals with a larger top-k, pass the candidates to the answer model, and have it discard passages for other products or versions."
+        },
+        {
+          "optionId": "opt_cfc5c8e9996f",
+          "text": "Create one vector for each complete manual, tag it with product and version, and rely on document ranking to supply both facts and detailed repair steps."
+        },
+        {
+          "optionId": "opt_2e11e1323aa0",
+          "text": "Index repair procedures as the primary units, retrieve the closest procedure for every question, and use its summary for common product/version lookups."
+        },
+        {
+          "optionId": "opt_3aef5b60ae50",
+          "text": "Filter by product and version, retrieve relevant manual sections, and expand to linked procedure passages only when the question needs the repair sequence."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_3aef5b60ae50"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The query usually supplies product and version, while only a minority needs a multi-section procedure. Use those identifiers to narrow retrieval first, then load deeper linked context when needed.",
+      "details": {
+        "mechanismOrProperty": "Hierarchical metadata and staged retrieval reduce a large flat candidate space while preserving detailed evidence for questions that need it.",
+        "scenarioApplication": "Filter on product/version and retrieve section-level passages; expand to linked procedure context for multi-step questions.",
+        "errorCorrection": "Broad retrieval, whole-manual vectors, and procedure-only indexing each miss a stated need; scope common lookups by product/version and expand only when procedure context is needed.",
+        "boundaryOrTradeoff": "Measure both frequent fact lookups and the smaller procedure-query slice; do not optimize one at the expense of the other.",
+        "transfer": "Follow query identifiers to the narrowest useful source unit, then retrieve additional context by an explicit need.",
+        "url": "https://www.anthropic.com/engineering/contextual-retrieval"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_6d19b018a99f",
+          "text": "Scope is resolved only after retrieval, so irrelevant product/version evidence still enters the answer context."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_cfc5c8e9996f",
+          "text": "Whole-manual vectors blur section-level evidence and are a poor basis for precise, multi-section procedure retrieval."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_2e11e1323aa0",
+          "text": "That design optimizes the minority procedure queries while dropping direct evidence for the common manual lookups."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-33d811167435"
+    ]
+  },
+  {
+    "questionId": "CCARP-D03-O05-depth-61",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O05",
+    "prompt": "A document owner approves a new retention rule, but the vector index still serves the previous rule for a subset of tenants. Logs show the source revision is current globally, while tenant manifests differ. What should the diagnosis inspect?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_cf8453000f84",
+          "text": "Retrieve the globally newest rule for all tenants, then apply application filtering after retrieval so the affected tenant can see the approved revision."
+        },
+        {
+          "optionId": "opt_b444bc26aaaf",
+          "text": "Rebuild the global index from the current source revision and assume each tenant manifest will begin serving that generation automatically."
+        },
+        {
+          "optionId": "opt_449454b87ca0",
+          "text": "Increase top-k for stale tenants so the old and new rules both appear, then instruct the answer model to prefer the newer revision."
+        },
+        {
+          "optionId": "opt_784c1b92089a",
+          "text": "For affected requests, inspect that tenant's active manifest and served index generation, then repair its activation against the approved rule revision."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_784c1b92089a"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The source is globally current, but the tenant manifests differ. Diagnosis therefore needs the request’s tenant-scoped manifest and served generation, not another global rebuild.",
+      "details": {
+        "mechanismOrProperty": "A multi-tenant retrieval path can have tenant-specific activation state even when its source repository is current.",
+        "scenarioApplication": "Compare affected requests with their tenant manifest and served generation, then activate the approved rule in the stale tenant scope.",
+        "errorCorrection": "Global source currency does not establish a tenant's active manifest; cross-tenant retrieval or showing both revisions leaves serving state unresolved.",
+        "boundaryOrTradeoff": "Do not cross tenant boundaries to compensate for index lag; preserve the tenant authorization filter throughout repair.",
+        "transfer": "Trace the actual request-scoped index identity when diagnosing version skew.",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_cf8453000f84",
+          "text": "Fetching across tenants before authorization can expose records and still does not establish the tenant's active serving generation."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_b444bc26aaaf",
+          "text": "A current source and global rebuild do not prove tenant-specific activation or served-index state."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_449454b87ca0",
+          "text": "Showing both versions leaves the tenant's active policy unresolved and permits the obsolete rule to remain in service."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-owasp-multi-tenant"
+    ]
+  },
+  {
+    "questionId": "CCARP-D03-O07-depth-62",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O07",
+    "prompt": "An MCP server declares `tools.listChanged` and loads an optional tool after an administrator enables a feature. Connected clients keep the old list, and the server emits no list-change notification. What should the team verify?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_7571f45efc12",
+          "text": "When the enabled tool set changes, emit `notifications/tools/list_changed`; clients can then refresh `tools/list` and apply their current authorization scope."
+        },
+        {
+          "optionId": "opt_8e59aad7a3ea",
+          "text": "Keep the current list until clients reconnect, then have each client repeat initialization to discover the optional tool after the feature toggle."
+        },
+        {
+          "optionId": "opt_f0fc667aed24",
+          "text": "Restart the server and publish the tool to every connected tenant, then let each client decide whether its local user should invoke it."
+        },
+        {
+          "optionId": "opt_b9bed4ec9534",
+          "text": "Update the model's instruction with the new tool name but leave each client's cached list unchanged until its next session."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_7571f45efc12"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "In the pinned 2025-06-18 MCP profile, `tools.listChanged` means the server will notify clients when the available tool list changes. The client can then fetch the updated list.",
+      "details": {
+        "mechanismOrProperty": "The MCP tools capability has an optional `listChanged` property; when declared, a changed tool list is signaled with `notifications/tools/list_changed`.",
+        "scenarioApplication": "Send the notification after feature-scoped availability changes; clients refresh `tools/list` and continue applying authorization to the result.",
+        "errorCorrection": "Prompting the model, reconnecting, or publishing globally does not update the declared scoped tool list; use the list-change notification and refresh.",
+        "boundaryOrTradeoff": "The notification updates discovery; it does not grant a tenant access to a tool that remains disabled or unauthorized.",
+        "transfer": "Use the protocol’s explicit list-change mechanism for dynamic tools rather than treating it as capability renegotiation.",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/tools"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_8e59aad7a3ea",
+          "text": "The declared `listChanged` capability provides the dynamic list-update notification; reconnecting is not the specified update path."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_f0fc667aed24",
+          "text": "A restart does not replace the list-change notification, and global publication crosses the feature and authorization boundary."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_b9bed4ec9534",
+          "text": "Model instructions do not refresh client discovery or make an unlisted tool callable through that client."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-mcp-20250618-tools"
+    ]
+  },
+  {
+    "questionId": "CCARP-D03-O07-depth-63",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O07",
+    "prompt": "An MCP server exposes project files as resources. A request contains a `file://` URI outside the approved workspace, and the server process can read that path. Which boundary should the server enforce?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_cca7606ffa1b",
+          "text": "Check URI syntax and ask the model to reject paths that look like system files, relying on the process sandbox for the remaining cases."
+        },
+        {
+          "optionId": "opt_f04dce6a3b8f",
+          "text": "Validate the `file://` resource URI at the MCP server, resolve it safely, and enforce the approved-workspace authorization boundary before reading the file."
+        },
+        {
+          "optionId": "opt_ceac41876192",
+          "text": "Trust `resources/list` to expose only approved files, then allow any syntactically valid URI in `resources/read` because clients normally select from that list."
+        },
+        {
+          "optionId": "opt_c881899adfa1",
+          "text": "Expose the whole filesystem through one resource and instruct the assistant to use only project paths when answering."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_f04dce6a3b8f"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The caller supplies a resource URI while the server process has broader filesystem access. Validate and authorize the resolved target where that privileged read occurs.",
+      "details": {
+        "mechanismOrProperty": "The pinned MCP resources profile requires servers to validate resource URIs and recommends access controls for sensitive resources.",
+        "scenarioApplication": "Resolve the submitted URI and check it against the approved workspace and caller policy before returning content.",
+        "errorCorrection": "A valid URI or an item omitted from discovery is not proof that `resources/read` is authorized.",
+        "boundaryOrTradeoff": "Keep authorization at the server that can access the resource; client-side filtering and prompt instructions are not enforcement.",
+        "transfer": "Validate untrusted resource identifiers at the execution boundary that holds data access.",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/resources"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_cca7606ffa1b",
+          "text": "Syntactic validity and model judgment do not establish that the resolved path is within the caller’s approved workspace."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_ceac41876192",
+          "text": "A caller can submit a URI directly; a prior list response does not authorize an arbitrary read."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_c881899adfa1",
+          "text": "Prompt guidance cannot constrain a server process that can read outside the approved workspace."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-mcp-20250618-resources"
+    ]
+  },
+  {
+    "questionId": "CCARP-D04-O06-depth-37",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "evaluation_diagnosis_and_optimization",
+    "mentalUnitId": "CCARP-D04-O06",
+    "prompt": "A production panel shows stable completion rate and p95. A new reviewer sample reports unsupported citations in one document type, but quality labels arrive three days late. What operational view helps the team act without pretending the labels are current?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_09111c5fe0c8",
+          "text": "Keep live completion and p95 in their current window; show groundedness with its own event window, sample size, document-type coverage, and three-day freshness, then review the affected slice."
+        },
+        {
+          "optionId": "opt_1e3dcff85731",
+          "text": "Use the completion rate as the current quality proxy and leave the reviewer sample out of the production panel until labels arrive for every request."
+        },
+        {
+          "optionId": "opt_727b2f563b16",
+          "text": "Hold groundedness off the dashboard until reviewers can label the full traffic stream in real time, while retaining only completion and p95 for now."
+        },
+        {
+          "optionId": "opt_47d0c45b7d0f",
+          "text": "Overlay the three-day-old groundedness labels on today's completion panel and describe the combined view as current because transport is stable."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_09111c5fe0c8"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Delivery metrics are current, but citation labels arrive three days later and cover a document-type sample. Show each signal with its own cohort and freshness instead of presenting delayed evidence as live.",
+      "details": {
+        "mechanismOrProperty": "Operational metrics can differ in arrival time and population coverage; their denominators and event windows must remain visible.",
+        "scenarioApplication": "Separate live completion/p95 from delayed groundedness, identify the labeled cohort and coverage by document type, and monitor that slice.",
+        "errorCorrection": "Transport success and delayed labels describe different cohorts; hiding the labels loses a signal, while merging them with today's traffic misstates freshness.",
+        "boundaryOrTradeoff": "Do not delay all quality diagnosis until labels are real-time; disclose the label lag and sample coverage.",
+        "transfer": "Represent asynchronous quality evidence with its age, denominator, and covered population.",
+        "url": "https://platform.claude.com/docs/en/test-and-evaluate/develop-tests"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_1e3dcff85731",
+          "text": "Successful delivery does not establish citation support, and sparse delayed evidence can still reveal a scoped regression."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_727b2f563b16",
+          "text": "Waiting for complete real-time labels discards a useful scoped signal instead of showing its age and coverage."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_47d0c45b7d0f",
+          "text": "The label cohort is older and narrower than today's traffic, so combining them misstates both freshness and population."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-6727386d515f"
+    ]
+  },
+  {
+    "questionId": "CCARP-D04-O06-depth-39",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "evaluation_diagnosis_and_optimization",
+    "mentalUnitId": "CCARP-D04-O06",
+    "prompt": "An alert fires when daily workspace spend exceeds a fixed threshold. An approved launch doubles expected traffic, but the alert now pages continuously despite normal per-request economics. What should be changed?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_626a142f23aa",
+          "text": "Keep the daily spend ceiling, add cost per resolved request, and revise the expected-volume baseline through review so alerts separate approved growth from worsening unit economics."
+        },
+        {
+          "optionId": "opt_2619945819ed",
+          "text": "Raise the daily ceiling to the forecast launch spend and retain no normalized indicator, then revisit it only if the provider reports an availability issue."
+        },
+        {
+          "optionId": "opt_a4350e0ca9d8",
+          "text": "Replace the daily spend limit with cost per request alone, since normal unit economics mean the approved traffic increase is affordable."
+        },
+        {
+          "optionId": "opt_04303fac42c4",
+          "text": "Keep paging at the old fixed threshold without adding workload context, and annotate each alert as expected until the launch settles."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_626a142f23aa"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The approved traffic change explains why a fixed threshold now pages continuously, but total spend still needs a guardrail. Pair that limit with normalized economics and a reviewed baseline.",
+      "details": {
+        "mechanismOrProperty": "Absolute budget limits and per-unit efficiency describe different risks and should be monitored together.",
+        "scenarioApplication": "Keep the spend ceiling; add cost per resolved request or another outcome-based unit and update the expected-volume baseline through review.",
+        "errorCorrection": "Preserve the total spend boundary; workload normalization explains expected volume and reveals whether cost per resolved outcome is worsening.",
+        "boundaryOrTradeoff": "A provider-health signal cannot establish that spending remains within authorization.",
+        "transfer": "Make cost alerts sensitive to workload while preserving the total budget boundary.",
+        "url": "https://platform.claude.com/docs/en/manage-claude/usage-cost-api"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_2619945819ed",
+          "text": "A forecast-based threshold can conceal waste, while provider availability does not measure whether spending remains authorized."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_a4350e0ca9d8",
+          "text": "Normal per-request cost does not remove the organization's total budget exposure."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_04303fac42c4",
+          "text": "The total limit remains useful, but this provides no way to distinguish traffic-driven volume from worsening efficiency."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-37b5ac0645ab"
+    ]
+  },
+  {
+    "questionId": "CCARP-D04-O06-depth-40",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "evaluation_diagnosis_and_optimization",
+    "mentalUnitId": "CCARP-D04-O06",
+    "prompt": "A release review dashboard compares one day of provider usage but seven days of application completions. The ‘cost per resolved case’ falls by 40%. What is the first correction?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_b39c7173b67d",
+          "text": "Recompute usage and outcomes for the same requests and time window, treating retries and unresolved cases consistently. If request-level joins are unavailable, keep the aggregates separate instead of reporting cost per case."
+        },
+        {
+          "optionId": "opt_a98bf1db1ac8",
+          "text": "Divide the one-day provider total by seven days of completions because the longer outcome sample is less sensitive to daily traffic noise."
+        },
+        {
+          "optionId": "opt_fb0765a00d57",
+          "text": "Keep the 40% reduction but label it as an estimate, since provider billing is accurate even though application completions cover a longer window."
+        },
+        {
+          "optionId": "opt_e1e4f9419dbc",
+          "text": "Scale the one-day usage total to seven days using its daily average, then divide by seven-day completions and call the result comparable."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_b39c7173b67d"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "One-day usage and seven-day outcomes cannot form a valid cost-per-case ratio. Match the windows and request cohort before dividing; where exact joins are unavailable, preserve the source aggregates separately.",
+      "details": {
+        "mechanismOrProperty": "A unit metric requires compatible numerator and denominator populations, with retries and unresolved outcomes handled consistently.",
+        "scenarioApplication": "Choose a shared cohort/window and recompute; if usage cannot be linked at request granularity, do not report exact route-level cost per case.",
+        "errorCorrection": "A unit ratio needs aligned periods and populations with consistent retry and unresolved handling; accurate provider totals cannot fix a mismatched denominator.",
+        "boundaryOrTradeoff": "Provider totals may be accurate at workspace/time/model grain while still lacking case-level attribution.",
+        "transfer": "Check cohort, time window, and source grain before interpreting an efficiency trend.",
+        "url": "https://platform.claude.com/docs/en/manage-claude/usage-cost-api"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_a98bf1db1ac8",
+          "text": "A steadier denominator still does not match the numerator's period or request population."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_fb0765a00d57",
+          "text": "Accurate billing totals cannot make a ratio across incompatible time windows and populations valid."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_e1e4f9419dbc",
+          "text": "This assumes stable volume and mix across six unobserved days and still does not align the requests being counted."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-37b5ac0645ab"
+    ]
+  },
+  {
+    "questionId": "CCARP-D04-O06-depth-56",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "evaluation_diagnosis_and_optimization",
+    "mentalUnitId": "CCARP-D04-O06",
+    "prompt": "A provider request succeeds, but the client receives a 200 status and then crashes while parsing an incomplete JSON stream. The operational dashboard counts it as success. Which outcome dimensions should be separated?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_ec7f4a95b1e2",
+          "text": "Count HTTP 200 as provider success and add a client-exception metric, but do not record whether the stream reached its terminal event."
+        },
+        {
+          "optionId": "opt_42d2d27e2ea3",
+          "text": "Accept any prefix that parses as JSON, then let later schema checks report missing fields while the dashboard retains the request as successful."
+        },
+        {
+          "optionId": "opt_c617d82f0ac6",
+          "text": "Retain each full streamed body and stack trace so an investigator can reconstruct every malformed response after the incident."
+        },
+        {
+          "optionId": "opt_76bf4b3a7533",
+          "text": "Track provider status, terminal stream completion, parse/validation, and application delivery or commit under shared operation and attempt IDs, with a safe error category for each failed stage."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_76bf4b3a7533"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "A successful HTTP response does not prove a complete stream or a valid application result. Record the terminal event and downstream parsing/validation outcome as separate stages.",
+      "details": {
+        "mechanismOrProperty": "Transport, stream termination, client parsing, schema validation, and application completion are distinct outcome boundaries.",
+        "scenarioApplication": "Trace provider status, terminal completion, parse/validation status, and delivery/commit under the same operation and attempt IDs.",
+        "errorCorrection": "HTTP success or a parseable prefix is not a complete validated result; record each stage without routinely retaining full response bodies.",
+        "boundaryOrTradeoff": "Capture safe error categories and stage metadata before considering full content logging.",
+        "transfer": "Define service success at the complete validated result promised to the user.",
+        "url": "https://platform.claude.com/docs/en/build-with-claude/streaming"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_ec7f4a95b1e2",
+          "text": "A client exception helps, but without terminal state the team cannot distinguish truncation from a completed stream that failed parsing."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_42d2d27e2ea3",
+          "text": "A parseable prefix may be incomplete; success must follow complete stream receipt and required application validation."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_c617d82f0ac6",
+          "text": "Routine content retention is broader than needed when terminal, parse, validation, and safe error-stage metadata identify the failure."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-0712ffc466da"
+    ]
+  },
+  {
+    "questionId": "CCARP-D04-O06-depth-67",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "evaluation_diagnosis_and_optimization",
+    "mentalUnitId": "CCARP-D04-O06",
+    "prompt": "A monitoring job retries provider usage queries after a network timeout. It later returns two overlapping hourly windows, and the dashboard double-counts the overlap. What should the ingestion path do?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_3f354761fadb",
+          "text": "Lengthen the polling interval to reduce overlaps, leave aggregation unchanged, and correct any repeated windows manually after a timeout."
+        },
+        {
+          "optionId": "opt_dfbe1e3326a6",
+          "text": "Replace the entire day's totals with the latest response and discard prior pages so no earlier window can be counted twice."
+        },
+        {
+          "optionId": "opt_9b00ad0bdab5",
+          "text": "Subtract one average hourly amount for each retry while retaining every successful response, then recompute the daily total."
+        },
+        {
+          "optionId": "opt_b42f9b219c65",
+          "text": "Make ingestion idempotent: deduplicate stable source records when available, or atomically replace the affected interval before aggregation."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_b42f9b219c65"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "A retried usage query can return overlapping windows. The ingestion layer must de-duplicate by stable record identity or replace the overlap atomically before summing.",
+      "details": {
+        "mechanismOrProperty": "At-least-once retrieval can replay overlapping data; an idempotent ingestion boundary prevents duplicate aggregation.",
+        "scenarioApplication": "Use a stable record key when the source provides one, or transactionally replace the affected interval and then recompute totals.",
+        "errorCorrection": "Changing poll frequency or subtracting an average leaves overlap ambiguous; replacing a whole day can discard valid pages or intervals.",
+        "boundaryOrTradeoff": "Preserve completeness across pagination and backfill; do not discard the whole day to avoid one overlap.",
+        "transfer": "Design telemetry ingestion to tolerate retries without multiplying measures.",
+        "url": "https://platform.claude.com/docs/en/manage-claude/usage-cost-api"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_3f354761fadb",
+          "text": "A longer interval does not make retry and backfill windows disjoint; the ingestion path can still double-count."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_dfbe1e3326a6",
+          "text": "The latest response may be partial or paginated, so replacing the whole day can lose valid records."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_9b00ad0bdab5",
+          "text": "An average subtraction cannot identify which source records overlap or how much each interval contributed."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-37b5ac0645ab"
+    ]
+  },
+  {
+    "questionId": "CCARP-D04-O06-depth-68",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "evaluation_diagnosis_and_optimization",
+    "mentalUnitId": "CCARP-D04-O06",
+    "prompt": "A dashboard shows a 20% drop in tokens per request after a deployment. Application logs reveal that a new response cache serves 18% of requests without calling the provider. What should the efficiency metric report?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_be95c0f2fdf2",
+          "text": "Divide provider tokens by every application request and call the result route efficiency, treating cache hits as zero-cost outcomes."
+        },
+        {
+          "optionId": "opt_be31ea9e0914",
+          "text": "Remove cache-served requests from every route metric and compare only provider-called traffic before and after the deployment."
+        },
+        {
+          "optionId": "opt_4a67c0536a4c",
+          "text": "Report tokens per provider call; separately show cache-hit rate, cost per resolved request, and quality by served path across all requests, including cache expense."
+        },
+        {
+          "optionId": "opt_24ad59cf21d8",
+          "text": "Treat the aggregate 20% token reduction as model efficiency, then compare quality only among the requests that still call the provider."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_4a67c0536a4c"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The cache changes which requests reach the provider. Report provider-call usage with its own denominator and end-to-end route economics/outcomes with cached requests included.",
+      "details": {
+        "mechanismOrProperty": "Provider-attempt metrics and user-request metrics have different populations when a cache short-circuits a call.",
+        "scenarioApplication": "Separate tokens per actual provider call from route cost/resolution per request; include cache hits, cache costs, and quality by served path.",
+        "errorCorrection": "Provider-call usage and route-wide economics have different populations; include cache hits and cache expense in route outcomes, and name each denominator.",
+        "boundaryOrTradeoff": "Cached responses are not necessarily free at the application level, and must remain in user outcome metrics.",
+        "transfer": "Always name the population and unit behind an efficiency measure.",
+        "url": "https://platform.claude.com/docs/en/manage-claude/usage-cost-api"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_be95c0f2fdf2",
+          "text": "This mixes provider-call tokens with a larger request population and ignores cache operating cost."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_be31ea9e0914",
+          "text": "That can describe provider-call usage, but it drops cached users from route cost, latency, and resolution outcomes."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_24ad59cf21d8",
+          "text": "The cache changed the request mix; neither aggregate tokens nor provider-only quality reveals route-wide efficiency and outcomes."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-37b5ac0645ab"
+    ]
+  },
+  {
+    "questionId": "CCARP-D03-O05-depth-73",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O05",
+    "prompt": "A held-out retrieval test covers 40 warning-applicability questions and 80 simple lookups. Fixed chunks support the cited answer in 33/40 warning cases and 75/80 simple cases; structure-aware chunks support 37/40 and 74/80. Their rebuild times are 20 and 24 minutes, respectively, against a 30-minute cap. Each query slice has a 90% support floor. Which design qualifies for the next pilot?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_cba19ebeea25",
+          "text": "Choose fixed chunks for their 20-minute rebuild and stronger simple-lookup score, then accept the warning slice's lower support as the pilot trade-off."
+        },
+        {
+          "optionId": "opt_1d899ebc104e",
+          "text": "Keep fixed chunks and increase top-k until warning support improves, then rely on the old held-out results to represent the larger candidate set."
+        },
+        {
+          "optionId": "opt_c7a07fc1e1cb",
+          "text": "Pilot structure-aware chunks: warning support is 37/40 and simple lookup support is 74/80, both above 90%, with a 24-minute rebuild under the cap."
+        },
+        {
+          "optionId": "opt_7ba0a4dffba4",
+          "text": "Choose structure-aware chunks from the combined 120-query score, then stop tracking query slices because the aggregate already clears the average floor."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_c7a07fc1e1cb"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The held-out comparison shows fixed chunks miss the warning floor, while structure-aware chunks meet both slice floors and the 30-minute rebuild cap. Pilot the qualifying design and continue watching each slice.",
+      "details": {
+        "mechanismOrProperty": "A chunking choice should be judged on evidence support for the query types it serves, plus operational constraints such as rebuild time.",
+        "scenarioApplication": "Structure-aware chunking supports 37/40 warning cases and 74/80 simple lookups, meeting the stated 90% floors; its 24-minute rebuild remains below the 30-minute cap.",
+        "errorCorrection": "Each declared slice must clear its support floor; aggregate scores and untested top-k changes do not qualify a design that misses one floor.",
+        "boundaryOrTradeoff": "Keep per-slice outcomes visible; the pilot evidence is bounded to this held-out set and does not guarantee future performance.",
+        "transfer": "When retrieval designs trade query-slice quality against operational cost, apply declared floors to each slice before rollout.",
+        "url": "https://www.anthropic.com/engineering/contextual-retrieval"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_cba19ebeea25",
+          "text": "The fixed design misses the explicit 90% warning-slice floor, which the faster rebuild cannot offset."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_1d899ebc104e",
+          "text": "There is no evidence the wider retrieval restores warning support while preserving the simple-query floor."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_7ba0a4dffba4",
+          "text": "An aggregate hides whether an individual required slice falls below its floor on later cohorts."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-33d811167435"
+    ]
+  },
+  {
+    "questionId": "CCARP-D03-O07-depth-74",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "enterprise_tools_retrieval_and_integration",
+    "mentalUnitId": "CCARP-D03-O07",
+    "prompt": "A remote MCP server declares resource subscriptions. Two clients subscribe to a known inventory resource. The source record changes, but the clients continue to show the old body; the resource remains in the same `resources/list` result. Which server event should the team verify?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_d6b00b7da3dc",
+          "text": "For each changed subscribed URI, send `notifications/resources/updated` so clients can reread its body; reserve list-change notification for changes to the listed resource set."
+        },
+        {
+          "optionId": "opt_96f1933afa78",
+          "text": "Send `notifications/resources/list_changed` after every body edit and have clients reload the catalog even when its resource membership is unchanged."
+        },
+        {
+          "optionId": "opt_99e699bab32a",
+          "text": "Wait for a later `resources/read` request to return the new body, since subscription support does not require the server to notify clients."
+        },
+        {
+          "optionId": "opt_50183b2b1063",
+          "text": "Keep the subscription active but expect the next `resources/list` poll to deliver new content for the same resource entry."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_d6b00b7da3dc"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The pinned 2025-06-18 MCP profile distinguishes a resource-content update from a resource-list change. Notify subscribed clients that the specific URI changed so they can reread it.",
+      "details": {
+        "mechanismOrProperty": "MCP resources support optional subscriptions; subscribed clients can receive `notifications/resources/updated` for a resource URI. `notifications/resources/list_changed` signals a changed resource list.",
+        "scenarioApplication": "Send the resource-updated notification for the changed subscribed URI and have the client reread that resource.",
+        "errorCorrection": "A body update for a subscribed URI differs from a change to resource-list membership; use the resource-updated notification for the former.",
+        "boundaryOrTradeoff": "The mechanism applies only where the server declared and established subscription support; it does not imply every client subscribes automatically.",
+        "transfer": "Distinguish resource-set changes from resource-content changes in protocol monitoring.",
+        "url": "https://modelcontextprotocol.io/specification/2025-06-18/server/resources"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_96f1933afa78",
+          "text": "A list-change event describes available resources; the incident is changed content at an existing subscribed URI."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_99e699bab32a",
+          "text": "This server declared and established subscriptions; without the resource-updated event, subscribed clients can keep stale content."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_50183b2b1063",
+          "text": "Listing resource metadata does not signal or return the changed body of a known subscribed resource."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-mcp-20250618-resources"
+    ]
+  },
+  {
+    "questionId": "CCARP-D04-O05-depth-75",
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "evaluation_diagnosis_and_optimization",
+    "mentalUnitId": "CCARP-D04-O05",
+    "prompt": "An application-managed cache stores rendered prompt blocks before calls to a model provider. It cuts prompt-assembly cost by 14% and hits on 82% of requests. An integration test shows tenant-specific policy text replayed across tenants because the cache key includes only policy version. The route still meets its latency budget if the common policy block remains reusable. What should change and be remeasured?",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "opt_e31f5df295fe",
+          "text": "Keep the tenant-insensitive cache key, append the tenant ID after lookup, and continue reusing the rendered block that already contains tenant-specific policy text."
+        },
+        {
+          "optionId": "opt_c11ac0c1154a",
+          "text": "Disable the application cache for every request, rebuild shared and tenant-specific prompt blocks each time, and compare provider token totals only."
+        },
+        {
+          "optionId": "opt_4e1a151660d1",
+          "text": "Retain rendered blocks longer to improve the hit rate, then instruct the model to ignore policy text that belongs to another tenant."
+        },
+        {
+          "optionId": "opt_5a3b5a409a3d",
+          "text": "Keep the common policy block reusable in the application cache, but exclude tenant rules from the shared entry or include tenant scope in its key; retest isolation and measure assembly cost and route latency."
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "opt_5a3b5a409a3d"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The application-managed cache reuses tenant-specific rendered context under a tenant-insensitive key. Preserve safe common-policy reuse while binding tenant-specific text to the correct tenant, then remeasure isolation and route cost.",
+      "details": {
+        "mechanismOrProperty": "An application-managed cache that reuses rendered prompt blocks must keep tenant-specific content bound to the requesting tenant; this case does not depend on provider-side prompt-cache key behavior.",
+        "scenarioApplication": "Keep common policy text reusable, but move tenant rules outside that shared entry or include tenant scope in the application cache identity; test cross-tenant isolation before measuring assembly cost and route latency.",
+        "errorCorrection": "Tenant identity added after lookup or model guidance cannot isolate reused tenant content; scope the cache entry or keep tenant rules outside the shared prefix.",
+        "boundaryOrTradeoff": "Disabling the whole application cache may prevent reuse leakage but gives up the stated common-block benefit; model instructions do not enforce tenant authorization.",
+        "transfer": "For any application-managed reuse layer, bind cached tenant-specific state to its tenant and measure performance only after isolation holds.",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Multi_Tenant_Security_Cheat_Sheet.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_e31f5df295fe",
+          "text": "A suffix added after cache lookup cannot isolate tenant-bound content already returned from the shared entry."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_c11ac0c1154a",
+          "text": "This avoids cross-tenant reuse but gives up the common-block benefit and does not measure isolation or route cost."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "opt_4e1a151660d1",
+          "text": "Longer retention increases reuse of the wrong tenant block; model instructions do not enforce isolation."
+        }
+      ]
+    },
+    "difficulty": null,
+    "sourceRefs": [
+      "ccarp-doc-owasp-multi-tenant"
+    ]
+  }
+]

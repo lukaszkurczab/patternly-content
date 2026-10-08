@@ -26,15 +26,17 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.equal(result.tracks.reduce((sum, track) => sum + track.mentalUnits, 0), 943);
   const az104 = result.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
   assert.equal(az104.primaryObjective.status, "partial");
-  assert.equal(az104.primaryObjective.mapped, 844);
-  assert.equal(az104.primaryObjective.unmapped, 444);
+  assert.equal(az104.primaryObjective.mapped, 1270);
+  assert.equal(az104.primaryObjective.unmapped, 18);
   assert.equal(az104.primaryObjective.orphan, 0);
   assert.equal(az104.primaryObjective.ambiguous, 0);
   assert.equal(az104.primaryObjective.mappingComplete, false);
   assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-1"], 296);
   assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-2"], 254);
-  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-3"], 294);
-  assert.equal(Object.keys(az104.primaryObjective.domainCounts).length, 3);
+  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-3"], 298);
+  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-4"], 240);
+  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-5"], 182);
+  assert.equal(Object.keys(az104.primaryObjective.domainCounts).length, 5);
   assert.equal(az104.questions, 1288);
   const gcp = result.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
   assert.equal(gcp.stratum.kind, "published_item_domain");
@@ -49,7 +51,7 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.ok(result.tracks.filter((track) => track.trackId !== "microsoft-azure-administrator-associate-az-104").every((track) => track.primaryObjective.status === "unavailable"));
 });
 
-test("AZ-104 preserves N01-N04 bindings and appends the exact approved N05-N06 partial set", () => {
+test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 partial set", () => {
   const az104 = manifest.tracks.find((entry) => entry.trackId === "microsoft-azure-administrator-associate-az-104");
   const expectedN01B01Rows = [
     ["001", "1.3"], ["002", "1.1"], ["005", "1.1"], ["007", "1.2"], ["008", "1.2"],
@@ -94,13 +96,31 @@ test("AZ-104 preserves N01-N04 bindings and appends the exact approved N05-N06 p
   assert.deepEqual(Object.fromEntries(["3.1", "3.2", "3.3", "3.4", "1.2"].map((suffix) => [
     suffix, computeRows.filter((binding) => binding.objectiveId === `az-104-2026-04-17-${suffix}`).length
   ])), { "3.1": 69, "3.2": 99, "3.3": 43, "3.4": 83, "1.2": 8 });
-  assert.equal(az104.primaryObjective.bindings.length, 844);
+  assert.equal(az104.primaryObjective.bindings.filter((binding) => /az104-AZ104-N0[1-6]-/u.test(binding.questionId)).length, 844);
   for (const excludedId of ["az104-AZ104-N06-B08-009", "az104-AZ104-N06-B08-016"]) {
     assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }
-  assert.deepEqual(Object.fromEntries(["1.1", "1.2", "1.3", "2.1", "2.2", "2.3", "3.1", "3.2", "3.3", "3.4"].map((suffix) => [
+  const networkRows = az104.primaryObjective.bindings.filter((binding) =>
+    binding.questionId.startsWith("az104-AZ104-N07-") || binding.questionId.startsWith("az104-AZ104-N08-") || binding.questionId.startsWith("az104-AZ104-N09-")
+  );
+  assert.equal(networkRows.length, 426);
+  assert.equal(sha256(canonicalJson(networkRows)), "19cfb7b0d620ae110b24bb38c85c885e11ef7d0aca4184b137933e41d80689f4");
+  assert.deepEqual(Object.fromEntries(["3.4", "4.1", "4.2", "4.3", "5.1", "5.2"].map((suffix) => [
+    suffix, networkRows.filter((binding) => binding.objectiveId === `az-104-2026-04-17-${suffix}`).length
+  ])), { "3.4": 4, "4.1": 80, "4.2": 93, "4.3": 67, "5.1": 120, "5.2": 62 });
+  assert.equal(az104.primaryObjective.bindings.length, 1270);
+  for (const [questionId, objectiveSuffix] of [
+    ["az104-AZ104-N07-B01-007", "3.4"],
+    ["az104-AZ104-N07-B08-002", "5.1"],
+    ["az104-AZ104-N07-B08-003", "5.1"]
+  ]) {
+    assert.deepEqual(networkRows.find((binding) => binding.questionId === questionId), {
+      questionId, objectiveId: `az-104-2026-04-17-${objectiveSuffix}`
+    });
+  }
+  assert.deepEqual(Object.fromEntries(["1.1", "1.2", "1.3", "2.1", "2.2", "2.3", "3.1", "3.2", "3.3", "3.4", "4.1", "4.2", "4.3", "5.1", "5.2"].map((suffix) => [
     suffix, az104.primaryObjective.bindings.filter((binding) => binding.objectiveId === `az-104-2026-04-17-${suffix}`).length
-  ])), { "1.1": 114, "1.2": 62, "1.3": 120, "2.1": 82, "2.2": 125, "2.3": 47, "3.1": 69, "3.2": 99, "3.3": 43, "3.4": 83 });
+  ])), { "1.1": 114, "1.2": 62, "1.3": 120, "2.1": 82, "2.2": 125, "2.3": 47, "3.1": 69, "3.2": 99, "3.3": 43, "3.4": 87, "4.1": 80, "4.2": 93, "4.3": 67, "5.1": 120, "5.2": 62 });
   assert.equal(az104.primaryObjective.registry.sha256, "7728bafa22a5d622ae1f64d14bb3fb5ff3459431c23aaeb82ad1fceaaf0f2476");
   assert.equal(az104.contentVersion, "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15-bizq02-v2");
   assert.equal(az104.primaryObjective.bindings.some((binding) => Object.hasOwn(binding, "domainId") || Object.hasOwn(binding, "parentDomainId")), false);
@@ -108,7 +128,9 @@ test("AZ-104 preserves N01-N04 bindings and appends the exact approved N05-N06 p
     "az104-AZ104-N01-B01-003", "az104-AZ104-N01-B01-004", "az104-AZ104-N01-B01-006",
     "az104-AZ104-N01-B05-001", "az104-AZ104-N01-B05-004", "az104-AZ104-N01-B05-016",
     "az104-AZ104-N01-B07-007", "az104-AZ104-N01-B07-014", "az104-AZ104-N01-B08-003",
-    "az104-AZ104-N02-B05-020", "az104-AZ104-N02-B09-014", "az104-AZ104-N02-B09-022", "az104-AZ104-N02-B09-024"
+    "az104-AZ104-N02-B05-020", "az104-AZ104-N02-B09-014", "az104-AZ104-N02-B09-022", "az104-AZ104-N02-B09-024",
+    "az104-AZ104-N06-B08-009", "az104-AZ104-N06-B08-016",
+    "az104-AZ104-N07-B08-008", "az104-AZ104-N08-B06-007"
   ]) {
     assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }

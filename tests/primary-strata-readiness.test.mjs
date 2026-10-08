@@ -26,13 +26,14 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.equal(result.tracks.reduce((sum, track) => sum + track.mentalUnits, 0), 943);
   const az104 = result.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
   assert.equal(az104.primaryObjective.status, "partial");
-  assert.equal(az104.primaryObjective.mapped, 287);
-  assert.equal(az104.primaryObjective.unmapped, 1001);
+  assert.equal(az104.primaryObjective.mapped, 542);
+  assert.equal(az104.primaryObjective.unmapped, 746);
   assert.equal(az104.primaryObjective.orphan, 0);
   assert.equal(az104.primaryObjective.ambiguous, 0);
   assert.equal(az104.primaryObjective.mappingComplete, false);
-  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-1"], 287);
-  assert.equal(Object.keys(az104.primaryObjective.domainCounts).length, 1);
+  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-1"], 288);
+  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-2"], 254);
+  assert.equal(Object.keys(az104.primaryObjective.domainCounts).length, 2);
   assert.equal(az104.questions, 1288);
   const gcp = result.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
   assert.equal(gcp.stratum.kind, "published_item_domain");
@@ -47,7 +48,7 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.ok(result.tracks.filter((track) => track.trackId !== "microsoft-azure-administrator-associate-az-104").every((track) => track.primaryObjective.status === "unavailable"));
 });
 
-test("AZ-104 preserves N01 bindings and appends the exact approved N02 partial set", () => {
+test("AZ-104 preserves N01-N02 bindings and appends the exact approved N03-N04 partial set", () => {
   const az104 = manifest.tracks.find((entry) => entry.trackId === "microsoft-azure-administrator-associate-az-104");
   const expectedN01B01Rows = [
     ["001", "1.3"], ["002", "1.1"], ["005", "1.1"], ["007", "1.2"], ["008", "1.2"],
@@ -73,10 +74,20 @@ test("AZ-104 preserves N01 bindings and appends the exact approved N02 partial s
   assert.deepEqual(n02Rows.find((binding) => binding.questionId === "az104-AZ104-N02-B01-012"), {
     questionId: "az104-AZ104-N02-B01-012", objectiveId: "az-104-2026-04-17-1.2"
   });
-  assert.equal(az104.primaryObjective.bindings.length, 287);
-  assert.deepEqual(Object.fromEntries(["1.1", "1.2", "1.3"].map((suffix) => [
+  const storageRows = az104.primaryObjective.bindings.filter((binding) =>
+    binding.questionId.startsWith("az104-AZ104-N03-") || binding.questionId.startsWith("az104-AZ104-N04-")
+  );
+  assert.equal(storageRows.length, 255);
+  assert.equal(sha256(canonicalJson(storageRows)), "7cc8d6ef2da580ed7357b8dbb62d4068d7a4cb67dba94432f549f62ac9e2c9ce");
+  assert.deepEqual(Object.fromEntries(["2.1", "2.2", "2.3", "1.2"].map((suffix) => [
+    suffix, storageRows.filter((binding) => binding.objectiveId === `az-104-2026-04-17-${suffix}`).length
+  ])), { "2.1": 82, "2.2": 125, "2.3": 47, "1.2": 1 });
+  assert.equal(az104.primaryObjective.bindings.length, 542);
+  // N03-B08-001 is a reviewed Data Box bulk-seeding item outside the pinned registry objectives.
+  assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === "az104-AZ104-N03-B08-001"), false);
+  assert.deepEqual(Object.fromEntries(["1.1", "1.2", "1.3", "2.1", "2.2", "2.3"].map((suffix) => [
     suffix, az104.primaryObjective.bindings.filter((binding) => binding.objectiveId === `az-104-2026-04-17-${suffix}`).length
-  ])), { "1.1": 114, "1.2": 53, "1.3": 120 });
+  ])), { "1.1": 114, "1.2": 54, "1.3": 120, "2.1": 82, "2.2": 125, "2.3": 47 });
   assert.equal(az104.primaryObjective.registry.sha256, "7728bafa22a5d622ae1f64d14bb3fb5ff3459431c23aaeb82ad1fceaaf0f2476");
   assert.equal(az104.contentVersion, "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15-bizq02-v2");
   assert.equal(az104.primaryObjective.bindings.some((binding) => Object.hasOwn(binding, "domainId") || Object.hasOwn(binding, "parentDomainId")), false);

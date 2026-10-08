@@ -260,39 +260,6 @@ export async function verifyReadiness({ rootDirectory = ROOT, manifest: supplied
   return { schemaVersion: manifest.schemaVersion, tracks: summaries };
 }
 
-export async function buildCurrentManifest({ rootDirectory = ROOT } = {}) {
-  const root = path.resolve(rootDirectory);
-  const catalog = await json(root, CATALOG_PATH);
-  const tracks = [];
-  for (const trackId of TRACK_IDS) {
-    const validated = await validateTrack({ rootDirectory: root, trackId });
-    const actual = await declaredInputs(root, trackId, validated);
-    const owner = await loaderOwner(root, actual.inputs);
-    const counts = uniqueCounts(validated.questions);
-    const ids = validated.questions.map((q) => q.questionId);
-    const objectiveStatus = "unavailable";
-    const stratum = trackId === "google-cloud-associate-cloud-engineer"
-      ? { kind: "published_item_domain", status: "existing_content_proof" }
-      : trackId === CODING_TRACK || DESIGN_TRACKS.has(trackId)
-        ? { kind: "patternly_node", status: "patternly_defined_scope" }
-        : { kind: "unavailable", reason: "No verified active question-to-domain proof is owned by the current content loader." };
-    const registry = objectiveRegistryPin(actual.registry ? { ...actual.registry, hash: actual.inputs.find((x) => x.role === "objective_registry_source").sha256 } : undefined);
-    tracks.push({
-      trackId,
-      contentVersion: validated.track.contentVersion,
-      questionCount: counts.questions,
-      questionIdSetSha256: setHash(ids),
-      sourceInventorySha256: sha256(canonicalJson({ inputs: actual.inputs, loaderOwner: owner })),
-      inputs: actual.inputs,
-      loaderOwner: owner,
-      primaryObjective: { status: objectiveStatus, reason: "No question-level primary objective bindings have completed semantic owner review.", ...(registry ? { registry } : {}) },
-      stratum
-    });
-  }
-  if (!Array.isArray(catalog.tracks) || tracks.length !== TRACK_IDS.length) fail("catalog_track_set_invalid");
-  return { schemaVersion: "patternly-primary-strata-readiness-v1", tracks };
-}
-
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const result = await verifyReadiness();

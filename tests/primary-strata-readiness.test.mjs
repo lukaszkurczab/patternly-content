@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
+import { canonicalJson, sha256 } from "../scripts/build.mjs";
 import { secureFile, validatePrimaryObjective, verifyReadiness } from "../scripts/content/verify-primary-strata-readiness.mjs";
 
 const manifest = JSON.parse(await readFile(new URL("../config/primary-strata-readiness.json", import.meta.url), "utf8"));
@@ -20,14 +21,17 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.ok(result.tracks.every((track) => track.structuralValidity === "valid"));
   assert.ok(result.tracks.every((track) => track.readiness === "not_ready"));
   assert.ok(result.tracks.every((track) => track.semanticOwnerApproval === "not_established" && track.efficacy === "not_evaluated"));
+  assert.equal(result.tracks.reduce((sum, track) => sum + track.questions, 0), 16622);
+  assert.equal(result.tracks.reduce((sum, track) => sum + track.nodes, 0), 117);
+  assert.equal(result.tracks.reduce((sum, track) => sum + track.mentalUnits, 0), 943);
   const az104 = result.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
   assert.equal(az104.primaryObjective.status, "partial");
-  assert.equal(az104.primaryObjective.mapped, 11);
-  assert.equal(az104.primaryObjective.unmapped, 1277);
+  assert.equal(az104.primaryObjective.mapped, 287);
+  assert.equal(az104.primaryObjective.unmapped, 1001);
   assert.equal(az104.primaryObjective.orphan, 0);
   assert.equal(az104.primaryObjective.ambiguous, 0);
   assert.equal(az104.primaryObjective.mappingComplete, false);
-  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-1"], 11);
+  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-1"], 287);
   assert.equal(Object.keys(az104.primaryObjective.domainCounts).length, 1);
   assert.equal(az104.questions, 1288);
   const gcp = result.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
@@ -43,21 +47,46 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.ok(result.tracks.filter((track) => track.trackId !== "microsoft-azure-administrator-associate-az-104").every((track) => track.primaryObjective.status === "unavailable"));
 });
 
-test("AZ-104 stores only the eleven reviewed item-level bindings and derives domain from registry", () => {
+test("AZ-104 preserves N01 bindings and appends the exact approved N02 partial set", () => {
   const az104 = manifest.tracks.find((entry) => entry.trackId === "microsoft-azure-administrator-associate-az-104");
-  const expected = [
+  const expectedN01B01Rows = [
     ["001", "1.3"], ["002", "1.1"], ["005", "1.1"], ["007", "1.2"], ["008", "1.2"],
     ["009", "1.1"], ["010", "1.1"], ["011", "1.1"], ["012", "1.2"], ["013", "1.2"], ["014", "1.3"]
   ].map(([questionSuffix, objectiveSuffix]) => ({
     questionId: `az104-AZ104-N01-B01-${questionSuffix}`,
     objectiveId: `az-104-2026-04-17-${objectiveSuffix}`
   }));
+  const n01Rows = az104.primaryObjective.bindings.filter((binding) => binding.questionId.startsWith("az104-AZ104-N01-"));
+  const n02Rows = az104.primaryObjective.bindings.filter((binding) => binding.questionId.startsWith("az104-AZ104-N02-"));
   assert.equal(az104.primaryObjective.status, "partial");
-  assert.deepEqual(az104.primaryObjective.bindings, expected);
+  assert.deepEqual(n01Rows.filter((binding) => binding.questionId.startsWith("az104-AZ104-N01-B01-")), expectedN01B01Rows);
+  const n01AddedRows = n01Rows.filter((binding) => !binding.questionId.startsWith("az104-AZ104-N01-B01-"));
+  assert.equal(n01Rows.length, 123);
+  assert.equal(n01AddedRows.length, 112);
+  assert.equal(sha256(canonicalJson(n01AddedRows)), "3f729796db99e6185758203509710b7281bb245e3f412929623dd714b8a3782b");
+  assert.equal(n01AddedRows.filter((binding) => binding.objectiveId === "az-104-2026-04-17-1.1").length, 109);
+  assert.equal(n01AddedRows.filter((binding) => binding.objectiveId === "az-104-2026-04-17-1.2").length, 3);
+  assert.equal(n02Rows.length, 164);
+  assert.equal(sha256(canonicalJson(n02Rows)), "3bcaf2a2df729402b17a5d15efd2335ca780761be04e40bb41df5c35589f2632");
+  assert.equal(n02Rows.filter((binding) => binding.objectiveId === "az-104-2026-04-17-1.2").length, 46);
+  assert.equal(n02Rows.filter((binding) => binding.objectiveId === "az-104-2026-04-17-1.3").length, 118);
+  assert.deepEqual(n02Rows.find((binding) => binding.questionId === "az104-AZ104-N02-B01-012"), {
+    questionId: "az104-AZ104-N02-B01-012", objectiveId: "az-104-2026-04-17-1.2"
+  });
+  assert.equal(az104.primaryObjective.bindings.length, 287);
+  assert.deepEqual(Object.fromEntries(["1.1", "1.2", "1.3"].map((suffix) => [
+    suffix, az104.primaryObjective.bindings.filter((binding) => binding.objectiveId === `az-104-2026-04-17-${suffix}`).length
+  ])), { "1.1": 114, "1.2": 53, "1.3": 120 });
   assert.equal(az104.primaryObjective.registry.sha256, "7728bafa22a5d622ae1f64d14bb3fb5ff3459431c23aaeb82ad1fceaaf0f2476");
+  assert.equal(az104.contentVersion, "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15-bizq02-v2");
   assert.equal(az104.primaryObjective.bindings.some((binding) => Object.hasOwn(binding, "domainId") || Object.hasOwn(binding, "parentDomainId")), false);
-  for (const suffix of ["003", "004", "006"]) {
-    assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId.endsWith(`-${suffix}`)), false);
+  for (const excludedId of [
+    "az104-AZ104-N01-B01-003", "az104-AZ104-N01-B01-004", "az104-AZ104-N01-B01-006",
+    "az104-AZ104-N01-B05-001", "az104-AZ104-N01-B05-004", "az104-AZ104-N01-B05-016",
+    "az104-AZ104-N01-B07-007", "az104-AZ104-N01-B07-014", "az104-AZ104-N01-B08-003",
+    "az104-AZ104-N02-B05-020", "az104-AZ104-N02-B09-014", "az104-AZ104-N02-B09-022", "az104-AZ104-N02-B09-024"
+  ]) {
+    assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }
   assert.equal(az104.questionIdSetSha256, "05c5642f6a14aa365d55e676e211a9b4466344c645e5361178e72aa6c54b3d25");
   assert.equal(az104.sourceInventorySha256, "88a0a42edfa3905b47c2c39a761d463272876d5d0a772fea028972867db0ceb0");

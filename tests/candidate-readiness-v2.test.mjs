@@ -13,9 +13,16 @@ import { DECISION_PATH, READINESS_PATH, validateCandidateDecisionV2 } from "../s
 const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
+test("active v2 candidate paths allow BIZQ-05 and preserve historical BIZQ-02 receipt bytes", async () => {
+  assert.equal(DECISION_PATH, "evidence/candidate-decisions/current-candidate-decision-v2.json");
+  assert.equal(READINESS_PATH, "evidence/readiness/current-candidate-readiness-v2.json");
+  const schema = JSON.parse(await readFile(path.join(ROOT, "schemas/review/content-candidate-decision-v2.schema.json"), "utf8"));
+  assert.ok(schema.properties.taskId.enum.includes("BIZQ-05/CANDIDATE"));
+  assert.equal(sha256(await readFile(path.join(ROOT, "evidence/candidate-decisions/bizq-02-codex-decision-v2.json"))), "7743fe5d32a2fc4652957394bc816ce529cb256d556523379f6d72127e4bee5a");
+  assert.equal(sha256(await readFile(path.join(ROOT, "evidence/readiness/bizq-02-candidate-readiness-v2.json"))), "5b31190cf15d2f2cc277dca3b8a7779703b974517563260cc42d425738c8da7f");
+});
+
 test("Codex candidate decision v2 binds exact candidate, source snapshot, release and nine artifact hashes", async () => {
-  assert.equal(DECISION_PATH, "evidence/candidate-decisions/bizq-02-codex-decision-v2.json");
-  assert.equal(READINESS_PATH, "evidence/readiness/bizq-02-candidate-readiness-v2.json");
   const base = await mkdtemp(path.join(os.tmpdir(), "patternly-candidate-readiness-test-"));
   try {
     const { manifest, release } = await buildCandidateDraft({ root: ROOT, outputDirectory: path.join(base, "draft") });
@@ -48,6 +55,8 @@ test("Codex candidate decision v2 binds exact candidate, source snapshot, releas
     await validateCandidateDecisionV2(bizqDecision, { root: ROOT, candidate: manifest, release, bindings });
     const bizq02Decision = { ...decision, taskId: "BIZQ-02/CANDIDATE" };
     await validateCandidateDecisionV2(bizq02Decision, { root: ROOT, candidate: manifest, release, bindings });
+    const bizq05Decision = { ...decision, taskId: "BIZQ-05/CANDIDATE" };
+    await validateCandidateDecisionV2(bizq05Decision, { root: ROOT, candidate: manifest, release, bindings });
     await assert.rejects(validateCandidateDecisionV2({ ...bizqDecision, taskId: "BIZQ-03/CANDIDATE" }, { root: ROOT, candidate: manifest, release, bindings }), /another task/);
     await assert.rejects(validateCandidateDecisionV2({ ...bizqDecision, decisionAuthority: "human_owner" }, { root: ROOT, candidate: manifest, release, bindings }), /delegated Codex/);
     await assert.rejects(validateCandidateDecisionV2({ ...bizqDecision, boundaries: { ...bizqDecision.boundaries, runtimeAdmission: "granted" } }, { root: ROOT, candidate: manifest, release, bindings }), /cannot grant/);

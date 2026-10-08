@@ -16,6 +16,66 @@ import {
 
 export const SIMP03_EVIDENCE_SCHEMA_VERSION = "patternly-simp03-migration-evidence-v1";
 
+const BIZQ05_GCP_RELATION_AMENDMENT = Object.freeze({
+  path: "evidence/business-quality/bizq-05-gcp-question-relations-01.json",
+  schemaVersion: "patternly-bizq05-gcp-question-relations-v1",
+  trackId: "google-cloud-associate-cloud-engineer",
+  contentVersion: "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1",
+  sourcePath: "content/google-cloud-associate-cloud-engineer/organization_projects_policies_services_quotas_and_assets/GCPACE-N01-B04.json",
+  predecessorCommit: "cf96d87f9bb874ea3c2b7532c40368b083c80823",
+  predecessorSourceSha256: "bf8182e1435819b775d1b4c22cef4ad8a13d9dc5a829a655861bd51eaf6c6d6f",
+  sourceSha256: "a12d404de3e440766e324784b60a3c225adaf0efe3e66313b36f1d985c17ab1b",
+  questionSetSha256: "bf8182e1435819b775d1b4c22cef4ad8a13d9dc5a829a655861bd51eaf6c6d6f",
+  questionIds: Object.freeze([
+    "gcp-ace-gcpace-n01-b04-001", "gcp-ace-gcpace-n01-b04-002", "gcp-ace-gcpace-n01-b04-003",
+    "gcp-ace-gcpace-n01-b04-004", "gcp-ace-gcpace-n01-b04-005", "gcp-ace-gcpace-n01-b04-006",
+    "gcp-ace-gcpace-n01-b04-007", "gcp-ace-gcpace-n01-b04-008", "gcp-ace-gcpace-n01-b04-009",
+    "gcp-ace-gcpace-n01-b04-010", "gcp-ace-gcpace-n01-b04-011", "gcp-ace-gcpace-n01-b04-012",
+    "gcp-ace-gcpace-n01-b04-013", "gcp-ace-gcpace-n01-b04-014", "gcp-ace-gcpace-n01-b04-015",
+    "gcp-ace-gcpace-n01-b04-016", "gcp-ace-gcpace-n01-b04-017", "gcp-ace-gcpace-n01-b04-018",
+    "gcp-ace-gcpace-n01-b04-019", "gcp-ace-gcpace-n01-b04-020", "gcp-ace-gcpace-n01-b04-021",
+    "gcp-ace-gcpace-n01-b04-022"
+  ]),
+  relations: Object.freeze([
+    Object.freeze({
+      questionId: "gcp-ace-gcpace-n01-b04-006",
+      questionRelation: Object.freeze({
+        changedCondition: "The first item concerns shutdown of the whole project; the paired item disables only one API while the project and its other services remain active.",
+        counterpartQuestionId: "gcp-ace-gcpace-n01-b04-007",
+        decisionBoundary: "A project shutdown changes project lifecycle and recovery state; disabling one API changes only that service’s enabled state.",
+        kind: "condition_contrast"
+      })
+    }),
+    Object.freeze({
+      questionId: "gcp-ace-gcpace-n01-b04-007",
+      questionRelation: Object.freeze({
+        changedCondition: "The first item concerns shutdown of the whole project; the paired item disables only one API while the project and its other services remain active.",
+        counterpartQuestionId: "gcp-ace-gcpace-n01-b04-006",
+        decisionBoundary: "A project shutdown changes project lifecycle and recovery state; disabling one API changes only that service’s enabled state.",
+        kind: "condition_contrast"
+      })
+    }),
+    Object.freeze({
+      questionId: "gcp-ace-gcpace-n01-b04-019",
+      questionRelation: Object.freeze({
+        changedCondition: "The first item uses a CLI command with app-dev as the active project while app-prod is intended; the paired item has an API enabled in app-dev while the workload runs in app-prod.",
+        counterpartQuestionId: "gcp-ace-gcpace-n01-b04-020",
+        decisionBoundary: "CLI project selection determines the command target; API enablement is project-scoped and must be repeated or verified in the workload project.",
+        kind: "near_variant"
+      })
+    }),
+    Object.freeze({
+      questionId: "gcp-ace-gcpace-n01-b04-020",
+      questionRelation: Object.freeze({
+        changedCondition: "The first item uses a CLI command with app-dev as the active project while app-prod is intended; the paired item has an API enabled in app-dev while the workload runs in app-prod.",
+        counterpartQuestionId: "gcp-ace-gcpace-n01-b04-019",
+        decisionBoundary: "CLI project selection determines the command target; API enablement is project-scoped and must be repeated or verified in the workload project.",
+        kind: "near_variant"
+      })
+    })
+  ])
+});
+
 export const EXPECTED_GLOBAL_COUNTS = Object.freeze({
   tracks: 9,
   nodes: 117,
@@ -824,6 +884,83 @@ async function loadCanonicalContent(contentRoot) {
     questionsByTrack.set(trackId, questions);
   }
   return { catalog, catalogByTrack, questionsByTrack, questionLocations };
+}
+
+export async function validateBizq05GcpQuestionRelationAmendment(contentRoot, canonical) {
+  const projectRoot = path.dirname(path.resolve(contentRoot));
+  const evidencePath = path.join(projectRoot, BIZQ05_GCP_RELATION_AMENDMENT.path);
+  await rejectSymlinkAncestors(evidencePath, "BIZQ-05 GCP question relation amendment");
+  const evidence = await readJson(evidencePath, "BIZQ-05 GCP question relation amendment");
+  const expectedEvidence = {
+    schemaVersion: BIZQ05_GCP_RELATION_AMENDMENT.schemaVersion,
+    trackId: BIZQ05_GCP_RELATION_AMENDMENT.trackId,
+    contentVersion: BIZQ05_GCP_RELATION_AMENDMENT.contentVersion,
+    sourcePath: BIZQ05_GCP_RELATION_AMENDMENT.sourcePath,
+    predecessor: {
+      commit: BIZQ05_GCP_RELATION_AMENDMENT.predecessorCommit,
+      sourceSha256: BIZQ05_GCP_RELATION_AMENDMENT.predecessorSourceSha256
+    },
+    currentSourceSha256: BIZQ05_GCP_RELATION_AMENDMENT.sourceSha256,
+    questionIds: BIZQ05_GCP_RELATION_AMENDMENT.questionIds,
+    historicalQuestionSetSha256: BIZQ05_GCP_RELATION_AMENDMENT.questionSetSha256,
+    relations: BIZQ05_GCP_RELATION_AMENDMENT.relations
+  };
+  if (canonicalJson(evidence) !== canonicalJson(expectedEvidence)) {
+    fail("EVIDENCE_VALUE", "BIZQ-05 GCP question relation amendment differs from its pinned four-question source amendment.");
+  }
+
+  const track = canonical.catalogByTrack.get(BIZQ05_GCP_RELATION_AMENDMENT.trackId);
+  if (track?.contentVersion !== BIZQ05_GCP_RELATION_AMENDMENT.contentVersion) {
+    fail("EVIDENCE_VALUE", "BIZQ-05 GCP question relation amendment content version does not match the current catalog.");
+  }
+  const sourcePath = path.join(projectRoot, BIZQ05_GCP_RELATION_AMENDMENT.sourcePath);
+  await rejectSymlinkAncestors(sourcePath, "BIZQ-05 GCP question relation source");
+  await regularPath(sourcePath, "BIZQ-05 GCP question relation source", "file");
+  let sourceBytes;
+  try {
+    sourceBytes = await readFile(sourcePath);
+  } catch (error) {
+    fail("READ_ERROR", `Cannot read BIZQ-05 GCP question relation source: ${error.message}`);
+  }
+  if (sha256(sourceBytes) !== BIZQ05_GCP_RELATION_AMENDMENT.sourceSha256) {
+    fail("HASH_MISMATCH", "Current BIZQ-05 GCP question relation source differs from its pinned complete-file hash.");
+  }
+  let sourceQuestions;
+  try {
+    sourceQuestions = JSON.parse(sourceBytes.toString("utf8"));
+  } catch (error) {
+    fail("INVALID_JSON", `BIZQ-05 GCP question relation source is not valid JSON: ${error.message}`);
+  }
+  if (!Array.isArray(sourceQuestions) || sourceQuestions.length !== BIZQ05_GCP_RELATION_AMENDMENT.questionIds.length) {
+    fail("EVIDENCE_MEMBERSHIP", "BIZQ-05 GCP question relation source must contain its exact 22-question unit.");
+  }
+  assertExactSet(sourceQuestions.map((question) => question?.questionId), BIZQ05_GCP_RELATION_AMENDMENT.questionIds, "BIZQ-05 GCP question relation source IDs");
+
+  const expectedRelations = new Map(BIZQ05_GCP_RELATION_AMENDMENT.relations.map(({ questionId, questionRelation }) => [questionId, questionRelation]));
+  const historicalQuestions = sourceQuestions.map((question) => {
+    if (!question || typeof question !== "object" || Array.isArray(question)) fail("CANONICAL_INVALID", "BIZQ-05 GCP question relation source contains a non-object question.");
+    const expectedRelation = expectedRelations.get(question.questionId);
+    if (expectedRelation) {
+      if (canonicalJson(question.questionRelation) !== canonicalJson(expectedRelation)) {
+        fail("EVIDENCE_VALUE", `BIZQ-05 GCP relation for ${question.questionId} differs from its pinned reviewed payload.`);
+      }
+      const { questionRelation: _acceptedRelation, ...historicalQuestion } = question;
+      return historicalQuestion;
+    }
+    if (Object.hasOwn(question, "questionRelation")) {
+      fail("EVIDENCE_MEMBERSHIP", `BIZQ-05 GCP question ${question.questionId} must not receive a relation amendment.`);
+    }
+    return question;
+  });
+  if (sha256(historicalQuestions) !== BIZQ05_GCP_RELATION_AMENDMENT.questionSetSha256) {
+    fail("HASH_MISMATCH", "BIZQ-05 GCP pre-relation question unit does not match its pinned historical whole-set hash.");
+  }
+
+  const currentById = new Map(canonical.questionsByTrack.get(BIZQ05_GCP_RELATION_AMENDMENT.trackId).map((question) => [question.questionId, question]));
+  if (historicalQuestions.some((question) => !currentById.has(question.questionId))) {
+    fail("EVIDENCE_MEMBERSHIP", "BIZQ-05 GCP question relation amendment is not present in canonical content.");
+  }
+  return new Map(historicalQuestions.map((question) => [question.questionId, question]));
 }
 
 async function loadEvidence(contentRoot) {
@@ -12550,6 +12687,7 @@ export async function verifyMigration(options = {}) {
   if (typeof contentRoot !== "string" || contentRoot.length === 0) fail("INPUT", "contentRoot is required.");
   const resolvedContentRoot = await secureRoot(contentRoot);
   const canonical = await loadCanonicalContent(resolvedContentRoot);
+  const bizq05HistoricalQuestions = await validateBizq05GcpQuestionRelationAmendment(resolvedContentRoot, canonical);
   validateCurrentProducerBanks(canonical);
   const evidence = await loadEvidence(resolvedContentRoot);
   const replacementProof = await loadBizq01ReplacementProof(resolvedContentRoot, canonical, evidence);
@@ -12576,7 +12714,7 @@ export async function verifyMigration(options = {}) {
     const reconstructedQuestions = [
       ...questions.filter((question) => !replacedCurrentIds.has(question.questionId)),
       ...replacements.map((replacement) => replacement.oldQuestion)
-    ].map((question) => sameIdCorrectionById.get(question.questionId)?.oldQuestion ?? question);
+    ].map((question) => sameIdCorrectionById.get(question.questionId)?.oldQuestion ?? bizq05HistoricalQuestions.get(question.questionId) ?? question);
     const historicalTrackQuestions = trackId === claudeTrackId && claudeCurrentProof
       ? claudeCurrentProof.historicalQuestions
       : reconstructedQuestions;

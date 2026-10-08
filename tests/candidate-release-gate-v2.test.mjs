@@ -262,7 +262,7 @@ test("workflow contract rebuilds v2 evidence and release gate without legacy pub
   for (const workflow of [publishing, release]) {
     assert.match(workflow, /npm run candidate:draft-v2/);
     assert.match(workflow, /npm run candidate:readiness-v2/);
-    assert.match(workflow, /git diff --exit-code -- reports\/candidate-reconciliation\/AWS-02-DRAFT evidence\/readiness\/bizq-02-candidate-readiness-v2\.json/);
+    assert.match(workflow, /git diff --exit-code -- reports\/candidate-reconciliation\/AWS-02-DRAFT evidence\/candidate-decisions\/current-candidate-decision-v2\.json evidence\/readiness\/current-candidate-readiness-v2\.json/);
     assert.doesNotMatch(workflow, /generate:review-packets|generate:candidate-readiness|scripts\/publishing\/|npm run validate:real:coding-interview|run:.*(?:deploy|npm run publish|firebase deploy)/i);
     for (const [, command] of workflow.matchAll(/\bnpm run ([\w:-]+)/g)) assert.ok(packageJson.scripts[command], `Workflow references missing npm script ${command}.`);
     for (const [, scriptPath] of workflow.matchAll(/\bnode (scripts\/[\w./-]+)/g)) await access(path.join(ROOT, scriptPath));

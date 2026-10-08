@@ -34,6 +34,50 @@ test("fixture validates as one family-neutral contract", () => {
   assert.equal(fixture.questions.length, 5);
 });
 
+test("questionRelation is an optional exact annotation with safe identity fields", () => {
+  const schema = JSON.parse(readFileSync(new URL("../schemas/content/question.schema.json", import.meta.url), "utf8"));
+  assert.deepEqual(Object.keys(schema.$defs.questionRelation.properties).sort(), ["changedCondition", "counterpartQuestionId", "decisionBoundary", "kind"]);
+  assert.deepEqual(schema.$defs.questionRelation.properties.kind.enum, ["near_variant", "condition_contrast"]);
+  const question = clone(questionsByType.get("choice_single"));
+  const relation = {
+    counterpartQuestionId: "peer-question",
+    kind: "condition_contrast",
+    changedCondition: "The whole project is shut down rather than one API being disabled.",
+    decisionBoundary: "Project lifecycle changes recovery state; one API disablement changes one service state."
+  };
+  question.questionRelation = relation;
+  assert.equal(validateQuestion(question).valid, true);
+  for (const mutate of [
+    (value) => { value.extra = "unsupported"; },
+    (value) => { value.kind = "other"; },
+    (value) => { value.counterpartQuestionId = " "; },
+    (value) => { value.decisionBoundary = "  "; }
+  ]) {
+    const invalid = clone(question);
+    mutate(invalid.questionRelation);
+    assert.equal(validateQuestion(invalid).valid, false);
+  }
+});
+
+test("JSON Schema accepts exact questionRelation metadata and rejects unsupported fields", () => {
+  const schemaPath = path.resolve("schemas/content/question.schema.json");
+  const fixturePath = path.resolve("tests/fixtures/shared-contract-fixture.json");
+  const script = String.raw`
+import json
+import sys
+from jsonschema import Draft202012Validator
+with open(sys.argv[1], encoding="utf-8") as handle: schema = json.load(handle)
+with open(sys.argv[2], encoding="utf-8") as handle: fixture = json.load(handle)
+question = fixture["questions"][0]
+question["questionRelation"] = {"counterpartQuestionId":"peer","kind":"near_variant","changedCondition":"A decisive condition changes.","decisionBoundary":"That condition changes the correct choice."}
+validator = Draft202012Validator(schema)
+assert validator.is_valid(question), list(validator.iter_errors(question))
+question["questionRelation"]["extra"] = "not allowed"
+assert not validator.is_valid(question)
+`;
+  assert.doesNotThrow(() => execFileSync("python3", ["-c", script, schemaPath, fixturePath], { encoding: "utf8" }));
+});
+
 test("schema documents five disjoint interaction branches", () => {
   const schema = JSON.parse(readFileSync(new URL("../schemas/content/question.schema.json", import.meta.url), "utf8"));
   assert.equal(schema.oneOf.length, 5);

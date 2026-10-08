@@ -5,7 +5,7 @@ import path from "node:path";
 import test from "node:test";
 
 import { canonicalJson, sha256 } from "../scripts/build.mjs";
-import { secureFile, validatePrimaryObjective, verifyReadiness } from "../scripts/content/verify-primary-strata-readiness.mjs";
+import { describeCurrentSourceProvenance, secureFile, validatePrimaryObjective, verifyReadiness } from "../scripts/content/verify-primary-strata-readiness.mjs";
 
 const manifest = JSON.parse(await readFile(new URL("../config/primary-strata-readiness.json", import.meta.url), "utf8"));
 const clone = (value) => structuredClone(value);
@@ -49,6 +49,17 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   const aws = result.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate");
   assert.equal(aws.stratum.kind, "unavailable");
   assert.ok(result.tracks.filter((track) => track.trackId !== "microsoft-azure-administrator-associate-az-104").every((track) => track.primaryObjective.status === "unavailable"));
+});
+
+test("read-only provenance description matches the pinned GCP source contract", async () => {
+  const trackId = "google-cloud-associate-cloud-engineer";
+  const entry = manifest.tracks.find((candidate) => candidate.trackId === trackId);
+  const current = await describeCurrentSourceProvenance({ trackId });
+  for (const key of ["trackId", "contentVersion", "questionCount", "questionIdSetSha256", "sourceInventorySha256", "inputs", "loaderOwner"]) {
+    assert.deepEqual(current[key], entry[key]);
+  }
+  assert.equal(current.inputs.some((input) => input.path.endsWith("GCPACE-N01-B04.json") && input.role === "canonical_question_source"), true);
+  await assert.rejects(describeCurrentSourceProvenance({ trackId: "unknown-track" }), /source_provenance_track_invalid/u);
 });
 
 test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 partial set", () => {
@@ -135,7 +146,7 @@ test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 
     assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }
   assert.equal(az104.questionIdSetSha256, "05c5642f6a14aa365d55e676e211a9b4466344c645e5361178e72aa6c54b3d25");
-  assert.equal(az104.sourceInventorySha256, "88a0a42edfa3905b47c2c39a761d463272876d5d0a772fea028972867db0ceb0");
+  assert.equal(az104.sourceInventorySha256, "1dbbd3a5117e0396608be155d10775bb48610f6181e90652a6f7cb31db59dda4");
 });
 
 test("manifest requires the exact nine unique current track identities", async () => {

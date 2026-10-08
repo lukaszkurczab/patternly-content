@@ -17,7 +17,8 @@ import {
   scoreQuestion,
   validatePackageCompletionRule,
   validateCatalog,
-  validateQuestion
+  validateQuestion,
+  validateQuestionRelations
 } from "./content/question-contract.mjs";
 
 export const ARTIFACT_SCHEMA_VERSION = "patternly-content-artifact-v1";
@@ -529,6 +530,8 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
     }
   }
   questions.sort((left, right) => compareStrings(left.questionId, right.questionId));
+  const relationResult = validateQuestionRelations(questions);
+  if (!relationResult.valid) fail(`Question relations are invalid for ${trackId}`, relationResult.errors);
   if (Object.hasOwn(track, "completionRule")) {
     const completion = validatePackageCompletionRule(track.completionRule, `catalog.tracks.${trackId}.completionRule`, questions);
     if (!completion.valid) fail(`Chapter completion rule does not match canonical source questions for ${trackId}`, completion.errors);
@@ -692,6 +695,8 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
     questionIds.add(question.questionId);
     previousQuestionId = question.questionId;
   });
+  const relationResult = validateQuestionRelations(artifact.questions);
+  if (!relationResult.valid) fail(`Artifact question relations are invalid: ${filePath}`, relationResult.errors);
   if (Object.hasOwn(artifact, "simulationProfiles") && (!Array.isArray(artifact.simulationProfiles) || artifact.simulationProfiles.length === 0)) fail(`Artifact simulationProfiles must be a non-empty array when present: ${filePath}`);
   return artifact;
 }

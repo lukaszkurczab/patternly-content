@@ -1,16 +1,18 @@
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { cp, mkdtemp, readFile, readdir, rename as fsRename, stat, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 
 import {
   ACCEPTED_TRACK_IDS,
   loadCanonicalCatalog,
-  loadCanonicalFixture
+  loadCanonicalFixture,
+  validateQuestionRelations
 } from "../scripts/content/question-contract.mjs";
 import {
   ARTIFACT_SCHEMA_VERSION,
@@ -27,7 +29,9 @@ import {
   testTrack,
   validateTrack
 } from "../scripts/build.mjs";
+import { validateBizq05GcpQuestionRelationAmendment } from "../scripts/content/verify-migration.mjs";
 
+const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const { fixture } = loadCanonicalFixture();
 const execFileAsync = promisify(execFile);
 const builderPath = new URL("../scripts/build.mjs", import.meta.url);
@@ -99,6 +103,115 @@ test("each catalogued track validates, tests and builds independently", async (t
     assert.equal(built.artifact.trackId, trackId);
     assert.equal(built.artifact.contentVersion, realCatalog.tracks.find((track) => track.trackId === trackId).contentVersion);
   }
+});
+
+
+test("question relations require exact reciprocal peers and survive the canonical GCP build", async (t) => {
+  const sourcePath = path.join("content", "google-cloud-associate-cloud-engineer", "organization_projects_policies_services_quotas_and_assets", "GCPACE-N01-B04.json");
+  const authored = JSON.parse(await readFile(path.join(ROOT, sourcePath), "utf8"));
+  const sourceBaseline = JSON.parse(execFileSync("git", ["show", `cf96d87f9bb874ea3c2b7532c40368b083c80823:${sourcePath}`], { cwd: ROOT, encoding: "utf8" }));
+  assert.deepEqual(authored.map(({ questionRelation, ...question }) => question), sourceBaseline);
+  assert.deepEqual(authored.filter((question) => question.questionRelation).map((question) => question.questionId), [
+    "gcp-ace-gcpace-n01-b04-006", "gcp-ace-gcpace-n01-b04-007",
+    "gcp-ace-gcpace-n01-b04-019", "gcp-ace-gcpace-n01-b04-020"
+  ]);
+  const relationQuestions = authored.filter((question) => [
+    "gcp-ace-gcpace-n01-b04-006", "gcp-ace-gcpace-n01-b04-007",
+    "gcp-ace-gcpace-n01-b04-019", "gcp-ace-gcpace-n01-b04-020"
+  ].includes(question.questionId));
+  assert.equal(validateQuestionRelations(relationQuestions).valid, true);
+  assert.equal(relationQuestions.length, 4);
+  const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-relation-build-"));
+  t.after(() => rm(outputRoot, { recursive: true, force: true }));
+  const built = await buildTrack({ rootDirectory: ROOT, outputRoot, trackId: "google-cloud-associate-cloud-engineer" });
+  const builtRelations = built.artifact.questions.filter((question) => question.questionRelation);
+  assert.deepEqual(builtRelations.map((question) => question.questionId), relationQuestions.map((question) => question.questionId));
+  assert.equal(builtRelations.length, 4);
+
+  const first = questionFor("aws-certified-solutions-architect-associate", "relation-a");
+  const second = questionFor("aws-certified-solutions-architect-associate", "relation-b");
+  const annotation = {
+    counterpartQuestionId: second.questionId,
+    kind: "near_variant",
+    changedCondition: "The command uses a different active project.",
+    decisionBoundary: "Project selection determines the command target."
+  };
+  first.questionRelation = annotation;
+  second.questionRelation = { ...annotation, counterpartQuestionId: first.questionId };
+  assert.equal(validateQuestionRelations([first, second]).valid, true);
+  const invalidCases = [
+    [first, { ...second, questionRelation: undefined }],
+    [first, { ...second, questionRelation: { ...second.questionRelation, kind: "condition_contrast" } }],
+    [first, { ...second, questionRelation: { ...second.questionRelation, decisionBoundary: "Different boundary." } }],
+    [first, { ...second, mentalUnitId: "another-unit" }],
+    [first, { ...second, trackId: "backend-system-design-interview" }]
+  ];
+  for (const invalid of invalidCases) assert.equal(validateQuestionRelations(invalid).valid, false);
+  const self = structuredClone(first);
+  self.questionRelation.counterpartQuestionId = self.questionId;
+  assert.equal(validateQuestionRelations([self]).valid, false);
+  assert.equal(validateQuestionRelations([first]).valid, false, "orphan counterpart");
+
+  const rootDirectory = await createWorkspace();
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  const orphan = questionFor("aws-certified-solutions-architect-associate");
+  orphan.questionRelation = { ...annotation, counterpartQuestionId: "missing-peer" };
+  await writeTrackQuestion(rootDirectory, orphan.trackId, orphan);
+  await expectBuildFailure(validateTrack({ rootDirectory, trackId: orphan.trackId }), /Question relations are invalid/u);
+});
+
+test("BIZQ-05 GCP historical relation amendment is exact, additive and tamper-evident", async (t) => {
+  const sourceRelativePath = "content/google-cloud-associate-cloud-engineer/organization_projects_policies_services_quotas_and_assets/GCPACE-N01-B04.json";
+  const evidenceRelativePath = "evidence/business-quality/bizq-05-gcp-question-relations-01.json";
+  const currentSource = await readFile(path.join(ROOT, sourceRelativePath), "utf8");
+  const currentEvidence = await readFile(path.join(ROOT, evidenceRelativePath), "utf8");
+  const sourceQuestions = JSON.parse(currentSource);
+  const evidence = JSON.parse(currentEvidence);
+  const tempRoot = await mkdtemp(path.join("/private/tmp", "patternly-bizq05-gcp-amendment-"));
+  t.after(() => rm(tempRoot, { recursive: true, force: true }));
+
+  async function verifyCandidate(questions = sourceQuestions, candidateEvidence = evidence) {
+    const contentRoot = path.join(tempRoot, "content");
+    const sourcePath = path.join(tempRoot, sourceRelativePath);
+    const evidencePath = path.join(tempRoot, evidenceRelativePath);
+    await mkdir(path.dirname(sourcePath), { recursive: true });
+    await mkdir(path.dirname(evidencePath), { recursive: true });
+    await writeFile(sourcePath, JSON.stringify(questions), "utf8");
+    await writeFile(evidencePath, JSON.stringify(candidateEvidence), "utf8");
+    const canonical = {
+      catalogByTrack: new Map([[evidence.trackId, { contentVersion: evidence.contentVersion }]]),
+      questionsByTrack: new Map([[evidence.trackId, questions]])
+    };
+    return validateBizq05GcpQuestionRelationAmendment(contentRoot, canonical);
+  }
+
+  const restored = await verifyCandidate();
+  assert.equal(restored.size, 22);
+  assert.ok([...restored.values()].every((question) => !Object.hasOwn(question, "questionRelation")));
+  assert.deepEqual([...restored.keys()].sort(), evidence.questionIds);
+
+  const alteredRelation = structuredClone(sourceQuestions);
+  alteredRelation.find(({ questionId }) => questionId.endsWith("-006")).questionRelation.decisionBoundary = "Changed boundary.";
+  await assert.rejects(verifyCandidate(alteredRelation), /complete-file hash/u);
+
+  const extraRelation = structuredClone(sourceQuestions);
+  extraRelation.find(({ questionId }) => questionId.endsWith("-001")).questionRelation = structuredClone(extraRelation.find(({ questionId }) => questionId.endsWith("-006")).questionRelation);
+  await assert.rejects(verifyCandidate(extraRelation), /complete-file hash/u);
+
+  const missingPeer = structuredClone(sourceQuestions);
+  delete missingPeer.find(({ questionId }) => questionId.endsWith("-007")).questionRelation;
+  await assert.rejects(verifyCandidate(missingPeer), /complete-file hash/u);
+
+  const changedUnannotatedQuestion = structuredClone(sourceQuestions);
+  changedUnannotatedQuestion.find(({ questionId }) => questionId.endsWith("-001")).prompt += " Changed.";
+  await assert.rejects(verifyCandidate(changedUnannotatedQuestion), /complete-file hash/u);
+
+  const alteredEvidence = structuredClone(evidence);
+  alteredEvidence.relations[0].questionRelation.kind = "near_variant";
+  await assert.rejects(verifyCandidate(sourceQuestions, alteredEvidence), /pinned four-question/u);
+  const changedHistoricalPin = structuredClone(evidence);
+  changedHistoricalPin.historicalQuestionSetSha256 = "0".repeat(64);
+  await assert.rejects(verifyCandidate(sourceQuestions, changedHistoricalPin), /pinned four-question/u);
 });
 
 test("build-all emits exactly nine deterministic artifacts and lock entries", async (t) => {
@@ -490,7 +603,7 @@ test("existing GCP artifact rejects a legal but source-inconsistent node domain 
   await expectBuildFailure(() => buildTrack({ rootDirectory, outputRoot, trackId }), /malformed or differ from authoritative config/u);
 });
 
-test("ACC-02 historical manifests retain identity while current versions include the approved rule metadata bump", () => {
+test("Historical manifests retain identity while current GCP source version records reviewed question relations", () => {
   const candidateTracks = [...candidateManifest.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
   const baselineTracks = [...historicalBaseline.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
   const migrationTracks = [...historicalMigrationManifest.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
@@ -514,9 +627,12 @@ test("ACC-02 historical manifests retain identity while current versions include
     assert.equal(candidateTrack.source.canonicalItemCount, migrationTrack.counts.questions, candidateTrack.trackId);
   }
 
-  // Historical candidate and migration identities remain frozen above. The current catalog is a policy metadata revision.
+  // Historical candidate and migration identities remain frozen above. GCP question metadata has its own current source version.
   for (const track of realCatalog.tracks) {
-    assert.equal(track.contentVersion, `${completionBaselineVersions.get(track.trackId)}-bizq02-v2`, track.trackId);
+    const expectedVersion = track.trackId === "google-cloud-associate-cloud-engineer"
+      ? "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1"
+      : `${completionBaselineVersions.get(track.trackId)}-bizq02-v2`;
+    assert.equal(track.contentVersion, expectedVersion, track.trackId);
   }
 });
 

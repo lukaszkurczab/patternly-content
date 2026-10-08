@@ -33,7 +33,7 @@ const REQUIRED_QUESTION_KEYS = [
   "feedback",
   "difficulty"
 ];
-const OPTIONAL_QUESTION_KEYS = ["constraints", "sourceRefs"];
+const OPTIONAL_QUESTION_KEYS = ["constraints", "sourceRefs", "questionRelation"];
 const QUESTION_KEYS = [...REQUIRED_QUESTION_KEYS, ...OPTIONAL_QUESTION_KEYS];
 const CATALOG_KEYS = ["schemaVersion", "tracks"];
 const TRACK_KEYS = ["trackId", "contentVersion", "completionRule"];
@@ -121,6 +121,17 @@ function learnerTextString(value, pathName, errors) {
     return false;
   }
   return true;
+}
+
+function validateQuestionRelation(relation, pathName, errors) {
+  const keys = ["counterpartQuestionId", "kind", "changedCondition", "decisionBoundary"];
+  if (!exactKeys(relation, keys, pathName, errors)) return;
+  trimCleanString(relation.counterpartQuestionId, `${pathName}.counterpartQuestionId`, errors);
+  if (!["near_variant", "condition_contrast"].includes(relation.kind)) {
+    addError(errors, `${pathName}.kind`, "must be near_variant or condition_contrast");
+  }
+  learnerTextString(relation.changedCondition, `${pathName}.changedCondition`, errors);
+  learnerTextString(relation.decisionBoundary, `${pathName}.decisionBoundary`, errors);
 }
 
 function nullableString(value, pathName, errors) {
@@ -335,6 +346,10 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
   if (Array.isArray(catalogTrackIds) && !catalogTrackIds.includes(question.trackId)) addError(errors, "question.trackId", `is not present in the supplied catalog (${question.trackId})`);
   for (const key of OPTIONAL_QUESTION_KEYS) {
     if (!Object.prototype.hasOwnProperty.call(question, key)) continue;
+    if (key === "questionRelation") {
+      validateQuestionRelation(question[key], "question.questionRelation", errors);
+      continue;
+    }
     if (!Array.isArray(question[key])) addError(errors, `question.${key}`, "must be an array");
     else question[key].forEach((entry, index) => {
       const validate = key === "constraints" ? learnerTextString : trimCleanString;
@@ -391,6 +406,38 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
 
 export function validateQuestion(question, options = {}) {
   const errors = validateQuestionInternal(question, options);
+  return { valid: errors.length === 0, errors };
+}
+
+export function validateQuestionRelations(questions) {
+  const errors = [];
+  if (!Array.isArray(questions)) return { valid: false, errors: ["questions: must be an array"] };
+  const byId = new Map(questions.map((question) => [question?.questionId, question]));
+  for (const question of questions) {
+    const relation = question?.questionRelation;
+    if (!isRecord(relation)) continue;
+    const label = `question ${question.questionId}`;
+    if (relation.counterpartQuestionId === question.questionId) {
+      addError(errors, `${label}.questionRelation.counterpartQuestionId`, "must not reference itself");
+      continue;
+    }
+    const counterpart = byId.get(relation.counterpartQuestionId);
+    if (!counterpart) {
+      addError(errors, `${label}.questionRelation.counterpartQuestionId`, "does not reference a question in this track");
+      continue;
+    }
+    const reciprocal = counterpart.questionRelation;
+    if (!isRecord(reciprocal) || reciprocal.counterpartQuestionId !== question.questionId) {
+      addError(errors, `${label}.questionRelation`, "must be reciprocated by its counterpart");
+      continue;
+    }
+    for (const key of ["trackId", "nodeId", "mentalUnitId"]) {
+      if (question[key] !== counterpart[key]) addError(errors, `${label}.questionRelation`, `counterpart must share ${key}`);
+    }
+    for (const key of ["kind", "changedCondition", "decisionBoundary"]) {
+      if (relation[key] !== reciprocal[key]) addError(errors, `${label}.questionRelation.${key}`, "must match the reciprocal annotation");
+    }
+  }
   return { valid: errors.length === 0, errors };
 }
 
@@ -499,6 +546,7 @@ export function validateFixture(fixture, catalog = loadCanonicalCatalog()) {
     errors.push(...result.errors.map((error) => `fixture.questions[${index}].${error.replace(/^question\.?/, "")}`));
     if (typeof question?.questionId === "string") questionIds.push(question.questionId);
   });
+  errors.push(...validateQuestionRelations(fixture.questions).errors.map((error) => `fixture.${error}`));
   if (new Set(questionIds).size !== questionIds.length) addError(errors, "fixture.questions", "question IDs must be unique");
   return { valid: errors.length === 0, errors };
 }

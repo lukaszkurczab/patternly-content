@@ -139,6 +139,29 @@ function uniqueCounts(questions) {
   };
 }
 
+async function currentSourceProvenance(root, trackId) {
+  const validated = await validateTrack({ rootDirectory: root, trackId });
+  const questionIds = validated.questions.map((question) => question.questionId);
+  const declared = await declaredInputs(root, trackId, validated);
+  const owner = await loaderOwner(root, declared.inputs);
+  return {
+    validated,
+    trackId,
+    contentVersion: validated.track.contentVersion,
+    questionCount: questionIds.length,
+    questionIdSetSha256: setHash(questionIds),
+    inputs: declared.inputs,
+    loaderOwner: owner,
+    sourceInventorySha256: sha256(canonicalJson({ inputs: declared.inputs, loaderOwner: owner }))
+  };
+}
+
+export async function describeCurrentSourceProvenance({ rootDirectory = ROOT, trackId } = {}) {
+  if (!TRACK_IDS.includes(trackId)) fail("source_provenance_track_invalid");
+  const { validated, ...provenance } = await currentSourceProvenance(path.resolve(rootDirectory), trackId);
+  return provenance;
+}
+
 export function validatePrimaryObjective(trackId, source, questionIds, registryData) {
   const objective = source.primaryObjective;
   if (!isRecord(objective) || !["unavailable", "partial", "complete"].includes(objective.status)) fail("primary_objective_shape_invalid");
@@ -208,13 +231,12 @@ export async function verifyReadiness({ rootDirectory = ROOT, manifest: supplied
       if (!isRecord(declared) || typeof declared.role !== "string" || !/^[a-f0-9]{64}$/u.test(declared.sha256)) fail("manifest_input_invalid");
       await secureFile(root, declared.path);
     }
-    const result = await validateTrack({ rootDirectory: root, trackId: entry.trackId });
+    const current = await currentSourceProvenance(root, entry.trackId);
+    const result = current.validated;
     const idsForTrack = result.questions.map((q) => q.questionId);
-    const actual = await declaredInputs(root, entry.trackId, result);
-    const owner = await loaderOwner(root, actual.inputs);
-    if (result.track.contentVersion !== entry.contentVersion || idsForTrack.length !== entry.questionCount || setHash(idsForTrack) !== entry.questionIdSetSha256) fail(`stale_source_${entry.trackId}`);
-    if (canonicalJson(entry.inputs) !== canonicalJson(actual.inputs) || canonicalJson(entry.loaderOwner) !== canonicalJson(owner) || sha256(canonicalJson({ inputs: actual.inputs, loaderOwner: owner })) !== entry.sourceInventorySha256) fail(`stale_provenance_${entry.trackId}`);
-    const sourceByPath = new Map(actual.inputs.map((x) => [x.path, x]));
+    if (current.contentVersion !== entry.contentVersion || current.questionCount !== entry.questionCount || current.questionIdSetSha256 !== entry.questionIdSetSha256) fail(`stale_source_${entry.trackId}`);
+    if (canonicalJson(entry.inputs) !== canonicalJson(current.inputs) || canonicalJson(entry.loaderOwner) !== canonicalJson(current.loaderOwner) || current.sourceInventorySha256 !== entry.sourceInventorySha256) fail(`stale_provenance_${entry.trackId}`);
+    const sourceByPath = new Map(current.inputs.map((x) => [x.path, x]));
     const registryRecord = [...sourceByPath.values()].find((x) => x.role === "objective_registry_source");
     if (!isRecord(entry.primaryObjective)) fail("primary_objective_shape_invalid");
     const expectedStratumKind = entry.trackId === "google-cloud-associate-cloud-engineer" ? "published_item_domain" : entry.trackId === CODING_TRACK || DESIGN_TRACKS.has(entry.trackId) ? "patternly_node" : "unavailable";

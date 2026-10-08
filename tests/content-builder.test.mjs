@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { cp, mkdtemp, readFile, readdir, rename as fsRename, stat, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, readdir, realpath, rename as fsRename, stat, mkdir, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -167,7 +167,7 @@ test("BIZQ-05 GCP historical relation amendment is exact, additive and tamper-ev
   const currentEvidence = await readFile(path.join(ROOT, evidenceRelativePath), "utf8");
   const sourceQuestions = JSON.parse(currentSource);
   const evidence = JSON.parse(currentEvidence);
-  const tempRoot = await mkdtemp(path.join("/private/tmp", "patternly-bizq05-gcp-amendment-"));
+  const tempRoot = await mkdtemp(path.join(await realpath(os.tmpdir()), "patternly-bizq05-gcp-amendment-"));
   t.after(() => rm(tempRoot, { recursive: true, force: true }));
 
   async function verifyCandidate(questions = sourceQuestions, candidateEvidence = evidence) {

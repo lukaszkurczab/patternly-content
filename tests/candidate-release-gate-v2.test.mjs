@@ -260,14 +260,24 @@ test("workflow contract rebuilds v2 evidence and release gate without legacy pub
   const release = await readFile(path.join(ROOT, ".github/workflows/real-content-release.yml"), "utf8");
   const packageJson = JSON.parse(await readFile(path.join(ROOT, "package.json"), "utf8"));
   for (const workflow of [publishing, release]) {
-    assert.match(workflow, /npm run candidate:draft-v2/);
-    assert.match(workflow, /npm run candidate:readiness-v2/);
     assert.match(workflow, /git diff --exit-code -- reports\/candidate-reconciliation\/AWS-02-DRAFT evidence\/candidate-decisions\/current-candidate-decision-v2\.json evidence\/readiness\/current-candidate-readiness-v2\.json/);
     assert.doesNotMatch(workflow, /generate:review-packets|generate:candidate-readiness|scripts\/publishing\/|npm run validate:real:coding-interview|run:.*(?:deploy|npm run publish|firebase deploy)/i);
     for (const [, command] of workflow.matchAll(/\bnpm run ([\w:-]+)/g)) assert.ok(packageJson.scripts[command], `Workflow references missing npm script ${command}.`);
     for (const [, scriptPath] of workflow.matchAll(/\bnode (scripts\/[\w./-]+)/g)) await access(path.join(ROOT, scriptPath));
   }
+  assert.match(publishing, /CONTENT_CANDIDATE_OUTPUT: \$\{\{ runner\.temp \}\}\/patternly-candidate-\$\{\{ github\.sha \}\}/);
+  assert.match(publishing, /execFileSync\("git", \["rev-parse", "HEAD"\]/);
+  assert.match(publishing, /checkoutCommit !== process\.env\.GITHUB_SHA/);
+  assert.match(publishing, /buildCandidateDraft\(\{ outputDirectory \}\)/);
+  assert.match(publishing, /manifest\.status !== "draft_not_admitted"/);
+  assert.match(publishing, /contentSourceCommit=\$\{manifest\.release\.sourceRepositoryCommit\}/);
+  assert.doesNotMatch(publishing, /manifest\.release\.sourceRepositoryCommit !== process\.env\.GITHUB_SHA/);
+  assert.match(publishing, /candidateApproval: "not_granted"/);
+  assert.match(publishing, /verifyCandidateReleaseEvidence\(\)/);
+  assert.doesNotMatch(publishing, /npm run candidate:draft-v2|npm run candidate:readiness-v2/);
   assert.match(publishing, /npm run validate:bundled-free-nodes/);
+  assert.match(release, /npm run candidate:draft-v2/);
+  assert.match(release, /npm run candidate:readiness-v2/);
   assert.match(release, /npm run candidate:release-gate-v2/);
   assert.match(release, /workflow_dispatch/);
 });

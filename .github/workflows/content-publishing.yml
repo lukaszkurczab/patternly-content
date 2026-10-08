@@ -50,11 +50,39 @@ jobs:
       - name: Score canonical answers for every catalog track
         run: |
           node --input-type=module -e 'import { readFileSync } from "node:fs"; import { spawnSync } from "node:child_process"; const { tracks } = JSON.parse(readFileSync("content/catalog.json", "utf8")); for (const { trackId } of tracks) { const result = spawnSync("npm", ["run", "content:test", "--", "--track", trackId, "--root", "."], { stdio: "inherit" }); if (result.error) throw result.error; if (result.status !== 0) process.exit(result.status ?? 1); }'
-      - name: Rebuild exact candidate draft
-        run: npm run candidate:draft-v2
-      - name: Regenerate readiness from the delegated decision
-        run: npm run candidate:readiness-v2
-      - name: Require committed candidate and decision-bound readiness evidence
+      - name: Build source candidate in quarantine without granting admission
+        env:
+          CONTENT_CANDIDATE_OUTPUT: ${{ runner.temp }}/patternly-candidate-${{ github.sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from "node:child_process";
+          import { buildCandidateDraft } from "./scripts/review/candidate-draft-v2.mjs";
+
+          const checkoutCommit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+          if (!/^[a-f0-9]{40}$/u.test(process.env.GITHUB_SHA ?? "") || checkoutCommit !== process.env.GITHUB_SHA) {
+            throw new Error("Workflow checkout does not match the triggering commit.");
+          }
+          const outputDirectory = process.env.CONTENT_CANDIDATE_OUTPUT;
+          if (!outputDirectory) throw new Error("Quarantined candidate output path is unavailable.");
+          const { manifest } = await buildCandidateDraft({ outputDirectory });
+          const notGranted = { candidateApproval: "not_granted", publishingAdmission: "not_granted", runtimeAdmission: "not_granted", appReleaseLockUpdated: false };
+          if (manifest.status !== "draft_not_admitted" || JSON.stringify(manifest.review) !== JSON.stringify(notGranted) || manifest.tracks.length !== 9) {
+            throw new Error("Quarantined source candidate has an invalid identity, scope, or admission boundary.");
+          }
+          process.stdout.write(`SOURCE_DRAFT_VALID candidateId=${manifest.candidateId}; checkoutCommit=${checkoutCommit}; contentSourceCommit=${manifest.release.sourceRepositoryCommit}; tracks=${manifest.tracks.length}; admission=not_granted\n`);
+          NODE
+      - name: Verify historical candidate decision and readiness without rewriting them
+        run: |
+          node --input-type=module <<'NODE'
+          import { verifyCandidateReleaseEvidence } from "./scripts/review/candidate-release-gate-v2.mjs";
+
+          const { candidate, readiness } = await verifyCandidateReleaseEvidence();
+          if (readiness.candidateApproval.status !== "approved" || readiness.publishingAdmission !== "not_granted" || readiness.runtimeAdmission !== "not_granted" || readiness.appReleaseLockUpdated !== false) {
+            throw new Error("Historical candidate evidence has an invalid identity or boundary.");
+          }
+          process.stdout.write(`HISTORICAL_EVIDENCE_VALID candidateId=${candidate.candidateId}; publishing/runtime=not_granted\n`);
+          NODE
+      - name: Require committed historical candidate and decision-bound readiness evidence to remain unchanged
         run: |
           git diff --exit-code -- reports/candidate-reconciliation/AWS-02-DRAFT evidence/candidate-decisions/current-candidate-decision-v2.json evidence/readiness/current-candidate-readiness-v2.json
           if test -n "$(git ls-files --others --exclude-standard -- reports/candidate-reconciliation/AWS-02-DRAFT evidence/candidate-decisions/current-candidate-decision-v2.json evidence/readiness/current-candidate-readiness-v2.json)"; then

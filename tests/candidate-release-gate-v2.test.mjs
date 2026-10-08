@@ -8,7 +8,9 @@ import { fileURLToPath } from "node:url";
 import { gzipSync, gunzipSync } from "node:zlib";
 
 import { BUNDLED_FREE_NODE_LIMITS, validateBundledFreeNode, validateConfiguredBundledFreeNodes } from "../scripts/product/validate-bundled-free-nodes.mjs";
-import { CANDIDATE_PATH, DECISION_PATH, READINESS_PATH, RELEASE_PATH } from "../scripts/review/candidate-readiness-v2.mjs";
+import { CANDIDATE_PATH, DECISION_PATH, READINESS_PATH, RELEASE_PATH, buildCandidateReadinessV2 } from "../scripts/review/candidate-readiness-v2.mjs";
+import { buildCandidateDraft } from "../scripts/review/candidate-draft-v2.mjs";
+import { CANDIDATE_TRACK_IDS, canonicalJsonBytes } from "../scripts/review/candidate-manifest.mjs";
 import { runCandidateReleaseGate, verifyCandidateReleaseEvidence } from "../scripts/review/candidate-release-gate-v2.mjs";
 import { ADMISSION_PATH } from "../scripts/review/candidate-admission-v3.mjs";
 
@@ -68,22 +70,67 @@ async function pinFixturePackage(root, entry, packageSha256) {
 
 async function makeCandidateFixture() {
   const root = await mkdtemp(path.join(os.tmpdir(), "patternly-release-gate-test-"));
-  const paths = [CANDIDATE_PATH, RELEASE_PATH, READINESS_PATH, DECISION_PATH,
-    "schemas/review/content-candidate-decision-v2.schema.json",
-    "schemas/review/content-candidate-readiness-v2.schema.json"];
-  for (const relativePath of paths) {
-    const destination = path.join(root, relativePath);
-    await mkdir(path.dirname(destination), { recursive: true });
-    await cp(path.join(ROOT, relativePath), destination);
+  try {
+    const built = await buildCandidateDraft({ root: ROOT, outputDirectory: path.join(root, "built") });
+    for (const relativePath of [
+      "schemas/review/content-candidate-decision-v2.schema.json",
+      "schemas/review/content-candidate-readiness-v2.schema.json",
+    ]) {
+      const destination = path.join(root, relativePath);
+      await mkdir(path.dirname(destination), { recursive: true });
+      await cp(path.join(ROOT, relativePath), destination);
+    }
+
+    const candidatePath = path.join(root, CANDIDATE_PATH);
+    const releasePath = path.join(root, RELEASE_PATH);
+    await mkdir(path.dirname(candidatePath), { recursive: true });
+    await mkdir(path.dirname(releasePath), { recursive: true });
+    await writeFile(candidatePath, canonicalJsonBytes(built.manifest));
+    await writeFile(releasePath, canonicalJsonBytes(built.release));
+    for (const artifact of built.release.artifacts) {
+      const relativePath = path.join(DRAFT_ROOT, "release", artifact.artifactPath);
+      const destination = path.join(root, relativePath);
+      await mkdir(path.dirname(destination), { recursive: true });
+      await cp(path.join(built.outputRoot, "release", artifact.artifactPath), destination);
+    }
+
+    const decision = {
+      schemaVersion: "patternly-content-candidate-decision-v2",
+      decisionId: `codex-content-candidate-review-v2:${built.manifest.candidateId}`,
+      decisionAuthority: "delegated_codex",
+      taskId: "BIZQ-02/CANDIDATE",
+      decision: "approved_for_candidate_readiness",
+      decisionRationale: "Test fixture binds exact current producer artifacts; this isolated approval grants neither publishing nor runtime admission.",
+      candidatePath: CANDIDATE_PATH,
+      candidateId: built.manifest.candidateId,
+      sourceRepositoryCommit: built.manifest.release.sourceRepositoryCommit,
+      release: {
+        releaseId: built.release.manifest.releaseId,
+        releasePath: RELEASE_PATH,
+        checksumSha256: sha256(canonicalJsonBytes(built.release)),
+      },
+      trackIds: [...CANDIDATE_TRACK_IDS],
+      tracks: built.release.artifacts.map((artifact) => ({
+        trackId: artifact.trackId,
+        sourcePath: artifact.sourcePath,
+        artifactPath: artifact.artifactPath,
+        questionCount: artifact.questionCount,
+        questionSetSha256: artifact.questionSetSha256,
+        artifactSha256: artifact.checksumSha256,
+      })),
+      basis: { odk096: "passed", nineTrackBuild: "passed", repositoryTests: "passed", migrationVerification: "passed" },
+      boundaries: { publishingAdmission: "not_granted", runtimeAdmission: "not_granted", appReleaseLockUpdated: false },
+    };
+    const decisionOutput = path.join(root, DECISION_PATH);
+    await mkdir(path.dirname(decisionOutput), { recursive: true });
+    await mkdir(path.dirname(path.join(root, READINESS_PATH)), { recursive: true });
+    await writeFile(decisionOutput, canonicalJsonBytes(decision));
+    await buildCandidateReadinessV2({ root });
+    return root;
+  } catch (error) {
+    await rm(root, { recursive: true, force: true });
+    throw error;
   }
-  const release = JSON.parse(await readFile(path.join(root, RELEASE_PATH), "utf8"));
-  for (const artifact of release.artifacts) {
-    const relativePath = path.join(DRAFT_ROOT, "release", artifact.artifactPath);
-    const destination = path.join(root, relativePath);
-    await mkdir(path.dirname(destination), { recursive: true });
-    await cp(path.join(ROOT, relativePath), destination);
-  }
-  return root;
 }
 
 test("release gate verifies exact decision-bound evidence and requires separate admission", async () => {
@@ -128,7 +175,7 @@ test("release gate verifies exact decision-bound evidence and requires separate 
   }
 });
 
-test("release gate accepts the exact v3 admission without mutating readiness v2", async () => {
+test("release gate rejects the old AWS grant for the current BIZQ-02 candidate", async () => {
   const root = await makeCandidateFixture();
   try {
     const admission = JSON.parse(await readFile(path.join(ROOT, ADMISSION_PATH), "utf8"));
@@ -138,11 +185,9 @@ test("release gate accepts the exact v3 admission without mutating readiness v2"
     await cp(runtimeSource, runtimeTarget);
     await mkdir(path.dirname(path.join(root, ADMISSION_PATH)), { recursive: true });
     await writeFile(path.join(root, ADMISSION_PATH), `${JSON.stringify(admission)}\n`);
-    const candidate = await runCandidateReleaseGate({ root });
-    assert.equal(candidate.candidateId, admission.candidateId);
-    admission.taskId = admission.taskId === "BIZQ-01/ADMISSION" ? "AWS-02/ADMISSION" : "BIZQ-01/ADMISSION";
-    await writeFile(path.join(root, ADMISSION_PATH), `${JSON.stringify(admission)}\n`);
-    await assert.rejects(runCandidateReleaseGate({ root }), /task differs/);
+    const candidate = JSON.parse(await readFile(path.join(root, CANDIDATE_PATH), "utf8"));
+    assert.notEqual(candidate.candidateId, admission.candidateId);
+    await assert.rejects(runCandidateReleaseGate({ root }), /Candidate admission release binding is stale/u);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
@@ -217,7 +262,7 @@ test("workflow contract rebuilds v2 evidence and release gate without legacy pub
   for (const workflow of [publishing, release]) {
     assert.match(workflow, /npm run candidate:draft-v2/);
     assert.match(workflow, /npm run candidate:readiness-v2/);
-    assert.match(workflow, /git diff --exit-code -- reports\/candidate-reconciliation\/AWS-02-DRAFT evidence\/readiness\/candidate-readiness-v2\.json/);
+    assert.match(workflow, /git diff --exit-code -- reports\/candidate-reconciliation\/AWS-02-DRAFT evidence\/readiness\/bizq-02-candidate-readiness-v2\.json/);
     assert.doesNotMatch(workflow, /generate:review-packets|generate:candidate-readiness|scripts\/publishing\/|npm run validate:real:coding-interview|run:.*(?:deploy|npm run publish|firebase deploy)/i);
     for (const [, command] of workflow.matchAll(/\bnpm run ([\w:-]+)/g)) assert.ok(packageJson.scripts[command], `Workflow references missing npm script ${command}.`);
     for (const [, scriptPath] of workflow.matchAll(/\bnode (scripts\/[\w./-]+)/g)) await access(path.join(ROOT, scriptPath));

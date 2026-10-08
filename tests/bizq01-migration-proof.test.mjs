@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, realpath, rename, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,6 +52,7 @@ before(async () => {
   await copyCurrentMigrationFixture(contentRepositoryRoot, fixtureRoot);
   noProofFixture = await createCanonicalFixture("bizq01-no-proof-");
   noProofFixtureParent = noProofFixture.parent;
+  await mkdir(path.join(noProofFixture.parent, "evidence", "business-quality"), { recursive: true });
 });
 
 after(async () => {
@@ -94,10 +95,11 @@ test("rejects a changed Claude item from the exact accepted current bank", async
   }, () => assertRejected("HASH_MISMATCH"));
 });
 
-test("rejects a synthetic bank without the fixed accepted producer proofs", async () => {
+test("rejects a synthetic bank without fixed accepted producer proofs", async () => {
   await assert.rejects(verifyMigration({ contentRoot: noProofFixture.root }), (error) => {
     assert.ok(error instanceof MigrationVerificationError);
-    assert.equal(error.code, "HASH_MISMATCH");
+    assert.equal(error.code, "PATH_ERROR");
+    assert.match(error.message, /bizq-05-gcp-question-relations-01\.json/u);
     return true;
   });
 });

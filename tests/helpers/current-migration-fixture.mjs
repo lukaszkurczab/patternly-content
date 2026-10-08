@@ -2,6 +2,7 @@ import { cp, mkdir } from "node:fs/promises";
 import path from "node:path";
 
 const BUSINESS_QUALITY_PROOFS = [
+  "bizq-05-gcp-question-relations-01.json",
   "bizq-01-besd-slice-01.json",
   "bizq-01-besd-seed-cohort-14.json",
   "bizq-01-coding-source-copy-04.json",

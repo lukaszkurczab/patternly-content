@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { canonicalJson, sha256 } from "../scripts/build.mjs";
+import { canonicalJson, sha256, validateTrack } from "../scripts/build.mjs";
 import { describeCurrentSourceProvenance, secureFile, validatePrimaryObjective, verifyReadiness } from "../scripts/content/verify-primary-strata-readiness.mjs";
 
 const manifest = JSON.parse(await readFile(new URL("../config/primary-strata-readiness.json", import.meta.url), "utf8"));
@@ -48,7 +48,55 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.ok(coding.stratum.uniqueNodeCount > 1);
   const aws = result.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate");
   assert.equal(aws.stratum.kind, "unavailable");
-  assert.ok(result.tracks.filter((track) => track.trackId !== "microsoft-azure-administrator-associate-az-104").every((track) => track.primaryObjective.status === "unavailable"));
+  assert.ok(result.tracks.filter((track) => !["microsoft-azure-administrator-associate-az-104", "microsoft-azure-ai-fundamentals-ai-901"].includes(track.trackId)).every((track) => track.primaryObjective.status === "unavailable"));
+});
+
+test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewed exclusions", async () => {
+  const ai901 = manifest.tracks.find((entry) => entry.trackId === "microsoft-azure-ai-fundamentals-ai-901");
+  const verified = (await verifyReadiness({ manifest })).tracks.find((track) => track.trackId === ai901.trackId);
+  assert.equal(ai901.contentVersion, "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15-bizq02-v2");
+  assert.equal(ai901.questionCount, 752);
+  assert.equal(ai901.questionIdSetSha256, "088aa8189f9d25a5a6da640e487a407c96efde3f410f86d4296bf39f97b8f34a");
+  assert.equal(ai901.sourceInventorySha256, "68cb2307ef674998c33f3475d9a58f6cf330f66c87fdcaac2bbdab6802023650");
+  assert.deepEqual(ai901.primaryObjective.registry, {
+    path: "config/certification-objective-registries/microsoft-azure-ai-fundamentals-ai-901.json",
+    sha256: "769202258c0e387550b8fc3160aecf06d2ecf3ba3b42e4153a3052b68f4a9d5b",
+    registryVersion: "patternly-certification-objective-registry-v1",
+    source: {
+      guideVersion: "skills-measured-2026-04-15",
+      checkedDate: "2026-08-10",
+      currentness: "unverified"
+    }
+  });
+  assert.equal(ai901.primaryObjective.status, "partial");
+  assert.equal(ai901.primaryObjective.bindings.length, 635);
+  assert.equal(sha256(canonicalJson(ai901.primaryObjective.bindings)), "830bccc7a6301016b0c316334367649c1e68982295dbecc90c0e251ac58f501b");
+  assert.equal(verified.primaryObjective.mapped, 635);
+  assert.equal(verified.primaryObjective.unmapped, 117);
+  assert.equal(verified.primaryObjective.orphan, 0);
+  assert.equal(verified.primaryObjective.ambiguous, 0);
+  assert.equal(verified.primaryObjective.mappingComplete, false);
+  assert.deepEqual({ ...verified.primaryObjective.domainCounts }, {
+    "ai-901-2026-04-15-domain-1": 530,
+    "ai-901-2026-04-15-domain-2": 105
+  });
+  assert.deepEqual(Object.fromEntries(["1.1", "1.2", "1.3", "2.1", "2.2", "2.3", "2.4"].map((suffix) => [
+    suffix,
+    ai901.primaryObjective.bindings.filter((binding) => binding.objectiveId === `ai-901-2026-04-15-${suffix}`).length
+  ])), { "1.1": 284, "1.2": 151, "1.3": 95, "2.1": 40, "2.2": 5, "2.3": 20, "2.4": 40 });
+  const mappedIds = new Set(ai901.primaryObjective.bindings.map((binding) => binding.questionId));
+  const validated = await validateTrack({ rootDirectory: process.cwd(), trackId: ai901.trackId });
+  const questionIds = new Set(validated.questions.map((question) => question.questionId));
+  const unmappedIds = [...questionIds].filter((questionId) => !mappedIds.has(questionId)).sort();
+  assert.equal(mappedIds.size, 635);
+  assert.equal(unmappedIds.length, 117);
+  assert.equal(sha256(canonicalJson(unmappedIds)), "9f1045b9bf0d9bd395dcd15d47db94868294e23a9d7ffbf499d6cb6733adbee7");
+  for (const questionId of [
+    "AI901-N05-B05-Q001", "AI901-N05-B05-Q003", "AI901-N05-B05-Q004", "AI901-N05-B05-Q005", "AI901-N05-B05-Q006"
+  ]) assert.equal(unmappedIds.includes(questionId), true, questionId);
+  assert.equal(verified.semanticOwnerApproval, "not_established");
+  assert.equal(verified.efficacy, "not_evaluated");
+  assert.equal(verified.readiness, "not_ready");
 });
 
 test("read-only provenance description matches the pinned GCP source contract", async () => {

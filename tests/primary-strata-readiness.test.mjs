@@ -14,12 +14,22 @@ const registry = JSON.parse(await readFile(new URL("../config/certification-obje
 const objectiveId = registry.objectives[0].objectiveId;
 const pinnedRegistry = manifest.tracks.find((entry) => entry.trackId === trackId).primaryObjective.registry;
 
-test("current nine-track manifest verifies as structurally valid without claiming primary readiness", async () => {
+test("current nine-track manifest verifies partial AZ-104 mapping without claiming track readiness", async () => {
   const result = await verifyReadiness({ manifest });
   assert.equal(result.tracks.length, 9);
   assert.ok(result.tracks.every((track) => track.structuralValidity === "valid"));
-  assert.ok(result.tracks.every((track) => track.primaryObjective.status === "unavailable" && track.readiness === "not_ready"));
+  assert.ok(result.tracks.every((track) => track.readiness === "not_ready"));
   assert.ok(result.tracks.every((track) => track.semanticOwnerApproval === "not_established" && track.efficacy === "not_evaluated"));
+  const az104 = result.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
+  assert.equal(az104.primaryObjective.status, "partial");
+  assert.equal(az104.primaryObjective.mapped, 11);
+  assert.equal(az104.primaryObjective.unmapped, 1277);
+  assert.equal(az104.primaryObjective.orphan, 0);
+  assert.equal(az104.primaryObjective.ambiguous, 0);
+  assert.equal(az104.primaryObjective.mappingComplete, false);
+  assert.equal(az104.primaryObjective.domainCounts["az-104-2026-04-17-domain-1"], 11);
+  assert.equal(Object.keys(az104.primaryObjective.domainCounts).length, 1);
+  assert.equal(az104.questions, 1288);
   const gcp = result.tracks.find((track) => track.trackId === "google-cloud-associate-cloud-engineer");
   assert.equal(gcp.stratum.kind, "published_item_domain");
   assert.equal(gcp.stratum.status, "verified");
@@ -30,6 +40,27 @@ test("current nine-track manifest verifies as structurally valid without claimin
   assert.ok(coding.stratum.uniqueNodeCount > 1);
   const aws = result.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate");
   assert.equal(aws.stratum.kind, "unavailable");
+  assert.ok(result.tracks.filter((track) => track.trackId !== "microsoft-azure-administrator-associate-az-104").every((track) => track.primaryObjective.status === "unavailable"));
+});
+
+test("AZ-104 stores only the eleven reviewed item-level bindings and derives domain from registry", () => {
+  const az104 = manifest.tracks.find((entry) => entry.trackId === "microsoft-azure-administrator-associate-az-104");
+  const expected = [
+    ["001", "1.3"], ["002", "1.1"], ["005", "1.1"], ["007", "1.2"], ["008", "1.2"],
+    ["009", "1.1"], ["010", "1.1"], ["011", "1.1"], ["012", "1.2"], ["013", "1.2"], ["014", "1.3"]
+  ].map(([questionSuffix, objectiveSuffix]) => ({
+    questionId: `az104-AZ104-N01-B01-${questionSuffix}`,
+    objectiveId: `az-104-2026-04-17-${objectiveSuffix}`
+  }));
+  assert.equal(az104.primaryObjective.status, "partial");
+  assert.deepEqual(az104.primaryObjective.bindings, expected);
+  assert.equal(az104.primaryObjective.registry.sha256, "7728bafa22a5d622ae1f64d14bb3fb5ff3459431c23aaeb82ad1fceaaf0f2476");
+  assert.equal(az104.primaryObjective.bindings.some((binding) => Object.hasOwn(binding, "domainId") || Object.hasOwn(binding, "parentDomainId")), false);
+  for (const suffix of ["003", "004", "006"]) {
+    assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId.endsWith(`-${suffix}`)), false);
+  }
+  assert.equal(az104.questionIdSetSha256, "05c5642f6a14aa365d55e676e211a9b4466344c645e5361178e72aa6c54b3d25");
+  assert.equal(az104.sourceInventorySha256, "88a0a42edfa3905b47c2c39a761d463272876d5d0a772fea028972867db0ceb0");
 });
 
 test("manifest requires the exact nine unique current track identities", async () => {

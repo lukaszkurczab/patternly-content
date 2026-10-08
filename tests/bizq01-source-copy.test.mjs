@@ -11,7 +11,7 @@ import { scoreQuestion, validateQuestion } from "../scripts/content/question-con
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const proof = JSON.parse(readFileSync(path.join(root, "evidence/business-quality/bizq-01-coding-source-copy-04.json")));
-const CURRENT_CONTENT_VERSION = "coding-interview-dsa-problem-solving-authoring-v2026.10.02-bizq01-04-bizq02-v2";
+const CURRENT_CONTENT_VERSION = "coding-interview-dsa-problem-solving-authoring-v2026.10.02-bizq01-04-bizq02-v2-bizq03-planning-v2";
 const sourceBytes = readFileSync(path.join(root, proof.sourceFile));
 const questions = JSON.parse(sourceBytes);
 const question = questions.find((question) => question.questionId === proof.questionId);

@@ -20,8 +20,9 @@ import {
   validateQuestion,
   validateQuestionRelations
 } from "./content/question-contract.mjs";
+import { PlanningPolicyError, validatePlanningPolicy } from "./content/planning-policy.mjs";
 
-export const ARTIFACT_SCHEMA_VERSION = "patternly-content-artifact-v1";
+export const ARTIFACT_SCHEMA_VERSION = "patternly-content-artifact-v2";
 export const LOCK_SCHEMA_VERSION = "patternly-content-lock-v1";
 export const LOCK_FILE_NAME = "content-lock.json";
 
@@ -536,6 +537,17 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
     const completion = validatePackageCompletionRule(track.completionRule, `catalog.tracks.${trackId}.completionRule`, questions);
     if (!completion.valid) fail(`Chapter completion rule does not match canonical source questions for ${trackId}`, completion.errors);
   }
+  const curriculumPath = path.join(resolvedRoot, "config", "curricula", `${trackId}.json`);
+  await assertSecurePath(resolvedRoot, curriculumPath, "registered curriculum");
+  const curriculum = await readJson(curriculumPath);
+  if (!isRecord(curriculum) || curriculum.trackId !== trackId) fail(`Registered curriculum identity does not match ${trackId}`);
+  let planningPolicy;
+  try {
+    planningPolicy = validatePlanningPolicy(curriculum.planningPolicy, questions);
+  } catch (error) {
+    if (error instanceof PlanningPolicyError) fail(`Invalid planning policy for ${trackId}: ${error.message}`);
+    throw error;
+  }
   const profileData = trackId === GCP_TRACK_ID
     ? await loadGcpSimulationProfileData({ rootDirectory: resolvedRoot, track, questions })
     : trackId === CODING_TRACK_ID
@@ -544,7 +556,7 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
   const artifactQuestions = profileData?.questionDomains
     ? questions.map((question) => ({ ...question, contentDomainId: profileData.questionDomains[question.questionId] }))
     : questions;
-  return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions, artifactQuestions, simulationProfiles: profileData?.simulationProfiles };
+  return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions, artifactQuestions, planningPolicy, simulationProfiles: profileData?.simulationProfiles };
 }
 
 export async function testTrack(options = {}) {
@@ -603,7 +615,8 @@ function artifactFor(validated) {
     schemaVersion: ARTIFACT_SCHEMA_VERSION,
     trackId: validated.trackId,
     contentVersion: validated.track.contentVersion,
-    questions: validated.artifactQuestions ?? validated.questions
+    questions: validated.artifactQuestions ?? validated.questions,
+    planningPolicy: validated.planningPolicy
   };
   if (Object.hasOwn(validated.track, "completionRule")) artifact.completionRule = validated.track.completionRule;
   if (validated.simulationProfiles) artifact.simulationProfiles = validated.simulationProfiles;
@@ -657,7 +670,7 @@ async function readRegularFile(filePath, label) {
 }
 
 function validateArtifactShape(artifact, { entry, catalog, filePath }) {
-  const requiredKeys = ["schemaVersion", "trackId", "contentVersion", "questions"];
+  const requiredKeys = ["schemaVersion", "trackId", "contentVersion", "questions", "planningPolicy"];
   const allowedKeys = [...requiredKeys, "simulationProfiles", "completionRule"];
   if (!isRecord(artifact) || requiredKeys.some((key) => !Object.hasOwn(artifact, key)) || Object.keys(artifact).some((key) => !allowedKeys.includes(key))) {
     fail(`Artifact has an invalid shape: ${filePath}`);
@@ -676,6 +689,12 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
   }
   if (!Array.isArray(artifact.questions) || artifact.questions.length !== entry.questionCount) {
     fail(`Artifact questionCount mismatch: ${filePath}`);
+  }
+  try {
+    validatePlanningPolicy(artifact.planningPolicy, artifact.questions);
+  } catch (error) {
+    if (error instanceof PlanningPolicyError) fail(`Artifact planningPolicy is invalid: ${filePath}: ${error.message}`);
+    throw error;
   }
   if (Object.hasOwn(artifact, "completionRule")) {
     const ruleResult = validatePackageCompletionRule(artifact.completionRule, "artifact.completionRule", artifact.questions);
@@ -720,6 +739,17 @@ async function verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory)
       fail(`Existing simulationProfiles are malformed or differ from authoritative config: ${filePath}`);
     }
   }
+  const curriculumPath = path.join(rootDirectory, "config", "curricula", `${entry.trackId}.json`);
+  await assertSecurePath(rootDirectory, curriculumPath, "registered curriculum");
+  const curriculum = await readJson(curriculumPath);
+  let expectedPlanningPolicy;
+  try {
+    expectedPlanningPolicy = validatePlanningPolicy(curriculum?.planningPolicy, validated.questions);
+  } catch (error) {
+    if (error instanceof PlanningPolicyError) fail(`Invalid planning policy for ${entry.trackId}: ${error.message}`);
+    throw error;
+  }
+  if (canonicalJson(validated.planningPolicy) !== canonicalJson(expectedPlanningPolicy)) fail(`Existing planningPolicy differs from authoritative curriculum: ${filePath}`);
   return validated;
 }
 

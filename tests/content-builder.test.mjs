@@ -46,9 +46,41 @@ const completionBaselineVersions = new Map(completionCsvRows.map(([trackId, _nod
 async function createWorkspace() {
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-simp02-"));
   await mkdir(path.join(rootDirectory, "content"), { recursive: true });
+  await mkdir(path.join(rootDirectory, "config", "curricula"), { recursive: true });
   const fixtureCatalog = structuredClone(realCatalog);
   for (const track of fixtureCatalog.tracks) delete track.completionRule;
   await writeFile(path.join(rootDirectory, "content/catalog.json"), `${canonicalJson(fixtureCatalog)}\n`, "utf8");
+  for (const track of fixtureCatalog.tracks) {
+    const curriculum = {
+      trackId: track.trackId,
+      planningPolicy: {
+        schemaVersion: "patternly-learning-planning-policy-v1",
+        policyVersion: "fixture-v1",
+        workEstimates: [{
+          estimateId: `${track.trackId}:fixture-mode`,
+          modeId: "fixture-mode",
+          scopeRefs: [{ nodeId: "node-001", mentalUnitId: "mental-unit-001" }],
+          minMinutesPerResponse: 1,
+          typicalMinutesPerResponse: 2,
+          maxMinutesPerResponse: 3,
+          provenance: "authored",
+          observationCount: 0,
+          rationale: "Bounded fixture task and feedback-reading estimate.",
+          reviewReserve: {
+            kind: "authored_estimate",
+            minAdditionalResponsesPerNewResponse: 0,
+            typicalAdditionalResponsesPerNewResponse: 0.5,
+            maxAdditionalResponsesPerNewResponse: 4,
+            provenance: "authored",
+            observationCount: 0,
+            rationale: "Canonical learning-cycle upper bound; fixture only."
+          }
+        }],
+        unavailableScopes: []
+      }
+    };
+    await writeFile(path.join(rootDirectory, "config", "curricula", `${track.trackId}.json`), `${JSON.stringify(curriculum, null, 2)}\n`, "utf8");
+  }
   return rootDirectory;
 }
 
@@ -98,11 +130,34 @@ test("each catalogued track validates, tests and builds independently", async (t
     const tested = await testTrack({ rootDirectory, trackId });
     assert.equal(tested.questions.length, 1);
     const built = await buildTrack({ rootDirectory, outputRoot, trackId });
-    assert.deepEqual(Object.keys(built.artifact).sort(), ["contentVersion", "questions", "schemaVersion", "trackId"]);
+    assert.deepEqual(Object.keys(built.artifact).sort(), ["contentVersion", "planningPolicy", "questions", "schemaVersion", "trackId"]);
     assert.equal(built.artifact.schemaVersion, ARTIFACT_SCHEMA_VERSION);
     assert.equal(built.artifact.trackId, trackId);
     assert.equal(built.artifact.contentVersion, realCatalog.tracks.find((track) => track.trackId === trackId).contentVersion);
   }
+});
+
+test("planning policy requires exact canonical node and mental unit scopes", async (t) => {
+  const rootDirectory = await createWorkspace();
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  await writeTrackQuestion(rootDirectory, ACCEPTED_TRACK_IDS[0]);
+  const curriculumPath = path.join(rootDirectory, "config", "curricula", `${ACCEPTED_TRACK_IDS[0]}.json`);
+  const curriculum = JSON.parse(await readFile(curriculumPath, "utf8"));
+  curriculum.planningPolicy.workEstimates[0].scopeRefs[0].mentalUnitId = "block-or-target-is-not-a-runtime-unit";
+  await writeFile(curriculumPath, `${JSON.stringify(curriculum, null, 2)}\n`, "utf8");
+  await expectBuildFailure(() => validateTrack({ rootDirectory, trackId: ACCEPTED_TRACK_IDS[0] }), /absent from canonical questions/u);
+});
+
+test("registered catalog tracks cannot build without their curriculum planning policy", async (t) => {
+  const rootDirectory = await createWorkspace();
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  const trackId = ACCEPTED_TRACK_IDS[0];
+  await writeTrackQuestion(rootDirectory, trackId);
+  const curriculumPath = path.join(rootDirectory, "config", "curricula", `${trackId}.json`);
+  const curriculum = JSON.parse(await readFile(curriculumPath, "utf8"));
+  delete curriculum.planningPolicy;
+  await writeFile(curriculumPath, `${JSON.stringify(curriculum, null, 2)}\n`, "utf8");
+  await expectBuildFailure(() => validateTrack({ rootDirectory, trackId }), /Invalid planning policy/u);
 });
 
 
@@ -170,7 +225,7 @@ test("BIZQ-05 GCP historical relation amendment is exact, additive and tamper-ev
   const tempRoot = await mkdtemp(path.join(await realpath(os.tmpdir()), "patternly-bizq05-gcp-amendment-"));
   t.after(() => rm(tempRoot, { recursive: true, force: true }));
 
-  async function verifyCandidate(questions = sourceQuestions, candidateEvidence = evidence) {
+  async function verifyCandidate(questions = sourceQuestions, candidateEvidence = evidence, canonicalQuestions = questions, catalogVersion = evidence.contentVersion) {
     const contentRoot = path.join(tempRoot, "content");
     const sourcePath = path.join(tempRoot, sourceRelativePath);
     const evidencePath = path.join(tempRoot, evidenceRelativePath);
@@ -179,8 +234,8 @@ test("BIZQ-05 GCP historical relation amendment is exact, additive and tamper-ev
     await writeFile(sourcePath, JSON.stringify(questions), "utf8");
     await writeFile(evidencePath, JSON.stringify(candidateEvidence), "utf8");
     const canonical = {
-      catalogByTrack: new Map([[evidence.trackId, { contentVersion: evidence.contentVersion }]]),
-      questionsByTrack: new Map([[evidence.trackId, questions]])
+      catalogByTrack: new Map([[evidence.trackId, { contentVersion: catalogVersion }]]),
+      questionsByTrack: new Map([[evidence.trackId, canonicalQuestions]])
     };
     return validateBizq05GcpQuestionRelationAmendment(contentRoot, canonical);
   }
@@ -189,6 +244,11 @@ test("BIZQ-05 GCP historical relation amendment is exact, additive and tamper-ev
   assert.equal(restored.size, 22);
   assert.ok([...restored.values()].every((question) => !Object.hasOwn(question, "questionRelation")));
   assert.deepEqual([...restored.keys()].sort(), evidence.questionIds);
+  assert.equal((await verifyCandidate(sourceQuestions, evidence, sourceQuestions, `${evidence.contentVersion}-bizq03-planning-v2`)).size, 22);
+
+  const alteredCanonical = structuredClone(sourceQuestions);
+  alteredCanonical.find(({ questionId }) => questionId.endsWith("-006")).prompt += " Changed.";
+  await assert.rejects(verifyCandidate(sourceQuestions, evidence, alteredCanonical), /current canonical questions/u);
 
   const alteredRelation = structuredClone(sourceQuestions);
   alteredRelation.find(({ questionId }) => questionId.endsWith("-006")).questionRelation.decisionBoundary = "Changed boundary.";
@@ -629,10 +689,10 @@ test("Historical manifests retain identity while current GCP source version reco
 
   // Historical candidate and migration identities remain frozen above. GCP question metadata has its own current source version.
   for (const track of realCatalog.tracks) {
-    const expectedVersion = track.trackId === "google-cloud-associate-cloud-engineer"
+    const expectedSourceVersion = track.trackId === "google-cloud-associate-cloud-engineer"
       ? "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1"
       : `${completionBaselineVersions.get(track.trackId)}-bizq02-v2`;
-    assert.equal(track.contentVersion, expectedVersion, track.trackId);
+    assert.equal(track.contentVersion, `${expectedSourceVersion}-bizq03-planning-v2`, track.trackId);
   }
 });
 

@@ -54,10 +54,10 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
 test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewed exclusions", async () => {
   const ai901 = manifest.tracks.find((entry) => entry.trackId === "microsoft-azure-ai-fundamentals-ai-901");
   const verified = (await verifyReadiness({ manifest })).tracks.find((track) => track.trackId === ai901.trackId);
-  assert.equal(ai901.contentVersion, "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15-bizq02-v2");
+  assert.equal(ai901.contentVersion, "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15-bizq02-v2-bizq03-planning-v2");
   assert.equal(ai901.questionCount, 752);
   assert.equal(ai901.questionIdSetSha256, "088aa8189f9d25a5a6da640e487a407c96efde3f410f86d4296bf39f97b8f34a");
-  assert.equal(ai901.sourceInventorySha256, "68cb2307ef674998c33f3475d9a58f6cf330f66c87fdcaac2bbdab6802023650");
+  assert.equal(ai901.sourceInventorySha256, "9d56e40b9f86653a1489824569931b7ecd693740133e9153c32ac5e10226e5a9");
   assert.deepEqual(ai901.primaryObjective.registry, {
     path: "config/certification-objective-registries/microsoft-azure-ai-fundamentals-ai-901.json",
     sha256: "769202258c0e387550b8fc3160aecf06d2ecf3ba3b42e4153a3052b68f4a9d5b",
@@ -106,6 +106,8 @@ test("read-only provenance description matches the pinned GCP source contract", 
   for (const key of ["trackId", "contentVersion", "questionCount", "questionIdSetSha256", "sourceInventorySha256", "inputs", "loaderOwner"]) {
     assert.deepEqual(current[key], entry[key]);
   }
+  assert.equal(current.inputs.some((input) => input.path === `config/curricula/${trackId}.json` && input.role === "planning_policy_source"), true);
+  assert.equal(current.inputs.some((input) => input.path === "scripts/content/planning-policy.mjs" && input.role === "validation_owner_code"), true);
   assert.equal(current.inputs.some((input) => input.path.endsWith("GCPACE-N01-B04.json") && input.role === "canonical_question_source"), true);
   await assert.rejects(describeCurrentSourceProvenance({ trackId: "unknown-track" }), /source_provenance_track_invalid/u);
 });
@@ -181,7 +183,7 @@ test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 
     suffix, az104.primaryObjective.bindings.filter((binding) => binding.objectiveId === `az-104-2026-04-17-${suffix}`).length
   ])), { "1.1": 114, "1.2": 62, "1.3": 120, "2.1": 82, "2.2": 125, "2.3": 47, "3.1": 69, "3.2": 99, "3.3": 43, "3.4": 87, "4.1": 80, "4.2": 93, "4.3": 67, "5.1": 120, "5.2": 62 });
   assert.equal(az104.primaryObjective.registry.sha256, "7728bafa22a5d622ae1f64d14bb3fb5ff3459431c23aaeb82ad1fceaaf0f2476");
-  assert.equal(az104.contentVersion, "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15-bizq02-v2");
+  assert.equal(az104.contentVersion, "microsoft-azure-administrator-associate-az-104-authoring-v2026.08.15-bizq02-v2-bizq03-planning-v2");
   assert.equal(az104.primaryObjective.bindings.some((binding) => Object.hasOwn(binding, "domainId") || Object.hasOwn(binding, "parentDomainId")), false);
   for (const excludedId of [
     "az104-AZ104-N01-B01-003", "az104-AZ104-N01-B01-004", "az104-AZ104-N01-B01-006",
@@ -194,7 +196,7 @@ test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 
     assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }
   assert.equal(az104.questionIdSetSha256, "05c5642f6a14aa365d55e676e211a9b4466344c645e5361178e72aa6c54b3d25");
-  assert.equal(az104.sourceInventorySha256, "1dbbd3a5117e0396608be155d10775bb48610f6181e90652a6f7cb31db59dda4");
+  assert.equal(az104.sourceInventorySha256, "4131e3c6cdc38346ec2be4ab825e83237ee1dede92342194443ff05a12b69b74");
 });
 
 test("manifest requires the exact nine unique current track identities", async () => {

@@ -40,7 +40,7 @@ test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AW
     });
     const aws = first.manifest.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate");
     assert.equal(aws.questionCount, 2604);
-    assert.equal(aws.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2");
+    assert.equal(aws.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2-bizq03-planning-v2");
     assert.equal(aws.questionSetSha256, "46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45");
     assert.equal(aws.canonicalApprovalBinding.newQuestionIds.length, 36);
     for (const relativePath of ["release/release.json", "candidate/manifest.json", ...first.release.artifacts.map((entry) => `release/${entry.artifactPath}`)]) {
@@ -67,7 +67,7 @@ test("ODK-096 approval remains historically pinned, preserves fixed scope, and r
     const aws = built.artifacts.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate");
     assert.ok(aws);
     assert.equal(approval.canonicalIdentity.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096");
-    assert.equal(aws.track.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2");
+    assert.equal(aws.track.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2-bizq03-planning-v2");
     assert.notEqual(aws.track.contentVersion, approval.canonicalIdentity.contentVersion);
     const binding = createOdk096CanonicalApprovalBinding(aws, approval);
     assert.equal(binding.addendumId, approval.addendumId);

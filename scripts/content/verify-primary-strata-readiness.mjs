@@ -7,7 +7,7 @@ import { canonicalJson, sha256, validateTrack } from "../build.mjs";
 const ROOT = path.resolve(fileURLToPath(new URL("../../", import.meta.url)));
 const MANIFEST_PATH = "config/primary-strata-readiness.json";
 const CATALOG_PATH = "content/catalog.json";
-const LOADER_PATHS = ["scripts/build.mjs", "scripts/content/question-contract.mjs"];
+const LOADER_PATHS = ["scripts/build.mjs", "scripts/content/question-contract.mjs", "scripts/content/planning-policy.mjs"];
 const PACKAGE_PATH = "package.json";
 const TRACK_IDS = [
   "aws-certified-solutions-architect-associate",
@@ -86,6 +86,7 @@ function trackConfigPath(trackId) {
 
 async function declaredInputs(root, trackId, validated) {
   const paths = new Map([[CATALOG_PATH, "canonical_catalog"], ...LOADER_PATHS.map((p) => [p, "validation_owner_code"])]);
+  paths.set(`config/curricula/${trackId}.json`, "planning_policy_source");
   for (const sourceFile of validated.sourceFiles) {
     const relative = path.relative(root, sourceFile).split(path.sep).join("/");
     paths.set(relative, "canonical_question_source");

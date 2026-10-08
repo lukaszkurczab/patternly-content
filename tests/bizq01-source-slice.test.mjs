@@ -11,7 +11,7 @@ import { createContentReviewConsole } from "../scripts/review/content-review-con
 const root = new URL("../", import.meta.url);
 const source01 = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-slice-01.json", root), "utf8"));
 const batch = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-seed-cohort-14.json", root), "utf8"));
-const CURRENT_CONTENT_VERSION = "backend-system-design-interview-authoring-v2026.10.03-bizq01-14-bizq02-v2";
+const CURRENT_CONTENT_VERSION = "backend-system-design-interview-authoring-v2026.10.03-bizq01-14-bizq02-v2-bizq03-planning-v2";
 const sourceItems = batch.replacements.map((entry) => {
   const bytes = readFileSync(new URL(entry.sourceFile, root));
   assert.equal(sha256(bytes), entry.sourceSha256, "fixed cohort must bind the actual changed source");

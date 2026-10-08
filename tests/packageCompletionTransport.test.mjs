@@ -92,7 +92,41 @@ async function workspace(t) {
   question.nodeId = "node-001";
   question.mentalUnitId = "unit-001";
   await writeFile(path.join(root, "content", trackId, "node-001", "unit-001.json"), `${JSON.stringify([question], null, 2)}\n`);
+  await writePlanningCurriculum(root);
   return { root, catalog };
+}
+
+async function writePlanningCurriculum(root) {
+  await mkdir(path.join(root, "config", "curricula"), { recursive: true });
+  const curriculum = {
+    trackId,
+    planningPolicy: {
+      schemaVersion: "patternly-learning-planning-policy-v1",
+      policyVersion: "fixture-v1",
+      workEstimates: [{
+        estimateId: `${trackId}:fixture-mode`,
+        modeId: "fixture-mode",
+        scopeRefs: [{ nodeId: "node-001", mentalUnitId: "unit-001" }],
+        minMinutesPerResponse: 1,
+        typicalMinutesPerResponse: 2,
+        maxMinutesPerResponse: 3,
+        provenance: "authored",
+        observationCount: 0,
+        rationale: "Fixture estimate includes question reading, response work and feedback reading.",
+        reviewReserve: {
+          kind: "authored_estimate",
+          minAdditionalResponsesPerNewResponse: 0,
+          typicalAdditionalResponsesPerNewResponse: 1,
+          maxAdditionalResponsesPerNewResponse: 3,
+          provenance: "authored",
+          observationCount: 0,
+          rationale: "Fixture reserve covers up to three spaced recall checks."
+        }
+      }],
+      unavailableScopes: []
+    }
+  };
+  await writeFile(path.join(root, "config", "curricula", `${trackId}.json`), `${JSON.stringify(curriculum, null, 2)}\n`);
 }
 
 test("catalog accepts a valid chapter rule and rejects malformed rules", () => {
@@ -165,6 +199,7 @@ test("builder transports the exact complete chapter rule, hashes it, and omits i
   absentQuestion.nodeId = "node-001";
   absentQuestion.mentalUnitId = "unit-001";
   await writeFile(path.join(absentRoot, "content", trackId, "node-001", "unit-001.json"), `${JSON.stringify([absentQuestion])}\n`);
+  await writePlanningCurriculum(absentRoot);
   const absent = await buildTrack({ rootDirectory: absentRoot, trackId });
   assert.equal(Object.hasOwn(absent.artifact, "completionRule"), false);
 });

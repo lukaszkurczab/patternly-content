@@ -909,10 +909,10 @@ export async function validateBizq05GcpQuestionRelationAmendment(contentRoot, ca
     fail("EVIDENCE_VALUE", "BIZQ-05 GCP question relation amendment differs from its pinned four-question source amendment.");
   }
 
-  const track = canonical.catalogByTrack.get(BIZQ05_GCP_RELATION_AMENDMENT.trackId);
-  if (track?.contentVersion !== BIZQ05_GCP_RELATION_AMENDMENT.contentVersion) {
-    fail("EVIDENCE_VALUE", "BIZQ-05 GCP question relation amendment content version does not match the current catalog.");
-  }
+  // The amendment's contentVersion identifies its historical review snapshot;
+  // it is pinned above as evidence and must not pin later policy-only catalog
+  // versions. Current source bytes and the restored question set remain pinned
+  // independently below.
   const sourcePath = path.join(projectRoot, BIZQ05_GCP_RELATION_AMENDMENT.sourcePath);
   await rejectSymlinkAncestors(sourcePath, "BIZQ-05 GCP question relation source");
   await regularPath(sourcePath, "BIZQ-05 GCP question relation source", "file");
@@ -956,9 +956,13 @@ export async function validateBizq05GcpQuestionRelationAmendment(contentRoot, ca
     fail("HASH_MISMATCH", "BIZQ-05 GCP pre-relation question unit does not match its pinned historical whole-set hash.");
   }
 
-  const currentById = new Map(canonical.questionsByTrack.get(BIZQ05_GCP_RELATION_AMENDMENT.trackId).map((question) => [question.questionId, question]));
-  if (historicalQuestions.some((question) => !currentById.has(question.questionId))) {
-    fail("EVIDENCE_MEMBERSHIP", "BIZQ-05 GCP question relation amendment is not present in canonical content.");
+  const canonicalQuestions = canonical.questionsByTrack.get(BIZQ05_GCP_RELATION_AMENDMENT.trackId);
+  if (!Array.isArray(canonicalQuestions)) {
+    fail("EVIDENCE_MEMBERSHIP", "BIZQ-05 GCP question relation amendment is missing from canonical content.");
+  }
+  const currentById = new Map(canonicalQuestions.map((question) => [question.questionId, question]));
+  if (sourceQuestions.some((question) => canonicalJson(currentById.get(question.questionId)) !== canonicalJson(question))) {
+    fail("HASH_MISMATCH", "BIZQ-05 GCP question relation source differs from the current canonical questions.");
   }
   return new Map(historicalQuestions.map((question) => [question.questionId, question]));
 }

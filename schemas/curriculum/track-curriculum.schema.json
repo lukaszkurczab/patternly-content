@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "patternly-track-curriculum-v1",
   "type": "object",
-  "required": ["schemaVersion", "curriculumVersion", "trackId", "familyId", "trackBriefReference", "freeNodeId", "entryPrerequisites", "learnerOutcome", "sourceBasis", "nodes", "crossNodeRelationships", "modePoolPlans", "simulationOrCasePoolPlans", "contentOwnershipRules", "crossTrackOverlapRules", "targetItemCount"],
+  "required": ["schemaVersion", "curriculumVersion", "trackId", "familyId", "trackBriefReference", "freeNodeId", "entryPrerequisites", "learnerOutcome", "sourceBasis", "nodes", "crossNodeRelationships", "modePoolPlans", "simulationOrCasePoolPlans", "contentOwnershipRules", "crossTrackOverlapRules", "targetItemCount", "planningPolicy"],
   "properties": {
     "schemaVersion": { "const": "patternly-track-curriculum-v1" },
     "curriculumVersion": { "type": "string", "minLength": 1 },
@@ -10,6 +10,80 @@
     "familyId": { "enum": ["coding_interview", "certification", "design_interview"] },
     "nodes": { "type": "array", "minItems": 1 },
     "sourceBasis": { "type": "array", "minItems": 1 },
-    "targetItemCount": { "type": "integer", "minimum": 1 }
+    "targetItemCount": { "type": "integer", "minimum": 1 },
+    "planningPolicy": { "$ref": "#/$defs/planningPolicy" }
+  },
+  "$defs": {
+    "scopeRef": {
+      "type": "object",
+      "required": ["nodeId", "mentalUnitId"],
+      "properties": {
+        "nodeId": { "type": "string", "minLength": 1 },
+        "mentalUnitId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "reviewReserve": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "minAdditionalResponsesPerNewResponse", "typicalAdditionalResponsesPerNewResponse", "maxAdditionalResponsesPerNewResponse", "provenance", "observationCount", "rationale"],
+          "properties": {
+            "kind": { "const": "authored_estimate" },
+            "minAdditionalResponsesPerNewResponse": { "type": "number", "minimum": 0 },
+            "typicalAdditionalResponsesPerNewResponse": { "type": "number", "minimum": 0 },
+            "maxAdditionalResponsesPerNewResponse": { "type": "number", "minimum": 0 },
+            "provenance": { "const": "authored" },
+            "observationCount": { "const": 0 },
+            "rationale": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "reason"],
+          "properties": { "kind": { "const": "unavailable" }, "reason": { "type": "string", "minLength": 1 } },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "workEstimate": {
+      "type": "object",
+      "required": ["estimateId", "modeId", "scopeRefs", "minMinutesPerResponse", "typicalMinutesPerResponse", "maxMinutesPerResponse", "provenance", "observationCount", "rationale", "reviewReserve"],
+      "properties": {
+        "estimateId": { "type": "string", "minLength": 1 },
+        "modeId": { "type": "string", "minLength": 1 },
+        "scopeRefs": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/scopeRef" } },
+        "minMinutesPerResponse": { "type": "integer", "minimum": 1 },
+        "typicalMinutesPerResponse": { "type": "integer", "minimum": 1 },
+        "maxMinutesPerResponse": { "type": "integer", "minimum": 1 },
+        "provenance": { "const": "authored" },
+        "observationCount": { "const": 0 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "reviewReserve": { "$ref": "#/$defs/reviewReserve" }
+      },
+      "additionalProperties": false
+    },
+    "unavailableScope": {
+      "type": "object",
+      "required": ["scopeRef", "modeIds", "reason"],
+      "properties": {
+        "scopeRef": { "$ref": "#/$defs/scopeRef" },
+        "modeIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "reason": { "enum": ["missing_authored_estimate", "unsupported_app_mode", "unknown_runtime_scope"] }
+      },
+      "additionalProperties": false
+    },
+    "planningPolicy": {
+      "type": "object",
+      "required": ["schemaVersion", "policyVersion", "workEstimates", "unavailableScopes"],
+      "properties": {
+        "schemaVersion": { "const": "patternly-learning-planning-policy-v1" },
+        "policyVersion": { "type": "string", "minLength": 1 },
+        "workEstimates": { "type": "array", "items": { "$ref": "#/$defs/workEstimate" } },
+        "unavailableScopes": { "type": "array", "items": { "$ref": "#/$defs/unavailableScope" } }
+      },
+      "additionalProperties": false
+    }
   }
 }

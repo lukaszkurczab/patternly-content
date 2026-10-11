@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, readdir, mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { readFile, readdir, mkdtemp, mkdir, realpath, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -70,7 +70,7 @@ test("AWS predecessor proof rejects unproven content drift and edited evidence",
     { code: "HASH_MISMATCH" }
   );
 
-  const temporaryRoot = await mkdtemp(path.join("/private/tmp", "saa-targeted-proof-tamper-"));
+  const temporaryRoot = await mkdtemp(path.join(await realpath(tmpdir()), "saa-targeted-proof-tamper-"));
   t.after(() => rm(temporaryRoot, { recursive: true, force: true }));
   const temporaryProof = path.join(temporaryRoot, "evidence/business-quality/saa-20261010-aws-targeted-corrections.json");
   await mkdir(path.dirname(temporaryProof), { recursive: true });

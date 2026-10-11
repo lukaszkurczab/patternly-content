@@ -7,6 +7,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import { buildAll } from "../build.mjs";
+import { reconstructApprovedAwsPredecessor } from "../content/verify-migration.mjs";
 import { CANDIDATE_TRACK_FAMILIES, CANDIDATE_TRACK_IDS, canonicalJson, canonicalJsonBytes, candidateIdFor } from "./candidate-manifest.mjs";
 import { validateSchema } from "./schema-validation.mjs";
 
@@ -105,6 +106,21 @@ export function createOdk096CanonicalApprovalBinding(artifact, approval) {
   };
 }
 
+// Candidate release locks bind training identity. Planning policy is a separate
+// v2 successor and must not be mistaken for a change to training content.
+export function candidateTrainingArtifact(artifact) {
+  const suffix = "-bizq03-planning-v2";
+  if (artifact.schemaVersion !== "patternly-content-artifact-v2" || !artifact.planningPolicy || !artifact.contentVersion.endsWith(suffix)) {
+    throw new Error("Candidate training projection requires an explicit versioned planning-policy successor.");
+  }
+  const training = structuredClone(artifact);
+  delete training.planningPolicy;
+  training.schemaVersion = "patternly-content-artifact-v1";
+  training.contentVersion = artifact.contentVersion.slice(0, -suffix.length);
+  if (!training.contentVersion) throw new Error("Candidate training version is missing.");
+  return training;
+}
+
 function assertCanonicalTrackSet(entries, label) {
   const ids = entries.map((entry) => entry?.trackId);
   if (canonicalJson(ids) !== canonicalJson(CANDIDATE_TRACK_IDS)) {
@@ -155,13 +171,14 @@ export async function buildCandidateDraft({ root = ROOT, outputDirectory } = {})
     for (const trackId of CANDIDATE_TRACK_IDS) {
       const artifact = built.artifacts.find((entry) => entry.trackId === trackId);
       if (!artifact) throw new Error(`Canonical build is missing ${trackId}.`);
-      const bytes = Buffer.from(artifact.artifactBytes);
+      const training = candidateTrainingArtifact(artifact.artifact);
+      const bytes = Buffer.from(canonicalJson(training));
       const artifactPath = `artifacts/${trackId}.json`;
       const entry = {
         trackId,
         familyId: CANDIDATE_TRACK_FAMILIES[trackId],
         sourcePath: `content/${trackId}`,
-        contentVersion: artifact.track.contentVersion,
+        contentVersion: training.contentVersion,
         questionCount: artifact.questions.length,
         questionSetSha256: sha256(canonicalJson(artifact.questions)),
         artifactPath,
@@ -169,7 +186,8 @@ export async function buildCandidateDraft({ root = ROOT, outputDirectory } = {})
         checksumSha256: sha256(bytes),
       };
       if (trackId === awsTrackId) {
-        entry.canonicalApprovalBinding = createOdk096CanonicalApprovalBinding(artifact, approval);
+        const predecessor = await reconstructApprovedAwsPredecessor({ rootDirectory: sourceRoot, questions: artifact.questions });
+        entry.canonicalApprovalBinding = createOdk096CanonicalApprovalBinding({ ...artifact, questions: predecessor.predecessorQuestions }, approval);
       }
       artifacts.push(entry);
       outputArtifacts.push({ path: artifactPath, bytes });

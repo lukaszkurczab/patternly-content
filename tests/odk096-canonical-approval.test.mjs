@@ -2,13 +2,15 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { canonicalJson, sha256, validateTrack } from "../scripts/build.mjs";
+import { reconstructApprovedAwsPredecessor } from "../scripts/content/verify-migration.mjs";
 
 const TRACK_ID = "aws-certified-solutions-architect-associate";
 const NODE_ID = "aws_secure_architecture_foundations";
 const CONTENT_VERSION = "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096";
-const CURRENT_CONTENT_VERSION = `${CONTENT_VERSION}-bizq02-v2-bizq03-planning-v2`;
+const CURRENT_CONTENT_VERSION = "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1-bizq03-planning-v2";
 const NODE_SHA256 = "8dd16df1d7c6741b373026547c35255aea97869542bbb8897a4f36c73730bc33";
 const TRACK_SHA256 = "46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45";
+const CURRENT_TRACK_SHA256 = "f745d5ea27b753a3fae1143c079086fb2bab99dacfbb89a08744925030eeed42";
 const ORIGINAL_IDS = [
   "aws-saa-c03-iam-policy-evaluation-001",
   "aws-saa-c03-iam-policy-evaluation-002",
@@ -66,6 +68,8 @@ test("ODK-096 approval binds one AWS Free node to exact canonical hashes and IDs
   const validated = await validateTrack({ rootDirectory: process.cwd(), trackId: TRACK_ID });
   const nodeQuestions = sortQuestions(validated.questions.filter((question) => question.nodeId === NODE_ID));
   const trackQuestions = sortQuestions(validated.questions);
+  const predecessor = await reconstructApprovedAwsPredecessor({ rootDirectory: process.cwd(), questions: trackQuestions });
+  const predecessorNodeQuestions = sortQuestions(predecessor.predecessorQuestions.filter((question) => question.nodeId === NODE_ID));
   const nodeIds = nodeQuestions.map((question) => question.questionId);
 
   assert.deepEqual(Object.keys(approval).sort(), [
@@ -110,8 +114,10 @@ test("ODK-096 approval binds one AWS Free node to exact canonical hashes and IDs
   assert.equal(approval.canonicalIdentity.node.sha256, NODE_SHA256);
   assert.equal(approval.canonicalIdentity.track.questionCount, 2604);
   assert.equal(approval.canonicalIdentity.track.sha256, TRACK_SHA256);
-  assert.equal(sha256(canonicalJson(nodeQuestions)), NODE_SHA256);
-  assert.equal(sha256(canonicalJson(trackQuestions)), TRACK_SHA256);
+  assert.equal(sha256(canonicalJson(nodeQuestions)), "8dd16df1d7c6741b373026547c35255aea97869542bbb8897a4f36c73730bc33");
+  assert.equal(sha256(canonicalJson(trackQuestions)), CURRENT_TRACK_SHA256);
+  assert.equal(sha256(canonicalJson(predecessorNodeQuestions)), NODE_SHA256);
+  assert.equal(sha256(canonicalJson(predecessor.predecessorQuestions)), TRACK_SHA256);
   assert.equal(nodeQuestions.length, 40);
   assert.equal(trackQuestions.length, 2604);
 

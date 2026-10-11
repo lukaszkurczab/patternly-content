@@ -130,10 +130,34 @@ const CLAUDE_CURRENT_BANK = Object.freeze({
   questionSetSha256: "717b995fd9f9bda5d25161c516a248eb80b3a78cf23c69d1641c2ed95add8b9a"
 });
 
+const AWS_SAA_TARGETED_CORRECTIONS = Object.freeze({
+  path: "evidence/business-quality/saa-20261010-aws-targeted-corrections.json",
+  sha256: "6d1545d9de8438600acc338bb9a53227b57d86f76345b63c8f6b141491196745",
+  scope: "saa-20261010-12-exact-packets",
+  trackId: "aws-certified-solutions-architect-associate",
+  beforeProducerCommit: "0f4e6912d7d0cdb1a1c41b9d7885d7e867f80f34",
+  beforeContentVersion: "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2-bizq03-planning-v2",
+  contentVersion: "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1-bizq03-planning-v2",
+  beforeQuestionSetSha256: "46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45",
+  questionSetSha256: "f745d5ea27b753a3fae1143c079086fb2bab99dacfbb89a08744925030eeed42",
+  questionIds: Object.freeze([
+    "aws-saa-c03-AWSSAA-N04-B01-011", "aws-saa-c03-AWSSAA-N04-B01-015", "aws-saa-c03-AWSSAA-N04-B02-006",
+    "aws-saa-c03-AWSSAA-N04-B03-016", "aws-saa-c03-AWSSAA-N04-B05-011", "aws-saa-c03-AWSSAA-N04-B05-015",
+    "aws-saa-c03-AWSSAA-N04-B06-010", "aws-saa-c03-AWSSAA-N04-B06-011", "aws-saa-c03-AWSSAA-N04-B06-012",
+    "aws-saa-c03-AWSSAA-N04-B06-013", "aws-saa-c03-AWSSAA-N04-B06-014", "aws-saa-c03-AWSSAA-N04-B06-015",
+    "aws-saa-c03-AWSSAA-N04-B06-016", "aws-saa-c03-AWSSAA-N04-B06-018", "aws-saa-c03-AWSSAA-N04-B07-012",
+    "aws-saa-c03-AWSSAA-N07-B01-007", "aws-saa-c03-AWSSAA-N07-B01-010", "aws-saa-c03-AWSSAA-N07-B02-013",
+    "aws-saa-c03-AWSSAA-N07-B04-005", "aws-saa-c03-AWSSAA-N07-B04-006", "aws-saa-c03-AWSSAA-N07-B05-001",
+    "aws-saa-c03-AWSSAA-N07-B05-002", "aws-saa-c03-AWSSAA-N07-B05-003", "aws-saa-c03-AWSSAA-N07-B05-004",
+    "aws-saa-c03-AWSSAA-N07-B05-005", "aws-saa-c03-AWSSAA-N07-B05-006", "aws-saa-c03-AWSSAA-N07-B06-012",
+    "aws-saa-c03-AWSSAA-N07-B07-006"
+  ])
+});
+
 const EXPECTED_CURRENT_PRODUCER_BANKS = Object.freeze({
   "aws-certified-solutions-architect-associate": Object.freeze({
     questionCount: 2604,
-    questionSetSha256: "46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45"
+    questionSetSha256: "f745d5ea27b753a3fae1143c079086fb2bab99dacfbb89a08744925030eeed42"
   }),
   "backend-system-design-interview": Object.freeze({
     questionCount: 1569,
@@ -12615,10 +12639,93 @@ function compareGlobal(manifest, questionsByTrack) {
   return { counts, interactions };
 }
 
-async function approvedAwsAdditions(contentRoot, canonical, evidence) {
+export async function reconstructApprovedAwsPredecessor({ rootDirectory, questions }) {
+  if (typeof rootDirectory !== "string" || !Array.isArray(questions)) fail("INPUT", "AWS predecessor reconstruction requires a project root and current questions.");
+  const accepted = AWS_SAA_TARGETED_CORRECTIONS;
+  const proofPath = path.join(rootDirectory, accepted.path);
+  await rejectSymlinkAncestors(proofPath, "AWS SAA targeted correction proof");
+  const proofBytes = await readFile(proofPath).catch((error) => fail("READ_ERROR", `Cannot read AWS SAA targeted correction proof: ${error.message}`));
+  if (sha256(proofBytes) !== accepted.sha256) fail("HASH_MISMATCH", "AWS SAA targeted correction proof differs from its fixed reviewed bytes.");
+  let proof;
+  try { proof = JSON.parse(proofBytes.toString("utf8")); }
+  catch (error) { fail("INVALID_JSON", `AWS SAA targeted correction proof is invalid JSON: ${error.message}`); }
+  exactKeys(proof, ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "sourceFiles", "items"], "AWS SAA targeted correction proof");
+  for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256"]) {
+    const expected = key === "schemaVersion" ? "patternly-bizq-semantic-replacement-v1" : accepted[key];
+    if (proof[key] !== expected) fail("EVIDENCE_VALUE", `AWS SAA targeted correction proof ${key} differs from the fixed transition.`);
+  }
+  if (proof.contentVersion !== accepted.contentVersion || questions.length !== 2604 || trackQuestionSetSha256(questions) !== accepted.questionSetSha256) {
+    fail("HASH_MISMATCH", "Current AWS SAA questions do not match the fixed targeted-correction successor.");
+  }
+  if (!Array.isArray(proof.items) || proof.items.length !== accepted.questionIds.length) fail("EVIDENCE_MEMBERSHIP", "AWS SAA proof must contain exactly 28 reviewed items.");
+  assertExactSet(proof.items.map((item) => item?.beforeQuestionId), accepted.questionIds, "AWS SAA predecessor question IDs");
+  const currentById = new Map(questions.map((question) => [question.questionId, question]));
+  const beforeIds = new Set();
+  const currentIds = new Set();
+  const replacements = [];
+  const sameIdCorrections = [];
+  const beforeByCurrentId = new Map();
+  for (const [index, item] of proof.items.entries()) {
+    const label = `AWS SAA proof.items[${index}]`;
+    exactKeys(item, ["sourceFile", "beforeQuestionId", "questionId", "identityAction", "beforeQuestion", "currentQuestion"], label);
+    assertRelativePath(item.sourceFile, `${label}.sourceFile`, { suffix: ".json" });
+    assertCanonicalQuestion(item.beforeQuestion, `${label}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+    assertCanonicalQuestion(item.currentQuestion, `${label}.currentQuestion`, ACCEPTED_TRACK_IDS);
+    const sameId = item.beforeQuestionId === item.questionId;
+    if (item.identityAction !== (sameId ? "preserve_question_id" : "new_question_id") || item.beforeQuestion.questionId !== item.beforeQuestionId || item.currentQuestion.questionId !== item.questionId) {
+      fail("EVIDENCE_VALUE", `${label} has an invalid question identity transition.`);
+    }
+    if (beforeIds.has(item.beforeQuestionId) || currentIds.has(item.questionId)) fail("EVIDENCE_MEMBERSHIP", `${label} duplicates a fixed question identity.`);
+    beforeIds.add(item.beforeQuestionId);
+    currentIds.add(item.questionId);
+    const live = currentById.get(item.questionId);
+    if (!live || canonicalJson(live) !== canonicalJson(item.currentQuestion)) fail("HASH_MISMATCH", `${label} current item differs from canonical content.`);
+    if (item.beforeQuestion.trackId !== accepted.trackId || item.currentQuestion.trackId !== accepted.trackId || item.beforeQuestion.nodeId !== item.currentQuestion.nodeId || item.beforeQuestion.mentalUnitId !== item.currentQuestion.mentalUnitId) {
+      fail("EVIDENCE_MEMBERSHIP", `${label} crosses an AWS node or mental-unit boundary.`);
+    }
+    beforeByCurrentId.set(item.questionId, item.beforeQuestion);
+    if (sameId) sameIdCorrections.push({ questionId: item.questionId, oldQuestion: item.beforeQuestion, newQuestion: item.currentQuestion });
+    else replacements.push({ beforeQuestionId: item.beforeQuestionId, questionId: item.questionId, oldQuestion: item.beforeQuestion, newQuestion: item.currentQuestion });
+  }
+  if (replacements.length !== 1 || sameIdCorrections.length !== 27) fail("EVIDENCE_MEMBERSHIP", "AWS SAA proof must contain 27 same-ID corrections and one successor identity.");
+  if (!Array.isArray(proof.sourceFiles) || proof.sourceFiles.length !== 12) fail("EVIDENCE_MEMBERSHIP", "AWS SAA proof must bind exactly 12 canonical source files.");
+  const sourcePaths = new Set();
+  for (const [index, source] of proof.sourceFiles.entries()) {
+    const label = `AWS SAA proof.sourceFiles[${index}]`;
+    exactKeys(source, ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"], label);
+    assertRelativePath(source.sourceFile, `${label}.sourceFile`, { suffix: ".json" });
+    assertHash(source.beforeSourceSha256, `${label}.beforeSourceSha256`);
+    assertHash(source.sourceSha256, `${label}.sourceSha256`);
+    if (!source.sourceFile.startsWith(`content/${accepted.trackId}/`) || sourcePaths.has(source.sourceFile)) fail("EVIDENCE_MEMBERSHIP", `${label} is outside the exact AWS track or duplicated.`);
+    sourcePaths.add(source.sourceFile);
+    const sourceItems = proof.items.filter((item) => item.sourceFile === source.sourceFile);
+    if (sourceItems.length === 0 || sourceItems.some((item) => item.beforeQuestion.nodeId !== source.nodeId || item.beforeQuestion.mentalUnitId !== source.mentalUnitId)) fail("EVIDENCE_MEMBERSHIP", `${label} does not match its exact item membership.`);
+    const sourcePath = path.resolve(rootDirectory, ...source.sourceFile.split("/"));
+    await rejectSymlinkAncestors(sourcePath, `${label}.sourceFile`);
+    await regularPath(sourcePath, `${label}.sourceFile`, "file");
+    const currentBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${label}.sourceFile: ${error.message}`));
+    if (sha256(currentBytes) !== source.sourceSha256) fail("HASH_MISMATCH", `${label}.sourceFile differs from the fixed current canonical source.`);
+    let sourceQuestions;
+    try { sourceQuestions = JSON.parse(currentBytes.toString("utf8")); }
+    catch (error) { fail("INVALID_JSON", `${label}.sourceFile is invalid JSON: ${error.message}`); }
+    const beforeSourceById = new Map(sourceItems.map((item) => [item.questionId, item.beforeQuestion]));
+    for (const item of sourceItems) {
+      const live = sourceQuestions.find((question) => question.questionId === item.questionId);
+      if (!live || canonicalJson(live) !== canonicalJson(item.currentQuestion)) fail("HASH_MISMATCH", `${label} current item differs from its canonical source file.`);
+    }
+    const beforeSource = sourceQuestions.map((question) => beforeSourceById.get(question.questionId) ?? question);
+    if (sha256(Buffer.from(JSON.stringify(beforeSource), "utf8")) !== source.beforeSourceSha256) fail("HASH_MISMATCH", `${label} does not reconstruct the byte-exact predecessor source.`);
+  }
+  if (proof.items.some((item) => !sourcePaths.has(item.sourceFile))) fail("EVIDENCE_MEMBERSHIP", "AWS SAA item is not bound by one of the fixed source hashes.");
+  const predecessorQuestions = questions.map((question) => beforeByCurrentId.get(question.questionId) ?? question).sort((left, right) => compare(left.questionId, right.questionId));
+  if (trackQuestionSetSha256(predecessorQuestions) !== accepted.beforeQuestionSetSha256) fail("HASH_MISMATCH", "AWS SAA proof does not reconstruct the immutable pre-correction track.");
+  return { trackId: accepted.trackId, predecessorQuestions, replacements, sameIdCorrections };
+}
+
+async function approvedAwsAdditions(contentRoot, canonical, evidence, awsSourceProof) {
   const trackId = "aws-certified-solutions-architect-associate";
   const baselineIds = new Set(evidence.rowsByTrack.get(trackId).map((row) => row.questionId));
-  const questions = canonical.questionsByTrack.get(trackId);
+  const questions = awsSourceProof.predecessorQuestions;
   const additions = questions.filter((question) => !baselineIds.has(question.questionId));
   if (additions.length === 0) return [];
   if (additions.length !== 36) fail("EVIDENCE_MEMBERSHIP", "Current AWS has an unapproved number of additions.");
@@ -12692,12 +12799,19 @@ export async function verifyMigration(options = {}) {
   const resolvedContentRoot = await secureRoot(contentRoot);
   const canonical = await loadCanonicalContent(resolvedContentRoot);
   const bizq05HistoricalQuestions = await validateBizq05GcpQuestionRelationAmendment(resolvedContentRoot, canonical);
+  const awsTrackId = AWS_SAA_TARGETED_CORRECTIONS.trackId;
+  const awsTrack = canonical.catalogByTrack.get(awsTrackId);
+  const hasFixedAwsVersion = awsTrack?.contentVersion === AWS_SAA_TARGETED_CORRECTIONS.contentVersion || awsTrack?.contentVersion?.startsWith(`${AWS_SAA_TARGETED_CORRECTIONS.contentVersion}-`);
+  const awsSourceProof = hasFixedAwsVersion
+    ? await reconstructApprovedAwsPredecessor({ rootDirectory: path.dirname(resolvedContentRoot), questions: canonical.questionsByTrack.get(awsTrackId) })
+    : undefined;
+  if (!awsSourceProof) fail("EVIDENCE_VALUE", "AWS SAA current contentVersion has no matching fixed source-correction proof.");
   validateCurrentProducerBanks(canonical);
   const evidence = await loadEvidence(resolvedContentRoot);
   const replacementProof = await loadBizq01ReplacementProof(resolvedContentRoot, canonical, evidence);
   const oodSemanticProof = await loadBizq01OodSemanticProof(resolvedContentRoot, canonical, evidence);
   const correctionProof = await loadBizq01WordingProof(resolvedContentRoot, canonical, evidence);
-  const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence);
+  const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence, awsSourceProof);
   const claudeTrackId = "claude-certified-architect-professional-certification";
   const claudeCurrentProof = await claudeHistoricalAndCurrentQuestions(resolvedContentRoot, canonical, evidence);
   const trackSummaries = [];
@@ -12706,8 +12820,8 @@ export async function verifyMigration(options = {}) {
     const rows = evidence.rowsByTrack.get(trackId);
     const questions = canonical.questionsByTrack.get(trackId);
     const extras = trackId === "aws-certified-solutions-architect-associate" ? approvedAdditions : [];
-    const replacements = [replacementProof, oodSemanticProof, correctionProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.replacements);
-    const sameIdCorrections = oodSemanticProof?.trackId === trackId ? (oodSemanticProof.sameIdCorrections ?? []) : [];
+    const replacements = [replacementProof, oodSemanticProof, correctionProof, awsSourceProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.replacements);
+    const sameIdCorrections = [oodSemanticProof, awsSourceProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.sameIdCorrections ?? []);
     const sameIdCorrectionById = new Map(sameIdCorrections.map((correction) => [correction.questionId, correction]));
     const replacedHistoricalIds = new Set(replacements.map((replacement) => replacement.beforeQuestionId));
     if (trackId !== claudeTrackId || !claudeCurrentProof) {

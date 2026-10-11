@@ -2,7 +2,7 @@
 
 ## Source review and outcome
 
-The attached repair table names 37 correct-answer texts accurately but its proposed stable `optionId` letters do not match those texts in the canonical source at `2aae062abf997ca148ee15a391c32bbde34f6d7f` (the current HEAD, `0f4e6912d7d0cdb1a1c41b9d7885d7e867f80f34`, has no diff in the eight scoped source files). For all 37 items, the existing authored key already targets the option whose text and rationale the attachment identifies as correct. The attachment’s proposed replacement ID instead targets a distractor. No P1 question content or answer key was changed.
+The attached repair table names 37 correct-answer texts accurately but its proposed stable `optionId` letters do not match those texts in the canonical source at `2aae062abf997ca148ee15a391c32bbde34f6d7f` (the preflight HEAD, `0f4e6912d7d0cdb1a1c41b9d7885d7e867f80f34`, has no diff in the eight scoped source files). For all 37 items, the existing authored key already targets the option whose text and rationale the attachment identifies as correct. The attachment’s proposed replacement ID instead targets a distractor. No P1 question content or answer key was changed.
 
 The initial `/private/tmp/patternly-claude-38/before-scoring.json` output used those mismapped proposed IDs as expected answers. Its reported 37/37 wrong-key reproduction is invalid and must not be represented as a defect or test result. The canonical scorer compares stable option IDs: each current key earns 1/1; the report-suggested distractor earns 0/1. The existing historical accepted-bank digest remains intact after reconstructing the pre-P2 question from the exact three P2 fields below.
 
@@ -110,3 +110,30 @@ Producer source → normal canonical builder → existing nine-track candidate �
 Independent design review: `admission_research`, gpt-6-luna high; fit 0.86, simplicity 0.82, risk 0.80, maintainability 0.84 (minimum 0.80). Existing default sync cannot replace training content silently; optional reviewed-candidate mode must validate exact committed source, all candidate artifact hashes and existing readiness. Historical v1 locks remain unchanged. The release lock binds direct current candidate v2 bytes; runtime training identity remains the verified v1 projection in the existing ledger. Old references must keep the existing explicit mismatch/unavailable behavior; no content substitution or user-data mutation.
 
 Implementation/merge order: reviewed source commit, canonical candidate and readiness, APP generated bundle/lock and tests commit, runtime admission evidence and final release gate, publish content and APP commits through normal Git push. No App Store/OTA/app installation is implied: learner content is bundled at build time and this repository has no live content delivery endpoint. Source publication and local admission are reported separately from deployment.
+
+## Final verification and publication record
+
+The production candidate is `d6e2f2f202790bec0d14614c855e87a5a7e40ddb1bfe7ca5346a1bbbd3b78b09`, release `patternly-candidate-63b1f8a388d7`, bound to canonical source commit `63b1f8a388d72cd620026d3a3cc24ee059c6a39b`. Candidate/readiness and current provenance pins are committed in `f402c03530310888162a989b36a0da330e1a6ab7`; evidence-only HEAD changes do not change the committed canonical source identity.
+
+| Actual check | Result |
+|---|---|
+| Claude source audit / validate / score / track build | PASS 12/12; 845 validated/scored; normal builder artifact SHA-256 `eccfbe348fdb6767e54cf8f1b3ba7c05464d0abfce205dc0b430c876106727b4` |
+| Nine-track build, nine-track canonical scoring, migration proof | PASS 9 tracks / 117 nodes / 943 units / 16,622 questions |
+| Full CONTENT repository tests | Initial run 224/229; five failures exposed stale current catalog/provenance pins. Updated pins through existing `describeCurrentSourceProvenance`, preserving historical evidence and semantic readiness. Both affected files rerun PASS 42/42; unaffected passing full-suite evidence reused. |
+| Independent current provenance review | PASS; readiness verifier and both affected test files also passed independently |
+| Candidate regression after refreshed decision/readiness | PASS 13/13 |
+| Existing APP sync and lock tests | PASS 25/25 + 28/28; production readiness validator includes missing/stale/wrong-source/wrong-hash/wrong-version negative cases |
+| Actual default sync with changed training | Correctly rejected; bundle unchanged |
+| Actual explicit reviewed-candidate sync, default repeat check, candidate release-lock check | PASS; inventory 9/117/943/16,622 |
+| Actual bundled scorer/feedback matrix | PASS 3,648/3,648; all 38 independently reviewed IDs, 24 orders, four responses |
+| APP canonical scoring oracle, runtime catalog and presentation tests | PASS 26 tests. First concurrently started runtime-admission test read the old lock before lock-write completion; only that test was rerun after completed lock and passed 1/1. This is recorded as execution ordering, not a product defect. |
+| APP reference/unavailable and practice presentation checks | PASS 24/24 |
+| APP typecheck and content boundary | PASS |
+
+Only Claude generated artifact bytes and its content lock/successor-ledger entries changed. Its new training projection is `ccarp-2026.10.11-capacity-v1-bizq02-v2-bizq03-planning-v2-training`, SHA-256 `4cf89c3a8a8bd5576abea3b655d90a6362d0ac9ae0eda08894dcdb26a943e23a`. All other eight bundle artifact identities are unchanged. Frozen historical APP release-lock SHA-256 remains `d5058e8678ceab38fbdb3fc6ea423b80e21571885549df9b42dd6e3916312195`.
+
+Local command logs and blind-review working JSON are private reproducibility outputs under `/private/tmp/patternly-claude-38`; durable verification is in the versioned existing tests and hash-bound candidate/admission artifacts. This work does not establish full-bank semantic acceptance, exam blueprint conformity, learning efficacy, native UI/VoiceOver behavior, or gateway capacity simulation.
+
+Independent final acceptance: **PASS**, `blind_semantic_qa`, gpt-6-luna high. Reviewer independently reran the final APP canonical matrix and runtime admission suites with the required tsx loader: **9/9 PASS**. Their earlier plain-Node TS invocation was invalid and is superseded by this correct run; it is not reported as a product defect. The source provenance verifier and affected tests also passed independently.
+
+Actual committed APP implementation/bundle: `9d6e664ef3814a22c431af4f917f2191f2938bb0`. Existing `candidate:admission-v3 -- BIZQ-01/ADMISSION` passed and wrote hash-bound runtime evidence at `evidence/admissions/runtime/d6e2f2f202790bec0d14614c855e87a5a7e40ddb1bfe7ca5346a1bbbd3b78b09-9d6e664ef3814a22c431af4f917f2191f2938bb0.json`. Existing `candidate:release-gate-v2` returned **RELEASE_READY**. Publishing/runtime admission is granted only within the existing `local_verified_artifacts_no_deployment` boundary. Remote Git publication follows these local gates; hosted CI outcomes are reported separately.

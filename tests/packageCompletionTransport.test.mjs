@@ -55,11 +55,21 @@ function assertChapterInventoryMatches(rows, artifacts) {
   assert.equal(new Set(artifactIds).size, artifactIds.length, "candidate artifact set must not repeat tracks");
   let unitTotal = 0;
   let questionTotal = 0;
+  const sourceCatalog = loadCanonicalCatalog();
   for (const artifact of artifacts) {
     const expected = byTrack.get(artifact.trackId);
     assert.ok(expected, `missing approved rows for ${artifact.trackId}`);
-    assert.equal(artifact.completionRule.ruleVersion, 2, `${artifact.trackId} must use chapter rule v2`);
     const actualChapters = artifact.completionRule.chapters;
+    if (artifact.trackId === "claude-certified-architect-professional-certification") {
+      const sourceTrack = sourceCatalog.tracks.find(({ trackId: sourceTrackId }) => sourceTrackId === artifact.trackId);
+      assert.equal(artifact.completionRule.ruleVersion, 3, "Claude must use its current required-unit rule v3");
+      assert.deepEqual(artifact.completionRule, sourceTrack.completionRule, "Claude artifact must transport the exact current catalog rule");
+      assert.equal(artifact.questions.length, 918, "Claude candidate artifact must contain the current accepted bank");
+      unitTotal += actualChapters.reduce((sum, chapter) => sum + chapter.mentalUnitCount, 0);
+      questionTotal += artifact.questions.length;
+      continue;
+    }
+    assert.equal(artifact.completionRule.ruleVersion, 2, `${artifact.trackId} must retain chapter rule v2`);
     assert.equal(new Set(actualChapters.map(({ nodeId }) => nodeId)).size, actualChapters.length, `${artifact.trackId} artifact must not repeat chapters`);
     assert.equal(actualChapters.length, expected.size, `${artifact.trackId} artifact must contain its complete approved chapter inventory`);
     assert.deepEqual(actualChapters.map(({ nodeId }) => nodeId).sort(), [...expected.keys()].sort(), `${artifact.trackId} artifact must not omit or add chapters`);
@@ -76,8 +86,8 @@ function assertChapterInventoryMatches(rows, artifacts) {
     }
     questionTotal += artifact.questions.length;
   }
-  assert.equal(unitTotal, 943, "candidate artifacts must cover all 943 approved mental units");
-  assert.equal(questionTotal, 16622, "the frozen release artifacts must contain all 16,622 accepted questions");
+  assert.equal(unitTotal, 958, "candidate artifacts must cover all 958 current mental units");
+  assert.equal(questionTotal, 16695, "candidate artifacts must contain all 16,695 current accepted questions");
 }
 
 async function workspace(t) {
@@ -140,7 +150,7 @@ test("catalog accepts a valid chapter rule and rejects malformed rules", () => {
   }
 });
 
-test("all v2 candidate artifacts match the complete approved 117-chapter CSV inventory", () => {
+test("candidate artifacts retain approved v2 chapters and transport the current Claude v3 rule", () => {
   const csv = readFileSync(completionCsvUrl, "utf8");
   const rows = parseCompletionCsv(csv);
   const artifacts = ACCEPTED_TRACK_IDS.map((id) => JSON.parse(readFileSync(new URL(`${id}.json`, candidateArtifactsUrl), "utf8")));

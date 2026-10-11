@@ -11,6 +11,7 @@ import { promisify } from "node:util";
 import { assertCanonicalSourceSnapshot, buildCandidateDraft, createOdk096CanonicalApprovalBinding, CANDIDATE_DRAFT_SCHEMA_PATH, CANDIDATE_RELEASE_SCHEMA_PATH, ODK096_APPROVAL_PATH } from "../scripts/review/candidate-draft-v2.mjs";
 import { canonicalJson, CANDIDATE_TRACK_IDS } from "../scripts/review/candidate-manifest.mjs";
 import { buildAll } from "../scripts/build.mjs";
+import { reconstructApprovedAwsPredecessor } from "../scripts/content/verify-migration.mjs";
 import { validateQuestion } from "../scripts/content/question-contract.mjs";
 import { validateSchema } from "../scripts/review/schema-validation.mjs";
 
@@ -40,9 +41,13 @@ test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AW
     });
     const aws = first.manifest.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate");
     assert.equal(aws.questionCount, 2604);
-    assert.equal(aws.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2-bizq03-planning-v2");
-    assert.equal(aws.questionSetSha256, "46697d0c4e395455084d5dc28206b83e9207109b6f803eb94a47d4b4b981ac45");
+    assert.equal(aws.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1-bizq03-planning-v2");
+    assert.equal(aws.questionSetSha256, "f745d5ea27b753a3fae1143c079086fb2bab99dacfbb89a08744925030eeed42");
     assert.equal(aws.canonicalApprovalBinding.newQuestionIds.length, 36);
+    const releasedAws = JSON.parse(await readFile(path.join(one, "release", aws.artifactPath), "utf8"));
+    assert.equal(releasedAws.schemaVersion, "patternly-content-artifact-v2");
+    assert.equal(releasedAws.contentVersion, aws.contentVersion);
+    assert.ok(releasedAws.planningPolicy);
     for (const relativePath of ["release/release.json", "candidate/manifest.json", ...first.release.artifacts.map((entry) => `release/${entry.artifactPath}`)]) {
       assert.deepEqual(await readFile(path.join(one, relativePath)), await readFile(path.join(two, relativePath)));
     }
@@ -67,9 +72,12 @@ test("ODK-096 approval remains historically pinned, preserves fixed scope, and r
     const aws = built.artifacts.find((entry) => entry.trackId === "aws-certified-solutions-architect-associate");
     assert.ok(aws);
     assert.equal(approval.canonicalIdentity.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096");
-    assert.equal(aws.track.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.09.21-odk096-bizq02-v2-bizq03-planning-v2");
+    assert.equal(aws.track.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1-bizq03-planning-v2");
     assert.notEqual(aws.track.contentVersion, approval.canonicalIdentity.contentVersion);
-    const binding = createOdk096CanonicalApprovalBinding(aws, approval);
+    assert.throws(() => createOdk096CanonicalApprovalBinding(aws, approval), /exact ODK-096 track binding/);
+    const predecessor = await reconstructApprovedAwsPredecessor({ rootDirectory: ROOT, questions: aws.questions });
+    const historicalAws = { ...aws, questions: predecessor.predecessorQuestions };
+    const binding = createOdk096CanonicalApprovalBinding(historicalAws, approval);
     assert.equal(binding.addendumId, approval.addendumId);
     assert.equal(binding.trackSha256, approval.canonicalIdentity.track.sha256);
     assert.equal(binding.nodeSha256, approval.canonicalIdentity.node.sha256);
@@ -77,13 +85,13 @@ test("ODK-096 approval remains historically pinned, preserves fixed scope, and r
 
     const changedApprovalNode = structuredClone(approval);
     changedApprovalNode.canonicalIdentity.nodeId = aws.questions.find((question) => question.nodeId !== "aws_secure_architecture_foundations").nodeId;
-    assert.throws(() => createOdk096CanonicalApprovalBinding(aws, changedApprovalNode), /fixed AWS free-node scope/u);
+    assert.throws(() => createOdk096CanonicalApprovalBinding(historicalAws, changedApprovalNode), /fixed AWS free-node scope/u);
 
-    const changedTrack = structuredClone(aws);
+    const changedTrack = structuredClone(historicalAws);
     changedTrack.questions[0].prompt += " changed";
     assert.throws(() => createOdk096CanonicalApprovalBinding(changedTrack, approval), /exact ODK-096 track binding/u);
 
-    const changedApprovedNode = structuredClone(aws);
+    const changedApprovedNode = structuredClone(historicalAws);
     const approvedQuestion = changedApprovedNode.questions.find((question) => question.nodeId === approval.canonicalIdentity.nodeId);
     assert.ok(approvedQuestion);
     approvedQuestion.prompt += " changed";

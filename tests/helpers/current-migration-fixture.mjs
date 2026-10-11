@@ -8,6 +8,7 @@ const BUSINESS_QUALITY_PROOFS = [
   "bizq-01-besd-seed-cohort-14.json",
   "bizq-01-besd-cohort-15.json",
   "bizq-01-coding-source-copy-04.json",
+  "saa-20261010-aws-targeted-corrections.json",
   "bizq-01-ood-source-11.json",
   "bizq-01-ood-source-12.json",
   "bizq-01-ood-unit-cohort-13.json",

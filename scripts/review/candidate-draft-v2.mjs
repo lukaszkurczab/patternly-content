@@ -7,6 +7,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import { buildAll } from "../build.mjs";
+import { reconstructApprovedAwsPredecessor } from "../content/verify-migration.mjs";
 import { CANDIDATE_TRACK_FAMILIES, CANDIDATE_TRACK_IDS, canonicalJson, canonicalJsonBytes, candidateIdFor } from "./candidate-manifest.mjs";
 import { validateSchema } from "./schema-validation.mjs";
 
@@ -169,7 +170,8 @@ export async function buildCandidateDraft({ root = ROOT, outputDirectory } = {})
         checksumSha256: sha256(bytes),
       };
       if (trackId === awsTrackId) {
-        entry.canonicalApprovalBinding = createOdk096CanonicalApprovalBinding(artifact, approval);
+        const predecessor = await reconstructApprovedAwsPredecessor({ rootDirectory: sourceRoot, questions: artifact.questions });
+        entry.canonicalApprovalBinding = createOdk096CanonicalApprovalBinding({ ...artifact, questions: predecessor.predecessorQuestions }, approval);
       }
       artifacts.push(entry);
       outputArtifacts.push({ path: artifactPath, bytes });

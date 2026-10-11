@@ -125,9 +125,10 @@ const CLAUDE_HISTORICAL_BASELINE = Object.freeze({
   questionSetSha256: "713f1709b438430773ad56ccb71fa50cc59473afd1cbfa3b208496b4b1d38a09"
 });
 
+// Current reviewed P2 copy amendment; frozen 300-question and historical 845 evidence remain unchanged.
 const CLAUDE_CURRENT_BANK = Object.freeze({
   questionCount: 845,
-  questionSetSha256: "717b995fd9f9bda5d25161c516a248eb80b3a78cf23c69d1641c2ed95add8b9a"
+  questionSetSha256: "73f561c4d64a272f8b6f055a321414303620c54dba7dfb4d0283d75ea74bfe6d"
 });
 
 const EXPECTED_CURRENT_PRODUCER_BANKS = Object.freeze({

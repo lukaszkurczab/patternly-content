@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { access, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -16,7 +17,15 @@ import { ADMISSION_PATH } from "../scripts/review/candidate-admission-v3.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const DRAFT_ROOT = "reports/candidate-reconciliation/AWS-02-DRAFT";
+const HISTORICAL_COMMIT = "eb92726efe583f646ce503f6215101d42528e08d";
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
+
+function historicalBlob(relativePath) {
+  return execFileSync("git", ["show", `${HISTORICAL_COMMIT}:${relativePath}`], {
+    cwd: ROOT,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+}
 
 function canonical(value) {
   if (value === null || ["boolean", "number", "string"].includes(typeof value)) return JSON.stringify(value);
@@ -178,11 +187,10 @@ test("release gate verifies exact decision-bound evidence and requires separate 
 test("release gate rejects the old AWS grant for the current BIZQ-02 candidate", async () => {
   const root = await makeCandidateFixture();
   try {
-    const admission = JSON.parse(await readFile(path.join(ROOT, ADMISSION_PATH), "utf8"));
-    const runtimeSource = path.join(ROOT, admission.runtimeEvidence.path);
+    const admission = JSON.parse(historicalBlob(ADMISSION_PATH).toString("utf8"));
     const runtimeTarget = path.join(root, admission.runtimeEvidence.path);
     await mkdir(path.dirname(runtimeTarget), { recursive: true });
-    await cp(runtimeSource, runtimeTarget);
+    await writeFile(runtimeTarget, historicalBlob(admission.runtimeEvidence.path));
     await mkdir(path.dirname(path.join(root, ADMISSION_PATH)), { recursive: true });
     await writeFile(path.join(root, ADMISSION_PATH), `${JSON.stringify(admission)}\n`);
     const candidate = JSON.parse(await readFile(path.join(root, CANDIDATE_PATH), "utf8"));

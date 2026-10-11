@@ -5,6 +5,7 @@ const BUSINESS_QUALITY_PROOFS = [
   "bizq-05-gcp-question-relations-01.json",
   "bizq-01-besd-slice-01.json",
   "bizq-01-besd-seed-cohort-14.json",
+  "bizq-01-besd-cohort-15.json",
   "bizq-01-coding-source-copy-04.json",
   "bizq-01-ood-source-11.json",
   "bizq-01-ood-source-12.json",

@@ -70,13 +70,15 @@ test("accepts the real BIZQ-01 replacement proof while preserving current and hi
   assert.equal(claude.historicalCounts.questions, 300);
   assert.equal(claude.currentCounts.questions, 845);
   assert.equal(Object.values(claude.historicalInteractions).reduce((sum, count) => sum + count, 0), 300);
+  const cohort15 = JSON.parse(await readFile(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-besd-cohort-15.json"), "utf8"));
   const cohort14 = JSON.parse(await readFile(path.join(contentRepositoryRoot, cohort14ProofPath), "utf8"));
   assert.deepEqual(result.replacementProof.replacements, [
     { beforeQuestionId: "besd-n02-b01-i002", questionId: "besd-n02-b01-i017" },
     { beforeQuestionId: "besd-n04-b01-i002", questionId: "besd-n04-b01-i019" },
-    ...cohort14.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId }))
+    ...cohort14.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId })),
+    ...cohort15.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId }))
   ]);
-  assert.equal(result.replacementProof.replacements.length, 34);
+  assert.equal(result.replacementProof.replacements.length, 168);
 });
 
 test("rejects a changed frozen Claude predecessor object", async () => {
@@ -243,7 +245,7 @@ const wordingQuestionId = "alg-contrast-binary-scan-correctness-006";
 test("accepts only the real same-ID Coding wording correction alongside the unchanged BESD proof", async () => {
   const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
   assert.deepEqual(result.wordingCorrectionProof, { trackId: "coding-interview-dsa-problem-solving", questionIds: [wordingQuestionId] });
-  assert.equal(result.replacementProof.replacements.length, 34);
+  assert.equal(result.replacementProof.replacements.length, 168);
   assert.equal(result.counts.questions, 16622);
   assert.equal(result.historicalCounts.questions, 16041);
 });

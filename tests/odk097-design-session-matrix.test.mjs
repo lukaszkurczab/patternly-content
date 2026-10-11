@@ -16,7 +16,7 @@ const DESIGN_TRACKS = Object.freeze([
     trackId: "backend-system-design-interview",
     profileId: "backend-system-design-interview-free-node-v1",
     freeNodeId: "requirements_capacity_and_architecture_decomposition",
-    contentVersion: "backend-system-design-interview-authoring-v2026.10.03-bizq01-14-bizq02-v2-bizq03-planning-v2",
+    contentVersion: "backend-system-design-interview-authoring-v2026.10.11-bizq01-15-bizq02-v2-bizq03-planning-v2",
     tradeoffConfigurationId: "backend-system-design-interview-free-tradeoff-practice-v2",
     reviewConfigurationId: "backend-system-design-interview-free-weak-area-review-v2",
     nodeCount: 145,
@@ -24,7 +24,7 @@ const DESIGN_TRACKS = Object.freeze([
     trackCount: 1569,
     // Targeted BIZQ-01 replacements update this current-source pin only.
     // The original admission artifacts and unchanged node hash stay frozen.
-    trackSha256: "1d19b932b4552fa65e37640bba63f0e0c8f52ba42f10259edca808cb265ef7ef",
+    trackSha256: "46954940e5d7ef7517f2602e32899f4ffbcbff13e40e8c6409f8433e0e0dd9c9",
   },
   {
     trackId: "object-oriented-design-interview",

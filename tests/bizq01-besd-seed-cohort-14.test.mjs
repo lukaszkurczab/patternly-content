@@ -53,8 +53,8 @@ test("accepts the fixed two-unit cohort and source01 predecessor chain", async (
   const cohort = JSON.parse(await readFile(path.join(repositoryRoot, proofPath), "utf8"));
   assert.equal(result.result, "passed");
   assert.equal(cohort.replacements.length, 32);
-  assert.equal(result.replacementProof.replacements.length, 34);
-  assert.deepEqual(result.replacementProof.replacements.slice(2), cohort.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId })));
+  assert.equal(result.replacementProof.replacements.length, 168);
+  assert.deepEqual(result.replacementProof.replacements.slice(2, 34), cohort.replacements.map(({ beforeQuestionId, questionId }) => ({ beforeQuestionId, questionId })));
 });
 
 test("requires both the new fixed proof and unchanged source01 proof", async () => {

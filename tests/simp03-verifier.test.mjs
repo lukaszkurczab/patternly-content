@@ -75,7 +75,6 @@ test("accepts package policy version changes only while each fixed current bank 
       if ([
         "aws-certified-solutions-architect-associate",
         "backend-system-design-interview",
-        "claude-certified-architect-professional-certification",
         "coding-interview-dsa-problem-solving",
         "object-oriented-design-interview"
       ].includes(track.trackId)) track.contentVersion += "-policy-fixture";
@@ -85,6 +84,12 @@ test("accepts package policy version changes only while each fixed current bank 
     const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
     assert.equal(result.result, "passed");
   });
+
+  await withJsonMutation("content/catalog.json", (catalog) => {
+    const claude = catalog.tracks.find(({ trackId }) => trackId === "claude-certified-architect-professional-certification");
+    claude.contentVersion += "-policy-fixture";
+    return catalog;
+  }, () => assertRejectedAny(["EVIDENCE_VALUE"], verifyMigration({ contentRoot: path.join(fixtureRoot, "content") })));
 });
 
 test("rejects current prompt, ID, count, node, unit, and path drift", async () => {

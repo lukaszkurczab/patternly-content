@@ -1,4 +1,5 @@
 import test from "node:test";
+import { execFileSync } from "node:child_process";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { access, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -178,11 +179,11 @@ test("release gate verifies exact decision-bound evidence and requires separate 
 test("release gate rejects the old AWS grant for the current BIZQ-02 candidate", async () => {
   const root = await makeCandidateFixture();
   try {
-    const admission = JSON.parse(await readFile(path.join(ROOT, ADMISSION_PATH), "utf8"));
-    const runtimeSource = path.join(ROOT, admission.runtimeEvidence.path);
+    const historical = relativePath => execFileSync("git", ["show", `eb92726efe583f646ce503f6215101d42528e08d:${relativePath}`], { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 });
+    const admission = JSON.parse(historical(ADMISSION_PATH).toString("utf8"));
     const runtimeTarget = path.join(root, admission.runtimeEvidence.path);
     await mkdir(path.dirname(runtimeTarget), { recursive: true });
-    await cp(runtimeSource, runtimeTarget);
+    await writeFile(runtimeTarget, historical(admission.runtimeEvidence.path));
     await mkdir(path.dirname(path.join(root, ADMISSION_PATH)), { recursive: true });
     await writeFile(path.join(root, ADMISSION_PATH), `${JSON.stringify(admission)}\n`);
     const candidate = JSON.parse(await readFile(path.join(root, CANDIDATE_PATH), "utf8"));

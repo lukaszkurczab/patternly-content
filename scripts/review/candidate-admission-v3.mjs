@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { CANDIDATE_PATH, RELEASE_PATH } from "./candidate-readiness-v2.mjs";
 import { CANDIDATE_TRACK_IDS, canonicalJson, canonicalJsonBytes, candidateIdFor } from "./candidate-manifest.mjs";
@@ -29,7 +29,7 @@ function assertExactTrackBindings(candidate, release, appLock, contentLock) {
   for (const [index, artifact] of release.artifacts.entries()) {
     const locked = appLock.artifacts[index];
     const installed = bundled.get(artifact.trackId);
-    if (!locked || !installed || locked.checksumSha256 !== artifact.checksumSha256 || installed.sha256 !== artifact.checksumSha256 || locked.contentVersion !== artifact.contentVersion || installed.contentVersion !== artifact.contentVersion) throw new Error(`Application runtime binding differs for ${artifact.trackId}.`);
+    if (!locked || !installed || locked.checksumSha256 !== artifact.checksumSha256 || locked.contentVersion !== artifact.contentVersion || installed.questionCount !== artifact.questionCount) throw new Error(`Application runtime binding differs for ${artifact.trackId}.`);
   }
 }
 
@@ -46,12 +46,15 @@ export async function createCandidateAdmissionV3({ root = ROOT, appRoot = path.r
   }
   const appLock = JSON.parse(appLockBytes);
   const contentLock = JSON.parse(contentLockBytes);
-  assertExactTrackBindings(candidate, release, appLock, contentLock);
   const { stdout: headOutput } = await exec("git", ["rev-parse", "HEAD"], { cwd: appRoot, encoding: "utf8" });
   const frontendCommit = headOutput.trim();
   if (!COMMIT.test(frontendCommit)) throw new Error("Application HEAD is not a full commit SHA.");
-  const { stdout: relevantStatus } = await exec("git", ["status", "--porcelain", "--", APP_LOCK_PATH, APP_CONTENT_LOCK_PATH, RUNTIME_TEST_PATH, "src/content/canonical", "src/domain/tracks"], { cwd: appRoot, encoding: "utf8" });
+  const { stdout: relevantStatus } = await exec("git", ["status", "--porcelain", "--", APP_LOCK_PATH, APP_CONTENT_LOCK_PATH, RUNTIME_TEST_PATH, "src/content/canonical", "src/domain/tracks", "scripts/candidateContentReleaseLock.mjs", "scripts/syncBundledContentRelease.mjs"], { cwd: appRoot, encoding: "utf8" });
   if (relevantStatus.trim()) throw new Error("Runtime admission paths differ from the application HEAD.");
+  const { createCandidateContentReleaseLock } = await import(pathToFileURL(path.join(appRoot, "scripts/candidateContentReleaseLock.mjs")).href);
+  const verifiedAppLock = await createCandidateContentReleaseLock({ appRoot, contentRoot: root });
+  if (canonicalJson(appLock) !== canonicalJson(verifiedAppLock)) throw new Error("Application release lock differs from verified bundled training projections.");
+  assertExactTrackBindings(candidate, release, appLock, contentLock);
   const command = "node --import tsx --test src/domain/tracks/runtimeAdmissionLaunchTracks.test.ts";
   await exec(process.execPath, ["--import", "tsx", "--test", RUNTIME_TEST_PATH], { cwd: appRoot, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
   const runtimeEvidence = {

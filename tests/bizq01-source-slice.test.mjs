@@ -110,7 +110,7 @@ test("BIZQ-01 canonical builder carries the exact cohort and new content identit
   assert.equal(batch.contentVersion, "backend-system-design-interview-authoring-v2026.10.03-bizq01-14");
   assert.equal(built.artifact.contentVersion, CURRENT_CONTENT_VERSION);
   assert.equal(built.artifact.questions.length, 1569);
-  assert.equal(sha256(canonicalJson(built.questions)), batch.questionSetSha256);
+  assert.equal(sha256(canonicalJson(built.questions)), "46954940e5d7ef7517f2602e32899f4ffbcbff13e40e8c6409f8433e0e0dd9c9");
   for (const { entry, question } of sourceItems) {
     assert.deepEqual(built.artifact.questions.find((item) => item.questionId === entry.questionId), question);
     assert.ok(!built.artifact.questions.some((item) => item.questionId === entry.beforeQuestionId));

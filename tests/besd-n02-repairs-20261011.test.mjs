@@ -640,7 +640,6 @@ const requiredMechanisms = {
 const idOffsets = { B02: 16, B03: 17, B04: 17, B05: 17, B06: 16, B07: 17, B08: 16, B09: 18 };
 const ids = Object.keys(expectedAnswers);
 const questionsByUnit = Object.fromEntries(ids.map((unit) => {
-  const unitNumber = unit.slice(1);
   const file = `BESD-N02-${unit}.json`;
   const questions = JSON.parse(readFileSync(path.join(unitDirectory, file), "utf8"));
   return [unit, questions];

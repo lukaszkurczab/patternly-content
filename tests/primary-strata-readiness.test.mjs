@@ -48,6 +48,8 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.ok(coding.stratum.uniqueNodeCount > 1);
   const aws = result.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate");
   assert.equal(aws.stratum.kind, "unavailable");
+  assert.equal(manifest.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate").contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1-bizq03-planning-v2");
+  assert.equal(manifest.tracks.find((track) => track.trackId === "claude-certified-architect-professional-certification").contentVersion, "ccarp-2026.10.11-capacity-v1-bizq02-v2-bizq03-planning-v2");
   assert.ok(result.tracks.filter((track) => !["microsoft-azure-administrator-associate-az-104", "microsoft-azure-ai-fundamentals-ai-901"].includes(track.trackId)).every((track) => track.primaryObjective.status === "unavailable"));
 });
 
@@ -57,7 +59,7 @@ test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewe
   assert.equal(ai901.contentVersion, "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15-bizq02-v2-bizq03-planning-v2");
   assert.equal(ai901.questionCount, 752);
   assert.equal(ai901.questionIdSetSha256, "088aa8189f9d25a5a6da640e487a407c96efde3f410f86d4296bf39f97b8f34a");
-  assert.equal(ai901.sourceInventorySha256, "d629a8f1196e0cebc7316c6e2661a51a359ca8471260a1ad7edeaa6c473f9377");
+  assert.equal(ai901.sourceInventorySha256, "ee28d07cdc815aa2bc1a99de78cff155031e7e43d442ddd12206f3f909739be7");
   assert.deepEqual(ai901.primaryObjective.registry, {
     path: "config/certification-objective-registries/microsoft-azure-ai-fundamentals-ai-901.json",
     sha256: "769202258c0e387550b8fc3160aecf06d2ecf3ba3b42e4153a3052b68f4a9d5b",
@@ -196,7 +198,7 @@ test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 
     assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }
   assert.equal(az104.questionIdSetSha256, "05c5642f6a14aa365d55e676e211a9b4466344c645e5361178e72aa6c54b3d25");
-  assert.equal(az104.sourceInventorySha256, "fcfefb40fc11d042970f1f8bed1c94c1e307143926333668402754cb74d7aa91");
+  assert.equal(az104.sourceInventorySha256, "4d2958885a3cfe70531d7547057f129cb829223a1f1fe063559fe5f2d3d57f29");
 });
 
 test("manifest requires the exact nine unique current track identities", async () => {

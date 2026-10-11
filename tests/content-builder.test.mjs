@@ -693,7 +693,9 @@ test("Historical manifests retain identity while current GCP source version reco
       ? "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1"
       : track.trackId === "aws-certified-solutions-architect-associate"
         ? "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1"
-      : `${completionBaselineVersions.get(track.trackId)}-bizq02-v2`;
+      : track.trackId === "claude-certified-architect-professional-certification"
+        ? "ccarp-2026.10.11-capacity-v1-bizq02-v2"
+        : `${completionBaselineVersions.get(track.trackId)}-bizq02-v2`;
     assert.equal(track.contentVersion, `${expectedSourceVersion}-bizq03-planning-v2`, track.trackId);
   }
 });

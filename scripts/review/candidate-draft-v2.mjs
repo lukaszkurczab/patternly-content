@@ -106,21 +106,6 @@ export function createOdk096CanonicalApprovalBinding(artifact, approval) {
   };
 }
 
-// Candidate release locks bind training identity. Planning policy is a separate
-// v2 successor and must not be mistaken for a change to training content.
-export function candidateTrainingArtifact(artifact) {
-  const suffix = "-bizq03-planning-v2";
-  if (artifact.schemaVersion !== "patternly-content-artifact-v2" || !artifact.planningPolicy || !artifact.contentVersion.endsWith(suffix)) {
-    throw new Error("Candidate training projection requires an explicit versioned planning-policy successor.");
-  }
-  const training = structuredClone(artifact);
-  delete training.planningPolicy;
-  training.schemaVersion = "patternly-content-artifact-v1";
-  training.contentVersion = artifact.contentVersion.slice(0, -suffix.length);
-  if (!training.contentVersion) throw new Error("Candidate training version is missing.");
-  return training;
-}
-
 function assertCanonicalTrackSet(entries, label) {
   const ids = entries.map((entry) => entry?.trackId);
   if (canonicalJson(ids) !== canonicalJson(CANDIDATE_TRACK_IDS)) {
@@ -171,14 +156,13 @@ export async function buildCandidateDraft({ root = ROOT, outputDirectory } = {})
     for (const trackId of CANDIDATE_TRACK_IDS) {
       const artifact = built.artifacts.find((entry) => entry.trackId === trackId);
       if (!artifact) throw new Error(`Canonical build is missing ${trackId}.`);
-      const training = candidateTrainingArtifact(artifact.artifact);
-      const bytes = Buffer.from(canonicalJson(training));
+      const bytes = Buffer.from(artifact.artifactBytes);
       const artifactPath = `artifacts/${trackId}.json`;
       const entry = {
         trackId,
         familyId: CANDIDATE_TRACK_FAMILIES[trackId],
         sourcePath: `content/${trackId}`,
-        contentVersion: training.contentVersion,
+        contentVersion: artifact.track.contentVersion,
         questionCount: artifact.questions.length,
         questionSetSha256: sha256(canonicalJson(artifact.questions)),
         artifactPath,

@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { assertCanonicalSourceSnapshot, buildCandidateDraft, candidateTrainingArtifact, createOdk096CanonicalApprovalBinding, CANDIDATE_DRAFT_SCHEMA_PATH, CANDIDATE_RELEASE_SCHEMA_PATH, ODK096_APPROVAL_PATH } from "../scripts/review/candidate-draft-v2.mjs";
+import { assertCanonicalSourceSnapshot, buildCandidateDraft, createOdk096CanonicalApprovalBinding, CANDIDATE_DRAFT_SCHEMA_PATH, CANDIDATE_RELEASE_SCHEMA_PATH, ODK096_APPROVAL_PATH } from "../scripts/review/candidate-draft-v2.mjs";
 import { canonicalJson, CANDIDATE_TRACK_IDS } from "../scripts/review/candidate-manifest.mjs";
 import { buildAll } from "../scripts/build.mjs";
 import { reconstructApprovedAwsPredecessor } from "../scripts/content/verify-migration.mjs";
@@ -41,9 +41,13 @@ test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AW
     });
     const aws = first.manifest.tracks.find((track) => track.trackId === "aws-certified-solutions-architect-associate");
     assert.equal(aws.questionCount, 2604);
-    assert.equal(aws.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1");
+    assert.equal(aws.contentVersion, "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1-bizq03-planning-v2");
     assert.equal(aws.questionSetSha256, "f745d5ea27b753a3fae1143c079086fb2bab99dacfbb89a08744925030eeed42");
     assert.equal(aws.canonicalApprovalBinding.newQuestionIds.length, 36);
+    const releasedAws = JSON.parse(await readFile(path.join(one, "release", aws.artifactPath), "utf8"));
+    assert.equal(releasedAws.schemaVersion, "patternly-content-artifact-v2");
+    assert.equal(releasedAws.contentVersion, aws.contentVersion);
+    assert.ok(releasedAws.planningPolicy);
     for (const relativePath of ["release/release.json", "candidate/manifest.json", ...first.release.artifacts.map((entry) => `release/${entry.artifactPath}`)]) {
       assert.deepEqual(await readFile(path.join(one, relativePath)), await readFile(path.join(two, relativePath)));
     }
@@ -130,15 +134,4 @@ test("canonical source snapshot rejects a valid untracked mental-unit JSON in an
   } finally {
     await rm(base, { recursive: true, force: true });
   }
-});
-
-
-test("training candidate projection is explicit and cannot preserve planning bytes as training", () => {
-  const artifact = { schemaVersion: "patternly-content-artifact-v2", trackId: "example", contentVersion: "training-v2-bizq03-planning-v2", questions: [{ questionId: "one" }], planningPolicy: { policyVersion: "one" } };
-  const training = candidateTrainingArtifact(artifact);
-  assert.deepEqual(training, { schemaVersion: "patternly-content-artifact-v1", trackId: "example", contentVersion: "training-v2", questions: artifact.questions });
-  assert.ok(Object.hasOwn(artifact, "planningPolicy"));
-  assert.throws(() => candidateTrainingArtifact({ ...artifact, contentVersion: "unversioned" }), /explicit versioned/);
-  assert.throws(() => candidateTrainingArtifact({ ...artifact, schemaVersion: "patternly-content-artifact-v1" }), /explicit versioned/);
-  assert.throws(() => candidateTrainingArtifact({ ...artifact, planningPolicy: undefined }), /explicit versioned/);
 });

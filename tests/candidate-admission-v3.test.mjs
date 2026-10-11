@@ -84,13 +84,17 @@ async function historicalReleaseGateFixture() {
 
 test("the old AWS grant cannot authorize the current BIZQ-02 candidate", async () => {
   const currentCandidate = JSON.parse(await readFile(path.join(root, CANDIDATE_PATH), "utf8"));
-  const oldAdmission = JSON.parse(await readFile(path.join(root, ADMISSION_PATH), "utf8"));
-  assert.equal(oldAdmission.candidateId, OLD_CANDIDATE_ID);
-  assert.notEqual(currentCandidate.candidateId, oldAdmission.candidateId);
-  await assert.rejects(validateCandidateAdmissionV3(oldAdmission, { root }), /Candidate admission release binding is stale/u);
+  const { fixtureRoot, admission: oldAdmission } = await historicalCandidateFixture();
+  try {
+    assert.equal(oldAdmission.candidateId, OLD_CANDIDATE_ID);
+    assert.notEqual(currentCandidate.candidateId, oldAdmission.candidateId);
+    await assert.rejects(validateCandidateAdmissionV3(oldAdmission, { root }), /Candidate admission release binding is stale/u);
 
-  const attemptedBIZQ02Grant = { ...oldAdmission, taskId: "BIZQ-02/ADMISSION" };
-  await assert.rejects(validateCandidateAdmissionV3(attemptedBIZQ02Grant, { root }), /identity is invalid/u);
+    const attemptedBIZQ02Grant = { ...oldAdmission, taskId: "BIZQ-02/ADMISSION" };
+    await assert.rejects(validateCandidateAdmissionV3(attemptedBIZQ02Grant, { root }), /identity is invalid/u);
+  } finally {
+    await rm(fixtureRoot, { recursive: true, force: true });
+  }
 });
 
 test("historical admission and runtime evidence remain hash-bound to their exact 946d candidate", async (t) => {

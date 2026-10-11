@@ -328,3 +328,14 @@ Independent semantic QA (Luna High, 2026-10-11): **PASS, all 28 exact IDs**. Fin
 - The primary-strata readiness manifest and verifier agree with the current AWS version and question-ID set. Catalog-derived provenance pins were refreshed for all nine tracks; non-AWS content versions, counts, question-ID sets, objective mappings, and readiness states remain unchanged.
 - The earlier local full `npm test` run was interrupted before completion and is superseded by the clean CI result above; it is not counted as a passing local run.
 - Official AWS documentation was checked on 2026-10-11; each current source reference is recorded per item above.
+
+## Final combined acceptance (2026-10-11)
+
+After the separately published Claude repair, the combined canonical source commit is `ad40ab3c53229acb608ec74c4cccc4a54279c911`. The existing raw-v2 candidate is `8385357bf7dfd91d8f157a1e8adde737237b96d422f64dcea7e134e90d6a52bd`; release checksum `279e972a4b8d938106b5ca4c95a60a0d0dbb4625001ec58f3af82fec10cf75d4`. Only the AWS artifact differs from the latest published producer baseline; all 12 AWS source files and the fixed proof are byte-identical to the independently reviewed correction commit `c270a47`.
+
+- Final clean combined CI [38157240322](https://github.com/lukaszkurczab/patternly-content/actions/runs/38157240322), commit `444679a`: PASS, 231/231 tests, nine builds, nine scoring suites, exact quarantined candidate, decision/readiness and Free-package checks.
+- Final independent Luna High source/scope receipt: PASS, 28 mappings, 27 same-ID edits plus MQ005 successor, 2,604 unique questions; foreign Claude source and artifact preserved.
+- Final independent Luna High integration/contract QA: PASS, no blocking findings. Actual current admission integration 1/1, consumer lock/runtime 29/29, choice/cross-repo 12/12, producer admission/release-gate 8/8; each completed with exit 0. Typecheck and actual sync/check completed with exit 0 on Node 22.13.1.
+- Actual AWS-02 admission is recorded in commit `74c4a05`, bound to application `c1509bfa8192dd6c29cbdc717233a1365adb7346`. The existing release gate returned `RELEASE_READY`; historical admission evidence and the frozen lock remain unchanged. Admission boundary remains local verified artifacts without service deployment.
+
+The owner explicitly authorized source/app publication before iOS in the active conversation. This acceptance covers the exact 28 repaired items, not semantic approval of all 2,604 AWS questions. Q13 and unrelated working-tree edits were not changed. No iOS binary release or AWS service mutation was performed.

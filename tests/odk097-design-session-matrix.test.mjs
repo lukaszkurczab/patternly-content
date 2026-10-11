@@ -44,13 +44,13 @@ const DESIGN_TRACKS = Object.freeze([
     trackId: "frontend-system-design-interview",
     profileId: "frontend-system-design-interview-free-node-v1",
     freeNodeId: "requirements_user_journeys_constraints_and_frontend_decomposition",
-    contentVersion: "frontend-system-design-interview-candidate-v2026.08.15-bizq02-v2-bizq03-planning-v2",
+    contentVersion: "frontend-system-design-interview-fesd-n08-v2026.10.11",
     tradeoffConfigurationId: "frontend-system-design-interview-free-tradeoff-practice-v2",
     reviewConfigurationId: "frontend-system-design-interview-free-weak-area-review-v2",
     nodeCount: 150,
     nodeSha256: "1fdf8950b3cade9aaf396d64084a99eb2487964f0aa99d4d5b6e5f1fbed06928",
     trackCount: 1766,
-    trackSha256: "8055a759f023ab7368ed26b4a4111fd56cd45a335fbae1ef9664155159cbd416",
+    trackSha256: "cccc86cda609c071dae829f1c7f9ae5b59219bc89da51f07ac3eab229e169261",
   },
 ]);
 

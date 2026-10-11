@@ -277,6 +277,38 @@ const BIZQ01_BESD_COHORT14_PROOF = Object.freeze({
 const BIZQ01_BESD_COHORT14_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "questionSetSha256", "replacements"];
 const BIZQ01_BESD_COHORT14_ITEM_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "learningObjective", "confirmedDefects", "identityAction", "identityReason", "acceptedOptionId", "sourceRefs", "beforeQuestion", "currentQuestion"];
 
+const FESD_N08_PROOF = Object.freeze({
+  path: "evidence/business-quality/fesd-n08-20261011.json",
+  schemaVersion: "patternly-bizq-semantic-replacement-v1",
+  scope: "FESD N08 fixed eight-unit source repair",
+  trackId: "frontend-system-design-interview",
+  beforeProducerCommit: "0f4e6912d7d0cdb1a1c41b9d7885d7e867f80f34",
+  beforeContentVersion: "frontend-system-design-interview-candidate-v2026.08.15-bizq02-v2-bizq03-planning-v2",
+  contentVersion: "frontend-system-design-interview-fesd-n08-v2026.10.11",
+  sourceFiles: Object.freeze([
+    "content/frontend-system-design-interview/accessibility_internationalization_responsive_and_input_design/FESD-N08-B01.json",
+    "content/frontend-system-design-interview/accessibility_internationalization_responsive_and_input_design/FESD-N08-B02.json",
+    "content/frontend-system-design-interview/accessibility_internationalization_responsive_and_input_design/FESD-N08-B03.json",
+    "content/frontend-system-design-interview/accessibility_internationalization_responsive_and_input_design/FESD-N08-B04.json",
+    "content/frontend-system-design-interview/accessibility_internationalization_responsive_and_input_design/FESD-N08-B05.json",
+    "content/frontend-system-design-interview/accessibility_internationalization_responsive_and_input_design/FESD-N08-B06.json",
+    "content/frontend-system-design-interview/accessibility_internationalization_responsive_and_input_design/FESD-N08-B07.json",
+    "content/frontend-system-design-interview/accessibility_internationalization_responsive_and_input_design/FESD-N08-B08.json"
+  ]),
+  replacementCount: 162,
+  proofSha256: "edc2e517adcbbf55a5aa1612868c3da7c1a83c653bb984de829a526a76ec2204"
+});
+
+function questionChildIdentityFamilies(question) {
+  const interaction = question.interaction ?? {};
+  return {
+    optionIds: interaction.options?.map(({ optionId }) => optionId) ?? [],
+    elementIds: interaction.elements?.map(({ elementId }) => elementId) ?? [],
+    dimensionIds: interaction.dimensions?.map(({ dimensionId }) => dimensionId) ?? [],
+    valueIds: interaction.dimensions?.flatMap(({ values }) => values.map(({ valueId }) => valueId)) ?? []
+  };
+}
+
 const BIZQ01_COPY_PROOF = Object.freeze({
   path: "evidence/business-quality/bizq-01-coding-source-copy-04.json",
   schemaVersion: "patternly-bizq-wording-correction-v1",
@@ -12576,6 +12608,155 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, priv
   };
 }
 
+async function loadFesdN08SemanticProof(contentRoot, canonical, evidence) {
+  const accepted = FESD_N08_PROOF;
+  const label = accepted.scope;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, accepted.path);
+  const proofInfo = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect ${label}: ${error.message}`);
+  });
+  const version = canonical.catalogByTrack.get(accepted.trackId)?.contentVersion;
+  if (version !== accepted.contentVersion) {
+    if (proofInfo) fail("EVIDENCE_VALUE", `${label} is bound to ${accepted.contentVersion}, not ${version}.`);
+    return undefined;
+  }
+  if (!proofInfo) fail("EVIDENCE_MEMBERSHIP", `${label} requires its fixed migration proof.`);
+  await rejectSymlinkAncestors(proofPath, label);
+  await regularPath(proofPath, label, "file");
+  const proofBytes = await readFile(proofPath).catch((error) => fail("READ_ERROR", `Cannot read ${label}: ${error.message}`));
+  if (!HASH256.test(accepted.proofSha256) || sha256(proofBytes) !== accepted.proofSha256) {
+    fail("HASH_MISMATCH", `${label} differs from its fixed proof bytes.`);
+  }
+  let proof;
+  try { proof = JSON.parse(proofBytes.toString("utf8")); }
+  catch (error) { fail("INVALID_JSON", `${label} is not valid JSON: ${error.message}`); }
+  exactKeys(proof, ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "replacements"], label);
+  for (const key of ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion"]) {
+    if (proof[key] !== accepted[key]) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed cohort identity.`);
+  }
+  assertHash(proof.beforeProducerCommit, `${label}.beforeProducerCommit`, { kind: "sha1" });
+  assertHash(proof.beforeQuestionSetSha256, `${label}.beforeQuestionSetSha256`);
+  assertHash(proof.questionSetSha256, `${label}.questionSetSha256`);
+
+  const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
+  if (trackQuestionSetSha256(currentTrackQuestions) !== proof.questionSetSha256) {
+    fail("HASH_MISMATCH", `${label} current question set differs from its fixed proof.`);
+  }
+  if (!Array.isArray(proof.sourceFiles) || proof.sourceFiles.length !== accepted.sourceFiles.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must identify exactly the ${accepted.sourceFiles.length} fixed source files.`);
+  }
+  if (!Array.isArray(proof.replacements) || proof.replacements.length !== accepted.replacementCount) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must contain exactly ${accepted.replacementCount} replacements.`);
+  }
+
+  const sourceByPath = new Map();
+  const currentById = new Map(currentTrackQuestions.map((question) => [question.questionId, question]));
+  const oldRowsById = new Map(evidence.rowsByTrack.get(accepted.trackId).map((row) => [row.questionId, row]));
+  const replacementIds = new Set();
+  const retiredIds = new Set();
+  const replacements = [];
+
+  for (const [index, sourceFile] of accepted.sourceFiles.entries()) {
+    const entry = proof.sourceFiles[index];
+    const sourceLabel = `${label}.sourceFiles[${index}]`;
+    exactKeys(entry, ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"], sourceLabel);
+    if (entry.sourceFile !== sourceFile) fail("EVIDENCE_VALUE", `${sourceLabel}.sourceFile differs from the fixed source path.`);
+    assertHash(entry.beforeSourceSha256, `${sourceLabel}.beforeSourceSha256`);
+    assertHash(entry.sourceSha256, `${sourceLabel}.sourceSha256`);
+    assertText(entry.nodeId, `${sourceLabel}.nodeId`);
+    assertText(entry.mentalUnitId, `${sourceLabel}.mentalUnitId`);
+    assertRelativePath(entry.sourceFile, `${sourceLabel}.sourceFile`, { suffix: ".json" });
+    const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
+    await rejectSymlinkAncestors(sourcePath, `${sourceLabel}.sourceFile`);
+    await regularPath(sourcePath, `${sourceLabel}.sourceFile`, "file");
+    const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    if (sha256(sourceBytes) !== entry.sourceSha256) fail("HASH_MISMATCH", `${sourceLabel}.sourceFile differs from its fixed current hash.`);
+    let questions;
+    try { questions = JSON.parse(sourceBytes.toString("utf8")); }
+    catch (error) { fail("INVALID_JSON", `${sourceLabel}.sourceFile is not valid JSON: ${error.message}`); }
+    if (!Array.isArray(questions) || questions.length === 0) fail("EVIDENCE_MEMBERSHIP", `${sourceLabel}.sourceFile must be a non-empty question array.`);
+    const location = [...canonical.questionLocations.values()].find((candidate) => path.relative(projectRoot, candidate.path).split(path.sep).join("/") === sourceFile);
+    if (!location || location.trackId !== accepted.trackId || location.nodeId !== entry.nodeId || location.mentalUnitId !== entry.mentalUnitId) {
+      fail("CANONICAL_MEMBERSHIP", `${sourceLabel} does not resolve to the fixed FESD mental unit.`);
+    }
+    sourceByPath.set(sourceFile, { entry, sourcePath, questions, questionById: new Map(questions.map((question) => [question?.questionId, question])) });
+  }
+
+  for (const [index, item] of proof.replacements.entries()) {
+    const itemLabel = `${label}.replacements[${index}]`;
+    exactKeys(item, ["sourceFile", "beforeSourceSha256", "sourceSha256", "beforeQuestionId", "questionId", "nodeId", "mentalUnitId", "beforeQuestion", "currentQuestion"], itemLabel);
+    const source = sourceByPath.get(item.sourceFile);
+    const oldQuestion = item.beforeQuestion;
+    const currentQuestion = currentById.get(item.questionId);
+    const oldRow = oldRowsById.get(item.beforeQuestionId);
+    if (!source || item.beforeSourceSha256 !== source.entry.beforeSourceSha256 || item.sourceSha256 !== source.entry.sourceSha256 ||
+        item.nodeId !== source.entry.nodeId || item.mentalUnitId !== source.entry.mentalUnitId ||
+        !oldQuestion || !currentQuestion || !oldRow || currentById.has(item.beforeQuestionId)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} must bind one removed historical question to one present replacement in its fixed unit.`);
+    }
+    if (retiredIds.has(item.beforeQuestionId) || replacementIds.has(item.questionId) || item.beforeQuestionId === item.questionId) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} duplicates or reuses a retired or current question identity.`);
+    }
+    retiredIds.add(item.beforeQuestionId);
+    replacementIds.add(item.questionId);
+    assertCanonicalQuestion(oldQuestion, `${itemLabel}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+    assertCanonicalQuestion(item.currentQuestion, `${itemLabel}.currentQuestion`, ACCEPTED_TRACK_IDS);
+    if (oldQuestion.questionId !== item.beforeQuestionId || oldQuestion.trackId !== accepted.trackId ||
+        currentQuestion.trackId !== accepted.trackId || item.currentQuestion.questionId !== item.questionId ||
+        canonicalJson(item.currentQuestion) !== canonicalJson(currentQuestion) ||
+        [oldQuestion.trackId, oldQuestion.nodeId, oldQuestion.mentalUnitId].join("|") !== [accepted.trackId, item.nodeId, item.mentalUnitId].join("|") ||
+        [currentQuestion.nodeId, currentQuestion.mentalUnitId].join("|") !== [item.nodeId, item.mentalUnitId].join("|")) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes the fixed taxonomy or current canonical object.`);
+    }
+    for (const key of ["trackId", "nodeId", "mentalUnitId"]) {
+      if (oldRow[key] !== oldQuestion[key]) fail("EVIDENCE_MEMBERSHIP", `${itemLabel} historical evidence ${key} differs from the retired question.`);
+    }
+    assertCanonicalHash(oldRow, oldQuestion, `${itemLabel}.beforeQuestion`);
+    const sourceQuestion = source.questionById.get(item.questionId);
+    const location = canonical.questionLocations.get(item.questionId);
+    if (!sourceQuestion || canonicalJson(sourceQuestion) !== canonicalJson(currentQuestion) || !location ||
+        path.relative(projectRoot, location.path).split(path.sep).join("/") !== item.sourceFile) {
+      fail("CANONICAL_MEMBERSHIP", `${itemLabel} current question is not present exactly once in its fixed canonical source file.`);
+    }
+    const oldChildIds = questionChildIdentityFamilies(oldQuestion);
+    const currentChildIds = questionChildIdentityFamilies(currentQuestion);
+    for (const family of Object.keys(oldChildIds)) {
+      const oldIds = oldChildIds[family];
+      const currentIds = currentChildIds[family];
+      if (oldIds.some((id) => currentIds.includes(id))) {
+        fail("EVIDENCE_MEMBERSHIP", `${itemLabel} reuses a ${family} identity from the retired question.`);
+      }
+    }
+    replacements.push({ oldQuestion, newQuestion: currentQuestion, beforeQuestionId: item.beforeQuestionId, questionId: item.questionId, sourceFile: item.sourceFile });
+  }
+  const presentIds = new Set(currentTrackQuestions.map((question) => question.questionId));
+  if ([...retiredIds].some((id) => presentIds.has(id))) fail("EVIDENCE_MEMBERSHIP", `${label} retains a retired question identity in current FESD content.`);
+
+  for (const [sourceFile, source] of sourceByPath) {
+    const sourceReplacements = replacements.filter((item) => item.sourceFile === sourceFile);
+    if (sourceReplacements.length === 0) fail("EVIDENCE_MEMBERSHIP", `${label} contains an unrepresented fixed source file.`);
+    const expectedIds = sourceReplacements.map((item) => item.questionId);
+    assertExactSet(source.questions.map((question) => question?.questionId), expectedIds, `${label} ${sourceFile} question IDs`);
+    const predecessorQuestions = source.questions
+      .filter((question) => !replacementIds.has(question.questionId))
+      .concat(sourceReplacements.map((item) => item.oldQuestion))
+      .sort((left, right) => compare(left.questionId, right.questionId));
+    if (sha256(Buffer.from(JSON.stringify(predecessorQuestions), "utf8")) !== source.entry.beforeSourceSha256) {
+      fail("HASH_MISMATCH", `${label} does not reconstruct the byte-exact predecessor source ${sourceFile}.`);
+    }
+  }
+  const reconstructedTrackQuestions = currentTrackQuestions
+    .filter((question) => !replacementIds.has(question.questionId))
+    .concat(replacements.map((item) => item.oldQuestion))
+    .sort((left, right) => compare(left.questionId, right.questionId));
+  if (reconstructedTrackQuestions.length !== currentTrackQuestions.length || trackQuestionSetSha256(reconstructedTrackQuestions) !== proof.beforeQuestionSetSha256) {
+    fail("HASH_MISMATCH", `${label} does not reconstruct the fixed predecessor FESD question set.`);
+  }
+  return { trackId: accepted.trackId, replacements };
+}
+
 async function loadBizq01WordingProof(contentRoot, canonical, evidence) {
   const accepted = BIZQ01_COPY_PROOF;
   const projectRoot = path.dirname(contentRoot);
@@ -12811,6 +12992,7 @@ export async function verifyMigration(options = {}) {
   const evidence = await loadEvidence(resolvedContentRoot);
   const replacementProof = await loadBizq01ReplacementProof(resolvedContentRoot, canonical, evidence);
   const oodSemanticProof = await loadBizq01OodSemanticProof(resolvedContentRoot, canonical, evidence);
+  const fesdSemanticProof = await loadFesdN08SemanticProof(resolvedContentRoot, canonical, evidence);
   const correctionProof = await loadBizq01WordingProof(resolvedContentRoot, canonical, evidence);
   const approvedAdditions = await approvedAwsAdditions(resolvedContentRoot, canonical, evidence, awsSourceProof);
   const claudeTrackId = "claude-certified-architect-professional-certification";
@@ -12821,7 +13003,7 @@ export async function verifyMigration(options = {}) {
     const rows = evidence.rowsByTrack.get(trackId);
     const questions = canonical.questionsByTrack.get(trackId);
     const extras = trackId === "aws-certified-solutions-architect-associate" ? approvedAdditions : [];
-    const replacements = [replacementProof, oodSemanticProof, correctionProof, awsSourceProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.replacements);
+    const replacements = [replacementProof, oodSemanticProof, correctionProof, fesdSemanticProof, awsSourceProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.replacements);
     const sameIdCorrections = [oodSemanticProof, awsSourceProof].filter((proof) => proof?.trackId === trackId).flatMap((proof) => proof.sameIdCorrections ?? []);
     const sameIdCorrectionById = new Map(sameIdCorrections.map((correction) => [correction.questionId, correction]));
     const replacedHistoricalIds = new Set(replacements.map((replacement) => replacement.beforeQuestionId));

@@ -13,7 +13,7 @@ export const DECISION_PATH = "evidence/candidate-decisions/current-candidate-dec
 export const READINESS_PATH = "evidence/readiness/current-candidate-readiness-v2.json";
 export const DECISION_SCHEMA_PATH = "schemas/review/content-candidate-decision-v2.schema.json";
 export const READINESS_SCHEMA_PATH = "schemas/review/content-candidate-readiness-v2.schema.json";
-const AUTHORIZED_CANDIDATE_TASKS = new Set(["AWS-02/CANDIDATE", "BIZQ-01/CANDIDATE", "BIZQ-02/CANDIDATE", "BIZQ-05/CANDIDATE"]);
+const AUTHORIZED_CANDIDATE_TASKS = new Set(["AWS-02/CANDIDATE", "BIZQ-01/CANDIDATE", "BIZQ-02/CANDIDATE", "BIZQ-05/CANDIDATE", "CC-05/CANDIDATE"]);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const exactKeys = (value, expected, label) => {
   const actual = Object.keys(value ?? {}).sort();

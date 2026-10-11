@@ -21,7 +21,7 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.ok(result.tracks.every((track) => track.structuralValidity === "valid"));
   assert.ok(result.tracks.every((track) => track.readiness === "not_ready"));
   assert.ok(result.tracks.every((track) => track.semanticOwnerApproval === "not_established" && track.efficacy === "not_evaluated"));
-  assert.equal(result.tracks.reduce((sum, track) => sum + track.questions, 0), 16622);
+  assert.equal(result.tracks.reduce((sum, track) => sum + track.questions, 0), 16695);
   assert.equal(result.tracks.reduce((sum, track) => sum + track.nodes, 0), 117);
   assert.equal(result.tracks.reduce((sum, track) => sum + track.mentalUnits, 0), 943);
   const az104 = result.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");

@@ -37,4 +37,11 @@ export async function copyCurrentMigrationFixture(repositoryRoot, fixtureRoot) {
     path.join(fixtureRoot, "evidence", "canonical-content-approvals"),
     { recursive: true }
   );
+  const sourceAuditRoot = path.join(repositoryRoot, "docs", "evidence", "content-audits");
+  const fixtureAuditRoot = path.join(fixtureRoot, "docs", "evidence", "content-audits");
+  await mkdir(fixtureAuditRoot, { recursive: true });
+  await cp(
+    path.join(sourceAuditRoot, "2026-10-11-cc02-content-coverage.json"),
+    path.join(fixtureAuditRoot, "2026-10-11-cc02-content-coverage.json")
+  );
 }

@@ -63,12 +63,13 @@ after(async () => {
 test("accepts the real BIZQ-01 replacement proof while preserving current and historical counts", async () => {
   const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
   assert.equal(result.result, "passed");
-  assert.deepEqual(result.counts, { tracks: 9, nodes: 117, mentalUnits: 943, questions: 16622 });
+  assert.deepEqual(result.counts, { tracks: 9, nodes: 117, mentalUnits: 958, questions: 16695 });
   assert.deepEqual(result.historicalCounts, { tracks: 9, nodes: 117, mentalUnits: 932, questions: 16041 });
   assert.equal(result.approvedAdditionCount, 36);
   const claude = result.tracks.find(({ trackId }) => trackId === "claude-certified-architect-professional-certification");
   assert.equal(claude.historicalCounts.questions, 300);
-  assert.equal(claude.currentCounts.questions, 845);
+  assert.equal(claude.currentCounts.mentalUnits, 53);
+  assert.equal(claude.currentCounts.questions, 918);
   assert.equal(Object.values(claude.historicalInteractions).reduce((sum, count) => sum + count, 0), 300);
   const cohort15 = JSON.parse(await readFile(path.join(contentRepositoryRoot, "evidence/business-quality/bizq-01-besd-cohort-15.json"), "utf8"));
   const cohort14 = JSON.parse(await readFile(path.join(contentRepositoryRoot, cohort14ProofPath), "utf8"));
@@ -95,6 +96,30 @@ test("rejects a changed Claude item from the exact accepted current bank", async
     questions[0].prompt += " changed";
     return questions;
   }, () => assertRejected("HASH_MISMATCH"));
+});
+
+test("rejects CC-02 coverage evidence that no longer binds the reviewed 73 additions and six changed records", async () => {
+  const coveragePath = "docs/evidence/content-audits/2026-10-11-cc02-content-coverage.json";
+  await withJsonMutation(coveragePath, (coverage) => {
+    coverage.inventory.canonicalAddedIds[0] = "CCARP-D01-O01-unreviewed-addition";
+    return coverage;
+  }, () => assertRejected("HASH_MISMATCH"));
+});
+
+test("rejects CC-03 baseline evidence with a different metadata-only question digest", async () => {
+  const baselinePath = "evidence/canonical-content-approvals/claude-cc03-question-baseline.json";
+  await withJsonMutation(baselinePath, (baseline) => {
+    baseline.withoutCourseSha256 = "0".repeat(64);
+    return baseline;
+  }, () => assertRejected("HASH_MISMATCH"));
+});
+
+test("rejects a Claude successor catalog with a different pinned content version", async () => {
+  await withJsonMutation("content/catalog.json", (catalog) => {
+    const track = catalog.tracks.find(({ trackId }) => trackId === "claude-certified-architect-professional-certification");
+    track.contentVersion += "-unreviewed";
+    return catalog;
+  }, () => assertRejected("EVIDENCE_VALUE"));
 });
 
 test("rejects a synthetic bank without fixed accepted producer proofs", async () => {
@@ -246,7 +271,7 @@ test("accepts only the real same-ID Coding wording correction alongside the unch
   const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
   assert.deepEqual(result.wordingCorrectionProof, { trackId: "coding-interview-dsa-problem-solving", questionIds: [wordingQuestionId] });
   assert.equal(result.replacementProof.replacements.length, 168);
-  assert.equal(result.counts.questions, 16622);
+  assert.equal(result.counts.questions, 16695);
   assert.equal(result.historicalCounts.questions, 16041);
 });
 

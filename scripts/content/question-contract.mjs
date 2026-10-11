@@ -280,10 +280,22 @@ function validateDimensions(dimensions, pathName, errors, type) {
 }
 
 function validateFeedback(feedback, type, referenceIds, dimensions, answer, pathName, errors) {
-  if (!exactKeys(feedback, ["type", "reason", "details", "messages"], pathName, errors, ["type", "reason", "details"])) return;
+  if (!exactKeys(feedback, ["type", "reason", "details", "messages", "course"], pathName, errors, ["type", "reason", "details"])) return;
   if (feedback.type !== type) addError(errors, `${pathName}.type`, `must equal ${type}`);
   learnerTextString(feedback.reason, `${pathName}.reason`, errors);
   validateJsonValue(feedback.details, `${pathName}.details`, errors);
+  if (Object.prototype.hasOwnProperty.call(feedback, "course")) {
+    const course = feedback.course;
+    const coursePath = `${pathName}.course`;
+    if (exactKeys(course, ["title", "url", "section", "requiresAccount"], coursePath, errors, ["title", "url", "requiresAccount"])) {
+      learnerTextString(course.title, `${coursePath}.title`, errors);
+      if (Object.prototype.hasOwnProperty.call(course, "section")) learnerTextString(course.section, `${coursePath}.section`, errors);
+      if (typeof course.requiresAccount !== "boolean") addError(errors, `${coursePath}.requiresAccount`, "must be boolean");
+      let validUrl = false;
+      try { validUrl = typeof course.url === "string" && /^https:\/\/[^\s/?#]+(?:[/?#][^\s]*)?$/.test(course.url) && new URL(course.url).protocol === "https:"; } catch { /* invalid URL */ }
+      if (!validUrl) addError(errors, `${coursePath}.url`, "must be an HTTPS URL");
+    }
+  }
   if (!Object.prototype.hasOwnProperty.call(feedback, "messages")) return;
   if (!Array.isArray(feedback.messages)) {
     addError(errors, `${pathName}.messages`, "must be an array");
@@ -478,15 +490,30 @@ export function validateCatalog(catalog) {
 export function validatePackageCompletionRule(rule, pathName = "completionRule", questions) {
   const errors = [];
   if (!exactKeys(rule, ["ruleVersion", "chapters"], pathName, errors)) return { valid: false, errors };
-  if (rule.ruleVersion !== 2) addError(errors, `${pathName}.ruleVersion`, "must equal 2");
+  if (rule.ruleVersion !== 2 && rule.ruleVersion !== 3) addError(errors, `${pathName}.ruleVersion`, "must equal 2 or 3");
+  const withCoverage = rule.ruleVersion === 3;
   if (!Array.isArray(rule.chapters) || rule.chapters.length === 0) {
     addError(errors, `${pathName}.chapters`, "must be a non-empty complete chapter inventory");
     return { valid: false, errors };
   }
   const nodeIds = new Set();
+  const requiredUnitIds = new Set();
   for (const [index, chapter] of rule.chapters.entries()) {
     const chapterPath = `${pathName}.chapters[${index}]`;
-    if (!exactKeys(chapter, ["nodeId", "mentalUnitCount", "minimumAttemptCount", "rollingWindowSize", "qualityThreshold"], chapterPath, errors)) continue;
+    if (!exactKeys(chapter, ["nodeId", "mentalUnitCount", "minimumAttemptCount", "rollingWindowSize", "qualityThreshold", ...(withCoverage ? ["units"] : [])], chapterPath, errors)) continue;
+    if (withCoverage) {
+      if (!Array.isArray(chapter.units) || chapter.units.length === 0 || chapter.units.length !== chapter.mentalUnitCount) addError(errors, `${chapterPath}.units`, "must declare every required mental unit exactly once");
+      const seenUnits = new Set();
+      for (const [unitIndex, unit] of (Array.isArray(chapter.units) ? chapter.units : []).entries()) {
+        const unitPath = `${chapterPath}.units[${unitIndex}]`;
+        if (!exactKeys(unit, ["mentalUnitId", "requiredCorrectQuestionCount"], unitPath, errors)) continue;
+        trimCleanString(unit.mentalUnitId, `${unitPath}.mentalUnitId`, errors);
+        if (seenUnits.has(unit.mentalUnitId) || requiredUnitIds.has(unit.mentalUnitId)) addError(errors, `${unitPath}.mentalUnitId`, "must be unique across the required package inventory");
+        requiredUnitIds.add(unit.mentalUnitId);
+        seenUnits.add(unit.mentalUnitId);
+        if (unit.requiredCorrectQuestionCount !== 4) addError(errors, `${unitPath}.requiredCorrectQuestionCount`, "must equal 4");
+      }
+    }
     trimCleanString(chapter.nodeId, `${chapterPath}.nodeId`, errors);
     if (typeof chapter.nodeId === "string" && nodeIds.has(chapter.nodeId)) addError(errors, `${chapterPath}.nodeId`, "must be unique");
     if (typeof chapter.nodeId === "string") nodeIds.add(chapter.nodeId);
@@ -500,7 +527,12 @@ export function validatePackageCompletionRule(rule, pathName = "completionRule",
   }
   if (questions !== undefined && Array.isArray(questions)) {
     const unitsByNode = new Map();
+    const questionIds = new Set();
     for (const question of questions) {
+      if (withCoverage) {
+        if (!trimCleanString(question?.questionId, `${pathName}.artifactQuestion.questionId`, errors) || questionIds.has(question?.questionId)) addError(errors, `${pathName}.artifactQuestion.questionId`, "must be a unique question identity");
+        questionIds.add(question?.questionId);
+      }
       if (!isRecord(question) || !trimCleanString(question.nodeId, `${pathName}.artifactQuestion.nodeId`, errors) || !trimCleanString(question.mentalUnitId, `${pathName}.artifactQuestion.mentalUnitId`, errors)) continue;
       const units = unitsByNode.get(question.nodeId) ?? new Set();
       units.add(question.mentalUnitId);
@@ -512,6 +544,14 @@ export function validatePackageCompletionRule(rule, pathName = "completionRule",
     for (const chapter of rule.chapters) {
       const units = unitsByNode.get(chapter?.nodeId);
       if (!units || units.size !== chapter?.mentalUnitCount) addError(errors, `${pathName}.chapters`, `mental-unit count does not match artifact node ${chapter?.nodeId}`);
+      if (withCoverage && Array.isArray(chapter?.units)) {
+        const declared = new Set(chapter.units.map((unit) => unit?.mentalUnitId));
+        if (!units || declared.size !== units.size || [...units].some((id) => !declared.has(id))) addError(errors, `${pathName}.chapters`, `required units do not exactly match artifact node ${chapter.nodeId}`);
+        for (const unit of chapter.units) {
+          const ids = new Set(questions.filter((question) => question?.nodeId === chapter.nodeId && question?.mentalUnitId === unit?.mentalUnitId).map((question) => question.questionId));
+          if (ids.size < 4 || [...ids].some((id) => typeof id !== "string" || !id.trim())) addError(errors, `${pathName}.chapters`, `required unit ${unit?.mentalUnitId} needs at least four distinct reachable questions`);
+        }
+      }
     }
   }
   return { valid: errors.length === 0, errors };

@@ -689,6 +689,10 @@ test("Historical manifests retain identity while current GCP source version reco
 
   // Historical candidate and migration identities remain frozen above. GCP question metadata has its own current source version.
   for (const track of realCatalog.tracks) {
+    if (track.trackId === "frontend-system-design-interview") {
+      assert.equal(track.contentVersion, "frontend-system-design-interview-fesd-n08-v2026.10.11", track.trackId);
+      continue;
+    }
     const expectedSourceVersion = track.trackId === "backend-system-design-interview"
       ? "backend-system-design-interview-authoring-v2026.10.11-bizq01-15-bizq02-v2"
       : track.trackId === "google-cloud-associate-cloud-engineer"

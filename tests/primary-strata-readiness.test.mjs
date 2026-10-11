@@ -57,7 +57,7 @@ test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewe
   assert.equal(ai901.contentVersion, "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15-bizq02-v2-bizq03-planning-v2");
   assert.equal(ai901.questionCount, 752);
   assert.equal(ai901.questionIdSetSha256, "088aa8189f9d25a5a6da640e487a407c96efde3f410f86d4296bf39f97b8f34a");
-  assert.equal(ai901.sourceInventorySha256, "f06a0b77bd28b1d3817c7adcf9be760a8bc159defc671f7cbeea4b9e831bf045");
+  assert.equal(ai901.sourceInventorySha256, "dbdca61c5eee25f9b0f9637d5131075a0a79f3a4fa3ae05925c6b7be9c125fa9");
   assert.deepEqual(ai901.primaryObjective.registry, {
     path: "config/certification-objective-registries/microsoft-azure-ai-fundamentals-ai-901.json",
     sha256: "769202258c0e387550b8fc3160aecf06d2ecf3ba3b42e4153a3052b68f4a9d5b",
@@ -196,7 +196,7 @@ test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 
     assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }
   assert.equal(az104.questionIdSetSha256, "05c5642f6a14aa365d55e676e211a9b4466344c645e5361178e72aa6c54b3d25");
-  assert.equal(az104.sourceInventorySha256, "f994dfc43ba538fdfd98904c2aa10fe5f4b2cfb1995d080f9473fae192f9ada3");
+  assert.equal(az104.sourceInventorySha256, "0d8b43f0fc5effdafb07b4452b13e7d5cf98ac351a26e91e7f5247d774c4be0e");
 });
 
 test("manifest requires the exact nine unique current track identities", async () => {

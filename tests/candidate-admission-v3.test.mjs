@@ -136,9 +136,10 @@ test("current admission verifies committed app projections and rejects dirty ver
   execFileSync("git", ["clone", "--quiet", "--shared", appSource, appRoot]);
   await symlink(path.join(appSource, "node_modules"), path.join(appRoot, "node_modules"));
   await symlink(root, path.join(temporaryRoot, "patternly-content"));
-  const options = { root, appRoot, taskId: "BIZQ-01/ADMISSION" };
+  const options = { root, appRoot, taskId: "AWS-02/ADMISSION" };
   const result = await createCandidateAdmissionV3(options);
   assert.equal(result.admission.runtimeAdmission, "granted");
+  assert.equal(result.admission.taskId, "AWS-02/ADMISSION");
   assert.equal(result.admission.candidateId, JSON.parse(await readFile(path.join(root, CANDIDATE_PATH))).candidateId);
   for (const relativePath of ["scripts/candidateContentReleaseLock.mjs", "scripts/syncBundledContentRelease.mjs"]) {
     const file = path.join(appRoot, relativePath);

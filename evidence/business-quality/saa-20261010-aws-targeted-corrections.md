@@ -319,9 +319,12 @@ Independent semantic QA (Luna High, 2026-10-11): **PASS, all 28 exact IDs**. Fin
 
 ## Verification
 
+- Clean CI run [38155563829](https://github.com/lukaszkurczab/patternly-content/actions/runs/38155563829) on producer commit `5c24755`: **PASS**. `npm test` passed 230/230; all nine content builds and scoring suites passed, along with quarantine, historical-evidence, and free-content controls.
 - AWS track validation: PASS (2,604 questions).
 - AWS canonical answer tests: PASS (2,604 answers).
 - AWS single-track build: PASS; output generated in `/private/tmp/saa-producer-build` (artifact SHA-256 `350dc44eed14c7087bfdd79196d84d5ca16c606b449536f8c35078b4116a6fc6`).
 - Migration verifier: PASS; reconstructs historical AWS at 2,568 questions and admits the existing 36-question ODK-096 addition set against unchanged approval evidence.
 - Targeted proof/scoring/build tests: PASS, including rejection of arbitrary current-source drift and edited proof bytes.
+- The primary-strata readiness manifest and verifier agree with the current AWS version and question-ID set. Catalog-derived provenance pins were refreshed for all nine tracks; non-AWS content versions, counts, question-ID sets, objective mappings, and readiness states remain unchanged.
+- The earlier local full `npm test` run was interrupted before completion and is superseded by the clean CI result above; it is not counted as a passing local run.
 - Official AWS documentation was checked on 2026-10-11; each current source reference is recorded per item above.

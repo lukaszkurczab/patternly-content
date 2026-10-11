@@ -23,7 +23,7 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
   assert.ok(result.tracks.every((track) => track.semanticOwnerApproval === "not_established" && track.efficacy === "not_evaluated"));
   assert.equal(result.tracks.reduce((sum, track) => sum + track.questions, 0), 16695);
   assert.equal(result.tracks.reduce((sum, track) => sum + track.nodes, 0), 117);
-  assert.equal(result.tracks.reduce((sum, track) => sum + track.mentalUnits, 0), 943);
+  assert.equal(result.tracks.reduce((sum, track) => sum + track.mentalUnits, 0), 958);
   const az104 = result.tracks.find((track) => track.trackId === "microsoft-azure-administrator-associate-az-104");
   assert.equal(az104.primaryObjective.status, "partial");
   assert.equal(az104.primaryObjective.mapped, 1270);
@@ -57,7 +57,7 @@ test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewe
   assert.equal(ai901.contentVersion, "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15-bizq02-v2-bizq03-planning-v2");
   assert.equal(ai901.questionCount, 752);
   assert.equal(ai901.questionIdSetSha256, "088aa8189f9d25a5a6da640e487a407c96efde3f410f86d4296bf39f97b8f34a");
-  assert.equal(ai901.sourceInventorySha256, "847aee49b777350a45bf15212d87a44b338efbc8b4e977d69cef9e06ea944fa5");
+  assert.equal(ai901.sourceInventorySha256, "ebda10ec65fcb7a0803ff8aa9ea86dd4257350501362c9a3e55ad7928b2ebf63");
   assert.deepEqual(ai901.primaryObjective.registry, {
     path: "config/certification-objective-registries/microsoft-azure-ai-fundamentals-ai-901.json",
     sha256: "769202258c0e387550b8fc3160aecf06d2ecf3ba3b42e4153a3052b68f4a9d5b",
@@ -196,7 +196,7 @@ test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 
     assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }
   assert.equal(az104.questionIdSetSha256, "05c5642f6a14aa365d55e676e211a9b4466344c645e5361178e72aa6c54b3d25");
-  assert.equal(az104.sourceInventorySha256, "a40c78e6fd51f2cb32ecc7e876cd6098d0cda2febff6e42aefcfb11e736e966c");
+  assert.equal(az104.sourceInventorySha256, "f51617a90626a30c11bf87efb229dc520c6887155c4d62aacc424dbe923dc6cc");
 });
 
 test("manifest requires the exact nine unique current track identities", async () => {

@@ -55,7 +55,7 @@ test("accepts the current exact bank while validating the fixed source13 proof c
   assert.equal(result.result, "passed");
   assert.equal(result.semanticReplacementProof.replacements.length, 664);
   assert.equal(result.sameIdCorrectionProof.questionIds.length, 749);
-  assert.equal(result.counts.questions, 16622);
+  assert.equal(result.counts.questions, 16695);
   assert.equal(result.historicalCounts.questions, 16041);
   assert.equal(result.tracks.find((track) => track.trackId === trackId).currentCounts.questions, 1413);
 });

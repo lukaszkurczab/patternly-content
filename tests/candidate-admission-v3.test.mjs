@@ -104,6 +104,8 @@ test("historical admission and runtime evidence remain hash-bound to their exact
   assert.equal(candidate.candidateId, OLD_CANDIDATE_ID);
   assert.equal(release.manifest.releaseId, "patternly-candidate-f00041eda3ca");
   await validateCandidateAdmissionV3(admission, { root: fixtureRoot });
+  await validateCandidateAdmissionV3({ ...admission, taskId: "CC-05/ADMISSION" }, { root: fixtureRoot });
+  await assert.rejects(validateCandidateAdmissionV3({ ...admission, taskId: "CC-06/ADMISSION" }, { root: fixtureRoot }), /identity is invalid/u);
 
   const unsupported = { ...admission, taskId: "BIZQ-02/ADMISSION" };
   await assert.rejects(validateCandidateAdmissionV3(unsupported, { root: fixtureRoot }), /identity is invalid/u);

@@ -55,6 +55,8 @@ test("Codex candidate decision v2 binds exact candidate, source snapshot, releas
     await validateCandidateDecisionV2(bizqDecision, { root: ROOT, candidate: manifest, release, bindings });
     const bizq02Decision = { ...decision, taskId: "BIZQ-02/CANDIDATE" };
     await validateCandidateDecisionV2(bizq02Decision, { root: ROOT, candidate: manifest, release, bindings });
+    await validateCandidateDecisionV2({ ...decision, taskId: "CC-05/CANDIDATE" }, { root: ROOT, candidate: manifest, release, bindings });
+    await assert.rejects(validateCandidateDecisionV2({ ...decision, taskId: "CC-06/CANDIDATE" }, { root: ROOT, candidate: manifest, release, bindings }), /another task/);
     const bizq05Decision = { ...decision, taskId: "BIZQ-05/CANDIDATE" };
     await validateCandidateDecisionV2(bizq05Decision, { root: ROOT, candidate: manifest, release, bindings });
     await assert.rejects(validateCandidateDecisionV2({ ...bizqDecision, taskId: "BIZQ-03/CANDIDATE" }, { root: ROOT, candidate: manifest, release, bindings }), /another task/);

@@ -125,10 +125,35 @@ const CLAUDE_HISTORICAL_BASELINE = Object.freeze({
   questionSetSha256: "713f1709b438430773ad56ccb71fa50cc59473afd1cbfa3b208496b4b1d38a09"
 });
 
-// Current reviewed P2 copy amendment; frozen 300-question and historical 845 evidence remain unchanged.
+// Accepted predecessor identities remain frozen while the separately reviewed CC-02/CC-03 successor is proven below.
 const CLAUDE_CURRENT_BANK = Object.freeze({
   questionCount: 845,
   questionSetSha256: "73f561c4d64a272f8b6f055a321414303620c54dba7dfb4d0283d75ea74bfe6d"
+});
+
+const CLAUDE_SUCCESSOR_BANK = Object.freeze({
+  contentVersion: "ccarp-2026.10.11-capacity-v1-bizq02-v2-bizq03-planning-v2-cc02-v1-cc03-v1-cc04-v3",
+  questionCount: 918,
+  questionSetSha256: "710b8550f3d09c20437912f045853fed596ec92c431c785a6fe42a0da0c5377c",
+  withoutCourseSha256: "4c8aac41f5e758747a64fb947f19005496de2034aa6e9652e3f4e1dad91df595"
+});
+
+const CLAUDE_CC02_SUCCESSOR_EVIDENCE = Object.freeze({
+  coveragePath: "docs/evidence/content-audits/2026-10-11-cc02-content-coverage.json",
+  coverageSha256: "08540f2440fd723261cd25b84632452288293b414ca8683776ef7ce2a69f38c6",
+  beforePath: "evidence/canonical-content-approvals/claude-cc02-historical-before.json",
+  beforeSha256: "5841e96aa1c242003cbed0dceb7030b4a34f29bc3f06fe7c96d361075026ab8b",
+  courseBaselinePath: "evidence/canonical-content-approvals/claude-cc03-question-baseline.json",
+  courseBaselineSha256: "c57846cfafd02d451599584671fd7cf3272e6eb7b437729dfee3e669920580d9",
+  schemaVersion: "cc02-content-coverage-v1",
+  trackId: "claude-certified-architect-professional-certification",
+  contentVersionBefore: "ccarp-2026.10.11-capacity-v1-bizq02-v2-bizq03-planning-v2",
+  contentVersionAfter: "ccarp-2026.10.11-capacity-v1-bizq02-v2-bizq03-planning-v2-cc02-v1",
+  beforeQuestionCount: 845,
+  addedQuestionCount: 73,
+  changedQuestionCount: 6,
+  supplementalQuestionCount: 4,
+  reviewAnswerTextMatches: 83
 });
 
 const AWS_SAA_TARGETED_CORRECTIONS = Object.freeze({
@@ -164,7 +189,10 @@ const EXPECTED_CURRENT_PRODUCER_BANKS = Object.freeze({
     questionCount: 1569,
     questionSetSha256: "46954940e5d7ef7517f2602e32899f4ffbcbff13e40e8c6409f8433e0e0dd9c9"
   }),
-  "claude-certified-architect-professional-certification": CLAUDE_CURRENT_BANK,
+  "claude-certified-architect-professional-certification": Object.freeze({
+    questionCount: CLAUDE_SUCCESSOR_BANK.questionCount,
+    questionSetSha256: CLAUDE_SUCCESSOR_BANK.questionSetSha256
+  }),
   "coding-interview-dsa-problem-solving": Object.freeze({
     questionCount: 3404,
     questionSetSha256: "cf941d1ea96f24110ea67dc7a112b2a1093848086ef5f14840ef0bf5da50d9ab"
@@ -15830,18 +15858,150 @@ async function claudeHistoricalAndCurrentQuestions(contentRoot, canonical, evide
   const historicalSummary = compareTrackMembership(expected.trackId, historicalQuestions, rows, evidence.manifestTracks.get(expected.trackId));
 
   const currentQuestions = canonical.questionsByTrack.get(expected.trackId);
-  if (currentQuestions.length !== CLAUDE_CURRENT_BANK.questionCount) {
-    fail("EVIDENCE_VALUE", "Current Claude question count differs from the fixed accepted bank.");
-  }
-  const sortedCurrentQuestions = [...currentQuestions].sort((left, right) => compare(left.questionId, right.questionId));
-  if (sha256(sortedCurrentQuestions) !== CLAUDE_CURRENT_BANK.questionSetSha256) {
-    fail("HASH_MISMATCH", "Current Claude questions differ from the fixed accepted 845-question bank.");
-  }
   const currentIds = new Set(currentQuestions.map((question) => question.questionId));
   if (historicalQuestions.some((question) => !currentIds.has(question.questionId))) {
     fail("EVIDENCE_MEMBERSHIP", "Current Claude content is missing a question from its frozen historical baseline.");
   }
-  return { historicalQuestions, historicalSummary };
+
+  const currentTrack = canonical.catalogByTrack.get(expected.trackId);
+  const successor = await reconstructClaudeAcceptedSuccessor({
+    contentRoot,
+    questions: currentQuestions,
+    contentVersion: currentTrack?.contentVersion
+  });
+  return { historicalQuestions, historicalSummary, successor };
+}
+
+async function readPinnedClaudeEvidence(projectRoot, relativePath, expectedSha256, label) {
+  const target = path.join(projectRoot, relativePath);
+  await rejectSymlinkAncestors(target, label);
+  await regularPath(target, label, "file");
+  const bytes = await readFile(target).catch((error) => fail("READ_ERROR", `Cannot read ${label}: ${error.message}`));
+  if (sha256(bytes) !== expectedSha256) fail("HASH_MISMATCH", `${label} differs from its fixed reviewed bytes.`);
+  try {
+    return JSON.parse(bytes.toString("utf8"));
+  } catch (error) {
+    fail("INVALID_JSON", `${label} is invalid JSON: ${error.message}`);
+  }
+}
+
+async function reconstructClaudeAcceptedSuccessor({ contentRoot, questions, contentVersion }) {
+  const projectRoot = path.dirname(path.resolve(contentRoot));
+  const accepted = CLAUDE_CC02_SUCCESSOR_EVIDENCE;
+  const coverage = await readPinnedClaudeEvidence(projectRoot, accepted.coveragePath, accepted.coverageSha256, "CC-02 Claude coverage evidence");
+  const beforeQuestions = await readPinnedClaudeEvidence(projectRoot, accepted.beforePath, accepted.beforeSha256, "CC-02 Claude before-question evidence");
+  const courseBaseline = await readPinnedClaudeEvidence(projectRoot, accepted.courseBaselinePath, accepted.courseBaselineSha256, "CC-03 Claude question baseline");
+
+  exactKeys(coverage, ["schemaVersion", "trackId", "createdAt", "sourceCourseMap", "contentVersionBefore", "contentVersionAfter", "purpose", "inventory", "unitPlan", "facets", "questionMappings", "changedExisting", "sourceEvidence", "scopeControls", "completionCounts", "mcpAudit", "limitations", "review", "verification"], "CC-02 Claude coverage evidence");
+  for (const [key, value] of Object.entries({
+    schemaVersion: accepted.schemaVersion,
+    trackId: accepted.trackId,
+    contentVersionBefore: accepted.contentVersionBefore,
+    contentVersionAfter: accepted.contentVersionAfter
+  })) {
+    if (coverage[key] !== value) fail("EVIDENCE_VALUE", `CC-02 Claude coverage evidence.${key} differs from the fixed accepted transition.`);
+  }
+  exactKeys(coverage.inventory, ["beforeCanonicalQuestionCount", "addedCanonicalQuestionCount", "afterCanonicalQuestionCount", "changedExistingQuestionCount", "addedSupplementQuestionCount", "canonicalAddedIds", "supplementQuestionIds", "questionIdUniqueness"], "CC-02 Claude coverage evidence.inventory");
+  assertExactObject({
+    beforeCanonicalQuestionCount: coverage.inventory.beforeCanonicalQuestionCount,
+    addedCanonicalQuestionCount: coverage.inventory.addedCanonicalQuestionCount,
+    afterCanonicalQuestionCount: coverage.inventory.afterCanonicalQuestionCount,
+    changedExistingQuestionCount: coverage.inventory.changedExistingQuestionCount,
+    addedSupplementQuestionCount: coverage.inventory.addedSupplementQuestionCount
+  }, {
+    beforeCanonicalQuestionCount: accepted.beforeQuestionCount,
+    addedCanonicalQuestionCount: accepted.addedQuestionCount,
+    afterCanonicalQuestionCount: CLAUDE_SUCCESSOR_BANK.questionCount,
+    changedExistingQuestionCount: accepted.changedQuestionCount,
+    addedSupplementQuestionCount: accepted.supplementalQuestionCount
+  }, "CC-02 Claude coverage inventory");
+  assertUniqueValues(coverage.inventory.canonicalAddedIds, "CC-02 Claude canonicalAddedIds");
+  assertUniqueValues(coverage.inventory.supplementQuestionIds, "CC-02 Claude supplementQuestionIds");
+  if (!Array.isArray(coverage.changedExisting) || coverage.changedExisting.length !== accepted.changedQuestionCount) {
+    fail("EVIDENCE_MEMBERSHIP", `CC-02 Claude coverage evidence must list exactly ${accepted.changedQuestionCount} changed existing questions.`);
+  }
+  exactKeys(coverage.review, ["status", "scope", "reviewers", "answerTextMatches", "wholeHistoricalBankSemanticallyReviewed", "method", "mappingCorrections"], "CC-02 Claude review evidence");
+  if (coverage.review.status !== "PASS" || coverage.review.answerTextMatches !== accepted.reviewAnswerTextMatches || coverage.review.wholeHistoricalBankSemanticallyReviewed !== false) {
+    fail("EVIDENCE_VALUE", "CC-02 Claude review evidence does not match the accepted bounded review scope.");
+  }
+
+  exactKeys(courseBaseline, ["questionCount", "withoutCourseSha256", "scope"], "CC-03 Claude question baseline");
+  if (courseBaseline.questionCount !== CLAUDE_SUCCESSOR_BANK.questionCount ||
+      courseBaseline.withoutCourseSha256 !== CLAUDE_SUCCESSOR_BANK.withoutCourseSha256 ||
+      courseBaseline.scope !== "CC-02 accepted question records before adding feedback.course; CC-03 must preserve all other fields.") {
+    fail("EVIDENCE_VALUE", "CC-03 Claude baseline does not bind the accepted question records before course metadata.");
+  }
+  if (contentVersion !== CLAUDE_SUCCESSOR_BANK.contentVersion) fail("EVIDENCE_VALUE", "Current Claude contentVersion differs from the accepted CC-02/CC-03/CC-04 successor.");
+  if (questions.length !== CLAUDE_SUCCESSOR_BANK.questionCount) fail("EVIDENCE_VALUE", "Current Claude question count differs from the accepted 918-question successor.");
+
+  const currentById = new Map();
+  const withoutCourse = questions.map((question, index) => {
+    if (!isRecord(question.feedback) || !Object.hasOwn(question.feedback, "course")) {
+      fail("EVIDENCE_MEMBERSHIP", `Current Claude question ${question.questionId ?? index} is missing CC-03 feedback.course metadata.`);
+    }
+    currentById.set(question.questionId, question);
+    const copy = structuredClone(question);
+    delete copy.feedback.course;
+    return copy;
+  });
+  const sortedWithoutCourse = withoutCourse.sort((left, right) => compare(left.questionId, right.questionId));
+  if (sha256(sortedWithoutCourse) !== CLAUDE_SUCCESSOR_BANK.withoutCourseSha256) {
+    fail("HASH_MISMATCH", "Claude question content differs from the CC-03 baseline after removing only feedback.course.");
+  }
+  if (sha256([...questions].sort((left, right) => compare(left.questionId, right.questionId))) !== CLAUDE_SUCCESSOR_BANK.questionSetSha256) {
+    fail("HASH_MISMATCH", "Current Claude questions differ from the fixed accepted 918-question successor.");
+  }
+
+  const addedIds = coverage.inventory.canonicalAddedIds;
+  if (addedIds.some((questionId) => !currentById.has(questionId))) fail("EVIDENCE_MEMBERSHIP", "CC-02 Claude added-question IDs are missing from current canonical content.");
+  const changedById = new Map();
+  for (const [index, change] of coverage.changedExisting.entries()) {
+    const label = `CC-02 Claude changedExisting[${index}]`;
+    exactKeys(change, ["questionId", "fieldsChanged", "before", "after"], label);
+    if (changedById.has(change.questionId)) fail("EVIDENCE_MEMBERSHIP", `${label} duplicates a question ID.`);
+    if (!Array.isArray(change.fieldsChanged) || change.fieldsChanged.some((field) => typeof field !== "string")) fail("EVIDENCE_SHAPE", `${label}.fieldsChanged must be a string array.`);
+    assertCanonicalQuestion(change.before, `${label}.before`, ACCEPTED_TRACK_IDS);
+    assertCanonicalQuestion(change.after, `${label}.after`, ACCEPTED_TRACK_IDS);
+    if (change.before.questionId !== change.questionId || change.after.questionId !== change.questionId) fail("EVIDENCE_MEMBERSHIP", `${label} changes question identity.`);
+    const liveAfter = withoutCourse.find((question) => question.questionId === change.questionId);
+    if (!liveAfter || canonicalJson(liveAfter) !== canonicalJson(change.after)) fail("HASH_MISMATCH", `${label}.after differs from current canonical content after removing course metadata.`);
+    const changedFields = [...new Set([...Object.keys(change.before), ...Object.keys(change.after)])]
+      .filter((key) => canonicalJson(change.before[key]) !== canonicalJson(change.after[key]));
+    assertExactSet(change.fieldsChanged, changedFields, `${label}.fieldsChanged`);
+    changedById.set(change.questionId, change);
+  }
+  assertExactSet(Object.keys(beforeQuestions), [...changedById.keys()], "CC-02 Claude historical-before question IDs");
+  for (const [questionId, change] of changedById) {
+    const before = beforeQuestions[questionId];
+    assertCanonicalQuestion(before, `CC-02 Claude historical-before.${questionId}`, ACCEPTED_TRACK_IDS);
+    if (canonicalJson(before) !== canonicalJson(change.before)) fail("HASH_MISMATCH", `CC-02 historical-before record ${questionId} differs from the reviewed coverage record.`);
+  }
+
+  const reconstructedById = new Map(sortedWithoutCourse
+    .filter((question) => !addedIds.includes(question.questionId))
+    .map((question) => [question.questionId, question]));
+  for (const [questionId, change] of changedById) reconstructedById.set(questionId, beforeQuestions[questionId]);
+  const reconstructed = [...reconstructedById.values()].sort((left, right) => compare(left.questionId, right.questionId));
+  if (reconstructed.length !== CLAUDE_CURRENT_BANK.questionCount || sha256(reconstructed) !== CLAUDE_CURRENT_BANK.questionSetSha256) {
+    fail("HASH_MISMATCH", "CC-02/CC-03 Claude successor does not reconstruct the exact accepted 845-question predecessor plus its reviewed P2 amendment.");
+  }
+  const reconstructedBeforeP2 = structuredClone(reconstructed);
+  const p2Question = reconstructedBeforeP2.find((question) => question.questionId === "CCARP-D02-O04-expansion-14");
+  if (!p2Question) fail("EVIDENCE_MEMBERSHIP", "Reconstructed Claude predecessor is missing the accepted P2 copy-amendment question.");
+  p2Question.interaction.options.find((option) => option.optionId === "a").text = "Preserve the reserve, reduce required input, then recount with the target model.";
+  p2Question.feedback.reason = "The input allowance is 18,000 tokens after reserve, while the target-model measurement is 19,300. The team must preserve the reserve and reduce or restructure context, then count again.";
+  p2Question.feedback.details.boundaryOrTradeoff = "Compression is valid only if it preserves required facts; if mandatory content cannot fit, use a supported split or another capacity plan.";
+  if (sha256(reconstructedBeforeP2) !== "717b995fd9f9bda5d25161c516a248eb80b3a78cf23c69d1641c2ed95add8b9a") {
+    fail("HASH_MISMATCH", "Reversing the reviewed Claude P2 copy amendment differs from its fixed pre-P2 845-question hash.");
+  }
+
+  return {
+    predecessorQuestionCount: reconstructed.length,
+    predecessorQuestionSetSha256: sha256(reconstructed),
+    addedQuestionCount: addedIds.length,
+    changedExistingQuestionCount: changedById.size,
+    courseMetadataOnlySha256: CLAUDE_SUCCESSOR_BANK.withoutCourseSha256
+  };
 }
 
 export async function verifyMigration(options = {}) {

@@ -63,10 +63,10 @@ after(async () => {
 
 test("verifies the current -bizq02-v2 package banks against immutable producer evidence", async () => {
   const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
-  assert.deepEqual(result.counts, { tracks: 9, nodes: 117, mentalUnits: 943, questions: 16622 });
+  assert.deepEqual(result.counts, { tracks: 9, nodes: 117, mentalUnits: 958, questions: 16695 });
   assert.deepEqual(result.historicalCounts, { tracks: 9, nodes: 117, mentalUnits: 932, questions: 16041 });
   assert.equal(result.tracks.length, 9);
-  assert.equal(result.tracks.find(({ trackId }) => trackId === "claude-certified-architect-professional-certification").currentCounts.questions, 845);
+  assert.equal(result.tracks.find(({ trackId }) => trackId === "claude-certified-architect-professional-certification").currentCounts.questions, 918);
 });
 
 test("accepts package policy version changes only while each fixed current bank remains exact", async () => {
@@ -75,7 +75,6 @@ test("accepts package policy version changes only while each fixed current bank 
       if ([
         "aws-certified-solutions-architect-associate",
         "backend-system-design-interview",
-        "claude-certified-architect-professional-certification",
         "coding-interview-dsa-problem-solving",
         "object-oriented-design-interview"
       ].includes(track.trackId)) track.contentVersion += "-policy-fixture";
@@ -85,6 +84,12 @@ test("accepts package policy version changes only while each fixed current bank 
     const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
     assert.equal(result.result, "passed");
   });
+
+  await withJsonMutation("content/catalog.json", (catalog) => {
+    const claude = catalog.tracks.find(({ trackId }) => trackId === "claude-certified-architect-professional-certification");
+    claude.contentVersion += "-policy-fixture";
+    return catalog;
+  }, () => assertRejectedAny(["EVIDENCE_VALUE"], verifyMigration({ contentRoot: path.join(fixtureRoot, "content") })));
 });
 
 test("rejects current prompt, ID, count, node, unit, and path drift", async () => {

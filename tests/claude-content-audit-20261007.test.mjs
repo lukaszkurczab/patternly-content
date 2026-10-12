@@ -9,10 +9,15 @@ const byId = new Map(questions.map(q => [q.questionId, q]));
 const get = id => { assert.ok(byId.has(id), id); return byId.get(id); };
 const message = (q, id, kind = 'wrong_option') => q.feedback.messages.find(m => m.targetId === id && m.kind === kind).text;
 
-test('historical accepted 845-question SHA reconstructs by reversing only the bounded P2 fields', () => {
+test('historical accepted 845-question SHA reconstructs by reversing bounded CC02 repairs and P2 fields', () => {
   const catalog = JSON.parse(readFileSync(new URL('../content/catalog.json', import.meta.url), 'utf8'));
   const track = catalog.tracks.find(entry => entry.trackId === 'claude-certified-architect-professional-certification');
-  const sorted = [...questions].sort((left, right) => left.questionId === right.questionId ? 0 : left.questionId < right.questionId ? -1 : 1);
+  const coverage = JSON.parse(readFileSync(new URL('../docs/evidence/content-audits/2026-10-11-cc02-content-coverage.json', import.meta.url), 'utf8'));
+  const beforeFixture = JSON.parse(readFileSync(new URL('../evidence/canonical-content-approvals/claude-cc02-historical-before.json', import.meta.url), 'utf8'));
+  const addedIds = new Set(coverage.inventory.canonicalAddedIds);
+  const baselineById = new Map(questions.filter(question => !addedIds.has(question.questionId)).map(question => { const prior = structuredClone(question); delete prior.feedback.course; return [question.questionId, prior]; }));
+  for (const [questionId, previousQuestion] of Object.entries(beforeFixture)) baselineById.set(questionId, JSON.parse(JSON.stringify(previousQuestion)));
+  const sorted = [...baselineById.values()].sort((left, right) => left.questionId === right.questionId ? 0 : left.questionId < right.questionId ? -1 : 1);
   const acceptedBeforeP2Clarification = JSON.parse(JSON.stringify(sorted));
   const priorP2 = acceptedBeforeP2Clarification.find(q => q.questionId === 'CCARP-D02-O04-expansion-14');
   priorP2.interaction.options.find(option => option.optionId === 'a').text = 'Preserve the reserve, reduce required input, then recount with the target model.';

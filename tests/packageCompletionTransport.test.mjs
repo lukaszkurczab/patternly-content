@@ -231,3 +231,79 @@ test("existing artifact rule must agree with catalog even after checksum is reco
     });
   }
 });
+
+test("v3 requires the exact required-unit inventory and four distinct reachable questions", async (t) => {
+  const { validatePackageCompletionRule } = await import("../scripts/content/question-contract.mjs");
+  const v3 = { ...rule, ruleVersion: 3, chapters: [{ ...rule.chapters[0], units: [{ mentalUnitId: "unit-001", requiredCorrectQuestionCount: 4 }] }] };
+  const questions = Array.from({ length: 4 }, (_, index) => ({ nodeId: "node-001", mentalUnitId: "unit-001", questionId: `q-${index}` }));
+  assert.equal(validatePackageCompletionRule(v3, "rule", questions).valid, true);
+  for (const invalid of [
+    { ...v3, chapters: [{ ...v3.chapters[0], units: [] }] },
+    { ...v3, chapters: [{ ...v3.chapters[0], units: [{ mentalUnitId: "foreign-unit", requiredCorrectQuestionCount: 4 }] }] },
+    { ...v3, chapters: [{ ...v3.chapters[0], units: [{ mentalUnitId: "unit-001", requiredCorrectQuestionCount: 3 }] }] },
+    { ...v3, chapters: [{ ...v3.chapters[0], units: [{ ...v3.chapters[0].units[0], extra: true }] }] },
+  ]) assert.equal(validatePackageCompletionRule(invalid, "rule", questions).valid, false);
+  assert.equal(validatePackageCompletionRule(v3, "rule", questions.slice(1)).valid, false);
+  assert.equal(validatePackageCompletionRule(v3, "rule", [...questions.slice(0, 3), questions[0]]).valid, false);
+  assert.equal(validatePackageCompletionRule(v3, "rule", [...questions, { ...questions[0], mentalUnitId: "supplement" }]).valid, false);
+  const { root, catalog } = await workspace(t);
+  const entry = catalog.tracks.find((value) => value.trackId === trackId);
+  entry.completionRule = v3;
+  await writeFile(path.join(root, "content", "catalog.json"), `${canonicalJson(catalog)}\n`);
+  const file = path.join(root, "content", trackId, "node-001", "unit-001.json");
+  const [question] = JSON.parse(await readFile(file, "utf8"));
+  const complete = Array.from({ length: 4 }, (_, index) => ({ ...question, questionId: `${trackId}-v3-${index}` }));
+  await writeFile(file, JSON.stringify(complete));
+  const built = await buildTrack({ rootDirectory: root, trackId });
+  assert.deepEqual(built.artifact.completionRule, v3);
+  assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+});
+
+test("Claude v3 covers all final exam units while other tracks keep v2", async () => {
+  const catalog = loadCanonicalCatalog();
+  const claude = catalog.tracks.find((entry) => entry.trackId === "claude-certified-architect-professional-certification");
+  assert.equal(claude.completionRule.ruleVersion, 3);
+  assert.equal(claude.completionRule.chapters.flatMap((chapter) => chapter.units).length, 53);
+  for (const track of catalog.tracks.filter((entry) => entry !== claude)) assert.equal(track.completionRule.ruleVersion, 2);
+  const { validateTrack } = await import("../scripts/build.mjs");
+  const result = await validateTrack({ trackId: claude.trackId });
+  assert.equal(result.questions.length, 918);
+  assert.equal(result.questions.some((question) => question.mentalUnitId.toLowerCase().includes("cowork")), false);
+});
+
+test("CC04 native fixture uses the exact final source rule and real exam question identities", async () => {
+  const { validateTrack } = await import("../scripts/build.mjs");
+  const trackId = "claude-certified-architect-professional-certification";
+  const source = await validateTrack({ trackId });
+  const fixture = JSON.parse(readFileSync(new URL("../../patternly/src/testing/claudeCoverageFixtureData.json", import.meta.url), "utf8"));
+  assert.equal(fixture.trackId, trackId);
+  assert.equal(fixture.contentVersion, source.track.contentVersion);
+  assert.deepEqual(fixture.completionRule, source.track.completionRule);
+  const actual = new Map(source.questions.map((question) => [question.questionId, question]));
+  assert.equal(fixture.questions.length, 53 * 4);
+  assert.equal(new Set(fixture.questions.map((question) => question.questionId)).size, 53 * 4);
+  for (const question of fixture.questions) {
+    const sourceQuestion = actual.get(question.questionId);
+    assert.ok(sourceQuestion, question.questionId);
+    assert.equal(question.nodeId, sourceQuestion.nodeId);
+    assert.equal(question.mentalUnitId, sourceQuestion.mentalUnitId);
+  }
+});
+
+test("Claude V3 planning policy costs every required Focus unit and retains review availability boundaries", async () => {
+  const { validateTrack } = await import("../scripts/build.mjs");
+  const source = await validateTrack({ trackId: "claude-certified-architect-professional-certification" });
+  const policy = JSON.parse(readFileSync(new URL("../config/curricula/claude-certified-architect-professional-certification.json", import.meta.url), "utf8")).planningPolicy;
+  const scopes = source.track.completionRule.chapters.flatMap((chapter) => chapter.units.map((unit) => `${chapter.nodeId}/${unit.mentalUnitId}`)).sort();
+  const focus = policy.workEstimates.filter((estimate) => estimate.modeId === "certification-focus-practice");
+  assert.deepEqual(focus.flatMap((estimate) => estimate.scopeRefs.map((scope) => `${scope.nodeId}/${scope.mentalUnitId}`)).sort(), scopes);
+  assert.equal(policy.unavailableScopes.some((entry) => entry.modeIds.includes("certification-focus-practice")), false);
+  for (const modeId of ["certification-weak-area-review", "certification-quick-review"]) {
+    const estimates = policy.workEstimates.filter((estimate) => estimate.modeId === modeId).flatMap((estimate) => estimate.scopeRefs);
+    assert.equal(estimates.length, 9);
+    assert.ok(estimates.every((scope) => scope.nodeId === "solution_design_and_architecture"));
+    const unavailable = policy.unavailableScopes.filter((entry) => entry.modeIds.includes(modeId));
+    assert.equal(unavailable.length, 44);
+    assert.ok(unavailable.every((entry) => entry.reason === "unknown_runtime_scope" && entry.scopeRef.nodeId !== "solution_design_and_architecture"));
+  }
+});

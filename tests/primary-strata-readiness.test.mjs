@@ -57,7 +57,7 @@ test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewe
   assert.equal(ai901.contentVersion, "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15-bizq02-v2-bizq03-planning-v2");
   assert.equal(ai901.questionCount, 752);
   assert.equal(ai901.questionIdSetSha256, "088aa8189f9d25a5a6da640e487a407c96efde3f410f86d4296bf39f97b8f34a");
-  assert.equal(ai901.sourceInventorySha256, "ebda10ec65fcb7a0803ff8aa9ea86dd4257350501362c9a3e55ad7928b2ebf63");
+  assert.equal(ai901.sourceInventorySha256, "4b6057a6c55d3f86d04f5ca93f5112fcdb27d6f290104b9dd1af1a83507b0a2d");
   assert.deepEqual(ai901.primaryObjective.registry, {
     path: "config/certification-objective-registries/microsoft-azure-ai-fundamentals-ai-901.json",
     sha256: "769202258c0e387550b8fc3160aecf06d2ecf3ba3b42e4153a3052b68f4a9d5b",
@@ -108,6 +108,11 @@ test("read-only provenance description matches the pinned GCP source contract", 
   }
   assert.equal(current.inputs.some((input) => input.path === `config/curricula/${trackId}.json` && input.role === "planning_policy_source"), true);
   assert.equal(current.inputs.some((input) => input.path === "scripts/content/planning-policy.mjs" && input.role === "validation_owner_code"), true);
+  assert.equal(current.inputs.some((input) => input.path === "config/track-runtime-bindings.json" && input.role === "track_runtime_bindings"), true);
+  assert.equal(current.inputs.some((input) => input.path === "scripts/content/track-runtime-bindings.mjs" && input.role === "validation_owner_code"), true);
+  assert.equal(current.inputs.some((input) => input.path === "config/families/design_interview.json" && input.role === "family_configuration"), true);
+  assert.equal(current.inputs.some((input) => input.path === "config/tracks/google-cloud-associate-cloud-engineer.json" && input.role === "track_configuration"), true);
+  assert.equal(current.inputs.some((input) => input.path === "config/simulation-profiles/design-interview.json" && input.role === "simulation_profile_source"), true);
   assert.equal(current.inputs.some((input) => input.path.endsWith("GCPACE-N01-B04.json") && input.role === "canonical_question_source"), true);
   await assert.rejects(describeCurrentSourceProvenance({ trackId: "unknown-track" }), /source_provenance_track_invalid/u);
 });
@@ -196,7 +201,7 @@ test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 
     assert.equal(az104.primaryObjective.bindings.some((binding) => binding.questionId === excludedId), false, excludedId);
   }
   assert.equal(az104.questionIdSetSha256, "05c5642f6a14aa365d55e676e211a9b4466344c645e5361178e72aa6c54b3d25");
-  assert.equal(az104.sourceInventorySha256, "f51617a90626a30c11bf87efb229dc520c6887155c4d62aacc424dbe923dc6cc");
+  assert.equal(az104.sourceInventorySha256, "19ba40e3c39aebff1608899aa51589243f02094582bd4765e55ad83fd477bd75");
 });
 
 test("manifest requires the exact nine unique current track identities", async () => {

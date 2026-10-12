@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { ACCEPTED_TRACK_IDS, loadCanonicalCatalog, loadCanonicalFixture, validateCatalog } from "../scripts/content/question-contract.mjs";
 import { ContentBuildError, buildTrack, canonicalJson, sha256 } from "../scripts/build.mjs";
@@ -13,6 +14,7 @@ const rule = Object.freeze({
   chapters: Object.freeze([{ nodeId: "node-001", mentalUnitCount: 1, minimumAttemptCount: 20, rollingWindowSize: 20, qualityThreshold: 0.8 }])
 });
 const trackId = "aws-certified-solutions-architect-associate";
+const CONTENT_ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 
 const completionCsvUrl = new URL("../../patternly/docs/specs/business-quality/02-BIZQ-02-CHAPTER-COMPLETION.csv", import.meta.url);
 const candidateArtifactsUrl = new URL("../reports/candidate-reconciliation/AWS-02-DRAFT/release/artifacts/", import.meta.url);
@@ -96,6 +98,7 @@ async function workspace(t) {
   await mkdir(path.join(root, "content", trackId, "node-001"), { recursive: true });
   const catalog = loadCanonicalCatalog();
   await writeFile(path.join(root, "content", "catalog.json"), `${canonicalJson(catalog)}\n`);
+  await writeRuntimeBindingConfig(root, catalog);
   const question = structuredClone(loadCanonicalFixture().fixture.questions[0]);
   question.questionId = `${trackId}-q-001`;
   question.trackId = trackId;
@@ -104,6 +107,24 @@ async function workspace(t) {
   await writeFile(path.join(root, "content", trackId, "node-001", "unit-001.json"), `${JSON.stringify([question], null, 2)}\n`);
   await writePlanningCurriculum(root);
   return { root, catalog };
+}
+
+async function writeRuntimeBindingConfig(root, catalog) {
+  const registry = JSON.parse(readFileSync(path.join(CONTENT_ROOT, "config/track-runtime-bindings.json"), "utf8"));
+  for (const binding of registry.tracks) binding.profileLoaderKey = null;
+  const catalogIds = new Set(catalog.tracks.map(({ trackId: id }) => id));
+  registry.tracks = registry.tracks.filter(({ trackId: id }) => catalogIds.has(id));
+  await mkdir(path.join(root, "config", "families"), { recursive: true });
+  await mkdir(path.join(root, "config", "tracks"), { recursive: true });
+  await writeFile(path.join(root, "config/track-runtime-bindings.json"), `${canonicalJson(registry)}\n`);
+  const families = new Set();
+  for (const binding of registry.tracks) {
+    if (!families.has(binding.familyId)) {
+      families.add(binding.familyId);
+      await writeFile(path.join(root, `config/families/${binding.familyId}.json`), `${JSON.stringify({ schemaVersion: "fixture-family-v1", familyId: binding.familyId })}\n`);
+    }
+    await writeFile(path.join(root, `config/tracks/${binding.trackId}.json`), `${JSON.stringify({ schemaVersion: "track-config-v1", trackId: binding.trackId, familyId: binding.familyId })}\n`);
+  }
 }
 
 async function writePlanningCurriculum(root) {
@@ -203,6 +224,7 @@ test("builder transports the exact complete chapter rule, hashes it, and omits i
   const absentCatalog = loadCanonicalCatalog();
   delete absentCatalog.tracks.find((entry) => entry.trackId === trackId).completionRule;
   await writeFile(path.join(absentRoot, "content", "catalog.json"), `${canonicalJson(absentCatalog)}\n`);
+  await writeRuntimeBindingConfig(absentRoot, absentCatalog);
   const absentQuestion = structuredClone(loadCanonicalFixture().fixture.questions[0]);
   absentQuestion.questionId = `${trackId}-q-001`;
   absentQuestion.trackId = trackId;

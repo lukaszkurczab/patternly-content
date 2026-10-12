@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
+import { acceptedTrackIdsFromRuntimeBindings } from "./track-runtime-bindings.mjs";
 
 export const QUESTION_INTERACTION_TYPES = Object.freeze([
   "choice_single",
@@ -10,17 +11,7 @@ export const QUESTION_INTERACTION_TYPES = Object.freeze([
   "decision_matrix"
 ]);
 
-export const ACCEPTED_TRACK_IDS = Object.freeze([
-  "aws-certified-solutions-architect-associate",
-  "backend-system-design-interview",
-  "claude-certified-architect-professional-certification",
-  "coding-interview-dsa-problem-solving",
-  "frontend-system-design-interview",
-  "google-cloud-associate-cloud-engineer",
-  "microsoft-azure-administrator-associate-az-104",
-  "microsoft-azure-ai-fundamentals-ai-901",
-  "object-oriented-design-interview"
-]);
+export const ACCEPTED_TRACK_IDS = acceptedTrackIdsFromRuntimeBindings();
 
 const REQUIRED_QUESTION_KEYS = [
   "questionId",
@@ -463,15 +454,19 @@ export function assertValidQuestion(question, options = {}) {
   return question;
 }
 
-export function validateCatalog(catalog) {
+export function validateCatalog(catalog, { acceptedTrackIds = ACCEPTED_TRACK_IDS } = {}) {
   const errors = [];
   if (!exactKeys(catalog, CATALOG_KEYS, "catalog", errors)) return { valid: false, errors };
   if (catalog.schemaVersion !== "patternly-content-catalog-v1") addError(errors, "catalog.schemaVersion", "must equal patternly-content-catalog-v1");
+  const expectedTrackIds = Array.isArray(acceptedTrackIds) ? acceptedTrackIds : [];
+  if (!Array.isArray(acceptedTrackIds) || expectedTrackIds.length === 0 || expectedTrackIds.some((trackId) => typeof trackId !== "string" || !trackId || trackId.trim() !== trackId) || new Set(expectedTrackIds).size !== expectedTrackIds.length) {
+    addError(errors, "catalog.trackBindings", "must be a non-empty unique list of clean track IDs");
+  }
   if (!Array.isArray(catalog.tracks)) {
     addError(errors, "catalog.tracks", "must be an array");
     return { valid: false, errors };
   }
-  if (catalog.tracks.length !== ACCEPTED_TRACK_IDS.length) addError(errors, "catalog.tracks", `must contain exactly ${ACCEPTED_TRACK_IDS.length} tracks`);
+  if (catalog.tracks.length !== expectedTrackIds.length) addError(errors, "catalog.tracks", `must contain exactly ${expectedTrackIds.length} tracks`);
   const ids = [];
   catalog.tracks.forEach((track, index) => {
     const trackPath = `catalog.tracks[${index}]`;
@@ -483,7 +478,7 @@ export function validateCatalog(catalog) {
     }
   });
   if (new Set(ids).size !== ids.length) addError(errors, "catalog.tracks", "track IDs must be unique");
-  exactIdSet(ids, ACCEPTED_TRACK_IDS, "catalog.tracks", errors);
+  exactIdSet(ids, expectedTrackIds, "catalog.tracks", errors);
   return { valid: errors.length === 0, errors };
 }
 

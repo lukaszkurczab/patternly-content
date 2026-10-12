@@ -30,6 +30,7 @@ import {
   validateTrack
 } from "../scripts/build.mjs";
 import { validateBizq05GcpQuestionRelationAmendment } from "../scripts/content/verify-migration.mjs";
+import { loadTrackProfileData, validateTrackRuntimeBindings } from "../scripts/content/track-runtime-bindings.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const { fixture } = loadCanonicalFixture();
@@ -47,9 +48,24 @@ async function createWorkspace() {
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-simp02-"));
   await mkdir(path.join(rootDirectory, "content"), { recursive: true });
   await mkdir(path.join(rootDirectory, "config", "curricula"), { recursive: true });
+  await mkdir(path.join(rootDirectory, "config", "families"), { recursive: true });
+  await mkdir(path.join(rootDirectory, "config", "tracks"), { recursive: true });
   const fixtureCatalog = structuredClone(realCatalog);
   for (const track of fixtureCatalog.tracks) delete track.completionRule;
   await writeFile(path.join(rootDirectory, "content/catalog.json"), `${canonicalJson(fixtureCatalog)}\n`, "utf8");
+  const bindings = JSON.parse(await readFile(path.join(ROOT, "config/track-runtime-bindings.json"), "utf8"));
+  for (const binding of bindings.tracks) binding.profileLoaderKey = null;
+  await writeFile(path.join(rootDirectory, "config/track-runtime-bindings.json"), `${canonicalJson(bindings)}\n`, "utf8");
+  await cp(path.join(ROOT, "config/families"), path.join(rootDirectory, "config/families"), { recursive: true });
+  for (const track of fixtureCatalog.tracks) {
+    const sourceTrackConfig = path.join(ROOT, "config/tracks", `${track.trackId}.json`);
+    try {
+      await cp(sourceTrackConfig, path.join(rootDirectory, "config/tracks", `${track.trackId}.json`));
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+      await writeFile(path.join(rootDirectory, "config/tracks", `${track.trackId}.json`), `${JSON.stringify({ schemaVersion: "track-config-v1", trackId: track.trackId, familyId: "design_interview" })}\n`, "utf8");
+    }
+  }
   for (const track of fixtureCatalog.tracks) {
     const curriculum = {
       trackId: track.trackId,
@@ -117,6 +133,84 @@ async function expectBuildFailure(action, pattern) {
     return true;
   });
 }
+
+test("runtime bindings admit an explicitly registered nonshipping family and loader", async () => {
+  const bindings = validateTrackRuntimeBindings({
+    schemaVersion: "patternly-track-runtime-bindings-v1",
+    tracks: [{ trackId: "fixture-new-track", familyId: "fixture_new_family", profileLoaderKey: "fixture-new-profile" }]
+  });
+  let received;
+  const result = await loadTrackProfileData(bindings[0], { source: "fixture" }, {
+    "fixture-new-profile": {
+      familyId: "fixture_new_family",
+      load: async (input) => { received = input; return { profileId: "fixture-profile-v1" }; }
+    }
+  });
+  assert.deepEqual(received, { source: "fixture" });
+  assert.deepEqual(result, { profileId: "fixture-profile-v1" });
+  await assert.rejects(
+    loadTrackProfileData(bindings[0], {}, { "fixture-new-profile": { familyId: "different_family", load: () => ({}) } }),
+    /absent or mismatched profile loader/u
+  );
+});
+
+test("build rejects an unregistered profile loader before creating output", async (t) => {
+  const rootDirectory = await createWorkspace();
+  const outputRoot = path.join(rootDirectory, "dist");
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  const bindingsPath = path.join(rootDirectory, "config/track-runtime-bindings.json");
+  const registry = JSON.parse(await readFile(bindingsPath, "utf8"));
+  registry.tracks[0].profileLoaderKey = "unregistered-fixture-loader";
+  await writeFile(bindingsPath, `${canonicalJson(registry)}\n`, "utf8");
+  await writeTrackQuestion(rootDirectory, ACCEPTED_TRACK_IDS[0]);
+  await assert.rejects(() => buildTrack({ rootDirectory, outputRoot, trackId: ACCEPTED_TRACK_IDS[0] }), /absent or mismatched profile loader/u);
+  await assert.rejects(() => stat(outputRoot), { code: "ENOENT" });
+});
+
+test("an injected nonshipping family profile loads through validation, build and existing-output verification", async (t) => {
+  const rootDirectory = await createWorkspace();
+  const outputRoot = path.join(rootDirectory, "dist");
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  const trackId = "fixture-runtime-extension-track";
+  const familyId = "fixture_runtime_extension_family";
+  const profileLoaderKey = "fixture-runtime-extension-profile";
+  const catalogPath = path.join(rootDirectory, "content/catalog.json");
+  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  catalog.tracks.push({ trackId, contentVersion: "fixture-runtime-extension-v1" });
+  catalog.tracks.sort((left, right) => left.trackId.localeCompare(right.trackId));
+  await writeFile(catalogPath, `${canonicalJson(catalog)}\n`, "utf8");
+  const bindingsPath = path.join(rootDirectory, "config/track-runtime-bindings.json");
+  const registry = JSON.parse(await readFile(bindingsPath, "utf8"));
+  registry.tracks.push({ trackId, familyId, profileLoaderKey });
+  registry.tracks.sort((left, right) => left.trackId.localeCompare(right.trackId));
+  await writeFile(bindingsPath, `${canonicalJson(registry)}\n`, "utf8");
+  await writeFile(path.join(rootDirectory, `config/families/${familyId}.json`), `${JSON.stringify({ schemaVersion: "fixture-family-v1", familyId })}\n`, "utf8");
+  await writeFile(path.join(rootDirectory, `config/tracks/${trackId}.json`), `${JSON.stringify({ schemaVersion: "track-config-v1", trackId, familyId })}\n`, "utf8");
+  const curriculum = JSON.parse(await readFile(path.join(rootDirectory, `config/curricula/${ACCEPTED_TRACK_IDS[0]}.json`), "utf8"));
+  curriculum.trackId = trackId;
+  await writeFile(path.join(rootDirectory, `config/curricula/${trackId}.json`), `${JSON.stringify(curriculum)}\n`, "utf8");
+  await writeTrackQuestion(rootDirectory, trackId);
+
+  let loaderCalls = 0;
+  const profileLoaders = {
+    [profileLoaderKey]: {
+      familyId,
+      async load() {
+        loaderCalls += 1;
+        return { simulationProfiles: [{ schemaVersion: "patternly-simulation-profile-envelope-v1", profileId: "fixture-profile-v1", profileVersion: "1", familyId, modeId: "fixture-mode", familyConfig: { schemaVersion: "fixture-profile-config-v1" } }] };
+      }
+    }
+  };
+  const validated = await validateTrack({ rootDirectory, trackId, profileLoaders });
+  assert.equal(validated.binding.familyId, familyId);
+  assert.equal(Object.hasOwn(validated, "profileLoaders"), false, "validated build data must remain structured-cloneable");
+  assert.equal(validated.simulationProfiles[0].profileId, "fixture-profile-v1");
+  const first = await buildTrack({ rootDirectory, outputRoot, trackId, profileLoaders });
+  const second = await buildTrack({ rootDirectory, outputRoot, trackId, profileLoaders });
+  assert.equal(Object.hasOwn(first, "profileLoaders"), false, "public build result must not expose loader functions");
+  assert.deepEqual(second.artifact, first.artifact);
+  assert.ok(loaderCalls >= 4, "loader runs for validation, build, and authoritative existing-output verification");
+});
 
 test("each catalogued track validates, tests and builds independently", async (t) => {
   const rootDirectory = await createWorkspace();
@@ -576,6 +670,8 @@ test("malformed Design Interview simulation sources fail closed", async (t) => {
     t.after(() => rm(rootDirectory, { recursive: true, force: true }));
     const config = structuredClone(original);
     mutate(config);
+    await mkdir(path.join(rootDirectory, "config"), { recursive: true });
+    await writeFile(path.join(rootDirectory, "config/track-runtime-bindings.json"), await readFile(path.join(sourceRoot, "config/track-runtime-bindings.json"), "utf8"));
     const configPath = path.join(rootDirectory, "config/simulation-profiles/design-interview.json");
     await mkdir(path.dirname(configPath), { recursive: true });
     await writeFile(configPath, JSON.stringify(config));

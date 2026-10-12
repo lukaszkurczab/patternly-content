@@ -28,7 +28,7 @@ The sole learner-content ingress is `content/<trackId>/<nodeId>/<mentalUnitId>.j
 
 Historical approvals and migration records remain under `evidence/` and `content/migration-evidence/`. They describe the accepted source at the time of approval; they are not a writable or executable learner-content ingress.
 
-Run `npm test` for the canonical builder, immutable migration evidence, review-console, and boundary gates. Use `npm run content:validate`, `npm run content:test`, `npm run content:build`, and `npm run content:build-all` for the shared canonical flow.
+Run `npm test` for the canonical builder, immutable migration evidence, review-console, and boundary gates. For one track, use `npm run content:validate -- --track <trackId>`, `npm run content:test -- --track <trackId>`, and `npm run content:build -- --track <trackId> --output-root <temporary-output>`. Use `npm run content:build-all -- --output-root <temporary-output>` for all nine tracks. See the shared builder examples below for an explicit source workspace.
 
 ## BIZQ-01 advisory constraint review
 

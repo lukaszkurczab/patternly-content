@@ -21,6 +21,7 @@ import {
   validateQuestionRelations
 } from "./content/question-contract.mjs";
 import { PlanningPolicyError, validatePlanningPolicy } from "./content/planning-policy.mjs";
+import { TRACK_RUNTIME_BINDINGS_FILE, getTrackRuntimeBinding, loadTrackProfileData, loadTrackRuntimeBindings, resolveTrackProfileLoaderRegistration, validateTrackRuntimeBindings } from "./content/track-runtime-bindings.mjs";
 
 export const ARTIFACT_SCHEMA_VERSION = "patternly-content-artifact-v2";
 export const LOCK_SCHEMA_VERSION = "patternly-content-lock-v1";
@@ -86,16 +87,58 @@ function catalogTrack(catalog, trackId) {
   return track;
 }
 
-async function loadValidatedCatalog(rootDirectory) {
+async function loadValidatedCatalog(rootDirectory, profileLoaders = PROFILE_LOADERS) {
+  const bindingsPath = path.join(rootDirectory, TRACK_RUNTIME_BINDINGS_FILE);
+  await assertSecurePath(rootDirectory, bindingsPath, "track runtime bindings");
+  const bindings = validateTrackRuntimeBindings(await readJson(bindingsPath));
   let catalog;
   try {
     catalog = loadCanonicalCatalog({ rootDirectory });
   } catch (error) {
     fail(`Cannot load content/catalog.json: ${error.message}`);
   }
-  const result = validateCatalog(catalog);
+  const result = validateCatalog(catalog, { acceptedTrackIds: bindings.map(({ trackId }) => trackId) });
   if (!result.valid) fail("content/catalog.json does not satisfy the canonical catalog contract", result.errors);
-  return catalog;
+  const catalogTrackIds = catalog.tracks.map(({ trackId }) => trackId).sort(compareStrings);
+  const bindingTrackIds = bindings.map(({ trackId }) => trackId);
+  if (canonicalJson(catalogTrackIds) !== canonicalJson(bindingTrackIds)) fail("Track runtime bindings do not exactly match the canonical catalog tracks");
+  await validateTrackBindingSources(rootDirectory, bindings, profileLoaders);
+  return { catalog, bindings, profileLoaders };
+}
+
+async function validateTrackBindingSources(rootDirectory, bindings, loaderRegistrations) {
+  const familyConfigs = new Map();
+  for (const binding of bindings) {
+    const loaderRegistration = resolveTrackProfileLoaderRegistration(binding, loaderRegistrations);
+    let familyConfig = familyConfigs.get(binding.familyId);
+    if (!familyConfig) {
+      const familyPath = path.join(rootDirectory, "config", "families", `${binding.familyId}.json`);
+      await assertSecurePath(rootDirectory, familyPath, `family config for ${binding.familyId}`);
+      familyConfig = await readJson(familyPath);
+      if (!isRecord(familyConfig) || !nonEmptyString(familyConfig.schemaVersion) || familyConfig.familyId !== binding.familyId) {
+        fail(`Family registration does not match track runtime binding ${binding.trackId}`);
+      }
+      familyConfigs.set(binding.familyId, familyConfig);
+    }
+
+    const trackConfigPath = path.join(rootDirectory, "config", "tracks", `${binding.trackId}.json`);
+    let trackConfigInfo;
+    let trackConfig = null;
+    try { trackConfigInfo = await lstat(trackConfigPath); }
+    catch (error) {
+      if (error?.code !== "ENOENT") fail(`Cannot inspect track binding source ${trackConfigPath}: ${error.message}`);
+    }
+    if (trackConfigInfo) {
+      await assertSecurePath(rootDirectory, trackConfigPath, `track binding source ${binding.trackId}`);
+      trackConfig = await readJson(trackConfigPath);
+      if (!isRecord(trackConfig) || trackConfig.schemaVersion !== "track-config-v1" || trackConfig.trackId !== binding.trackId || trackConfig.familyId !== binding.familyId) {
+        fail(`Track/family source does not match runtime binding ${binding.trackId}`);
+      }
+    } else if (!loaderRegistration?.validateTrackSource) {
+      fail(`Track binding source is missing for ${binding.trackId}`);
+    }
+    if (loaderRegistration?.validateTrackSource) await loaderRegistration.validateTrackSource({ rootDirectory, binding, bindings, familyConfig, trackConfig });
+  }
 }
 
 function resolveFileOps(fileOps = {}) {
@@ -215,11 +258,6 @@ const GCP_DOMAIN_IDS = Object.freeze([
 ]);
 const CODING_TRACK_ID = "coding-interview-dsa-problem-solving";
 const CODING_PROFILE_ID = "algorithms-interview-simulation-v1";
-const DESIGN_TRACK_IDS = Object.freeze([
-  "backend-system-design-interview",
-  "frontend-system-design-interview",
-  "object-oriented-design-interview"
-]);
 const DESIGN_SIMULATION_MODE_ID = "design-interview-simulation";
 const DESIGN_SIMULATION_STAGE_IDS = Object.freeze(["requirements", "architecture", "tradeoffs", "final_answer"]);
 const DESIGN_SIMULATION_RUBRIC_DIMENSION_IDS = Object.freeze([
@@ -423,8 +461,10 @@ export async function loadCodingSimulationProfiles(options) {
   return (await loadCodingSimulationProfileData(options)).simulationProfiles;
 }
 
-async function loadDesignSimulationProfileData({ rootDirectory, track }) {
-  if (!DESIGN_TRACK_IDS.includes(track.trackId)) return undefined;
+async function loadDesignSimulationProfileData({ rootDirectory, track, bindings }) {
+  const loaderBindings = bindings?.filter((binding) => binding.familyId === track.familyId && binding.profileLoaderKey === track.profileLoaderKey) ?? [];
+  const designTrackIds = loaderBindings.map(({ trackId }) => trackId).sort(compareStrings);
+  if (!track.profileLoaderKey || !designTrackIds.includes(track.trackId)) return undefined;
   const configPath = path.join(rootDirectory, "config", "simulation-profiles", "design-interview.json");
   let configInfo;
   try { configInfo = await lstat(configPath); }
@@ -455,13 +495,13 @@ async function loadDesignSimulationProfileData({ rootDirectory, track }) {
       if (level.level !== levelIndex + 1 || !nonEmptyString(level.label) || !nonEmptyString(level.description)) fail(`Design Interview simulation rubric level ${index}.${levelIndex} is invalid`);
     });
   }
-  if (!Array.isArray(config.cases) || config.cases.length !== DESIGN_TRACK_IDS.length) fail("Design Interview simulation source must define exactly one case per Design track");
+  if (!Array.isArray(config.cases) || config.cases.length !== designTrackIds.length) fail("Design Interview simulation source must define exactly one case per registered profile track");
   const casesByTrack = new Map();
   const caseIds = new Set();
   const profileIds = new Set();
   for (const [index, designCase] of config.cases.entries()) {
     exactKeys(designCase, ["trackId", "profileId", "profileVersion", "caseId", "caseVersion", "title", "brief", "reviewCriteria"], `Design Interview simulation case ${index}`);
-    if (!DESIGN_TRACK_IDS.includes(designCase.trackId) || casesByTrack.has(designCase.trackId)) fail(`Design Interview simulation case ${index} has a missing, unknown, or duplicate track identity`);
+    if (!designTrackIds.includes(designCase.trackId) || casesByTrack.has(designCase.trackId)) fail(`Design Interview simulation case ${index} has a missing, unknown, or duplicate track identity`);
     if (!nonEmptyString(designCase.profileId) || designCase.profileVersion !== "1" || !nonEmptyString(designCase.caseId) || designCase.caseVersion !== "1" || !nonEmptyString(designCase.title) || !nonEmptyString(designCase.brief)) fail(`Design Interview simulation case ${index} identity or prompt is invalid`);
     if (caseIds.has(designCase.caseId) || profileIds.has(designCase.profileId)) fail(`Design Interview simulation case ${index} has a duplicate stable identity`);
     caseIds.add(designCase.caseId);
@@ -476,7 +516,7 @@ async function loadDesignSimulationProfileData({ rootDirectory, track }) {
     if (canonicalJson(designCase.reviewCriteria.map((criterion) => criterion.stageId)) !== canonicalJson(DESIGN_SIMULATION_STAGE_IDS)) fail(`Design Interview simulation case ${index} review criteria must follow the stage order`);
     casesByTrack.set(designCase.trackId, designCase);
   }
-  if (DESIGN_TRACK_IDS.some((trackId) => !casesByTrack.has(trackId))) fail("Design Interview simulation source must cover every Design track");
+  if (designTrackIds.some((trackId) => !casesByTrack.has(trackId))) fail("Design Interview simulation source must cover every registered profile track");
 
   const designCase = casesByTrack.get(track.trackId);
   const familyConfig = Object.freeze({
@@ -504,14 +544,33 @@ async function loadDesignSimulationProfileData({ rootDirectory, track }) {
 }
 
 export async function loadDesignSimulationProfiles(options) {
-  return (await loadDesignSimulationProfileData(options)).simulationProfiles;
+  const bindings = options.bindings ?? loadTrackRuntimeBindings({ rootDirectory: options.rootDirectory });
+  const binding = options.binding ?? getTrackRuntimeBinding(options.track?.trackId, bindings);
+  if (binding.profileLoaderKey === null) return undefined;
+  const result = await loadDesignSimulationProfileData({ ...options, track: { ...options.track, familyId: binding.familyId, profileLoaderKey: binding.profileLoaderKey }, bindings });
+  return result?.simulationProfiles;
 }
 
-export async function validateTrack({ rootDirectory, root, trackId } = {}) {
+const PROFILE_LOADERS = Object.freeze({
+  "gcp-certification": Object.freeze({ familyId: "certification", load: loadGcpSimulationProfileData }),
+  "coding-interview": Object.freeze({ familyId: "coding_interview", load: loadCodingSimulationProfileData }),
+  "design-interview": Object.freeze({
+    familyId: "design_interview",
+    load: loadDesignSimulationProfileData,
+    validateTrackSource: async ({ rootDirectory, binding, bindings }) => {
+      const result = await loadDesignSimulationProfileData({ rootDirectory, track: binding, bindings });
+      if (!result) fail(`Design profile source does not bind track ${binding.trackId}`);
+    }
+  })
+});
+
+export async function validateTrack({ rootDirectory, root, trackId, profileLoaders = PROFILE_LOADERS } = {}) {
   if (!nonEmptyString(trackId)) fail("trackId is required");
   const resolvedRoot = resolveRoot({ rootDirectory, root });
-  const catalog = await loadValidatedCatalog(resolvedRoot);
+  const loaded = await loadValidatedCatalog(resolvedRoot, profileLoaders);
+  const { catalog, bindings } = loaded;
   const track = catalogTrack(catalog, trackId);
+  const binding = getTrackRuntimeBinding(trackId, bindings);
   const contentRoot = path.join(resolvedRoot, "content");
   const sourceRoot = path.join(resolvedRoot, "content", trackId);
   const sourceFiles = await collectSourceFiles(sourceRoot, contentRoot);
@@ -548,15 +607,11 @@ export async function validateTrack({ rootDirectory, root, trackId } = {}) {
     if (error instanceof PlanningPolicyError) fail(`Invalid planning policy for ${trackId}: ${error.message}`);
     throw error;
   }
-  const profileData = trackId === GCP_TRACK_ID
-    ? await loadGcpSimulationProfileData({ rootDirectory: resolvedRoot, track, questions })
-    : trackId === CODING_TRACK_ID
-      ? await loadCodingSimulationProfileData({ rootDirectory: resolvedRoot, track, questions })
-      : DESIGN_TRACK_IDS.includes(trackId) ? await loadDesignSimulationProfileData({ rootDirectory: resolvedRoot, track }) : undefined;
+  const profileData = await loadTrackProfileData(binding, { rootDirectory: resolvedRoot, track: { ...track, ...binding }, questions, bindings }, profileLoaders);
   const artifactQuestions = profileData?.questionDomains
     ? questions.map((question) => ({ ...question, contentDomainId: profileData.questionDomains[question.questionId] }))
     : questions;
-  return { rootDirectory: resolvedRoot, catalog, track, trackId, sourceRoot, sourceFiles, questions, artifactQuestions, planningPolicy, simulationProfiles: profileData?.simulationProfiles };
+  return { rootDirectory: resolvedRoot, catalog, bindings, binding, track, trackId, sourceRoot, sourceFiles, questions, artifactQuestions, planningPolicy, simulationProfiles: profileData?.simulationProfiles };
 }
 
 export async function testTrack(options = {}) {
@@ -720,7 +775,7 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
   return artifact;
 }
 
-async function verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory) {
+async function verifyExistingArtifact(outputRoot, entry, catalog, bindings, profileLoaders, rootDirectory) {
   const filePath = path.join(outputRoot, `${entry.trackId}.json`);
   const bytes = await readRegularFile(filePath, "existing artifact");
   if (sha256(bytes) !== entry.sha256) fail(`Existing artifact checksum mismatch: ${filePath}`);
@@ -728,13 +783,13 @@ async function verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory)
   if (canonicalJson(artifact) !== bytes) fail(`Existing artifact is not canonical: ${filePath}`);
   const validated = validateArtifactShape(artifact, { entry, catalog, filePath });
   if (Object.hasOwn(validated, "simulationProfiles")) {
-    const profileData = entry.trackId === GCP_TRACK_ID
-      ? await loadGcpSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
-      : entry.trackId === CODING_TRACK_ID
-        ? await loadCodingSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId), questions: validated.questions })
-        : DESIGN_TRACK_IDS.includes(entry.trackId)
-          ? await loadDesignSimulationProfileData({ rootDirectory, track: catalogTrack(catalog, entry.trackId) })
-          : undefined;
+    const binding = getTrackRuntimeBinding(entry.trackId, bindings);
+    const profileData = await loadTrackProfileData(binding, {
+      rootDirectory,
+      track: { ...catalogTrack(catalog, entry.trackId), ...binding },
+      questions: validated.questions,
+      bindings
+    }, profileLoaders);
     if (!profileData || canonicalJson(validated.simulationProfiles) !== canonicalJson(profileData.simulationProfiles) || (profileData.questionDomains && validated.questions.some((question) => question.contentDomainId !== profileData.questionDomains[question.questionId]))) {
       fail(`Existing simulationProfiles are malformed or differ from authoritative config: ${filePath}`);
     }
@@ -753,7 +808,7 @@ async function verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory)
   return validated;
 }
 
-async function loadExistingLock(outputRoot, catalog, rootDirectory) {
+async function loadExistingLock(outputRoot, catalog, bindings, profileLoaders, rootDirectory) {
   const lockPath = path.join(outputRoot, LOCK_FILE_NAME);
   let lockInfo;
   try {
@@ -766,7 +821,7 @@ async function loadExistingLock(outputRoot, catalog, rootDirectory) {
   if (!lockInfo.isFile()) fail(`Content lock is not a regular file: ${lockPath}`);
   const lock = await readJson(lockPath);
   const validLock = strictLock(lock, catalog);
-  for (const entry of validLock.tracks) await verifyExistingArtifact(outputRoot, entry, catalog, rootDirectory);
+  for (const entry of validLock.tracks) await verifyExistingArtifact(outputRoot, entry, catalog, bindings, profileLoaders, rootDirectory);
   return validLock;
 }
 
@@ -909,7 +964,7 @@ function mergeLock(existingLock, entry) {
 export async function buildTrack(options = {}) {
   const validated = await validateTrack(options);
   const outputRoot = resolveOutputRoot(options);
-  const existingLock = await loadExistingLock(outputRoot, validated.catalog, validated.rootDirectory);
+  const existingLock = await loadExistingLock(outputRoot, validated.catalog, validated.bindings, options.profileLoaders ?? PROFILE_LOADERS, validated.rootDirectory);
   await verifyExistingOutputSet(outputRoot, validated.catalog, existingLock);
   const artifact = artifactFor(validated);
   const artifactBytes = canonicalJson(artifact);
@@ -926,15 +981,16 @@ export async function buildTrack(options = {}) {
   return { ...validated, artifact, artifactBytes, artifactPath, lock: nextLock, lockEntry, lockPath };
 }
 
-export async function buildAll({ rootDirectory, root, outputRoot, outputDirectory, fileOps } = {}) {
+export async function buildAll({ rootDirectory, root, outputRoot, outputDirectory, fileOps, profileLoaders = PROFILE_LOADERS } = {}) {
   const resolvedRoot = resolveRoot({ rootDirectory, root });
   const resolvedOutputRoot = resolveOutputRoot({ rootDirectory: resolvedRoot, outputRoot, outputDirectory });
-  const catalog = await loadValidatedCatalog(resolvedRoot);
-  const existingLock = await loadExistingLock(resolvedOutputRoot, catalog, resolvedRoot);
+  const loaded = await loadValidatedCatalog(resolvedRoot, profileLoaders);
+  const { catalog, bindings } = loaded;
+  const existingLock = await loadExistingLock(resolvedOutputRoot, catalog, bindings, profileLoaders, resolvedRoot);
   await verifyExistingOutputSet(resolvedOutputRoot, catalog, existingLock);
   const validatedTracks = [];
   for (const track of catalog.tracks) {
-    validatedTracks.push(await validateTrack({ rootDirectory: resolvedRoot, trackId: track.trackId }));
+    validatedTracks.push(await validateTrack({ rootDirectory: resolvedRoot, trackId: track.trackId, profileLoaders }));
   }
   const lockEntries = [];
   const artifacts = [];

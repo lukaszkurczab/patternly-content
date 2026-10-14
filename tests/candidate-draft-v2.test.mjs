@@ -1,3 +1,5 @@
+import { after } from "node:test";
+import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -15,7 +17,10 @@ import { reconstructApprovedAwsPredecessor } from "../scripts/content/verify-mig
 import { validateQuestion } from "../scripts/content/question-contract.mjs";
 import { validateSchema } from "../scripts/review/schema-validation.mjs";
 
-const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
+const ACTUAL_ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
+const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT);
+const ROOT = frozenProducer.root;
+after(() => frozenProducer.cleanup());
 const exec = promisify(execFile);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 

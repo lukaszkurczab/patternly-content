@@ -1,3 +1,4 @@
+import { validateCaseRecipe, validateCaseRecipes, CLAUDE_CASE_TRACK } from "./case-recipe.mjs";
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import path from "node:path";
@@ -24,7 +25,7 @@ const REQUIRED_QUESTION_KEYS = [
   "feedback",
   "difficulty"
 ];
-const OPTIONAL_QUESTION_KEYS = ["constraints", "sourceRefs", "questionRelation"];
+const OPTIONAL_QUESTION_KEYS = ["constraints", "sourceRefs", "questionRelation", "caseRecipe"];
 const QUESTION_KEYS = [...REQUIRED_QUESTION_KEYS, ...OPTIONAL_QUESTION_KEYS];
 const CATALOG_KEYS = ["schemaVersion", "tracks"];
 const TRACK_KEYS = ["trackId", "contentVersion", "completionRule"];
@@ -349,6 +350,11 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
   if (Array.isArray(catalogTrackIds) && !catalogTrackIds.includes(question.trackId)) addError(errors, "question.trackId", `is not present in the supplied catalog (${question.trackId})`);
   for (const key of OPTIONAL_QUESTION_KEYS) {
     if (!Object.prototype.hasOwnProperty.call(question, key)) continue;
+    if (key === "caseRecipe") {
+      errors.push(...validateCaseRecipe(question[key]));
+      if (question.trackId !== CLAUDE_CASE_TRACK) errors.push("caseRecipe: unavailable for this track");
+      continue;
+    }
     if (key === "questionRelation") {
       validateQuestionRelation(question[key], "question.questionRelation", errors);
       continue;
@@ -415,6 +421,7 @@ export function validateQuestion(question, options = {}) {
 export function validateQuestionRelations(questions) {
   const errors = [];
   if (!Array.isArray(questions)) return { valid: false, errors: ["questions: must be an array"] };
+  errors.push(...validateCaseRecipes(questions));
   const byId = new Map(questions.map((question) => [question?.questionId, question]));
   for (const question of questions) {
     const relation = question?.questionRelation;

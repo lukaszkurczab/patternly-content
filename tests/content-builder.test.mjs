@@ -790,7 +790,7 @@ test("Historical manifests retain identity while current GCP source version reco
       continue;
     }
     if (track.trackId === "claude-certified-architect-professional-certification") {
-      assert.equal(track.contentVersion, "ccarp-2026.10.11-capacity-v1-bizq02-v2-bizq03-planning-v2-cc02-v1-cc03-v1-cc04-v3", track.trackId);
+      assert.equal(track.contentVersion, "ccarp-2026.10.14-qle-v2-full-path-identity-v2", track.trackId);
       continue;
     }
     const expectedSourceVersion = track.trackId === "backend-system-design-interview"

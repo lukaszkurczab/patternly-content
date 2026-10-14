@@ -49,7 +49,7 @@ after(async () => {
 });
 
 test("accepts the fixed two-unit cohort and source01 predecessor chain", async () => {
-  const result = await verifyMigration({ contentRoot });
+  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   const cohort = JSON.parse(await readFile(path.join(repositoryRoot, proofPath), "utf8"));
   assert.equal(result.result, "passed");
   assert.equal(cohort.replacements.length, 32);

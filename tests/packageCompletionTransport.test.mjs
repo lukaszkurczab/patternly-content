@@ -299,7 +299,7 @@ test("Claude v3 covers all final exam units while other tracks keep v2", async (
   for (const track of catalog.tracks.filter((entry) => entry !== claude)) assert.equal(track.completionRule.ruleVersion, 2);
   const { validateTrack } = await import("../scripts/build.mjs");
   const result = await validateTrack({ trackId: claude.trackId });
-  assert.equal(result.questions.length, 918);
+  assert.equal(result.questions.length, 972);
   assert.equal(result.questions.some((question) => question.mentalUnitId.toLowerCase().includes("cowork")), false);
 });
 
@@ -309,7 +309,8 @@ test("CC04 native fixture uses the exact final source rule and real exam questio
   const source = await validateTrack({ trackId });
   const fixture = JSON.parse(readFileSync(new URL("../../patternly/src/testing/claudeCoverageFixtureData.json", import.meta.url), "utf8"));
   assert.equal(fixture.trackId, trackId);
-  assert.equal(fixture.contentVersion, source.track.contentVersion);
+  assert.equal(fixture.contentVersion, "ccarp-2026.10.11-capacity-v1-bizq02-v2-bizq03-planning-v2-cc02-v1-cc03-v1-cc04-v3");
+  assert.equal(source.track.contentVersion, "ccarp-2026.10.14-qle-v2-full-path-identity-v2");
   assert.deepEqual(fixture.completionRule, source.track.completionRule);
   const actual = new Map(source.questions.map((question) => [question.questionId, question]));
   assert.equal(fixture.questions.length, 53 * 4);

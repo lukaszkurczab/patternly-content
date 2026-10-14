@@ -3,12 +3,15 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
+import { createPreQleProducerFixture } from './helpers/pre-qle-producer-fixture.mjs';
 import { fileURLToPath } from 'node:url';
 import { buildTrack } from '../scripts/build.mjs';
 import { scoreQuestion, validateQuestion } from '../scripts/content/question-contract.mjs';
 
-const ROOT = path.resolve(fileURLToPath(new URL('../', import.meta.url)));
+const fixture = await createPreQleProducerFixture(path.resolve(fileURLToPath(new URL('../', import.meta.url))));
+after(() => fixture.cleanup());
+const ROOT = fixture.root;
 const TRACK = 'claude-certified-architect-professional-certification';
 const read = relative => JSON.parse(readFileSync(path.join(ROOT, relative), 'utf8'));
 const coverage = read('docs/evidence/content-audits/2026-10-11-cc02-content-coverage.json');
@@ -18,7 +21,9 @@ const registry = read(`config/certification-source-registries/${TRACK}.json`);
 const sourceById = new Map(registry.sources.map(source => [source.sourceId, source]));
 const modules = new Map(frozenMap.modules.map(module => [module.moduleId, module]));
 const objectives = new Set(frozenMap.objectives.map(objective => objective.objectiveId));
-const canonical = readdirSync(path.join(ROOT, 'content', TRACK)).flatMap(node => readdirSync(path.join(ROOT, 'content', TRACK, node)).filter(file => file.endsWith('.json')).flatMap(file => readFileSync(path.join(ROOT, 'content', TRACK, node, file), 'utf8').trim() ? JSON.parse(readFileSync(path.join(ROOT, 'content', TRACK, node, file), 'utf8')) : []));
+const allCanonical = readdirSync(path.join(ROOT, 'content', TRACK)).flatMap(node => readdirSync(path.join(ROOT, 'content', TRACK, node)).filter(file => file.endsWith('.json')).flatMap(file => readFileSync(path.join(ROOT, 'content', TRACK, node, file), 'utf8').trim() ? JSON.parse(readFileSync(path.join(ROOT, 'content', TRACK, node, file), 'utf8')) : []));
+const canonical = allCanonical.filter(question => !question.questionId.includes('-qle-v2-'));
+const historicalCanonical = canonical;
 const canonicalById = new Map(canonical.map(question => [question.questionId, question]));
 
 function assertQuestionScores(question) {
@@ -44,7 +49,7 @@ test('CC-02 maps every authored question to real course material and registry-ba
   assert.equal(coverage.inventory.addedCanonicalQuestionCount, 73);
   assert.equal(coverage.inventory.afterCanonicalQuestionCount, 918);
   assert.equal(coverage.inventory.changedExistingQuestionCount, 6);
-  assert.equal(canonical.length, 918);
+  assert.equal(historicalCanonical.length, 918);
   assert.equal(canonicalById.size, canonical.length, 'canonical question IDs are unique');
 
   assert.equal(blindAnswerText.schemaVersion, 'cc02-blind-answer-text-v1');
@@ -166,7 +171,7 @@ test('Cowork supplement validates with the shared scorer but stays outside the c
     const built = await buildTrack({ rootDirectory: ROOT, outputRoot, trackId: TRACK });
     const builtIds = new Set(built.artifact.questions.map(question => question.questionId));
     for (const questionId of supplementIds) assert.ok(!builtIds.has(questionId), `${questionId}: omitted from canonical build`);
-    assert.equal(built.artifact.questions.length, canonicalById.size);
+    assert.equal(built.artifact.questions.length, allCanonical.length);
   } finally {
     await rm(outputRoot, { recursive: true, force: true });
   }

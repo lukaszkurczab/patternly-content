@@ -1,4 +1,5 @@
-import { cp, mkdir } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { cp, mkdir, writeFile, readFile } from "node:fs/promises";
 import path from "node:path";
 
 const BUSINESS_QUALITY_PROOFS = [
@@ -26,6 +27,20 @@ const BUSINESS_QUALITY_PROOFS = [
 /** Copy the actual canonical content and every fixed producer proof needed by verifyMigration. */
 export async function copyCurrentMigrationFixture(repositoryRoot, fixtureRoot) {
   await cp(path.join(repositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
+  // These historical migration proofs bind the accepted 918-item Claude bank.
+  // Exercise that fixed predecessor, while preserving the current eight other banks.
+  const frozenHead = "58d7e8b918590abfe3cfa4da2594f1c12653f547";
+  const prefix = "content/claude-certified-architect-professional-certification/";
+  const files = execFileSync("git", ["ls-tree", "-r", "--name-only", frozenHead, "--", prefix], { cwd: repositoryRoot, encoding: "utf8" }).trim().split("\n");
+  for (const file of files) {
+    await mkdir(path.dirname(path.join(fixtureRoot, file)), { recursive: true });
+    await writeFile(path.join(fixtureRoot, file), execFileSync("git", ["show", `${frozenHead}:${file}`], { cwd: repositoryRoot }));
+  }
+  const catalogPath = path.join(fixtureRoot, "content/catalog.json");
+  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  const frozenCatalog = JSON.parse(execFileSync("git", ["show", `${frozenHead}:content/catalog.json`], { cwd: repositoryRoot, encoding: "utf8" }));
+  catalog.tracks = catalog.tracks.map(track => track.trackId === "claude-certified-architect-professional-certification" ? frozenCatalog.tracks.find(old => old.trackId === track.trackId) : track);
+  await writeFile(catalogPath, JSON.stringify(catalog) + "\n");
   const sourceProofRoot = path.join(repositoryRoot, "evidence", "business-quality");
   const fixtureProofRoot = path.join(fixtureRoot, "evidence", "business-quality");
   await mkdir(fixtureProofRoot, { recursive: true });

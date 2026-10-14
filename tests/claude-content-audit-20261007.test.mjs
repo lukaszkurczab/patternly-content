@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import test from 'node:test';
+import test, { after } from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createPreQleProducerFixture } from './helpers/pre-qle-producer-fixture.mjs';
 import { canonicalJson, sha256 } from '../scripts/build.mjs';
 import { scoreQuestion } from '../scripts/content/question-contract.mjs';
-const root = new URL('../content/claude-certified-architect-professional-certification/', import.meta.url);
+const fixture = await createPreQleProducerFixture(fileURLToPath(new URL('../', import.meta.url)));
+after(() => fixture.cleanup());
+const root = new URL('content/claude-certified-architect-professional-certification/', pathToFileURL(fixture.root + '/'));
 const questions = readdirSync(root).flatMap(node => readdirSync(new URL(`${node}/`, root)).filter(file => file.endsWith('.json')).flatMap(file => JSON.parse(readFileSync(new URL(`${node}/${file}`, root), 'utf8'))));
 const byId = new Map(questions.map(q => [q.questionId, q]));
 const get = id => { assert.ok(byId.has(id), id); return byId.get(id); };
@@ -15,7 +19,7 @@ test('historical accepted 845-question SHA reconstructs by reversing bounded CC0
   const coverage = JSON.parse(readFileSync(new URL('../docs/evidence/content-audits/2026-10-11-cc02-content-coverage.json', import.meta.url), 'utf8'));
   const beforeFixture = JSON.parse(readFileSync(new URL('../evidence/canonical-content-approvals/claude-cc02-historical-before.json', import.meta.url), 'utf8'));
   const addedIds = new Set(coverage.inventory.canonicalAddedIds);
-  const baselineById = new Map(questions.filter(question => !addedIds.has(question.questionId)).map(question => { const prior = structuredClone(question); delete prior.feedback.course; return [question.questionId, prior]; }));
+  const baselineById = new Map(questions.filter(question => !addedIds.has(question.questionId) && !question.questionId.includes('-qle-v2-')).map(question => { const prior = structuredClone(question); delete prior.feedback.course; return [question.questionId, prior]; }));
   for (const [questionId, previousQuestion] of Object.entries(beforeFixture)) baselineById.set(questionId, JSON.parse(JSON.stringify(previousQuestion)));
   const sorted = [...baselineById.values()].sort((left, right) => left.questionId === right.questionId ? 0 : left.questionId < right.questionId ? -1 : 1);
   const acceptedBeforeP2Clarification = JSON.parse(JSON.stringify(sorted));

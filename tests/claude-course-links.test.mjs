@@ -1,15 +1,25 @@
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import test from 'node:test';
+import test, { after } from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { createPreQleProducerFixture } from './helpers/pre-qle-producer-fixture.mjs';
 import { execFileSync } from 'node:child_process';
 import { canonicalJson, sha256 } from '../scripts/build.mjs';
 import { ACCEPTED_TRACK_IDS, validateQuestion } from '../scripts/content/question-contract.mjs';
 import { checkOrWriteCourseLinks, courseForQuestion, trackId } from '../scripts/content/add-claude-course-links.mjs';
 const read = path => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'));
 const directory = new URL(`../content/${trackId}/`, import.meta.url);
-const questions = readdirSync(directory).flatMap(node => readdirSync(new URL(`${node}/`, directory)).filter(name => name.endsWith('.json')).flatMap(file => JSON.parse(readFileSync(new URL(`${node}/${file}`, directory), 'utf8'))));
-test('all 918 questions have exact course metadata from final CC01+CC02 map, without changing any other question field', () => {
-  assert.equal(checkOrWriteCourseLinks(), 918);
+const currentQuestions = readdirSync(directory).flatMap(node => readdirSync(new URL(`${node}/`, directory)).filter(name => name.endsWith('.json')).flatMap(file => JSON.parse(readFileSync(new URL(`${node}/${file}`, directory), 'utf8'))));
+const fixture = await createPreQleProducerFixture(fileURLToPath(new URL('../', import.meta.url)));
+after(() => fixture.cleanup());
+const historicalDirectory = new URL(`content/${trackId}/`, pathToFileURL(fixture.root + '/'));
+const questions = readdirSync(historicalDirectory).flatMap(node => readdirSync(new URL(`${node}/`, historicalDirectory)).filter(name => name.endsWith('.json')).flatMap(file => JSON.parse(readFileSync(new URL(`${node}/${file}`, historicalDirectory), 'utf8'))));
+
+test('historical 918 questions have exact course metadata from final CC01+CC02 map, without changing any other question field', () => {
+  assert.equal(questions.length, 918);
+  assert.equal(currentQuestions.length, 972);
+  assert.throws(() => checkOrWriteCourseLinks(), /Missing course mapping/u); // historical CC04 authoring command must not invent new mappings
+  for (const question of currentQuestions.filter(q => q.questionId.includes('-qle-v2-'))) assert.equal(validateQuestion(question).valid, true);
   for (const question of questions) {
     assert.deepEqual(question.feedback.course, courseForQuestion(question.questionId));
     assert.equal(validateQuestion(question).valid, true);

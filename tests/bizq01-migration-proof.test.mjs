@@ -61,7 +61,7 @@ after(async () => {
 });
 
 test("accepts the real BIZQ-01 replacement proof while preserving current and historical counts", async () => {
-  const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
+  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.equal(result.result, "passed");
   assert.deepEqual(result.counts, { tracks: 9, nodes: 117, mentalUnits: 958, questions: 16695 });
   assert.deepEqual(result.historicalCounts, { tracks: 9, nodes: 117, mentalUnits: 932, questions: 16041 });
@@ -268,7 +268,7 @@ const wordingSourcePath = "content/coding-interview-dsa-problem-solving/contrast
 const wordingQuestionId = "alg-contrast-binary-scan-correctness-006";
 
 test("accepts only the real same-ID Coding wording correction alongside the unchanged BESD proof", async () => {
-  const result = await verifyMigration({ contentRoot: path.join(contentRepositoryRoot, "content") });
+  const result = await verifyMigration({ contentRoot: path.join(fixtureRoot, "content") });
   assert.deepEqual(result.wordingCorrectionProof, { trackId: "coding-interview-dsa-problem-solving", questionIds: [wordingQuestionId] });
   assert.equal(result.replacementProof.replacements.length, 168);
   assert.equal(result.counts.questions, 16695);

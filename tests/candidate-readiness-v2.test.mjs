@@ -1,3 +1,5 @@
+import { after } from "node:test";
+import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -10,7 +12,10 @@ import { buildCandidateDraft } from "../scripts/review/candidate-draft-v2.mjs";
 import { CANDIDATE_TRACK_IDS, canonicalJson, canonicalJsonBytes } from "../scripts/review/candidate-manifest.mjs";
 import { DECISION_PATH, READINESS_PATH, validateCandidateDecisionV2 } from "../scripts/review/candidate-readiness-v2.mjs";
 
-const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
+const ACTUAL_ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
+const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT);
+const ROOT = frozenProducer.root;
+after(() => frozenProducer.cleanup());
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
 test("active v2 candidate paths allow BIZQ-05 and preserve historical BIZQ-02 receipt bytes", async () => {

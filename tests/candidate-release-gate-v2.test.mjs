@@ -1,3 +1,5 @@
+import { after } from "node:test";
+import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -15,7 +17,10 @@ import { CANDIDATE_TRACK_IDS, canonicalJsonBytes } from "../scripts/review/candi
 import { runCandidateReleaseGate, verifyCandidateReleaseEvidence } from "../scripts/review/candidate-release-gate-v2.mjs";
 import { ADMISSION_PATH } from "../scripts/review/candidate-admission-v3.mjs";
 
-const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
+const ACTUAL_ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
+const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT);
+const ROOT = frozenProducer.root;
+after(() => frozenProducer.cleanup());
 const DRAFT_ROOT = "reports/candidate-reconciliation/AWS-02-DRAFT";
 const HISTORICAL_COMMIT = "eb92726efe583f646ce503f6215101d42528e08d";
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");

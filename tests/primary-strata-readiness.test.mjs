@@ -1,3 +1,6 @@
+import { after } from "node:test";
+import { fileURLToPath } from "node:url";
+import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -7,6 +10,8 @@ import test from "node:test";
 import { canonicalJson, sha256, validateTrack } from "../scripts/build.mjs";
 import { describeCurrentSourceProvenance, secureFile, validatePrimaryObjective, verifyReadiness } from "../scripts/content/verify-primary-strata-readiness.mjs";
 
+const frozenProducer = await createPreQleProducerFixture(fileURLToPath(new URL("../", import.meta.url)));
+after(() => frozenProducer.cleanup());
 const manifest = JSON.parse(await readFile(new URL("../config/primary-strata-readiness.json", import.meta.url), "utf8"));
 const clone = (value) => structuredClone(value);
 const sha = "a".repeat(64);
@@ -16,7 +21,7 @@ const objectiveId = registry.objectives[0].objectiveId;
 const pinnedRegistry = manifest.tracks.find((entry) => entry.trackId === trackId).primaryObjective.registry;
 
 test("current nine-track manifest verifies partial AZ-104 mapping without claiming track readiness", async () => {
-  const result = await verifyReadiness({ manifest });
+  const result = await verifyReadiness({ rootDirectory: frozenProducer.root, manifest });
   assert.equal(result.tracks.length, 9);
   assert.ok(result.tracks.every((track) => track.structuralValidity === "valid"));
   assert.ok(result.tracks.every((track) => track.readiness === "not_ready"));
@@ -53,7 +58,7 @@ test("current nine-track manifest verifies partial AZ-104 mapping without claimi
 
 test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewed exclusions", async () => {
   const ai901 = manifest.tracks.find((entry) => entry.trackId === "microsoft-azure-ai-fundamentals-ai-901");
-  const verified = (await verifyReadiness({ manifest })).tracks.find((track) => track.trackId === ai901.trackId);
+  const verified = (await verifyReadiness({ rootDirectory: frozenProducer.root, manifest })).tracks.find((track) => track.trackId === ai901.trackId);
   assert.equal(ai901.contentVersion, "microsoft-azure-ai-fundamentals-ai-901-authoring-v2026.08.15-bizq02-v2-bizq03-planning-v2");
   assert.equal(ai901.questionCount, 752);
   assert.equal(ai901.questionIdSetSha256, "088aa8189f9d25a5a6da640e487a407c96efde3f410f86d4296bf39f97b8f34a");
@@ -102,7 +107,7 @@ test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewe
 test("read-only provenance description matches the pinned GCP source contract", async () => {
   const trackId = "google-cloud-associate-cloud-engineer";
   const entry = manifest.tracks.find((candidate) => candidate.trackId === trackId);
-  const current = await describeCurrentSourceProvenance({ trackId });
+  const current = await describeCurrentSourceProvenance({ rootDirectory: frozenProducer.root, trackId });
   for (const key of ["trackId", "contentVersion", "questionCount", "questionIdSetSha256", "sourceInventorySha256", "inputs", "loaderOwner"]) {
     assert.deepEqual(current[key], entry[key]);
   }
@@ -114,7 +119,7 @@ test("read-only provenance description matches the pinned GCP source contract", 
   assert.equal(current.inputs.some((input) => input.path === "config/tracks/google-cloud-associate-cloud-engineer.json" && input.role === "track_configuration"), true);
   assert.equal(current.inputs.some((input) => input.path === "config/simulation-profiles/design-interview.json" && input.role === "simulation_profile_source"), true);
   assert.equal(current.inputs.some((input) => input.path.endsWith("GCPACE-N01-B04.json") && input.role === "canonical_question_source"), true);
-  await assert.rejects(describeCurrentSourceProvenance({ trackId: "unknown-track" }), /source_provenance_track_invalid/u);
+  await assert.rejects(describeCurrentSourceProvenance({ rootDirectory: frozenProducer.root, trackId: "unknown-track" }), /source_provenance_track_invalid/u);
 });
 
 test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 partial set", () => {
@@ -207,10 +212,10 @@ test("AZ-104 preserves N01-N06 bindings and appends the exact corrected N07-N09 
 test("manifest requires the exact nine unique current track identities", async () => {
   const bad = clone(manifest);
   bad.tracks[1].trackId = bad.tracks[0].trackId;
-  await assert.rejects(verifyReadiness({ manifest: bad }), /manifest_track_set_invalid/u);
+  await assert.rejects(verifyReadiness({ rootDirectory: frozenProducer.root, manifest: bad }), /manifest_track_set_invalid/u);
   const foreign = clone(manifest);
   foreign.tracks[0].trackId = "foreign-track";
-  await assert.rejects(verifyReadiness({ manifest: foreign }), /manifest_track_set_invalid/u);
+  await assert.rejects(verifyReadiness({ rootDirectory: frozenProducer.root, manifest: foreign }), /manifest_track_set_invalid/u);
 });
 
 test("content version, exact question set and full source inventory drift are rejected", async () => {
@@ -221,7 +226,7 @@ test("content version, exact question set and full source inventory drift are re
   ]) {
     const bad = clone(manifest);
     mutate(bad.tracks[0]);
-    await assert.rejects(verifyReadiness({ manifest: bad }), /stale_(source|provenance)_/u);
+    await assert.rejects(verifyReadiness({ rootDirectory: frozenProducer.root, manifest: bad }), /stale_(source|provenance)_/u);
   }
 });
 
@@ -263,18 +268,18 @@ test("partial and complete bindings enforce exact question and pinned objective 
 test("registry and published evidence pins reject drift", async () => {
   const staleRegistry = clone(manifest);
   staleRegistry.tracks[0].primaryObjective.registry.sha256 = sha;
-  await assert.rejects(verifyReadiness({ manifest: staleRegistry }), /objective_registry_pin_stale/u);
+  await assert.rejects(verifyReadiness({ rootDirectory: frozenProducer.root, manifest: staleRegistry }), /objective_registry_pin_stale/u);
   const stalePublished = clone(manifest);
   const gcp = stalePublished.tracks.find((entry) => entry.trackId === "google-cloud-associate-cloud-engineer");
   const proof = gcp.inputs.find((input) => input.role === "published_domain_evidence");
   proof.sha256 = sha;
-  await assert.rejects(verifyReadiness({ manifest: stalePublished }), /stale_provenance_google-cloud-associate-cloud-engineer/u);
+  await assert.rejects(verifyReadiness({ rootDirectory: frozenProducer.root, manifest: stalePublished }), /stale_provenance_google-cloud-associate-cloud-engineer/u);
 });
 
 test("path rules reject absolute, escaping, and symlinked declared inputs", async () => {
   const bad = clone(manifest);
   bad.tracks[0].inputs[0].path = "/etc/passwd";
-  await assert.rejects(verifyReadiness({ manifest: bad }), /input_path_invalid/u);
+  await assert.rejects(verifyReadiness({ rootDirectory: frozenProducer.root, manifest: bad }), /input_path_invalid/u);
   const root = await mkdtemp(path.join(os.tmpdir(), "primary-strata-"));
   try {
     await writeFile(path.join(root, "target.json"), "{}");
@@ -284,4 +289,8 @@ test("path rules reject absolute, escaping, and symlinked declared inputs", asyn
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+});
+
+test("current QLE producer must not reuse the pre-QLE global provenance grant", async () => {
+  await assert.rejects(verifyReadiness({ manifest }), /stale_provenance/u);
 });

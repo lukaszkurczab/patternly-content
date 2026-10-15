@@ -1,3 +1,4 @@
+import { gzipSync, gunzipSync } from "node:zlib";
 import { createHash, randomUUID } from "node:crypto";
 import {
   lstat,
@@ -30,7 +31,7 @@ export const LOCK_FILE_NAME = "content-lock.json";
 const DEFAULT_ROOT_DIRECTORY = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const JSON_FILE_SUFFIX = ".json";
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
-const COMMANDS = new Set(["validate", "test", "build", "build-all"]);
+const COMMANDS = new Set(["validate", "test", "build", "build-all", "build-premium-node"]);
 const TRACK_COMMANDS = new Set(["validate", "test", "build"]);
 const compareStrings = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 const DEFAULT_FILE_OPS = Object.freeze({ lstat, mkdir, readFile, readdir, realpath, rename, unlink, writeFile });
@@ -1012,8 +1013,79 @@ export async function buildAll({ rootDirectory, root, outputRoot, outputDirector
   return { rootDirectory: resolvedRoot, outputRoot: resolvedOutputRoot, catalog, artifacts, lock, lockPath };
 }
 
+/** Local derivation from an existing granted admission. No content edits, grant or network publishing. */
+export async function buildPremiumNodePackage(options = {}) {
+  const root = resolveRoot(options);
+  const appRoot = path.resolve(options.appRoot ?? path.join(root, "../patternly"));
+  const { trackId, nodeId } = options;
+  const identity = /^[a-z0-9][a-z0-9._-]{0,127}$/u;
+  if (!identity.test(trackId ?? "") || !identity.test(nodeId ?? "")) fail("Premium node identity is invalid.");
+  const { ADMISSION_PATH, APP_LOCK_PATH, APP_CONTENT_LOCK_PATH, validateCandidateAdmissionV3 } = await import("./review/candidate-admission-v3.mjs");
+  const admissionBytes = await readFile(path.join(root, ADMISSION_PATH));
+  const admission = await validateCandidateAdmissionV3(JSON.parse(admissionBytes), { root });
+  const [appLockBytes, contentLockBytes, releaseBytes] = await Promise.all([
+    readFile(path.join(appRoot, APP_LOCK_PATH)), readFile(path.join(appRoot, APP_CONTENT_LOCK_PATH)), readFile(path.join(root, admission.release.releasePath)),
+  ]);
+  if (sha256(appLockBytes) !== admission.application.releaseLockSha256) fail("Premium node application admission binding is stale.");
+  const release = JSON.parse(releaseBytes);
+  const source = release.artifacts.find((row) => row.trackId === trackId);
+  const admitted = admission.tracks.find((row) => row.trackId === trackId);
+  const appLocked = JSON.parse(appLockBytes).artifacts.find((row) => row.trackId === trackId);
+  const bundled = JSON.parse(contentLockBytes).tracks.find((row) => row.trackId === trackId);
+  if (!source || !admitted || source.checksumSha256 !== admitted.artifactSha256 || source.checksumSha256 !== appLocked?.checksumSha256 || source.contentVersion !== appLocked?.contentVersion || bundled?.sha256 !== source.checksumSha256 || bundled?.contentVersion !== source.contentVersion || bundled?.questionCount !== source.questionCount) fail("Premium node source is not admitted.");
+  const sourcePath = path.resolve(root, path.dirname(admission.release.releasePath), source.artifactPath);
+  await assertSecurePath(root, sourcePath, "admitted Premium source");
+  const sourceBytes = await readFile(sourcePath);
+  if (sha256(sourceBytes) !== source.checksumSha256 || sourceBytes.length !== source.artifactBytes) fail("Premium node source checksum mismatch.");
+  const currentAppArtifact = await readFile(path.join(appRoot, "src/content/generated/canonical-content", `${trackId}.json`));
+  if (sha256(currentAppArtifact) !== source.checksumSha256 || currentAppArtifact.length !== source.artifactBytes) fail("Premium node current application artifact differs from admission.");
+  const artifact = JSON.parse(sourceBytes);
+  if (artifact.trackId !== trackId || artifact.contentVersion !== source.contentVersion || artifact.questions?.length !== source.questionCount) fail("Premium node source identity mismatch.");
+  const profile = await readJson(path.join(root, "config/free-node-experience-profiles", `${trackId}.json`));
+  if (profile.familyId !== "certification" || profile.freeNodeId === nodeId) fail("Premium derivation requires a non-Free Certification node.");
+  const items = artifact.questions.filter((question) => question.nodeId === nodeId);
+  if (items.length < 40) fail("Premium node has insufficient whole-node capacity.");
+  const ids = new Set();
+  for (const question of items) {
+    const result = validateQuestion(question, { catalogTrackIds: admission.trackIds });
+    if (!result.valid || question.trackId !== trackId || ids.has(question.questionId)) fail("Premium node contains an invalid question.", result.errors);
+    ids.add(question.questionId);
+  }
+  const relations = validateQuestionRelations(items);
+  if (!relations.valid) fail("Premium node relations cross the package boundary.", relations.errors);
+  const payload = { schemaVersion: "patternly-content-node-payload-v1", trackId, nodeId, contentVersion: artifact.contentVersion, contentReleaseId: release.manifest.releaseId, items };
+  const artifactBytes = Buffer.from(canonicalJson(payload));
+  const compressed = gzipSync(artifactBytes, { level: 9 });
+  if (compressed.length > 2 * 1024 * 1024 || artifactBytes.length > 8 * 1024 * 1024 || !gunzipSync(compressed).equals(artifactBytes)) fail("Premium node package limits or readback failed.");
+  const artifactSha256 = sha256(artifactBytes), packageSha256 = sha256(compressed);
+  const manifest = { schemaVersion: "patternly-content-node-package-v1", trackId, nodeId, contentVersion: artifact.contentVersion, artifactSha256, packageSha256, contentReleaseId: payload.contentReleaseId, minimumAppVersion: "0.1.0", packageFormat: "gzip", compressedSizeBytes: compressed.length, artifactSizeBytes: artifactBytes.length, packagePath: `packages/${trackId}/${nodeId}/${packageSha256}.gzip` };
+  const derivation = { schemaVersion: "patternly-premium-node-derivation-v1", candidateId: admission.candidateId, admissionSha256: sha256(admissionBytes), observedCurrentBundledLockSha256: sha256(contentLockBytes), selectedApplicationArtifactSha256: sha256(currentAppArtifact), releaseManifestSha256: admission.release.checksumSha256, sourceArtifactSha256: source.checksumSha256, packageManifestSha256: sha256(canonicalJson(manifest)), artifactSha256, packageSha256, trackId, nodeId, itemCount: items.length, mentalUnitIds: [...new Set(items.map((item) => item.mentalUnitId))].sort(), boundary: "local_derivation_from_granted_candidate_no_deployment" };
+  const offer = { offerId: `${trackId}--${nodeId}`, trackId, familyId: "certification", nodeId, contentVersion: artifact.contentVersion, artifactSha256, modeId: "certification-focus-practice", source: "authenticated_backend" };
+  const outputRoot = path.resolve(options.outputRoot ?? path.join(root, "artifacts/premium-nodes", trackId, nodeId, artifactSha256));
+  await mkdir(outputRoot, { recursive: true });
+  const packageFile = path.join(outputRoot, `${packageSha256}.gzip`);
+  try { await writeFile(packageFile, compressed, { flag: "wx" }); }
+  catch (error) {
+    if (error?.code !== "EEXIST") throw error;
+    const info = await lstat(packageFile);
+    if (!info.isFile() || info.isSymbolicLink() || !(await readFile(packageFile)).equals(compressed)) fail("Premium node immutable output conflict.");
+  }
+  if (!(await readFile(packageFile)).equals(compressed)) fail("Premium node output readback failed.");
+  const changes = [];
+  for (const [name, value] of [["manifest.json", manifest], ["derivation.json", derivation]]) {
+    const change = await outputChange(path.join(outputRoot, name), canonicalJson(value));
+    if (change) changes.push(change);
+  }
+  await commitOutputSet(changes, options);
+  // The only app output is metadata, written last; payload questions never enter the app bundle.
+  const offerPath = path.join(appRoot, "src/content/generated/premium-node-offer.json");
+  const offerChange = await outputChange(offerPath, canonicalJson({ offer, derivation }));
+  if (offerChange) await commitOutputSet([offerChange], options);
+  return { manifest, derivation, offer, outputRoot, packageFile, offerPath };
+}
+
 function usage() {
-  return "Usage: node scripts/build.mjs <validate|test|build> --track <trackId> [--root <dir>] [--output-root <dir>] | build-all [--root <dir>] [--output-root <dir>]";
+  return "Usage: node scripts/build.mjs <validate|test|build> --track <trackId> [--root <dir>] [--output-root <dir>] | build-all [--root <dir>] [--output-root <dir>] | build-premium-node --track <trackId> --node <nodeId> [--app-root <dir>] [--output-root <dir>]";
 }
 
 export function parseArgs(argv = process.argv.slice(2)) {
@@ -1022,21 +1094,28 @@ export function parseArgs(argv = process.argv.slice(2)) {
   const options = { command };
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];
-    if (!["--track", "--root", "--output-root"].includes(argument)) fail(`Unknown argument: ${argument}\n${usage()}`);
+    if (!["--track", "--node", "--root", "--output-root", "--app-root"].includes(argument)) fail(`Unknown argument: ${argument}\n${usage()}`);
     if (index + 1 >= rest.length || rest[index + 1].startsWith("--")) fail(`${argument} requires a value\n${usage()}`);
     const value = rest[++index];
     if (!nonEmptyString(value)) fail(`${argument} requires a non-empty value\n${usage()}`);
-    const key = argument === "--output-root" ? "outputRoot" : argument === "--track" ? "trackId" : argument.slice(2);
+    const key = argument === "--output-root" ? "outputRoot" : argument === "--track" ? "trackId" : argument === "--node" ? "nodeId" : argument === "--app-root" ? "appRoot" : argument.slice(2);
     if (Object.prototype.hasOwnProperty.call(options, key)) fail(`Duplicate argument: ${argument}`);
     options[key] = value;
   }
   if (TRACK_COMMANDS.has(command) && !nonEmptyString(options.trackId)) fail(`--track is required for ${command}\n${usage()}`);
+  if (command === "build-premium-node" && (!options.trackId || !options.nodeId)) fail("--track and --node are required for build-premium-node");
+  if (command !== "build-premium-node" && (options.nodeId || options.appRoot)) fail("--node/--app-root require build-premium-node");
   if (command === "build-all" && options.trackId) fail(`--track is not accepted for build-all\n${usage()}`);
   return options;
 }
 
 async function runCli(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
+  if (options.command === "build-premium-node") {
+    const result = await buildPremiumNodePackage(options);
+    console.log(`Built admitted Premium node (${result.derivation.itemCount} questions); local artifacts only: ${result.outputRoot}`);
+    return;
+  }
   if (options.command === "validate") {
     const result = await validateTrack(options);
     console.log(`Validated ${result.questions.length} question(s) for ${result.trackId}`);

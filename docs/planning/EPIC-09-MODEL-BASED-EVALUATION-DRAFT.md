@@ -1,6 +1,8 @@
 # EPIC-09 — model-based evaluation wszystkich banków
 
-> **Rola po konsolidacji:** specyfikacja i kryteria `09-A–09-H`. Kolejność programu i status tasków utrzymuje wyłącznie [aktualny plan roboczy](https://github.com/lukaszkurczab/gcp-ace-trainer/blob/main/docs/PATTERNLY-WORKING-PLAN.md).
+> **Rola po konsolidacji:** specyfikacja i kryteria `09-A–09-H`. Kolejność programu i status tasków utrzymuje wyłącznie [aktualny plan roboczy](../../../docs/PATTERNLY-WORKING-PLAN.md).
+
+**Harmonogram:** pełny audyt banków pytań i EPIC-09 rozpoczynają się po faktycznej publikacji Androida, a następnie iOS. Ta zmiana ustala wyłącznie kolejność; kryteria i zakres faz `09-A–09-H` poniżej pozostają bez zmian.
 
 **Rola:** specyfikacja przyszłego narzędzia; status i priorytet wyłącznie w planie głównym. Candidate/admission AWS-02 i canonical migration są wdrożone; dawne AWS-01/SIMP nie są otwartymi zależnościami.
 **Charakter:** uzupełniająca ścieżka jakościowa
@@ -217,4 +219,4 @@ Każda faza `09-*` jest osobnym taskiem. Jej goal i acceptance/stop condition s�
 
 Istniejący read-only inventory runner działa na dziewięciu kanonicznych bankach. Bieżący odczyt07.10 wykazał117 nodów,943 mental unity i16622 pytania. `blocked_baseline` jest zamierzonym porównaniem ze stałym migration baseline932/16041: AWS dodał11unitów/36pytań, Claude545pytań, razem+11/+581. Nie jest blokadą przyjętego candidate/admission ani wydania aplikacji.
 
-09-A nadal wymaga uzgodnienia i udokumentowania wejściowego zakresu EPIC z tym immutable baseline; późniejsze fazy EPIC nie mogą przyjąć nieuzgodnionego scope. Nie przepisywać frozen migration evidence. AC: zero unassigned/ambiguous IDs, pełny rozkład interakcji, byte-identyczny inventory po powtórzeniu, jawne accepted current identities i wyjaśnione różnice, zero zmian contentu i zero wywołań modelu. Raport jest regenerowalny. Istnienie runnera nie oznacza odbioru09-A ani pełnego audytu pytań. Priorytet całego EPIC pozostaje odroczony w planie głównym.
+09-A nadal wymaga uzgodnienia i udokumentowania wejściowego zakresu EPIC z tym immutable baseline; późniejsze fazy EPIC nie mogą przyjąć nieuzgodnionego scope. Nie przepisywać frozen migration evidence. AC: zero unassigned/ambiguous IDs, pełny rozkład interakcji, byte-identyczny inventory po powtórzeniu, jawne accepted current identities i wyjaśnione różnice, zero zmian contentu i zero wywołań modelu. Raport jest regenerowalny. Istnienie runnera nie oznacza odbioru09-A ani pełnego audytu pytań. Priorytet całego EPIC pozostaje odroczony w planie głównym do czasu faktycznej publikacji Androida, a następnie iOS; harmonogram nie zmienia kryteriów ani zakresu faz.

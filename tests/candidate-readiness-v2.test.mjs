@@ -13,7 +13,7 @@ import { CANDIDATE_TRACK_IDS, canonicalJson, canonicalJsonBytes } from "../scrip
 import { DECISION_PATH, READINESS_PATH, validateCandidateDecisionV2 } from "../scripts/review/candidate-readiness-v2.mjs";
 
 const ACTUAL_ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
-const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT);
+const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT, { currentBuilder: true });
 const ROOT = frozenProducer.root;
 after(() => frozenProducer.cleanup());
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");

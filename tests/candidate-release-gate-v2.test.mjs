@@ -18,7 +18,7 @@ import { runCandidateReleaseGate, verifyCandidateReleaseEvidence } from "../scri
 import { ADMISSION_PATH } from "../scripts/review/candidate-admission-v3.mjs";
 
 const ACTUAL_ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
-const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT);
+const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT, { currentBuilder: true });
 const ROOT = frozenProducer.root;
 after(() => frozenProducer.cleanup());
 const DRAFT_ROOT = "reports/candidate-reconciliation/AWS-02-DRAFT";

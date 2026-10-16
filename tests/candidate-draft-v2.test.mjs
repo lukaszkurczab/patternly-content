@@ -7,22 +7,74 @@ import { execFile } from "node:child_process";
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
 import { assertCanonicalSourceSnapshot, buildCandidateDraft, createOdk096CanonicalApprovalBinding, CANDIDATE_DRAFT_SCHEMA_PATH, CANDIDATE_RELEASE_SCHEMA_PATH, ODK096_APPROVAL_PATH } from "../scripts/review/candidate-draft-v2.mjs";
 import { canonicalJson, CANDIDATE_TRACK_IDS } from "../scripts/review/candidate-manifest.mjs";
-import { buildAll } from "../scripts/build.mjs";
+import { buildAll, buildTrack, loadGcpSimulationProfiles } from "../scripts/build.mjs";
 import { reconstructApprovedAwsPredecessor } from "../scripts/content/verify-migration.mjs";
 import { validateQuestion } from "../scripts/content/question-contract.mjs";
 import { validateSchema } from "../scripts/review/schema-validation.mjs";
 
 const ACTUAL_ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
-const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT);
+const frozenProducer = await createPreQleProducerFixture(ACTUAL_ROOT, { currentBuilder: true });
 const ROOT = frozenProducer.root;
 after(() => frozenProducer.cleanup());
 const exec = promisify(execFile);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+
+test("historical producer adapter preserves exact GCP bytes and rejects invalid current attribution", async (t) => {
+  const trackId = "google-cloud-associate-cloud-engineer";
+  const configPath = `config/tracks/${trackId}.json`;
+  const { stdout: head } = await exec("git", ["rev-parse", "HEAD"], { cwd: ROOT });
+  assert.equal(head.trim(), "58d7e8b918590abfe3cfa4da2594f1c12653f547");
+  const originalBytes = (await exec("git", ["show", `HEAD:${configPath}`], { cwd: ROOT })).stdout;
+  const adaptedBytes = await readFile(path.join(ROOT, configPath), "utf8");
+  const adaptedConfig = JSON.parse(adaptedBytes);
+  const { currentAttribution, ...originalProfile } = adaptedConfig.profile;
+  assert.deepEqual({ ...adaptedConfig, profile: originalProfile }, JSON.parse(originalBytes));
+  assert.deepEqual(currentAttribution, {
+    schemaVersion: "gcp-current-attribution-v1",
+    contentVersion: "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1-bizq03-planning-v2",
+    itemCount: 2981,
+    inventorySha256: "483d91441ff1777edf23a147570ecf80cbcb5556c3adf7b1fe8c95af47d6d371",
+    crosswalkSha256: "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51",
+    historicalArtifactSha256: "732f915e43542ca1318bf32aafd1f2cfab77012eb3c8d236a362a92a993740e4",
+    historicalCrosswalkSha256: "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51",
+  });
+  const base = await mkdtemp(path.join(os.tmpdir(), "patternly-historical-gcp-adapter-"));
+  t.after(() => rm(base, { recursive: true, force: true }));
+  try {
+    const current = await buildTrack({ rootDirectory: ROOT, trackId, outputRoot: path.join(base, "current") });
+    assert.equal(current.artifact.simulationProfiles[0].familyConfig.currentAttribution, undefined);
+    await writeFile(path.join(ROOT, configPath), originalBytes);
+    const historicalBuilder = await import(pathToFileURL(path.join(ROOT, "scripts/build.mjs")).href);
+    const historical = await historicalBuilder.buildTrack({ rootDirectory: ROOT, trackId, outputRoot: path.join(base, "historical") });
+    assert.equal(current.artifactBytes, historical.artifactBytes);
+    assert.deepEqual(current.lock, historical.lock);
+
+    const assertRejected = async (mutate, pattern) => {
+      const config = structuredClone(adaptedConfig);
+      mutate(config.profile);
+      await writeFile(path.join(ROOT, configPath), JSON.stringify(config));
+      await assert.rejects(loadGcpSimulationProfiles({ rootDirectory: ROOT, track: current.track, questions: current.questions }), pattern);
+    };
+    await assertRejected(profile => { delete profile.currentAttribution; }, /GCP simulation profile has an invalid shape/u);
+    await assertRejected(profile => { profile.extra = true; }, /GCP simulation profile has an invalid shape/u);
+    await assertRejected(profile => { profile.currentAttribution.extra = true; }, /GCP current attribution has an invalid shape/u);
+    await assertRejected(profile => { profile.currentAttribution.contentVersion += "-stale"; }, /identity or provenance/u);
+    await assertRejected(profile => { profile.currentAttribution.itemCount -= 1; }, /item count/u);
+    await assertRejected(profile => { profile.currentAttribution.inventorySha256 = "0".repeat(64); }, /exact current question inventory/u);
+    await assertRejected(profile => { profile.currentAttribution.crosswalkSha256 = "0".repeat(64); }, /exact current question inventory/u);
+  } finally {
+    await writeFile(path.join(ROOT, configPath), adaptedBytes);
+  }
+  const { stdout: changedPaths } = await exec("git", ["diff", "--name-only", "HEAD"], { cwd: ROOT });
+  assert.equal(changedPaths.trim(), configPath, "content, artifacts, evidence and locks must remain byte-exact");
+  const { stdout: untracked } = await exec("git", ["ls-files", "--others", "--exclude-standard"], { cwd: ROOT });
+  assert.equal(untracked, "");
+});
 
 test("candidate draft v2 binds all nine canonical artifacts and exact ODK-096 AWS identity deterministically", async () => {
   const base = await mkdtemp(path.join(os.tmpdir(), "patternly-candidate-draft-test-"));

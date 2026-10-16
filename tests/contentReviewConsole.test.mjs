@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { chmod, link, mkdir, mkdtemp, open, readFile, realpath, rename, rm, stat, lstat, symlink, unlink, writeFile } from "node:fs/promises";
+import { request as httpRequest } from "node:http";
+import { chmod, link, mkdir, mkdtemp, open, readFile, readdir, realpath, rename, rm, stat, lstat, symlink, unlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -21,6 +22,26 @@ async function temporaryReviewPath(t, prefix = "patternly-review-console-") {
   // an alias for /private/var.
   const canonicalDirectory = await realpath(directory);
   return { directory, reviewPath: join(canonicalDirectory, "outcomes.json") };
+}
+
+async function consoleUiHeaders(origin) {
+  const page = await fetch(`${origin}/`);
+  assert.equal(page.status, 200);
+  const token = (await page.text()).match(/const mutationToken="([a-f0-9-]+)";/)?.[1];
+  assert.ok(token, "the served UI carries the process token");
+  return { origin, "content-type": "application/json", "x-content-review-token": token };
+}
+
+// Raw headers let the tests exercise duplicates and missing Host without client normalization.
+function wireRequest(running, path, method, headers, body) {
+  return new Promise((resolveRequest, reject) => {
+    const request = httpRequest({ hostname: "127.0.0.1", port: running.address.port, path, method, headers, setHost: false, agent: false }, (response) => {
+      response.resume();
+      response.once("end", () => resolveRequest(response.statusCode));
+    });
+    request.once("error", reject);
+    request.end(body);
+  });
 }
 
 test("review console surfaces a remaining BESD constraint disclosure without recording an outcome", async (t) => {
@@ -259,7 +280,7 @@ test("review console serves a local UI and bounded JSON API without fabricating 
   const catalog = await fetch(`http://127.0.0.1:${address.port}/api/catalog`);
   assert.equal(catalog.status, 200);
   assert.equal((await catalog.json()).launchTrackCount, 9);
-  const response = await fetch(`http://127.0.0.1:${address.port}/api/reviews/batch`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ items: [], outcome: "approved", note: "No-op", reviewerId: "owner-local" }) });
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/reviews/batch`, { method: "POST", headers: await consoleUiHeaders(`http://127.0.0.1:${address.port}`), body: JSON.stringify({ items: [], outcome: "approved", note: "No-op", reviewerId: "owner-local" }) });
   assert.equal(response.status, 400);
 });
 
@@ -569,7 +590,7 @@ test("post-commit lock-release warnings stay visible through the HTTP API", asyn
   const running = await startContentReviewConsole({ reviewPath, port: 0, reviewStoreFs: fileSystem });
   t.after(() => new Promise((resolveServer) => running.server.close(resolveServer)));
   const response = await fetch(`http://127.0.0.1:${running.address.port}/api/reviews`, {
-    method: "POST", headers: { "content-type": "application/json" },
+    method: "POST", headers: await consoleUiHeaders(`http://127.0.0.1:${running.address.port}`),
     body: JSON.stringify({ trackId: "backend-system-design-interview", questionId: "besd-n04-b02-i001", outcome: "approved", note: "Temporary API commit warning.", reviewerId: "temporary-owner" }),
   });
   assert.equal(response.status, 200);
@@ -578,4 +599,96 @@ test("post-commit lock-release warnings stay visible through the HTTP API", asyn
   assert.match(result.warning, /store lock remains/u);
   assert.equal(JSON.parse(await readFile(reviewPath, "utf8")).reviews.length, 1);
   await assert.rejects(running.service.recordOutcome({ trackId: "backend-system-design-interview", questionId: "besd-n04-b02-i001", outcome: "needs_change", note: "Temporary busy after committed warning.", reviewerId: "temporary-owner" }), { code: "review_store_busy" });
+});
+
+test("SEC-06 protects both mutation routes before any file or memory change", async (t) => {
+  const { directory, reviewPath } = await temporaryReviewPath(t, "patternly-sec06-");
+  const running = await startContentReviewConsole({ reviewPath, port: 0 });
+  t.after(() => new Promise((done) => running.server.close(done)));
+  assert.equal(running.address.address, "127.0.0.1");
+  const authority = `127.0.0.1:${running.address.port}`;
+  const origin = `http://${authority}`;
+  const headers = { host: authority, ...await consoleUiHeaders(origin) };
+  const first = running.service.listItems()[0];
+  const second = running.service.listItems()[1];
+  const payload = { trackId: first.trackId, questionId: first.questionId, outcome: "needs_change", note: "Disposable SEC-06 fixture only.", reviewerId: "test-only" };
+  const cases = [
+    ["missing Origin", "POST", { origin: undefined }, 403],
+    ["foreign Origin", "POST", { origin: "https://foreign.invalid" }, 403],
+    ["null Origin", "POST", { origin: "null" }, 403],
+    ["wrong Origin port", "POST", { origin: "http://127.0.0.1:1" }, 403],
+    ["Origin suffix", "POST", { origin: `${origin}.foreign.invalid` }, 403],
+    ["Origin trailing slash", "POST", { origin: `${origin}/` }, 403],
+    ["missing Host (Node HTTP parser)", "POST", { host: undefined }, 400],
+    ["foreign Host", "POST", { host: "foreign.invalid" }, 403],
+    ["wrong Host port", "POST", { host: "127.0.0.1:1" }, 403],
+    ["alias Host", "POST", { host: `localhost:${running.address.port}` }, 403],
+    ["missing type", "POST", { "content-type": undefined }, 415],
+    ["plain JSON", "POST", { "content-type": "text/plain" }, 415],
+    ["form", "POST", { "content-type": "application/x-www-form-urlencoded" }, 415],
+    ["multipart", "POST", { "content-type": "multipart/form-data; boundary=x" }, 415],
+    ["unknown charset", "POST", { "content-type": "application/json; charset=iso-8859-1" }, 415],
+    ["extra parameter", "POST", { "content-type": "application/json; x=y" }, 415],
+    ["missing UI token", "POST", { "x-content-review-token": undefined }, 403],
+    ["wrong UI token", "POST", { "x-content-review-token": "wrong" }, 403],
+    ...["GET", "HEAD", "OPTIONS", "PUT", "PATCH", "DELETE"].map((method) => [method, method, {}, 405]),
+  ];
+  for (const name of ["host", "origin", "content-type", "x-content-review-token"]) {
+    cases.push([`duplicate ${name}`, "POST", { duplicate: name }, name === "content-type" ? 415 : 403]);
+  }
+  for (const existing of [false, true]) {
+    if (existing) await running.service.recordOutcome({ ...payload, outcome: "rejected" });
+    const before = existing ? await readFile(reviewPath) : null;
+    for (const path of ["/api/reviews", "/api/reviews/batch"]) {
+      const body = JSON.stringify(path.endsWith("/batch") ? { ...payload, items: [first, second] } : payload);
+      for (const [label, method, overrides, expected] of cases) {
+        const merged = { ...headers, ...overrides };
+        const rawHeaders = Object.entries(merged).filter(([key, value]) => key !== "duplicate" && value !== undefined).flat();
+        if (overrides.duplicate) rawHeaders.push(overrides.duplicate, headers[overrides.duplicate]);
+        assert.equal(await wireRequest(running, path, method, rawHeaders, body), expected, `${existing ? "existing" : "absent"} ${path}: ${label}`);
+        if (existing) assert.deepEqual(await readFile(reviewPath), before, label);
+        else await assert.rejects(readFile(reviewPath), { code: "ENOENT" });
+        assert.equal(running.service.getItem(first.trackId, first.questionId).review.status, existing ? "rejected" : "unreviewed");
+        assert.equal(running.service.getItem(second.trackId, second.questionId).review.status, "unreviewed");
+      }
+      const goodHeaders = { ...headers, "content-type": "application/json; charset=utf-8" };
+      assert.equal(await wireRequest(running, path, "POST", Object.entries(goodHeaders).flat(), "{broken"), 400);
+      if (existing) assert.deepEqual(await readFile(reviewPath), before);
+      else await assert.rejects(readFile(reviewPath), { code: "ENOENT" });
+    }
+    assert.equal((await readdir(directory)).some((name) => name.endsWith(".lock") || name.endsWith(".tmp")), false);
+  }
+  assert.equal(await wireRequest(running, "/", "GET", ["Host", "foreign.invalid"], ""), 403, "foreign Host cannot read UI token");
+  assert.equal(await wireRequest(running, "/api/reviews", "POST", Object.entries(headers).flat(), JSON.stringify(payload)), 200);
+  assert.equal(running.service.getItem(first.trackId, first.questionId).review.status, "needs_change");
+  assert.equal(await wireRequest(running, "/api/reviews/batch", "POST", Object.entries({ ...headers, "content-type": "Application/JSON; charset=UTF-8" }).flat(), JSON.stringify({ ...payload, items: [first, second], outcome: "rejected" })), 200);
+  const persisted = JSON.parse(await readFile(reviewPath, "utf8"));
+  assert.equal(persisted.reviews.length, 2);
+  assert.ok(persisted.reviews.every((item) => item.outcome === "rejected"));
+});
+
+test("SEC-06 token belongs to one server instance; unsafe bind hosts fail closed", async (t) => {
+  const { directory, reviewPath } = await temporaryReviewPath(t, "patternly-sec06-token-");
+  for (const host of ["0.0.0.0", "::", "localhost", "127.0.0.2", "foreign.invalid"]) {
+    await assert.rejects(startContentReviewConsole({ reviewPath, host, port: 0 }), /literal loopback/);
+  }
+  const first = await startContentReviewConsole({ reviewPath, port: 0 });
+  const firstOrigin = `http://127.0.0.1:${first.address.port}`;
+  const oldHeaders = await consoleUiHeaders(firstOrigin);
+  const page = await fetch(firstOrigin);
+  assert.equal(page.headers.get("cache-control"), "no-store");
+  assert.equal(page.headers.get("x-frame-options"), "DENY");
+  assert.equal(page.headers.get("content-security-policy"), "frame-ancestors 'none'");
+  assert.equal(page.headers.get("access-control-allow-origin"), null);
+  await page.text();
+  const port = first.address.port;
+  await new Promise((done) => first.server.close(done));
+  const second = await startContentReviewConsole({ reviewPath: join(directory, "second.json"), port });
+  t.after(() => new Promise((done) => second.server.close(done)));
+  const item = second.service.listItems()[0];
+  const body = JSON.stringify({ ...item, outcome: "needs_change", note: "Disposable token probe.", reviewerId: "test-only" });
+  const response = await fetch(`${firstOrigin}/api/reviews`, { method: "POST", headers: oldHeaders, body });
+  assert.equal(response.status, 403);
+  assert.notEqual((await consoleUiHeaders(firstOrigin))["x-content-review-token"], oldHeaders["x-content-review-token"]);
+  await assert.rejects(readFile(second.service.reviewPath), { code: "ENOENT" });
 });

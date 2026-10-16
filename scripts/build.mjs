@@ -297,7 +297,7 @@ async function loadGcpSimulationProfileData({ rootDirectory, track, questions })
   if (!Array.isArray(taxonomy.cloudDomains) || canonicalJson(taxonomy.cloudDomains) !== canonicalJson(GCP_DOMAIN_IDS)) fail("GCP taxonomy cloud domains are invalid");
 
   const profile = config.profile;
-  exactKeys(profile, ["schemaVersion", "profileId", "profileVersion", "source", "durationMinutes", "questionCount", "blueprint", "interactionPolicy", "nodeDomainMap", "nodeDomainMapEvidence"], "GCP simulation profile");
+  exactKeys(profile, ["schemaVersion", "profileId", "profileVersion", "source", "durationMinutes", "questionCount", "blueprint", "interactionPolicy", "nodeDomainMap", "nodeDomainMapEvidence", "currentAttribution"], "GCP simulation profile");
   if (profile.schemaVersion !== "exam-experience-profile-v2" || profile.profileId !== GCP_SOURCE_PROFILE_ID || profile.profileVersion !== "1") fail("GCP simulation profile identity is invalid");
   exactKeys(profile.source, ["url", "checkedDate", "guideVersion"], "GCP simulation profile source");
   if (typeof profile.source.url !== "string" || typeof profile.source.checkedDate !== "string" || typeof profile.source.guideVersion !== "string") fail("GCP simulation profile source is invalid");
@@ -327,35 +327,22 @@ async function loadGcpSimulationProfileData({ rootDirectory, track, questions })
   for (const [nodeId, domainId] of Object.entries(profile.nodeDomainMap)) if (!GCP_DOMAIN_IDS.includes(domainId)) fail(`GCP nodeDomainMap contains unknown domain for ${nodeId}`);
   exactKeys(profile.nodeDomainMapEvidence, ["artifactPath", "contentVersion", "itemCount", "nodeCount", "ambiguousNodeCount"], "GCP nodeDomainMap evidence");
   const evidenceContentVersion = profile.nodeDomainMapEvidence.contentVersion;
-  if (typeof evidenceContentVersion !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(evidenceContentVersion) || profile.nodeDomainMapEvidence.artifactPath !== `artifacts/tracks/${GCP_TRACK_ID}/${evidenceContentVersion}/track-artifact.json` || profile.nodeDomainMapEvidence.itemCount !== 2981 || profile.nodeDomainMapEvidence.nodeCount !== nodeIds.length || profile.nodeDomainMapEvidence.ambiguousNodeCount !== 0) fail("GCP nodeDomainMap evidence does not match its pinned published artifact identity");
-
-  const publishedPath = path.resolve(rootDirectory, profile.nodeDomainMapEvidence.artifactPath);
-  await assertSecurePath(rootDirectory, publishedPath, "GCP published attribution artifact");
-  const wrapper = await readJson(publishedPath);
-  exactKeys(wrapper, ["artifactBytes", "checksumSha256", "contentVersion", "declaredModes", "familyId", "schemaVersion", "sourceRepositoryCommit", "taxonomyVersion", "trackId"], "GCP published artifact wrapper");
-  if (wrapper.trackId !== GCP_TRACK_ID || wrapper.contentVersion !== evidenceContentVersion || wrapper.familyId !== "certification" || typeof wrapper.artifactBytes !== "string" || wrapper.checksumSha256 !== sha256(wrapper.artifactBytes)) fail("GCP published artifact checksum or pinned identity is invalid");
-  const published = jsonText(wrapper.artifactBytes, publishedPath);
-  if (!isRecord(published) || published.contentVersion !== evidenceContentVersion || !isRecord(published.bank) || published.bank.trackId !== GCP_TRACK_ID || published.bank.contentVersion !== evidenceContentVersion || !Array.isArray(published.bank.items)) fail("GCP published artifact content identity or item inventory is invalid");
-  if (published.bank.items.length !== profile.nodeDomainMapEvidence.itemCount) fail("GCP published artifact item count does not match profile evidence");
+  if (typeof evidenceContentVersion !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(evidenceContentVersion) || profile.nodeDomainMapEvidence.artifactPath !== `artifacts/tracks/${GCP_TRACK_ID}/${evidenceContentVersion}/track-artifact.json` || profile.nodeDomainMapEvidence.itemCount !== 2981 || profile.nodeDomainMapEvidence.nodeCount !== 20 || profile.nodeDomainMapEvidence.ambiguousNodeCount !== 0) fail("GCP nodeDomainMap evidence does not match its pinned published artifact identity");
+  const attribution = profile.currentAttribution;
+  exactKeys(attribution, ["schemaVersion", "contentVersion", "itemCount", "inventorySha256", "crosswalkSha256", "historicalArtifactSha256", "historicalCrosswalkSha256"], "GCP current attribution");
+  if (attribution.schemaVersion !== "gcp-current-attribution-v1" || attribution.contentVersion !== track.contentVersion || !HASH_PATTERN.test(attribution.inventorySha256) || !HASH_PATTERN.test(attribution.crosswalkSha256) || !HASH_PATTERN.test(attribution.historicalArtifactSha256) || !HASH_PATTERN.test(attribution.historicalCrosswalkSha256)) fail("GCP current attribution identity or provenance is invalid");
+  if (attribution.itemCount !== questions.length) fail("GCP current attribution item count does not match canonical source inventory");
 
   const canonicalById = new Map(questions.map((question) => [question.questionId, question]));
   const questionDomains = Object.create(null);
-  const domainsByNode = new Map();
-  const publishedIds = new Set();
-  for (const item of published.bank.items) {
-    if (!isRecord(item) || !nonEmptyString(item.id) || !nonEmptyString(item.nodeId) || !GCP_DOMAIN_IDS.includes(item.domain) || publishedIds.has(item.id)) fail("GCP published artifact contains malformed or duplicate item attribution");
-    publishedIds.add(item.id);
-    const question = canonicalById.get(item.id);
-    if (!question || question.nodeId !== item.nodeId) fail(`GCP published attribution does not exactly match canonical question ${item.id}`);
-    questionDomains[item.id] = item.domain;
-    const domains = domainsByNode.get(item.nodeId) ?? new Set();
-    domains.add(item.domain);
-    domainsByNode.set(item.nodeId, domains);
-  }
-  if (publishedIds.size !== canonicalById.size || [...canonicalById.keys()].some((questionId) => !publishedIds.has(questionId))) fail("GCP published attribution does not cover the canonical question inventory");
-  if (domainsByNode.size !== nodeIds.length || [...domainsByNode.values()].some((domains) => domains.size !== 1)) fail("GCP published attribution has missing or ambiguous node domains");
-  const evidencedMap = Object.fromEntries([...domainsByNode].map(([nodeId, domains]) => [nodeId, [...domains][0]]).sort(([left], [right]) => compareStrings(left, right)));
-  if (canonicalJson(profile.nodeDomainMap) !== canonicalJson(evidencedMap)) fail("GCP nodeDomainMap differs from same-version published question attribution");
+  const currentCrosswalk = questions.map((question) => {
+    const domain = profile.nodeDomainMap[question.nodeId];
+    if (!domain || !GCP_DOMAIN_IDS.includes(domain)) fail(`GCP current attribution is missing or ambiguous for question ${question.questionId}`);
+    questionDomains[question.questionId] = domain;
+    return { questionId: question.questionId, nodeId: question.nodeId, domain };
+  }).sort((left, right) => compareStrings(left.questionId, right.questionId));
+  const inventorySha256 = sha256([...canonicalById.keys()].sort(compareStrings));
+  if (attribution.inventorySha256 !== inventorySha256 || attribution.crosswalkSha256 !== sha256(currentCrosswalk)) fail("GCP current attribution does not match the exact current question inventory and node/domain crosswalk");
 
   const familyConfig = Object.freeze({
     schemaVersion: "patternly-certification-simulation-config-v1",

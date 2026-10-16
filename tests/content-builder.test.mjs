@@ -30,6 +30,7 @@ import {
   validateTrack
 } from "../scripts/build.mjs";
 import { validateBizq05GcpQuestionRelationAmendment } from "../scripts/content/verify-migration.mjs";
+import { verifyGcpAttributionHistory, verifyGcpCurrentAttributionParity } from "../scripts/content/verify-gcp-attribution-history.mjs";
 import { loadTrackProfileData, validateTrackRuntimeBindings } from "../scripts/content/track-runtime-bindings.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
@@ -395,7 +396,7 @@ test("build-all emits exactly nine deterministic artifacts and lock entries", as
   assert.equal(await readFile(path.join(outputRoot, "content-lock.json"), "utf8"), firstLockBytes);
 });
 
-test("GCP simulation profile binds a complete unambiguous node map to its pinned published artifact", async (t) => {
+test("GCP simulation profile validates current-source attribution without reading historical published bank", async (t) => {
   const rootDirectory = path.resolve(".");
   const validated = await validateTrack({ rootDirectory, trackId: "google-cloud-associate-cloud-engineer" });
   const profile = validated.simulationProfiles?.[0];
@@ -414,87 +415,158 @@ test("GCP simulation profile binds a complete unambiguous node map to its pinned
     ["gcp-ace-standard-domain-4", 20]
   ]);
 
-  const publishedPath = path.join(rootDirectory, familyConfig.nodeDomainMapEvidence.artifactPath);
-  const publishedWrapper = JSON.parse(readFileSync(publishedPath, "utf8"));
-  const published = JSON.parse(publishedWrapper.artifactBytes);
-  assert.equal(published.contentVersion, familyConfig.nodeDomainMapEvidence.contentVersion);
-  assert.notEqual(validated.track.contentVersion, familyConfig.nodeDomainMapEvidence.contentVersion, "the approved chapter-rule metadata bump must not relabel historical attribution evidence");
-  assert.equal(published.bank.items.length, familyConfig.nodeDomainMapEvidence.itemCount);
-  const domainsByNode = new Map();
-  for (const item of published.bank.items) {
-    const domains = domainsByNode.get(item.nodeId) ?? new Set();
-    domains.add(item.domain);
-    domainsByNode.set(item.nodeId, domains);
-  }
-  assert.equal(domainsByNode.size, 20);
-  assert.equal([...domainsByNode.values()].filter((domains) => domains.size !== 1).length, 0);
-  const evidencedMap = Object.fromEntries([...domainsByNode].map(([nodeId, domains]) => [nodeId, [...domains][0]]).sort(([left], [right]) => left.localeCompare(right)));
-  assert.deepEqual(familyConfig.nodeDomainMap, evidencedMap);
+  const trackConfig = JSON.parse(await readFile(path.join(rootDirectory, "config/tracks/google-cloud-associate-cloud-engineer.json"), "utf8"));
+  assert.equal(trackConfig.profile.currentAttribution.contentVersion, validated.track.contentVersion);
+  assert.equal(trackConfig.profile.currentAttribution.itemCount, validated.questions.length);
+  assert.equal(trackConfig.profile.currentAttribution.crosswalkSha256, "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51");
+  assert.equal(familyConfig.nodeDomainMapEvidence.contentVersion, "google-cloud-associate-cloud-engineer-authoring-v2026.08.11");
+
+  const isolatedRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-current-attribution-"));
+  t.after(() => rm(isolatedRoot, { recursive: true, force: true }));
+  await mkdir(path.join(isolatedRoot, "config/tracks"), { recursive: true });
+  await mkdir(path.join(isolatedRoot, "config/taxonomy"), { recursive: true });
+  await writeFile(path.join(isolatedRoot, "config/tracks/google-cloud-associate-cloud-engineer.json"), canonicalJson(trackConfig));
+  await writeFile(path.join(isolatedRoot, "config/taxonomy/google-cloud-associate-cloud-engineer.json"), await readFile(path.join(rootDirectory, trackConfig.taxonomyPath), "utf8"));
+  const isolatedProfiles = await loadGcpSimulationProfiles({ rootDirectory: isolatedRoot, track: validated.track, questions: validated.questions });
+  assert.deepEqual(isolatedProfiles, validated.simulationProfiles);
+  const nextTrackVersion = `${validated.track.contentVersion}-test-bump`;
+  const nextConfig = structuredClone(trackConfig);
+  nextConfig.profile.currentAttribution.contentVersion = nextTrackVersion;
+  await writeFile(path.join(isolatedRoot, "config/tracks/google-cloud-associate-cloud-engineer.json"), canonicalJson(nextConfig));
+  const bumpedProfiles = await loadGcpSimulationProfiles({ rootDirectory: isolatedRoot, track: { ...validated.track, contentVersion: nextTrackVersion }, questions: validated.questions });
+  assert.deepEqual(bumpedProfiles, isolatedProfiles, "a current source version bump needs attribution metadata and no historical bank regeneration");
 
   const outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-profile-build-"));
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
-  const built = await buildTrack({ rootDirectory, outputRoot, trackId: "google-cloud-associate-cloud-engineer" });
+  const sourceWithoutPublishedBank = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-build-without-history-"));
+  t.after(() => rm(sourceWithoutPublishedBank, { recursive: true, force: true }));
+  await cp(path.join(rootDirectory, "config"), path.join(sourceWithoutPublishedBank, "config"), { recursive: true });
+  await cp(path.join(rootDirectory, "content"), path.join(sourceWithoutPublishedBank, "content"), { recursive: true });
+  const historicalArtifact = path.join(sourceWithoutPublishedBank, familyConfig.nodeDomainMapEvidence.artifactPath);
+  await assert.rejects(readFile(historicalArtifact), { code: "ENOENT" });
+  const built = await buildTrack({ rootDirectory: sourceWithoutPublishedBank, outputRoot, trackId: "google-cloud-associate-cloud-engineer" });
   assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
-  assert.equal(built.artifact.questions.length, published.bank.items.length);
-  const questionDomains = new Map(built.artifact.questions.map((question) => [question.questionId, question.contentDomainId]));
-  assert.ok(published.bank.items.every((item) => questionDomains.get(item.id) === item.domain));
+  assert.equal(built.artifact.questions.length, 2981);
+  assert.equal(built.lockEntry.sha256, "e399212abf92bac30edcfb1aa04b170306469a8b2a1eab57b8f80f1ee7b37d82");
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+
+  await mkdir(path.dirname(historicalArtifact), { recursive: true });
+  await writeFile(historicalArtifact, "malformed historical artifact");
+  const malformedHistoryOutput = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-malformed-history-build-"));
+  t.after(() => rm(malformedHistoryOutput, { recursive: true, force: true }));
+  const rebuiltWithMalformedHistory = await buildTrack({ rootDirectory: sourceWithoutPublishedBank, outputRoot: malformedHistoryOutput, trackId: "google-cloud-associate-cloud-engineer" });
+  assert.equal(rebuiltWithMalformedHistory.lockEntry.sha256, built.lockEntry.sha256);
+  await rm(historicalArtifact);
+
+  const catalogPath = path.join(sourceWithoutPublishedBank, "content/catalog.json");
+  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  const catalogTrack = catalog.tracks.find(candidate => candidate.trackId === "google-cloud-associate-cloud-engineer");
+  const bumpedContentVersion = `${catalogTrack.contentVersion}-fixture-bump`;
+  catalogTrack.contentVersion = bumpedContentVersion;
+  await writeFile(catalogPath, canonicalJson(catalog));
+  const currentTrackConfigPath = path.join(sourceWithoutPublishedBank, "config/tracks/google-cloud-associate-cloud-engineer.json");
+  const bumpedTrackConfig = JSON.parse(await readFile(currentTrackConfigPath, "utf8"));
+  bumpedTrackConfig.profile.currentAttribution.contentVersion = bumpedContentVersion;
+  await writeFile(currentTrackConfigPath, canonicalJson(bumpedTrackConfig));
+  const bumpedOutputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-bumped-version-build-"));
+  t.after(() => rm(bumpedOutputRoot, { recursive: true, force: true }));
+  const bumpedBuild = await buildTrack({ rootDirectory: sourceWithoutPublishedBank, outputRoot: bumpedOutputRoot, trackId: "google-cloud-associate-cloud-engineer" });
+  assert.equal(bumpedBuild.artifact.contentVersion, bumpedContentVersion);
+  assert.deepEqual(bumpedBuild.artifact.questions, built.artifact.questions);
+  assert.deepEqual(bumpedBuild.artifact.simulationProfiles, built.artifact.simulationProfiles);
+  assert.equal(bumpedBuild.artifact.questions.length, 2981);
+  await assert.rejects(readFile(historicalArtifact), { code: "ENOENT" });
 });
 
-test("GCP historical attribution pin rejects tampered provenance and incomplete or contradictory inventories", async (t) => {
+test("GCP current attribution rejects version, coverage and crosswalk mismatches without historical data", async (t) => {
   const sourceRoot = path.resolve(".");
   const trackId = "google-cloud-associate-cloud-engineer";
   const validated = await validateTrack({ rootDirectory: sourceRoot, trackId });
-  const configPath = path.join(sourceRoot, "config/tracks", `${trackId}.json`);
-  const sourceConfig = JSON.parse(await readFile(configPath, "utf8"));
-  const taxonomyPath = path.join(sourceRoot, sourceConfig.taxonomyPath);
-  const sourceTaxonomy = await readFile(taxonomyPath, "utf8");
-  const evidence = sourceConfig.profile.nodeDomainMapEvidence;
-  const sourceArtifactPath = path.join(sourceRoot, evidence.artifactPath);
-  const sourceWrapper = JSON.parse(await readFile(sourceArtifactPath, "utf8"));
-  const sourceArtifact = JSON.parse(sourceWrapper.artifactBytes);
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-evidence-negative-"));
   t.after(() => rm(rootDirectory, { recursive: true, force: true }));
   await mkdir(path.join(rootDirectory, "config/tracks"), { recursive: true });
-  await mkdir(path.dirname(path.join(rootDirectory, sourceConfig.taxonomyPath)), { recursive: true });
-  await mkdir(path.dirname(path.join(rootDirectory, evidence.artifactPath)), { recursive: true });
-
-  const assertRejected = async (name, mutateConfig = () => {}, mutateWrapper = () => {}) => {
+  await mkdir(path.join(rootDirectory, "config/taxonomy"), { recursive: true });
+  const configPath = path.join(sourceRoot, "config/tracks", `${trackId}.json`);
+  const sourceConfig = JSON.parse(await readFile(configPath, "utf8"));
+  const taxonomyBytes = await readFile(path.join(sourceRoot, sourceConfig.taxonomyPath), "utf8");
+  await writeFile(path.join(rootDirectory, sourceConfig.taxonomyPath), taxonomyBytes);
+  const assertRejected = async (mutateConfig, message) => {
     const config = structuredClone(sourceConfig);
-    const wrapper = structuredClone(sourceWrapper);
     mutateConfig(config);
-    mutateWrapper(wrapper);
     await writeFile(path.join(rootDirectory, `config/tracks/${trackId}.json`), canonicalJson(config), "utf8");
-    await writeFile(path.join(rootDirectory, sourceConfig.taxonomyPath), sourceTaxonomy, "utf8");
-    await writeFile(path.join(rootDirectory, evidence.artifactPath), canonicalJson(wrapper), "utf8");
-    await assert.rejects(loadGcpSimulationProfiles({ rootDirectory, track: validated.track, questions: validated.questions }), undefined, name);
+    await assert.rejects(loadGcpSimulationProfiles({ rootDirectory, track: validated.track, questions: validated.questions }), message);
   };
+  await assertRejected(config => { config.profile.currentAttribution.contentVersion += "-stale"; }, /current attribution identity or provenance/u);
+  await assertRejected(config => { delete config.profile.nodeDomainMap[Object.keys(config.profile.nodeDomainMap)[0]]; }, /nodeDomainMap has an invalid shape/u);
+  await assertRejected(config => { config.profile.nodeDomainMap["organization_projects_policies_services_quotas_and_assets"] = "gcp-ace-standard-domain-2"; }, /exact current question inventory and node\/domain crosswalk/u);
 
-  await loadGcpSimulationProfiles({ rootDirectory: sourceRoot, track: validated.track, questions: validated.questions });
-  await assertRejected("changed evidence path", config => { config.profile.nodeDomainMapEvidence.artifactPath = `artifacts/tracks/${trackId}/other/track-artifact.json`; });
-  await assertRejected("wrapper version mismatch", () => {}, wrapper => { wrapper.contentVersion = `${evidence.contentVersion}-other`; });
-  await assertRejected("wrapper checksum mismatch", () => {}, wrapper => { wrapper.checksumSha256 = "0".repeat(64); });
+  const omittedQuestion = validated.questions.find(question => validated.questions.some(candidate => candidate !== question && candidate.nodeId === question.nodeId));
+  assert.ok(omittedQuestion);
+  const reducedQuestions = validated.questions.filter(question => question !== omittedQuestion);
+  assert.equal(reducedQuestions.length, validated.questions.length - 1);
+  const nextVersion = `${validated.track.contentVersion}-inventory-fixture`;
+  const nextConfig = structuredClone(sourceConfig);
+  const nextCrosswalk = reducedQuestions.map(question => ({
+    questionId: question.questionId,
+    nodeId: question.nodeId,
+    domain: nextConfig.profile.nodeDomainMap[question.nodeId]
+  })).sort((left, right) => left.questionId.localeCompare(right.questionId));
+  nextConfig.profile.currentAttribution.contentVersion = nextVersion;
+  nextConfig.profile.currentAttribution.itemCount = reducedQuestions.length;
+  nextConfig.profile.currentAttribution.inventorySha256 = sha256(reducedQuestions.map(question => question.questionId).sort());
+  nextConfig.profile.currentAttribution.crosswalkSha256 = sha256(nextCrosswalk);
+  await writeFile(path.join(rootDirectory, `config/tracks/${trackId}.json`), canonicalJson(nextConfig), "utf8");
+  const historicalArtifactPath = sourceConfig.profile.nodeDomainMapEvidence.artifactPath;
+  await mkdir(path.dirname(path.join(rootDirectory, historicalArtifactPath)), { recursive: true });
+  await cp(path.join(sourceRoot, historicalArtifactPath), path.join(rootDirectory, historicalArtifactPath));
+  const unchangedHistory = await verifyGcpAttributionHistory({ rootDirectory });
+  assert.equal(unchangedHistory.itemCount, 2981, "historical verification remains independent of the smaller current inventory");
+  const reducedProfiles = await loadGcpSimulationProfiles({
+    rootDirectory,
+    track: { ...validated.track, contentVersion: nextVersion },
+    questions: reducedQuestions
+  });
+  assert.equal(reducedProfiles[0].familyConfig.nodeDomainMapEvidence.itemCount, 2981, "historical evidence retains its fixed count independently of current inventory");
+  assert.equal(nextConfig.profile.currentAttribution.itemCount, 2980);
+});
 
-  const mutateItems = async (name, mutate) => assertRejected(name, () => {}, wrapper => {
-    const artifact = structuredClone(sourceArtifact);
-    mutate(artifact.bank.items);
-    wrapper.artifactBytes = canonicalJson(artifact);
-    wrapper.checksumSha256 = sha256(wrapper.artifactBytes);
-  });
-  await mutateItems("missing pinned question id", items => { items.pop(); });
-  await mutateItems("extra pinned question id", items => { items.push({ ...items[0], id: `${items[0].id}-extra` }); });
-  await mutateItems("duplicate pinned question id", items => { items[1] = structuredClone(items[0]); });
-  await mutateItems("question moved to a different node", items => { items[0].nodeId = items.find(item => item.nodeId !== items[0].nodeId).nodeId; });
-  await mutateItems("question with unknown domain", items => { items[0].domain = "gcp-ace-unknown-domain"; });
-  await mutateItems("ambiguous mixed domains within one node", items => {
-    const first = items[0];
-    const conflicting = items.find(item => item.nodeId === first.nodeId && item.domain === first.domain);
-    conflicting.domain = "gcp-ace-standard-domain-2";
-  });
-  await assertRejected("current node map disagrees with pinned attribution", config => {
-    const [nodeId] = Object.entries(config.profile.nodeDomainMap).find(([, domainId]) => domainId === "gcp-ace-standard-domain-1");
-    config.profile.nodeDomainMap[nodeId] = "gcp-ace-standard-domain-2";
-  });
+test("GCP historical attribution verifier keeps its artifact checksum and crosswalk tamper evident", async (t) => {
+  const sourceRoot = path.resolve(".");
+  const trackId = "google-cloud-associate-cloud-engineer";
+  const validated = await validateTrack({ rootDirectory: sourceRoot, trackId });
+  const result = await verifyGcpAttributionHistory({ rootDirectory: sourceRoot });
+  const migrationParity = await verifyGcpCurrentAttributionParity({ rootDirectory: sourceRoot, track: validated.track, questions: validated.questions });
+  assert.equal(result.itemCount, 2981);
+  assert.equal(result.nodeCount, 20);
+  assert.equal(result.crosswalkSha256, "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51");
+  assert.equal(migrationParity.currentContentVersion, validated.track.contentVersion);
+
+  const config = JSON.parse(await readFile(path.join(sourceRoot, "config/tracks", `${trackId}.json`), "utf8"));
+  const evidence = config.profile.nodeDomainMapEvidence;
+  const sourceWrapper = JSON.parse(await readFile(path.join(sourceRoot, evidence.artifactPath), "utf8"));
+  const copyRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-history-tamper-"));
+  t.after(() => rm(copyRoot, { recursive: true, force: true }));
+  await mkdir(path.join(copyRoot, "config/tracks"), { recursive: true });
+  await mkdir(path.dirname(path.join(copyRoot, evidence.artifactPath)), { recursive: true });
+  const copiedConfigPath = path.join(copyRoot, "config/tracks", `${trackId}.json`);
+  const copiedArtifactPath = path.join(copyRoot, evidence.artifactPath);
+  const invalidProvenanceConfig = structuredClone(config);
+  invalidProvenanceConfig.profile.currentAttribution.historicalArtifactSha256 = "0".repeat(64);
+  await writeFile(copiedConfigPath, canonicalJson(invalidProvenanceConfig));
+  await writeFile(copiedArtifactPath, canonicalJson(sourceWrapper));
+  await assert.rejects(verifyGcpCurrentAttributionParity({ rootDirectory: copyRoot, track: validated.track, questions: validated.questions }), /historical provenance pins differ/u);
+
+  await writeFile(copiedConfigPath, canonicalJson(config));
+  await writeFile(copiedArtifactPath, canonicalJson({ ...sourceWrapper, checksumSha256: "0".repeat(64) }));
+  await assert.rejects(verifyGcpAttributionHistory({ rootDirectory: copyRoot }), /checksum or identity/u);
+
+  const changedArtifact = JSON.parse(sourceWrapper.artifactBytes);
+  changedArtifact.bank.items[0].domain = changedArtifact.bank.items[0].domain === "gcp-ace-standard-domain-1"
+    ? "gcp-ace-standard-domain-2"
+    : "gcp-ace-standard-domain-1";
+  const changedArtifactBytes = canonicalJson(changedArtifact);
+  await writeFile(copiedArtifactPath, canonicalJson({ ...sourceWrapper, artifactBytes: changedArtifactBytes, checksumSha256: sha256(changedArtifactBytes) }));
+  await assert.rejects(verifyGcpAttributionHistory({ rootDirectory: copyRoot }), /checksum or identity/u);
 });
 
 test("Coding Interview simulation profile emits the blueprint and exact checksum-verified pool identities", async (t) => {

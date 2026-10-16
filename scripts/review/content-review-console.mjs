@@ -501,17 +501,18 @@ export async function createContentReviewConsole({ root = ROOT, reviewPath = joi
   });
 }
 
-function html() {
+function html(mutationToken) {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Patternly Content Review Console</title>
 <style>body{font:15px system-ui,sans-serif;margin:0;color:#17202a;background:#f6f7f9}header{padding:20px;background:#17202a;color:white}main{display:grid;grid-template-columns:minmax(260px,35%) 1fr;gap:16px;padding:16px;max-width:1400px;margin:auto}section,article{background:white;border:1px solid #d7dce2;border-radius:8px;padding:14px}input,select,button,textarea{font:inherit;padding:8px;margin:4px 0}input,select,textarea{width:100%;box-sizing:border-box}button{cursor:pointer}.item{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #edf0f2;background:white;padding:10px}.risk{color:#9b1c1c}.muted{color:#5d6873}pre{white-space:pre-wrap;overflow:auto;background:#f1f3f5;padding:10px;border-radius:4px}.field{margin:10px 0}label{display:block;font-weight:600}.status{padding:4px 7px;border-radius:10px;background:#e8edf2;display:inline-block}.stale{background:#ffe3a3}.approved{background:#d5f5dc}.needs_change{background:#fff0c2}.rejected{background:#ffd6d6}</style></head>
 <body><header><h1>Patternly Content Review Console</h1><p>Local/internal review aid. Source files remain authoritative; signals are advisory.</p></header>
 <main><section><form id="filters"><label for="track">Track</label><select id="track"><option value="">All launch tracks</option></select><label for="node">Node</label><input id="node" placeholder="node id"><label for="unit">Mental unit</label><input id="unit" placeholder="mental unit id"><label for="query">Search</label><input id="query" placeholder="prompt, taxonomy, source"><label><input id="risk" type="checkbox" style="width:auto"> advisory risks only</label><button>Refresh items</button></form><p id="count" class="muted"></p><div id="items"></div></section><article><div id="detail" class="muted">Select an item to inspect its decision, feedback, provenance, coverage, and review state.</div></article></main>
 <script>
+const mutationToken=${JSON.stringify(mutationToken)};
 const $=id=>document.getElementById(id); let current=null;
 async function api(path,options){const response=await fetch(path,options);const body=await response.json();if(!response.ok)throw new Error(body.error||'Request failed');return body;}
 async function refresh(){const params=new URLSearchParams();for(const [id,key] of [['track','trackId'],['node','nodeId'],['unit','mentalUnitId'],['query','query']])if($(id).value)params.set(key,$(id).value);if($('risk').checked)params.set('riskOnly','true');const body=await api('/api/items?'+params);$('count').textContent=body.items.length+' items';$('items').replaceChildren(...body.items.map(question=>{const button=document.createElement('button');button.className='item';button.onclick=()=>show(question.trackId,question.questionId);button.innerHTML='<strong>'+escapeHtml(question.questionId||question.questionKey)+'</strong><br><span class="muted">'+escapeHtml(question.nodeId)+' / '+escapeHtml(question.mentalUnitId)+'</span><br>'+escapeHtml(question.prompt.slice(0,180))+'<br><span class="status '+question.review.status+'">'+question.review.status+'</span> '+(question.riskFlags.length?'<span class="risk">'+question.riskFlags.join(', ')+'</span>':'');return button;}));}
-async function show(trackId,questionId){current=await api('/api/items/'+encodeURIComponent(trackId)+'/'+encodeURIComponent(questionId));const detail=$('detail');detail.replaceChildren();const title=document.createElement('h2');title.textContent=current.questionId;detail.append(title);const meta=document.createElement('p');meta.innerHTML='<span class="status '+current.review.status+'">'+current.review.status+'</span> '+escapeHtml(current.sourceFile);detail.append(meta);for(const [label,value] of [['Prompt',current.prompt],['Constraints',(current.item.constraints||[]).join('\\n')],['Taxonomy',JSON.stringify(current.taxonomy,null,2)],['Interaction',JSON.stringify(current.item.interaction||{},null,2)],['Feedback',JSON.stringify(current.item.feedback||{},null,2)],['Coverage',JSON.stringify(current.coverage,null,2)],['Advisory risks',current.riskFlags.join(', ')||'none'],['Changed fields',current.review.changedFields.join(', ')||'none']]){const block=document.createElement('div');block.className='field';const labelNode=document.createElement('label');labelNode.textContent=label;const pre=document.createElement('pre');pre.textContent=value;block.append(labelNode,pre);detail.append(block);}const form=document.createElement('form');form.innerHTML='<label>Outcome<select id="outcome"><option>approved</option><option>needs_change</option><option>rejected</option></select></label><label>Reviewer ID<input id="reviewer" required></label><label>Note<textarea id="note" required></textarea></label><button>Record current outcome</button>';form.onsubmit=async event=>{event.preventDefault();try{const trackId=current.trackId;const questionId=current.questionId;const result=await api('/api/reviews',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({trackId,questionId,outcome:$('outcome').value,reviewerId:$('reviewer').value,note:$('note').value})});if(result.warning)alert(result.warning);await refresh();await show(trackId,questionId);}catch(error){alert(error.message);}};detail.append(form);}
+async function show(trackId,questionId){current=await api('/api/items/'+encodeURIComponent(trackId)+'/'+encodeURIComponent(questionId));const detail=$('detail');detail.replaceChildren();const title=document.createElement('h2');title.textContent=current.questionId;detail.append(title);const meta=document.createElement('p');meta.innerHTML='<span class="status '+current.review.status+'">'+current.review.status+'</span> '+escapeHtml(current.sourceFile);detail.append(meta);for(const [label,value] of [['Prompt',current.prompt],['Constraints',(current.item.constraints||[]).join('\\n')],['Taxonomy',JSON.stringify(current.taxonomy,null,2)],['Interaction',JSON.stringify(current.item.interaction||{},null,2)],['Feedback',JSON.stringify(current.item.feedback||{},null,2)],['Coverage',JSON.stringify(current.coverage,null,2)],['Advisory risks',current.riskFlags.join(', ')||'none'],['Changed fields',current.review.changedFields.join(', ')||'none']]){const block=document.createElement('div');block.className='field';const labelNode=document.createElement('label');labelNode.textContent=label;const pre=document.createElement('pre');pre.textContent=value;block.append(labelNode,pre);detail.append(block);}const form=document.createElement('form');form.innerHTML='<label>Outcome<select id="outcome"><option>approved</option><option>needs_change</option><option>rejected</option></select></label><label>Reviewer ID<input id="reviewer" required></label><label>Note<textarea id="note" required></textarea></label><button>Record current outcome</button>';form.onsubmit=async event=>{event.preventDefault();try{const trackId=current.trackId;const questionId=current.questionId;const result=await api('/api/reviews',{method:'POST',headers:{'content-type':'application/json','x-content-review-token':mutationToken},body:JSON.stringify({trackId,questionId,outcome:$('outcome').value,reviewerId:$('reviewer').value,note:$('note').value})});if(result.warning)alert(result.warning);await refresh();await show(trackId,questionId);}catch(error){alert(error.message);}};detail.append(form);}
 function escapeHtml(value){return String(value).replace(/[&<>\"']/g,character=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[character]));}
 async function init(){const catalog=await api('/api/catalog');for(const track of catalog.tracks){const option=document.createElement('option');option.value=track.trackId;option.textContent=track.trackId+' ('+track.itemCount+')';$('track').append(option);}await refresh();} $('filters').onsubmit=event=>{event.preventDefault();refresh().catch(error=>alert(error.message));};init().catch(error=>alert(error.message));
 </script></body></html>`;
@@ -531,14 +532,62 @@ function json(response, status, value) {
   response.end(JSON.stringify(value));
 }
 
+// Node may merge/discard duplicate headers in request.headers; require one on the wire.
+function singleHeader(request, name) {
+  const values = [];
+  for (let index = 0; index < request.rawHeaders.length; index += 2) {
+    if (request.rawHeaders[index].toLowerCase() === name) values.push(request.rawHeaders[index + 1]);
+  }
+  return values.length === 1 ? values[0] : undefined;
+}
+
 export async function startContentReviewConsole({ root = ROOT, reviewPath = join(root, CONTENT_REVIEW_OUTCOMES_PATH), host = "127.0.0.1", port = 4173, reviewStoreFs = defaultReviewStoreFs } = {}) {
+  if (!["127.0.0.1", "::1"].includes(host)) throw new Error("The review console must bind to literal loopback (127.0.0.1 or ::1).");
   const service = await createContentReviewConsole({ root, reviewPath, reviewStoreFs });
+  const mutationToken = randomUUID();
+  let authority;
+  let origin;
   const server = createServer(async (request, response) => {
     try {
-      const url = new URL(request.url ?? "/", `http://${host}`);
+      // Check Host even on reads: a rebinding origin must never receive the UI token.
+      if (singleHeader(request, "host") !== authority) {
+        json(response, 403, { error: "Invalid console Host." });
+        return;
+      }
+      if (!["GET", "POST"].includes(request.method)) {
+        response.setHeader("Allow", "GET, POST");
+        json(response, 405, { error: "Method not allowed." });
+        return;
+      }
+      const url = new URL(request.url ?? "/", origin);
+      if (url.origin !== origin) {
+        json(response, 403, { error: "Invalid console request target." });
+        return;
+      }
+      const mutationRoute = ["/api/reviews", "/api/reviews/batch"].includes(url.pathname);
+      if (mutationRoute && request.method !== "POST") {
+        response.setHeader("Allow", "POST");
+        json(response, 405, { error: "Method not allowed." });
+        return;
+      }
+      // A single boundary protects every HTTP write before body parsing or store access.
+      if (request.method === "POST") {
+        if (singleHeader(request, "origin") !== origin) {
+          json(response, 403, { error: "Invalid console Origin." });
+          return;
+        }
+        if (!/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(singleHeader(request, "content-type") ?? "")) {
+          json(response, 415, { error: "Expected application/json with optional charset=utf-8." });
+          return;
+        }
+        if (singleHeader(request, "x-content-review-token") !== mutationToken) {
+          json(response, 403, { error: "Invalid console UI token. Reload the console page." });
+          return;
+        }
+      }
       if (request.method === "GET" && url.pathname === "/") {
-        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-        response.end(html());
+        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Frame-Options": "DENY", "Content-Security-Policy": "frame-ancestors 'none'" });
+        response.end(html(mutationToken));
         return;
       }
       if (request.method === "GET" && url.pathname === "/api/catalog") {
@@ -578,7 +627,10 @@ export async function startContentReviewConsole({ root = ROOT, reviewPath = join
     server.once("error", reject);
     server.listen(port, host, resolveServer);
   });
-  return { server, service, address: server.address() };
+  const address = server.address();
+  authority = `${address.family === "IPv6" ? `[${address.address}]` : address.address}:${address.port}`;
+  origin = `http://${authority}`;
+  return { server, service, address };
 }
 
 function parseArguments(argumentsList) {

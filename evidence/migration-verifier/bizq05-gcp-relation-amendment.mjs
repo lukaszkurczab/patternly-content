@@ -1,0 +1,60 @@
+// Fixed accepted BIZQ-05 pins; the JSON proof is validated against these values.
+export const BIZQ05_GCP_RELATION_AMENDMENT = Object.freeze({
+  path: "evidence/business-quality/bizq-05-gcp-question-relations-01.json",
+  schemaVersion: "patternly-bizq05-gcp-question-relations-v1",
+  trackId: "google-cloud-associate-cloud-engineer",
+  contentVersion: "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1",
+  sourcePath: "content/google-cloud-associate-cloud-engineer/organization_projects_policies_services_quotas_and_assets/GCPACE-N01-B04.json",
+  predecessorCommit: "cf96d87f9bb874ea3c2b7532c40368b083c80823",
+  predecessorSourceSha256: "bf8182e1435819b775d1b4c22cef4ad8a13d9dc5a829a655861bd51eaf6c6d6f",
+  sourceSha256: "a12d404de3e440766e324784b60a3c225adaf0efe3e66313b36f1d985c17ab1b",
+  questionSetSha256: "bf8182e1435819b775d1b4c22cef4ad8a13d9dc5a829a655861bd51eaf6c6d6f",
+  questionIds: Object.freeze([
+    "gcp-ace-gcpace-n01-b04-001", "gcp-ace-gcpace-n01-b04-002", "gcp-ace-gcpace-n01-b04-003",
+    "gcp-ace-gcpace-n01-b04-004", "gcp-ace-gcpace-n01-b04-005", "gcp-ace-gcpace-n01-b04-006",
+    "gcp-ace-gcpace-n01-b04-007", "gcp-ace-gcpace-n01-b04-008", "gcp-ace-gcpace-n01-b04-009",
+    "gcp-ace-gcpace-n01-b04-010", "gcp-ace-gcpace-n01-b04-011", "gcp-ace-gcpace-n01-b04-012",
+    "gcp-ace-gcpace-n01-b04-013", "gcp-ace-gcpace-n01-b04-014", "gcp-ace-gcpace-n01-b04-015",
+    "gcp-ace-gcpace-n01-b04-016", "gcp-ace-gcpace-n01-b04-017", "gcp-ace-gcpace-n01-b04-018",
+    "gcp-ace-gcpace-n01-b04-019", "gcp-ace-gcpace-n01-b04-020", "gcp-ace-gcpace-n01-b04-021",
+    "gcp-ace-gcpace-n01-b04-022"
+  ]),
+  relations: Object.freeze([
+    Object.freeze({
+      questionId: "gcp-ace-gcpace-n01-b04-006",
+      questionRelation: Object.freeze({
+        changedCondition: "The first item concerns shutdown of the whole project; the paired item disables only one API while the project and its other services remain active.",
+        counterpartQuestionId: "gcp-ace-gcpace-n01-b04-007",
+        decisionBoundary: "A project shutdown changes project lifecycle and recovery state; disabling one API changes only that service’s enabled state.",
+        kind: "condition_contrast"
+      })
+    }),
+    Object.freeze({
+      questionId: "gcp-ace-gcpace-n01-b04-007",
+      questionRelation: Object.freeze({
+        changedCondition: "The first item concerns shutdown of the whole project; the paired item disables only one API while the project and its other services remain active.",
+        counterpartQuestionId: "gcp-ace-gcpace-n01-b04-006",
+        decisionBoundary: "A project shutdown changes project lifecycle and recovery state; disabling one API changes only that service’s enabled state.",
+        kind: "condition_contrast"
+      })
+    }),
+    Object.freeze({
+      questionId: "gcp-ace-gcpace-n01-b04-019",
+      questionRelation: Object.freeze({
+        changedCondition: "The first item uses a CLI command with app-dev as the active project while app-prod is intended; the paired item has an API enabled in app-dev while the workload runs in app-prod.",
+        counterpartQuestionId: "gcp-ace-gcpace-n01-b04-020",
+        decisionBoundary: "CLI project selection determines the command target; API enablement is project-scoped and must be repeated or verified in the workload project.",
+        kind: "near_variant"
+      })
+    }),
+    Object.freeze({
+      questionId: "gcp-ace-gcpace-n01-b04-020",
+      questionRelation: Object.freeze({
+        changedCondition: "The first item uses a CLI command with app-dev as the active project while app-prod is intended; the paired item has an API enabled in app-dev while the workload runs in app-prod.",
+        counterpartQuestionId: "gcp-ace-gcpace-n01-b04-019",
+        decisionBoundary: "CLI project selection determines the command target; API enablement is project-scoped and must be repeated or verified in the workload project.",
+        kind: "near_variant"
+      })
+    })
+  ])
+});

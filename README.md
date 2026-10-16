@@ -59,6 +59,19 @@ the lock remains, the outcome is already committed: verify no writer is active
 for that store before manually removing the sidecar `.lock` file. Atomic rename
 protects handled write failures; it is not a power-loss transaction guarantee.
 
+The HTTP console binds only to literal loopback (`127.0.0.1`, or `::1` via
+its programmatic API). Open the exact URL printed by `npm run review:console`;
+`localhost` aliases and other Host/port combinations are rejected. Both POST
+routes (`/api/reviews` and `/api/reviews/batch`) require that exact Origin,
+`application/json` (optionally `charset=utf-8`), and the per-process UI token
+sent by the console. Reload the page after restarting the server. Missing or
+foreign Origin, duplicate security headers, other content types and methods
+cannot write outcomes. The console does not enable CORS or cross-origin framing.
+This is local browser request protection, not authentication against local
+processes/users or a human approval/publishing grant. CLI review remains a
+local operator action. Browser private-network reachability is a separate fact
+from server-side rejection.
+
 ## Shared content builder (SIMP-02)
 
 The canonical v1 builder reads one track at a time from

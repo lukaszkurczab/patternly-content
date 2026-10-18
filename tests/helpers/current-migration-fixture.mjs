@@ -21,7 +21,8 @@ const BUSINESS_QUALITY_PROOFS = [
   "bizq-01-ood-node-closure-21.json",
   "bizq-01-ood-node-closure-22.json",
   "bizq-01-ood-node-closure-23.json",
-  "bizq-01-ood-node-closure-24.json"
+  "bizq-01-ood-node-closure-24.json",
+  "ood-20261013-explanation-corrections.json"
 ];
 
 /** Copy the actual canonical content and every fixed producer proof needed by verifyMigration. */

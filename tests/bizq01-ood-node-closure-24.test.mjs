@@ -8,7 +8,7 @@ import test, { after, before } from "node:test";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { sha256 } from "../scripts/build.mjs";
 import { MigrationVerificationError, verifyMigration } from "../scripts/content/verify-migration.mjs";
-import { copyCurrentMigrationFixture } from "./helpers/current-migration-fixture.mjs";
+import { copyOodCorrectionMigrationFixture as copyCurrentMigrationFixture } from "./helpers/ood-correction-migration-fixture.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const trackId = "object-oriented-design-interview";

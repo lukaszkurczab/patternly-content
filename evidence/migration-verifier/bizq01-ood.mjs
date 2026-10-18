@@ -5928,6 +5928,18 @@ export const BIZQ01_OOD_COHORT24_PROOF = Object.freeze({
   })
 });
 
+export const OOD_EXPLANATION_CORRECTIONS_20261013_PROOF = Object.freeze({
+  path: "evidence/business-quality/ood-20261013-explanation-corrections.json",
+  sha256: "f8de1a613c65e28bc31d20e2908e5ce14744db82814e8284e6e1e279be724bac",
+  questionSetSha256: "95457ba17e78c00912b1cf8ecc428c9e052d23272332619423d825421b28f59b",
+  schemaVersion: "patternly-ood-explanation-corrections-v1",
+  scope: "OOD-20261013-01–03: explanation-only authoring corrections; no admission or publication",
+  trackId: "object-oriented-design-interview",
+  beforeContentVersion: "object-oriented-design-interview-authoring-v2026.10.05-bizq01-24-bizq02-v2-bizq03-planning-v2",
+  contentVersion: "object-oriented-design-interview-authoring-v2026.10.05-bizq01-24-bizq02-v2-bizq03-planning-v2-ood-20261013-01-03",
+  itemCount: 39
+});
+
 export const BIZQ01_OOD_COHORT22_PROOF = Object.freeze({
   path: "evidence/business-quality/bizq-01-ood-node-closure-22.json",
   sha256: "5987128d427d0362b2fe83f6ab62bf2483169374c51941bf23fc3b192f0e089c",

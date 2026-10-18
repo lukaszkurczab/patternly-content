@@ -30,6 +30,7 @@ import {
   validateTrack
 } from "../scripts/build.mjs";
 import { validateBizq05GcpQuestionRelationAmendment } from "../scripts/content/verify-migration.mjs";
+import { OOD_EXPLANATION_CORRECTIONS_20261013_PROOF } from "../evidence/migration-verifier/bizq01-ood.mjs";
 import { verifyGcpAttributionHistory, verifyGcpCurrentAttributionParity } from "../scripts/content/verify-gcp-attribution-history.mjs";
 import { loadTrackProfileData, validateTrackRuntimeBindings } from "../scripts/content/track-runtime-bindings.mjs";
 
@@ -418,7 +419,7 @@ test("GCP simulation profile validates current-source attribution without readin
   const trackConfig = JSON.parse(await readFile(path.join(rootDirectory, "config/tracks/google-cloud-associate-cloud-engineer.json"), "utf8"));
   assert.equal(trackConfig.profile.currentAttribution.contentVersion, validated.track.contentVersion);
   assert.equal(trackConfig.profile.currentAttribution.itemCount, validated.questions.length);
-  assert.equal(trackConfig.profile.currentAttribution.crosswalkSha256, "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51");
+  assert.equal(trackConfig.profile.currentAttribution.crosswalkSha256, "05c08196b41c053a02ec58d6d84673eee1c3008a70bae8a44dadb073c46f9ec0");
   assert.equal(familyConfig.nodeDomainMapEvidence.contentVersion, "google-cloud-associate-cloud-engineer-authoring-v2026.08.11");
 
   const isolatedRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-current-attribution-"));
@@ -447,7 +448,7 @@ test("GCP simulation profile validates current-source attribution without readin
   const built = await buildTrack({ rootDirectory: sourceWithoutPublishedBank, outputRoot, trackId: "google-cloud-associate-cloud-engineer" });
   assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
   assert.equal(built.artifact.questions.length, 2981);
-  assert.equal(built.lockEntry.sha256, "e399212abf92bac30edcfb1aa04b170306469a8b2a1eab57b8f80f1ee7b37d82");
+  assert.equal(built.lockEntry.sha256, "a1cb5d3162401b735efa25504c0ae1c3cf849d9317cf1818dbbb7ef37b408210");
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
 
   await mkdir(path.dirname(historicalArtifact), { recursive: true });
@@ -530,37 +531,57 @@ test("GCP current attribution rejects version, coverage and crosswalk mismatches
   assert.equal(nextConfig.profile.currentAttribution.itemCount, 2980);
 });
 
-test("GCP historical attribution verifier keeps its artifact checksum and crosswalk tamper evident", async (t) => {
+test("GCP historical attribution remains checksum-pinned while the current semantic successor has a distinct question map", async (t) => {
   const sourceRoot = path.resolve(".");
   const trackId = "google-cloud-associate-cloud-engineer";
   const validated = await validateTrack({ rootDirectory: sourceRoot, trackId });
   const result = await verifyGcpAttributionHistory({ rootDirectory: sourceRoot });
-  const migrationParity = await verifyGcpCurrentAttributionParity({ rootDirectory: sourceRoot, track: validated.track, questions: validated.questions });
   assert.equal(result.itemCount, 2981);
   assert.equal(result.nodeCount, 20);
   assert.equal(result.crosswalkSha256, "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51");
-  assert.equal(migrationParity.currentContentVersion, validated.track.contentVersion);
+  assert.ok(validated.questions.some(question => question.questionId === "gcp-ace-gcpace-n02-b05-019"));
+  assert.equal(validated.questions.some(question => question.questionId === "gcp-ace-gcpace-n02-b05-010"), false);
+  // This verifier intentionally means exact historical parity, not lawful succession.
+  await assert.rejects(verifyGcpCurrentAttributionParity({ rootDirectory: sourceRoot, track: validated.track, questions: validated.questions }), /differs from the verified historical question map/u);
 
   const config = JSON.parse(await readFile(path.join(sourceRoot, "config/tracks", `${trackId}.json`), "utf8"));
   const evidence = config.profile.nodeDomainMapEvidence;
   const sourceWrapper = JSON.parse(await readFile(path.join(sourceRoot, evidence.artifactPath), "utf8"));
+  const frozenArtifact = JSON.parse(sourceWrapper.artifactBytes);
+  const historicalQuestions = frozenArtifact.bank.items.map(item => ({ questionId: item.id, nodeId: item.nodeId }));
+  const historicalVersion = "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1-bizq03-planning-v2";
+  const historicalTrack = { ...validated.track, contentVersion: historicalVersion };
+  const frozenConfig = structuredClone(config);
+  frozenConfig.profile.currentAttribution = {
+    schemaVersion: "gcp-current-attribution-v1",
+    contentVersion: historicalVersion,
+    itemCount: 2981,
+    inventorySha256: "483d91441ff1777edf23a147570ecf80cbcb5556c3adf7b1fe8c95af47d6d371",
+    crosswalkSha256: "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51",
+    historicalArtifactSha256: "732f915e43542ca1318bf32aafd1f2cfab77012eb3c8d236a362a92a993740e4",
+    historicalCrosswalkSha256: "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51"
+  };
   const copyRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-history-tamper-"));
   t.after(() => rm(copyRoot, { recursive: true, force: true }));
   await mkdir(path.join(copyRoot, "config/tracks"), { recursive: true });
   await mkdir(path.dirname(path.join(copyRoot, evidence.artifactPath)), { recursive: true });
   const copiedConfigPath = path.join(copyRoot, "config/tracks", `${trackId}.json`);
   const copiedArtifactPath = path.join(copyRoot, evidence.artifactPath);
-  const invalidProvenanceConfig = structuredClone(config);
+  await writeFile(copiedConfigPath, canonicalJson(frozenConfig));
+  await writeFile(copiedArtifactPath, canonicalJson(sourceWrapper));
+  const parity = await verifyGcpCurrentAttributionParity({ rootDirectory: copyRoot, track: historicalTrack, questions: historicalQuestions });
+  assert.equal(parity.currentContentVersion, historicalVersion);
+
+  const invalidProvenanceConfig = structuredClone(frozenConfig);
   invalidProvenanceConfig.profile.currentAttribution.historicalArtifactSha256 = "0".repeat(64);
   await writeFile(copiedConfigPath, canonicalJson(invalidProvenanceConfig));
-  await writeFile(copiedArtifactPath, canonicalJson(sourceWrapper));
-  await assert.rejects(verifyGcpCurrentAttributionParity({ rootDirectory: copyRoot, track: validated.track, questions: validated.questions }), /historical provenance pins differ/u);
+  await assert.rejects(verifyGcpCurrentAttributionParity({ rootDirectory: copyRoot, track: historicalTrack, questions: historicalQuestions }), /historical provenance pins differ/u);
 
-  await writeFile(copiedConfigPath, canonicalJson(config));
+  await writeFile(copiedConfigPath, canonicalJson(frozenConfig));
   await writeFile(copiedArtifactPath, canonicalJson({ ...sourceWrapper, checksumSha256: "0".repeat(64) }));
   await assert.rejects(verifyGcpAttributionHistory({ rootDirectory: copyRoot }), /checksum or identity/u);
 
-  const changedArtifact = JSON.parse(sourceWrapper.artifactBytes);
+  const changedArtifact = structuredClone(frozenArtifact);
   changedArtifact.bank.items[0].domain = changedArtifact.bank.items[0].domain === "gcp-ace-standard-domain-1"
     ? "gcp-ace-standard-domain-2"
     : "gcp-ace-standard-domain-1";
@@ -857,6 +878,14 @@ test("Historical manifests retain identity while current GCP source version reco
 
   // Historical candidate and migration identities remain frozen above. GCP question metadata has its own current source version.
   for (const track of realCatalog.tracks) {
+    if (track.trackId === "google-cloud-associate-cloud-engineer") {
+      assert.equal(track.contentVersion, "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1-bizq03-planning-v2-gcp-20261018-fixes-v1", track.trackId);
+      continue;
+    }
+    if (track.trackId === OOD_EXPLANATION_CORRECTIONS_20261013_PROOF.trackId) {
+      assert.equal(track.contentVersion, OOD_EXPLANATION_CORRECTIONS_20261013_PROOF.contentVersion, track.trackId);
+      continue;
+    }
     if (track.trackId === "frontend-system-design-interview") {
       assert.equal(track.contentVersion, "frontend-system-design-interview-fesd-n08-v2026.10.11", track.trackId);
       continue;
@@ -867,8 +896,7 @@ test("Historical manifests retain identity while current GCP source version reco
     }
     const expectedSourceVersion = track.trackId === "backend-system-design-interview"
       ? "backend-system-design-interview-authoring-v2026.10.11-bizq01-15-bizq02-v2"
-      : track.trackId === "google-cloud-associate-cloud-engineer"
-      ? "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1"
+
       : track.trackId === "aws-certified-solutions-architect-associate"
         ? "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1"
       : `${completionBaselineVersions.get(track.trackId)}-bizq02-v2`;

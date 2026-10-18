@@ -19,6 +19,6 @@ export const EXPECTED_CURRENT_PRODUCER_BANKS = Object.freeze({
   }),
   "object-oriented-design-interview": Object.freeze({
     questionCount: 1413,
-    questionSetSha256: "c92a9f04488efb4ef7a5fa8b3257495c21e6c62125123df8073141c60000b2d8"
+    questionSetSha256: "95457ba17e78c00912b1cf8ecc428c9e052d23272332619423d825421b28f59b"
   })
 });

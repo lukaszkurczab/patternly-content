@@ -26,7 +26,8 @@ import {
   BIZQ01_OOD_COHORT22_PROOF,
   BIZQ01_OOD_COHORT21_PROOF,
   BIZQ01_OOD_COHORT20_PROOF,
-  BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF
+  BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF,
+  OOD_EXPLANATION_CORRECTIONS_20261013_PROOF
 } from "../../evidence/migration-verifier/bizq01-ood.mjs";
 import { BIZQ01_PROOF } from "../../evidence/migration-verifier/bizq01-besd-slice.mjs";
 import { EXPECTED_CURRENT_PRODUCER_BANKS } from "../../evidence/migration-verifier/current-producer-banks.mjs";
@@ -1165,6 +1166,31 @@ const BIZQ01_OOD_REASON_AMENDMENT_19A_ROOT_KEYS = ["schemaVersion", "scope", "tr
 const BIZQ01_OOD_REASON_AMENDMENT_19A_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
 const BIZQ01_OOD_REASON_AMENDMENT_19A_ITEM_KEYS = ["sourceFile", "questionId", "mentalUnitId", "beforeReason", "reason", "beforeQuestionSha256", "questionSha256"];
 const OOD_REASON_AMENDMENT_19A_PRIVATE_CONTEXT = Symbol("fixed OOD reason amendment 19a historical source context");
+const OOD_EXPLANATION_CORRECTION_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "items"];
+const OOD_EXPLANATION_CORRECTION_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256"];
+const OOD_EXPLANATION_CORRECTION_ITEM_KEYS = ["questionId", "sourceFile", "identityAction", "identityReason", "beforeQuestion", "currentQuestion"];
+const OOD_EXPLANATION_CORRECTION_ALLOWED_PATHS = new Set([
+  "feedback.details.boundaryOrTradeoff",
+  "feedback.details.errorCorrection",
+  "feedback.details.mechanismOrProperty",
+  "feedback.messages[].text",
+  "feedback.reason"
+]);
+
+function oodHistoricalSourceOverridesFor(accepted, overrides, label) {
+  if (overrides === undefined) return undefined;
+  if (!(overrides instanceof Map)) fail("EVIDENCE_VALUE", `${label} historical source overrides must be a fixed proof map.`);
+  const applicable = new Map();
+  for (const source of accepted.sourceFiles) {
+    const bytes = overrides.get(source.sourceFile);
+    if (bytes === undefined) continue;
+    if (!Buffer.isBuffer(bytes) || sha256(bytes) !== source.sourceSha256) {
+      fail("HASH_MISMATCH", `${label} historical source override does not match the fixed source hash for ${source.sourceFile}.`);
+    }
+    applicable.set(source.sourceFile, bytes);
+  }
+  return applicable;
+}
 
 const BIZQ01_OOD_COHORT17_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "identityAction", "identityReason", "confirmedDefects", "replacements"];
 const BIZQ01_OOD_COHORT17_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
@@ -1172,9 +1198,10 @@ const BIZQ01_OOD_COHORT17_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "so
 const BIZQ01_OOD_COHORT16_ROOT_KEYS = ["schemaVersion", "scope", "trackId", "beforeProducerCommit", "beforeContentVersion", "contentVersion", "beforeQuestionSetSha256", "questionSetSha256", "sourceFiles", "identityAction", "identityReason", "confirmedDefects", "replacements"];
 const BIZQ01_OOD_COHORT16_SOURCE_KEYS = ["sourceFile", "beforeSourceSha256", "sourceSha256", "nodeId", "mentalUnitId"];
 
-async function validateBizq01OodCohort16Proof(contentRoot, canonical, evidence) {
+async function validateBizq01OodCohort16Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes) {
   const accepted = BIZQ01_OOD_COHORT16_PROOF;
   const label = accepted.scope;
+  const applicableExplanationSourceBytes = oodHistoricalSourceOverridesFor(accepted, explanationHistoricalSourceBytes, label);
   const projectRoot = path.dirname(contentRoot);
   const proofPath = path.join(projectRoot, accepted.path);
   const proofInfo = await lstat(proofPath).catch((error) => {
@@ -1214,7 +1241,8 @@ async function validateBizq01OodCohort16Proof(contentRoot, canonical, evidence) 
     const sourcePath = path.resolve(projectRoot, ...entry.sourceFile.split("/"));
     await rejectSymlinkAncestors(sourcePath, `${sourceLabel}.sourceFile`);
     await regularPath(sourcePath, `${sourceLabel}.sourceFile`, "file");
-    const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    const diskSourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    const sourceBytes = applicableExplanationSourceBytes?.get(source.sourceFile) ?? diskSourceBytes;
     if (sha256(sourceBytes) !== source.sourceSha256) fail("HASH_MISMATCH", `${sourceLabel}.sourceFile does not match the fixed current source hash.`);
     let questions;
     try { questions = JSON.parse(sourceBytes.toString("utf8")); }
@@ -1361,18 +1389,18 @@ async function validateBizq01OodCohort16Proof(contentRoot, canonical, evidence) 
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true, explanationHistoricalSourceBytes);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged source13, source12, and source11 proofs for historical validation.`);
   return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...replacements] };
 }
 
 
-async function validateBizq01OodCohort17Proof(contentRoot, canonical, evidence) {
-  return validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, BIZQ01_OOD_COHORT17_PROOF);
+async function validateBizq01OodCohort17Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes) {
+  return validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, BIZQ01_OOD_COHORT17_PROOF, undefined, undefined, explanationHistoricalSourceBytes);
 }
 
 // Closed reviewed descriptor only: proof input cannot select approval scope or mappings.
-async function validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, accepted, privateHistoricalSourceBytes, privateContext) {
+async function validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, accepted, privateHistoricalSourceBytes, privateContext, explanationHistoricalSourceBytes) {
   if (accepted !== BIZQ01_OOD_COHORT17_PROOF && accepted !== BIZQ01_OOD_COHORT19_PROOF) {
     fail("EVIDENCE_VALUE", "Unsupported private OOD cohort descriptor.");
   }
@@ -1388,6 +1416,7 @@ async function validateBizq01OodClosedCohortProof(contentRoot, canonical, eviden
     fail("EVIDENCE_VALUE", "A private historical context requires its fixed source buffers.");
   }
   const label = accepted.scope;
+  const applicableExplanationSourceBytes = oodHistoricalSourceOverridesFor(accepted, explanationHistoricalSourceBytes, label);
   const projectRoot = path.dirname(contentRoot);
   const proofPath = path.join(projectRoot, accepted.path);
   const proofInfo = await lstat(proofPath).catch((error) => {
@@ -1428,7 +1457,7 @@ async function validateBizq01OodClosedCohortProof(contentRoot, canonical, eviden
     await rejectSymlinkAncestors(sourcePath, `${sourceLabel}.sourceFile`);
     await regularPath(sourcePath, `${sourceLabel}.sourceFile`, "file");
     const diskSourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
-    const sourceBytes = privateHistoricalSourceBytes?.get(source.sourceFile) ?? diskSourceBytes;
+    const sourceBytes = privateHistoricalSourceBytes?.get(source.sourceFile) ?? applicableExplanationSourceBytes?.get(source.sourceFile) ?? diskSourceBytes;
     if (sha256(sourceBytes) !== source.sourceSha256) fail("HASH_MISMATCH", `${sourceLabel}.sourceFile does not match the fixed current source hash.`);
     let questions;
     try { questions = JSON.parse(sourceBytes.toString("utf8")); }
@@ -1575,12 +1604,12 @@ async function validateBizq01OodClosedCohortProof(contentRoot, canonical, eviden
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true, explanationHistoricalSourceBytes);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires its unchanged predecessor proof chain for historical validation.`);
   return { trackId: accepted.trackId, replacements: [...predecessor.replacements, ...replacements] };
 }
 
-async function validateBizq01OodReasonAmendment19a(contentRoot, canonical, evidence) {
+async function validateBizq01OodReasonAmendment19a(contentRoot, canonical, evidence, explanationHistoricalSourceBytes) {
   const accepted = BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF;
   const label = accepted.scope;
   const projectRoot = path.dirname(contentRoot);
@@ -1728,7 +1757,8 @@ async function validateBizq01OodReasonAmendment19a(contentRoot, canonical, evide
     evidence,
     BIZQ01_OOD_COHORT19_PROOF,
     privateHistoricalSourceBytes,
-    OOD_REASON_AMENDMENT_19A_PRIVATE_CONTEXT
+    OOD_REASON_AMENDMENT_19A_PRIVATE_CONTEXT,
+    explanationHistoricalSourceBytes
   );
   if (!semanticProof) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v19 predecessor proof.`);
   return {
@@ -1737,7 +1767,7 @@ async function validateBizq01OodReasonAmendment19a(contentRoot, canonical, evide
   };
 }
 
-async function validateBizq01OodCohort21Proof(contentRoot, canonical, evidence) {
+async function validateBizq01OodCohort21Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes) {
   const accepted = BIZQ01_OOD_COHORT21_PROOF.descriptor;
   const label = accepted.scope;
   const projectRoot = path.dirname(contentRoot);
@@ -1895,7 +1925,7 @@ async function validateBizq01OodCohort21Proof(contentRoot, canonical, evidence) 
     catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions)
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true, explanationHistoricalSourceBytes);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v20 predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -1905,7 +1935,7 @@ async function validateBizq01OodCohort21Proof(contentRoot, canonical, evidence) 
   };
 }
 
-async function validateBizq01OodCohort23Proof(contentRoot, canonical, evidence) {
+async function validateBizq01OodCohort23Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes) {
   const accepted = BIZQ01_OOD_COHORT23_PROOF.descriptor;
   const label = accepted.scope;
   const projectRoot = path.dirname(contentRoot);
@@ -2083,7 +2113,7 @@ async function validateBizq01OodCohort23Proof(contentRoot, canonical, evidence) 
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true, explanationHistoricalSourceBytes);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v22 predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -2094,7 +2124,7 @@ async function validateBizq01OodCohort23Proof(contentRoot, canonical, evidence) 
 }
 
 
-async function validateBizq01OodCohort24Proof(contentRoot, canonical, evidence) {
+async function validateBizq01OodCohort24Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes) {
   const accepted = BIZQ01_OOD_COHORT24_PROOF.descriptor;
   const label = accepted.scope;
   const projectRoot = path.dirname(contentRoot);
@@ -2272,7 +2302,7 @@ async function validateBizq01OodCohort24Proof(contentRoot, canonical, evidence) 
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true, explanationHistoricalSourceBytes);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v23 predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -2283,7 +2313,7 @@ async function validateBizq01OodCohort24Proof(contentRoot, canonical, evidence) 
 }
 
 
-async function validateBizq01OodCohort22Proof(contentRoot, canonical, evidence) {
+async function validateBizq01OodCohort22Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes) {
   const accepted = BIZQ01_OOD_COHORT22_PROOF.descriptor;
   const label = accepted.scope;
   const projectRoot = path.dirname(contentRoot);
@@ -2441,7 +2471,7 @@ async function validateBizq01OodCohort22Proof(contentRoot, canonical, evidence) 
     catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions)
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true, explanationHistoricalSourceBytes);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed v21 predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -2451,7 +2481,7 @@ async function validateBizq01OodCohort22Proof(contentRoot, canonical, evidence) 
   };
 }
 
-async function validateBizq01OodCohort20Proof(contentRoot, canonical, evidence) {
+async function validateBizq01OodCohort20Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes) {
   const accepted = BIZQ01_OOD_COHORT20_PROOF.descriptor;
   const label = accepted.scope;
   const projectRoot = path.dirname(contentRoot);
@@ -2636,7 +2666,7 @@ async function validateBizq01OodCohort20Proof(contentRoot, canonical, evidence) 
     questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions),
     questionLocations: predecessorLocations
   };
-  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true);
+  const predecessor = await loadBizq01OodSemanticProof(contentRoot, predecessorCanonical, evidence, undefined, true, explanationHistoricalSourceBytes);
   if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed 19a predecessor proof chain.`);
   return {
     trackId: accepted.trackId,
@@ -2646,9 +2676,199 @@ async function validateBizq01OodCohort20Proof(contentRoot, canonical, evidence) 
   };
 }
 
-async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, privateHistoricalSourceBytes, historicalPredecessor = false) {
+function assertOodExplanationOnlyChange(before, current, label) {
+  if (!before || !current || before.questionId !== current.questionId) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must preserve the exact question identity.`);
+  }
+  const beforeCopy = structuredClone(before);
+  const currentCopy = structuredClone(current);
+  const changed = [];
+  if (before.feedback?.reason !== undefined || current.feedback?.reason !== undefined) {
+    if (typeof before.feedback?.reason !== "string" || typeof current.feedback?.reason !== "string") {
+      fail("EVIDENCE_SHAPE", `${label}.feedback.reason must remain a string.`);
+    }
+    if (before.feedback.reason !== current.feedback.reason) changed.push("feedback.reason");
+    beforeCopy.feedback.reason = "<explanation>";
+    currentCopy.feedback.reason = "<explanation>";
+  }
+  for (const key of ["mechanismOrProperty", "boundaryOrTradeoff", "errorCorrection"]) {
+    if (before.feedback?.details?.[key] !== undefined || current.feedback?.details?.[key] !== undefined) {
+      if (typeof before.feedback?.details?.[key] !== "string" || typeof current.feedback?.details?.[key] !== "string") {
+        fail("EVIDENCE_SHAPE", `${label}.feedback.details.${key} must remain a string.`);
+      }
+      if (before.feedback.details[key] !== current.feedback.details[key]) changed.push(`feedback.details.${key}`);
+      beforeCopy.feedback.details[key] = "<explanation>";
+      currentCopy.feedback.details[key] = "<explanation>";
+    }
+  }
+  const beforeMessages = before.feedback?.messages;
+  const currentMessages = current.feedback?.messages;
+  if (!Array.isArray(beforeMessages) || !Array.isArray(currentMessages) || beforeMessages.length !== currentMessages.length) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must preserve feedback message membership.`);
+  }
+  for (let index = 0; index < beforeMessages.length; index += 1) {
+    const left = beforeMessages[index];
+    const right = currentMessages[index];
+    if (left.kind !== right.kind || left.targetId !== right.targetId) {
+      fail("EVIDENCE_MEMBERSHIP", `${label}.feedback.messages[${index}] must preserve its kind and target.`);
+    }
+    if (left.text !== right.text) changed.push(`feedback.messages[${index}].text`);
+    beforeCopy.feedback.messages[index].text = "<explanation>";
+    currentCopy.feedback.messages[index].text = "<explanation>";
+  }
+  if (canonicalJson(beforeCopy) !== canonicalJson(currentCopy) || changed.length === 0) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} changes fields outside the approved feedback explanation paths.`);
+  }
+  if (changed.some((key) => !OOD_EXPLANATION_CORRECTION_ALLOWED_PATHS.has(key.replace(/feedback\.messages\[\d+\]\.text/, "feedback.messages[].text")))) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} changes a feedback path outside the fixed explanation allowlist.`);
+  }
+}
+
+async function validateOodExplanationCorrections(contentRoot, canonical, evidence) {
+  const accepted = OOD_EXPLANATION_CORRECTIONS_20261013_PROOF;
+  const label = accepted.scope;
+  const projectRoot = path.dirname(contentRoot);
+  const proofPath = path.join(projectRoot, accepted.path);
+  const proofInfo = await lstat(proofPath).catch((error) => {
+    if (error?.code === "ENOENT") return undefined;
+    fail("PATH_ERROR", `Cannot inspect ${label}: ${error.message}`);
+  });
+  if (!proofInfo) return undefined;
+  await rejectSymlinkAncestors(proofPath, label);
+  await regularPath(proofPath, label, "file");
+  const proofBytes = await readFile(proofPath).catch((error) => fail("READ_ERROR", `Cannot read ${label}: ${error.message}`));
+  if (sha256(proofBytes) !== accepted.sha256) fail("HASH_MISMATCH", `${label} differs from its fixed proof bytes.`);
+  let proof;
+  try { proof = JSON.parse(proofBytes.toString("utf8")); }
+  catch (error) { fail("INVALID_JSON", `${label} is not valid JSON: ${error.message}`); }
+  exactKeys(proof, OOD_EXPLANATION_CORRECTION_ROOT_KEYS, label);
+  for (const [key, value] of Object.entries({
+    schemaVersion: accepted.schemaVersion,
+    scope: accepted.scope,
+    trackId: accepted.trackId,
+    beforeContentVersion: accepted.beforeContentVersion,
+    contentVersion: accepted.contentVersion,
+    questionSetSha256: accepted.questionSetSha256
+  })) {
+    if (proof[key] !== value) fail("EVIDENCE_VALUE", `${label}.${key} differs from the fixed correction identity.`);
+  }
+  for (const key of ["beforeProducerCommit"]) {
+    if (typeof proof[key] !== "string" || !/^[a-f0-9]{40}$/.test(proof[key])) fail("EVIDENCE_VALUE", `${label}.${key} must be a fixed Git commit identity.`);
+  }
+  for (const key of ["beforeQuestionSetSha256", "questionSetSha256"]) assertHash(proof[key], `${label}.${key}`);
+  if (!Array.isArray(proof.items) || proof.items.length !== accepted.itemCount) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must contain exactly ${accepted.itemCount} corrections.`);
+  }
+  const currentTrackQuestions = canonical.questionsByTrack.get(accepted.trackId);
+  if (!currentTrackQuestions || trackQuestionSetSha256(currentTrackQuestions) !== proof.questionSetSha256) {
+    fail("HASH_MISMATCH", `${label} current OOD question set differs from its immutable proof.`);
+  }
+  if (!Array.isArray(proof.sourceFiles) || proof.sourceFiles.length !== 4) {
+    fail("EVIDENCE_MEMBERSHIP", `${label} must bind exactly four source files.`);
+  }
+  const sourcesByPath = new Map();
+  for (const [index, source] of proof.sourceFiles.entries()) {
+    const sourceLabel = `${label}.sourceFiles[${index}]`;
+    exactKeys(source, OOD_EXPLANATION_CORRECTION_SOURCE_KEYS, sourceLabel);
+    assertRelativePath(source.sourceFile, `${sourceLabel}.sourceFile`, { suffix: ".json" });
+    assertHash(source.beforeSourceSha256, `${sourceLabel}.beforeSourceSha256`);
+    assertHash(source.sourceSha256, `${sourceLabel}.sourceSha256`);
+    if (sourcesByPath.has(source.sourceFile)) fail("EVIDENCE_MEMBERSHIP", `${label} repeats a source file.`);
+    const sourcePath = path.resolve(projectRoot, ...source.sourceFile.split("/"));
+    await rejectSymlinkAncestors(sourcePath, `${sourceLabel}.sourceFile`);
+    await regularPath(sourcePath, `${sourceLabel}.sourceFile`, "file");
+    const sourceBytes = await readFile(sourcePath).catch((error) => fail("READ_ERROR", `Cannot read ${sourceLabel}.sourceFile: ${error.message}`));
+    if (sha256(sourceBytes) !== source.sourceSha256) fail("HASH_MISMATCH", `${sourceLabel}.sourceFile differs from the fixed current source hash.`);
+    let questions;
+    try { questions = JSON.parse(sourceBytes.toString("utf8")); }
+    catch (error) { fail("INVALID_JSON", `${sourceLabel}.sourceFile is not valid JSON: ${error.message}`); }
+    if (!Array.isArray(questions)) fail("EVIDENCE_SHAPE", `${sourceLabel}.sourceFile must contain a question array.`);
+    const ids = proof.items.filter((item) => item.sourceFile === source.sourceFile).map((item) => item.questionId);
+    if (ids.length === 0) fail("EVIDENCE_MEMBERSHIP", `${sourceLabel}.sourceFile has no fixed corrections.`);
+    assertExactSet(questions.filter((question) => ids.includes(question?.questionId)).map((question) => question.questionId), ids, `${sourceLabel} corrected question IDs`);
+    const sourceById = new Map(questions.map((question) => [question.questionId, question]));
+    for (const question of questions) {
+      const location = canonical.questionLocations.get(question.questionId);
+      if (!location || path.relative(projectRoot, location.path).split(path.sep).join("/") !== source.sourceFile) {
+        fail("CANONICAL_MEMBERSHIP", `${sourceLabel} question is outside its canonical source path.`);
+      }
+      const canonicalQuestion = currentTrackQuestions.find((item) => item.questionId === question.questionId);
+      if (!canonicalQuestion || canonicalJson(question) !== canonicalJson(canonicalQuestion)) {
+        fail("HASH_MISMATCH", `${sourceLabel} source question differs from canonical content.`);
+      }
+    }
+    sourcesByPath.set(source.sourceFile, { questions, sourceById, sourceBytes, sourcePath, beforeSourceSha256: source.beforeSourceSha256 });
+  }
+
+  const beforeById = new Map();
+  const currentById = new Map(currentTrackQuestions.map((question) => [question.questionId, question]));
+  for (const [index, item] of proof.items.entries()) {
+    const itemLabel = `${label}.items[${index}]`;
+    exactKeys(item, OOD_EXPLANATION_CORRECTION_ITEM_KEYS, itemLabel);
+    if (item.identityAction !== "preserve_question_id" || typeof item.identityReason !== "string" || item.identityReason.length === 0 ||
+        item.questionId !== item.beforeQuestion?.questionId || item.questionId !== item.currentQuestion?.questionId || beforeById.has(item.questionId)) {
+      fail("EVIDENCE_VALUE", `${itemLabel} must preserve a unique question ID and explain that identity decision.`);
+    }
+    const source = sourcesByPath.get(item.sourceFile);
+    const current = source?.sourceById.get(item.questionId);
+    const canonicalQuestion = currentById.get(item.questionId);
+    if (!source || !current || !canonicalQuestion || canonicalJson(current) !== canonicalJson(item.currentQuestion) || canonicalJson(canonicalQuestion) !== canonicalJson(item.currentQuestion)) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} current object is not the canonical source object.`);
+    }
+    assertCanonicalQuestion(item.beforeQuestion, `${itemLabel}.beforeQuestion`, ACCEPTED_TRACK_IDS);
+    assertCanonicalQuestion(item.currentQuestion, `${itemLabel}.currentQuestion`, ACCEPTED_TRACK_IDS);
+    if (item.beforeQuestion.trackId !== accepted.trackId || item.beforeQuestion.nodeId !== item.currentQuestion.nodeId ||
+        item.beforeQuestion.mentalUnitId !== item.currentQuestion.mentalUnitId) {
+      fail("EVIDENCE_MEMBERSHIP", `${itemLabel} changes taxonomy or track identity.`);
+    }
+    assertOodExplanationOnlyChange(item.beforeQuestion, item.currentQuestion, itemLabel);
+    beforeById.set(item.questionId, item.beforeQuestion);
+  }
+  if (beforeById.size !== accepted.itemCount) fail("EVIDENCE_MEMBERSHIP", `${label} must bind 39 unique current identities.`);
+
+  const reconstructedTrackQuestions = currentTrackQuestions.map((question) => beforeById.get(question.questionId) ?? question)
+    .sort((left, right) => compare(left.questionId, right.questionId));
+  if (trackQuestionSetSha256(reconstructedTrackQuestions) !== proof.beforeQuestionSetSha256) {
+    fail("HASH_MISMATCH", `${label} does not reconstruct the immutable predecessor OOD question set.`);
+  }
+  for (const [sourceFile, sourceData] of sourcesByPath) {
+    const reconstructedQuestions = sourceData.questions.map((question) => beforeById.get(question.questionId) ?? question);
+    const prettyBytes = Buffer.from(`${JSON.stringify(reconstructedQuestions, null, 2)}\n`, "utf8");
+    const compactBytes = Buffer.from(JSON.stringify(reconstructedQuestions), "utf8");
+    const sourceBytes = sourceData.sourceBytes.toString("utf8").endsWith("\n") ? prettyBytes : compactBytes;
+    if (sha256(sourceBytes) !== sourceData.beforeSourceSha256) {
+      fail("HASH_MISMATCH", `${label} does not reconstruct the immutable predecessor source ${sourceFile}.`);
+    }
+    sourceData.beforeSourceBytes = sourceBytes;
+  }
+  const predecessorCatalog = {
+    ...canonical.catalog,
+    tracks: canonical.catalog.tracks.map((track) => track.trackId === accepted.trackId
+      ? { ...track, contentVersion: accepted.beforeContentVersion }
+      : track)
+  };
+  const predecessorCanonical = {
+    ...canonical,
+    catalog: predecessorCatalog,
+    catalogByTrack: new Map(predecessorCatalog.tracks.map((track) => [track.trackId, track])),
+    questionsByTrack: new Map(canonical.questionsByTrack).set(accepted.trackId, reconstructedTrackQuestions)
+  };
+  const predecessorSourceBytes = new Map([...sourcesByPath].map(([sourceFile, sourceData]) => [sourceFile, sourceData.beforeSourceBytes]));
+  const predecessor = await validateBizq01OodCohort24Proof(contentRoot, predecessorCanonical, evidence, predecessorSourceBytes);
+  if (!predecessor) fail("EVIDENCE_MEMBERSHIP", `${label} requires the unchanged fixed OOD24 predecessor chain.`);
+  return { ...predecessor, explanationCorrectionQuestionIds: proof.items.map((item) => item.questionId) };
+}
+
+async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, privateHistoricalSourceBytes, historicalPredecessor = false, explanationHistoricalSourceBytes) {
   const version = canonical.catalogByTrack.get(BIZQ01_OOD_PROOF.trackId)?.contentVersion;
   if (!historicalPredecessor) {
+    const currentOodQuestions = canonical.questionsByTrack.get(OOD_EXPLANATION_CORRECTIONS_20261013_PROOF.trackId);
+    if (version === OOD_EXPLANATION_CORRECTIONS_20261013_PROOF.contentVersion ||
+        trackQuestionSetSha256(currentOodQuestions ?? []) === OOD_EXPLANATION_CORRECTIONS_20261013_PROOF.questionSetSha256) {
+      const corrections = await validateOodExplanationCorrections(contentRoot, canonical, evidence);
+      if (!corrections) fail("EVIDENCE_MEMBERSHIP", "The OOD explanation-correction version requires its fixed immutable proof.");
+      return corrections;
+    }
     const trackId = BIZQ01_OOD_COHORT24_PROOF.descriptor.trackId;
     const questions = canonical.questionsByTrack.get(trackId);
     if (questions.length !== EXPECTED_TRACK_COUNTS[trackId].questions ||
@@ -2660,47 +2880,47 @@ async function loadBizq01OodSemanticProof(contentRoot, canonical, evidence, priv
     return cohort;
   }
   if (version === BIZQ01_OOD_COHORT24_PROOF.descriptor.contentVersion) {
-    const cohort = await validateBizq01OodCohort24Proof(contentRoot, canonical, evidence);
+    const cohort = await validateBizq01OodCohort24Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source24 OOD version requires its fixed eighteen-unit N08/N09 proof.");
     return cohort;
   }
   if (version === BIZQ01_OOD_COHORT23_PROOF.descriptor.contentVersion) {
-    const cohort = await validateBizq01OodCohort23Proof(contentRoot, canonical, evidence);
+    const cohort = await validateBizq01OodCohort23Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source23 OOD version requires its fixed eight-unit N07 proof.");
     return cohort;
   }
   if (version === BIZQ01_OOD_COHORT22_PROOF.descriptor.contentVersion) {
-    const cohort = await validateBizq01OodCohort22Proof(contentRoot, canonical, evidence);
+    const cohort = await validateBizq01OodCohort22Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source22 OOD version requires its fixed ten-unit N06 proof.");
     return cohort;
   }
   if (version === BIZQ01_OOD_COHORT21_PROOF.descriptor.contentVersion) {
-    const cohort = await validateBizq01OodCohort21Proof(contentRoot, canonical, evidence);
+    const cohort = await validateBizq01OodCohort21Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source21 OOD version requires its fixed nine-unit N05 proof.");
     return cohort;
   }
   if (version === BIZQ01_OOD_COHORT20_PROOF.descriptor.contentVersion) {
-    const cohort = await validateBizq01OodCohort20Proof(contentRoot, canonical, evidence);
+    const cohort = await validateBizq01OodCohort20Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source20 OOD version requires its fixed nine-unit N04 proof.");
     return cohort;
   }
   if (version === BIZQ01_OOD_REASON_AMENDMENT_19A_PROOF.contentVersion) {
-    const amendment = await validateBizq01OodReasonAmendment19a(contentRoot, canonical, evidence);
+    const amendment = await validateBizq01OodReasonAmendment19a(contentRoot, canonical, evidence, explanationHistoricalSourceBytes);
     if (!amendment) fail("EVIDENCE_MEMBERSHIP", "The source19a OOD version requires its fixed 25-item Reason-only amendment proof.");
     return amendment;
   }
   if (version === BIZQ01_OOD_COHORT19_PROOF.contentVersion) {
-    const cohort = await validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, BIZQ01_OOD_COHORT19_PROOF);
+    const cohort = await validateBizq01OodClosedCohortProof(contentRoot, canonical, evidence, BIZQ01_OOD_COHORT19_PROOF, undefined, undefined, explanationHistoricalSourceBytes);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source19 OOD version requires its fixed 162-question closure proof.");
     return cohort;
   }
   if (version === BIZQ01_OOD_COHORT17_PROOF.contentVersion) {
-    const cohort = await validateBizq01OodCohort17Proof(contentRoot, canonical, evidence);
+    const cohort = await validateBizq01OodCohort17Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source17 OOD version requires its fixed 152-question closure proof.");
     return cohort;
   }
   if (version === BIZQ01_OOD_COHORT16_PROOF.contentVersion) {
-    const cohort = await validateBizq01OodCohort16Proof(contentRoot, canonical, evidence);
+    const cohort = await validateBizq01OodCohort16Proof(contentRoot, canonical, evidence, explanationHistoricalSourceBytes);
     if (!cohort) fail("EVIDENCE_MEMBERSHIP", "The source16 OOD version requires its fixed 119-question closure proof.");
     return cohort;
   }
@@ -3417,6 +3637,10 @@ export async function verifyMigration(options = {}) {
     sameIdCorrectionProof: oodSemanticProof?.sameIdCorrections?.length ? {
       trackId: oodSemanticProof.trackId,
       questionIds: oodSemanticProof.sameIdCorrections.map(({ questionId }) => questionId)
+    } : undefined,
+    explanationCorrectionProof: oodSemanticProof?.explanationCorrectionQuestionIds ? {
+      trackId: oodSemanticProof.trackId,
+      questionIds: oodSemanticProof.explanationCorrectionQuestionIds
     } : undefined,
     wordingCorrectionProof: correctionProof ? { trackId: correctionProof.trackId, questionIds: correctionProof.replacements.map(({ questionId }) => questionId) } : undefined,
     replacementProof: replacementProof ? {

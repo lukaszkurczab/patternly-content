@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cp, mkdir, writeFile, readFile } from "node:fs/promises";
+import { cp, mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 
 const BUSINESS_QUALITY_PROOFS = [
@@ -25,22 +25,32 @@ const BUSINESS_QUALITY_PROOFS = [
   "ood-20261013-explanation-corrections.json"
 ];
 
-/** Copy the actual canonical content and every fixed producer proof needed by verifyMigration. */
+/** Fixed historical migration inputs; current authoring is tested by source regressions/builds. */
 export async function copyCurrentMigrationFixture(repositoryRoot, fixtureRoot) {
-  await cp(path.join(repositoryRoot, "content"), path.join(fixtureRoot, "content"), { recursive: true });
-  // These historical migration proofs bind the accepted 918-item Claude bank.
-  // Exercise that fixed predecessor, while preserving the current eight other banks.
-  const frozenHead = "58d7e8b918590abfe3cfa4da2594f1c12653f547";
-  const prefix = "content/claude-certified-architect-professional-certification/";
-  const files = execFileSync("git", ["ls-tree", "-r", "--name-only", frozenHead, "--", prefix], { cwd: repositoryRoot, encoding: "utf8" }).trim().split("\n");
-  for (const file of files) {
-    await mkdir(path.dirname(path.join(fixtureRoot, file)), { recursive: true });
-    await writeFile(path.join(fixtureRoot, file), execFileSync("git", ["show", `${frozenHead}:${file}`], { cwd: repositoryRoot }));
-  }
+  if (path.resolve(repositoryRoot) === path.resolve(fixtureRoot)) throw new Error("Fixture must be separate from repository source");
+  await mkdir(fixtureRoot, { recursive: true });
+  const baselineCommit = "ad3738067818d4e3caa6495943bc9e9b0d6f6c2a";
+  const claudeCommit = "58d7e8b918590abfe3cfa4da2594f1c12653f547";
+  const claudeTrack = "claude-certified-architect-professional-certification";
+  const oodTrack = "object-oriented-design-interview";
+  const archivePath = path.join(fixtureRoot, "historical-migration-inputs.tar");
+  try {
+    for (const [commit, source] of [[baselineCommit, "content"], [claudeCommit, `content/${claudeTrack}`]]) {
+      await rm(path.join(fixtureRoot, source), { recursive: true, force: true });
+      execFileSync("git", ["archive", "--format=tar", "-o", archivePath, commit, "--", source], { cwd: repositoryRoot });
+      execFileSync("tar", ["-xf", archivePath, "-C", fixtureRoot]);
+    }
+  } finally { await rm(archivePath, { force: true }); }
+  // The production verifier includes the separately reviewed OOD explanation successor.
+  await rm(path.join(fixtureRoot, "content", oodTrack), { recursive: true, force: true });
+  await cp(path.join(repositoryRoot, "content", oodTrack), path.join(fixtureRoot, "content", oodTrack), { recursive: true });
   const catalogPath = path.join(fixtureRoot, "content/catalog.json");
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
-  const frozenCatalog = JSON.parse(execFileSync("git", ["show", `${frozenHead}:content/catalog.json`], { cwd: repositoryRoot, encoding: "utf8" }));
-  catalog.tracks = catalog.tracks.map(track => track.trackId === "claude-certified-architect-professional-certification" ? frozenCatalog.tracks.find(old => old.trackId === track.trackId) : track);
+  const claudeCatalog = JSON.parse(execFileSync("git", ["show", `${claudeCommit}:content/catalog.json`], { cwd: repositoryRoot, encoding: "utf8" }));
+  const currentCatalog = JSON.parse(await readFile(path.join(repositoryRoot, "content/catalog.json"), "utf8"));
+  catalog.tracks = catalog.tracks.map(track => track.trackId === claudeTrack
+    ? claudeCatalog.tracks.find(old => old.trackId === claudeTrack)
+    : track.trackId === oodTrack ? currentCatalog.tracks.find(current => current.trackId === oodTrack) : track);
   await writeFile(catalogPath, JSON.stringify(catalog) + "\n");
   const sourceProofRoot = path.join(repositoryRoot, "evidence", "business-quality");
   const fixtureProofRoot = path.join(fixtureRoot, "evidence", "business-quality");

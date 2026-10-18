@@ -1,14 +1,19 @@
+import { after } from "node:test";
+import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { buildTrack, canonicalJson, sha256 } from "../scripts/build.mjs";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { createContentReviewConsole } from "../scripts/review/content-review-console.mjs";
 
 const root = new URL("../", import.meta.url);
+const historicalProducer = await createPreQleProducerFixture(fileURLToPath(root), { currentBuilder: true });
+after(() => historicalProducer.cleanup());
 const source01 = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-slice-01.json", root), "utf8"));
 const batch = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-seed-cohort-14.json", root), "utf8"));
 const CURRENT_CONTENT_VERSION = "backend-system-design-interview-authoring-v2026.10.11-bizq01-15-bizq02-v2-bizq03-planning-v2";
@@ -64,7 +69,7 @@ test("BIZQ-01 preserves both accepted source01 objects and their scored, built, 
 
   const outputRoot = await mkdtemp(join(tmpdir(), "patternly-bizq01-preserved-build-"));
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
-  const built = await buildTrack({ trackId: batch.trackId, outputRoot });
+  const built = await buildTrack({ root: historicalProducer.root, trackId: batch.trackId, outputRoot });
   for (const { entry, question } of acceptedSourceItems) {
     assert.deepEqual(built.artifact.questions.find((item) => item.questionId === entry.questionId), question);
     assert.ok(built.artifact.questions.some((item) => item.questionId === entry.questionId));
@@ -106,7 +111,7 @@ test("BIZQ-01 changed items keep concrete learner constraints and one scoreable 
 test("BIZQ-01 canonical builder carries the exact cohort and new content identity", async (t) => {
   const outputRoot = await mkdtemp(join(tmpdir(), "patternly-bizq01-build-"));
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
-  const built = await buildTrack({ trackId: batch.trackId, outputRoot });
+  const built = await buildTrack({ root: historicalProducer.root, trackId: batch.trackId, outputRoot });
   assert.equal(batch.contentVersion, "backend-system-design-interview-authoring-v2026.10.03-bizq01-14");
   assert.equal(built.artifact.contentVersion, CURRENT_CONTENT_VERSION);
   assert.equal(built.artifact.questions.length, 1569);

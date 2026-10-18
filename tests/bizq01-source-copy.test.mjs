@@ -1,3 +1,5 @@
+import { after } from "node:test";
+import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -10,6 +12,8 @@ import { buildTrack, canonicalJson, sha256 } from "../scripts/build.mjs";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const historicalProducer = await createPreQleProducerFixture(root, { currentBuilder: true });
+after(() => historicalProducer.cleanup());
 const proof = JSON.parse(readFileSync(path.join(root, "evidence/business-quality/bizq-01-coding-source-copy-04.json")));
 const CURRENT_CONTENT_VERSION = "coding-interview-dsa-problem-solving-authoring-v2026.10.02-bizq01-04-bizq02-v2-bizq03-planning-v2";
 const sourceBytes = readFileSync(path.join(root, proof.sourceFile));
@@ -48,7 +52,7 @@ test("same-ID source correction changes only the three reviewed texts and preser
 test("canonical single-track builder carries the exact corrected object and new immutable content identity", async (t) => {
   const outputRoot = await mkdtemp(path.join(tmpdir(), "bizq01-source-copy-build-"));
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
-  const built = await buildTrack({ root, trackId: proof.trackId, outputRoot });
+  const built = await buildTrack({ root: historicalProducer.root, trackId: proof.trackId, outputRoot });
   assert.equal(proof.contentVersion, "coding-interview-dsa-problem-solving-authoring-v2026.10.02-bizq01-04");
   assert.equal(built.artifact.contentVersion, CURRENT_CONTENT_VERSION);
   assert.equal(built.artifact.questions.length, 3404);

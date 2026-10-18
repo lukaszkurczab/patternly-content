@@ -34,7 +34,7 @@ test("BESD source01 extraction preserves the historical chain and real candidate
   assert.equal(accepted.result, "passed");
   // Complete outputs captured before production extraction; omit only the random root.
   const { contentRoot: _temporaryRoot, ...stableAccepted } = accepted;
-  assert.equal(sha256(canonicalJson(stableAccepted)), "396b2ef6f9dcc50222afeccf48d73b8a85082101a4b14c043298fd9ad828304f");
+  assert.equal(sha256(canonicalJson(stableAccepted)), "5f01f7726b209ec2c461d069587dac77ba5fb9d6962ec060a215f43f16ab5783");
   assert.equal(sha256(canonicalJson(consumed)), "d368bc9b6f0993223b9109a7805597533f8cdffda0b8480e25aa9c31b71c43d1");
 
   const proof = JSON.parse(await readFile(path.join(fixtureRoot, proofPath)));

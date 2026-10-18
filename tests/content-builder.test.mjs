@@ -877,7 +877,16 @@ test("Historical manifests retain identity while current GCP source version reco
   }
 
   // Historical candidate and migration identities remain frozen above. GCP question metadata has its own current source version.
+  const sourceCorrections = ["besd-n03-20261018-repairs.json", "dsa-20261018-targeted-corrections.json", "ai901-20261018-repairs.json"];
+  const sourceVersions = new Map(sourceCorrections.map(file => {
+    const proof = JSON.parse(readFileSync(new URL(`../evidence/business-quality/${file}`, import.meta.url), "utf8"));
+    return [proof.trackId, proof.contentVersion];
+  }));
   for (const track of realCatalog.tracks) {
+    if (sourceVersions.has(track.trackId)) {
+      assert.equal(track.contentVersion, sourceVersions.get(track.trackId), track.trackId);
+      continue;
+    }
     if (track.trackId === "google-cloud-associate-cloud-engineer") {
       assert.equal(track.contentVersion, "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1-bizq03-planning-v2-gcp-20261018-fixes-v1", track.trackId);
       continue;

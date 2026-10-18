@@ -1,3 +1,5 @@
+import { after } from "node:test";
+import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -7,6 +9,8 @@ import { canonicalJson, sha256, validateTrack } from "../scripts/build.mjs";
 import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
 
 const CONTENT_ROOT = fileURLToPath(new URL("..", import.meta.url));
+const historicalProducer = await createPreQleProducerFixture(CONTENT_ROOT, { currentBuilder: true });
+after(() => historicalProducer.cleanup());
 const LEARN_MODE = "design-interview-learn-framework";
 const TRADEOFF_MODE = "design-interview-tradeoff-practice";
 const REVIEW_MODE = "design-interview-weak-area-review";
@@ -130,9 +134,9 @@ test("ODK-097 producer profiles expose the approved Design session matrix", asyn
   }
 });
 
-test("ODK-097 producer changes preserve canonical Design question counts and hashes", async () => {
+test("historical ODK-097 producer preserves canonical Design question counts and hashes", async () => {
   for (const expected of DESIGN_TRACKS) {
-    const validated = await validateTrack({ rootDirectory: CONTENT_ROOT, trackId: expected.trackId });
+    const validated = await validateTrack({ rootDirectory: historicalProducer.root, trackId: expected.trackId });
     const nodeQuestions = sortQuestions(validated.questions.filter((question) => question.nodeId === expected.freeNodeId));
     const trackQuestions = sortQuestions(validated.questions);
 

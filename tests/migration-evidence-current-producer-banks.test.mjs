@@ -32,7 +32,7 @@ test("current producer bank extraction preserves accepted migration and the real
   assert.equal(accepted.result, "passed");
   // Fingerprint the complete pre-extraction outputs, excluding only the random root.
   const { contentRoot: _temporaryRoot, ...stableAccepted } = accepted;
-  assert.equal(sha256(canonicalJson(stableAccepted)), "396b2ef6f9dcc50222afeccf48d73b8a85082101a4b14c043298fd9ad828304f");
+  assert.equal(sha256(canonicalJson(stableAccepted)), "5f01f7726b209ec2c461d069587dac77ba5fb9d6962ec060a215f43f16ab5783");
   assert.equal(sha256(canonicalJson(consumed)), "d368bc9b6f0993223b9109a7805597533f8cdffda0b8480e25aa9c31b71c43d1");
 
   const identities = [];
@@ -50,7 +50,7 @@ test("current producer bank extraction preserves accepted migration and the real
     identities.push([trackId, { questionCount: questions.length, questionSetSha256: sha256(questions) }]);
   }
   // All five pinned identities and entry/key order, without another production map.
-  assert.equal(sha256(JSON.stringify(identities)), "c586b504ceaf9b8ec17cec02757e1ebbba31338884fce0b534edce3991607590");
+  assert.equal(sha256(JSON.stringify(identities)), "b71278e0115eb94861717ca325339994e7e4069d7c2b201c8b3b8252ce2a9cea");
 
   async function withBytes(relativePath, bytes, action) {
     const target = path.join(fixtureRoot, relativePath);

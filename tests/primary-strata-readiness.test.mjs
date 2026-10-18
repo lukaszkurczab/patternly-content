@@ -1,5 +1,5 @@
 import { after } from "node:test";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
@@ -8,10 +8,13 @@ import path from "node:path";
 import test from "node:test";
 
 import { canonicalJson, sha256, validateTrack } from "../scripts/build.mjs";
-import { describeCurrentSourceProvenance, secureFile, validatePrimaryObjective, verifyReadiness } from "../scripts/content/verify-primary-strata-readiness.mjs";
+import { secureFile, validatePrimaryObjective, verifyReadiness as verifyCurrentReadiness } from "../scripts/content/verify-primary-strata-readiness.mjs";
 
 const frozenProducer = await createPreQleProducerFixture(fileURLToPath(new URL("../", import.meta.url)));
 after(() => frozenProducer.cleanup());
+// Provenance includes the loader/config bytes: execute that exact historical pair.
+// Pure objective/path validators below still exercise the current implementation.
+const { verifyReadiness, describeCurrentSourceProvenance } = await import(pathToFileURL(path.join(frozenProducer.root, "scripts/content/verify-primary-strata-readiness.mjs")).href);
 const manifest = JSON.parse(await readFile(new URL("../config/primary-strata-readiness.json", import.meta.url), "utf8"));
 const clone = (value) => structuredClone(value);
 const sha = "a".repeat(64);
@@ -20,7 +23,7 @@ const registry = JSON.parse(await readFile(new URL("../config/certification-obje
 const objectiveId = registry.objectives[0].objectiveId;
 const pinnedRegistry = manifest.tracks.find((entry) => entry.trackId === trackId).primaryObjective.registry;
 
-test("current nine-track manifest verifies partial AZ-104 mapping without claiming track readiness", async () => {
+test("historical nine-track manifest verifies partial AZ-104 mapping without claiming track readiness", async () => {
   const result = await verifyReadiness({ rootDirectory: frozenProducer.root, manifest });
   assert.equal(result.tracks.length, 9);
   assert.ok(result.tracks.every((track) => track.structuralValidity === "valid"));
@@ -90,7 +93,7 @@ test("AI-901 preserves the reviewed 635-item partial mapping and all 117 reviewe
     ai901.primaryObjective.bindings.filter((binding) => binding.objectiveId === `ai-901-2026-04-15-${suffix}`).length
   ])), { "1.1": 284, "1.2": 151, "1.3": 95, "2.1": 40, "2.2": 5, "2.3": 20, "2.4": 40 });
   const mappedIds = new Set(ai901.primaryObjective.bindings.map((binding) => binding.questionId));
-  const validated = await validateTrack({ rootDirectory: process.cwd(), trackId: ai901.trackId });
+  const validated = await validateTrack({ rootDirectory: frozenProducer.root, trackId: ai901.trackId });
   const questionIds = new Set(validated.questions.map((question) => question.questionId));
   const unmappedIds = [...questionIds].filter((questionId) => !mappedIds.has(questionId)).sort();
   assert.equal(mappedIds.size, 635);
@@ -292,5 +295,5 @@ test("path rules reject absolute, escaping, and symlinked declared inputs", asyn
 });
 
 test("current QLE producer must not reuse the pre-QLE global provenance grant", async () => {
-  await assert.rejects(verifyReadiness({ manifest }), /stale_provenance/u);
+  await assert.rejects(verifyCurrentReadiness({ manifest }), /stale_provenance/u);
 });

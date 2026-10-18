@@ -121,6 +121,15 @@ test("all 16 M05 extractions preserve complete results and actual proof validati
   const consumed = await consume();
   const { contentRoot: _randomFixturePath, ...verified } = accepted;
   assert.equal(verified.result, "passed");
+  // OOD explanation correction is the only extension to the original M05 report.
+  const { explanationCorrectionProof, ...historicalReport } = verified;
+  assert.equal(sha256(canonicalJson(historicalReport)), "396b2ef6f9dcc50222afeccf48d73b8a85082101a4b14c043298fd9ad828304f");
+  const explanationProof = JSON.parse(await readFile(path.join(root, "evidence/business-quality/ood-20261013-explanation-corrections.json")));
+  assert.equal(explanationProof.items.length, 39);
+  assert.deepEqual(explanationCorrectionProof, {
+    trackId: explanationProof.trackId,
+    questionIds: explanationProof.items.map(({ questionId }) => questionId),
+  });
   const baselinePath = path.join(root, "tests/fixtures/migration-evidence-m05-baseline.json");
   const baseline = JSON.parse(await readFile(baselinePath));
   assert.deepEqual(verified, baseline.verified);

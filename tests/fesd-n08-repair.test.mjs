@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { buildTrack, validateTrack } from "../scripts/build.mjs";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
@@ -121,8 +122,10 @@ test("one-track builder preserves all source questions in the actual artifact", 
 
 test("real application scorer and presentation consume rebuilt questions without changing the app pin", { skip: !process.env.PATTERNLY_FRONTEND_ROOT }, async () => {
   const app = path.resolve(process.env.PATTERNLY_FRONTEND_ROOT);
-  const { scoreCanonicalQuestion } = await import(pathToFileURL(path.join(app, "src/content/canonical/questionScoring.ts")));
-  const { buildCanonicalInteractionViewModel, composeCanonicalFeedback, projectCanonicalOrderingFeedbackMessages } = await import(pathToFileURL(path.join(app, "src/application/canonical/canonicalInteractionPresentation.ts")));
+  const require = createRequire(path.join(app, "package.json"));
+  require("tsx/cjs");
+  const { scoreCanonicalQuestion } = require(path.join(app, "src/content/canonical/questionScoring.ts"));
+  const { buildCanonicalInteractionViewModel, composeCanonicalFeedback, projectCanonicalOrderingFeedbackMessages } = require(path.join(app, "src/application/canonical/canonicalInteractionPresentation.ts"));
   const outputRoot = await mkdtemp(path.join(tmpdir(), "fesd-n08-consumer-"));
   try {
     const built = await buildTrack({ rootDirectory: root, trackId, outputRoot });
@@ -130,7 +133,10 @@ test("real application scorer and presentation consume rebuilt questions without
     for (const q of artifact.questions.filter((q) => q.nodeId === nodeId)) {
       assert.equal(scoreCanonicalQuestion(q, q.answer).kind, "correct", q.questionId);
       const order = q.interaction.options?.map((o) => o.optionId).reverse() ?? q.interaction.elements?.map((e) => e.elementId).reverse() ?? [];
-      const view = buildCanonicalInteractionViewModel(q, null, order);
+      const presented = buildCanonicalInteractionViewModel(q, null, order);
+      assert.equal(presented.interactionType, q.interaction.type);
+      const view = presented.model;
+      assert.ok(view && typeof view === "object", q.questionId);
       assert.equal(view.accessibility.label, q.prompt);
       assert.equal(Object.hasOwn(view, "answer"), false);
       assert.equal(Object.hasOwn(view, "feedback"), false);
@@ -140,7 +146,7 @@ test("real application scorer and presentation consume rebuilt questions without
           const response = { type: "choice_single", optionId: option.optionId };
           const correct = option.optionId === q.answer.optionId;
           assert.equal(scoreCanonicalQuestion(q, response).earnedPoints, correct ? 1 : 0);
-          const messages = composeCanonicalFeedback(q, response).messages;
+          const messages = composeCanonicalFeedback(q, response, scoreCanonicalQuestion(q, response)).messages;
           assert.deepEqual(messages, correct ? [] : [feedback(q, "wrong_option", option.optionId)]);
           assert.equal(view.accessibility.controls.find((c) => c.id === option.optionId).label, option.text);
         }

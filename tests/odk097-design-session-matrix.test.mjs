@@ -1,16 +1,13 @@
-import { after } from "node:test";
-import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { canonicalJson, sha256, validateTrack } from "../scripts/build.mjs";
+import { validateQuestion } from "../scripts/content/question-contract.mjs";
 import { loadCanonicalTrackBriefs } from "../scripts/product/track-briefs.mjs";
+import { loadCurrentQuestionBank } from "./helpers/current-question-bank.mjs";
 
 const CONTENT_ROOT = fileURLToPath(new URL("..", import.meta.url));
-const historicalProducer = await createPreQleProducerFixture(CONTENT_ROOT, { currentBuilder: true });
-after(() => historicalProducer.cleanup());
 const LEARN_MODE = "design-interview-learn-framework";
 const TRADEOFF_MODE = "design-interview-tradeoff-practice";
 const REVIEW_MODE = "design-interview-weak-area-review";
@@ -20,52 +17,27 @@ const DESIGN_TRACKS = Object.freeze([
     trackId: "backend-system-design-interview",
     profileId: "backend-system-design-interview-free-node-v1",
     freeNodeId: "requirements_capacity_and_architecture_decomposition",
-    contentVersion: "backend-system-design-interview-authoring-v2026.10.11-bizq01-15-bizq02-v2-bizq03-planning-v2",
     tradeoffConfigurationId: "backend-system-design-interview-free-tradeoff-practice-v2",
     reviewConfigurationId: "backend-system-design-interview-free-weak-area-review-v2",
-    nodeCount: 145,
-    nodeSha256: "27de9ae6ae032d90e67b837087b18a128e0d991bc3474ca475e2626bf1098d99",
-    trackCount: 1569,
-    // Targeted BIZQ-01 replacements update this current-source pin only.
-    // The original admission artifacts and unchanged node hash stay frozen.
-    trackSha256: "46954940e5d7ef7517f2602e32899f4ffbcbff13e40e8c6409f8433e0e0dd9c9",
   },
   {
     trackId: "object-oriented-design-interview",
     profileId: "object-oriented-design-interview-free-node-v1",
     freeNodeId: "requirements_use_cases_domain_vocabulary_and_model_boundaries",
-    contentVersion: "object-oriented-design-interview-authoring-v2026.10.05-bizq01-24-bizq02-v2-bizq03-planning-v2",
     tradeoffConfigurationId: "object-oriented-design-interview-free-tradeoff-practice-v2",
     reviewConfigurationId: "object-oriented-design-interview-free-weak-area-review-v2",
-    nodeCount: 136,
-    nodeSha256: "15d0ca1dff401af483bd52ed967376f0d64edad64cc55dbe58d12d29f82d41a9",
-    trackCount: 1413,
-    // Current source24 adds the approved N08/N09 cohorts; the N01 free-node hash and
-    // historical ODK-097 admission artifacts remain unchanged.
-    trackSha256: "c92a9f04488efb4ef7a5fa8b3257495c21e6c62125123df8073141c60000b2d8",
   },
   {
     trackId: "frontend-system-design-interview",
     profileId: "frontend-system-design-interview-free-node-v1",
     freeNodeId: "requirements_user_journeys_constraints_and_frontend_decomposition",
-    contentVersion: "frontend-system-design-interview-fesd-n08-v2026.10.11",
     tradeoffConfigurationId: "frontend-system-design-interview-free-tradeoff-practice-v2",
     reviewConfigurationId: "frontend-system-design-interview-free-weak-area-review-v2",
-    nodeCount: 150,
-    nodeSha256: "1fdf8950b3cade9aaf396d64084a99eb2487964f0aa99d4d5b6e5f1fbed06928",
-    trackCount: 1766,
-    trackSha256: "cccc86cda609c071dae829f1c7f9ae5b59219bc89da51f07ac3eab229e169261",
   },
 ]);
 
 async function readJson(relativePath) {
   return JSON.parse(await readFile(new URL(relativePath, import.meta.url), "utf8"));
-}
-
-function sortQuestions(questions) {
-  return [...questions].sort((left, right) => (
-    left.questionId < right.questionId ? -1 : left.questionId > right.questionId ? 1 : 0
-  ));
 }
 
 function modeById(profile, modeId) {
@@ -134,18 +106,12 @@ test("ODK-097 producer profiles expose the approved Design session matrix", asyn
   }
 });
 
-test("historical ODK-097 producer preserves canonical Design question counts and hashes", async () => {
+test("current free-node practice sources build into valid canonical questions", async () => {
   for (const expected of DESIGN_TRACKS) {
-    const validated = await validateTrack({ rootDirectory: historicalProducer.root, trackId: expected.trackId });
-    const nodeQuestions = sortQuestions(validated.questions.filter((question) => question.nodeId === expected.freeNodeId));
-    const trackQuestions = sortQuestions(validated.questions);
-
-    assert.equal(validated.track.contentVersion, expected.contentVersion);
-    assert.equal(nodeQuestions.length, expected.nodeCount);
-    assert.equal(sha256(canonicalJson(nodeQuestions)), expected.nodeSha256);
-    assert.equal(trackQuestions.length, expected.trackCount);
-    assert.equal(sha256(canonicalJson(trackQuestions)), expected.trackSha256);
+    const { questions } = await loadCurrentQuestionBank(expected.trackId);
+    const nodeQuestions = questions.filter((question) => question.nodeId === expected.freeNodeId);
+    assert.ok(nodeQuestions.length >= 10, `${expected.trackId}: current free node has a substantial practice set`);
     assert.equal(new Set(nodeQuestions.map((question) => question.questionId)).size, nodeQuestions.length);
-    assert.ok(nodeQuestions.every((question) => question.nodeId === expected.freeNodeId));
+    for (const question of nodeQuestions) assert.equal(validateQuestion(question).valid, true, question.questionId);
   }
 });

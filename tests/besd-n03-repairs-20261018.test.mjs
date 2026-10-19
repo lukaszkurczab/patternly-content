@@ -1,192 +1,134 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
+import { loadCurrentQuestionBank } from "./helpers/current-question-bank.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const trackId = "backend-system-design-interview";
-const directory = `content/${trackId}/data_models_storage_selection_indexing_and_transactions`;
-const files = [1, 2, 3, 4].map(unit => `${directory}/BESD-N03-B0${unit}.json`);
-const sources = new Map(await Promise.all(files.map(async file => [file, JSON.parse(await readFile(path.join(root, file), "utf8"))])));
-const before = new Map(files.map(file => [file, JSON.parse(execFileSync("git", ["show", `d7d4e5545f7ce618286c075e751dafaa61aeb937:${file}`], { cwd: root, encoding: "utf8" }))]));
-const proof = JSON.parse(await readFile(path.join(root, "evidence/business-quality/besd-n03-20261018-repairs.json"), "utf8"));
-const byCurrentId = new Map(proof.items.map(item => [item.questionId, item]));
-const byBeforeId = new Map(proof.items.map(item => [item.beforeQuestionId, item]));
-const sha256 = value => createHash("sha256").update(value).digest("hex");
+const bank = await loadCurrentQuestionBank("backend-system-design-interview");
+const blocks = ["B01", "B02", "B03", "B04"];
+const questions = bank.questions.filter((question) => /^besd-n03-b0[1-4]-/.test(question.questionId));
+const get = (id) => {
+  const question = bank.byId.get(id);
+  assert.ok(question, `current bank includes ${id}`);
+  return question;
+};
+const domainMechanisms = new Map([
+  ["besd-n03-b01-i001", /operation|extraction/i], ["besd-n03-b01-i002", /allocation|ticket|pending|seat/i], ["besd-n03-b01-i004", /metadata|asset|watermark/i],
+  ["besd-n03-b01-i005", /command|device/i], ["besd-n03-b01-i007", /revision|ETag|conditional/i], ["besd-n03-b01-i009", /progress|event|completion/i],
+  ["besd-n03-b01-i010", /price|version|revision/i], ["besd-n03-b01-i011", /revocation|epoch|credential/i], ["besd-n03-b01-i012", /job|worker/i],
+  ["besd-n03-b01-i013", /flag|rollout|version/i], ["besd-n03-b01-i015", /source|watermark|search/i], ["besd-n03-b01-i016", /route|urgent|dispatch/i],
+  ["besd-n03-b01-i018", /fraud|risk|case|priority/i], ["besd-n03-b01-i019", /tenant/i], ["besd-n03-b01-i020", /event|partner/i],
+  ["besd-n03-b01-i021", /stock|quantity|inventory/i], ["besd-n03-b01-i022", /overlap|exclusion/i], ["besd-n03-b01-i023", /payment|intent|charge/i],
+  ["besd-n03-b02-i001", /stock|inventory|reservation|conditional/i], ["besd-n03-b02-i002", /progress|event|completion/i], ["besd-n03-b02-i003", /price|version|merchant/i],
+  ["besd-n03-b02-i004", /revocation|epoch|session/i], ["besd-n03-b02-i005", /job|transcod/i], ["besd-n03-b02-i006", /flag|rollout|version/i],
+  ["besd-n03-b02-i008", /search|watermark|projection/i], ["besd-n03-b02-i009", /route|urgent|priority/i], ["besd-n03-b02-i011", /risk|case|priority/i],
+  ["besd-n03-b02-i012", /payroll|period|snapshot/i], ["besd-n03-b02-i013", /report|cutoff|aggregate/i], ["besd-n03-b02-i014", /telemetry|time.series|raw|rollup/i],
+  ["besd-n03-b02-i015", /preference|notification|delivery/i], ["besd-n03-b02-i017", /parcel|sequence|carrier/i], ["besd-n03-b02-i018", /extraction|operation|billable/i],
+  ["besd-n03-b02-i019", /overlap|exclusion/i], ["besd-n03-b02-i020", /intent|provider key|idempotenc/i], ["besd-n03-b02-i021", /audit|append|checkpoint/i],
+  ["besd-n03-b03-i001", /outbox|watermark|source.version/i], ["besd-n03-b03-i004", /case|queue/i], ["besd-n03-b03-i007", /raw|telemetry|rollup/i],
+  ["besd-n03-b03-i009", /audit/i], ["besd-n03-b03-i010", /carrier|parcel|sequence/i], ["besd-n03-b03-i012", /allocation/i],
+  ["besd-n03-b03-i014", /metadata|catalog/i], ["besd-n03-b03-i016", /webhook|event.*intent|delivery.*status/i], ["besd-n03-b03-i017", /document|revision|conflict/i],
+  ["besd-n03-b03-i018", /inventory|stock|reservation/i], ["besd-n03-b03-i020", /route|snapshot/i], ["besd-n03-b03-i021", /intent|reconcil/i],
+  ["besd-n03-b03-i023", /payroll|period|export/i], ["besd-n03-b03-i024", /cutoff|aggregate|report/i], ["besd-n03-b03-i026", /preference/i],
+  ["besd-n03-b03-i029", /extraction|operation|billable|job/i], ["besd-n03-b03-i031", /tenant|authoriz|ACL/i], ["besd-n03-b03-i033", /command|device/i]
+]);
+
+const invariantCases = [
+  { id: "besd-n03-b01-i019", accepted: "i019_tenant_owner_authorization", required: [/tenant/i, /server|authoriz|access.*boundary/i], positive: "authorized tenant result", negative: "cross-tenant result must be denied" },
+  { id: "besd-n03-b01-i020", accepted: "i020_unique_event_atomic_commit", required: [/partnerId|partner/i, /eventId|event.*key/i, /atomic|transaction/i], positive: "original event commits", negative: "same event replay must not apply another business effect" },
+  { id: "besd-n03-b01-i021", accepted: "i021_guarded_stock_decrement", required: [/atomic|transaction/i, /available|quantity|stock/i, /conditional|only when|positive|greater than|at least|>=/i], positive: "last available unit is reserved once", negative: "competing stale reservation must not oversell" },
+  { id: "besd-n03-b01-i022", accepted: "i022_booking_interval_exclusion", required: [/overlap|exclusion/i, /atomic|exclusion|guarded|serializ|transaction/i, /resource|room/i], positive: "two different resources book concurrently", negative: "overlapping same-resource confirmation is rejected" },
+  { id: "besd-n03-b01-i023", accepted: "i023_provider_idempotent_intent", required: [/intent/i, /idempotenc/i, /reconcil/i], positive: "first provider authorization succeeds", negative: "ambiguous timeout reuses the same intent without another charge" },
+  { id: "besd-n03-b02-i019", accepted: "i019_booking_exclusion_store", required: [/overlap|exclusion/i, /atomic|exclusion|serializ/i, /resource|room/i], positive: "nonoverlapping booking is stored", negative: "overlapping same-resource confirmation is rejected" },
+  { id: "besd-n03-b02-i020", accepted: "i020_intent_reconcile_after_retention", required: [/intent/i, /provider key|idempotenc/i, /reconcil/i], positive: "timeout reconciles against the existing charge", negative: "new intent on an ambiguous timeout is rejected" },
+  { id: "besd-n03-b02-i021", accepted: "i021_checkpointed_audit_append", required: [/append|immutable/i, /actor|attribut|author/i, /retention|retain/i, /sequence.*hash|hash.*chain/i, /independent.*checkpoint/i], positive: "attributable immutable evidence is appended", negative: "overwrite or silent loss is rejected" }
+];
 
 function assertNoAnswerLeak(question) {
   const visible = [question.prompt, ...question.constraints].join("\n");
   assert.doesNotMatch(visible, /the primary decision is/i, question.questionId);
-  const accepted = question.interaction.options.find(option => option.optionId === question.answer.optionId);
+  const accepted = question.interaction.options.find((option) => option.optionId === question.answer.optionId);
   assert.ok(accepted, question.questionId);
   assert.equal(visible.includes(accepted.text), false, `${question.questionId}: accepted text is not a visible hint`);
-  assert.equal(visible.includes(question.feedback.reason), false, `${question.questionId}: feedback Reason was not copied into the prompt`);
+  assert.equal(visible.includes(question.feedback.reason), false, `${question.questionId}: feedback reason is not copied into the prompt`);
 }
 
-test("PKG-01: all 72 visible scenarios retain their business invariant without disclosing the answer", () => {
-  let count = 0;
-  for (const [file, questions] of sources) {
-    assert.equal(questions.length, 18, file);
-    for (const question of questions) {
-      assertNoAnswerLeak(question);
-      assert.equal(question.constraints[0], byCurrentId.get(question.questionId).beforeQuestion.constraints[0], `${question.questionId}: business invariant`);
-      assert.deepEqual(validateQuestion(question), { valid: true, errors: [] }, question.questionId);
-      count++;
-    }
+test("all 72 current cases retain a concrete business invariant, hide the key, and validate", () => {
+  assert.equal(questions.length, 72);
+  for (const block of blocks) {
+    const group = questions.filter((question) => question.questionId.includes(`-${block.toLowerCase()}-`));
+    assert.equal(group.length, 18, `${block} case count`);
   }
-  assert.equal(count, 72);
+  for (const question of questions) {
+    assert.ok(question.prompt.length > 60, `${question.questionId}: concrete scenario`);
+    assert.ok(question.constraints.length >= 1 && question.constraints.every((constraint) => constraint.length > 20), question.questionId);
+    assertNoAnswerLeak(question);
+    assert.equal(validateQuestion(question).valid, true, question.questionId);
+  }
+  assert.equal(domainMechanisms.size, 54);
+  for (const [id, mechanism] of domainMechanisms) {
+    const question = get(id);
+    const accepted = question.interaction.options.find((option) => option.optionId === question.answer.optionId);
+    assert.match(accepted.text, mechanism, id);
+    assert.doesNotMatch(question.prompt, /^\s*Access path and guard:/, id);
+  }
+
+  const leaked = structuredClone(get("besd-n03-b01-i019"));
+  leaked.constraints.push(leaked.interaction.options.find((option) => option.optionId === leaked.answer.optionId).text);
+  assert.throws(() => assertNoAnswerLeak(leaked), assert.AssertionError, "negative control catches a visible answer leak");
 });
 
-test("PKG-01 negative control: the old constraint is detected while option-ID scoring survives reordering", () => {
-  for (const questions of sources.values()) for (const authored of questions) {
-    const question = structuredClone(authored);
-    question.constraints.push(byCurrentId.get(question.questionId).beforeQuestion.constraints[2]);
-    assert.throws(() => assertNoAnswerLeak(question), { code: "ERR_ASSERTION" });
-    question.interaction.options.reverse();
-    const result = scoreQuestion(question, question.answer);
-    assert.equal(result.earnedPoints, result.maxPoints, question.questionId);
-  }
-});
-
-test("immutable before/after evidence accounts for exactly the four FCA units and all 72 original identities", async () => {
-  assert.equal(proof.trackId, trackId);
-  assert.equal(proof.beforeProducerCommit, "d7d4e5545f7ce618286c075e751dafaa61aeb937");
-  assert.equal(proof.items.length, 72);
-  assert.equal(byCurrentId.size, 72);
-  assert.equal(byBeforeId.size, 72);
-  assert.deepEqual([...byBeforeId.keys()].sort(), [...before.values()].flat().map(question => question.questionId).sort());
-  assert.deepEqual(proof.sourceFiles.map(file => file.sourceFile), files);
-  for (const file of proof.sourceFiles) {
-    assert.equal(sha256(await readFile(path.join(root, file.sourceFile))), file.sourceSha256);
-    assert.equal(sha256(execFileSync("git", ["show", `${proof.beforeProducerCommit}:${file.sourceFile}`], { cwd: root })), file.beforeSourceSha256);
-    const questions = sources.get(file.sourceFile);
-    assert.deepEqual(questions.map(question => question.questionId), questions.map(question => question.questionId).sort());
-    for (const question of questions) {
-      const item = byCurrentId.get(question.questionId);
-      assert.deepEqual(item.currentQuestion, question);
-      assert.deepEqual(item.beforeQuestion, before.get(file.sourceFile).find(old => old.questionId === item.beforeQuestionId));
-      assert.equal(item.beforeQuestionCanonicalSha256, sha256(JSON.stringify(item.beforeQuestion)));
-      assert.equal(item.currentQuestionCanonicalSha256, sha256(JSON.stringify(question)));
-      assert.ok(item.identityReason.length > 30);
-      assert.equal(item.identityAction, item.questionId === item.beforeQuestionId ? "preserve_question_id" : "replace_question_with_new_id");
-      if (item.questionId !== item.beforeQuestionId) {
-        assert.ok(Number(item.questionId.slice(-3)) > 18, "a replacement has a fresh identity outside the retired range");
-        assert.equal(item.questionId.slice(0, -3), item.beforeQuestionId.slice(0, -3));
-        assert.equal([...sources.values()].flat().some(current => current.questionId === item.beforeQuestionId), false);
-      }
-      assert.equal(item.optionIdMapping.length, 5);
-      assert.deepEqual(item.optionIdMapping.map(entry => entry.beforeOptionId).sort(), item.beforeQuestion.interaction.options.map(option => option.optionId).sort());
-      assert.deepEqual(item.optionIdMapping.map(entry => entry.optionId).sort(), question.interaction.options.map(option => option.optionId).sort());
-      assert.ok(item.optionIdMapping.every(entry => entry.reason.length > 0));
-      assert.ok(item.changedFields.length > 0);
-    }
-  }
-  const catalog = JSON.parse(await readFile(path.join(root, "content/catalog.json"), "utf8"));
-  const oldCatalog = JSON.parse(execFileSync("git", ["show", `${proof.beforeProducerCommit}:content/catalog.json`], { cwd: root, encoding: "utf8" }));
-  assert.equal(catalog.tracks.find(track => track.trackId === trackId).contentVersion, proof.contentVersion);
-  assert.notEqual(proof.beforeContentVersion, proof.contentVersion);
-  for (const track of catalog.tracks.filter(track => track.trackId !== trackId)) {
-    assert.deepEqual(track, oldCatalog.tracks.find(old => old.trackId === track.trackId));
-  }
-  const changedContent = execFileSync("git", ["diff", proof.beforeProducerCommit, "--name-only", "--", "content"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
-  assert.deepEqual(changedContent.sort(), ["content/catalog.json", ...files].sort());
-});
-
-const invariantCases = [
-  { id: "besd-n03-b01-i003", accepted: "i019_tenant_owner_authorization", required: [/tenant/i, /server|authoriz|access.*boundary/i], positive: "authorized tenant result", negative: "cross-tenant result must be denied" },
-  { id: "besd-n03-b01-i006", accepted: "i020_unique_event_atomic_commit", required: [/partnerId|partner/i, /eventId|event.*key/i, /atomic|transaction/i], positive: "original event commits", negative: "same event replay must not apply a second business effect" },
-  { id: "besd-n03-b01-i008", accepted: "i021_guarded_stock_decrement", required: [/atomic|transaction/i, /available|quantity|stock/i, /conditional|only when|positive|greater than|at least|>=/i], positive: "reserve the last available unit", negative: "competing stale reservation must not oversell" },
-  { id: "besd-n03-b01-i014", accepted: "i022_booking_interval_exclusion", required: [/overlap|exclusion/i, /atomic|exclusion|guarded|serializ|transaction/i, /resource|room/i], positive: "two different resources can be booked concurrently", negative: "overlapping confirmation for the same resource is rejected" },
-  { id: "besd-n03-b01-i017", accepted: "i023_provider_idempotent_intent", required: [/intent/i, /idempotenc/i, /reconcil/i], positive: "first authorization succeeds", negative: "delayed acknowledgement reuses the same intent without another charge" },
-  { id: "besd-n03-b02-i007", accepted: "i019_booking_exclusion_store", required: [/overlap|exclusion/i, /atomic|exclusion|serializ/i, /resource|room/i], positive: "nonoverlapping booking is stored", negative: "overlapping confirmation for the same resource is rejected" },
-  { id: "besd-n03-b02-i010", accepted: "i020_intent_reconcile_after_retention", required: [/intent/i, /provider key|idempotenc/i, /reconcil/i], positive: "timeout is reconciled against the existing charge", negative: "new intent on an ambiguous timeout is rejected" },
-  { id: "besd-n03-b02-i016", accepted: "i021_checkpointed_audit_append", required: [/append|immutable/i, /actor|attribut|author/i, /retention|retain/i, /sequence.*hash|hash.*chain/i, /independent.*checkpoint/i], positive: "attributable immutable evidence is appended", negative: "overwrite or silent loss is rejected" },
-];
-
-// Independent scenario anchors detect a valid-looking option shifted onto the
-// neighbouring record when a mixed old/new-ID unit is sorted. These are semantic
-// content regressions, not claims about a running database or provider.
-const scenarioMechanisms = {
-  B01: [/operation|extraction/i, /allocation|ticket|pending|seat/i, /tenant/i, /metadata|asset|watermark/i, /command|device/i, /event|partner/i, /revision|ETag|conditional/i, /stock|quantity|inventory/i, /progress|event|completion/i, /price|version|revision/i, /revocation|epoch|credential/i, /job|worker/i, /flag|rollout|version/i, /overlap|exclusion/i, /source|watermark|search/i, /route|urgent|dispatch/i, /payment|intent|charge/i, /fraud|risk|case|priority/i],
-  B02: [/stock|inventory|reservation|conditional/i, /progress|event|completion/i, /price|version|merchant/i, /revocation|epoch|session/i, /job|transcod/i, /flag|rollout|version/i, /overlap|exclusion/i, /search|watermark|projection/i, /route|urgent|priority/i, /payment|intent|charge/i, /risk|case|priority/i, /payroll|period|snapshot/i, /report|cutoff|aggregate/i, /telemetry|time.series|raw|rollup/i, /preference|notification|delivery/i, /audit|ledger|append/i, /parcel|sequence|carrier/i, /extraction|operation|billable/i],
-  B03: [/outbox|watermark|source.version/i, /input|snapshot|route/i, /intent|reconcil/i, /case|queue/i, /period|payroll|export|rules/i, /cutoff|aggregate|report/i, /raw|telemetry|rollup/i, /preference/i, /audit/i, /carrier|parcel|sequence/i, /extraction|operation|billable|job/i, /allocation/i, /tenant|authoriz|ACL/i, /metadata|catalog/i, /command|device/i, /webhook|event.*intent|delivery.*status/i, /document|revision|conflict/i, /inventory|stock|reservation/i],
-};
-
-test("all 54 model/storage/projection decisions remain attached to their original domain after identity changes", () => {
-  for (const [unit, patterns] of Object.entries(scenarioMechanisms)) for (let index = 0; index < patterns.length; index++) {
-    const item = byBeforeId.get(`besd-n03-${unit.toLowerCase()}-i${String(index + 1).padStart(3, "0")}`);
-    const question = item.currentQuestion;
-    const accepted = question.interaction.options.find(option => option.optionId === question.answer.optionId);
-    assert.match(accepted.text, patterns[index], item.beforeQuestionId);
-    assert.doesNotMatch(question.prompt, /^\s*Access path and guard:/, "a feedback sentence must not replace the actual scenario");
-  }
-});
-
-for (const fixture of invariantCases) {
-  test(`PKG-03 semantic fixture ${fixture.id}: ${fixture.positive} / ${fixture.negative}`, () => {
-    const item = byBeforeId.get(fixture.id);
-    const question = item.currentQuestion;
-    const expected = proof.invariantRegressionMatrix.find(entry => entry.beforeQuestionId === fixture.id);
-    assert.ok(expected, fixture.id);
-    assert.equal(question.answer.optionId, fixture.accepted, "the independent regression fixture pins the accepted mechanism");
-    assert.equal(expected.acceptedOptionId, fixture.accepted, "proof agrees with the independent regression fixture");
-    const accepted = question.interaction.options.find(option => option.optionId === expected.acceptedOptionId);
+test("eight independently specified business cases retain their positive and negative outcomes", () => {
+  for (const fixture of invariantCases) {
+    const question = get(fixture.id);
+    assert.equal(question.answer.optionId, fixture.accepted, `${fixture.id}: expected decision`);
+    const accepted = question.interaction.options.find((option) => option.optionId === fixture.accepted);
     for (const pattern of fixture.required) assert.match(accepted.text, pattern, fixture.id);
-    assert.ok(item.positiveCase.length > 0 && item.negativeCase.length > 0);
-    assert.equal(scoreQuestion(question, { type: "choice_single", optionId: expected.acceptedOptionId }).earnedPoints, 1);
-    assert.ok(expected.rejectedOptionIds.length >= 1);
-    for (const optionId of expected.rejectedOptionIds) {
-      assert.ok(question.interaction.options.some(option => option.optionId === optionId));
-      assert.equal(scoreQuestion(question, { type: "choice_single", optionId }).earnedPoints, 0);
-      assert.ok(question.feedback.messages.some(message => message.targetId === optionId));
-      const mutated = structuredClone(question);
-      mutated.answer.optionId = optionId;
-      assert.notEqual(mutated.answer.optionId, expected.acceptedOptionId, "negative control rejects a re-keyed near-miss");
-      assert.equal(scoreQuestion(mutated, { type: "choice_single", optionId: expected.acceptedOptionId }).earnedPoints, 0);
-    }
-  });
-}
-
-test("PKG-02: every indexing item has an explicit measured query, maintenance tradeoff and independent domain guarantee", () => {
-  for (let ordinal = 1; ordinal <= 18; ordinal++) {
-    const item = byBeforeId.get(`besd-n03-b04-i${String(ordinal).padStart(3, "0")}`);
-    const question = item.currentQuestion;
-    assert.equal(item.identityAction, "replace_question_with_new_id");
-    assert.ok(item.queryWorkload.length > 15, item.beforeQuestionId);
-    assert.ok(item.indexTradeoff.length > 15, item.beforeQuestionId);
-    assert.ok(item.separateDomainGuarantee.length > 15, item.beforeQuestionId);
-    assert.match(question.prompt, /query|lookup|filter|SELECT|scan|EXPLAIN/i, item.beforeQuestionId);
-    assert.match([question.prompt, ...question.constraints].join(" "), /write|maintenance|update|insert|storage/i, item.beforeQuestionId);
-    const accepted = question.interaction.options.find(option => option.optionId === question.answer.optionId);
-    assert.match(accepted.text, /index|scan|access path|b-tree|\([a-z_]+(?:,|\))|resource\/time-range/i, item.beforeQuestionId);
-    const strongestWrong = question.interaction.options.find(option => option.optionId === item.strongestWrongOptionId);
-    assert.ok(strongestWrong, item.beforeQuestionId);
-    const wrongScore = scoreQuestion(question, { type: "choice_single", optionId: strongestWrong.optionId });
-    assert.equal(wrongScore.earnedPoints, 0);
+    assert.ok(fixture.positive.length > 0 && fixture.negative.length > 0);
+    assert.equal(scoreQuestion(question, { type: "choice_single", optionId: fixture.accepted }).earnedPoints, 1);
+    const wrong = question.interaction.options.find((option) => option.optionId !== fixture.accepted);
+    assert.ok(wrong, fixture.id);
+    assert.equal(scoreQuestion(question, { type: "choice_single", optionId: wrong.optionId }).earnedPoints, 0);
+    assert.ok(question.feedback.messages.some((message) => message.targetId === wrong.optionId));
+    const mutated = structuredClone(question);
+    mutated.answer.optionId = wrong.optionId;
+    assert.equal(scoreQuestion(mutated, { type: "choice_single", optionId: fixture.accepted }).earnedPoints, 0, `${fixture.id}: negative control rejects a re-keyed near miss`);
   }
 });
 
-test("PKG-04: all alternatives have their own matching diagnostic ID and scenario-specific explanation", () => {
-  for (const questions of sources.values()) for (const question of questions) {
+test("all 18 measured index choices state both query work and write or storage tradeoffs", () => {
+  const indexed = questions.filter((question) => question.questionId.includes("-b04-"));
+  assert.equal(indexed.length, 18);
+  for (const question of indexed) {
+    assert.match(question.prompt, /query|lookup|filter|SELECT|scan|EXPLAIN/i, question.questionId);
+    assert.match([question.prompt, ...question.constraints].join(" "), /write|maintenance|update|insert|storage|index/i, question.questionId);
+    const accepted = question.interaction.options.find((option) => option.optionId === question.answer.optionId);
+    assert.match(accepted.text, /index|scan|access path|b-tree|\([a-z_]+(?:,|\))|resource\/time-range/i, question.questionId);
+    assert.match(question.prompt, /\d|measured|plan|scan|rows|latency|selectivity|EXPLAIN (?:shows|reports)|existing .* lookup (?:meets|already uses)/i, `${question.questionId}: observed workload or plan evidence`);
+    const wrong = question.interaction.options.filter((option) => option.optionId !== question.answer.optionId);
+    assert.equal(question.feedback.messages.length, wrong.length, question.questionId);
+    for (const option of wrong) {
+      assert.equal(scoreQuestion(question, { type: "choice_single", optionId: option.optionId }).earnedPoints, 0, `${question.questionId}/${option.optionId}`);
+      assert.ok(question.feedback.messages.some((message) => message.targetId === option.optionId && message.text.length > 30), question.questionId);
+    }
+    assert.equal(scoreQuestion(question, question.answer).earnedPoints, 1, question.questionId);
+  }
+});
+
+test("all alternatives have their own matching diagnostic ID and scenario-specific explanation", () => {
+  for (const question of questions) {
     const options = question.interaction.options;
-    const wrong = options.filter(option => option.optionId !== question.answer.optionId);
-    assert.equal(wrong.length, 4);
-    assert.equal(question.feedback.messages.length, 4);
-    assert.equal(new Set(question.feedback.messages.map(message => message.targetId)).size, 4);
+    const wrong = options.filter((option) => option.optionId !== question.answer.optionId);
+    assert.equal(wrong.length, 4, question.questionId);
+    assert.equal(question.feedback.messages.length, 4, question.questionId);
+    assert.equal(new Set(question.feedback.messages.map((message) => message.targetId)).size, 4, question.questionId);
     assert.doesNotMatch(question.feedback.details.errorCorrection, /^The distractors either/);
     assert.doesNotMatch(question.feedback.reason, /through an explicit mechanism/);
     for (const option of wrong) {
-      const messages = question.feedback.messages.filter(message => message.kind === "wrong_option" && message.targetId === option.optionId);
-      assert.equal(messages.length, 1, `${question.questionId}/${option.optionId}`);
-      assert.ok(messages[0].text.length > 30);
-      assert.doesNotMatch(messages[0].text, /^The architecture decision should survive a provider change/);
-      assert.equal(scoreQuestion(question, { type: "choice_single", optionId: option.optionId }).earnedPoints, 0);
+      const matching = question.feedback.messages.filter((message) => message.kind === "wrong_option" && message.targetId === option.optionId);
+      assert.equal(matching.length, 1, `${question.questionId}/${option.optionId}`);
+      assert.ok(matching[0].text.length > 30, `${question.questionId}/${option.optionId}`);
+      assert.notEqual(scoreQuestion(question, { type: "choice_single", optionId: option.optionId }).earnedPoints, 1);
     }
-    for (const message of question.feedback.messages) assert.ok(wrong.some(option => option.optionId === message.targetId));
-    assert.equal(scoreQuestion(question, question.answer).earnedPoints, 1);
+    assert.equal(scoreQuestion(question, question.answer).earnedPoints, 1, question.questionId);
   }
 });

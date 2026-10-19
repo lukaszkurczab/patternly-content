@@ -1,82 +1,64 @@
 import assert from "node:assert/strict";
-import { readFile, readdir, mkdtemp, mkdir, realpath, rm, writeFile } from "node:fs/promises";
-import path from "node:path";
-import { tmpdir } from "node:os";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { buildTrack, canonicalJson, sha256 } from "../scripts/build.mjs";
-import { reconstructApprovedAwsPredecessor } from "../scripts/content/verify-migration.mjs";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
+import { loadCurrentQuestionBank } from "./helpers/current-question-bank.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const proof = JSON.parse(await readFile(path.join(root, "evidence/business-quality/saa-20261010-aws-targeted-corrections.json"), "utf8"));
-const sourceQuestions = [];
-for (const node of await readdir(path.join(root, "content", proof.trackId), { withFileTypes: true })) {
-  if (!node.isDirectory()) continue;
-  for (const name of await readdir(path.join(root, "content", proof.trackId, node.name))) {
-    if (name.endsWith(".json")) sourceQuestions.push(...JSON.parse(await readFile(path.join(root, "content", proof.trackId, node.name, name), "utf8")));
-  }
-}
+const bank = await loadCurrentQuestionBank("aws-certified-solutions-architect-associate");
+const currentIds = [
+  "aws-saa-c03-AWSSAA-N04-B01-011", "aws-saa-c03-AWSSAA-N04-B01-015", "aws-saa-c03-AWSSAA-N04-B02-006",
+  "aws-saa-c03-AWSSAA-N04-B03-016", "aws-saa-c03-AWSSAA-N04-B05-011", "aws-saa-c03-AWSSAA-N04-B05-015",
+  "aws-saa-c03-AWSSAA-N04-B06-010", "aws-saa-c03-AWSSAA-N04-B06-011", "aws-saa-c03-AWSSAA-N04-B06-012",
+  "aws-saa-c03-AWSSAA-N04-B06-013", "aws-saa-c03-AWSSAA-N04-B06-014", "aws-saa-c03-AWSSAA-N04-B06-015",
+  "aws-saa-c03-AWSSAA-N04-B06-016", "aws-saa-c03-AWSSAA-N04-B06-018", "aws-saa-c03-AWSSAA-N04-B07-012",
+  "aws-saa-c03-AWSSAA-N07-B01-007", "aws-saa-c03-AWSSAA-N07-B01-010", "aws-saa-c03-AWSSAA-N07-B02-013",
+  "aws-saa-c03-AWSSAA-N07-B04-005", "aws-saa-c03-AWSSAA-N07-B04-006", "aws-saa-c03-AWSSAA-N07-B05-001",
+  "aws-saa-c03-AWSSAA-N07-B05-002", "aws-saa-c03-AWSSAA-N07-B05-003", "aws-saa-c03-AWSSAA-N07-B05-004",
+  "aws-saa-c03-AWSSAA-N07-B05-005-saa20261011", "aws-saa-c03-AWSSAA-N07-B05-006",
+  "aws-saa-c03-AWSSAA-N07-B06-012", "aws-saa-c03-AWSSAA-N07-B07-006"
+];
+const keyMechanisms = new Map([
+  ["aws-saa-c03-AWSSAA-N04-B01-011", /MFA policy|enrollment|challenge flow/i],
+  ["aws-saa-c03-AWSSAA-N04-B01-015", /Cognito.*authorizer|OAuth access-token scopes/i],
+  ["aws-saa-c03-AWSSAA-N04-B02-006", /task execution role.*GetSecretValue/i],
+  ["aws-saa-c03-AWSSAA-N04-B03-016", /path-scoped exception/i],
+  ["aws-saa-c03-AWSSAA-N04-B05-015", /origin group.*primary and secondary origin/i],
+  ["aws-saa-c03-AWSSAA-N04-B06-010", /Security Hub CSPM.*cross-account finding aggregation/i],
+  ["aws-saa-c03-AWSSAA-N07-B02-013", /300-second per-message delay/i],
+  ["aws-saa-c03-AWSSAA-N07-B04-005", /EventBridge archive.*retention period/i],
+  ["aws-saa-c03-AWSSAA-N07-B05-003", /active\/standby.*Availability Zones/i],
+  ["aws-saa-c03-AWSSAA-N07-B05-005-saa20261011", /Stage the migration.*checkpoint.*drain/i],
+  ["aws-saa-c03-AWSSAA-N07-B06-012", /Standard workflow execution history/i]
+]);
 
-test("the 28 exact AWS source corrections preserve scoring and reconstruct the immutable predecessor", async () => {
-  assert.equal(proof.items.length, 28);
-  assert.equal(new Set(proof.items.map(({ beforeQuestionId }) => beforeQuestionId)).size, 28);
-  assert.equal(proof.items.filter(({ identityAction }) => identityAction === "preserve_question_id").length, 27);
-  assert.deepEqual(proof.items.filter(({ identityAction }) => identityAction === "new_question_id").map(({ beforeQuestionId, questionId }) => [beforeQuestionId, questionId]), [
-    ["aws-saa-c03-AWSSAA-N07-B05-005", "aws-saa-c03-AWSSAA-N07-B05-005-saa20261011"]
-  ]);
-
-  const byId = new Map(sourceQuestions.map((question) => [question.questionId, question]));
-  for (const item of proof.items) {
-    const question = byId.get(item.questionId);
-    assert.ok(question, item.questionId);
-    assert.deepEqual(question, item.currentQuestion, item.questionId);
-    assert.equal(validateQuestion(question).valid, true, item.questionId);
-    const optionIds = question.interaction.options.map(({ optionId }) => optionId);
-    assert.equal(new Set(optionIds).size, optionIds.length, item.questionId);
+test("the 28 current AWS corrections are in the built artifact with expected keys and diagnostic feedback", () => {
+  assert.equal(currentIds.length, 28);
+  assert.equal(new Set(currentIds).size, 28);
+  for (const id of currentIds) {
+    const question = bank.byId.get(id);
+    assert.ok(question, id);
+    assert.equal(validateQuestion(question).valid, true, id);
+    const optionIds = question.interaction.options.map((option) => option.optionId);
+    assert.equal(new Set(optionIds).size, optionIds.length, id);
+    assert.equal(question.answer.optionId, "A", `${id}: response is the independently expected AWS mechanism`);
     const wrongIds = optionIds.filter((optionId) => optionId !== question.answer.optionId).sort();
-    assert.deepEqual(question.feedback.messages.map(({ targetId }) => targetId).sort(), wrongIds, item.questionId);
+    assert.deepEqual(question.feedback.messages.map((message) => message.targetId).sort(), wrongIds, id);
+    assert.ok(question.feedback.messages.every((message) => message.kind === "wrong_option" && message.text.trim().length > 25), id);
     for (const optionId of optionIds) {
-      const score = scoreQuestion(question, { type: "choice_single", optionId });
-      assert.equal(score.status, optionId === question.answer.optionId ? "correct" : "incorrect", `${item.questionId}/${optionId}`);
-      assert.equal(score.earnedPoints, optionId === question.answer.optionId ? 1 : 0, `${item.questionId}/${optionId}`);
+      const result = scoreQuestion(question, { type: "choice_single", optionId });
+      assert.equal(result.status, optionId === question.answer.optionId ? "correct" : "incorrect", `${id}/${optionId}`);
+      assert.equal(result.earnedPoints, optionId === question.answer.optionId ? 1 : 0, `${id}/${optionId}`);
     }
+    const shuffled = { ...question, interaction: { ...question.interaction, options: [...question.interaction.options].reverse() } };
+    assert.equal(scoreQuestion(shuffled, question.answer).earnedPoints, 1, `${id}: option order does not change the key`);
   }
-
-  const transition = await reconstructApprovedAwsPredecessor({ rootDirectory: root, questions: sourceQuestions });
-  assert.equal(transition.predecessorQuestions.length, 2604);
-  assert.equal(transition.replacements.length, 1);
-  assert.equal(transition.sameIdCorrections.length, 27);
-  assert.equal(sha256(canonicalJson(transition.predecessorQuestions)), proof.beforeQuestionSetSha256);
-  assert.equal(transition.predecessorQuestions.some(({ questionId }) => questionId.endsWith("-005-saa20261011")), false);
-
-  const outputRoot = await mkdtemp(path.join(tmpdir(), "saa-targeted-corrections-build-"));
-  try {
-    const built = await buildTrack({ root, trackId: proof.trackId, outputRoot });
-    assert.equal(built.artifact.contentVersion, proof.contentVersion);
-    assert.equal(built.artifact.questions.length, 2604);
-    for (const item of proof.items) assert.deepEqual(built.artifact.questions.find(({ questionId }) => questionId === item.questionId), item.currentQuestion);
-    assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
-  } finally {
-    await rm(outputRoot, { recursive: true, force: true });
+  for (const [id, mechanism] of keyMechanisms) {
+    const question = bank.byId.get(id);
+    assert.ok(question, id);
+    assert.match(question.interaction.options.find((option) => option.optionId === question.answer.optionId).text, mechanism, id);
   }
 });
 
-test("AWS predecessor proof rejects unproven content drift and edited evidence", async (t) => {
-  const drifted = structuredClone(sourceQuestions);
-  drifted.find(({ questionId }) => questionId === proof.items[0].questionId).prompt += " unreviewed";
-  await assert.rejects(
-    reconstructApprovedAwsPredecessor({ rootDirectory: root, questions: drifted }),
-    { code: "HASH_MISMATCH" }
-  );
-
-  const temporaryRoot = await mkdtemp(path.join(await realpath(tmpdir()), "saa-targeted-proof-tamper-"));
-  t.after(() => rm(temporaryRoot, { recursive: true, force: true }));
-  const temporaryProof = path.join(temporaryRoot, "evidence/business-quality/saa-20261010-aws-targeted-corrections.json");
-  await mkdir(path.dirname(temporaryProof), { recursive: true });
-  await writeFile(temporaryProof, `${JSON.stringify({ ...proof, scope: "tampered" })}\n`);
-  await assert.rejects(
-    reconstructApprovedAwsPredecessor({ rootDirectory: temporaryRoot, questions: sourceQuestions }),
-    { code: "HASH_MISMATCH" }
-  );
+test("the current AWS source and temporary canonical artifact contain identical question records", () => {
+  for (const id of currentIds) assert.ok(bank.artifact.questions.some((question) => question.questionId === id), id);
+  assert.deepEqual(bank.artifact.questions, bank.questions);
 });

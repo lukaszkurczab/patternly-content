@@ -1,45 +1,34 @@
-import assert from 'node:assert/strict';
-import test, { after } from 'node:test';
-import { readFileSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import { createPreQleProducerFixture } from './helpers/pre-qle-producer-fixture.mjs';
-import { validateQuestion } from '../scripts/content/question-contract.mjs';
-const root = fileURLToPath(new URL('../', import.meta.url));
-const fixture = await createPreQleProducerFixture(root);
-after(() => fixture.cleanup());
-const read = p => JSON.parse(readFileSync(p, 'utf8'));
-const coverage = read(path.join(root, 'docs/evidence/content-audits/2026-10-13-claude-qle-v2-coverage.json'));
+import assert from "node:assert/strict";
+import test from "node:test";
 
-test('semantic replacements have fresh active identities and exact historical provenance without runtime aliases', () => {
-  const active = new Map();
-  const old = new Map();
-  for (const unit of coverage.units) {
-    const bytes = readFileSync(path.join(root, unit.sourcePath));
-    assert.equal(createHash('sha256').update(bytes).digest('hex'), unit.sourceSha256, unit.mentalUnitId);
-    for (const question of JSON.parse(bytes)) { assert.ok(!active.has(question.questionId)); active.set(question.questionId, question); }
-    for (const question of read(path.join(fixture.root, unit.sourcePath))) old.set(question.questionId, question);
-  }
-  assert.equal(active.size, 972);
-  assert.equal(coverage.replacementLineage.length, 8);
-  const newIds = new Set();
-  for (const relation of coverage.replacementLineage) {
-    assert.equal(relation.kind, 'semantic_replacement');
-    assert.equal(relation.effect, 'provenance_only_no_credit_or_review_alias');
-    const previous = relation.predecessor;
-    assert.equal(previous.trackId, coverage.trackId);
-    assert.equal(previous.contentVersion, 'ccarp-2026.10.11-capacity-v1-bizq02-v2-bizq03-planning-v2-cc02-v1-cc03-v1-cc04-v3');
-    assert.equal(previous.artifactSha256, '12e6c8637b112af9e48ca870bb80d89f9db6ad7d1949c51efceb37572a6cd0bd');
-    assert.ok(old.has(previous.questionId));
-    assert.ok(!active.has(previous.questionId));
-    assert.ok(!old.has(relation.currentQuestionId));
-    assert.ok(!newIds.has(relation.currentQuestionId)); newIds.add(relation.currentQuestionId);
-    const current = active.get(relation.currentQuestionId); assert.ok(current);
-    assert.equal(current.mentalUnitId, old.get(previous.questionId).mentalUnitId);
-    assert.equal(current.questionRelation, undefined, 'unrelated decisions must not become selectable contrast pairs');
-    assert.equal(validateQuestion(current).valid, true);
-    const entry = coverage.units.flatMap(u => u.questions).find(q => q.questionId === relation.currentQuestionId);
-    assert.equal(entry.decision, 'replace'); assert.equal(entry.replacesQuestionId, previous.questionId);
+import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
+import { loadCurrentQuestionBank } from "./helpers/current-question-bank.mjs";
+
+const currentQleAnswers = new Map([
+  ["CCARP-D05-O02-qle-v2-context-budget-admission", "b"],
+  ["CCARP-D05-O05-qle-v2-decision-path-provenance", "d"],
+  ["CCARP-D06-O01-qle-v2-retention-assumption", "d"],
+  ["CCARP-D06-O02-qle-v2-architecture-cost-volume", "b"],
+  ["CCARP-D06-O03-qle-v2-scheduled-governance-review", "a"],
+  ["CCARP-D06-O04-qle-v2-architecture-rationale-handoff", "d"],
+  ["CCARP-D07-O02-qle-v2-generated-code-understanding", "d"],
+  ["CCARP-D07-O03-qle-v2-spend-driver-diagnosis", "b"]
+]);
+
+test("current QLE questions have valid independent identities and retain their answer behavior", async () => {
+  const { byId } = await loadCurrentQuestionBank("claude-certified-architect-professional-certification");
+  assert.equal(new Set(currentQleAnswers.keys()).size, currentQleAnswers.size);
+  for (const [questionId, expectedAnswerOptionId] of currentQleAnswers) {
+    const question = byId.get(questionId);
+    assert.ok(question, `${questionId} remains in current canonical source`);
+    assert.equal(validateQuestion(question).valid, true, questionId);
+    assert.equal(question.questionRelation, undefined, `${questionId} does not introduce a runtime predecessor alias`);
+    assert.equal(question.answer.optionId, expectedAnswerOptionId, `${questionId}: current semantic answer remains correct`);
+    const options = question.interaction.options.map(({ optionId }) => optionId);
+    assert.equal(new Set(options).size, options.length, `${questionId}: unique options`);
+    for (const optionId of options) {
+      const correct = optionId === question.answer.optionId;
+      assert.equal(scoreQuestion(question, { type: "choice_single", optionId }).status, correct ? "correct" : "incorrect", `${questionId}/${optionId}`);
+    }
   }
 });

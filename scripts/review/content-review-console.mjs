@@ -8,7 +8,7 @@ import { validateSchema } from "./schema-validation.mjs";
 
 export const CONTENT_REVIEW_OUTCOME_SCHEMA_VERSION = "patternly-content-review-outcome-v1";
 export const CONTENT_REVIEW_OUTCOMES = Object.freeze(["approved", "needs_change", "rejected"]);
-export const CONTENT_REVIEW_OUTCOMES_PATH = "evidence/content-reviews/outcomes.json";
+export const CONTENT_REVIEW_OUTCOMES_PATH = ".local/review/current-outcomes.json";
 export const LAUNCH_TRACK_IDS = Object.freeze([
   "coding-interview-dsa-problem-solving",
   "claude-certified-architect-professional-certification",

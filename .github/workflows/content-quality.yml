@@ -1,0 +1,83 @@
+name: Current content quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  content:
+    runs-on: ubuntu-latest
+    env:
+      PATTERNLY_FRONTEND_ROOT: ${{ github.workspace }}/patternly
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: patternly-content
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: lukaszkurczab/gcp-ace-trainer
+          ref: main
+          path: patternly
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            patternly-content/package-lock.json
+            patternly/package-lock.json
+      - name: Record exact source and consumer revisions
+        id: revisions
+        run: |
+          content_sha=$(git -C patternly-content rev-parse HEAD)
+          app_sha=$(git -C patternly rev-parse HEAD)
+          echo "content_sha=$content_sha" >> "$GITHUB_OUTPUT"
+          echo "app_sha=$app_sha" >> "$GITHUB_OUTPUT"
+          echo "CONTENT_SHA=$content_sha"
+          echo "APP_SHA=$app_sha"
+      - run: npm ci
+        working-directory: patternly-content
+      - run: npm ci
+        working-directory: patternly
+      - run: npm test
+        working-directory: patternly-content
+      - name: Build all current canonical tracks
+        run: npm run content:build-all
+        working-directory: patternly-content
+      - name: Build a local current-source release for the backend reader
+        run: npm run content:build-release -- "$RUNNER_TEMP/patternly-current-release"
+        working-directory: patternly-content
+      - name: Verify generated release carries a current technical identity only
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from "node:fs/promises";
+
+          const root = `${process.env.RUNNER_TEMP}/patternly-current-release`;
+          const pointer = JSON.parse(await readFile(`${root}/current.json`, "utf8"));
+          const release = JSON.parse(await readFile(`${root}/${pointer.releasePath}`, "utf8"));
+          const identity = release.manifest.currentIdentity;
+          if (release.manifest.releaseId !== pointer.releaseId || release.manifest.status !== "current_source" || identity?.tracks?.length !== 9 || release.artifacts.length !== 9 || identity.claims?.semanticReview !== "not_claimed" || identity.claims?.publication !== "not_performed" || identity.claims?.deployment !== "not_performed") {
+            throw new Error("Generated source release has an invalid current identity or overclaims review/publication/deployment.");
+          }
+          process.stdout.write(`CURRENT_SOURCE_RELEASE_VALID releaseId=${pointer.releaseId}; tracks=${release.artifacts.length}; fingerprint=${identity.sourceInputFingerprint}\n`);
+          NODE
+        working-directory: patternly-content
+      - name: Sync and verify current CONTENT source in the selected APP revision
+        env:
+          PATTERNLY_CONTENT_CURRENT_ROOT: ${{ github.workspace }}/patternly-content
+          PATTERNLY_CONTENT_EXPECTED_CURRENT_SHA: ${{ steps.revisions.outputs.content_sha }}
+        working-directory: patternly
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/patternly-current-receipt"
+          node scripts/syncBundledContentRelease.mjs sync --content-root "$PATTERNLY_CONTENT_CURRENT_ROOT"
+          node scripts/verifyDerivedContentWorkspace.mjs | tee "$RUNNER_TEMP/patternly-current-receipt/derived-content.json"
+          app_head=$(git rev-parse HEAD)
+          test "$app_head" = "${{ steps.revisions.outputs.app_sha }}"
+          printf '{"contentSha":"%s","appSha":"%s"}\n' "$PATTERNLY_CONTENT_EXPECTED_CURRENT_SHA" "$app_head" > "$RUNNER_TEMP/patternly-current-receipt/revisions.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: current-content-receipt-${{ github.run_id }}
+          path: ${{ runner.temp }}/patternly-current-receipt
+          if-no-files-found: error

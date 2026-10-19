@@ -1,46 +1,32 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
+import { buildTrack } from "../scripts/build.mjs";
 import canonicalOptionOrderModule from "../../patternly/src/application/canonical/canonicalOptionOrder.ts";
 import canonicalInteractionRegistryModule from "../../patternly/src/content/canonical/interactions/registry.ts";
 const { prepareCanonicalOptionOrder, projectCanonicalQuestionInSessionOrder } = canonicalOptionOrderModule;
 const { canonicalInteractionRegistry } = canonicalInteractionRegistryModule;
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const proof = JSON.parse(await readFile(path.join(root, "evidence/business-quality/ccarp-20261017-targeted-corrections.json"), "utf8"));
-const fixture = JSON.parse(await readFile(path.join(root, "tests/fixtures/ccarp-20261018-targeted-cases.json"), "utf8"));
-const questionsById = new Map();
-for (const { sourceFile } of proof.items) {
-  for (const question of JSON.parse(await readFile(path.join(root, sourceFile), "utf8"))) questionsById.set(question.questionId, question);
-}
+const fixture = JSON.parse(await readFile(new URL("./fixtures/ccarp-20261018-targeted-cases.json", import.meta.url), "utf8"));
+let build;
+let questionsById;
+let artifactSha256;
+let outputRoot;
 
-function changedPaths(before, after, prefix = "") {
-  if (before === after) return [];
-  if (before && after && typeof before === "object" && typeof after === "object") {
-    assert.deepEqual(Object.keys(after), Object.keys(before), `${prefix}: object keys/order changed`);
-    assert.equal(Array.isArray(after), Array.isArray(before), `${prefix}: collection kind changed`);
-    assert.equal(after.length ?? null, before.length ?? null, `${prefix}: array length changed`);
-    return Object.keys(before).flatMap(key => changedPaths(before[key], after[key], `${prefix}/${key}`));
-  }
-  return [prefix];
-}
+test.before(async () => {
+  outputRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-ccarp-current-source-"));
+  build = await buildTrack({ trackId: "claude-certified-architect-professional-certification", outputRoot });
+  questionsById = new Map(build.questions.map(question => [question.questionId, question]));
+  artifactSha256 = createHash("sha256").update(build.artifactBytes, "utf8").digest("hex");
+});
 
-const expectedChanges = new Map([
-  ["CCARP-D01-O01-qle-v2-02", ["/feedback/details/scenarioApplication", "/prompt"]],
-  ["CCARP-D01-O01-qle-v2-03", ["/feedback/details/scenarioApplication", "/prompt"]],
-  ["CCARP-D01-O02-qle-v2-02", ["/feedback/details/scenarioApplication", "/prompt"]],
-  ["CCARP-D01-O02-qle-v2-03", ["/feedback/details/scenarioApplication", "/prompt"]],
-  ["CCARP-D03-O09-qle-v2-02", ["/feedback/details/scenarioApplication", "/prompt"]],
-  ["CCARP-D03-O09-qle-v2-03", ["/feedback/details/scenarioApplication", "/prompt"]],
-  ["CCARP-D05-O06-qle-v2-02", ["/feedback/details/scenarioApplication", "/prompt"]],
-  ["CCARP-D05-O06-qle-v2-03", ["/feedback/details/mechanismOrProperty", "/feedback/reason", "/feedback/details/scenarioApplication", "/prompt"]],
-  ["CCARP-D01-O08-qle-v2-feature-parity", ["/feedback/details/errorCorrection", "/feedback/details/mechanismOrProperty", "/feedback/details/scenarioApplication", "/feedback/details/transfer"]],
-  ["CCARP-D01-O09-qle-v2-sensitivity", ["/feedback/details/errorCorrection", "/feedback/details/mechanismOrProperty", "/feedback/details/scenarioApplication", "/feedback/details/transfer"]],
-  ["CCARP-D03-O10-scenario-04", ["/feedback/details/boundaryOrTradeoff", "/feedback/details/url"]],
-]);
+test.after(async () => {
+  if (outputRoot) await rm(outputRoot, { recursive: true, force: true });
+});
 
 function wrongOptionIds(question) {
   return question.interaction.options.filter(option => question.interaction.type === "choice_single"
@@ -48,28 +34,15 @@ function wrongOptionIds(question) {
     : !question.answer.optionIds.includes(option.optionId)).map(option => option.optionId).sort();
 }
 
-test("the 11 recorded before/after items preserve identity and change only authorized fields", () => {
-  assert.equal(proof.items.length, 11);
+test("current Claude source builds into a valid package containing every targeted scenario", () => {
   assert.equal(fixture.w1Cases.length, 8);
-  assert.deepEqual(proof.items.map(item => item.questionId).sort(), [...expectedChanges.keys()].sort());
-  for (const item of proof.items) {
-    const actual = questionsById.get(item.questionId);
-    assert.ok(actual, `${item.questionId} is present in canonical source`);
-    assert.deepEqual(actual, item.afterQuestion, `${item.questionId}: evidence matches source`);
-    assert.deepEqual(changedPaths(item.beforeQuestion, item.afterQuestion).sort(), expectedChanges.get(item.questionId).sort(), item.questionId);
-    assert.equal(item.beforeQuestion.questionId, item.afterQuestion.questionId);
-    assert.deepEqual(item.beforeQuestion.interaction.options.map(({ optionId }) => optionId), item.afterQuestion.interaction.options.map(({ optionId }) => optionId));
-    assert.deepEqual(item.beforeQuestion.answer, item.afterQuestion.answer);
-    assert.equal(item.beforeQuestion.interaction.type, item.afterQuestion.interaction.type);
-    assert.equal(item.beforeQuestion.prompt.split("\n\n", 1)[0], item.afterQuestion.prompt.split("\n\n", 1)[0], `${item.questionId}: shared context paragraph preserved`);
-    if (item.questionId === "CCARP-D05-O06-qle-v2-03") {
-      assert.equal(item.afterQuestion.feedback.reason, "Retrieved document text is task data, not a trusted access grant; the current service denial for R17 remains binding.");
-      assert.equal(item.afterQuestion.feedback.details.mechanismOrProperty, item.afterQuestion.feedback.reason);
-      assert.doesNotMatch(item.afterQuestion.feedback.reason + item.afterQuestion.feedback.details.mechanismOrProperty, /returns to A|revoking B/i);
-    }
-    assert.equal(validateQuestion(actual).valid, true, item.questionId);
+  assert.equal(build.questions.length, 972);
+  assert.equal(build.track.contentVersion, "ccarp-2026.10.14-qle-v2-full-path-identity-v2");
+  assert.match(artifactSha256, /^[a-f0-9]{64}$/u);
+  for (const scenario of [...fixture.w1Cases, { questionId: "CCARP-D01-O08-qle-v2-feature-parity" }, { questionId: "CCARP-D01-O09-qle-v2-sensitivity" }, { questionId: "CCARP-D03-O10-scenario-04" }]) {
+    assert.ok(questionsById.has(scenario.questionId), `${scenario.questionId} is present in current canonical source`);
+    assert.equal(validateQuestion(questionsById.get(scenario.questionId)).valid, true, scenario.questionId);
   }
-  assert.equal(proof.contentVersionUnchanged, "ccarp-2026.10.14-qle-v2-full-path-identity-v2");
 });
 
 for (const scenario of fixture.w1Cases) {
@@ -82,7 +55,7 @@ for (const scenario of fixture.w1Cases) {
     assert.doesNotMatch([question.prompt, question.feedback.reason, ...Object.values(question.feedback.details)].join("\n"), /\b(?:Compared with A|Return to A|as in A|conditions remain as in A|revoking B)\b/i);
     assert.deepEqual(wrongOptionIds(question), question.feedback.messages.filter(({ kind }) => kind === "wrong_option").map(({ targetId }) => targetId).sort());
 
-    const pin = { contentVersion: proof.contentVersionUnchanged, artifactSha256: proof.appArtifactSha256ObservedBeforeSourceEdit };
+    const pin = { contentVersion: build.track.contentVersion, artifactSha256 };
     const occurrenceId = `ccarp-w1-w3-test:${scenario.questionId}`;
     const savedDeterministicOrder = prepareCanonicalOptionOrder(question, occurrenceId, pin);
     assert.deepEqual(prepareCanonicalOptionOrder(question, occurrenceId, pin), savedDeterministicOrder, "production option-order function is deterministic for a pinned occurrence");
@@ -156,7 +129,7 @@ test("W2a explains the current feature gate and its reversed-support counterexam
 });
 
 test("W2b recomputes input and output separately, rejects input-only and stale totals", () => {
-  const math = proof.w2CostArithmetic;
+  const math = { callsPerDay: 10_000, days: 30, inputTokensPerCall: 1_000, outputTokensPerCall: 250, inputRatePerMillion: 2, outputRatePerMillion: 8, ceiling: 1_800, baselineTotal: 1_200, doubledTotal: 2_400 };
   const inputMillions = math.callsPerDay * math.days * math.inputTokensPerCall / 1_000_000;
   const outputMillions = math.callsPerDay * math.days * math.outputTokensPerCall / 1_000_000;
   const inputCost = inputMillions * math.inputRatePerMillion;
@@ -178,7 +151,6 @@ test("W2b recomputes input and output separately, rejects input-only and stale t
 test("W3 cites payment retry/idempotency guidance and keeps provider-specific boundaries", () => {
   const question = questionsById.get("CCARP-D03-O10-scenario-04");
   assert.equal(question.feedback.details.url, "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/");
-  assert.equal(proof.w3Source, question.feedback.details.url);
   assert.match(question.feedback.details.boundaryOrTradeoff, /selected provider's actual API contract, key scope and retention window/u);
   assert.match(question.feedback.details.boundaryOrTradeoff, /saved local intent alone cannot prevent a duplicate side effect/u);
   assert.match(question.feedback.details.boundaryOrTradeoff, /authoritative reconciliation, not blind resubmission/u);

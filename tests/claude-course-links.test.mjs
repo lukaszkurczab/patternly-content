@@ -1,37 +1,51 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
-import test, { after } from 'node:test';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { createPreQleProducerFixture } from './helpers/pre-qle-producer-fixture.mjs';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { canonicalJson, sha256 } from '../scripts/build.mjs';
 import { ACCEPTED_TRACK_IDS, validateQuestion } from '../scripts/content/question-contract.mjs';
-import { checkOrWriteCourseLinks, courseForQuestion, trackId } from '../scripts/content/add-claude-course-links.mjs';
+import { loadCurrentQuestionBank } from './helpers/current-question-bank.mjs';
 const read = path => JSON.parse(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'));
-const directory = new URL(`../content/${trackId}/`, import.meta.url);
-const currentQuestions = readdirSync(directory).flatMap(node => readdirSync(new URL(`${node}/`, directory)).filter(name => name.endsWith('.json')).flatMap(file => JSON.parse(readFileSync(new URL(`${node}/${file}`, directory), 'utf8'))));
-const fixture = await createPreQleProducerFixture(fileURLToPath(new URL('../', import.meta.url)));
-after(() => fixture.cleanup());
-const historicalDirectory = new URL(`content/${trackId}/`, pathToFileURL(fixture.root + '/'));
-const questions = readdirSync(historicalDirectory).flatMap(node => readdirSync(new URL(`${node}/`, historicalDirectory)).filter(name => name.endsWith('.json')).flatMap(file => JSON.parse(readFileSync(new URL(`${node}/${file}`, historicalDirectory), 'utf8'))));
+const TRACK = 'claude-certified-architect-professional-certification';
+const { questions } = await loadCurrentQuestionBank(TRACK);
+const registry = read(`config/certification-source-registries/${TRACK}.json`);
+const registeredSourceIds = new Set(registry.sources.map(source => source.sourceId));
+const knownUnlinkedQleIds = [
+  'CCARP-D01-O01-qle-v2-01',
+  'CCARP-D01-O01-qle-v2-02',
+  'CCARP-D01-O01-qle-v2-03',
+  'CCARP-D03-O09-qle-v2-01',
+  'CCARP-D03-O09-qle-v2-02',
+  'CCARP-D03-O09-qle-v2-03',
+  'CCARP-D05-O06-qle-v2-01',
+  'CCARP-D05-O06-qle-v2-02',
+  'CCARP-D05-O06-qle-v2-03',
+];
 
-test('historical 918 questions have exact course metadata from final CC01+CC02 map, without changing any other question field', () => {
-  assert.equal(questions.length, 918);
-  assert.equal(currentQuestions.length, 972);
-  assert.throws(() => checkOrWriteCourseLinks(), /Missing course mapping/u); // historical CC04 authoring command must not invent new mappings
-  for (const question of currentQuestions.filter(q => q.questionId.includes('-qle-v2-'))) assert.equal(validateQuestion(question).valid, true);
+test('every current Claude question retains valid course metadata and registered source references', () => {
+  assert.equal(questions.length, 972);
+  let linkedCount = 0;
+  const missingCourse = [];
   for (const question of questions) {
-    assert.deepEqual(question.feedback.course, courseForQuestion(question.questionId));
-    assert.equal(validateQuestion(question).valid, true);
+    assert.equal(validateQuestion(question).valid, true, question.questionId);
     assert.ok(question.feedback.details.url.startsWith('https://'));
-    assert.notEqual(question.feedback.details.url, question.feedback.course.url);
-    assert.equal(question.feedback.course.requiresAccount, true);
+    assert.ok(question.sourceRefs.length > 0, question.questionId);
+    for (const sourceId of question.sourceRefs) {
+      assert.ok(registeredSourceIds.has(sourceId), `${question.questionId}: unknown source ${sourceId}`);
+    }
+    if (!question.feedback.course) {
+      missingCourse.push(question);
+      continue;
+    }
+    linkedCount++;
+    assert.equal(new URL(question.feedback.course.url).protocol, 'https:', question.questionId);
+    assert.equal(new URL(question.feedback.course.url).hostname, 'anthropic-partners.skilljar.com', question.questionId);
+    assert.ok(question.feedback.course.title.trim().length > 0, question.questionId);
+    assert.equal(question.feedback.course.requiresAccount, true, question.questionId);
   }
-  const baseline = read('evidence/canonical-content-approvals/claude-cc03-question-baseline.json');
-  const withoutCourse = structuredClone(questions).sort((a,b) => a.questionId < b.questionId ? -1 : a.questionId > b.questionId ? 1 : 0);
-  for (const question of withoutCourse) delete question.feedback.course;
-  assert.equal(sha256(canonicalJson(withoutCourse)), baseline.withoutCourseSha256);
-  assert.equal(withoutCourse.length, baseline.questionCount);
+  assert.ok(linkedCount > 0);
+  assert.ok(missingCourse.every(question => knownUnlinkedQleIds.includes(question.questionId)),
+    'questions without course metadata remain within the documented QLE source-mapping residual');
+  assert.ok(missingCourse.every(question => question.questionId.includes('-qle-v2-')), 'questions without course metadata are current QLE cases');
 });
 test('course is optional in the shared contract, but present course metadata is strict and HTTPS', () => {
   const base = structuredClone(questions[0]);

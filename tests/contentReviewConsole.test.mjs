@@ -11,7 +11,6 @@ import { validateSchema } from "../scripts/review/schema-validation.mjs";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 
 const AUTHOR_CONSTRAINT_RISK = "author_instruction_in_constraints";
-const BESD_UNIT_COHORT14_URL = new URL("../evidence/business-quality/bizq-01-besd-seed-cohort-14.json", import.meta.url);
 const reviewFs = { mkdir, open, readFile, realpath, rename, stat, lstat, unlink };
 
 async function temporaryReviewPath(t, prefix = "patternly-review-console-") {
@@ -56,12 +55,10 @@ test("review console surfaces a remaining BESD constraint disclosure without rec
   assert.ok(service.listItems({ trackId: item.trackId, riskOnly: true }).some((candidate) => candidate.questionId === item.questionId));
   await assert.rejects(readFile(reviewPath), { code: "ENOENT" });
 
-  const cohort = JSON.parse(await readFile(BESD_UNIT_COHORT14_URL, "utf8"));
-  for (const replacement of cohort.replacements) {
-    const repaired = service.getItem(cohort.trackId, replacement.questionId);
-    assert.ok(!repaired.riskFlags.includes(AUTHOR_CONSTRAINT_RISK), replacement.questionId);
-    assert.ok(repaired.item.constraints.every((constraint) => !constraint.startsWith("The primary decision is")), replacement.questionId);
-  }
+  const currentBesd = service.listItems({ trackId: item.trackId });
+  assert.ok(currentBesd.some((candidate) => !candidate.riskFlags.includes(AUTHOR_CONSTRAINT_RISK)
+    && Array.isArray(candidate.item.constraints)
+    && candidate.item.constraints.every((constraint) => !constraint.startsWith("The primary decision is"))), "current BESD sources include corrected records without the stale constraint disclosure");
 });
 
 test("constraint warning is advisory across interactions and does not flag ordinary worked examples or feedback", async (t) => {

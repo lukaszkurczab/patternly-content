@@ -3,14 +3,17 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   lstat,
   mkdir,
+  mkdtemp,
   readFile,
   readdir,
   rename,
   realpath,
+  rm,
   unlink,
   writeFile
 } from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
@@ -297,7 +300,7 @@ async function loadGcpSimulationProfileData({ rootDirectory, track, questions })
   if (!Array.isArray(taxonomy.cloudDomains) || canonicalJson(taxonomy.cloudDomains) !== canonicalJson(GCP_DOMAIN_IDS)) fail("GCP taxonomy cloud domains are invalid");
 
   const profile = config.profile;
-  exactKeys(profile, ["schemaVersion", "profileId", "profileVersion", "source", "durationMinutes", "questionCount", "blueprint", "interactionPolicy", "nodeDomainMap", "nodeDomainMapEvidence", "currentAttribution"], "GCP simulation profile");
+  exactKeys(profile, ["schemaVersion", "profileId", "profileVersion", "source", "durationMinutes", "questionCount", "blueprint", "interactionPolicy", "nodeDomainMap", "currentAttribution"], "GCP simulation profile");
   if (profile.schemaVersion !== "exam-experience-profile-v2" || profile.profileId !== GCP_SOURCE_PROFILE_ID || profile.profileVersion !== "1") fail("GCP simulation profile identity is invalid");
   exactKeys(profile.source, ["url", "checkedDate", "guideVersion"], "GCP simulation profile source");
   if (typeof profile.source.url !== "string" || typeof profile.source.checkedDate !== "string" || typeof profile.source.guideVersion !== "string") fail("GCP simulation profile source is invalid");
@@ -325,12 +328,9 @@ async function loadGcpSimulationProfileData({ rootDirectory, track, questions })
   if (!Array.isArray(taxonomy.nodeIds) || canonicalJson([...taxonomy.nodeIds].sort(compareStrings)) !== canonicalJson(nodeIds)) fail("GCP taxonomy nodes do not exactly match canonical question nodes");
   exactKeys(profile.nodeDomainMap, nodeIds, "GCP simulation profile nodeDomainMap");
   for (const [nodeId, domainId] of Object.entries(profile.nodeDomainMap)) if (!GCP_DOMAIN_IDS.includes(domainId)) fail(`GCP nodeDomainMap contains unknown domain for ${nodeId}`);
-  exactKeys(profile.nodeDomainMapEvidence, ["artifactPath", "contentVersion", "itemCount", "nodeCount", "ambiguousNodeCount"], "GCP nodeDomainMap evidence");
-  const evidenceContentVersion = profile.nodeDomainMapEvidence.contentVersion;
-  if (typeof evidenceContentVersion !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u.test(evidenceContentVersion) || profile.nodeDomainMapEvidence.artifactPath !== `artifacts/tracks/${GCP_TRACK_ID}/${evidenceContentVersion}/track-artifact.json` || profile.nodeDomainMapEvidence.itemCount !== 2981 || profile.nodeDomainMapEvidence.nodeCount !== 20 || profile.nodeDomainMapEvidence.ambiguousNodeCount !== 0) fail("GCP nodeDomainMap evidence does not match its pinned published artifact identity");
   const attribution = profile.currentAttribution;
-  exactKeys(attribution, ["schemaVersion", "contentVersion", "itemCount", "inventorySha256", "crosswalkSha256", "historicalArtifactSha256", "historicalCrosswalkSha256"], "GCP current attribution");
-  if (attribution.schemaVersion !== "gcp-current-attribution-v1" || attribution.contentVersion !== track.contentVersion || !HASH_PATTERN.test(attribution.inventorySha256) || !HASH_PATTERN.test(attribution.crosswalkSha256) || !HASH_PATTERN.test(attribution.historicalArtifactSha256) || !HASH_PATTERN.test(attribution.historicalCrosswalkSha256)) fail("GCP current attribution identity or provenance is invalid");
+  exactKeys(attribution, ["schemaVersion", "contentVersion", "itemCount", "inventorySha256", "crosswalkSha256"], "GCP current attribution");
+  if (attribution.schemaVersion !== "gcp-current-attribution-v1" || attribution.contentVersion !== track.contentVersion || !HASH_PATTERN.test(attribution.inventorySha256) || !HASH_PATTERN.test(attribution.crosswalkSha256)) fail("GCP current attribution identity or provenance is invalid");
   if (attribution.itemCount !== questions.length) fail("GCP current attribution item count does not match canonical source inventory");
 
   const canonicalById = new Map(questions.map((question) => [question.questionId, question]));
@@ -351,8 +351,7 @@ async function loadGcpSimulationProfileData({ rootDirectory, track, questions })
     questionCount: profile.questionCount,
     blueprint: profile.blueprint,
     interactionPolicy: profile.interactionPolicy,
-    nodeDomainMap: profile.nodeDomainMap,
-    nodeDomainMapEvidence: profile.nodeDomainMapEvidence
+    nodeDomainMap: profile.nodeDomainMap
   });
   return {
     questionDomains,
@@ -1000,79 +999,79 @@ export async function buildAll({ rootDirectory, root, outputRoot, outputDirector
   return { rootDirectory: resolvedRoot, outputRoot: resolvedOutputRoot, catalog, artifacts, lock, lockPath };
 }
 
-/** Local derivation from an existing granted admission. No content edits, grant or network publishing. */
+/** Generate a transient Premium package from today's validated canonical source. */
 export async function buildPremiumNodePackage(options = {}) {
   const root = resolveRoot(options);
-  const appRoot = path.resolve(options.appRoot ?? path.join(root, "../patternly"));
+  const appRoot = path.resolve(options.appRoot ?? process.env.PATTERNLY_FRONTEND_ROOT ?? path.join(root, "../patternly"));
   const { trackId, nodeId } = options;
   const identity = /^[a-z0-9][a-z0-9._-]{0,127}$/u;
   if (!identity.test(trackId ?? "") || !identity.test(nodeId ?? "")) fail("Premium node identity is invalid.");
-  const { ADMISSION_PATH, APP_LOCK_PATH, APP_CONTENT_LOCK_PATH, validateCandidateAdmissionV3 } = await import("./review/candidate-admission-v3.mjs");
-  const admissionBytes = await readFile(path.join(root, ADMISSION_PATH));
-  const admission = await validateCandidateAdmissionV3(JSON.parse(admissionBytes), { root });
-  const [appLockBytes, contentLockBytes, releaseBytes] = await Promise.all([
-    readFile(path.join(appRoot, APP_LOCK_PATH)), readFile(path.join(appRoot, APP_CONTENT_LOCK_PATH)), readFile(path.join(root, admission.release.releasePath)),
-  ]);
-  if (sha256(appLockBytes) !== admission.application.releaseLockSha256) fail("Premium node application admission binding is stale.");
-  const release = JSON.parse(releaseBytes);
-  const source = release.artifacts.find((row) => row.trackId === trackId);
-  const admitted = admission.tracks.find((row) => row.trackId === trackId);
-  const appLocked = JSON.parse(appLockBytes).artifacts.find((row) => row.trackId === trackId);
-  const bundled = JSON.parse(contentLockBytes).tracks.find((row) => row.trackId === trackId);
-  if (!source || !admitted || source.checksumSha256 !== admitted.artifactSha256 || source.checksumSha256 !== appLocked?.checksumSha256 || source.contentVersion !== appLocked?.contentVersion || bundled?.sha256 !== source.checksumSha256 || bundled?.contentVersion !== source.contentVersion || bundled?.questionCount !== source.questionCount) fail("Premium node source is not admitted.");
-  const sourcePath = path.resolve(root, path.dirname(admission.release.releasePath), source.artifactPath);
-  await assertSecurePath(root, sourcePath, "admitted Premium source");
-  const sourceBytes = await readFile(sourcePath);
-  if (sha256(sourceBytes) !== source.checksumSha256 || sourceBytes.length !== source.artifactBytes) fail("Premium node source checksum mismatch.");
-  const currentAppArtifact = await readFile(path.join(appRoot, "src/content/generated/canonical-content", `${trackId}.json`));
-  if (sha256(currentAppArtifact) !== source.checksumSha256 || currentAppArtifact.length !== source.artifactBytes) fail("Premium node current application artifact differs from admission.");
-  const artifact = JSON.parse(sourceBytes);
-  if (artifact.trackId !== trackId || artifact.contentVersion !== source.contentVersion || artifact.questions?.length !== source.questionCount) fail("Premium node source identity mismatch.");
+  const sourceBuildRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-premium-current-source-"));
+  let currentIdentity;
+  let artifact;
+  let sourceBytes;
+  let currentReleaseId;
+  let canonicalTrackIds;
+  let deriveCurrentSourceIdentity;
+  let assertCurrentSourceFingerprint;
+  try {
+    const built = await buildAll({ rootDirectory: root, outputRoot: sourceBuildRoot });
+    canonicalTrackIds = built.catalog.tracks.map((track) => track.trackId);
+    ({ deriveCurrentSourceIdentity, assertCurrentSourceFingerprint } = await import("./content/current-source-identity.mjs"));
+    currentIdentity = await deriveCurrentSourceIdentity({ contentRoot: root, built });
+    const sourceTrack = built.artifacts.find((entry) => entry.trackId === trackId);
+    if (!sourceTrack) fail("Premium node source is outside the current canonical track set.");
+    artifact = sourceTrack.artifact;
+    sourceBytes = Buffer.from(sourceTrack.artifactBytes, "utf8");
+    currentReleaseId = `patternly-local-${currentIdentity.sourceInputFingerprint.slice(0, 20)}`;
+  } finally {
+    await rm(sourceBuildRoot, { recursive: true, force: true });
+  }
   const profile = await readJson(path.join(root, "config/free-node-experience-profiles", `${trackId}.json`));
   if (profile.familyId !== "certification" || profile.freeNodeId === nodeId) fail("Premium derivation requires a non-Free Certification node.");
   const items = artifact.questions.filter((question) => question.nodeId === nodeId);
   if (items.length < 40) fail("Premium node has insufficient whole-node capacity.");
   const ids = new Set();
   for (const question of items) {
-    const result = validateQuestion(question, { catalogTrackIds: admission.trackIds });
+    const result = validateQuestion(question, { catalogTrackIds: canonicalTrackIds });
     if (!result.valid || question.trackId !== trackId || ids.has(question.questionId)) fail("Premium node contains an invalid question.", result.errors);
     ids.add(question.questionId);
   }
   const relations = validateQuestionRelations(items);
   if (!relations.valid) fail("Premium node relations cross the package boundary.", relations.errors);
-  const payload = { schemaVersion: "patternly-content-node-payload-v1", trackId, nodeId, contentVersion: artifact.contentVersion, contentReleaseId: release.manifest.releaseId, items };
+  const payload = { schemaVersion: "patternly-content-node-payload-v1", trackId, nodeId, contentVersion: artifact.contentVersion, contentReleaseId: currentReleaseId, items };
   const artifactBytes = Buffer.from(canonicalJson(payload));
   const compressed = gzipSync(artifactBytes, { level: 9 });
   if (compressed.length > 2 * 1024 * 1024 || artifactBytes.length > 8 * 1024 * 1024 || !gunzipSync(compressed).equals(artifactBytes)) fail("Premium node package limits or readback failed.");
   const artifactSha256 = sha256(artifactBytes), packageSha256 = sha256(compressed);
   const manifest = { schemaVersion: "patternly-content-node-package-v1", trackId, nodeId, contentVersion: artifact.contentVersion, artifactSha256, packageSha256, contentReleaseId: payload.contentReleaseId, minimumAppVersion: "0.1.0", packageFormat: "gzip", compressedSizeBytes: compressed.length, artifactSizeBytes: artifactBytes.length, packagePath: `packages/${trackId}/${nodeId}/${packageSha256}.gzip` };
-  const derivation = { schemaVersion: "patternly-premium-node-derivation-v1", candidateId: admission.candidateId, admissionSha256: sha256(admissionBytes), observedCurrentBundledLockSha256: sha256(contentLockBytes), selectedApplicationArtifactSha256: sha256(currentAppArtifact), releaseManifestSha256: admission.release.checksumSha256, sourceArtifactSha256: source.checksumSha256, packageManifestSha256: sha256(canonicalJson(manifest)), artifactSha256, packageSha256, trackId, nodeId, itemCount: items.length, mentalUnitIds: [...new Set(items.map((item) => item.mentalUnitId))].sort(), boundary: "local_derivation_from_granted_candidate_no_deployment" };
+  const derivation = { schemaVersion: "patternly-premium-node-derivation-v2", currentSourceFingerprint: currentIdentity.sourceInputFingerprint, sourceTree: currentIdentity.sourceTree, selectedApplicationArtifactSha256: sha256(sourceBytes), sourceArtifactSha256: sha256(sourceBytes), packageManifestSha256: sha256(canonicalJson(manifest)), artifactSha256, packageSha256, trackId, nodeId, itemCount: items.length, mentalUnitIds: [...new Set(items.map((item) => item.mentalUnitId))].sort(), boundary: "local_current_source_derivation_no_publication_or_deployment" };
   const offer = { offerId: `${trackId}--${nodeId}`, trackId, familyId: "certification", nodeId, contentVersion: artifact.contentVersion, artifactSha256, modeId: "certification-focus-practice", source: "authenticated_backend" };
-  const outputRoot = path.resolve(options.outputRoot ?? path.join(root, "artifacts/premium-nodes", trackId, nodeId, artifactSha256));
+  const outputRoot = path.resolve(options.outputRoot ?? path.join(root, "dist/premium-nodes", trackId, nodeId, "current"));
   await mkdir(outputRoot, { recursive: true });
-  const packageFile = path.join(outputRoot, `${packageSha256}.gzip`);
-  try { await writeFile(packageFile, compressed, { flag: "wx" }); }
-  catch (error) {
-    if (error?.code !== "EEXIST") throw error;
-    const info = await lstat(packageFile);
-    if (!info.isFile() || info.isSymbolicLink() || !(await readFile(packageFile)).equals(compressed)) fail("Premium node immutable output conflict.");
-  }
-  if (!(await readFile(packageFile)).equals(compressed)) fail("Premium node output readback failed.");
+  const packageFile = path.join(outputRoot, "package.gzip");
   const changes = [];
+  const packageChange = await outputChange(packageFile, compressed);
+  if (packageChange) changes.push(packageChange);
   for (const [name, value] of [["manifest.json", manifest], ["derivation.json", derivation]]) {
     const change = await outputChange(path.join(outputRoot, name), canonicalJson(value));
     if (change) changes.push(change);
   }
+  await assertCurrentSourceFingerprint({ contentRoot: root, expectedFingerprint: currentIdentity.sourceInputFingerprint });
   await commitOutputSet(changes, options);
-  // The only app output is metadata, written last; payload questions never enter the app bundle.
-  const offerPath = path.join(appRoot, "src/content/generated/premium-node-offer.json");
-  const offerChange = await outputChange(offerPath, canonicalJson({ offer, derivation }));
-  if (offerChange) await commitOutputSet([offerChange], options);
-  return { manifest, derivation, offer, outputRoot, packageFile, offerPath };
+  if (!(await readFile(packageFile)).equals(compressed)) fail("Premium node output readback failed.");
+  let offerPath;
+  if (options.applyOffer === true) {
+    await assertCurrentSourceFingerprint({ contentRoot: root, expectedFingerprint: currentIdentity.sourceInputFingerprint });
+    offerPath = path.join(appRoot, "src/content/generated/premium-node-offer.json");
+    const offerChange = await outputChange(offerPath, canonicalJson({ offer, derivation }));
+    if (offerChange) await commitOutputSet([offerChange], options);
+  }
+  return { manifest, derivation, offer, outputRoot, packageFile, ...(offerPath ? { offerPath } : {}) };
 }
 
 function usage() {
-  return "Usage: node scripts/build.mjs <validate|test|build> --track <trackId> [--root <dir>] [--output-root <dir>] | build-all [--root <dir>] [--output-root <dir>] | build-premium-node --track <trackId> --node <nodeId> [--app-root <dir>] [--output-root <dir>]";
+  return "Usage: node scripts/build.mjs <validate|test|build> --track <trackId> [--root <dir>] [--output-root <dir>] | build-all [--root <dir>] [--output-root <dir>] | build-premium-node --track <trackId> --node <nodeId> [--app-root <dir>] [--output-root <dir>] [--apply-offer]";
 }
 
 export function parseArgs(argv = process.argv.slice(2)) {
@@ -1081,6 +1080,11 @@ export function parseArgs(argv = process.argv.slice(2)) {
   const options = { command };
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];
+    if (argument === "--apply-offer") {
+      if (options.applyOffer) fail("Duplicate argument: --apply-offer");
+      options.applyOffer = true;
+      continue;
+    }
     if (!["--track", "--node", "--root", "--output-root", "--app-root"].includes(argument)) fail(`Unknown argument: ${argument}\n${usage()}`);
     if (index + 1 >= rest.length || rest[index + 1].startsWith("--")) fail(`${argument} requires a value\n${usage()}`);
     const value = rest[++index];
@@ -1091,7 +1095,7 @@ export function parseArgs(argv = process.argv.slice(2)) {
   }
   if (TRACK_COMMANDS.has(command) && !nonEmptyString(options.trackId)) fail(`--track is required for ${command}\n${usage()}`);
   if (command === "build-premium-node" && (!options.trackId || !options.nodeId)) fail("--track and --node are required for build-premium-node");
-  if (command !== "build-premium-node" && (options.nodeId || options.appRoot)) fail("--node/--app-root require build-premium-node");
+  if (command !== "build-premium-node" && (options.nodeId || options.appRoot || options.applyOffer)) fail("--node/--app-root/--apply-offer require build-premium-node");
   if (command === "build-all" && options.trackId) fail(`--track is not accepted for build-all\n${usage()}`);
   return options;
 }
@@ -1100,7 +1104,7 @@ async function runCli(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
   if (options.command === "build-premium-node") {
     const result = await buildPremiumNodePackage(options);
-    console.log(`Built admitted Premium node (${result.derivation.itemCount} questions); local artifacts only: ${result.outputRoot}`);
+    console.log(`Built current Premium node (${result.derivation.itemCount} questions); local artifacts: ${result.outputRoot}${result.offerPath ? `; offer applied: ${result.offerPath}` : "; offer not applied"}`);
     return;
   }
   if (options.command === "validate") {

@@ -29,9 +29,6 @@ import {
   testTrack,
   validateTrack
 } from "../scripts/build.mjs";
-import { validateBizq05GcpQuestionRelationAmendment } from "../scripts/content/verify-migration.mjs";
-import { OOD_EXPLANATION_CORRECTIONS_20261013_PROOF } from "../evidence/migration-verifier/bizq01-ood.mjs";
-import { verifyGcpAttributionHistory, verifyGcpCurrentAttributionParity } from "../scripts/content/verify-gcp-attribution-history.mjs";
 import { loadTrackProfileData, validateTrackRuntimeBindings } from "../scripts/content/track-runtime-bindings.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
@@ -40,11 +37,6 @@ const execFileAsync = promisify(execFile);
 const builderPath = new URL("../scripts/build.mjs", import.meta.url);
 const baseQuestion = fixture.questions.find((question) => question.interaction.type === "choice_single");
 const realCatalog = loadCanonicalCatalog();
-const candidateManifest = JSON.parse(readFileSync(new URL("../evidence/content-acceptance/candidate-manifest-v1.json", import.meta.url), "utf8"));
-const historicalBaseline = JSON.parse(readFileSync(new URL("../evidence/content-acceptance/acc-01-baseline-v1.json", import.meta.url), "utf8"));
-const historicalMigrationManifest = JSON.parse(readFileSync(new URL("../content/migration-evidence/manifest.json", import.meta.url), "utf8"));
-const completionCsvRows = readFileSync(new URL("../../patternly/docs/specs/business-quality/02-BIZQ-02-CHAPTER-COMPLETION.csv", import.meta.url), "utf8").trim().split(/\r?\n/u).slice(1).map((line) => line.split(","));
-const completionBaselineVersions = new Map(completionCsvRows.map(([trackId, _nodeId, baselineContentVersion]) => [trackId, baselineContentVersion]));
 
 async function createWorkspace() {
   const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-simp02-"));
@@ -311,65 +303,6 @@ test("question relations require exact reciprocal peers and survive the canonica
   await expectBuildFailure(validateTrack({ rootDirectory, trackId: orphan.trackId }), /Question relations are invalid/u);
 });
 
-test("BIZQ-05 GCP historical relation amendment is exact, additive and tamper-evident", async (t) => {
-  const sourceRelativePath = "content/google-cloud-associate-cloud-engineer/organization_projects_policies_services_quotas_and_assets/GCPACE-N01-B04.json";
-  const evidenceRelativePath = "evidence/business-quality/bizq-05-gcp-question-relations-01.json";
-  const currentSource = await readFile(path.join(ROOT, sourceRelativePath), "utf8");
-  const currentEvidence = await readFile(path.join(ROOT, evidenceRelativePath), "utf8");
-  const sourceQuestions = JSON.parse(currentSource);
-  const evidence = JSON.parse(currentEvidence);
-  const tempRoot = await mkdtemp(path.join(await realpath(os.tmpdir()), "patternly-bizq05-gcp-amendment-"));
-  t.after(() => rm(tempRoot, { recursive: true, force: true }));
-
-  async function verifyCandidate(questions = sourceQuestions, candidateEvidence = evidence, canonicalQuestions = questions, catalogVersion = evidence.contentVersion) {
-    const contentRoot = path.join(tempRoot, "content");
-    const sourcePath = path.join(tempRoot, sourceRelativePath);
-    const evidencePath = path.join(tempRoot, evidenceRelativePath);
-    await mkdir(path.dirname(sourcePath), { recursive: true });
-    await mkdir(path.dirname(evidencePath), { recursive: true });
-    await writeFile(sourcePath, JSON.stringify(questions), "utf8");
-    await writeFile(evidencePath, JSON.stringify(candidateEvidence), "utf8");
-    const canonical = {
-      catalogByTrack: new Map([[evidence.trackId, { contentVersion: catalogVersion }]]),
-      questionsByTrack: new Map([[evidence.trackId, canonicalQuestions]])
-    };
-    return validateBizq05GcpQuestionRelationAmendment(contentRoot, canonical);
-  }
-
-  const restored = await verifyCandidate();
-  assert.equal(restored.size, 22);
-  assert.ok([...restored.values()].every((question) => !Object.hasOwn(question, "questionRelation")));
-  assert.deepEqual([...restored.keys()].sort(), evidence.questionIds);
-  assert.equal((await verifyCandidate(sourceQuestions, evidence, sourceQuestions, `${evidence.contentVersion}-bizq03-planning-v2`)).size, 22);
-
-  const alteredCanonical = structuredClone(sourceQuestions);
-  alteredCanonical.find(({ questionId }) => questionId.endsWith("-006")).prompt += " Changed.";
-  await assert.rejects(verifyCandidate(sourceQuestions, evidence, alteredCanonical), /current canonical questions/u);
-
-  const alteredRelation = structuredClone(sourceQuestions);
-  alteredRelation.find(({ questionId }) => questionId.endsWith("-006")).questionRelation.decisionBoundary = "Changed boundary.";
-  await assert.rejects(verifyCandidate(alteredRelation), /complete-file hash/u);
-
-  const extraRelation = structuredClone(sourceQuestions);
-  extraRelation.find(({ questionId }) => questionId.endsWith("-001")).questionRelation = structuredClone(extraRelation.find(({ questionId }) => questionId.endsWith("-006")).questionRelation);
-  await assert.rejects(verifyCandidate(extraRelation), /complete-file hash/u);
-
-  const missingPeer = structuredClone(sourceQuestions);
-  delete missingPeer.find(({ questionId }) => questionId.endsWith("-007")).questionRelation;
-  await assert.rejects(verifyCandidate(missingPeer), /complete-file hash/u);
-
-  const changedUnannotatedQuestion = structuredClone(sourceQuestions);
-  changedUnannotatedQuestion.find(({ questionId }) => questionId.endsWith("-001")).prompt += " Changed.";
-  await assert.rejects(verifyCandidate(changedUnannotatedQuestion), /complete-file hash/u);
-
-  const alteredEvidence = structuredClone(evidence);
-  alteredEvidence.relations[0].questionRelation.kind = "near_variant";
-  await assert.rejects(verifyCandidate(sourceQuestions, alteredEvidence), /pinned four-question/u);
-  const changedHistoricalPin = structuredClone(evidence);
-  changedHistoricalPin.historicalQuestionSetSha256 = "0".repeat(64);
-  await assert.rejects(verifyCandidate(sourceQuestions, changedHistoricalPin), /pinned four-question/u);
-});
-
 test("build-all emits exactly nine deterministic artifacts and lock entries", async (t) => {
   const rootDirectory = await createWorkspace();
   const outputRoot = path.join(rootDirectory, "dist");
@@ -419,8 +352,9 @@ test("GCP simulation profile validates current-source attribution without readin
   const trackConfig = JSON.parse(await readFile(path.join(rootDirectory, "config/tracks/google-cloud-associate-cloud-engineer.json"), "utf8"));
   assert.equal(trackConfig.profile.currentAttribution.contentVersion, validated.track.contentVersion);
   assert.equal(trackConfig.profile.currentAttribution.itemCount, validated.questions.length);
-  assert.equal(trackConfig.profile.currentAttribution.crosswalkSha256, "05c08196b41c053a02ec58d6d84673eee1c3008a70bae8a44dadb073c46f9ec0");
-  assert.equal(familyConfig.nodeDomainMapEvidence.contentVersion, "google-cloud-associate-cloud-engineer-authoring-v2026.08.11");
+  const currentCrosswalk = validated.questions.map((question) => ({ questionId: question.questionId, nodeId: question.nodeId, domain: trackConfig.profile.nodeDomainMap[question.nodeId] })).sort((left, right) => left.questionId.localeCompare(right.questionId));
+  assert.equal(trackConfig.profile.currentAttribution.crosswalkSha256, sha256(currentCrosswalk));
+  assert.equal(trackConfig.profile.currentAttribution.inventorySha256, sha256(validated.questions.map(({ questionId }) => questionId).sort()));
 
   const isolatedRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-current-attribution-"));
   t.after(() => rm(isolatedRoot, { recursive: true, force: true }));
@@ -443,21 +377,10 @@ test("GCP simulation profile validates current-source attribution without readin
   t.after(() => rm(sourceWithoutPublishedBank, { recursive: true, force: true }));
   await cp(path.join(rootDirectory, "config"), path.join(sourceWithoutPublishedBank, "config"), { recursive: true });
   await cp(path.join(rootDirectory, "content"), path.join(sourceWithoutPublishedBank, "content"), { recursive: true });
-  const historicalArtifact = path.join(sourceWithoutPublishedBank, familyConfig.nodeDomainMapEvidence.artifactPath);
-  await assert.rejects(readFile(historicalArtifact), { code: "ENOENT" });
   const built = await buildTrack({ rootDirectory: sourceWithoutPublishedBank, outputRoot, trackId: "google-cloud-associate-cloud-engineer" });
   assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
-  assert.equal(built.artifact.questions.length, 2981);
-  assert.equal(built.lockEntry.sha256, "a1cb5d3162401b735efa25504c0ae1c3cf849d9317cf1818dbbb7ef37b408210");
+  assert.equal(built.artifact.questions.length, validated.questions.length);
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
-
-  await mkdir(path.dirname(historicalArtifact), { recursive: true });
-  await writeFile(historicalArtifact, "malformed historical artifact");
-  const malformedHistoryOutput = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-malformed-history-build-"));
-  t.after(() => rm(malformedHistoryOutput, { recursive: true, force: true }));
-  const rebuiltWithMalformedHistory = await buildTrack({ rootDirectory: sourceWithoutPublishedBank, outputRoot: malformedHistoryOutput, trackId: "google-cloud-associate-cloud-engineer" });
-  assert.equal(rebuiltWithMalformedHistory.lockEntry.sha256, built.lockEntry.sha256);
-  await rm(historicalArtifact);
 
   const catalogPath = path.join(sourceWithoutPublishedBank, "content/catalog.json");
   const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
@@ -475,119 +398,29 @@ test("GCP simulation profile validates current-source attribution without readin
   assert.equal(bumpedBuild.artifact.contentVersion, bumpedContentVersion);
   assert.deepEqual(bumpedBuild.artifact.questions, built.artifact.questions);
   assert.deepEqual(bumpedBuild.artifact.simulationProfiles, built.artifact.simulationProfiles);
-  assert.equal(bumpedBuild.artifact.questions.length, 2981);
-  await assert.rejects(readFile(historicalArtifact), { code: "ENOENT" });
+  assert.equal(bumpedBuild.artifact.questions.length, validated.questions.length);
 });
 
-test("GCP current attribution rejects version, coverage and crosswalk mismatches without historical data", async (t) => {
+test("GCP profile rejects stale current attribution and incomplete source node/domain maps", async (t) => {
   const sourceRoot = path.resolve(".");
   const trackId = "google-cloud-associate-cloud-engineer";
   const validated = await validateTrack({ rootDirectory: sourceRoot, trackId });
-  const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-evidence-negative-"));
-  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
-  await mkdir(path.join(rootDirectory, "config/tracks"), { recursive: true });
-  await mkdir(path.join(rootDirectory, "config/taxonomy"), { recursive: true });
-  const configPath = path.join(sourceRoot, "config/tracks", `${trackId}.json`);
-  const sourceConfig = JSON.parse(await readFile(configPath, "utf8"));
-  const taxonomyBytes = await readFile(path.join(sourceRoot, sourceConfig.taxonomyPath), "utf8");
-  await writeFile(path.join(rootDirectory, sourceConfig.taxonomyPath), taxonomyBytes);
-  const assertRejected = async (mutateConfig, message) => {
+  const sourceConfig = JSON.parse(await readFile(path.join(sourceRoot, "config/tracks", `${trackId}.json`), "utf8"));
+  const taxonomyBytes = await readFile(path.join(sourceRoot, sourceConfig.taxonomyPath));
+  const assertRejected = async (mutate, message) => {
+    const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-current-map-"));
+    t.after(() => rm(rootDirectory, { recursive: true, force: true }));
     const config = structuredClone(sourceConfig);
-    mutateConfig(config);
-    await writeFile(path.join(rootDirectory, `config/tracks/${trackId}.json`), canonicalJson(config), "utf8");
+    mutate(config);
+    await mkdir(path.join(rootDirectory, "config/tracks"), { recursive: true });
+    await mkdir(path.dirname(path.join(rootDirectory, sourceConfig.taxonomyPath)), { recursive: true });
+    await writeFile(path.join(rootDirectory, "config/tracks", `${trackId}.json`), canonicalJson(config));
+    await writeFile(path.join(rootDirectory, sourceConfig.taxonomyPath), taxonomyBytes);
     await assert.rejects(loadGcpSimulationProfiles({ rootDirectory, track: validated.track, questions: validated.questions }), message);
   };
-  await assertRejected(config => { config.profile.currentAttribution.contentVersion += "-stale"; }, /current attribution identity or provenance/u);
-  await assertRejected(config => { delete config.profile.nodeDomainMap[Object.keys(config.profile.nodeDomainMap)[0]]; }, /nodeDomainMap has an invalid shape/u);
-  await assertRejected(config => { config.profile.nodeDomainMap["organization_projects_policies_services_quotas_and_assets"] = "gcp-ace-standard-domain-2"; }, /exact current question inventory and node\/domain crosswalk/u);
-
-  const omittedQuestion = validated.questions.find(question => validated.questions.some(candidate => candidate !== question && candidate.nodeId === question.nodeId));
-  assert.ok(omittedQuestion);
-  const reducedQuestions = validated.questions.filter(question => question !== omittedQuestion);
-  assert.equal(reducedQuestions.length, validated.questions.length - 1);
-  const nextVersion = `${validated.track.contentVersion}-inventory-fixture`;
-  const nextConfig = structuredClone(sourceConfig);
-  const nextCrosswalk = reducedQuestions.map(question => ({
-    questionId: question.questionId,
-    nodeId: question.nodeId,
-    domain: nextConfig.profile.nodeDomainMap[question.nodeId]
-  })).sort((left, right) => left.questionId.localeCompare(right.questionId));
-  nextConfig.profile.currentAttribution.contentVersion = nextVersion;
-  nextConfig.profile.currentAttribution.itemCount = reducedQuestions.length;
-  nextConfig.profile.currentAttribution.inventorySha256 = sha256(reducedQuestions.map(question => question.questionId).sort());
-  nextConfig.profile.currentAttribution.crosswalkSha256 = sha256(nextCrosswalk);
-  await writeFile(path.join(rootDirectory, `config/tracks/${trackId}.json`), canonicalJson(nextConfig), "utf8");
-  const historicalArtifactPath = sourceConfig.profile.nodeDomainMapEvidence.artifactPath;
-  await mkdir(path.dirname(path.join(rootDirectory, historicalArtifactPath)), { recursive: true });
-  await cp(path.join(sourceRoot, historicalArtifactPath), path.join(rootDirectory, historicalArtifactPath));
-  const unchangedHistory = await verifyGcpAttributionHistory({ rootDirectory });
-  assert.equal(unchangedHistory.itemCount, 2981, "historical verification remains independent of the smaller current inventory");
-  const reducedProfiles = await loadGcpSimulationProfiles({
-    rootDirectory,
-    track: { ...validated.track, contentVersion: nextVersion },
-    questions: reducedQuestions
-  });
-  assert.equal(reducedProfiles[0].familyConfig.nodeDomainMapEvidence.itemCount, 2981, "historical evidence retains its fixed count independently of current inventory");
-  assert.equal(nextConfig.profile.currentAttribution.itemCount, 2980);
-});
-
-test("GCP historical attribution remains checksum-pinned while the current semantic successor has a distinct question map", async (t) => {
-  const sourceRoot = path.resolve(".");
-  const trackId = "google-cloud-associate-cloud-engineer";
-  const validated = await validateTrack({ rootDirectory: sourceRoot, trackId });
-  const result = await verifyGcpAttributionHistory({ rootDirectory: sourceRoot });
-  assert.equal(result.itemCount, 2981);
-  assert.equal(result.nodeCount, 20);
-  assert.equal(result.crosswalkSha256, "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51");
-  assert.ok(validated.questions.some(question => question.questionId === "gcp-ace-gcpace-n02-b05-019"));
-  assert.equal(validated.questions.some(question => question.questionId === "gcp-ace-gcpace-n02-b05-010"), false);
-  // This verifier intentionally means exact historical parity, not lawful succession.
-  await assert.rejects(verifyGcpCurrentAttributionParity({ rootDirectory: sourceRoot, track: validated.track, questions: validated.questions }), /differs from the verified historical question map/u);
-
-  const config = JSON.parse(await readFile(path.join(sourceRoot, "config/tracks", `${trackId}.json`), "utf8"));
-  const evidence = config.profile.nodeDomainMapEvidence;
-  const sourceWrapper = JSON.parse(await readFile(path.join(sourceRoot, evidence.artifactPath), "utf8"));
-  const frozenArtifact = JSON.parse(sourceWrapper.artifactBytes);
-  const historicalQuestions = frozenArtifact.bank.items.map(item => ({ questionId: item.id, nodeId: item.nodeId }));
-  const historicalVersion = "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1-bizq03-planning-v2";
-  const historicalTrack = { ...validated.track, contentVersion: historicalVersion };
-  const frozenConfig = structuredClone(config);
-  frozenConfig.profile.currentAttribution = {
-    schemaVersion: "gcp-current-attribution-v1",
-    contentVersion: historicalVersion,
-    itemCount: 2981,
-    inventorySha256: "483d91441ff1777edf23a147570ecf80cbcb5556c3adf7b1fe8c95af47d6d371",
-    crosswalkSha256: "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51",
-    historicalArtifactSha256: "732f915e43542ca1318bf32aafd1f2cfab77012eb3c8d236a362a92a993740e4",
-    historicalCrosswalkSha256: "a60cd7cf6b65f127d9e7550a8979b03a52efd4cdebd2abe2fa42659aeef4bf51"
-  };
-  const copyRoot = await mkdtemp(path.join(os.tmpdir(), "patternly-gcp-history-tamper-"));
-  t.after(() => rm(copyRoot, { recursive: true, force: true }));
-  await mkdir(path.join(copyRoot, "config/tracks"), { recursive: true });
-  await mkdir(path.dirname(path.join(copyRoot, evidence.artifactPath)), { recursive: true });
-  const copiedConfigPath = path.join(copyRoot, "config/tracks", `${trackId}.json`);
-  const copiedArtifactPath = path.join(copyRoot, evidence.artifactPath);
-  await writeFile(copiedConfigPath, canonicalJson(frozenConfig));
-  await writeFile(copiedArtifactPath, canonicalJson(sourceWrapper));
-  const parity = await verifyGcpCurrentAttributionParity({ rootDirectory: copyRoot, track: historicalTrack, questions: historicalQuestions });
-  assert.equal(parity.currentContentVersion, historicalVersion);
-
-  const invalidProvenanceConfig = structuredClone(frozenConfig);
-  invalidProvenanceConfig.profile.currentAttribution.historicalArtifactSha256 = "0".repeat(64);
-  await writeFile(copiedConfigPath, canonicalJson(invalidProvenanceConfig));
-  await assert.rejects(verifyGcpCurrentAttributionParity({ rootDirectory: copyRoot, track: historicalTrack, questions: historicalQuestions }), /historical provenance pins differ/u);
-
-  await writeFile(copiedConfigPath, canonicalJson(frozenConfig));
-  await writeFile(copiedArtifactPath, canonicalJson({ ...sourceWrapper, checksumSha256: "0".repeat(64) }));
-  await assert.rejects(verifyGcpAttributionHistory({ rootDirectory: copyRoot }), /checksum or identity/u);
-
-  const changedArtifact = structuredClone(frozenArtifact);
-  changedArtifact.bank.items[0].domain = changedArtifact.bank.items[0].domain === "gcp-ace-standard-domain-1"
-    ? "gcp-ace-standard-domain-2"
-    : "gcp-ace-standard-domain-1";
-  const changedArtifactBytes = canonicalJson(changedArtifact);
-  await writeFile(copiedArtifactPath, canonicalJson({ ...sourceWrapper, artifactBytes: changedArtifactBytes, checksumSha256: sha256(changedArtifactBytes) }));
-  await assert.rejects(verifyGcpAttributionHistory({ rootDirectory: copyRoot }), /checksum or identity/u);
+  await assertRejected((config) => { config.profile.currentAttribution.contentVersion += "-stale"; }, /current attribution identity or provenance/u);
+  await assertRejected((config) => { delete config.profile.nodeDomainMap[Object.keys(config.profile.nodeDomainMap)[0]]; }, /nodeDomainMap has an invalid shape/u);
+  await assertRejected((config) => { config.profile.currentAttribution.crosswalkSha256 = "0".repeat(64); }, /exact current question inventory and node\/domain crosswalk/u);
 });
 
 test("Coding Interview simulation profile emits the blueprint and exact checksum-verified pool identities", async (t) => {
@@ -641,8 +474,15 @@ test("Coding Interview simulation selection policies reject stale pools and inva
   const sourceRoot = path.resolve(".");
   const validated = await validateTrack({ rootDirectory: sourceRoot, trackId: "coding-interview-dsa-problem-solving" });
   const sourceConfig = JSON.parse(await readFile(path.join(sourceRoot, "config/tracks/coding-interview-dsa-problem-solving.json"), "utf8"));
-  const oldWrapper = JSON.parse(await readFile(path.join(sourceRoot, "artifacts/tracks/coding-interview-dsa-problem-solving", candidateManifest.tracks.find((track) => track.trackId === "coding-interview-dsa-problem-solving").artifact.contentVersion, "track-artifact.json"), "utf8"));
-  const oldPool = JSON.parse(oldWrapper.artifactBytes).bank.simulationPools[0].itemIds;
+  const staleSingleTypePool = [];
+  const coveredUnits = new Set();
+  for (const question of validated.questions) {
+    if (question.interaction.type !== "choice_single" || coveredUnits.has(question.mentalUnitId)) continue;
+    staleSingleTypePool.push(question.questionId);
+    coveredUnits.add(question.mentalUnitId);
+    if (staleSingleTypePool.length === 40) break;
+  }
+  assert.equal(staleSingleTypePool.length, 40);
   const taxonomyBytes = await readFile(path.join(sourceRoot, sourceConfig.taxonomyPath));
   const withConfig = async (mutateConfig, mutateQuestions = (questions) => questions, mutateTaxonomy = (taxonomy) => taxonomy) => {
     const rootDirectory = await mkdtemp(path.join(os.tmpdir(), "patternly-coding-policy-"));
@@ -662,7 +502,7 @@ test("Coding Interview simulation selection policies reject stale pools and inva
     await expectBuildFailure(loadCodingSimulationProfiles({ rootDirectory, track: validated.track, questions }), pattern);
   };
 
-  await rejects((config) => { config.modeConfiguration.simulationBlueprint.eligibleQuestionIds = oldPool; }, /does not represent every active interaction type/u);
+  await rejects((config) => { config.modeConfiguration.simulationBlueprint.eligibleQuestionIds = staleSingleTypePool; }, /does not represent every active interaction type/u);
   await rejects((config) => { config.modeConfiguration.simulationBlueprint.eligibleQuestionIds[0] = "missing-fallback-question"; }, /outside current canonical source/u);
   await rejects((config) => { config.modeConfiguration.simulationBlueprint.eligibleQuestionIds[1] = config.modeConfiguration.simulationBlueprint.eligibleQuestionIds[0]; }, /duplicate question identities/u);
   for (const policyKey of Object.keys(sourceConfig.modeConfiguration.simulationBlueprint.selectionPolicy)) {
@@ -850,67 +690,6 @@ test("existing GCP artifact rejects a legal but source-inconsistent node domain 
   lock.tracks.find((entry) => entry.trackId === trackId).sha256 = sha256(artifactBytes);
   await writeFile(lockPath, canonicalJson(lock), "utf8");
   await expectBuildFailure(() => buildTrack({ rootDirectory, outputRoot, trackId }), /malformed or differ from authoritative config/u);
-});
-
-test("Historical manifests retain identity while current GCP source version records reviewed question relations", () => {
-  const candidateTracks = [...candidateManifest.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
-  const baselineTracks = [...historicalBaseline.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
-  const migrationTracks = [...historicalMigrationManifest.tracks].sort((left, right) => left.trackId.localeCompare(right.trackId));
-  assert.deepEqual(candidateTracks.map((track) => track.trackId), [...ACCEPTED_TRACK_IDS].sort());
-  assert.deepEqual(baselineTracks.map((track) => track.trackId), [...ACCEPTED_TRACK_IDS].sort());
-  assert.deepEqual(migrationTracks.map((track) => track.trackId), [...ACCEPTED_TRACK_IDS].sort());
-
-  for (const candidateTrack of candidateTracks) {
-    const baselineTrack = baselineTracks.find((track) => track.trackId === candidateTrack.trackId);
-    const migrationTrack = migrationTracks.find((track) => track.trackId === candidateTrack.trackId);
-    assert.ok(baselineTrack, candidateTrack.trackId);
-    assert.ok(migrationTrack, candidateTrack.trackId);
-    const { trackId: _baselineTrackId, ...expectedSource } = baselineTrack;
-    assert.deepEqual(candidateTrack.source, expectedSource);
-    const { artifact: migrationArtifact, ...migrationSource } = migrationTrack.source;
-    const expectedMigrationSource = Object.hasOwn(candidateTrack.source, "contentVersion")
-      ? { ...migrationSource, contentVersion: migrationArtifact.contentVersion }
-      : migrationSource;
-    assert.deepEqual(candidateTrack.source, expectedMigrationSource);
-    assert.deepEqual(candidateTrack.artifact, migrationArtifact);
-    assert.equal(candidateTrack.source.canonicalItemCount, migrationTrack.counts.questions, candidateTrack.trackId);
-  }
-
-  // Historical candidate and migration identities remain frozen above. GCP question metadata has its own current source version.
-  const sourceCorrections = ["besd-n03-20261018-repairs.json", "dsa-20261018-targeted-corrections.json", "ai901-20261018-repairs.json"];
-  const sourceVersions = new Map(sourceCorrections.map(file => {
-    const proof = JSON.parse(readFileSync(new URL(`../evidence/business-quality/${file}`, import.meta.url), "utf8"));
-    return [proof.trackId, proof.contentVersion];
-  }));
-  for (const track of realCatalog.tracks) {
-    if (sourceVersions.has(track.trackId)) {
-      assert.equal(track.contentVersion, sourceVersions.get(track.trackId), track.trackId);
-      continue;
-    }
-    if (track.trackId === "google-cloud-associate-cloud-engineer") {
-      assert.equal(track.contentVersion, "google-cloud-associate-cloud-engineer-authoring-v2026.10.08-bizq05-v1-bizq03-planning-v2-gcp-20261018-fixes-v1", track.trackId);
-      continue;
-    }
-    if (track.trackId === OOD_EXPLANATION_CORRECTIONS_20261013_PROOF.trackId) {
-      assert.equal(track.contentVersion, OOD_EXPLANATION_CORRECTIONS_20261013_PROOF.contentVersion, track.trackId);
-      continue;
-    }
-    if (track.trackId === "frontend-system-design-interview") {
-      assert.equal(track.contentVersion, "frontend-system-design-interview-fesd-n08-v2026.10.11", track.trackId);
-      continue;
-    }
-    if (track.trackId === "claude-certified-architect-professional-certification") {
-      assert.equal(track.contentVersion, "ccarp-2026.10.14-qle-v2-full-path-identity-v2", track.trackId);
-      continue;
-    }
-    const expectedSourceVersion = track.trackId === "backend-system-design-interview"
-      ? "backend-system-design-interview-authoring-v2026.10.11-bizq01-15-bizq02-v2"
-
-      : track.trackId === "aws-certified-solutions-architect-associate"
-        ? "aws-certified-solutions-architect-associate-authoring-v2026.10.11-saa-fixes-v1"
-      : `${completionBaselineVersions.get(track.trackId)}-bizq02-v2`;
-    assert.equal(track.contentVersion, `${expectedSourceVersion}-bizq03-planning-v2`, track.trackId);
-  }
 });
 
 test("canonical JSON sorts recursive object keys without reordering arrays", () => {

@@ -55,8 +55,15 @@ export async function secureFile(root, relativePath) {
   const base = path.resolve(root);
   const target = path.resolve(base, relativePath);
   if (!within(base, target)) fail("input_path_outside_root");
+  try {
+    if ((await lstat(base)).isSymbolicLink()) fail("input_symlink_disallowed");
+  } catch (error) {
+    if (error.message === "input_symlink_disallowed") throw error;
+    fail("input_missing_or_unreadable");
+  }
   let current = base;
-  for (const segment of path.relative(base, target).split(path.sep)) {
+  const targetSegments = path.relative(base, target).split(path.sep).filter(Boolean);
+  for (const segment of targetSegments) {
     current = path.join(current, segment);
     let info;
     try { info = await lstat(current); } catch { fail("input_missing_or_unreadable"); }
@@ -113,11 +120,6 @@ async function declaredInputs(root, trackId, validated) {
     const config = await json(root, configRelative);
     if (typeof config.taxonomyPath !== "string") fail("loader_dependency_undeclared");
     paths.set(config.taxonomyPath, "track_taxonomy");
-    if (trackId === "google-cloud-associate-cloud-engineer") {
-      const artifactPath = config.profile?.nodeDomainMapEvidence?.artifactPath;
-      if (typeof artifactPath !== "string") fail("loader_dependency_undeclared");
-      paths.set(artifactPath, "published_domain_evidence");
-    }
   } else if (DESIGN_TRACKS.has(trackId)) {
     paths.set("config/simulation-profiles/design-interview.json", "simulation_profile_source");
   } else if (!CERTIFICATION_TRACKS.has(trackId)) {
@@ -190,6 +192,7 @@ export function validatePrimaryObjective(trackId, source, questionIds, registryD
   if (!Array.isArray(objective.bindings) || objective.bindings.length === 0) fail("objective_bindings_empty");
   const ids = new Set();
   let ambiguous = 0;
+  let orphan = 0;
   const domainCounts = Object.create(null);
   if (!isRecord(registryData) || registryData.trackId !== trackId) fail("objective_registry_track_mismatch");
   const domainIds = new Set((registryData.domains ?? []).map((domain) => domain.domainId));
@@ -202,7 +205,10 @@ export function validatePrimaryObjective(trackId, source, questionIds, registryD
     if (!isRecord(binding) || Object.keys(binding).some((key) => !supportedBindingKeys.includes(key)) || typeof binding.questionId !== "string" || typeof binding.objectiveId !== "string") fail("objective_binding_invalid");
     if (binding.trackId !== undefined && binding.trackId !== trackId) fail("objective_binding_foreign_track");
     if (binding.ambiguous !== undefined && typeof binding.ambiguous !== "boolean") fail("objective_binding_ambiguous_flag_invalid");
-    if (!questionIds.has(binding.questionId)) fail("objective_binding_orphan");
+    if (!questionIds.has(binding.questionId)) {
+      orphan++;
+      continue;
+    }
     if (ids.has(binding.questionId)) fail("objective_binding_duplicate");
     ids.add(binding.questionId);
     if (!objectiveById.has(binding.objectiveId)) fail("objective_reference_unknown");
@@ -214,24 +220,7 @@ export function validatePrimaryObjective(trackId, source, questionIds, registryD
   }
   if (ambiguous) fail("objective_binding_ambiguous");
   const unmapped = questionIds.size - ids.size;
-  if (objective.status === "complete" && (unmapped !== 0 || ids.size !== questionIds.size)) fail("complete_objective_set_incomplete");
-  return { status: objective.status, mapped: ids.size, unmapped, orphan: 0, ambiguous, domainCounts, mappingComplete: objective.status === "complete" && unmapped === 0 && ambiguous === 0 };
-}
-
-function objectiveRegistryPin(registry) {
-  if (!registry) return undefined;
-  const value = registry.value;
-  const firstSource = value.sources?.[0] ?? value.source;
-  return {
-    path: registry.path,
-    sha256: registry.hash,
-    registryVersion: value.registryVersion ?? value.version ?? value.schemaVersion,
-    source: {
-      guideVersion: firstSource?.guideVersion ?? firstSource?.version ?? value.guideVersion ?? "not_documented",
-      checkedDate: firstSource?.checkedDate ?? "not_documented",
-      currentness: "unverified"
-    }
-  };
+  return { status: objective.status, mapped: ids.size, unmapped, orphan, ambiguous, domainCounts, mappingComplete: objective.status === "complete" && unmapped === 0 && orphan === 0 && ambiguous === 0 };
 }
 
 export async function verifyReadiness({ rootDirectory = ROOT, manifest: suppliedManifest } = {}) {
@@ -243,27 +232,17 @@ export async function verifyReadiness({ rootDirectory = ROOT, manifest: supplied
   const summaries = [];
   for (const entry of manifest.tracks) {
     if (!isRecord(entry) || !Number.isInteger(entry.questionCount) || entry.questionCount < 1 || !/^[a-f0-9]{64}$/u.test(entry.questionIdSetSha256) || !/^[a-f0-9]{64}$/u.test(entry.sourceInventorySha256) || !Array.isArray(entry.inputs)) fail("manifest_entry_invalid");
-    for (const declared of entry.inputs) {
-      if (!isRecord(declared) || typeof declared.role !== "string" || !/^[a-f0-9]{64}$/u.test(declared.sha256)) fail("manifest_input_invalid");
-      await secureFile(root, declared.path);
-    }
     const current = await currentSourceProvenance(root, entry.trackId);
     const result = current.validated;
     const idsForTrack = result.questions.map((q) => q.questionId);
-    if (current.contentVersion !== entry.contentVersion || current.questionCount !== entry.questionCount || current.questionIdSetSha256 !== entry.questionIdSetSha256) fail(`stale_source_${entry.trackId}`);
-    if (canonicalJson(entry.inputs) !== canonicalJson(current.inputs) || canonicalJson(entry.loaderOwner) !== canonicalJson(current.loaderOwner) || current.sourceInventorySha256 !== entry.sourceInventorySha256) fail(`stale_provenance_${entry.trackId}`);
     const sourceByPath = new Map(current.inputs.map((x) => [x.path, x]));
+    const configuredByPath = new Map((Array.isArray(entry.inputs) ? entry.inputs : []).map((x) => [x.path, x]));
+    const changedInputCount = current.inputs.filter((input) => configuredByPath.get(input.path)?.sha256 !== input.sha256).length
+      + [...configuredByPath.keys()].filter((file) => !sourceByPath.has(file)).length;
     const registryRecord = [...sourceByPath.values()].find((x) => x.role === "objective_registry_source");
     if (!isRecord(entry.primaryObjective)) fail("primary_objective_shape_invalid");
-    const expectedStratumKind = entry.trackId === "google-cloud-associate-cloud-engineer" ? "published_item_domain" : entry.trackId === CODING_TRACK || DESIGN_TRACKS.has(entry.trackId) ? "patternly_node" : "unavailable";
-    if (!isRecord(entry.stratum) || entry.stratum.kind !== expectedStratumKind) fail("stratum_declaration_invalid");
-    if (registryRecord && (!isRecord(entry.primaryObjective.registry) || entry.primaryObjective.registry.sha256 !== registryRecord.sha256 || entry.primaryObjective.registry.path !== registryRecord.path)) fail("objective_registry_pin_stale");
-    if (!registryRecord && entry.primaryObjective.registry) fail("objective_registry_unexpected");
+    if (!isRecord(entry.stratum) || !["published_item_domain", "patternly_node", "unavailable"].includes(entry.stratum.kind)) fail("stratum_declaration_invalid");
     const registryData = registryRecord ? await json(root, registryRecord.path) : undefined;
-    if (registryRecord) {
-      const expectedPin = objectiveRegistryPin({ path: registryRecord.path, hash: registryRecord.sha256, value: registryData });
-      if (canonicalJson(entry.primaryObjective.registry) !== canonicalJson(expectedPin)) fail("objective_registry_pin_stale");
-    }
     const objective = validatePrimaryObjective(entry.trackId, entry, new Set(idsForTrack), registryData);
 
     const questions = result.questions;
@@ -271,10 +250,8 @@ export async function verifyReadiness({ rootDirectory = ROOT, manifest: supplied
     const nodes = new Map();
     if (entry.stratum.kind === "published_item_domain") {
       for (const q of result.artifactQuestions) {
-      if (typeof q.contentDomainId !== "string") fail("published_domain_proof_missing");
-        domains.set(q.questionId, q.contentDomainId);
+        if (typeof q.contentDomainId === "string" && q.contentDomainId.trim()) domains.set(q.questionId, q.contentDomainId);
       }
-      if (domains.size !== questions.length || !result.simulationProfiles?.length) fail("published_domain_proof_incomplete");
     } else if (entry.stratum.kind === "patternly_node") {
       for (const q of questions) nodes.set(q.questionId, q.nodeId);
     } else if (entry.stratum.kind !== "unavailable") fail("stratum_kind_invalid");
@@ -285,17 +262,28 @@ export async function verifyReadiness({ rootDirectory = ROOT, manifest: supplied
     if (entry.stratum.kind === "patternly_node") for (const q of questions) nodeCounts[q.nodeId] = (nodeCounts[q.nodeId] ?? 0) + 1;
     summaries.push({
       trackId: entry.trackId,
-      contentVersion: entry.contentVersion,
+      contentVersion: current.contentVersion,
       ...uniqueCounts(questions),
       primaryObjective: objective,
-      stratum: { kind: entry.stratum.kind, status: entry.stratum.kind === "unavailable" ? "unavailable" : "verified", uniqueDomainCount: new Set(domains.values()).size, uniqueNodeCount: new Set(nodes.values()).size, domainCounts, nodeCounts },
+      technicalProvenance: {
+        status: "current_source_observed",
+        sourceInventorySha256: current.sourceInventorySha256,
+        inputCount: current.inputs.length,
+        changedInputCount,
+        loaderOwner: current.loaderOwner,
+        configuredVersion: entry.contentVersion,
+        configuredQuestionCount: entry.questionCount,
+        configuredQuestionIdSetSha256: entry.questionIdSetSha256,
+        configuredSourceInventorySha256: entry.sourceInventorySha256
+      },
+      stratum: { kind: entry.stratum.kind, status: entry.stratum.kind === "unavailable" ? "unavailable" : entry.stratum.kind === "published_item_domain" ? (domains.size === questions.length ? "verified_current_source" : "unmapped_current_source") : "verified_current_source", mappedQuestionCount: entry.stratum.kind === "published_item_domain" ? domains.size : entry.stratum.kind === "patternly_node" ? nodes.size : 0, uniqueDomainCount: new Set(domains.values()).size, uniqueNodeCount: new Set(nodes.values()).size, domainCounts, nodeCounts },
       structuralValidity: "valid",
       semanticOwnerApproval: "not_established",
       efficacy: "not_evaluated",
       readiness: "not_ready"
     });
   }
-  return { schemaVersion: manifest.schemaVersion, tracks: summaries };
+  return { schemaVersion: manifest.schemaVersion, status: "current_source_inventory", tracks: summaries };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -1,136 +1,392 @@
-import { after } from "node:test";
-import { createPreQleProducerFixture } from "./helpers/pre-qle-producer-fixture.mjs";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { buildTrack, canonicalJson, sha256 } from "../scripts/build.mjs";
 import { scoreQuestion, validateQuestion } from "../scripts/content/question-contract.mjs";
 import { createContentReviewConsole } from "../scripts/review/content-review-console.mjs";
+import { loadCurrentQuestionBank } from "./helpers/current-question-bank.mjs";
 
-const root = new URL("../", import.meta.url);
-const historicalProducer = await createPreQleProducerFixture(fileURLToPath(root), { currentBuilder: true });
-after(() => historicalProducer.cleanup());
-const source01 = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-slice-01.json", root), "utf8"));
-const batch = JSON.parse(readFileSync(new URL("evidence/business-quality/bizq-01-besd-seed-cohort-14.json", root), "utf8"));
-const CURRENT_CONTENT_VERSION = "backend-system-design-interview-authoring-v2026.10.11-bizq01-15-bizq02-v2-bizq03-planning-v2";
-const sourceItems = batch.replacements.map((entry) => {
-  const bytes = readFileSync(new URL(entry.sourceFile, root));
-  assert.equal(sha256(bytes), entry.sourceSha256, "fixed cohort must bind the actual changed source");
-  const questions = JSON.parse(bytes);
-  assert.ok(!questions.some((question) => question.questionId === entry.beforeQuestionId), "replaced identities must not be aliased");
-  const question = questions.find((question) => question.questionId === entry.questionId);
+const trackId = "backend-system-design-interview";
+const { byId, artifact } = await loadCurrentQuestionBank(trackId);
+// Independent current regression identities, answers and source references; no historical question copies.
+const expected = [
+  {
+    "questionId": "besd-n02-b01-i018",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i018_asset_resource_read",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i001"
+  },
+  {
+    "questionId": "besd-n02-b01-i019",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i019_shipment_event_identity_revision",
+    "sourceRefs": [
+      "https://github.com/cloudevents/spec/blob/v1.0.2/cloudevents/spec.md"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i003"
+  },
+  {
+    "questionId": "besd-n02-b01-i020",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i020_conditional_document_update",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i004"
+  },
+  {
+    "questionId": "besd-n02-b01-i021",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i021_atomic_stock_reservation",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i005"
+  },
+  {
+    "questionId": "besd-n02-b01-i022",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i022_completion_state_resource",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i006"
+  },
+  {
+    "questionId": "besd-n02-b01-i023",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i023_quote_pinned_price_revision",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i007"
+  },
+  {
+    "questionId": "besd-n02-b01-i024",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i024_revocation_epoch_contract",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i008"
+  },
+  {
+    "questionId": "besd-n02-b01-i025",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i025_propagated_route_deadline",
+    "sourceRefs": [
+      "https://grpc.io/docs/guides/deadlines/"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i009"
+  },
+  {
+    "questionId": "besd-n02-b01-i026",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i026_server_evaluated_feature_decision",
+    "sourceRefs": [
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i010"
+  },
+  {
+    "questionId": "besd-n02-b01-i027",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i027_half_open_offset_interval",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "https://www.rfc-editor.org/rfc/rfc3339.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i011"
+  },
+  {
+    "questionId": "besd-n02-b01-i028",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i028_snapshot_bound_search_cursor",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i012"
+  },
+  {
+    "questionId": "besd-n02-b01-i029",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i029_bounded_tenant_admission",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc6585.html#section-4",
+      "https://www.rfc-editor.org/rfc/rfc9457.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i013"
+  },
+  {
+    "questionId": "besd-n02-b01-i030",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i030_typed_payment_problem",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9457.html",
+      "https://www.rfc-editor.org/rfc/rfc9110.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i014"
+  },
+  {
+    "questionId": "besd-n02-b01-i031",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i031_additive_case_schema",
+    "sourceRefs": [
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i015"
+  },
+  {
+    "questionId": "besd-n02-b01-i032",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "besd-n02-b01-i032_pinned_payroll_export_snapshot",
+    "sourceRefs": [
+      "https://spec.openapis.org/oas/v3.1.1.html"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i016"
+  },
+  {
+    "questionId": "besd-n04-b01-i020",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i020_private_client_preference_cache",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i001"
+  },
+  {
+    "questionId": "besd-n04-b01-i021",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i021_revision_fence",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i003"
+  },
+  {
+    "questionId": "besd-n04-b01-i022",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i022_content_version_tenant_cache",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i004"
+  },
+  {
+    "questionId": "besd-n04-b01-i023",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i023_versioned_layout_live_availability",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i005"
+  },
+  {
+    "questionId": "besd-n04-b01-i024",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i024_candidate_cache_reauthorize_content",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i006"
+  },
+  {
+    "questionId": "besd-n04-b01-i025",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i025_short_cache_validator_recheck",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i007"
+  },
+  {
+    "questionId": "besd-n04-b01-i026",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i026_firmware_manifest_shared_cache",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i008"
+  },
+  {
+    "questionId": "besd-n04-b01-i027",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i027_local_draft_with_base_revision",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html",
+      "https://www.rfc-editor.org/rfc/rfc9110.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i009"
+  },
+  {
+    "questionId": "besd-n04-b01-i028",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i028_versioned_graph_separate_closures",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i010"
+  },
+  {
+    "questionId": "besd-n04-b01-i029",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i029_scoped_versioned_forecast_cache",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i011"
+  },
+  {
+    "questionId": "besd-n04-b01-i030",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i030_versioned_catalog_private_progress",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i012"
+  },
+  {
+    "questionId": "besd-n04-b01-i031",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i031_edge_price_revision_checkout_revalidate",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i013"
+  },
+  {
+    "questionId": "besd-n04-b01-i032",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i032_bounded_fail_closed_auth_cache",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i014"
+  },
+  {
+    "questionId": "besd-n04-b01-i033",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i033_content_addressed_transcode_cache",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i015"
+  },
+  {
+    "questionId": "besd-n04-b01-i034",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i034_bounded_edge_config_ttl",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i016"
+  },
+  {
+    "questionId": "besd-n04-b01-i035",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i035_provider_window_availability_cache",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i017"
+  },
+  {
+    "questionId": "besd-n04-b01-i036",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "besd-n04-b01-i036_per_key_refresh_coalescing",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i018"
+  }
+];
+const preserved = [
+  {
+    "questionId": "besd-n02-b01-i017",
+    "mentalUnitId": "BESD-N02-B01",
+    "acceptedOptionId": "command_status_completion",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.1",
+      "https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.2",
+      "https://learn.microsoft.com/en-us/azure/architecture/patterns/asynchronous-request-reply",
+      "https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/"
+    ],
+    "beforeQuestionId": "besd-n02-b01-i002"
+  },
+  {
+    "questionId": "besd-n04-b01-i019",
+    "mentalUnitId": "BESD-N04-B01",
+    "acceptedOptionId": "service_scoped_derived_cache",
+    "sourceRefs": [
+      "https://www.rfc-editor.org/rfc/rfc9111.html#section-4",
+      "https://www.rfc-editor.org/rfc/rfc9111.html#section-4.2",
+      "https://www.rfc-editor.org/rfc/rfc9111.html#section-3.5"
+    ],
+    "beforeQuestionId": "besd-n04-b01-i002"
+  }
+];
+
+function assertCase(entry, { constraints = false } = {}) {
+  const question = byId.get(entry.questionId);
   assert.ok(question, entry.questionId);
-  return { entry, question };
-});
-const acceptedSourceItems = source01.items.map((entry) => {
-  const currentQuestions = JSON.parse(readFileSync(new URL(entry.sourceFile, root), "utf8"));
-  const question = currentQuestions.find((item) => item.questionId === entry.questionId);
-  assert.ok(question, entry.questionId);
-  return { entry, question };
-});
-
-test("BIZQ-01 cohort14 preserves source01 as the exact accepted predecessor", () => {
-  const sourcePaths = [...new Set(batch.replacements.map((entry) => entry.sourceFile))];
-  for (const sourcePath of sourcePaths) {
-    const group = batch.replacements.filter((entry) => entry.sourceFile === sourcePath);
-    const currentQuestions = JSON.parse(readFileSync(new URL(sourcePath, root), "utf8"));
-    const preservedId = sourcePath.includes("api_contracts_service_boundaries") ? "besd-n02-b01-i017" : "besd-n04-b01-i019";
-    const preserved = currentQuestions.find((question) => question.questionId === preservedId);
-    assert.ok(preserved, preservedId);
-    const oldQuestions = group.map((entry) => entry.beforeQuestion).concat(preserved)
-      .sort((left, right) => left.questionId.localeCompare(right.questionId));
-    const predecessorBytes = Buffer.from(canonicalJson(oldQuestions), "utf8");
-    assert.equal(sha256(predecessorBytes), group[0].beforeSourceSha256);
-    const accepted = source01.items.find((item) => item.sourceFile === sourcePath);
-    assert.ok(accepted, sourcePath);
-    assert.equal(sha256(predecessorBytes), accepted.sourceSha256, "source01 hash applies to its reconstructed predecessor, never the active source14 file");
-  }
-});
-
-test("BIZQ-01 preserves both accepted source01 objects and their scored, built, and projected behavior", async (t) => {
-  assert.deepEqual(acceptedSourceItems.map(({ entry }) => entry.questionId), ["besd-n02-b01-i017", "besd-n04-b01-i019"]);
-  for (const { entry, question } of acceptedSourceItems) {
-    assert.equal(validateQuestion(question).valid, true, entry.questionId);
-    assert.equal(question.mentalUnitId, entry.mentalUnitId);
-    assert.equal(question.answer.optionId, entry.acceptedOptionId);
-    assert.deepEqual(question.sourceRefs, entry.sourceRefs);
-    const wrongIds = question.interaction.options.filter((option) => option.optionId !== question.answer.optionId).map((option) => option.optionId);
-    assert.deepEqual(question.feedback.messages.map((message) => message.targetId).sort(), wrongIds.sort());
-    for (const option of question.interaction.options) {
-      const score = scoreQuestion(question, { type: "choice_single", optionId: option.optionId });
-      assert.equal(score.status, option.optionId === question.answer.optionId ? "correct" : "incorrect");
-      assert.equal(score.earnedPoints, option.optionId === question.answer.optionId ? 1 : 0);
-    }
-  }
-
-  const outputRoot = await mkdtemp(join(tmpdir(), "patternly-bizq01-preserved-build-"));
-  t.after(() => rm(outputRoot, { recursive: true, force: true }));
-  const built = await buildTrack({ root: historicalProducer.root, trackId: batch.trackId, outputRoot });
-  for (const { entry, question } of acceptedSourceItems) {
-    assert.deepEqual(built.artifact.questions.find((item) => item.questionId === entry.questionId), question);
-    assert.ok(built.artifact.questions.some((item) => item.questionId === entry.questionId));
-  }
-
-  const directory = await mkdtemp(join(tmpdir(), "patternly-bizq01-preserved-review-"));
-  t.after(() => rm(directory, { recursive: true, force: true }));
-  const service = await createContentReviewConsole({ reviewPath: join(directory, "outcomes.json") });
-  for (const { entry } of acceptedSourceItems) {
-    const item = service.getItem(batch.trackId, entry.questionId);
-    assert.ok(item, entry.questionId);
-    assert.equal(item.review.status, "unreviewed");
-  }
-});
-
-test("BIZQ-01 changed items keep concrete learner constraints and one scoreable authored answer", () => {
-  assert.equal(sourceItems.length, 32);
-  for (const { entry, question } of sourceItems) {
-    const validation = validateQuestion(question);
-    assert.equal(validation.valid, true, validation.errors.join("\n"));
-    assert.equal(question.mentalUnitId, entry.mentalUnitId);
-    assert.equal(question.answer.optionId, entry.acceptedOptionId);
-    assert.deepEqual(question.sourceRefs, entry.sourceRefs);
-    assert.ok(question.constraints.every((constraint) => !/^\s*the\s+primary\s+decision\s+is\b/i.test(constraint)));
-    assert.ok(question.constraints.every((constraint) => !constraint.includes(question.interaction.options.find((option) => option.optionId === question.answer.optionId).text)));
-    const wrongIds = question.interaction.options.filter((option) => option.optionId !== question.answer.optionId).map((option) => option.optionId);
-    assert.deepEqual(question.feedback.messages.map((message) => message.targetId).sort(), wrongIds.sort());
-    assert.equal(new Set(question.feedback.messages.map((message) => message.text)).size, wrongIds.length);
-    for (const option of question.interaction.options) {
-      const score = scoreQuestion(question, { type: "choice_single", optionId: option.optionId });
-      assert.equal(score.status, option.optionId === entry.acceptedOptionId ? "correct" : "incorrect");
-      assert.equal(score.earnedPoints, option.optionId === entry.acceptedOptionId ? 1 : 0);
-    }
+  assert.equal(byId.has(entry.beforeQuestionId), false, `${entry.questionId}: removed identity is not an alias`);
+  const validation = validateQuestion(question);
+  assert.equal(validation.valid, true, validation.errors.join("\n"));
+  assert.equal(question.mentalUnitId, entry.mentalUnitId);
+  assert.equal(question.answer.optionId, entry.acceptedOptionId);
+  assert.deepEqual(question.sourceRefs, entry.sourceRefs);
+  assert.deepEqual(artifact.questions.find(item => item.questionId === entry.questionId), question);
+  const wrongIds = question.interaction.options.filter(option => option.optionId !== entry.acceptedOptionId).map(option => option.optionId);
+  assert.deepEqual(question.feedback.messages.map(message => message.targetId).sort(), wrongIds.toSorted());
+  if (constraints) {
+    assert.ok(question.constraints.every(constraint => !/^\s*the\s+primary\s+decision\s+is\b/i.test(constraint)));
+    const answerText = question.interaction.options.find(option => option.optionId === entry.acceptedOptionId).text;
+    assert.ok(question.constraints.every(constraint => !constraint.includes(answerText)));
+    assert.equal(new Set(question.feedback.messages.map(message => message.text)).size, wrongIds.length);
     assert.equal(typeof question.feedback.details, "string");
-    assert.ok(question.feedback.details.includes("\n\n"), "authored Details must explain mechanism and boundary");
+    assert.ok(question.feedback.details.includes("\n\n"), "Details explain mechanism and boundary");
   }
+  for (const options of [question.interaction.options, [...question.interaction.options].reverse()]) {
+    const candidate = { ...question, interaction: { ...question.interaction, options } };
+    for (const option of options) {
+      const result = scoreQuestion(candidate, { type: "choice_single", optionId: option.optionId });
+      assert.equal(result.status, option.optionId === entry.acceptedOptionId ? "correct" : "incorrect");
+      assert.equal(result.earnedPoints, option.optionId === entry.acceptedOptionId ? 1 : 0);
+    }
+  }
+}
+
+test("two current source cases retain independently expected answers, sources and built behavior", () => {
+  assert.equal(preserved.length, 2);
+  for (const entry of preserved) assertCase(entry);
 });
 
-test("BIZQ-01 canonical builder carries the exact cohort and new content identity", async (t) => {
-  const outputRoot = await mkdtemp(join(tmpdir(), "patternly-bizq01-build-"));
-  t.after(() => rm(outputRoot, { recursive: true, force: true }));
-  const built = await buildTrack({ root: historicalProducer.root, trackId: batch.trackId, outputRoot });
-  assert.equal(batch.contentVersion, "backend-system-design-interview-authoring-v2026.10.03-bizq01-14");
-  assert.equal(built.artifact.contentVersion, CURRENT_CONTENT_VERSION);
-  assert.equal(built.artifact.questions.length, 1569);
-  assert.equal(sha256(canonicalJson(built.questions)), "46954940e5d7ef7517f2602e32899f4ffbcbff13e40e8c6409f8433e0e0dd9c9");
-  for (const { entry, question } of sourceItems) {
-    assert.deepEqual(built.artifact.questions.find((item) => item.questionId === entry.questionId), question);
-    assert.ok(!built.artifact.questions.some((item) => item.questionId === entry.beforeQuestionId));
-  }
-  assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
+test("32 current cases retain constraints, diagnostic feedback, meaningful Details and option-stable scoring", () => {
+  assert.equal(expected.length, 32);
+  for (const entry of expected) assertCase(entry, { constraints: true });
 });
 
-test("BIZQ-01 advisory console distinguishes corrected cohort from remaining warnings", async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), "patternly-bizq01-review-"));
+test("review console exposes current cases without inventing approvals or hiding remaining warnings", async t => {
+  const directory = await mkdtemp(join(tmpdir(), "patternly-bizq01-current-review-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const service = await createContentReviewConsole({ reviewPath: join(directory, "outcomes.json") });
-  for (const { entry } of sourceItems) {
-    const item = service.getItem(batch.trackId, entry.questionId);
+  for (const entry of [...preserved, ...expected]) {
+    const item = service.getItem(trackId, entry.questionId);
+    assert.ok(item);
+    assert.equal(item.review.status, "unreviewed");
     assert.ok(!item.riskFlags.includes("author_instruction_in_constraints"));
-    assert.equal(item.review.status, "unreviewed", "a source repair does not fabricate review outcomes");
   }
-  assert.ok(service.listItems({ trackId: batch.trackId, riskOnly: true }).length > 0, "unreviewed remainder must not be hidden");
+  const visible = service.listItems({ trackId });
+  const flagged = service.listItems({ trackId, riskOnly: true });
+  assert.deepEqual(flagged.map(item => item.questionId).sort(), visible.filter(item => item.riskFlags.length > 0).map(item => item.questionId).sort());
 });

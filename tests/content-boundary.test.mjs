@@ -1,44 +1,51 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir, stat } from "node:fs/promises";
-import { join } from "node:path";
+import { readFile, readdir } from "node:fs/promises";
+import path from "node:path";
 import test from "node:test";
 
 const root = process.cwd();
-const historicalEvidenceValidators = [
-  "scripts/content/verify-migration.mjs",
-  "scripts/review/candidate-manifest.mjs",
-  "scripts/review/content-acceptance-baseline.mjs",
-];
 
 async function files(directory) {
-  const entries = await readdir(join(root, directory), { withFileTypes: true });
+  const entries = await readdir(path.join(root, directory), { withFileTypes: true });
   return (await Promise.all(entries.map((entry) => entry.isDirectory()
-    ? files(join(directory, entry.name))
-    : [join(directory, entry.name)]))).flat();
+    ? files(path.join(directory, entry.name))
+    : [path.join(directory, entry.name)]))).flat();
 }
 
-test("active canonical ingress has no legacy publisher and historical references are verifier-only", async () => {
-  await assert.rejects(stat(join(root, "manual", "source")), { code: "ENOENT" });
-  await assert.rejects(access(join(root, "scripts", "publishing", "pipeline.mjs")), { code: "ENOENT" });
-  await assert.rejects(access(join(root, "scripts", "authoring", "lib", "model.mjs")), { code: "ENOENT" });
-  await assert.rejects(access(join(root, "schemas", "publishing")), { code: "ENOENT" });
+async function retainedTests() {
+  return (await files("tests")).filter((relativePath) => relativePath.endsWith(".test.mjs")
+    && relativePath !== "tests/content-boundary.test.mjs");
+}
 
-  const executablePaths = ["package.json", ...await files(join("scripts", "content")), ...await files(join("scripts", "review"))];
+test("normal source and test entrypoints have no dependency on evidence or artifact archives", async () => {
+  const paths = ["package.json", ...await files("scripts"), ...await files(".github/workflows"), ...await retainedTests()];
   const references = [];
-  for (const relativePath of executablePaths) {
-    const source = await readFile(join(root, relativePath), "utf8");
-    if (source.includes("manual/source")) references.push(relativePath);
+  for (const relativePath of paths) {
+    const source = await readFile(path.join(root, relativePath), "utf8");
+    if (/(?:^|[/\\])(?:evidence|artifacts)(?:[/\\]|$)/u.test(source) || /reports\/candidate-reconciliation/u.test(source)) references.push(relativePath);
   }
+  assert.deepEqual(references, []);
+});
 
-  assert.deepEqual(references, historicalEvidenceValidators);
-  const evidenceValidator = await readFile(join(root, "scripts/content/verify-migration.mjs"), "utf8");
-  assert.match(evidenceValidator, /EVIDENCE_VALUE/);
-  assert.doesNotMatch(evidenceValidator, /join\([^\n]*manual["']\s*,\s*["']source/);
-  const historicalArtifactValidator = await readFile(join(root, "scripts/review/historical-artifact-evidence.mjs"), "utf8");
-  assert.match(historicalArtifactValidator, /verifyHistoricalArtifactEvidence/);
-  assert.doesNotMatch(historicalArtifactValidator, /discoverSourceBatches|buildTrack|publishRelease|readdir|readFile/);
-  for (const relativePath of ["scripts/review/candidate-manifest.mjs", "scripts/review/content-acceptance-baseline.mjs", "scripts/review/content-approval.mjs"]) {
-    const source = await readFile(join(root, relativePath), "utf8");
-    assert.doesNotMatch(source, /summarizeSource|verifyCurrentSource|legacySourceAvailable/);
+test("retired archive validators and admission workflows are absent from public entrypoints", async () => {
+  const obsolete = [
+    "scripts/content/verify-migration.mjs",
+    "scripts/content/verify-gcp-attribution-history.mjs",
+    "scripts/review/candidate-draft-v2.mjs",
+    "scripts/review/candidate-readiness-v2.mjs",
+    "scripts/review/candidate-release-gate-v2.mjs",
+    "scripts/review/candidate-admission-v3.mjs",
+    "scripts/review/candidate-manifest.mjs",
+    "scripts/product/validate-bundled-free-nodes.mjs",
+  ];
+  for (const relativePath of obsolete) {
+    await assert.rejects(readFile(path.join(root, relativePath)), { code: "ENOENT" }, relativePath);
+  }
+});
+
+
+test("retired producer archive roots remain absent", async () => {
+  for (const directory of ["evidence", "artifacts"]) {
+    await assert.rejects(readdir(path.join(root, directory)), { code: "ENOENT" }, directory);
   }
 });

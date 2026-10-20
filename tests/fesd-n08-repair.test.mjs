@@ -19,7 +19,7 @@ const read = async (file) => JSON.parse(await readFile(path.join(root, file), "u
 const selected = async () => (await Promise.all(files.map(read))).flat();
 const feedback = (q, kind, targetId) => q.feedback.messages.find((message) => message.kind === kind && message.targetId === targetId);
 
-test("exact 162 replacements retire the old IDs and leave the other 1604 questions unchanged", async () => {
+test("exact 162 N08 replacements retain their identity and unrelated historical source remains unchanged", async () => {
   const sourceFiles = execFileSync("git", ["ls-tree", "-r", "--name-only", predecessor, `content/${trackId}`], { cwd: root, encoding: "utf8" }).trim().split("\n");
   let unchanged = 0;
   const originalInteractions = { choice_single: 0, ordering: 0, decision_matrix: 0 };
@@ -28,6 +28,9 @@ test("exact 162 replacements retire the old IDs and leave the other 1604 questio
     const after = await read(file);
     const index = files.indexOf(file);
     if (index < 0) {
+      // N09 has its own bounded repair and baseline-preservation regression.
+      // This historical N08 test must not freeze that subsequently repaired unit.
+      if (file.includes("/security_privacy_authentication_and_untrusted_content/")) continue;
       assert.deepEqual(after, before, file);
       unchanged += before.length;
       continue;
@@ -45,7 +48,7 @@ test("exact 162 replacements retire the old IDs and leave the other 1604 questio
       assert.doesNotMatch(JSON.stringify(q), /Do not reduce|The accepted design must name|The the |This unit owns the primary|The client-authority, global-state, framework-first/);
     }
   }
-  assert.equal(unchanged, 1604);
+  assert.equal(unchanged, 1445);
   assert.deepEqual(originalInteractions, { choice_single: 46, ordering: 83, decision_matrix: 33 });
 });
 

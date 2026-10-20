@@ -9,7 +9,6 @@ import { buildAll, canonicalJson, validateTrack } from "../build.mjs";
 import { computeCurrentSourceFingerprint } from "../content/current-source-identity.mjs";
 
 const ROOT = path.resolve(fileURLToPath(new URL("../../", import.meta.url)));
-const CONTRACT_PATH = path.join(ROOT, "config/current-content-audit-contract.json");
 const keyFor = (track, itemId) => `${track}:${itemId}`;
 const CERTIFICATION_TRACKS = new Set([
   "aws-certified-solutions-architect-associate",
@@ -64,6 +63,22 @@ function matchesCurrentIdentity(record, item) {
     && record.taxonomy?.mentalUnitId === item.taxonomy.mentalUnitId;
 }
 
+const isRecord = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+const isNonemptyText = (value) => typeof value === "string" && value.trim().length > 0;
+
+function isReviewTimestamp(value) {
+  if (typeof value !== "string") return false;
+  // Require an unambiguous timestamp; Date.parse alone normalizes impossible dates.
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-](\d{2}):(\d{2}))$/iu.exec(value);
+  if (!match) return false;
+  const [year, month, day, hour, minute, second, offsetHour, offsetMinute] = match.slice(1).map((part) => Number(part ?? 0));
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth[month - 1]
+    && hour <= 23 && minute <= 59 && second <= 59 && offsetHour <= 23 && offsetMinute <= 59
+    && Number.isFinite(Date.parse(value));
+}
+
 function validateCurrentReview(review, question, contract, family) {
   if (!review || typeof review !== "object" || Array.isArray(review)) fail("review_missing");
   if (!contract.verdicts.includes(review.verdict) || !contract.severities.includes(review.severity)) fail("review_verdict_or_severity_invalid");
@@ -81,7 +96,14 @@ function validateCurrentReview(review, question, contract, family) {
   for (const finding of review.findings) {
     if (!finding?.code || !Array.isArray(finding.dimensions) || finding.dimensions.length === 0 || !finding.problem || !finding.evidence || !finding.remediation) fail("review_finding_incomplete");
   }
-  if (!review.interactionReview || !review.reviewer || !review.reviewedAt || !Array.isArray(review.duplicatePeers) || !Array.isArray(review.factChecks)) fail("review_metadata_missing");
+  if (!isRecord(review.reviewer)) fail("review_reviewer_invalid");
+  for (const field of ["model", "reasoningEffort", "method"]) {
+    if (!isNonemptyText(review.reviewer[field])) fail(`review_reviewer_field_invalid:${field}`);
+  }
+  if (!isRecord(review.interactionReview)) fail("review_interaction_invalid");
+  if (!isNonemptyText(review.interactionReview.evidence)) fail("review_interaction_evidence_invalid");
+  if (!isReviewTimestamp(review.reviewedAt)) fail("review_reviewed_at_invalid");
+  if (!Array.isArray(review.duplicatePeers) || !Array.isArray(review.factChecks)) fail("review_metadata_missing");
 
   const interaction = question.interaction;
   const answerIds = new Set(interaction.type === "choice_single"

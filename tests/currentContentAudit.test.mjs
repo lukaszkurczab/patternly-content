@@ -83,3 +83,97 @@ test("intensive batches cap a large current unit at twelve items", () => {
   assert.equal(result.nextBatch.questionIds.length, 12);
   assert.equal(result.nextBatch.remainingInUnit, 13);
 });
+
+const completeRecords = () => [record(), record({
+  itemId: "q2", itemSha256: "b".repeat(64), review: { ...review(), distractors: [] },
+})];
+
+const invalidMetadataCases = [];
+for (const field of ["reviewer", "interactionReview"]) {
+  for (const value of [undefined, null, {}, [], "text", 1, true]) {
+    invalidMetadataCases.push([`${field}=${JSON.stringify(value)}`, (item) => { item[field] = value; },
+      field === "reviewer" ? (value && !Array.isArray(value) && typeof value === "object" ? "review_reviewer_field_invalid:model" : "review_reviewer_invalid")
+        : (value && !Array.isArray(value) && typeof value === "object" ? "review_interaction_evidence_invalid" : "review_interaction_invalid")]);
+  }
+}
+for (const field of ["model", "reasoningEffort", "method"]) {
+  for (const value of [undefined, null, "", " \n\t", 1, true, [], {}]) {
+    invalidMetadataCases.push([`reviewer.${field}=${JSON.stringify(value)}`, (item) => { item.reviewer[field] = value; }, `review_reviewer_field_invalid:${field}`]);
+  }
+}
+for (const value of [undefined, null, "", " \n\t", 1, true, [], {}]) {
+  invalidMetadataCases.push([`interactionReview.evidence=${JSON.stringify(value)}`, (item) => { item.interactionReview.evidence = value; }, "review_interaction_evidence_invalid"]);
+}
+for (const value of [undefined, null, "", " ", 1, true, [], {}, "not-a-date", "2026-10-19", "2026-10-19T12:00:00",
+  "2026-02-30T12:00:00Z", "2025-02-29T12:00:00Z", "2026-04-31T12:00:00Z", "2026-13-01T12:00:00Z",
+  "2026-00-01T12:00:00Z", "2026-01-00T12:00:00Z", "2026-10-19T24:00:00Z", "2026-10-19T12:60:00Z",
+  "2026-10-19T12:00:60Z", "2026-10-19T12:00:00+24:00", "2026-10-19T12:00:00+02:60"]) {
+  invalidMetadataCases.push([`reviewedAt=${JSON.stringify(value)}`, (item) => { item.reviewedAt = value; }, "review_reviewed_at_invalid"]);
+}
+for (const field of ["duplicatePeers", "factChecks"]) {
+  for (const value of [undefined, null, {}, "text", 1, true]) {
+    invalidMetadataCases.push([`${field}=${JSON.stringify(value)}`, (item) => { item[field] = value; }, "review_metadata_missing"]);
+  }
+}
+for (const [label, mutate, category] of invalidMetadataCases) {
+  test(`rejects incomplete metadata before returning counts or COMPLETE: ${label}`, () => {
+    const records = completeRecords();
+    // The final row would otherwise complete this entire synthetic inventory.
+    mutate(records[1].review);
+    let result;
+    assert.throws(() => { result = reconcileCurrentAudit({ ...common, auditInput: { reviews: records } }); },
+      { message: `current_audit_invalid:${category}` });
+    assert.equal(result, undefined, "invalid input must not publish counters or COMPLETE");
+  });
+}
+
+test("accepts complete metadata without inventing values and completes the synthetic inventory", () => {
+  for (const reviewedAt of ["2026-10-19T12:00:00Z", "2024-02-29T12:00:00.123Z", "2026-10-19T14:00:00+02:00", "2026-10-19T07:00:00-05:00", "2024-01-02t03:04:05.123z"]) {
+    const records = completeRecords();
+    records[1].review.reviewedAt = reviewedAt;
+    records[1].review.reviewer = { model: "any-recorded-model", reasoningEffort: "recorded-effort", method: "manual item review" };
+    const before = structuredClone(records);
+    const result = reconcileCurrentAudit({ ...common, auditInput: { reviews: records } });
+    assert.equal(result.status, "COMPLETE");
+    assert.equal(result.counts.currentReviewCount, 2);
+    assert.equal(result.counts.currentByVerdict.PASS, 2);
+    assert.equal(result.counts.pendingCount, 0);
+    assert.equal(result.nextBatch, null);
+    assert.deepEqual(result.currentReviews.map(({ review }) => review), records.map(({ review }) => review));
+    assert.deepEqual(records, before);
+  }
+});
+
+test("rejects the original combined empty-metadata counterexample", () => {
+  const records = completeRecords();
+  for (const item of records) Object.assign(item.review, { reviewer: {}, interactionReview: {}, reviewedAt: "not-a-date" });
+  assert.throws(() => reconcileCurrentAudit({ ...common, auditInput: { reviews: records } }), /review_reviewer_field_invalid:model/u);
+});
+
+test("preserves distractor, fact-check, dimension and batch guards", () => {
+  const missingDistractor = review();
+  missingDistractor.distractors = [];
+  assert.throws(() => reconcileCurrentAudit({ ...common, auditInput: { reviews: [record({ review: missingDistractor })] } }), /review_distractor_coverage_invalid/u);
+  const failingDimension = review();
+  failingDimension.dimensions.technical_correctness.status = "FAIL";
+  assert.throws(() => reconcileCurrentAudit({ ...common, auditInput: { reviews: [record({ review: failingDimension })] } }), /pass_contains_nonpassing_dimension/u);
+  const certTrack = "aws-certified-solutions-architect-associate";
+  const certInventory = structuredClone(inventory);
+  certInventory.tracks[0].trackId = certTrack;
+  const questions = new Map([...currentQuestions].map(([key, value]) => [key.replace(trackId, certTrack), value]));
+  const certRecord = record({ track: certTrack });
+  assert.throws(() => reconcileCurrentAudit({ ...common, inventory: certInventory, currentQuestions: questions, auditInput: { reviews: [certRecord] } }), /certification_fact_check_missing/u);
+  certRecord.review.factChecks = [{ url: "https://example.com/official", checkedDate: "2026-10-19", claim: "Synthetic claim", evidence: "Synthetic source evidence" }];
+  assert.equal(reconcileCurrentAudit({ ...common, inventory: certInventory, currentQuestions: questions, auditInput: { reviews: [certRecord] } }).counts.currentReviewCount, 1);
+  assert.throws(() => reconcileCurrentAudit({ ...common, batchSize: 21 }), /batch_size_invalid/u);
+});
+
+for (const overrides of [{ contentVersion: "old" }, { file: "old.json" }, { taxonomy: { nodeId: "old", mentalUnitId: "unit-a" } }, { taxonomy: { nodeId: "node-a", mentalUnitId: "old" } }]) {
+  test(`preserves exact identity guard: ${JSON.stringify(overrides)}`, () => {
+    const result = reconcileCurrentAudit({ ...common, auditInput: { reviews: [record(overrides)] } });
+    assert.equal(result.counts.currentReviewCount, 0);
+    assert.equal(result.counts.currentByVerdict.PASS, 0);
+    assert.equal(result.counts.staleReviewCount, 1);
+    assert.equal(result.status, "IN_PROGRESS");
+  });
+}

@@ -292,3 +292,115 @@ console.log(JSON.stringify({ items: expected.size, permutationsPerItem: 24, perm
   assert.match(result.stdout, /"responseCount": 4224/);
   assert.match(result.stdout, /"result": "PASS"/);
 });
+
+// Six bounded governance repairs AZ104-20261021-01..04; separate from the older cohort.
+const october21 = [
+  ["AZ104-N02-B03.json", "017", "A"], ["AZ104-N02-B03.json", "018", "D"],
+  ["AZ104-N02-B05.json", "019", "C"], ["AZ104-N02-B08.json", "009", "A"],
+  ["AZ104-N02-B08.json", "011", "C"], ["AZ104-N02-B08.json", "015", "C"],
+].map(([file, suffix, key]) => ({ row: question(governance, file, suffix), key }));
+for (const { row, key } of october21) test(`October 21 ${row.questionId}: identity, key and exact feedback targets`, () => {
+  assert.equal(row.answer.optionId, key);
+  assert.equal(row.interaction.type, "choice_single");
+  assert.equal(validateQuestion(row).valid, true);
+  const ids = row.interaction.options.map((o) => o.optionId);
+  assert.deepEqual(ids, row.questionId.endsWith("B03-018") ? ["blob_data_reader_for_configuration", "B", "C", "D"] : ["A", "B", "C", "D"]);
+  assert.deepEqual(row.feedback.messages.map((m) => m.targetId).sort(), ids.filter((id) => id !== key).sort());
+  for (const id of ids) {
+    const score = scoreQuestion(row, { type: "choice_single", optionId: id });
+    assert.equal(score.earnedPoints, id === key ? 1 : 0);
+    assert.equal(score.maxPoints, 1);
+  }
+});
+test("October 21 closest counterexamples: data access, export-only delivery, nonexistent CLI", () => {
+  const reader = october21[1].row;
+  const replacement = option(reader, "blob_data_reader_for_configuration");
+  assert.match(replacement.text, /Storage Blob Data Reader.*configuration is stored as blob data/i);
+  assert.match(wrongFeedback(reader, replacement.optionId).text, /blob contents.*violate the no-blob-data constraint/i);
+  assert.match(reader.feedback.details.errorCorrection, /Reader at the storage-account scope.*without blob DataActions/i);
+  const dangling = structuredClone(reader);
+  dangling.feedback.messages[0].targetId = "A";
+  assert.equal(validateQuestion(dangling).valid, false);
+  const missingAnswer = structuredClone(reader);
+  missingAnswer.interaction.options = missingAnswer.interaction.options.filter((o) => o.optionId !== "D");
+  assert.equal(validateQuestion(missingAnswer).valid, false);
+  const email = october21[3].row;
+  assert.match(option(email, "A").text, /weekly scheduled email alert.*recipients.*reporting period/i);
+  assert.doesNotMatch(option(email, "A").text + email.feedback.details.scenarioApplication, /scheduled alert or export/i);
+  assert.match(email.feedback.details.mechanismOrProperty, /export writes datasets to storage and needs another delivery process/i);
+  assert.match(email.feedback.reason, /without portal access/i);
+  const query = october21[5].row;
+  assert.match(option(query, "C").text, /REST API with POST.*explicit scope.*request body.*timeframe and grouping.*az rest/i);
+  assert.doesNotMatch(JSON.stringify(query), /az costmanagement query|--query/);
+  assert.match(query.feedback.details.mechanismOrProperty, /ARM REST operation/);
+});
+test("October 21 nine distractors preserve false mechanisms without pre-submit self-disproof", () => {
+  for (const index of [0, 2, 4]) {
+    const { row, key } = october21[index];
+    for (const o of row.interaction.options.filter((o) => o.optionId !== key)) {
+      assert.doesNotMatch(o.text, /;|it does not|Owner includes writes|budgets do not|their governance evidence differs/i);
+      assert.ok(wrongFeedback(row, o.optionId)?.text.trim());
+    }
+  }
+  for (const [index, id, misconception] of [[0,"B",/tenant-wide administration/],[0,"C",/Owner provides read-only/],[0,"D",/grants Microsoft Entra directory roles/],[2,"A",/grants Azure permissions/],[2,"B",/deletes the waived resource/],[2,"D",/exactly the same way/],[4,"A",/bypasses an automatic budget shutdown/],[4,"B",/removed the budget's action group/],[4,"D",/VM quota/]]) assert.match(option(october21[index].row,id).text,misconception);
+});
+test("October 21 actual APP: persisted permutations, accessibility, feedback boundary, retired IDs", () => {
+  const appRoot = process.env.PATTERNLY_FRONTEND_ROOT || path.resolve("..", "patternly");
+  const probe = String.raw`
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const { canonicalInteractionRegistry: registry } = require('./src/content/canonical/interactions/registry.ts');
+const { prepareCanonicalOptionOrder, isCanonicalOptionOrder } = require('./src/application/canonical/canonicalOptionOrder.ts');
+const { projectCertificationPracticeQuestion, projectCertificationPracticeFeedback } = require('./src/application/certification/certificationSessionFacade.ts');
+const cases = JSON.parse(process.env.AZ104_OCT21_CASES);
+let responses = 0;
+for (const { row: q, key } of cases) {
+  assert.deepEqual(registry.validate(q), []);
+  const owner = { question: { questionId: q.questionId, interactionType: q.interaction.type }, interactions: {
+    projectFeedback: (_id, r) => registry.projectFeedback(q, r),
+    projectDiagnostics: (_id, r) => registry.projectDiagnostics(q, r),
+  }};
+  const prepared = prepareCanonicalOptionOrder(q, 'az104-oct21:' + q.questionId, { contentVersion: 'test-current', artifactSha256: 'a'.repeat(64) });
+  for (const order of [prepared, [...prepared].reverse()]) {
+    const savedOrder = JSON.parse(JSON.stringify(order));
+    assert.equal(isCanonicalOptionOrder(q, savedOrder), true);
+    const model = registry.present(q, null, savedOrder).model;
+    const projected = projectCertificationPracticeQuestion({ ...q, interactionType: q.interaction.type }, model);
+    assert.deepEqual(projected.interaction.options.map((o) => o.optionId), savedOrder);
+    assert.equal('answer' in projected, false);
+    assert.equal('feedback' in projected, false);
+    assert.equal(projectCertificationPracticeFeedback('afterEachAnswer', null, owner), null);
+    assert.deepEqual(model.accessibility.controls.map((c) => c.label), savedOrder.map((id) => q.interaction.options.find((o) => o.optionId === id).text));
+    assert.equal('feedback' in model.accessibility, false);
+    for (const id of savedOrder) {
+      const response = JSON.parse(JSON.stringify({ type: 'choice_single', optionId: id }));
+      const score = registry.score(q, response);
+      assert.equal(score.kind, id === key ? 'correct' : 'incorrect');
+      assert.equal(score.earnedPoints, id === key ? 1 : 0);
+      assert.equal(score.maxPoints, 1);
+      const restored = registry.present(q, response, savedOrder).model;
+      assert.equal(restored.renderer.options.find((o) => o.id === id).selected, true);
+      const attempt = { response, result: { kind: score.kind } };
+      const feedback = projectCertificationPracticeFeedback('afterEachAnswer', attempt, owner);
+      assert.deepEqual(feedback.messages.map((m) => m.targetId), id === key ? [] : [id]);
+      assert.ok(feedback.reason && feedback.details);
+      assert.equal(projectCertificationPracticeFeedback('atSessionEnd', attempt, owner), null);
+      responses++;
+    }
+  }
+  for (const id of ['', 'missing-option', ...(q.questionId.endsWith('B03-018') ? ['A'] : [])]) {
+    const response = { type: 'choice_single', optionId: id };
+    assert.equal(registry.isComplete(q, response), false);
+    assert.equal(registry.score(q, response).earnedPoints, 0);
+    assert.equal(registry.projectFeedback(q, response), null);
+  }
+}
+console.log(JSON.stringify({ questions: cases.length, orders: 12, responses, accessibility: 'PASS', projection: 'PASS' }));
+`;
+  const result = spawnSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e", probe], {
+    cwd: appRoot, env: { ...process.env, AZ104_OCT21_CASES: JSON.stringify(october21) }, encoding: "utf8", maxBuffer: 1024 * 1024,
+  });
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+});

@@ -10,7 +10,7 @@ const targetedKeySemantics = [
   ['CCARP-D01-O02-expansion-01', 'a', 'b', 'Validate fields before retrieval', 'dashboard finds correction patterns after the fact'],
   ['CCARP-D01-O02-expansion-02', 'c', 'a', 'Resolve the device, then retrieve its applicable manual revision', 'newest manual may not apply'],
   ['CCARP-D01-O02-expansion-04', 'b', 'c', 'Return a typed vendor rejection', 'Hiding the ERP rejection'],
-  ['CCARP-D01-O02-expansion-05', 'd', 'b', 'Refresh the reading and authoritative applicable threshold', 'Plausibility does not show'],
+  ['CCARP-D01-O02-expansion-05', 'd', 'latest_threshold_p01r1', 'Refresh the reading and authoritative applicable threshold', 'not proven applicable'],
   ['CCARP-D01-O02-expansion-06', 'b', 'a', 'Revise, gather evidence, or stop based on review', 'second call on every answer'],
   ['CCARP-D01-O02-expansion-07', 'b', 'd', 'Persist the intent and key before submission', 'Account history does not reveal'],
   ['CCARP-D01-O04-expansion-03', 'c', 'd', 'Keep status partial until required evidence is resolved', 'discards completed work'],
@@ -19,7 +19,7 @@ const targetedKeySemantics = [
   ['CCARP-D01-O04-expansion-08', 'b', 'c', 'Publish the validated required sections', 'plausible inference from another packet'],
   ['CCARP-D01-O04-expansion-09', 'b', 'd', 'Validate each citation against its assigned source', 'Deleting provenance conceals unsupported claims'],
   ['CCARP-D01-O04-expansion-10', 'b', 'a', 'Treat the excerpt as untrusted evidence content', 'cannot rewrite the lead’s task contract'],
-  ['CCARP-D01-O04-expansion-12', 'b', 'c', 'Use bounded batches within', 'Changing task boundaries'],
+  ['CCARP-D01-O04-packet-dispatch-contract', 'bounded_packet_batches', 'bundle_three_packets', 'Use four-call batches', 'accepts one packet ID'],
   ['CCARP-D01-O04-expansion-13', 'b', 'd', 'Prefer the simpler lead process for this workload', 'without a diagnosed gap'],
   ['CCARP-D01-O04-expansion-14', 'b', 'a', 'Keep local status unresolved, query status', 'new operation key may create a second'],
   ['CCARP-D02-O01-expansion-02', 'c', 'a', 'Test a model or route that clears the multilingual floor', 'model switch alone may not address the ambiguity'],
@@ -43,7 +43,7 @@ const targetedKeySemantics = [
   ['CCARP-D01-O01-expansion-01', 'a', 'b', 'Separate status and policy paths', 'source for live account facts'],
   ['CCARP-D01-O01-expansion-02', 'b', 'a', 'Set separate outcome targets, owners, and refund-loss guardrails', 'Response speed omits'],
   ['CCARP-D01-O01-expansion-04', 'b', 'c', 'Expand through the queue with quality and end-to-end measures', 'measured total includes correction work'],
-  ['CCARP-D01-O01-expansion-06', 'b', 'c', 'Measure and redesign the queue assignment and ownership workflow', 'faster model would affect only the small interpretation segment'],
+  ['CCARP-D01-O01-expansion-06', 'b', 'note_review_capacity_p01r2', 'Pilot revised queue-assignment responsibilities and handoff rules', 'does not change who assigns waiting cases'],
 ];
 
 function permutations(ids) {
@@ -51,11 +51,11 @@ function permutations(ids) {
   return ids.flatMap((id, index) => permutations(ids.filter((_, i) => i !== index)).map(rest => [id, ...rest]));
 }
 
-test('37 audited expansion items retain the source-supported stable answers and reject the report’s stale option letters', () => {
+test('37 expansion items retain current source-supported answers and diagnose current distractors', () => {
   assert.equal(targetedKeySemantics.length, 37);
   const uniqueIds = new Set(targetedKeySemantics.map(([id]) => id));
   assert.equal(uniqueIds.size, 37);
-  for (const [id, expectedKey, staleSuggestedKey, answerClue, distractorClue] of targetedKeySemantics) {
+  for (const [id, expectedKey, rejectedOptionId, answerClue, distractorClue] of targetedKeySemantics) {
     const q = get(id);
     const options = q.interaction.options;
     const ids = options.map(option => option.optionId);
@@ -64,14 +64,14 @@ test('37 audited expansion items retain the source-supported stable answers and 
     assert.equal(ids.length, 4, `${id} choice count`);
     assert.equal(new Set(ids).size, 4, `${id} unique option IDs`);
     assert.ok(options.find(option => option.optionId === expectedKey).text.includes(answerClue), `${id} answer semantics`);
-    assert.notEqual(expectedKey, staleSuggestedKey, `${id} stale report ID must remain a distractor`);
+    assert.notEqual(expectedKey, rejectedOptionId, `${id} current rejected ID must remain a distractor`);
 
     const wrongIds = ids.filter(optionId => optionId !== expectedKey);
     const wrongMessages = q.feedback.messages.filter(entry => entry.kind === 'wrong_option');
     assert.equal(wrongMessages.length, 3, `${id} wrong-option feedback cardinality`);
     assert.deepEqual(wrongMessages.map(entry => entry.targetId).sort(), [...wrongIds].sort(), `${id} feedback targets`);
     assert.equal(q.feedback.messages.filter(entry => entry.kind === 'omitted_option').length, 0, `${id} choice_single omitted feedback`);
-    assert.match(message(q, staleSuggestedKey), new RegExp(distractorClue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `${id} stale-ID feedback diagnoses its actual distractor`);
+    assert.match(message(q, rejectedOptionId), new RegExp(distractorClue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), `${id} current-ID feedback diagnoses its actual distractor`);
 
     const accepted = scoreQuestion(q, { type: 'choice_single', optionId: expectedKey });
     assert.equal(accepted.status, 'correct', `${id} expected response status`);
@@ -257,5 +257,63 @@ test('variant provenance cites its mechanism rather than an unrelated unit seed 
       assert.match(q.feedback.details.url, /develop-tests/);
     }
     if (q.mentalUnitId === 'CCARP-D02-O04') assert.ok(q.sourceRefs.includes('ccarp-doc-126e07cf0d68'));
+  }
+});
+
+
+test('O04 single-packet replacement has a fresh current identity and preserves the producer contract', () => {
+  assert.equal(byId.has('CCARP-D01-O04-expansion-12'), false);
+  const q = get('CCARP-D01-O04-packet-dispatch-contract');
+  assert.equal(q.questionRelation, undefined);
+  assert.equal(q.mentalUnitId, 'CCARP-D01-O04');
+  assert.equal(q.nodeId, 'solution_design_and_architecture');
+  assert.match(q.prompt, /accepts exactly one packet ID and returns one packet result/);
+  assert.match(q.prompt, /cannot change that scope or output schema/);
+  assert.match(q.prompt, /completion times have not yet been measured/);
+  const expectedKey = 'bounded_packet_batches';
+  const wrongIds = ['launch_all_packets', 'bundle_three_packets', 'serialize_all_packets'];
+  assert.equal(q.answer.optionId, expectedKey);
+  assert.deepEqual(q.interaction.options.map(o => o.optionId).sort(), [...wrongIds, expectedKey].sort());
+  assert.deepEqual(q.feedback.messages.map(m => m.targetId).sort(), wrongIds.sort());
+  for (const order of permutations(q.interaction.options.map(o => o.optionId))) {
+    const shuffled = { ...q, interaction: { ...q.interaction, options: order.map(id => q.interaction.options.find(o => o.optionId === id)) } };
+    for (const optionId of [expectedKey, ...wrongIds]) {
+      const result = scoreQuestion(shuffled, { type: 'choice_single', optionId });
+      assert.equal(result.status, optionId === expectedKey ? 'correct' : 'incorrect');
+      assert.equal(result.earnedPoints, optionId === expectedKey ? 1 : 0);
+      assert.equal(result.maxPoints, 1);
+    }
+    for (const response of [null, { type: 'choice_single', optionId: 'not-an-option' }]) {
+      assert.notEqual(scoreQuestion(shuffled, response).status, 'correct');
+    }
+  }
+});
+
+
+test('O01 model-gap replacement exposes decisive evidence and has a fresh producer identity', () => {
+  assert.equal(byId.has('CCARP-D01-O01-scenario-01'), false);
+  const q = get('CCARP-D01-O01-evidenced-model-gap');
+  assert.equal(q.questionRelation, undefined);
+  assert.equal(q.mentalUnitId, 'CCARP-D01-O01');
+  assert.equal(q.nodeId, 'solution_design_and_architecture');
+  assert.match(q.prompt, /validation and classification meet the agreed correctness and 40 ms p95 requirements/);
+  assert.match(q.prompt, /no unmet interpretation or explanation need/);
+  const key = 'retain_measured_rules';
+  const wrong = ['shadow_classifier', 'replace_classification', 'explanation_detail_gate'];
+  assert.equal(q.answer.optionId, key);
+  assert.deepEqual(q.interaction.options.map(o => o.optionId).sort(), [...wrong, key].sort());
+  assert.deepEqual(q.feedback.messages.map(m => m.targetId).sort(), wrong.sort());
+  assert.ok(q.feedback.messages.every(m => m.kind === 'wrong_option'));
+  assert.match(message(q, 'shadow_classifier'), /Shadow comparison can investigate a defined quality gap/);
+  assert.match(q.feedback.details.mechanismOrProperty, /Structured inputs alone do not rule out a useful model task/);
+  for (const order of permutations(q.interaction.options.map(o => o.optionId))) {
+    const shuffled = { ...q, interaction: { ...q.interaction, options: order.map(id => q.interaction.options.find(o => o.optionId === id)) } };
+    for (const optionId of [key, ...wrong, 'b', 'not-an-option']) {
+      const result = scoreQuestion(shuffled, { type: 'choice_single', optionId });
+      assert.equal(result.status, optionId === key ? 'correct' : 'incorrect');
+      assert.equal(result.earnedPoints, optionId === key ? 1 : 0);
+      assert.equal(result.maxPoints, 1);
+    }
+    assert.notEqual(scoreQuestion(shuffled, null).status, 'correct');
   }
 });

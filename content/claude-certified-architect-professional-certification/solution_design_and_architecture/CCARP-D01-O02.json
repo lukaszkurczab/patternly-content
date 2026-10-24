@@ -378,8 +378,8 @@
     "difficulty": null,
     "feedback": {
       "details": {
-        "boundaryOrTradeoff": "Removing the timestamp hides a material boundary from the technician.",
-        "errorCorrection": "Plausibility does not determine whether operational evidence remains current.",
+        "boundaryOrTradeoff": "Keeping evidence timestamps and policy revision linked to the recommendation adds handoff data but lets the technician check freshness and applicability.",
+        "errorCorrection": "Establish reading freshness and policy applicability separately; record the evidence supporting both.",
         "mechanismOrProperty": "Ground truth must be relevant to the current step, not merely returned by a tool.",
         "scenarioApplication": "Freshness and policy applicability should gate the downstream answer.",
         "transfer": "Pass source timestamp and version alongside content when they affect the decision.",
@@ -388,18 +388,18 @@
       "messages": [
         {
           "kind": "wrong_option",
-          "targetId": "a",
-          "text": "An approved tool can still return data that is too old for the current safety decision."
+          "targetId": "cached_reading_p01r1",
+          "text": "Refreshing the threshold does not establish that the cached reading is current enough for this decision. A non-dangerous comparison is not evidence of reading freshness."
         },
         {
           "kind": "wrong_option",
-          "targetId": "b",
-          "text": "Plausibility does not show that the reading or threshold is current."
+          "targetId": "latest_threshold_p01r1",
+          "text": "The newest repository revision is not proven applicable to this decision. Refreshing the reading and preserving provenance do not establish a safe recommendation unless that applicability is confirmed."
         },
         {
           "kind": "wrong_option",
-          "targetId": "c",
-          "text": "Removing the timestamp hides a fact needed to judge whether the recommendation is safe."
+          "targetId": "unlinked_provenance_p01r1",
+          "text": "A completion timestamp does not identify when the device was read or which policy revision was applied. Unlinked logs do not let the technician check the evidence behind this recommendation."
         }
       ],
       "reason": "A trusted source can still be stale for the present decision. Freshness and applicable policy version are part of the evidence contract before an operational recommendation.",
@@ -414,20 +414,20 @@
     "interaction": {
       "options": [
         {
-          "optionId": "a",
-          "text": "Use the reading because it came from an approved tool."
+          "optionId": "cached_reading_p01r1",
+          "text": "Refresh the applicable threshold, compare it with the cached reading, and hand off both timestamps and the revision; escalate only if the comparison indicates danger."
         },
         {
           "optionId": "d",
-          "text": "Refresh the reading and authoritative applicable threshold, retaining timestamps and policy revision; escalate if either remains unresolved."
+          "text": "Refresh the reading and authoritative applicable threshold; hand off their timestamps and policy revision with the recommendation, and escalate if either remains unresolved."
         },
         {
-          "optionId": "b",
-          "text": "Ask Claude whether the old reading still seems plausible."
+          "optionId": "latest_threshold_p01r1",
+          "text": "Refresh the reading, compare it with the newest threshold in the repository, and hand off both timestamps and the revision; escalate only if that threshold is unavailable."
         },
         {
-          "optionId": "c",
-          "text": "Use the reading but omit its timestamp to avoid confusing the technician."
+          "optionId": "unlinked_provenance_p01r1",
+          "text": "Refresh the reading and applicable threshold, then hand off the recommendation with a completion timestamp; keep the evidence timestamps and policy revision only in unlinked tool logs."
         }
       ],
       "scoringMethod": "exact_selected_set",
@@ -435,7 +435,7 @@
     },
     "mentalUnitId": "CCARP-D01-O02",
     "nodeId": "solution_design_and_architecture",
-    "prompt": "A field-service assistant calls a device status tool, then advises a technician. The status tool returns a reading timestamped 40 minutes before the request, and the safety threshold may have changed since then. What should the processing stage do?",
+    "prompt": "A field-service assistant calls a device status tool, then advises a technician. The status tool returns a reading timestamped 40 minutes before the request, and the safety threshold may have changed since then. The technician must be able to check which reading time and policy revision support the recommendation. What should the processing stage do?",
     "questionId": "CCARP-D01-O02-expansion-05",
     "sourceRefs": [
       "ccarp-doc-ffc229d83891"
@@ -998,7 +998,7 @@
         {
           "kind": "wrong_option",
           "targetId": "c",
-          "text": "Acceptance rates cannot explain the operator edits or locate the stage where the value changed."
+          "text": "Sampling operator corrections can reveal useful field-level problems, but acceptance plus a sample does not provide the complete per-case links among extracted, validated, and edited values, final outcomes, and release versions."
         },
         {
           "kind": "wrong_option",
@@ -1586,8 +1586,8 @@
       "details": {
         "boundaryOrTradeoff": "If the gateway could not prove pre-dispatch rejection or returned a provider request ID, keep the existing poll-and-reconcile decision and do not retry blindly.",
         "errorCorrection": "That discards the gateway contract that proves no provider call occurred and can leave a valid refund unnecessarily unresolved.",
-        "mechanismOrProperty": "Anthropic says agents need ground truth from the environment at each step and recommends stopping conditions and human feedback checkpoints. The scenario's mechanism is governed by this decisive constraint: A proven pre-dispatch rejection permits a bounded safe retry after current authorization checks; an unknown side-effect state still requires authoritative reconciliation.",
-        "scenarioApplication": "Persist the rejection event, revalidate subject, approval, scope, and budget, retry once with the same idempotency key, and route any subsequent unknown result to status reconciliation.",
+        "mechanismOrProperty": "The gateway's explicit pre-dispatch proof establishes that no refund was attempted. With authority and budget already valid, the stated policy allows one retry using the saved key; a timeout after that attempt leaves its result unknown and requires authoritative reconciliation.",
+        "scenarioApplication": "Record the proven rejection and use the one permitted retry with the saved key and valid authority. If that attempt has an unknown outcome, query authoritative status instead of submitting another attempt.",
         "transfer": "Use measured evidence and the stated authority boundary to choose the least complex design that satisfies the workload's constraint; revisit the route when the counterfactual changes.",
         "url": "https://www.anthropic.com/engineering/building-effective-agents"
       },
@@ -1599,8 +1599,8 @@
         },
         {
           "kind": "wrong_option",
-          "targetId": "b",
-          "text": "A bounded retry still requires a durable rejection record and current authorization and budget checks before the side effect is attempted."
+          "targetId": "same_key_timeout_retry_p02r1",
+          "text": "The first same-key retry is allowed, but resending after its timeout exceeds the one-retry limit and bypasses reconciliation of a now-unknown result."
         },
         {
           "kind": "wrong_option",
@@ -1624,8 +1624,8 @@
           "text": "Treat every failure as an unknown side effect and wait for reconciliation before attempting any retry."
         },
         {
-          "optionId": "b",
-          "text": "Retry immediately with the same idempotency key without persisting the rejection or rechecking approval, scope, and budget."
+          "optionId": "same_key_timeout_retry_p02r1",
+          "text": "Retry once with the saved key; if that attempt times out, resend it with the same key instead of reconciling status."
         },
         {
           "optionId": "c",

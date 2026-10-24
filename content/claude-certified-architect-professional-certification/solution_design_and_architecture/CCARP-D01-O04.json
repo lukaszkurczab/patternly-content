@@ -959,38 +959,40 @@
   },
   {
     "answer": {
-      "optionId": "b",
+      "optionId": "bounded_packet_batches",
       "type": "choice_single"
     },
-    "constraints": [],
+    "constraints": [
+      "Each worker call accepts exactly one evidence packet ID and returns exactly one result for that packet; the deployed worker scope and output schema cannot be changed for this report."
+    ],
     "difficulty": null,
     "feedback": {
       "details": {
-        "boundaryOrTradeoff": "Rate-limited parallelism still allows multiple safe in-flight tasks and can meet the deadline more efficiently than serial work.",
-        "errorCorrection": "Bundling three packets into one worker changes the task scope and may violate the output contract unless deliberately designed and tested.",
-        "mechanismOrProperty": "Unbounded fanout can exceed rate limits and consume the entire per-report budget before priorities are known.",
-        "scenarioApplication": "The20-call budget cannot cover60 single-packet tasks. Prioritize the12 required packets, schedule within the lead’s processing capacity, and expose the remaining optional coverage instead of silently changing task scope.",
-        "transfer": "Bound concurrency and call volume, prioritize mandatory work, and retain explicit completion status.",
+        "boundaryOrTradeoff": "Batching limits in-flight work and may sacrifice some throughput, but it preserves the deployed one-packet worker contract. If mandatory evidence is still missing at the deadline, report an incomplete result rather than claiming full coverage.",
+        "errorCorrection": "Twenty calls cannot cover 60 packets under a one-packet schema. Three-packet calls would require a different worker contract, which this report explicitly forbids; silently bundling inputs does not create extra valid coverage.",
+        "mechanismOrProperty": "A call budget limits total dispatched work; a result-processing rate limits how quickly the lead may consume completed work. Neither limit supplies the missing worker-duration estimate.",
+        "scenarioApplication": "Twelve successful calls cover the 12 mandatory packets; at most eight calls remain for optional packets, leaving at least 40 optional packets unprocessed. Five batches of at most four calls consume no more than 20 calls; consuming each batch within a separate one-second processing window respects four results per second. Worker time must still be measured before claiming completion within ten minutes.",
+        "transfer": "Check task granularity, total call budget, result consumption rate, and observed duration separately. Prioritize mandatory evidence and expose missing coverage instead of assuming that parallel dispatch guarantees the deadline.",
         "url": "https://www.anthropic.com/engineering/building-effective-agents"
       },
       "messages": [
         {
           "kind": "wrong_option",
-          "targetId": "a",
-          "text": "Launching beyond the result and call limits can cause throttling and deadline failure."
+          "targetId": "launch_all_packets",
+          "text": "Sixty single-packet calls exceed the 20-call report budget before any retry. Simultaneous completion can also outrun the lead unless result consumption is controlled."
         },
         {
           "kind": "wrong_option",
-          "targetId": "c",
-          "text": "Changing task boundaries ad hoc risks omissions and incompatible outputs; the plan should preserve the packet contract."
+          "targetId": "bundle_three_packets",
+          "text": "The deployed worker accepts one packet ID and returns one packet result per call. Giving it three packets violates that explicit contract; this report does not permit changing the scope or schema."
         },
         {
           "kind": "wrong_option",
-          "targetId": "d",
-          "text": "A finite concurrency limit does not mean only one task may run at a time."
+          "targetId": "serialize_all_packets",
+          "text": "Serial dispatch does not reduce 60 single-packet calls to the allowed 20, and bounded parallelism still permits several calls in flight. Serial execution also provides no deadline guarantee without duration evidence."
         }
       ],
-      "reason": "The work is independent, so concurrency can help, but the lead and provider impose explicit rate and call limits. Bounded batching preserves throughput while making deadline and remaining coverage visible.",
+      "reason": "The one-packet call contract makes the 20-call budget a ceiling of 20 packets. Bounded batches respect the lead’s result-processing capacity and put the 12 mandatory packets first. Unknown worker durations mean the ten-minute deadline cannot yet be guaranteed; completeness must follow actual mandatory results.",
       "type": "choice_single",
       "course": {
         "title": "Module 1 · Claude Platform & Solution Design: Architect",
@@ -1002,20 +1004,20 @@
     "interaction": {
       "options": [
         {
-          "optionId": "a",
-          "text": "Launch all 60 workers simultaneously to minimize model latency, then retry any throttled calls."
+          "optionId": "launch_all_packets",
+          "text": "Launch all 60 single-packet workers together to reduce elapsed time; use provider throttling to pace the results and retry rejected calls until every packet is covered."
         },
         {
-          "optionId": "c",
-          "text": "Launch 20 workers immediately and ask each one to process three packets without changing its scope or output schema."
+          "optionId": "bundle_three_packets",
+          "text": "Launch 20 workers together with three packets each; retain the existing worker scope and output schema, then combine their results to cover all 60 packets."
         },
         {
-          "optionId": "b",
-          "text": "Use bounded batches within the lead’s four-results-per-second capacity and 20-call budget, prioritize all12 required packets, and disclose any remaining optional coverage as unavailable."
+          "optionId": "bounded_packet_batches",
+          "text": "Use four-call batches, mandatory packets first; consume at most four results/second and stop at 20 total calls. At deadline, mark missing mandatory evidence incomplete and unprocessed optional evidence unavailable."
         },
         {
-          "optionId": "d",
-          "text": "Run all packets serially because bounded parallelism is equivalent to no parallelism."
+          "optionId": "serialize_all_packets",
+          "text": "Run all 60 single-packet calls serially to avoid result bursts; bounded parallelism permits only one active worker, so use the remaining time to process mandatory and optional evidence."
         }
       ],
       "scoringMethod": "exact_selected_set",
@@ -1023,8 +1025,8 @@
     },
     "mentalUnitId": "CCARP-D01-O04",
     "nodeId": "solution_design_and_architecture",
-    "prompt": "A lead can process at most four worker results per second, and the shared provider budget allows 20 calls per report. A request contains 12 mandatory and 48 optional independent evidence packets due in ten minutes. Which dispatch plan fits the actual limits?",
-    "questionId": "CCARP-D01-O04-expansion-12",
+    "prompt": "A lead can process at most four worker results per second, and the shared provider budget allows 20 calls per report. A request contains 12 mandatory and 48 optional independent evidence packets due in ten minutes. Each deployed worker call accepts exactly one packet ID and returns one packet result; this report cannot change that scope or output schema. Worker completion times have not yet been measured. Which dispatch plan is justified by the stated limits?",
+    "questionId": "CCARP-D01-O04-packet-dispatch-contract",
     "sourceRefs": [
       "ccarp-doc-ffc229d83891"
     ],

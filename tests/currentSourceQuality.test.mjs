@@ -18,6 +18,8 @@ test("all nine current source banks build, validate and score without historical
     for (const track of built.artifacts) {
       assert.equal(track.artifact.trackId, track.trackId);
       assert.equal(track.artifact.contentVersion, track.track.contentVersion);
+      assert.match(track.artifact.contentVersion, /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/u,
+        `${track.trackId}: contentVersion must satisfy the APP successor-ledger identity contract (1–128 safe characters)`);
       assert.ok(track.questions.length > 0, track.trackId);
       questionCount += track.questions.length;
 

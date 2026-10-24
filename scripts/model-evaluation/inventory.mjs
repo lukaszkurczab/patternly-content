@@ -189,8 +189,7 @@ export async function createInventory({ rootDirectory = ROOT, auditStatePath } =
           : difference.trackId === "claude-certified-architect-professional-certification"
             ? `Current Claude QLE bank has ${tracks.find(({ trackId }) => trackId === difference.trackId).observed.mentalUnits} units/${tracks.find(({ trackId }) => trackId === difference.trackId).observed.questions} questions; its historical bank had 38 units/300 questions.`
             : "Current canonical source differs from the historical bank; no source is rewritten to restore historical counts.",
-        reference: difference.trackId === "aws-certified-solutions-architect-associate" ? "reports/candidate-reconciliation/AWS-01-REPORT.md"
-          : "vault:patternly-content/docs/planning/EPIC-09-MODEL-BASED-EVALUATION-DRAFT.md#Historyczny baseline migracji",
+        reference: "vault:patternly-content/docs/planning/EPIC-09-MODEL-BASED-EVALUATION-DRAFT.md#Historyczny baseline migracji",
       })),
     },
     baseline: BASELINE,

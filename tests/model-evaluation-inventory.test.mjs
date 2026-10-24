@@ -20,6 +20,7 @@ async function copyInputs() {
 
 test("nine real canonical banks are deterministic and structurally valid despite historical differences", { timeout: 120_000 }, async () => {
   const stateBefore = await readFile(path.join(ROOT, CURRENT_AUDIT_STATE_PATH));
+  const auditState = JSON.parse(stateBefore);
   const first = await createInventory({ auditStatePath: CURRENT_AUDIT_STATE_PATH });
   const second = await createInventory({ auditStatePath: CURRENT_AUDIT_STATE_PATH });
   assert.equal(inventoryBytes(first), inventoryBytes(second));
@@ -53,7 +54,13 @@ test("nine real canonical banks are deterministic and structurally valid despite
         const questions = JSON.parse(bytes);
         assert.equal(questions.length, unit.observed.questions);
         assert.deepEqual(unit.interactionCounts, countInteractions(unit.items));
-        assert.equal(unit.auditCoverage.status, "NOT_ASSESSED");
+        const coverageIndex = auditState.unitCoverage.findIndex((row) => row.track === track.trackId && row.nodeId === node.nodeId && row.mentalUnitId === unit.mentalUnitId);
+        assert.notEqual(coverageIndex, -1);
+        assert.deepEqual(unit.auditCoverage, {
+          statePath: CURRENT_AUDIT_STATE_PATH,
+          pointer: `/unitCoverage/${coverageIndex}`,
+          status: auditState.unitCoverage[coverageIndex].status,
+        });
         for (const question of questions) {
           assert.equal(question.trackId, track.trackId);
           assert.equal(question.nodeId, node.nodeId);
@@ -78,7 +85,9 @@ test("nine real canonical banks are deterministic and structurally valid despite
   for (const record of first.sourceManifest.files) assert.equal(record.sha256, sha256(await readFile(path.join(ROOT, record.file))));
   assert.match(first.repository.sourceRepositoryCommit, /^[a-f0-9]{40}$/u);
   assert.equal(first.currentAudit.stateSha256, sha256(stateBefore));
-  assert.deepEqual(first.currentAudit.coverageByStatus, { NOT_ASSESSED: 958, PARTIAL: 0, COMPLETE: 0 });
+  assert.deepEqual(first.currentAudit.coverageByStatus, Object.fromEntries(
+    ["NOT_ASSESSED", "PARTIAL", "COMPLETE"].map((status) => [status, auditState.unitCoverage.filter((row) => row.status === status).length]),
+  ));
   const claude = first.tracks.find(({ trackId }) => trackId.startsWith("claude-"));
   assert.equal(claude.observed.questions, 972); assert.ok(claude.observed.questions > 7 * 120);
   assert.deepEqual(claude.nodes.map((node) => [node.nodeId, node.chapterMinimum.currentCount, node.chapterMinimum.deficit, node.chapterMinimum.met]), [

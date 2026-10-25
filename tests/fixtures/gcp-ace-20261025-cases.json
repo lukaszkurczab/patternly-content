@@ -1,0 +1,105 @@
+{
+  "gcp-ace-gcpace-n03-b04-004": {
+    "package": "P01",
+    "prompt": "An alerts-only Cloud Billing budget reaches an actual-spend threshold, with email notifications enabled and no response automation. What happens because of the budget itself?",
+    "answerText": "It sends the configured threshold notification; it does not automatically stop service usage.",
+    "reason": "An alerts-only budget reports the threshold crossing. A separate spend-cap budget is a different budget type with service-limited enforcement."
+  },
+  "gcp-ace-gcpace-n03-b04-007": {
+    "package": "P01",
+    "prompt": "A team sets an alerts-only Cloud Billing budget with a 100% threshold and assumes this guarantees no additional charges. What must they correct?",
+    "answerText": "The threshold sends alerts, not a guaranteed hard cap; supported spend-cap budgets are a separate, service-limited feature and may still incur overages.",
+    "reason": "Alerts-only budgets do not enforce usage limits. Eligible spend caps may pause selected services, but delayed enforcement can still allow overages."
+  },
+  "gcp-ace-gcpace-n03-b04-013": {
+    "package": "P01",
+    "prompt": "An alerts-only budget sends a 100% actual-spend notification, but Compute Engine VMs in the project continue running. Is this expected?",
+    "answerText": "Yes. Alerts-only budget notifications do not shut down Compute Engine VMs.",
+    "reason": "A notification is not an enforcement action; eligible spend-cap budgets enforce limits only for specified supported services, not every project resource."
+  },
+  "gcp-ace-gcpace-n03-b05-003": {
+    "package": "P01",
+    "prompt": "An alerts-only Cloud Billing budget sends a notification, and its owner expects it to block new Compute Engine VM creation. What should be explained?",
+    "answerText": "An alerts-only notification does not block Compute Engine operations; any enforcement needs its own supported control.",
+    "reason": "Budgets of the alerts-only type notify; they do not provide an automatic quota, resource-creation block, or hard spend guarantee."
+  },
+  "gcp-ace-gcpace-n03-b04-020": {
+    "package": "P02",
+    "prompt": "An alerts-only Cloud Billing budget is connected to Pub/Sub so a worker can react when actual spending reaches 80%. What must the integration verify?",
+    "answerText": "The budget is connected to an authorized Pub/Sub topic, and the worker reads periodic budget status updates, handles duplicates, and evaluates the threshold itself.",
+    "reason": "Cloud Billing periodically publishes current budget status; Pub/Sub does not emit a single guaranteed message at the instant a threshold is crossed."
+  },
+  "gcp-ace-gcpace-n03-b05-004": {
+    "package": "P02",
+    "prompt": "A finance team wants recurring Cloud Billing budget status updates in a Pub/Sub topic and to process threshold exceedances. What must it configure?",
+    "answerText": "Connect the budget to a Pub/Sub topic with publisher authorization, then let a subscriber interpret periodic status messages and handle duplicates.",
+    "reason": "Budget Pub/Sub notifications report status several times daily, independently of when alert emails cross thresholds."
+  },
+  "gcp-ace-gcpace-n03-b05-010": {
+    "package": "P02",
+    "prompt": "A manager needs separate escalations at 80% actual spend and 100% forecast spend, implemented by a subscriber to Cloud Billing budget Pub/Sub updates. What must be configured?",
+    "answerText": "Set both actual and forecast alert thresholds and have the subscriber evaluate the corresponding fields in each periodic budget status update for separate, idempotent escalations.",
+    "reason": "Actual and forecast thresholds express different conditions; Pub/Sub delivers status periodically, so the consumer—not the publish event alone—must distinguish and deduplicate escalation actions."
+  },
+  "gcp-ace-gcpace-n03-b05-022": {
+    "package": "P02",
+    "prompt": "A budget's Pub/Sub status message reaches its topic, but a configured downstream runbook does not act on a threshold exceedance. What should be checked before changing the budget?",
+    "answerText": "The subscription, consumer permissions, threshold-field evaluation, deduplication, and handler processing.",
+    "reason": "Successful topic delivery does not prove that the consumer parsed the budget status or executed the intended idempotent action."
+  },
+  "gcp-ace-gcpace-n03-b02-015": {
+    "package": "P03",
+    "prompt": "A company needs consolidated billing reports for development, staging, and production while preserving separate project administration and project-level cost attribution. Which design meets all requirements?",
+    "answerText": "Keep separate projects, link them to an approved billing account, and aggregate costs using project dimensions.",
+    "reason": "Billing aggregation can span multiple projects; keeping project dimensions preserves accountability without collapsing resource boundaries.",
+    "options": [
+      {
+        "optionId": "merge_projects",
+        "text": "Move every workload into one shared project so the finance report needs no project dimension."
+      },
+      {
+        "optionId": "grant_finance_owner",
+        "text": "Grant finance Project Owner on each project so finance can administer all resources directly."
+      },
+      {
+        "optionId": "discard_project_attribution",
+        "text": "Report only one billing-account total and discard project-level cost attribution."
+      }
+    ],
+    "messages": {
+      "merge_projects": "A shared project removes the required administrative boundary between environments.",
+      "grant_finance_owner": "Reporting costs does not require granting finance infrastructure administration.",
+      "discard_project_attribution": "A total without project dimensions cannot meet the required cost attribution."
+    }
+  },
+  "gcp-ace-gcpace-n03-b06-005": {
+    "package": "P04",
+    "prompt": null,
+    "answerText": null,
+    "reason": null,
+    "details": {
+      "mechanismOrProperty": "On first enablement, supported US/EU multi-region cost exports may backfill the current and previous month; regional cost exports start on activation, while pricing exports do not backfill. Do not promise the account's complete historical ledger.",
+      "scenarioApplication": "Identify export type and dataset location, record activation time, and use retained financial records for uncovered history."
+    }
+  },
+  "gcp-ace-gcpace-n03-b06-006": {
+    "package": "P04",
+    "prompt": null,
+    "answerText": "Plan destination IAM, preserve the previous dataset, and reconcile reports across both datasets because prior exports are not backfilled to the replacement.",
+    "reason": "Changing the export destination changes where new data lands, but it does not copy earlier exported rows.",
+    "details": {
+      "scenarioApplication": "Keep the old dataset readable, verify the new export, and join historical and new data through queries or views rather than inserting rows into managed export tables."
+    }
+  },
+  "gcp-ace-n03-b01-001": {
+    "package": "P05",
+    "details": {
+      "errorCorrection": "Billing accounts manage charges; resource folders express hierarchy, while human and service accounts are distinct IAM principals."
+    },
+    "messages": {
+      "B": "An organization folder organizes resources in the hierarchy; it does not represent a payment relationship for project charges.",
+      "C": "A human identity receives IAM permissions and signs in, but its sign-in identity is not a Cloud Billing account.",
+      "D": "A service account is a workload identity, not the account responsible for paying a project's charges."
+    }
+  }
+}

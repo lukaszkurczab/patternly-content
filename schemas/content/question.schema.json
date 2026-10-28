@@ -17,11 +17,25 @@
     "difficulty": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] },
     "sourceRefs": { "type": "array", "items": { "$ref": "#/$defs/id" } },
     "questionRelation": { "$ref": "#/$defs/questionRelation" },
-    "caseRecipe": { "$ref": "#/$defs/caseRecipe" }
+    "caseRecipe": { "$ref": "#/$defs/caseRecipe" },
+    "examMetadata": { "$ref": "#/$defs/examMetadata" }
   },
   "required": ["questionId", "trackId", "nodeId", "mentalUnitId", "prompt", "interaction", "answer", "feedback", "difficulty"],
   "additionalProperties": false,
-  "allOf": [{ "if": { "required": ["caseRecipe"] }, "then": { "properties": { "trackId": { "const": "claude-certified-architect-professional-certification" } } } }],
+  "allOf": [
+    { "if": { "required": ["caseRecipe"] }, "then": { "properties": { "trackId": { "const": "claude-certified-architect-professional-certification" } } } },
+    { "if": { "required": ["examMetadata"] }, "then": { "properties": { "trackId": { "const": "claude-certified-architect-professional-certification" } } } },
+    {
+      "if": {
+        "properties": {
+          "trackId": { "const": "claude-certified-architect-professional-certification" },
+          "interaction": { "properties": { "type": { "const": "choice_multiple" } }, "required": ["type"] }
+        },
+        "required": ["trackId", "interaction"]
+      },
+      "then": { "properties": { "interaction": { "required": ["requiredSelectionCount"] } } }
+    }
+  ],
   "oneOf": [
     { "$ref": "#/$defs/choiceSingleQuestion" },
     { "$ref": "#/$defs/choiceMultipleQuestion" },
@@ -193,7 +207,7 @@
     },
     "choiceMultipleInteraction": {
       "type": "object",
-      "properties": { "type": { "const": "choice_multiple" }, "scoringMethod": { "const": "exact_selected_set" }, "options": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/option" } } },
+      "properties": { "type": { "const": "choice_multiple" }, "scoringMethod": { "const": "exact_selected_set" }, "requiredSelectionCount": { "type": "integer", "minimum": 1 }, "options": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/option" } } },
       "required": ["type", "scoringMethod", "options"],
       "additionalProperties": false
     },
@@ -285,6 +299,15 @@
         "decisionBoundary": { "$ref": "#/$defs/learnerText" }
       },
       "required": ["counterpartQuestionId", "kind", "changedCondition", "decisionBoundary"],
+      "additionalProperties": false
+    },
+    "examMetadata": {
+      "type": "object",
+      "properties": {
+        "decisionSkill": { "enum": ["knowledge", "diagnosis", "prerequisite", "next_action", "contextual_choice"] },
+        "scenarioFamilyId": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+      },
+      "required": ["decisionSkill"],
       "additionalProperties": false
     },
     "choiceSingleQuestion": {

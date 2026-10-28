@@ -25,7 +25,7 @@ const REQUIRED_QUESTION_KEYS = [
   "feedback",
   "difficulty"
 ];
-const OPTIONAL_QUESTION_KEYS = ["constraints", "sourceRefs", "questionRelation", "caseRecipe"];
+const OPTIONAL_QUESTION_KEYS = ["constraints", "sourceRefs", "questionRelation", "caseRecipe", "examMetadata"];
 const QUESTION_KEYS = [...REQUIRED_QUESTION_KEYS, ...OPTIONAL_QUESTION_KEYS];
 const CATALOG_KEYS = ["schemaVersion", "tracks"];
 const TRACK_KEYS = ["trackId", "contentVersion", "completionRule"];
@@ -359,6 +359,18 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
       validateQuestionRelation(question[key], "question.questionRelation", errors);
       continue;
     }
+    if (key === "examMetadata") {
+      if (question.trackId !== "claude-certified-architect-professional-certification") addError(errors, "question.examMetadata", "is only available for CCAR-P");
+      if (!exactKeys(question.examMetadata, ["decisionSkill", "scenarioFamilyId"], "question.examMetadata", errors, ["decisionSkill"])) continue;
+      if (!["knowledge", "diagnosis", "prerequisite", "next_action", "contextual_choice"].includes(question.examMetadata.decisionSkill)) {
+        addError(errors, "question.examMetadata.decisionSkill", "must be one of knowledge, diagnosis, prerequisite, next_action, contextual_choice");
+      }
+      if (Object.prototype.hasOwnProperty.call(question.examMetadata, "scenarioFamilyId") &&
+          (typeof question.examMetadata.scenarioFamilyId !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(question.examMetadata.scenarioFamilyId))) {
+        addError(errors, "question.examMetadata.scenarioFamilyId", "must be a non-empty lowercase kebab-case identifier");
+      }
+      continue;
+    }
     if (!Array.isArray(question[key])) addError(errors, `question.${key}`, "must be an array");
     else question[key].forEach((entry, index) => {
       const validate = key === "constraints" ? learnerTextString : trimCleanString;
@@ -379,7 +391,11 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
   let referenceIds = [];
   let dimensions = [];
   if (type === "choice_single" || type === "choice_multiple") {
-    if (!exactKeys(question.interaction, ["type", "scoringMethod", "options"], "question.interaction", errors)) return errors;
+    const interactionKeys = type === "choice_multiple"
+      ? ["type", "scoringMethod", "options", ...(Object.hasOwn(question.interaction, "requiredSelectionCount") ? ["requiredSelectionCount"] : [])]
+      : ["type", "scoringMethod", "options"];
+    if (!exactKeys(question.interaction, interactionKeys, "question.interaction", errors)) return errors;
+    if (type === "choice_multiple" && question.trackId === "claude-certified-architect-professional-certification" && !Object.hasOwn(question.interaction, "requiredSelectionCount")) addError(errors, "question.interaction.requiredSelectionCount", "is required for CCAR-P multiple-choice questions");
     if (question.interaction.scoringMethod !== SCORING_METHODS[type]) addError(errors, "question.interaction.scoringMethod", `must equal ${SCORING_METHODS[type]}`);
     referenceIds = validateOptionList(question.interaction.options, "question.interaction.options", errors);
     if (type === "choice_single") {
@@ -391,6 +407,13 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
       if (question.answer.type !== type) addError(errors, "question.answer.type", `must equal ${type}`);
       const ids = question.answer.optionIds;
       uniqueStrings(ids, "question.answer.optionIds", errors, { minItems: 1 });
+      if (Object.hasOwn(question.interaction, "requiredSelectionCount")) {
+        if (!Number.isInteger(question.interaction.requiredSelectionCount) || question.interaction.requiredSelectionCount < 1 || question.interaction.requiredSelectionCount > referenceIds.length) addError(errors, "question.interaction.requiredSelectionCount", "must be a positive integer no greater than the option count");
+        if (Array.isArray(ids) && ids.length !== question.interaction.requiredSelectionCount) addError(errors, "question.answer.optionIds", "must contain exactly requiredSelectionCount IDs");
+        const countLabels = { 1: "(?:1|one)", 2: "(?:2|two|both)", 3: "(?:3|three)", 4: "(?:4|four)", 5: "(?:5|five)" };
+        const countLabel = countLabels[question.interaction.requiredSelectionCount];
+        if (countLabel && !new RegExp(`(?:select|choose)\\s+(?:exactly\\s+)?${countLabel}\\b`, "i").test(question.prompt)) addError(errors, "question.prompt", "must state the required number of selected options");
+      }
       if (Array.isArray(ids)) for (const id of ids) if (!referenceIds.includes(id)) addError(errors, "question.answer.optionIds", `references unknown option ${id}`);
     }
   } else if (type === "ordering") {

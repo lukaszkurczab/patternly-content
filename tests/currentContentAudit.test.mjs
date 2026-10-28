@@ -552,19 +552,19 @@ test("real CLI write-read-reconcile preserves a matching synthetic review; actua
     await writeFile(emptyPath, JSON.stringify({ schemaVersion: contract.inputSchemaVersion, rubricVersion: contract.rubricVersion, reviews: [], unitCoverage: [] }));
     run(["--input", emptyPath, "--output", firstPath]);
     const first = JSON.parse(await readFile(firstPath, "utf8"));
-    assert.deepEqual(first.observed, { tracks: 9, nodes: 117, mentalUnits: 958, questions: 16749 });
+    assert.deepEqual(first.observed, { tracks: 9, nodes: 117, mentalUnits: 958, questions: 16759 });
     assert.equal(first.counts.currentReviewCount, 0);
-    assert.equal(first.counts.pendingCount, 16749);
+    assert.equal(first.counts.pendingCount, 16759);
     assert.equal(first.selection.trackId, contract.defaultTrack);
     assert.equal(first.nextBatch.nodeId, "solution_design_and_architecture");
     assert.equal(first.nextBatch.mentalUnitId, "CCARP-D01-O01");
     assert.equal(first.nextBatch.questionIds.length, 20);
-    assert.equal(first.nextBatch.remainingInUnit, 3);
+    assert.equal(first.nextBatch.remainingInUnit, 5);
     assert.equal(first.unitCoverage.every(({ status, gaps, requiredDecisions }) => status === "NOT_ASSESSED" && gaps === null && requiredDecisions === null), true);
     assert.equal(first.findings.length, 0);
     assert.equal(first.nodeCounts.filter(({ track }) => track === contract.defaultTrack).length, 7);
     const claudeTrack = first.inventory.tracks.find(({ trackId }) => trackId === contract.defaultTrack);
-    assert.deepEqual(claudeTrack.observed, { nodes: 7, mentalUnits: 53, questions: 972 });
+    assert.deepEqual(claudeTrack.observed, { nodes: 7, mentalUnits: 53, questions: 982 });
     const claudeUnits = claudeTrack.nodes.flatMap(({ mentalUnits }) => mentalUnits);
     assert.equal(claudeUnits.every((unit) => unit.reviewContext !== null && unit.objectiveInputs.sourceResolution.unresolvedRefs.length === 0), true);
     assert.ok(new Set(claudeUnits.map((unit) => unit.reviewContext.contextSha256)).size > 1);
@@ -601,7 +601,7 @@ test("real CLI write-read-reconcile preserves a matching synthetic review; actua
     assert.equal(reread.currentReviews[0].review.reviewedAt, synthetic.reviewedAt);
     assert.equal(reread.currentReviews[0].review.verdict, "FIX_MINOR");
     assert.equal(reread.nextBatch.questionIds.length, 12);
-    assert.equal(reread.nextBatch.remainingInUnit, 11);
+    assert.equal(reread.nextBatch.remainingInUnit, 13);
     assert.equal(reread.counts.pendingByTrack[track.trackId], track.observed.questions - 1);
   } finally { await rm(output, { recursive: true, force: true }); }
 });

@@ -254,6 +254,11 @@ const GCP_TRACK_ID = "google-cloud-associate-cloud-engineer";
 const SIMULATION_PROFILE_SCHEMA_VERSION = "patternly-simulation-profile-envelope-v1";
 const GCP_EXAM_PROFILE_ID = "google-cloud-associate-cloud-engineer-certification-exam-v1";
 const GCP_SOURCE_PROFILE_ID = "google-cloud-associate-cloud-engineer-patternly-practice-v1";
+const CLAUDE_TRACK_ID = "claude-certified-architect-professional-certification";
+const CLAUDE_EXAM_PROFILE_ID = "claude-certified-architect-professional-certification-patternly-practice-v2";
+const CLAUDE_DOMAIN_IDS = Object.freeze(Array.from({ length: 7 }, (_, index) => `ccarp-domain-${index + 1}`));
+const CLAUDE_DECISION_SKILLS = Object.freeze(["knowledge", "diagnosis", "prerequisite", "next_action", "contextual_choice"]);
+const CLAUDE_INTERACTION_TYPES = Object.freeze(["choice_single", "choice_multiple", "decision_matrix"]);
 const GCP_DOMAIN_IDS = Object.freeze([
   "gcp-ace-standard-domain-1",
   "gcp-ace-standard-domain-2",
@@ -368,6 +373,96 @@ async function loadGcpSimulationProfileData({ rootDirectory, track, questions })
 
 export async function loadGcpSimulationProfiles(options) {
   return (await loadGcpSimulationProfileData(options)).simulationProfiles;
+}
+
+async function loadClaudeSimulationProfileData({ rootDirectory, track, questions }) {
+  const trackConfigPath = path.join(rootDirectory, "config", "tracks", `${CLAUDE_TRACK_ID}.json`);
+  let info;
+  try { info = await lstat(trackConfigPath); }
+  catch (error) { if (error?.code === "ENOENT") return undefined; fail(`Cannot inspect CCAR-P profile config ${trackConfigPath}: ${error.message}`); }
+  if (!info.isFile() || info.isSymbolicLink()) fail(`CCAR-P profile config must be a regular file: ${trackConfigPath}`);
+  if (track.trackId !== CLAUDE_TRACK_ID || track.familyId !== "certification") fail("CCAR-P profile is bound to the wrong track or runtime family");
+
+  const config = await readJson(trackConfigPath);
+  exactKeys(config, ["schemaVersion", "trackId", "familyId", "taxonomyVersion", "taxonomyPath", "freeNodeExperienceProfilePath", "modeConfiguration", "profile"], "CCAR-P track config");
+  if (config.schemaVersion !== "track-config-v1" || config.trackId !== CLAUDE_TRACK_ID || config.familyId !== "certification" || !isRecord(config.profile)) fail("CCAR-P track config identity or profile is invalid");
+  const profile = config.profile;
+  exactKeys(profile, ["schemaVersion", "profileId", "profileVersion", "source", "durationMinutes", "questionCount", "blueprint", "examCoverage", "nodeDomainMap", "scoringPolicy", "interactionPolicy"], "CCAR-P simulation profile");
+  if (profile.schemaVersion !== "exam-experience-profile-v2" || profile.profileId !== CLAUDE_EXAM_PROFILE_ID || profile.profileVersion !== "2") fail("CCAR-P simulation profile identity is invalid");
+  exactKeys(profile.source, ["url", "checkedDate", "guideVersion"], "CCAR-P profile source");
+  if (typeof profile.source.url !== "string" || profile.source.checkedDate !== "2026-09-03" || typeof profile.source.guideVersion !== "string") fail("CCAR-P profile source must preserve its actual historical verification date");
+  if (profile.durationMinutes !== 120) fail("CCAR-P training profile duration must remain 120 minutes");
+  exactKeys(profile.questionCount, ["kind", "minimum", "maximum"], "CCAR-P profile questionCount");
+  if (profile.questionCount.kind !== "range" || profile.questionCount.minimum !== 63 || profile.questionCount.maximum !== 63) fail("CCAR-P Patternly practice profile currently requires exactly 63 items");
+
+  exactKeys(profile.blueprint, ["kind", "sections"], "CCAR-P profile blueprint");
+  if (profile.blueprint.kind !== "weighted_sections" || !Array.isArray(profile.blueprint.sections) || profile.blueprint.sections.length !== CLAUDE_DOMAIN_IDS.length) fail("CCAR-P blueprint must define all seven weighted domains");
+  const domainWeights = new Map();
+  for (const [index, section] of profile.blueprint.sections.entries()) {
+    exactKeys(section, ["id", "contentDomainId", "weightPercent"], `CCAR-P blueprint section ${index}`);
+    if (!nonEmptyString(section.id) || !CLAUDE_DOMAIN_IDS.includes(section.contentDomainId) || !Number.isInteger(section.weightPercent) || section.weightPercent < 1 || domainWeights.has(section.contentDomainId)) fail(`CCAR-P blueprint section ${index} has an invalid domain or weight`);
+    domainWeights.set(section.contentDomainId, section.weightPercent);
+  }
+  if (CLAUDE_DOMAIN_IDS.some((domain) => !domainWeights.has(domain)) || [...domainWeights.values()].reduce((sum, weight) => sum + weight, 0) !== 100) fail("CCAR-P domain blueprint must cover the seven domains and total 100 percent");
+
+  const coverage = profile.examCoverage;
+  exactKeys(coverage, ["policy", "provenance", "formatMinimums", "skillMinimums"], "CCAR-P exam coverage");
+  if (coverage.policy !== "patternly-ccarp-v1") fail("CCAR-P exam coverage policy is not recognized");
+  exactKeys(coverage.provenance, ["decidedDate", "guideAvailability", "retainedProfileParameters"], "CCAR-P exam coverage provenance");
+  if (coverage.provenance.decidedDate !== "2026-10-26" || coverage.provenance.guideAvailability !== "http_403" || !nonEmptyString(coverage.provenance.retainedProfileParameters)) fail("CCAR-P profile provenance is invalid");
+  exactKeys(coverage.formatMinimums, CLAUDE_INTERACTION_TYPES, "CCAR-P format minimums");
+  exactKeys(coverage.skillMinimums, CLAUDE_DECISION_SKILLS, "CCAR-P skill minimums");
+  for (const [format, minimum] of Object.entries(coverage.formatMinimums)) if (!Number.isInteger(minimum) || minimum < 0) fail(`CCAR-P format minimum for ${format} is invalid`);
+  for (const [skill, minimum] of Object.entries(coverage.skillMinimums)) if (!Number.isInteger(minimum) || minimum < 0) fail(`CCAR-P skill minimum for ${skill} is invalid`);
+  if (Object.values(coverage.formatMinimums).reduce((sum, value) => sum + value, 0) > profile.questionCount.maximum || Object.values(coverage.skillMinimums).reduce((sum, value) => sum + value, 0) > profile.questionCount.maximum) fail("CCAR-P format and skill minima cannot exceed the exam length");
+  for (const format of CLAUDE_INTERACTION_TYPES) {
+    const candidates = questions.filter((question) => question.interaction.type === format).length;
+    if (candidates < coverage.formatMinimums[format]) fail(`CCAR-P format minimum for ${format} exceeds its candidate pool`);
+  }
+  for (const skill of CLAUDE_DECISION_SKILLS) {
+    const candidates = questions.filter((question) => question.examMetadata?.decisionSkill === skill).length;
+    if (candidates < coverage.skillMinimums[skill]) fail(`CCAR-P skill minimum for ${skill} exceeds its candidate pool`);
+  }
+
+  const policy = profile.interactionPolicy;
+  exactKeys(policy, ["schemaVersion", "policyId", "policyVersion", "owner", "navigation", "answerChanges", "flagging", "navigator", "sections", "timeout", "feedbackTiming"], "CCAR-P simulation interaction policy");
+  if (policy.schemaVersion !== "patternly-certification-simulation-policy-v1" || policy.policyVersion !== "1" || policy.owner !== "patternly_product" || policy.navigation !== "free" || policy.answerChanges !== "until_final_submission" || policy.flagging !== "available" || policy.navigator !== "available" || policy.sections !== "blueprint_visible" || policy.timeout !== "absolute_deadline" || policy.feedbackTiming !== "after_verified_finalization") fail("CCAR-P simulation interaction policy is invalid");
+
+  const nodeIds = [...new Set(questions.map((question) => question.nodeId))].sort(compareStrings);
+  exactKeys(profile.nodeDomainMap, nodeIds, "CCAR-P profile nodeDomainMap");
+  for (const [nodeId, domainId] of Object.entries(profile.nodeDomainMap)) if (!CLAUDE_DOMAIN_IDS.includes(domainId)) fail(`CCAR-P profile node ${nodeId} has an unknown domain`);
+  const questionDomains = Object.create(null);
+  for (const question of questions) {
+    const domain = profile.nodeDomainMap[question.nodeId];
+    if (!domain) fail(`CCAR-P nodeDomainMap does not map question ${question.questionId}`);
+    questionDomains[question.questionId] = domain;
+  }
+
+  exactKeys(profile.scoringPolicy, ["policyId", "policyVersion", "method"], "CCAR-P scoring policy");
+  if (profile.scoringPolicy.policyId !== "patternly-ccarp-complete-item-v1" || profile.scoringPolicy.policyVersion !== "1" || profile.scoringPolicy.method !== "complete_correct_item_only") fail("CCAR-P training scoring policy is invalid");
+
+  const familyConfig = Object.freeze({
+    schemaVersion: "patternly-certification-simulation-config-v2",
+    source: profile.source,
+    durationMinutes: profile.durationMinutes,
+    questionCount: profile.questionCount,
+    blueprint: profile.blueprint,
+    interactionPolicy: profile.interactionPolicy,
+    nodeDomainMap: profile.nodeDomainMap,
+    examCoverage: profile.examCoverage,
+    scoringPolicy: profile.scoringPolicy
+  });
+  return {
+    questionDomains,
+    simulationProfiles: [Object.freeze({
+      schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION,
+      profileId: profile.profileId,
+      profileVersion: profile.profileVersion,
+      familyId: "certification",
+      modeId: "certification-exam-simulation",
+      familyConfig
+    })]
+  };
 }
 
 async function loadCodingSimulationProfileData({ rootDirectory, track, questions }) {
@@ -539,6 +634,7 @@ export async function loadDesignSimulationProfiles(options) {
 }
 
 const PROFILE_LOADERS = Object.freeze({
+  "claude-certification": Object.freeze({ familyId: "certification", load: loadClaudeSimulationProfileData }),
   "gcp-certification": Object.freeze({ familyId: "certification", load: loadGcpSimulationProfileData }),
   "coding-interview": Object.freeze({ familyId: "coding_interview", load: loadCodingSimulationProfileData }),
   "design-interview": Object.freeze({
@@ -665,19 +761,20 @@ function artifactFor(validated) {
   return artifact;
 }
 
-function strictLockEntry(entry, catalog, index) {
+function strictLockEntry(entry, catalog, index, replacingTrackIds) {
   const prefix = `lock.tracks[${index}]`;
   if (!isRecord(entry)) fail(`${prefix} must be an object`);
   const expectedKeys = ["trackId", "contentVersion", "questionCount", "sha256"];
   const actualKeys = Object.keys(entry).sort();
   if (canonicalJson(actualKeys) !== canonicalJson([...expectedKeys].sort())) fail(`${prefix} has an invalid shape`);
   const track = catalogTrack(catalog, entry.trackId);
-  if (!nonEmptyString(entry.contentVersion) || entry.contentVersion !== track.contentVersion) fail(`${prefix}.contentVersion does not match catalog`);
+  if (!nonEmptyString(entry.contentVersion)) fail(`${prefix}.contentVersion must be a non-empty string`);
+  if (entry.contentVersion !== track.contentVersion && !replacingTrackIds.has(entry.trackId)) fail(`${prefix}.contentVersion does not match catalog`);
   if (!Number.isInteger(entry.questionCount) || entry.questionCount < 1) fail(`${prefix}.questionCount must be a positive integer`);
   if (typeof entry.sha256 !== "string" || !HASH_PATTERN.test(entry.sha256)) fail(`${prefix}.sha256 must be a lowercase SHA-256`);
 }
 
-function strictLock(lock, catalog) {
+function strictLock(lock, catalog, replacingTrackIds = new Set()) {
   if (!isRecord(lock)) fail("content lock must be an object");
   const expectedKeys = ["schemaVersion", "tracks"];
   if (canonicalJson(Object.keys(lock).sort()) !== canonicalJson([...expectedKeys].sort())) fail("content lock has an invalid shape");
@@ -685,7 +782,7 @@ function strictLock(lock, catalog) {
   const ids = new Set();
   let previous;
   lock.tracks.forEach((entry, index) => {
-    strictLockEntry(entry, catalog, index);
+    strictLockEntry(entry, catalog, index, replacingTrackIds);
     if (ids.has(entry.trackId)) fail(`content lock contains duplicate trackId: ${entry.trackId}`);
     if (previous !== undefined && previous >= entry.trackId) fail("content lock tracks must be sorted by trackId");
     ids.add(entry.trackId);
@@ -711,7 +808,7 @@ async function readRegularFile(filePath, label) {
   }
 }
 
-function validateArtifactShape(artifact, { entry, catalog, filePath }) {
+function validateArtifactShape(artifact, { entry, catalog, filePath, matchesCurrentVersion }) {
   const requiredKeys = ["schemaVersion", "trackId", "contentVersion", "questions", "planningPolicy"];
   const allowedKeys = [...requiredKeys, "simulationProfiles", "completionRule"];
   if (!isRecord(artifact) || requiredKeys.some((key) => !Object.hasOwn(artifact, key)) || Object.keys(artifact).some((key) => !allowedKeys.includes(key))) {
@@ -725,8 +822,8 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
     const ruleResult = validatePackageCompletionRule(artifact.completionRule, "artifact.completionRule");
     if (!ruleResult.valid) fail(`Artifact completionRule is invalid: ${filePath}`, ruleResult.errors);
   }
-  if (Object.hasOwn(artifact, "completionRule") !== Object.hasOwn(catalogEntry, "completionRule") ||
-      (Object.hasOwn(catalogEntry, "completionRule") && canonicalJson(artifact.completionRule) !== canonicalJson(catalogEntry.completionRule))) {
+  if (matchesCurrentVersion && (Object.hasOwn(artifact, "completionRule") !== Object.hasOwn(catalogEntry, "completionRule") ||
+      (Object.hasOwn(catalogEntry, "completionRule") && canonicalJson(artifact.completionRule) !== canonicalJson(catalogEntry.completionRule)))) {
     fail(`Artifact completionRule does not match authoritative catalog: ${filePath}`);
   }
   if (!Array.isArray(artifact.questions) || artifact.questions.length !== entry.questionCount) {
@@ -749,7 +846,11 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
     const { contentDomainId, ...questionContract } = question;
     const result = validateQuestion(questionContract, { catalogTrackIds });
     if (!result.valid) fail(`Artifact question ${index} is invalid: ${filePath}`, result.errors);
-    if (contentDomainId !== undefined && (entry.trackId !== GCP_TRACK_ID || !Object.hasOwn(artifact, "simulationProfiles") || !GCP_DOMAIN_IDS.includes(contentDomainId))) fail(`Artifact question ${index} has invalid source-derived GCP domain attribution: ${filePath}`);
+    if (contentDomainId !== undefined) {
+      const validGcpDomain = entry.trackId === GCP_TRACK_ID && GCP_DOMAIN_IDS.includes(contentDomainId);
+      const validClaudeDomain = entry.trackId === CLAUDE_TRACK_ID && CLAUDE_DOMAIN_IDS.includes(contentDomainId);
+      if (!Object.hasOwn(artifact, "simulationProfiles") || (!validGcpDomain && !validClaudeDomain)) fail(`Artifact question ${index} has invalid source-derived certification domain attribution: ${filePath}`);
+    }
     if (question.trackId !== entry.trackId) fail(`Artifact question trackId mismatch: ${filePath}`);
     if (questionIds.has(question.questionId)) fail(`Artifact contains duplicate questionId ${question.questionId}: ${filePath}`);
     if (previousQuestionId !== undefined && previousQuestionId >= question.questionId) fail(`Artifact questions are not sorted by questionId: ${filePath}`);
@@ -759,6 +860,14 @@ function validateArtifactShape(artifact, { entry, catalog, filePath }) {
   const relationResult = validateQuestionRelations(artifact.questions);
   if (!relationResult.valid) fail(`Artifact question relations are invalid: ${filePath}`, relationResult.errors);
   if (Object.hasOwn(artifact, "simulationProfiles") && (!Array.isArray(artifact.simulationProfiles) || artifact.simulationProfiles.length === 0)) fail(`Artifact simulationProfiles must be a non-empty array when present: ${filePath}`);
+  for (const profile of artifact.simulationProfiles ?? []) {
+    exactKeys(profile, ["schemaVersion", "profileId", "profileVersion", "familyId", "modeId", "familyConfig"], "Artifact simulation profile");
+    if (profile.schemaVersion !== SIMULATION_PROFILE_SCHEMA_VERSION ||
+        [profile.profileId, profile.profileVersion, profile.familyId, profile.modeId].some((value) => !nonEmptyString(value)) ||
+        !isRecord(profile.familyConfig) || !nonEmptyString(profile.familyConfig.schemaVersion)) {
+      fail(`Artifact simulation profile envelope is invalid: ${filePath}`);
+    }
+  }
   return artifact;
 }
 
@@ -768,7 +877,11 @@ async function verifyExistingArtifact(outputRoot, entry, catalog, bindings, prof
   if (sha256(bytes) !== entry.sha256) fail(`Existing artifact checksum mismatch: ${filePath}`);
   const artifact = jsonText(bytes, filePath);
   if (canonicalJson(artifact) !== bytes) fail(`Existing artifact is not canonical: ${filePath}`);
-  const validated = validateArtifactShape(artifact, { entry, catalog, filePath });
+  const matchesCurrentVersion = entry.contentVersion === catalogTrack(catalog, entry.trackId).contentVersion;
+  const validated = validateArtifactShape(artifact, { entry, catalog, filePath, matchesCurrentVersion });
+  // A replaced version is checked against its own lock and embedded contracts.
+  // Current config is not historical evidence; the new source is validated before commit.
+  if (!matchesCurrentVersion) return validated;
   if (Object.hasOwn(validated, "simulationProfiles")) {
     const binding = getTrackRuntimeBinding(entry.trackId, bindings);
     const profileData = await loadTrackProfileData(binding, {
@@ -795,7 +908,7 @@ async function verifyExistingArtifact(outputRoot, entry, catalog, bindings, prof
   return validated;
 }
 
-async function loadExistingLock(outputRoot, catalog, bindings, profileLoaders, rootDirectory) {
+async function loadExistingLock(outputRoot, catalog, bindings, profileLoaders, rootDirectory, replacingTrackIds) {
   const lockPath = path.join(outputRoot, LOCK_FILE_NAME);
   let lockInfo;
   try {
@@ -807,7 +920,7 @@ async function loadExistingLock(outputRoot, catalog, bindings, profileLoaders, r
   if (lockInfo.isSymbolicLink()) fail(`Symbolic links are not allowed in content lock: ${lockPath}`);
   if (!lockInfo.isFile()) fail(`Content lock is not a regular file: ${lockPath}`);
   const lock = await readJson(lockPath);
-  const validLock = strictLock(lock, catalog);
+  const validLock = strictLock(lock, catalog, replacingTrackIds);
   for (const entry of validLock.tracks) await verifyExistingArtifact(outputRoot, entry, catalog, bindings, profileLoaders, rootDirectory);
   return validLock;
 }
@@ -951,14 +1064,14 @@ function mergeLock(existingLock, entry) {
 export async function buildTrack(options = {}) {
   const validated = await validateTrack(options);
   const outputRoot = resolveOutputRoot(options);
-  const existingLock = await loadExistingLock(outputRoot, validated.catalog, validated.bindings, options.profileLoaders ?? PROFILE_LOADERS, validated.rootDirectory);
+  const existingLock = await loadExistingLock(outputRoot, validated.catalog, validated.bindings, options.profileLoaders ?? PROFILE_LOADERS, validated.rootDirectory, new Set([validated.trackId]));
   await verifyExistingOutputSet(outputRoot, validated.catalog, existingLock);
   const artifact = artifactFor(validated);
   const artifactBytes = canonicalJson(artifact);
   const artifactPath = path.join(outputRoot, `${validated.trackId}.json`);
   const lockPath = path.join(outputRoot, LOCK_FILE_NAME);
   const lockEntry = lockEntryFor(validated, artifactBytes);
-  const nextLock = mergeLock(existingLock, lockEntry);
+  const nextLock = strictLock(mergeLock(existingLock, lockEntry), validated.catalog);
   const changes = [];
   const artifactChange = await outputChange(artifactPath, artifactBytes);
   if (artifactChange) changes.push(artifactChange);
@@ -973,7 +1086,7 @@ export async function buildAll({ rootDirectory, root, outputRoot, outputDirector
   const resolvedOutputRoot = resolveOutputRoot({ rootDirectory: resolvedRoot, outputRoot, outputDirectory });
   const loaded = await loadValidatedCatalog(resolvedRoot, profileLoaders);
   const { catalog, bindings } = loaded;
-  const existingLock = await loadExistingLock(resolvedOutputRoot, catalog, bindings, profileLoaders, resolvedRoot);
+  const existingLock = await loadExistingLock(resolvedOutputRoot, catalog, bindings, profileLoaders, resolvedRoot, new Set(catalog.tracks.map(({ trackId }) => trackId)));
   await verifyExistingOutputSet(resolvedOutputRoot, catalog, existingLock);
   const validatedTracks = [];
   for (const track of catalog.tracks) {
@@ -991,7 +1104,7 @@ export async function buildAll({ rootDirectory, root, outputRoot, outputDirector
     artifacts.push({ ...validated, artifact, artifactBytes, artifactPath });
     lockEntries.push(lockEntryFor(validated, artifactBytes));
   }
-  const lock = { schemaVersion: LOCK_SCHEMA_VERSION, tracks: lockEntries.sort((left, right) => compareStrings(left.trackId, right.trackId)) };
+  const lock = strictLock({ schemaVersion: LOCK_SCHEMA_VERSION, tracks: lockEntries.sort((left, right) => compareStrings(left.trackId, right.trackId)) }, catalog);
   const lockPath = path.join(resolvedOutputRoot, LOCK_FILE_NAME);
   const lockChange = await outputChange(lockPath, canonicalJson(lock));
   if (lockChange) changes.push(lockChange);

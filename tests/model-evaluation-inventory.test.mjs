@@ -26,17 +26,17 @@ test("nine real canonical banks are deterministic and structurally valid despite
   assert.equal(inventoryBytes(first), inventoryBytes(second));
   assert.equal(sha256(inventoryBytes(first)), sha256(inventoryBytes(second)));
   assert.equal(first.schemaVersion, "patternly-model-evaluation-inventory-v2");
-  assert.deepEqual(first.observed, { tracks: 9, nodes: 117, mentalUnits: 958, questions: 16749 });
+  assert.deepEqual(first.observed, { tracks: 9, nodes: 117, mentalUnits: 958, questions: 16759 });
   assert.equal(first.status, "structurally_valid");
   assert.deepEqual(first.structuralValidation, { status: "PASS", validator: "scripts/build.mjs:validateTrack", duplicateQuestions: 0, unassignedQuestions: 0, multiplyAssignedQuestions: 0 });
   assert.deepEqual(first.baseline, { tracks: 9, nodes: 117, mentalUnits: 932, questions: 16041 });
   assert.equal(first.baselineComparison.status, "differences");
   assert.deepEqual(first.differences, [
-    { key: "mentalUnits", expected: 932, observed: 958 }, { key: "questions", expected: 16041, observed: 16749 },
+    { key: "mentalUnits", expected: 932, observed: 958 }, { key: "questions", expected: 16041, observed: 16759 },
     { trackId: "aws-certified-solutions-architect-associate", key: "mentalUnits", expected: 134, observed: 145 },
     { trackId: "aws-certified-solutions-architect-associate", key: "questions", expected: 2568, observed: 2604 },
     { trackId: "claude-certified-architect-professional-certification", key: "mentalUnits", expected: 38, observed: 53 },
-    { trackId: "claude-certified-architect-professional-certification", key: "questions", expected: 300, observed: 972 },
+    { trackId: "claude-certified-architect-professional-certification", key: "questions", expected: 300, observed: 982 },
   ]);
   assert.equal(first.baselineComparison.explanations.length, 4);
   for (const key of ["mentalUnits", "questions"]) {
@@ -78,7 +78,7 @@ test("nine real canonical banks are deterministic and structurally valid despite
     assert.equal(track.observed.questions, trackItems.length);
   }
   assert.equal(ids.size, first.observed.questions);
-  assert.deepEqual(first.interactionCounts, { choice_single: 14695, choice_multiple: 445, ordering: 1173, complexity: 279, decision_matrix: 157 });
+  assert.deepEqual(first.interactionCounts, { choice_single: 14696, choice_multiple: 446, ordering: 1173, complexity: 279, decision_matrix: 165 });
   assert.deepEqual(first.interactionCounts, countInteractions(allUnits(first).flatMap((unit) => unit.items)));
   assert.equal(first.sourceManifest.sha256, sha256(first.sourceManifest.files));
   assert.ok(!first.sourceManifest.files.some(({ file }) => [CURRENT_AUDIT_STATE_PATH, INVENTORY_REPORT_PATH].includes(file)));
@@ -89,12 +89,12 @@ test("nine real canonical banks are deterministic and structurally valid despite
     ["NOT_ASSESSED", "PARTIAL", "COMPLETE"].map((status) => [status, auditState.unitCoverage.filter((row) => row.status === status).length]),
   ));
   const claude = first.tracks.find(({ trackId }) => trackId.startsWith("claude-"));
-  assert.equal(claude.observed.questions, 972); assert.ok(claude.observed.questions > 7 * 120);
+  assert.equal(claude.observed.questions, 982); assert.ok(claude.observed.questions > 7 * 120);
   assert.deepEqual(claude.nodes.map((node) => [node.nodeId, node.chapterMinimum.currentCount, node.chapterMinimum.deficit, node.chapterMinimum.met]), [
-    ["enterprise_tools_retrieval_and_integration", 175, 0, true], ["evaluation_diagnosis_and_optimization", 136, 0, true],
-    ["governance_safety_and_risk_controls", 150, 0, true], ["model_prompt_and_context_decisions", 115, 5, false],
-    ["solution_design_and_architecture", 168, 0, true], ["stakeholder_decisions_and_delivery_lifecycle", 127, 0, true],
-    ["team_workflows_and_operational_enablement", 101, 19, false],
+    ["enterprise_tools_retrieval_and_integration", 176, 0, true], ["evaluation_diagnosis_and_optimization", 137, 0, true],
+    ["governance_safety_and_risk_controls", 151, 0, true], ["model_prompt_and_context_decisions", 116, 4, false],
+    ["solution_design_and_architecture", 172, 0, true], ["stakeholder_decisions_and_delivery_lifecycle", 128, 0, true],
+    ["team_workflows_and_operational_enablement", 102, 18, false],
   ]);
   assert.deepEqual(await readFile(path.join(ROOT, CURRENT_AUDIT_STATE_PATH)), stateBefore);
   assert.deepEqual(first.claims, { semanticAssessment: "NOT_PERFORMED", contentApproval: "NOT_GRANTED", publication: "NOT_PERFORMED", modelCalls: 0 });

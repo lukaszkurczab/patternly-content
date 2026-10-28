@@ -200,10 +200,10 @@ test("real Claude track shares received identities, deterministic controls and s
   const auditBefore = await readFile(path.join(ROOT, "config/current-content-audit-state.json"));
   const inventoryBefore = await readFile(path.join(ROOT, "reports/model-evaluation/09-a-inventory.json"));
   const prepared = await prepareTrack({ trackId: "claude-certified-architect-professional-certification" });
-  assert.equal(prepared.units.length, 53); assert.equal(prepared.units.flatMap((u) => u.questions).length, 972);
-  assert.equal(prepared.structuralValidation.status, "PASS"); assert.equal(prepared.structuralValidation.questions, 972);
+  assert.equal(prepared.units.length, 53); assert.equal(prepared.units.flatMap((u) => u.questions).length, 982);
+  assert.equal(prepared.structuralValidation.status, "PASS"); assert.equal(prepared.structuralValidation.questions, 982);
   const counts = chapterMinimumReport(prepared, contract); assert.equal(counts.length, 7);
-  assert.deepEqual(counts.filter((row) => row.deficit).map((row) => [row.nodeId, row.deficit, row.recommendation]), [["model_prompt_and_context_decisions", 5, "FCA_EDIT"], ["team_workflows_and_operational_enablement", 19, "FCA_EDIT"]]);
+  assert.deepEqual(counts.filter((row) => row.deficit).map((row) => [row.nodeId, row.deficit, row.recommendation]), [["model_prompt_and_context_decisions", 4, "FCA_EDIT"], ["team_workflows_and_operational_enablement", 18, "FCA_EDIT"]]);
   assert.ok(counts.every((row) => row.qualityScore === null));
   const unit = prepared.units[0]; const question = unit.questions[0];
   const task = createTask({ prepared, nodeId: unit.nodeId, mentalUnitId: unit.mentalUnitId, questionId: question.questionId, scope: "item" });

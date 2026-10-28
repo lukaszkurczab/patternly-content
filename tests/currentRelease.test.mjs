@@ -20,7 +20,7 @@ test("current source generates a deterministic backend-readable release bound to
     assert.equal(first.release.manifest.status, "current_source");
     assert.equal(first.release.manifest.currentIdentity.sourceInputFingerprint, first.currentIdentity.sourceInputFingerprint);
     assert.equal(first.currentIdentity.tracks.length, 9);
-    assert.equal(first.currentIdentity.verificationCategories.find(({ id }) => id === "canonical-answer-scoring").scoredQuestionCount, 16749);
+    assert.equal(first.currentIdentity.verificationCategories.find(({ id }) => id === "canonical-answer-scoring").scoredQuestionCount, 16759);
     assert.deepEqual(first.currentIdentity.claims, {
       semanticReview: "not_claimed",
       publication: "not_performed",
@@ -32,7 +32,7 @@ test("current source generates a deterministic backend-readable release bound to
     assert.deepEqual(Object.fromEntries(first.release.artifacts.map(({ trackId, declaredModes }) => [trackId, declaredModes])), {
       "aws-certified-solutions-architect-associate": [],
       "backend-system-design-interview": ["design-interview-simulation"],
-      "claude-certified-architect-professional-certification": [],
+      "claude-certified-architect-professional-certification": ["certification-exam-simulation"],
       "coding-interview-dsa-problem-solving": ["coding-interview-simulation"],
       "frontend-system-design-interview": ["design-interview-simulation"],
       "google-cloud-associate-cloud-engineer": ["certification-exam-simulation"],

@@ -59,6 +59,21 @@ test("questionRelation is an optional exact annotation with safe identity fields
   }
 });
 
+test("CCAR-P exam metadata allows an optional stable scenario family ID", () => {
+  const question = clone(questionsByType.get("choice_single"));
+  question.trackId = "claude-certified-architect-professional-certification";
+  question.examMetadata = { decisionSkill: "contextual_choice", scenarioFamilyId: "ccarp-d04-billing-delete-attempt-v1" };
+  assert.equal(validateQuestion(question).valid, true);
+  for (const scenarioFamilyId of ["", "Uppercase", "has spaces", "two--hyphens", "_underscore"]) {
+    const invalid = clone(question);
+    invalid.examMetadata.scenarioFamilyId = scenarioFamilyId;
+    assert.equal(validateQuestion(invalid).valid, false, scenarioFamilyId);
+  }
+  const missingSkill = clone(question);
+  delete missingSkill.examMetadata.decisionSkill;
+  assert.equal(validateQuestion(missingSkill).valid, false);
+});
+
 test("JSON Schema accepts exact questionRelation metadata and rejects unsupported fields", () => {
   const schemaPath = path.resolve("schemas/content/question.schema.json");
   const fixturePath = path.resolve("tests/fixtures/shared-contract-fixture.json");

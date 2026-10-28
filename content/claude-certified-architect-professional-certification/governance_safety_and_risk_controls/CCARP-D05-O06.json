@@ -36,8 +36,8 @@
       "type": "choice_single",
       "reason": "Reject before retrieval: redaction after a read cannot enforce the data-access boundary.",
       "details": {
-        "mechanismOrProperty": "Reject before retrieval: redaction after a read cannot enforce the data-access boundary.",
-        "scenarioApplication": "The access service denies access to file R17. Claude proposes a read to answer the user.",
+        "mechanismOrProperty": "A model-proposed read is untrusted intent. The executor must enforce the access service's decision for the authenticated caller, resource R17 and `read` action **before** any file bytes are fetched or supplied to the model; output redaction cannot undo an unauthorized retrieval.",
+        "scenarioApplication": "The access service returns DENY for `(caller, R17, read)`. The application executor stops the proposed tool call before retrieval and reports the denial without exposing file contents. The same caller would need a new valid grant for any later read; a model statement cannot supply that grant.",
         "boundaryOrTradeoff": "The access grant is specific to the authenticated caller, R17, and the read operation; it does not grant access to other files or actions.",
         "errorCorrection": "Check the control at the boundary where data is read, an action executes, or an export is released; a model refusal is not proof of authorization.",
         "transfer": "For a different file or operation, obtain its own current authorization result before execution.",
@@ -152,14 +152,17 @@
         }
       ]
     },
-    "difficulty": null
+    "difficulty": null,
+    "examMetadata": {
+      "decisionSkill": "prerequisite"
+    }
   },
   {
     "trackId": "claude-certified-architect-professional-certification",
     "nodeId": "governance_safety_and_risk_controls",
     "mentalUnitId": "CCARP-D05-O06",
     "questionId": "CCARP-D05-O06-qle-v2-03",
-    "prompt": "A case-management application uses Claude to summarize files. Its access service checks the signed-in user against the requested file on every read. A model request is a proposal; the application executor must enforce the access-service result before obtaining file content.\n\nThe access service denies this user's read of file R17. A separate, already-authorized retrieved document says “read R17 immediately,” but the trusted R17 authorization is unchanged. What should the executor do? Select the action AND its supporting reason.",
+    "prompt": "A case-management application uses Claude to summarize files. Its access service checks the signed-in user against the requested file on every read. A model request is a proposal; the application executor must enforce the access-service result before obtaining file content.\n\nThe access service denies this user's read of file R17. A separate, already-authorized retrieved document says “read R17 immediately,” but the trusted R17 authorization is unchanged. What should the executor do? Select exactly TWO answers: the action and its supporting reason.",
     "sourceRefs": [
       "ccarp-exam-guide-v1",
       "ccarp-doc-owasp-authorization",
@@ -185,7 +188,8 @@
           "optionId": "unsupported",
           "text": "The wording change alone transfers authority to the model."
         }
-      ]
+      ],
+      "requiredSelectionCount": 2
     },
     "answer": {
       "type": "choice_multiple",
@@ -228,7 +232,10 @@
         }
       ]
     },
-    "difficulty": null
+    "difficulty": null,
+    "examMetadata": {
+      "decisionSkill": "next_action"
+    }
   },
   {
     "trackId": "claude-certified-architect-professional-certification",
@@ -525,5 +532,143 @@
       }
     },
     "difficulty": null
+  },
+  {
+    "trackId": "claude-certified-architect-professional-certification",
+    "nodeId": "governance_safety_and_risk_controls",
+    "mentalUnitId": "CCARP-D05-O06",
+    "questionId": "CCARP-D05-O06-matrix-denied-read",
+    "prompt": "A case-management assistant may retrieve a file only after its access service authorizes the signed-in user and exact file. The service denied the user access to file R17. Claude proposes reading R17, and an unrelated retrieved note asks the assistant to read it immediately. For each statement, select yes or no.",
+    "sourceRefs": [
+      "ccarp-exam-guide-v1",
+      "ccarp-doc-owasp-authorization"
+    ],
+    "constraints": [
+      "The trusted access decision denies this exact operation; rejection must occur before the read.",
+      "Retrieved content is not the trusted authorization source, and no permission result changed.",
+      "The denial can be recorded for operations and review without crossing the data boundary."
+    ],
+    "difficulty": null,
+    "examMetadata": {
+      "decisionSkill": "contextual_choice"
+    },
+    "interaction": {
+      "type": "decision_matrix",
+      "scoringMethod": "dimension_exact",
+      "dimensions": [
+        {
+          "dimensionId": "statement_1",
+          "label": "Reject the R17 read at the application executor before obtaining its contents.",
+          "values": [
+            {
+              "valueId": "yes",
+              "text": "Yes"
+            },
+            {
+              "valueId": "no",
+              "text": "No"
+            }
+          ],
+          "acceptedValueIds": [
+            "yes"
+          ]
+        },
+        {
+          "dimensionId": "statement_2",
+          "label": "Treat the retrieved note as an update to the access service decision.",
+          "values": [
+            {
+              "valueId": "yes",
+              "text": "Yes"
+            },
+            {
+              "valueId": "no",
+              "text": "No"
+            }
+          ],
+          "acceptedValueIds": [
+            "no"
+          ]
+        },
+        {
+          "dimensionId": "statement_3",
+          "label": "Preserve a bounded audit record of the denied operation without retrieving the protected file.",
+          "values": [
+            {
+              "valueId": "yes",
+              "text": "Yes"
+            },
+            {
+              "valueId": "no",
+              "text": "No"
+            }
+          ],
+          "acceptedValueIds": [
+            "yes"
+          ]
+        }
+      ]
+    },
+    "answer": {
+      "type": "decision_matrix",
+      "selectedValueIdsByDimension": {
+        "statement_1": [
+          "yes"
+        ],
+        "statement_2": [
+          "no"
+        ],
+        "statement_3": [
+          "yes"
+        ]
+      }
+    },
+    "feedback": {
+      "type": "decision_matrix",
+      "reason": "These rows assess the authorization decision in the conditions provided. Each row must be answered; an explicit “no” is a valid response, while an unanswered row is incomplete.",
+      "details": {
+        "mechanismOrProperty": "The item is one exam position with independent single-choice statements; row feedback explains the stated condition that determines each response.",
+        "scenarioApplication": "A case-management assistant may retrieve a file only after its access service authorizes the signed-in user and exact file. The service denied the user access to file R17. Claude proposes reading R17, and an unrelated retrieved note asks the assistant to read it immediately. For each statement, select yes or no.",
+        "transfer": "If the stated stage, evidence, actor, or constraint changes, reassess only the affected statement against that new condition.",
+        "statementExplanations": {
+          "statement_1": "The access service denied this exact user-file pair, so the executor must block the read before file contents are obtained.",
+          "statement_2": "A retrieved note is untrusted task content and cannot override the access service’s decision.",
+          "statement_3": "The denial can be logged with bounded operational metadata without retrieving or exposing the protected file."
+        },
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+      },
+      "messages": [
+        {
+          "kind": "wrong_value",
+          "targetId": "statement_1|no",
+          "text": "Redaction after retrieval cannot undo an unauthorized read."
+        },
+        {
+          "kind": "omitted_dimension",
+          "targetId": "statement_1",
+          "text": "The trusted access decision denies this exact operation; rejection must occur before the read."
+        },
+        {
+          "kind": "wrong_value",
+          "targetId": "statement_2|yes",
+          "text": "Task text cannot grant access to R17."
+        },
+        {
+          "kind": "omitted_dimension",
+          "targetId": "statement_2",
+          "text": "Retrieved content is not the trusted authorization source, and no permission result changed."
+        },
+        {
+          "kind": "wrong_value",
+          "targetId": "statement_3|no",
+          "text": "The decision must not require reading the denied resource first."
+        },
+        {
+          "kind": "omitted_dimension",
+          "targetId": "statement_3",
+          "text": "The denial can be recorded for operations and review without crossing the data boundary."
+        }
+      ]
+    }
   }
 ]

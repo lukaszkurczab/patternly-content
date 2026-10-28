@@ -36,8 +36,8 @@ function wrongOptionIds(question) {
 
 test("current Claude source builds into a valid package containing every targeted scenario", () => {
   assert.equal(fixture.w1Cases.length, 8);
-  assert.equal(build.questions.length, 972);
-  assert.equal(build.track.contentVersion, "ccarp-2026.10.14-qle-v2-full-path-identity-v2");
+  assert.equal(build.questions.length, 982);
+  assert.equal(build.track.contentVersion, "ccarp-2026.10.26-realistic-exam-v1");
   assert.match(artifactSha256, /^[a-f0-9]{64}$/u);
   for (const scenario of [...fixture.w1Cases, { questionId: "CCARP-D01-O08-qle-v2-feature-parity" }, { questionId: "CCARP-D01-O09-qle-v2-sensitivity" }, { questionId: "CCARP-D03-O10-scenario-04" }]) {
     assert.ok(questionsById.has(scenario.questionId), `${scenario.questionId} is present in current canonical source`);
@@ -102,7 +102,7 @@ for (const scenario of fixture.w1Cases) {
         assert.equal(appPartial.kind, "partial", `${scenario.questionId}: production APP scorer retains partial, non-correct item result`);
         assert.notEqual(appPartial.kind, "correct", "partial item score cannot satisfy the full-answer condition");
         const omittedFeedback = canonicalInteractionRegistry.projectFeedback(reordered, response);
-        assert.deepEqual(omittedFeedback.messages, question.feedback.messages.filter(message => message.kind === "omitted_option" && message.targetId === omitted));
+        assert.equal(omittedFeedback, null, "an incomplete exact-count draft is not a completed attempt and receives no review feedback");
       }
       const oneCorrect = scoreQuestion(reordered, { type: "choice_multiple", optionIds: [expected[0]] });
       assert.equal(oneCorrect.status, "partial");

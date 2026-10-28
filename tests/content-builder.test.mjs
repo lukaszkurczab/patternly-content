@@ -724,6 +724,95 @@ test("mutating one track does not rewrite another artifact or lock entry", async
   assert.notEqual(rebuilt.lock.tracks.find((entry) => entry.trackId === changedTrackId).sha256, beforeLock.tracks.find((entry) => entry.trackId === changedTrackId).sha256);
 });
 
+test("version transitions validate the old pair independently of new policy and completion config", async (t) => {
+  for (const method of ["buildTrack", "buildAll"]) await t.test(method, async (t) => {
+    const rootDirectory = await createWorkspace();
+    t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+    const outputRoot = path.join(rootDirectory, "dist");
+    const trackId = ACCEPTED_TRACK_IDS[0];
+    const catalogPath = path.join(rootDirectory, "content/catalog.json");
+    const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+    const track = catalog.tracks.find((entry) => entry.trackId === trackId);
+    await populateAll(rootDirectory);
+    await buildAll({ rootDirectory, outputRoot });
+    const unchangedTrackId = ACCEPTED_TRACK_IDS[1];
+    const unchangedArtifact = await readFile(path.join(outputRoot, `${unchangedTrackId}.json`));
+    const beforeLock = JSON.parse(await readFile(path.join(outputRoot, "content-lock.json"), "utf8"));
+    track.contentVersion += "-v2";
+    track.completionRule = { ruleVersion: 2, chapters: [{ nodeId: "node-001", mentalUnitCount: 1, minimumAttemptCount: 20, rollingWindowSize: 20, qualityThreshold: 0.8 }] };
+    await writeFile(catalogPath, canonicalJson(catalog));
+    const curriculumPath = path.join(rootDirectory, "config/curricula", `${trackId}.json`);
+    const curriculum = JSON.parse(await readFile(curriculumPath, "utf8"));
+    curriculum.planningPolicy.policyVersion = "fixture-v2";
+    await writeFile(curriculumPath, canonicalJson(curriculum));
+
+    if (method === "buildTrack") await buildTrack({ rootDirectory, outputRoot, trackId });
+    else await buildAll({ rootDirectory, outputRoot });
+    const artifactBytes = await readFile(path.join(outputRoot, `${trackId}.json`), "utf8");
+    const artifact = JSON.parse(artifactBytes);
+    const nextLock = JSON.parse(await readFile(path.join(outputRoot, "content-lock.json"), "utf8"));
+    const entry = nextLock.tracks.find((candidate) => candidate.trackId === trackId);
+    assert.equal(artifact.contentVersion, track.contentVersion);
+    assert.deepEqual(artifact.completionRule, track.completionRule);
+    assert.deepEqual(artifact.planningPolicy, curriculum.planningPolicy);
+    assert.equal(entry.sha256, sha256(artifactBytes));
+    assert.equal(entry.contentVersion, track.contentVersion);
+    assert.deepEqual(nextLock.tracks.find((candidate) => candidate.trackId === unchangedTrackId), beforeLock.tracks.find((candidate) => candidate.trackId === unchangedTrackId));
+    assert.deepEqual(await readFile(path.join(outputRoot, `${unchangedTrackId}.json`)), unchangedArtifact);
+  });
+});
+
+test("single-track version transition refuses a stale retained track before any write", async (t) => {
+  const rootDirectory = await createWorkspace();
+  t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+  const outputRoot = path.join(rootDirectory, "dist");
+  await populateAll(rootDirectory);
+  await buildAll({ rootDirectory, outputRoot });
+  const before = new Map(await Promise.all((await readdir(outputRoot)).map(async (name) => [name, await readFile(path.join(outputRoot, name))])));
+  const catalogPath = path.join(rootDirectory, "content/catalog.json");
+  const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+  for (const trackId of ACCEPTED_TRACK_IDS.slice(0, 2)) catalog.tracks.find((track) => track.trackId === trackId).contentVersion += "-v2";
+  await writeFile(catalogPath, canonicalJson(catalog));
+  await expectBuildFailure(() => buildTrack({ rootDirectory, outputRoot, trackId: ACCEPTED_TRACK_IDS[0] }), /contentVersion does not match catalog/u);
+  assert.deepEqual((await readdir(outputRoot)).sort(), [...before.keys()].sort());
+  for (const [name, bytes] of before) assert.deepEqual(await readFile(path.join(outputRoot, name)), bytes);
+});
+
+test("version transition still rejects a corrupted old pair before any write", async (t) => {
+  for (const corruption of ["lock-shape", "checksum", "artifact-version"]) await t.test(corruption, async (t) => {
+    const rootDirectory = await createWorkspace();
+    t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+    const outputRoot = path.join(rootDirectory, "dist");
+    const trackId = ACCEPTED_TRACK_IDS[0];
+    await writeTrackQuestion(rootDirectory, trackId);
+    await buildTrack({ rootDirectory, outputRoot, trackId });
+    const catalogPath = path.join(rootDirectory, "content/catalog.json");
+    const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
+    catalog.tracks.find((track) => track.trackId === trackId).contentVersion += "-v2";
+    await writeFile(catalogPath, canonicalJson(catalog));
+    const lockPath = path.join(outputRoot, "content-lock.json");
+    const artifactPath = path.join(outputRoot, `${trackId}.json`);
+    const lock = JSON.parse(await readFile(lockPath, "utf8"));
+    if (corruption === "lock-shape") delete lock.tracks[0].sha256;
+    if (corruption === "checksum") await writeFile(artifactPath, `${await readFile(artifactPath, "utf8")}\n`);
+    if (corruption === "artifact-version") {
+      const artifact = JSON.parse(await readFile(artifactPath, "utf8"));
+      artifact.contentVersion = "mismatched-version";
+      const bytes = canonicalJson(artifact);
+      await writeFile(artifactPath, bytes);
+      lock.tracks[0].sha256 = sha256(bytes);
+    }
+    await writeFile(lockPath, canonicalJson(lock));
+    const previousArtifact = await readFile(artifactPath);
+    const previousLock = await readFile(lockPath);
+    const pattern = { "lock-shape": /invalid shape/u, checksum: /checksum mismatch/u, "artifact-version": /Artifact contentVersion mismatch/u }[corruption];
+    await expectBuildFailure(() => buildTrack({ rootDirectory, outputRoot, trackId }), pattern);
+    assert.deepEqual(await readFile(artifactPath), previousArtifact);
+    assert.deepEqual(await readFile(lockPath), previousLock);
+    assert.deepEqual((await readdir(outputRoot)).sort(), [`${trackId}.json`, "content-lock.json"].sort());
+  });
+});
+
 test("builder rejects missing, empty, unknown and malformed inputs", async (t) => {
   const missingRoot = await createWorkspace();
   t.after(() => rm(missingRoot, { recursive: true, force: true }));
@@ -933,6 +1022,126 @@ test("build-all stages and rolls back the complete new output set on rename fail
   assert.deepEqual(await readdir(outputRoot), []);
   await buildAll({ rootDirectory, outputRoot });
   assert.equal((await readdir(outputRoot)).length, 10);
+});
+
+test("version transitions preserve old pairs for incomplete output and injected write failures", async (t) => {
+  const evidenceRoot = process.env.PATTERNLY_CONTENT_BUILDER_EVIDENCE_ROOT;
+  const snapshot = async (directory) => Object.fromEntries(await Promise.all((await readdir(directory)).sort().map(async (name) => {
+    const bytes = await readFile(path.join(directory, name), "utf8");
+    return [name, { bytes, sha256: sha256(bytes) }];
+  })));
+  let caseNumber = 10;
+  for (const scenario of ["missing-artifact", "missing-lock", "second-rename", "second-stage-write"]) {
+    for (const method of ["buildTrack", "buildAll"]) {
+      const id = `C${caseNumber++}`;
+      await t.test(`${id} ${method} ${scenario}`, async (t) => {
+        const rootDirectory = await createWorkspace();
+        t.after(() => rm(rootDirectory, { recursive: true, force: true }));
+        const outputRoot = path.join(rootDirectory, "dist");
+        const trackId = ACCEPTED_TRACK_IDS[0];
+        const artifactName = `${trackId}.json`;
+        const catalogPath = path.join(rootDirectory, "content/catalog.json");
+        const bindingsPath = path.join(rootDirectory, "config/track-runtime-bindings.json");
+        const catalog = { schemaVersion: "patternly-content-catalog-v1", tracks: [{ trackId, contentVersion: "fixture-v1" }] };
+        await writeFile(catalogPath, canonicalJson(catalog));
+        const bindings = JSON.parse(await readFile(bindingsPath, "utf8"));
+        bindings.tracks = bindings.tracks.filter((binding) => binding.trackId === trackId);
+        await writeFile(bindingsPath, canonicalJson(bindings));
+        const question = { ...structuredClone(baseQuestion), trackId, questionId: "018-q-001", nodeId: "node-001", mentalUnitId: "mental-unit-001" };
+        await writeTrackQuestion(rootDirectory, trackId, question);
+        const build = (fileOps) => method === "buildTrack"
+          ? buildTrack({ rootDirectory, outputRoot, trackId, fileOps })
+          : buildAll({ rootDirectory, outputRoot, fileOps });
+        await build();
+        const intactV1 = await snapshot(outputRoot);
+        const record = {
+          task_id: "PAT-CODE-018.3", scope_id: "PAT-CODE-018-S01", id, method, scenario,
+          candidate: { builderSha256: sha256(await readFile(builderPath)), testSha256: sha256(await readFile(fileURLToPath(import.meta.url))) },
+          environment: { node: process.version, platform: process.platform, arch: process.arch },
+          expected: scenario.startsWith("missing") ? "reject without builder mutations; retain incomplete input set"
+            : "restore exact v1 pair without temporary files; fault-free retry produces v2",
+          inputs: { trackId, question, catalogV1: structuredClone(catalog), bindings,
+            curriculum: JSON.parse(await readFile(path.join(rootDirectory, "config/curricula", `${trackId}.json`), "utf8")) },
+          intactV1, mutations: [], result: "FAIL", operation_state: "in-flight"
+        };
+        try {
+          catalog.tracks[0].contentVersion = "fixture-v2";
+          await writeFile(catalogPath, canonicalJson(catalog));
+          record.inputs.catalogV2 = structuredClone(catalog);
+          if (scenario === "missing-artifact") await rm(path.join(outputRoot, artifactName));
+          if (scenario === "missing-lock") await rm(path.join(outputRoot, "content-lock.json"));
+          record.beforeAttempt = await snapshot(outputRoot);
+          let renameCalls = 0;
+          let stagingWrites = 0;
+          const fileOps = {
+            mkdir: async (...args) => { record.mutations.push({ operation: "mkdir" }); return mkdir(...args); },
+            writeFile: async (...args) => {
+              const staging = args[2]?.flag === "wx";
+              if (staging) stagingWrites += 1;
+              record.mutations.push({ operation: "writeFile", path: path.basename(args[0]), staging });
+              if (scenario === "second-stage-write" && staging && stagingWrites === 2) {
+                record.atFault = await snapshot(outputRoot);
+                throw new Error("PAT-CODE-018 injected second stage write failure");
+              }
+              return writeFile(...args);
+            },
+            rename: async (...args) => {
+              renameCalls += 1;
+              record.mutations.push({ operation: "rename", target: path.basename(args[1]) });
+              if (scenario === "second-rename" && renameCalls === 2) {
+                record.atFault = await snapshot(outputRoot);
+                throw new Error("PAT-CODE-018 injected second rename failure during v1-to-v2");
+              }
+              return fsRename(...args);
+            }
+          };
+          await assert.rejects(() => build(fileOps), (error) => {
+            assert.ok(error instanceof ContentBuildError);
+            record.error = { name: error.name, message: error.message, details: error.details };
+            const pattern = { "missing-artifact": /existing artifact is missing/u, "missing-lock": /no lock entry/u,
+              "second-rename": /previous outputs were restored/u, "second-stage-write": /Cannot stage output set/u }[scenario];
+            assert.match(error.message, pattern);
+            return true;
+          });
+          record.renameCalls = renameCalls;
+          record.stagingWrites = stagingWrites;
+          record.afterFailure = await snapshot(outputRoot);
+          assert.deepEqual(record.afterFailure, record.beforeAttempt);
+          if (scenario.startsWith("missing")) {
+            assert.deepEqual(record.mutations, []);
+          } else {
+            assert.deepEqual(record.afterFailure, intactV1);
+            if (scenario === "second-rename") {
+              assert.equal(renameCalls, 2);
+              assert.equal(JSON.parse(record.atFault[artifactName].bytes).contentVersion, "fixture-v2");
+              assert.equal(JSON.parse(record.atFault["content-lock.json"].bytes).tracks[0].contentVersion, "fixture-v1");
+            } else {
+              assert.equal(stagingWrites, 2);
+              assert.equal(renameCalls, 0);
+            }
+            await build();
+            record.afterRetry = await snapshot(outputRoot);
+            assert.deepEqual(Object.keys(record.afterRetry).sort(), [artifactName, "content-lock.json"].sort());
+            const artifact = JSON.parse(record.afterRetry[artifactName].bytes);
+            const entry = JSON.parse(record.afterRetry["content-lock.json"].bytes).tracks[0];
+            assert.equal(artifact.contentVersion, "fixture-v2");
+            assert.equal(entry.contentVersion, "fixture-v2");
+            assert.equal(entry.sha256, record.afterRetry[artifactName].sha256);
+          }
+          record.result = "PASS";
+        } catch (error) {
+          record.failure = { name: error.name, message: error.message };
+          throw error;
+        } finally {
+          record.operation_state = "terminal";
+          if (evidenceRoot) {
+            await mkdir(evidenceRoot, { recursive: true });
+            await writeFile(path.join(evidenceRoot, `${id}.json`), `${JSON.stringify(record, null, 2)}\n`, { flag: "wx" });
+          }
+        }
+      });
+    }
+  }
 });
 
 test("CLI parser requires track for single-track commands and rejects it for build-all", () => {

@@ -20,9 +20,21 @@ const knownUnlinkedQleIds = [
   'CCARP-D05-O06-qle-v2-02',
   'CCARP-D05-O06-qle-v2-03',
 ];
+const knownUnlinkedAuthoredExamIds = [
+  'CCARP-D01-O01-matrix-pilot-evidence',
+  'CCARP-D01-O01-scenario-pilot-stage-after-evaluation',
+  'CCARP-D01-O02-matrix-incident-containment',
+  'CCARP-D01-O02-multiple-incident-containment',
+  'CCARP-D02-O01-matrix-context-budget',
+  'CCARP-D03-O01-matrix-tool-boundary',
+  'CCARP-D04-O01-matrix-release-evidence',
+  'CCARP-D05-O06-matrix-denied-read',
+  'CCARP-D06-O01-matrix-rollout-stage',
+  'CCARP-D07-O01-matrix-change-review',
+];
 
 test('every current Claude question retains valid course metadata and registered source references', () => {
-  assert.equal(questions.length, 972);
+  assert.equal(questions.length, 982);
   let linkedCount = 0;
   const missingCourse = [];
   for (const question of questions) {
@@ -43,9 +55,9 @@ test('every current Claude question retains valid course metadata and registered
     assert.equal(question.feedback.course.requiresAccount, true, question.questionId);
   }
   assert.ok(linkedCount > 0);
-  assert.ok(missingCourse.every(question => knownUnlinkedQleIds.includes(question.questionId)),
-    'questions without course metadata remain within the documented QLE source-mapping residual');
-  assert.ok(missingCourse.every(question => question.questionId.includes('-qle-v2-')), 'questions without course metadata are current QLE cases');
+  const expectedUnlinkedIds = [...knownUnlinkedQleIds, ...knownUnlinkedAuthoredExamIds].sort();
+  assert.deepEqual(missingCourse.map(question => question.questionId).sort(), expectedUnlinkedIds,
+    'only the documented QLE source-mapping residual and newly authored scenarios lack course attribution');
 });
 test('course is optional in the shared contract, but present course metadata is strict and HTTPS', () => {
   const base = structuredClone(questions[0]);

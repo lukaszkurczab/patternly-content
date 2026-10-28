@@ -12,13 +12,13 @@ test("readiness reports current nine-track structure without claiming semantic a
   const result = await verifyReadiness({ rootDirectory: root, manifest });
   assert.equal(result.status, "current_source_inventory");
   assert.equal(result.tracks.length, 9);
-  assert.equal(result.tracks.reduce((sum, track) => sum + track.questions, 0), 16749);
+  assert.equal(result.tracks.reduce((sum, track) => sum + track.questions, 0), 16759);
   assert.ok(result.tracks.every((track) => track.structuralValidity === "valid"));
   assert.ok(result.tracks.every((track) => track.semanticOwnerApproval === "not_established"));
   assert.ok(result.tracks.every((track) => track.efficacy === "not_evaluated"));
   assert.ok(result.tracks.every((track) => track.readiness === "not_ready"));
   const currentClaude = result.tracks.find((track) => track.trackId === "claude-certified-architect-professional-certification");
-  assert.equal(currentClaude.questions, 972);
+  assert.equal(currentClaude.questions, 982);
   assert.equal(currentClaude.technicalProvenance.status, "current_source_observed");
   assert.ok(currentClaude.technicalProvenance.changedInputCount > 0);
 });
@@ -32,7 +32,7 @@ test("source drift refreshes technical provenance and remains visible without fr
   const result = await verifyReadiness({ rootDirectory: root, manifest: staleManifest });
   const claude = result.tracks.find((track) => track.trackId === currentEntry.trackId);
   assert.notEqual(claude.contentVersion, currentEntry.contentVersion);
-  assert.equal(claude.questions, 972);
+  assert.equal(claude.questions, 982);
   assert.equal(claude.technicalProvenance.configuredQuestionCount, 300);
   assert.equal(claude.semanticOwnerApproval, "not_established");
 });

@@ -7,9 +7,9 @@ test("current Claude source links and taxonomy report current mappings without a
   const result = await inspectCurrentClaudeCourseMap();
   assert.equal(result.schemaVersion, "patternly-current-claude-course-map-v1");
   assert.equal(result.status, "CURRENT_SOURCE_WITH_UNMAPPED_ITEMS");
-  assert.equal(result.questionCount, 972);
+  assert.equal(result.questionCount, 982);
   assert.equal(result.courseLinkedQuestionCount, 963);
-  assert.equal(result.missingCourseLinkCount, 9);
+  assert.equal(result.missingCourseLinkCount, 19);
   assert.equal(result.currentCourseCount, 5);
   assert.equal(result.mappedObjectiveUnitCount, 38);
   assert.deepEqual(result.unmappedObjectiveUnits, [

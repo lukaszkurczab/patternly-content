@@ -383,7 +383,14 @@ for (const { row: q, key } of cases) {
       assert.equal(restored.renderer.options.find((o) => o.id === id).selected, true);
       const attempt = { response, result: { kind: score.kind } };
       const feedback = projectCertificationPracticeFeedback('afterEachAnswer', attempt, owner);
-      assert.deepEqual(feedback.messages.map((m) => m.targetId), id === key ? [] : [id]);
+      assert.ok(feedback);
+      if (id === key) {
+        assert.equal(feedback.messages, undefined);
+      } else {
+        const expectedMessage = q.feedback.messages.find((message) => message.kind === 'wrong_option' && message.targetId === id);
+        assert.ok(expectedMessage);
+        assert.deepEqual(feedback.messages, [expectedMessage]);
+      }
       assert.ok(feedback.reason && feedback.details);
       assert.equal(projectCertificationPracticeFeedback('atSessionEnd', attempt, owner), null);
       responses++;

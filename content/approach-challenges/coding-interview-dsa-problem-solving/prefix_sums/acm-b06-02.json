@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b06-02",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "prefix_sums",
+  "requiredFamilyIds": ["prefix_sums", "hash_map_and_set"],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b06-02-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "prefix_sums",
+    "mentalUnitId": "prefix_sum_with_hash_state",
+    "prompt": "Matching playback segments. A playback log is a fixed sequence of signed score changes. Count every non-empty contiguous interval whose total change equals target. The sequence may contain negative, zero, and positive values, so interval totals do not necessarily increase when an endpoint moves. Example: changes [2, −2, 2] and target 2 produce 3 intervals. Changes [0, 0, 0] and target 0 also produce 6 intervals; repeated prefix totals represent different boundary pairs.",
+    "constraints": [
+      "1 ≤ n ≤ 200000.",
+      "−1000000000 ≤ changes[i] ≤ 1000000000 and −200000000000000 ≤ target ≤ 200000000000000.",
+      "Intervals are contiguous, non-empty, and use inclusive endpoints; count each pair of endpoints once.",
+      "The answer and all prefix totals fit signed 64-bit integers.",
+      "The output is one count; no interval needs to be listed. The sequence is read-only."
+    ],
+    "difficulty": "hard",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "prefix-frequency-stream",
+          "text": "Scan left to right with running prefix S. Before recording the current S, add the frequency of S − target to the answer; then record this S in a frequency map. Start the map with frequency 1 for prefix zero.",
+          "grade": "correct",
+          "feedback": "A preceding prefix at S − target identifies exactly an interval ending here. Recording after the lookup prevents the current boundary from forming an empty interval."
+        },
+        {
+          "optionId": "B",
+          "approachId": "stored-prefix-frequency",
+          "text": "First store all n prefix totals after each position. Then scan those totals in order, adding the frequency of the earlier value currentPrefix − target and recording each current total afterward; initialize the frequency map with prefix zero.",
+          "grade": "correct",
+          "feedback": "This uses the same prefix-difference relation and counts only earlier boundaries. Each stored total is handled in order, and its frequency preserves distinct earlier boundaries with the same value."
+        },
+        {
+          "optionId": "C",
+          "approachId": "positive-window",
+          "text": "Expand a right boundary and shrink the left boundary whenever the current total exceeds target; count a window whenever its total equals target.",
+          "grade": "incorrect",
+          "feedback": "Negative changes break the monotonic rule needed to discard a left boundary. For [1, −1, 1] with target 1, valid intervals are [1], [1, −1, 1], and the final [1]; a one-window scan does not count all three."
+        },
+        {
+          "optionId": "D",
+          "approachId": "record-before-query",
+          "text": "For each position, add its value to the running prefix, record that prefix in the frequency map, and then add the frequency of prefix − target to the answer.",
+          "grade": "incorrect",
+          "feedback": "Recording first lets the current boundary pair with itself. For a single change [0] and target 0, it counts the empty interval as well as the one valid non-empty interval."
+        },
+        {
+          "optionId": "E",
+          "approachId": "enumerate-all-intervals",
+          "text": "For every starting position, extend the ending position one step at a time, maintain that interval's total, and count matches.",
+          "grade": "incorrect",
+          "feedback": "This checks every interval correctly, but there can be n(n+1)/2 of them. The same prefix boundaries can instead be summarized by their frequencies as the scan proceeds."
+        }
+      ]
+    },
+    "answer": { "type": "approach_choice" },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "An interval total is the difference of two prefix totals. Count earlier prefixes with the required value, and preserve boundary order so each match is a non-empty interval ending at the current position.",
+      "details": {
+        "expectedApproachIds": ["prefix-frequency-stream", "stored-prefix-frequency"],
+        "prefixDifference": "For current prefix S and an earlier boundary prefix P, the interval total is S−P; it equals target exactly when P=S−target.",
+        "duplicatePrefixes": "Store frequencies, not just presence: multiple earlier boundaries with the same total represent distinct intervals.",
+        "emptyIntervalGuard": "Query before adding the current prefix. The initial prefix zero represents the boundary before index zero."
+      }
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b06-02-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "prefix_sums",
+    "mentalUnitId": "prefix_sum_with_hash_state",
+    "prompt": "For the streaming prefix-frequency method, choose its tightest standard expected-time and auxiliary-space pair. Assume frequency-map lookup and update take expected O(1) time; include the map and running state, and exclude the input and required scalar result.",
+    "difficulty": "hard",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        { "optionId": "expected-linear-linear", "text": "Expected O(n) time and O(n) auxiliary space" },
+        { "optionId": "worst-linear-linear", "text": "Worst-case O(n) time and O(n) auxiliary space" },
+        { "optionId": "expected-n2-constant", "text": "Expected O(n²) time and O(1) auxiliary space" },
+        { "optionId": "expected-linear-constant", "text": "Expected O(n) time and O(1) auxiliary space" },
+        { "optionId": "expected-nlogn-linear", "text": "Expected O(n log n) time and O(n) auxiliary space" }
+      ]
+    },
+    "answer": { "type": "choice_single", "optionId": "expected-linear-linear" },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each change is processed once with an expected constant number of frequency-map operations. In the worst case, the map can contain a distinct entry for each prefix.",
+      "details": {
+        "expectedPair": "Expected O(n) time; O(n) auxiliary space",
+        "timeDerivation": "There are n running prefixes. Under the explicit expected O(1) map-operation assumption, each prefix performs one lookup and one frequency update. Worst-case map behavior is not claimed to be constant.",
+        "spaceDerivation": "At most n+1 distinct prefix values are stored, including the initial zero; the running total and answer use constant additional state. The input and scalar output are excluded.",
+        "prefixCount": "A matching earlier boundary contributes its frequency, so duplicate prefix totals are all counted.",
+        "nonEmptyBoundary": "The lookup occurs before recording the current prefix, and the seeded zero handles intervals beginning at index zero.",
+        "methodComparison": "The stored-prefix alternative B also has expected O(n) time and O(n) auxiliary space; its extra prefix list changes storage constants, not the asymptotic pair. Enumerating all intervals is correct but takes O(n²) time with O(1) extra space. The positive-only window is not correct for signed values, and recording the current prefix before lookup counts an empty interval. The target has expected O(n) time and O(n) auxiliary space under the stated hash-map assumption; worst-case O(1) hash operations are not guaranteed."
+      }
+    }
+  },
+  "analyzedApproachId": "prefix-frequency-stream",
+  "methodReveal": {
+    "title": "Count earlier boundaries by prefix total",
+    "description": "Maintain the total through the current position and a map from previously seen totals to their frequencies. Before inserting the current total, look up the total that would leave exactly the requested change between the earlier boundary and this position. Add all matching earlier boundaries to the answer, then record the current total. Seed the map with a zero total for the boundary before the sequence."
+  }
+}

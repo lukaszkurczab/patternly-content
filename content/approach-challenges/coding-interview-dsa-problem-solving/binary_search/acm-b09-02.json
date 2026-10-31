@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b09-02",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "binary_search",
+  "requiredFamilyIds": ["binary_search"],
+  "difficulty": "hard",
+  "approachQuestion": {
+    "questionId": "acm-b09-02-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "binary_search",
+    "mentalUnitId": "minimum-capacity-monotone-feasibility",
+    "prompt": "Smallest daily load cap\n\nA print studio must process a fixed queue of jobs in the listed order over at most `days` consecutive workdays. A day receives one nonempty contiguous block of jobs, and its load is the sum of their durations. Jobs cannot be split or reordered. Return the smallest possible maximum daily load.\n\nConstraints: 2 <= n <= 200000; 1 <= jobs[i] <= 10^9; 1 <= days <= n; the sum of all durations fits in a signed 64-bit integer.\n\nExamples: ([4, 7, 2, 8, 3], 3) -> 11, using [4,7], [2,8], [3]; ([5, 6, 4], 3) -> 6; ([9, 2, 2], 1) -> 13.\n\nChoose a method that is correct for every allowed input and uses the fact that feasibility changes monotonically with a proposed load limit.",
+    "constraints": [
+      "Every job is positive, must be processed exactly once, and stays in original order.",
+      "Each day receives a nonempty contiguous block; using fewer than days is allowed.",
+      "The answer is between the longest single job and the sum of all jobs, inclusive; use 64-bit totals."
+    ],
+    "difficulty": "hard",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "binary-search-capacity",
+          "approachId": "binary-search-capacity",
+          "text": "Search integer limits from the longest job through the total duration. For a candidate limit, greedily place each next job on the current day if it fits; otherwise start the next day. The limit is feasible when this needs no more than days.",
+          "grade": "correct",
+          "feedback": "Feasibility is monotonic: raising the allowed daily load cannot require more days. The greedy check uses the fewest consecutive groups for a fixed limit, so binary search can locate the first feasible limit."
+        },
+        {
+          "optionId": "try-every-capacity",
+          "approachId": "try-every-capacity",
+          "text": "For each integer limit from the longest job to the total, run the same greedy feasibility check and return the first feasible one.",
+          "grade": "incorrect",
+          "feedback": "This does return the correct answer, but enumerating every integer capacity ignores the monotonic feasibility boundary and may require checking an enormous numeric interval. It is therefore an incorrect efficiency choice for this task, not an incorrect result."
+        },
+        {
+          "optionId": "sort-jobs-first",
+          "approachId": "sort-jobs-first",
+          "text": "Sort jobs by duration, then group consecutive entries in the sorted list under the smallest feasible limit.",
+          "grade": "incorrect",
+          "feedback": "Sorting changes the required job order and can change the answer. With jobs [1, 2, 1] and days 2, the ordered answer is 3; sorting gives [1, 1, 2] and permits a maximum load of 2."
+        },
+        {
+          "optionId": "enumerate-cut-patterns",
+          "approachId": "enumerate-cut-patterns",
+          "text": "Try every way to place up to days-1 cuts between jobs, compute each schedule's largest daily load, and keep the smallest.",
+          "grade": "incorrect",
+          "feedback": "The result would be correct, but the number of cut patterns grows combinatorially with n and days. It does not exploit the monotonic feasibility boundary and is not a useful method at the stated limits."
+        }
+      ]
+    },
+    "answer": { "type": "approach_choice" },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "For any proposed maximum load, a greedy left-to-right check determines the minimum number of consecutive days needed. If a limit works, every larger limit works too, creating a monotonic predicate over a bounded integer answer space.",
+      "details": {}
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b09-02-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "binary_search",
+    "mentalUnitId": "minimum-capacity-monotone-feasibility",
+    "prompt": "For the binary search over candidate daily loads, with the greedy feasibility check described in Q1, choose the tight worst-case time and auxiliary-space pair. The input array is supplied and excluded from auxiliary space. The check uses one pass and constant counters; 64-bit additions/comparisons are constant time. No recursion or copied arrays are used.",
+    "difficulty": "hard",
+    "constraints": ["n is job count; S is the sum of durations; auxiliary space excludes the input and returned integer."],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        { "optionId": "n-log-s-constant", "text": "O(n log S) time, O(1) auxiliary space" },
+        { "optionId": "n-plus-s-constant", "text": "O(n + S) time, O(1) auxiliary space" },
+        { "optionId": "n-log-s-n", "text": "O(n log S) time, O(n) auxiliary space" },
+        { "optionId": "n-constant", "text": "O(n) time, O(1) auxiliary space" }
+      ]
+    },
+    "answer": { "type": "choice_single", "optionId": "n-log-s-constant" },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The inclusive integer search interval has width at most S and is halved after each check. Each check scans at most n jobs once, and both the search and check keep only a fixed number of scalar values.",
+      "details": { "time": "O(n log S)", "additionalSpace": "O(1)" }
+    }
+  },
+  "analyzedApproachId": "binary-search-capacity",
+  "methodReveal": {
+    "title": "Search the first feasible load",
+    "description": "The smallest possible limit is the longest job, since no job may be split. The sum of all jobs is always sufficient. For each midpoint limit, scan jobs in order and open a new day only when the next job would exceed that limit. If the scan uses too many days, raise the lower bound; otherwise keep the midpoint as a possible answer and lower the upper bound. Positive durations ensure this greedy packing uses the fewest days for the proposed limit."
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "dynamic_programming_intro",
+  "requiredFamilyIds": [
+    "dynamic_programming_intro"
+  ],
+  "problemId": "acm-b13-02",
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b13-02-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "dynamic_programming_intro",
+    "mentalUnitId": "define_dp_state",
+    "prompt": "You have distinct positive coin denominations in coins, and each denomination may be used any number of times. For a target amount, return the smallest number of coins whose values add up exactly to target, or −1 if no such sum exists. Return only the count, not the coins. Examples: coins=[1,3,4], target=6 → 2; coins=[4,6], target=7 → −1; coins=[5], target=0 → 0. Which approaches solve subproblems based on the remaining amount?",
+    "constraints": [
+      "1 ≤ coins.length ≤ 30; the denominations are distinct positive integers.",
+      "Each coins[i] is an integer from 1 to 10000; target is a non-negative integer from 0 to 100000.",
+      "Do not modify the input. Each denomination may be used any number of times.",
+      "Return −1 when the target cannot be reached; target=0 requires zero coins."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "bottom-up-remaining-amount",
+          "text": "Create best for amounts from 0 to target and set best[0]=0. For each positive amount, consider every denomination no greater than it; if the smaller amount is reachable, add one coin. Process amounts in increasing order so a denomination can be reused.",
+          "grade": "correct",
+          "feedback": "The state is the minimum coin count for an exact amount. Each possible last denomination leads to a smaller amount that has already been solved; unreachable amounts remain marked as such."
+        },
+        {
+          "optionId": "B",
+          "approachId": "full-denomination-amount-table",
+          "text": "Create dp[i][s] for the first i denomination types and amount s. In each row, compare skipping the current denomination with using it and moving to a smaller amount in the same row; keep every row.",
+          "grade": "partial",
+          "feedback": "This recurrence is correct for every allowed input; reading a smaller amount from the current row allows unlimited reuse. The full table keeps older denomination rows that later rows no longer read. The previous row and the row being built are enough, or one array can be updated in increasing order, so the remaining rows are removable storage."
+        },
+        {
+          "optionId": "C",
+          "approachId": "largest-denomination-first",
+          "text": "Sort denominations from largest to smallest. Repeatedly choose the largest denomination no greater than the remaining amount, then reject the result if the remainder is not zero.",
+          "grade": "incorrect",
+          "feedback": "Choosing the largest denomination first does not always minimize the count. For coins=[1,3,4] and target=6, this picks 4, then 1 and 1: three coins. Two coins of value 3 are better."
+        },
+        {
+          "optionId": "D",
+          "approachId": "enumerate-unbounded-choice-sequences",
+          "text": "Enumerate sequences of denominations whose total does not exceed target, then return the shortest sequence that reaches target.",
+          "grade": "incorrect",
+          "feedback": "This can return the right minimum, but it explores many coin orders and revisits the same remaining amounts. Different sequences often lead to the same remaining amount and the same future choices, so exploring each sequence repeats those decisions."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The last coin identifies a smaller amount that must already be solved. This lets us compare every legal final step while keeping unreachable amounts explicit.",
+      "details": {}
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b13-02-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "dynamic_programming_intro",
+    "mentalUnitId": "define_dp_state",
+    "prompt": "Analyze the fixed bottom-up method from approach A: set best[0]=0; for each amount s from 1 to target, check each denomination no greater than s and form best[s−coin]+1 when best[s−coin] is reachable. It returns only the minimum count or −1. Let k = coins.length and T = target.",
+    "constraints": [
+      "Worst case. Analyze k = coins.length and T = target as variable parameters within the input bounds (k ≤ 30, T ≤ 100000). For T=0, the algorithm returns the base value zero.",
+      "The coins array is input and the returned count is output; neither is auxiliary space.",
+      "Count the full amount-state array and all temporary variables. The method uses no recursion or call stack."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "kt-time-t-space",
+          "text": "O(kT) time, O(T) auxiliary space"
+        },
+        {
+          "optionId": "t-time-t-space",
+          "text": "O(T) time, O(T) auxiliary space"
+        },
+        {
+          "optionId": "kt-time-kt-space",
+          "text": "O(kT) time, O(kT) auxiliary space"
+        },
+        {
+          "optionId": "ktlogkplus1-time-t-space",
+          "text": "O(kT log(k+1)) time, O(T) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "kt-time-t-space"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "For every positive amount s through T, the method checks up to k denominations, so the work depends on both parameters. The best array has T+1 entries, plus a constant number of temporary values. Input, output, and call stack add no auxiliary space.",
+      "details": {
+        "time": "O(kT)",
+        "additionalSpace": "O(T)"
+      },
+      "messages": [
+        {
+          "kind": "wrong_option",
+          "targetId": "t-time-t-space",
+          "text": "Under the stated k,T analysis, each amount checks up to k denominations; this pair omits those checks. T=0 is only the constant-time base case."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "kt-time-kt-space",
+          "text": "The time bound matches, but the method stores one array of T+1 amount values, not a table for every denomination and amount pair."
+        },
+        {
+          "kind": "wrong_option",
+          "targetId": "ktlogkplus1-time-t-space",
+          "text": "The method does not sort denominations or use a heap; it checks denominations directly in each state. The extra log(k+1) factor is not part of its tight time bound."
+        }
+      ]
+    }
+  },
+  "analyzedApproachId": "bottom-up-remaining-amount",
+  "methodReveal": {
+    "title": "Solve smaller remaining amounts first",
+    "description": "Start with amount zero. For each larger amount, consider each denomination that could be the last coin. If the smaller amount is reachable, add one coin to its minimum and keep the best result. If no reachable predecessor exists, mark the amount unreachable. Processing amounts in increasing order allows every denomination to be reused."
+  }
+}

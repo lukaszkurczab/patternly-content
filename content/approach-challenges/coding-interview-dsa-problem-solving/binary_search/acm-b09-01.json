@@ -1,0 +1,92 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b09-01",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "binary_search",
+  "requiredFamilyIds": ["binary_search"],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b09-01-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "binary_search",
+    "mentalUnitId": "first-qualifying-position",
+    "prompt": "First qualifying chamber record\n\nA cold-storage lab records the highest temperature reached by each sealed test chamber. The records are sorted in nondecreasing order by temperature; equal readings can occur. Given the array `peakCelsius` and a limit `limit`, return the index of the first record whose temperature is at least `limit`. Return -1 if no record qualifies. The array is read-only.\n\nConstraints: 0 <= n <= 200000; -10^9 <= peakCelsius[i], limit <= 10^9.\n\nExamples: ([ -8, -2, -2, 4, 9 ], -2) -> 1; ([ 1, 3, 7 ], 5) -> 2; ([ 1, 3 ], 8) -> -1; ([], 0) -> -1.\n\nChoose a method that guarantees the earliest qualifying index, including when the limit is absent or repeated.",
+    "constraints": [
+      "Input is sorted in nondecreasing order; repeated values are allowed.",
+      "Return the smallest qualifying index, or -1 when no value is at least limit.",
+      "The input is immutable; n may be zero."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "binary-left-bound",
+          "approachId": "binary-left-bound",
+          "text": "Keep a half-open candidate range [lo, hi). At each midpoint, if its value is below limit move lo past it; otherwise keep that midpoint and everything to its left. When the range is empty, return lo if lo < n; if lo == n, return -1.",
+          "grade": "correct",
+          "feedback": "The predicate ‘value is at least limit’ changes from false to true at most once. Keeping the midpoint on the true side preserves the first qualifying index and handles duplicates."
+        },
+        {
+          "optionId": "left-to-right-scan",
+          "approachId": "left-to-right-scan",
+          "text": "Inspect records from index zero and return as soon as a temperature is at least limit; return -1 if the scan ends.",
+          "grade": "incorrect",
+          "feedback": "This scan does return the right answer, but it ignores the sorted-order mechanism that lets binary search discard large portions of the remaining candidates. It is therefore an incorrect efficiency choice for this task, not an incorrect result."
+        },
+        {
+          "optionId": "arbitrary-equal-midpoint",
+          "approachId": "arbitrary-equal-midpoint",
+          "text": "Use binary search for an equal value and return the first matching index encountered.",
+          "grade": "incorrect",
+          "feedback": "The first midpoint that qualifies is not necessarily the earliest qualifying record. For [-2, -2, 4] with limit -2, a search may encounter index 1 before index 0."
+        },
+        {
+          "optionId": "descending-discard-rule",
+          "approachId": "descending-discard-rule",
+          "text": "Use binary search, moving the lower bound right whenever the midpoint is at least limit.",
+          "grade": "incorrect",
+          "feedback": "That rule discards qualifying values on the left and can skip the answer. For [1, 3, 3, 8] with limit 3, it may return index 3 instead of index 1."
+        }
+      ]
+    },
+    "answer": { "type": "approach_choice" },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The ordered input makes the threshold predicate monotonic, so correct boundary handling can eliminate a contiguous half of the candidate range each step.",
+      "details": {}
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b09-01-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "binary_search",
+    "mentalUnitId": "first-qualifying-position",
+    "prompt": "For the half-open binary search that finds the first value at least `limit`, choose its tight worst-case time and auxiliary-space pair. The input array is supplied and is not counted as auxiliary space. The algorithm is iterative and stores only integer indices; assume fixed-width integer operations are constant time and the bounds do not overflow.",
+    "difficulty": "medium",
+    "constraints": ["n is the input length; auxiliary space excludes the supplied array and returned integer."],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        { "optionId": "logarithmic-constant", "text": "O(log(n + 1)) time, O(1) auxiliary space" },
+        { "optionId": "linear-constant", "text": "O(n) time, O(1) auxiliary space" },
+        { "optionId": "logarithmic-logarithmic", "text": "O(log(n + 1)) time, O(log(n + 1)) auxiliary space" },
+        { "optionId": "constant-constant", "text": "O(1) time, O(1) auxiliary space" }
+      ]
+    },
+    "answer": { "type": "choice_single", "optionId": "logarithmic-constant" },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each comparison discards at least half of the remaining candidate interval; for an empty input no comparison is needed. The iterative algorithm retains only a fixed number of indices and values. The following illustration is outside this task's legal input domain, which requires sorted records: on [1, 7, 3, 4] with limit 7, the midpoint value 3 sends a lower-bound search rightward, so it can skip the qualifying value at index 1. This shows why the ordering precondition is necessary; it does not extend the task's input domain.",
+      "details": { "time": "O(log(n + 1))", "additionalSpace": "O(1)" }
+    }
+  },
+  "analyzedApproachId": "binary-left-bound",
+  "methodReveal": {
+    "title": "Find the first true position",
+    "description": "Maintain a half-open interval of positions that could still be the first qualifying record. If the midpoint is below the limit, every position through it is also below the limit, so continue to its right. Otherwise retain the midpoint as a possible answer and continue to its left. When no candidates remain, return the boundary if lo < n; the sentinel lo == n means no record qualifies, so return -1."
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b04-01",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "two_pointers",
+  "requiredFamilyIds": [
+    "two_pointers"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b04-01-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "two_pointers",
+    "mentalUnitId": "sorted-pair-elimination",
+    "prompt": "Harbor Pair Count\n\nHarbor sensors report their readings in nondecreasing order. Given the integer array readings and an integer limit, return the number of index pairs (i, j) with i < j and readings[i] + readings[j] <= limit. Every pair of positions counts separately, even when their values are equal.\n\nConstraints: 0 <= readings.length <= 200000; -1000000000 <= readings[i] <= 1000000000; -2000000000 <= limit <= 2000000000; readings is already nondecreasing and must not be modified. The answer is at most 19,999,900,000 and must use a signed 64-bit integer.\n\nExample 1: readings = [-4, -1, 0, 3, 8], limit = 2 -> 5. The qualifying pairs of indices are (0,1), (0,2), (0,3), (1,2), and (1,3).\nExample 2: readings = [2, 2, 2, 2], limit = 4 -> 6; equal values at different positions form different pairs.\nExample 3: readings = [-5, 1, 7], limit = -6 -> 0.",
+    "constraints": [
+      "The input is sorted in nondecreasing order; the order must be preserved.",
+      "Count index pairs, not distinct value pairs; use signed 64-bit arithmetic for the result.",
+      "Use signed 64-bit intermediate arithmetic for threshold subtraction, pair comparisons, and the running count; the final count fits in signed 64-bit."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "opposite-end-sum-elimination",
+          "text": "Put one index at each end. If their sum is at most the limit, add every pair between the left value and the remaining values through the right index, then move left inward. Otherwise move right inward.",
+          "grade": "correct",
+          "feedback": "The sorted order makes the endpoint move safe: one comparison settles a whole set of remaining pairs."
+        },
+        {
+          "optionId": "B",
+          "approachId": "binary-search-each-left",
+          "text": "For each left index, binary-search the first later value whose sum with it exceeds the limit, and add the number of earlier later-indices to the count.",
+          "grade": "partial",
+          "feedback": "Correct for every input, but it repeats a boundary search instead of reusing the boundary as the left value advances."
+        },
+        {
+          "optionId": "C",
+          "approachId": "enumerate-every-pair",
+          "text": "Check every pair of indices and increment the count when its sum is at most the limit.",
+          "grade": "incorrect",
+          "feedback": "Correct result, but it independently checks every pair even though one ordered comparison can settle many."
+        },
+        {
+          "optionId": "D",
+          "approachId": "move-both-endpoints",
+          "text": "Compare the two endpoint values, add one if their sum qualifies, and move both indices inward on every iteration.",
+          "grade": "incorrect",
+          "feedback": "This can miss valid pairs. For [1, 2, 3, 4] with limit 5, the answer is 4 while checking only opposite endpoints finds 2."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "A pointer move is justified by the order relation: it must prove that a whole set of remaining index pairs either contributes or cannot contribute.",
+      "details": {}
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b04-01-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "two_pointers",
+    "mentalUnitId": "sorted-pair-elimination",
+    "prompt": "For the fixed opposite-end sum-elimination method described after question 1, choose its tight worst-case time and auxiliary-space pair. Count the returned integer as output, not auxiliary space; the input array is supplied and is not copied.",
+    "constraints": [
+      "Use worst-case bounds, not average-case assumptions.",
+      "Include all temporary state and exclude the supplied input and returned output."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-constant",
+          "text": "O(n²) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "nlogn-linear",
+          "text": "O(n log n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "linear-linear",
+          "text": "O(n) time, O(n) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-constant"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The left index only increases and the right index only decreases. Each can move at most n positions, and the algorithm stores only the two indices and a 64-bit running count; the supplied array and returned count are excluded from auxiliary space.",
+      "details": {
+        "targetApproachId": "opposite-end-sum-elimination",
+        "tightWorstCase": {
+          "time": "O(n)",
+          "auxiliarySpace": "O(1)"
+        },
+        "whyTimeIsTight": "In the worst case the scan examines a linear number of endpoints before one side is exhausted. Each iteration advances at least one endpoint, so there are at most 2n endpoint advances and O(n) total work.",
+        "whySpaceIsConstant": "Only two indices and the running count are retained. The input is not copied and the returned scalar is not auxiliary storage.",
+        "otherOptions": {
+          "quadratic-constant": "O(n²) describes checking every pair, not the fixed method.",
+          "nlogn-linear": "This adds sorting or a copied auxiliary representation that the already-sorted input does not require.",
+          "linear-linear": "The time bound is right, but an O(n) table is not allocated by the fixed method."
+        },
+        "numericModel": "Each input and limit fit signed 32-bit range, but limit-readings[i] in the binary-search alternative can reach 3,000,000,000 and the count can reach 19,999,900,000. Use signed 64-bit intermediate arithmetic for threshold subtraction, pair comparisons, and the running count.",
+        "storageModel": "Iterative method; no recursion or call stack proportional to input size; O(1) means a fixed number of machine words.",
+        "approachOptionRationales": {
+          "opposite-end-sum-elimination": "Correct: if readings[left]+readings[right] <= limit, every index from left+1 through right pairs successfully with left, so add right-left and advance left. Otherwise every earlier value is <= readings[left], so none can pair successfully with right; decrement right and discard those impossible pairs. Repetition does not overcount because each pair is counted only when its left endpoint is removed.",
+          "binary-search-each-left": "Correct for all allowed inputs. For each left index, find the first later value above limit-readings[left]; all prior later indices qualify. Its independent searches add a removable logarithmic search factor per left index compared with a single monotone boundary.",
+          "enumerate-every-pair": "Correct output but inefficient: it checks up to n(n-1)/2 pairs individually, even though the order supports safe grouped counting.",
+          "move-both-endpoints": "Incorrect. On [1,2,3,4] with limit 5 the valid pairs are (0,1),(0,2),(0,3),(1,2), count 4. The opposite endpoint sequence tests (0,3) and (1,2), counting only 2 and discarding the other two."
+        }
+      }
+    }
+  },
+  "analyzedApproachId": "opposite-end-sum-elimination",
+  "methodReveal": {
+    "title": "Count a whole row of pairs at once",
+    "description": "Start at the smallest and largest remaining readings. If their sum is within the limit, the smallest reading also fits with every remaining value before the largest, so count those pairs together and advance the left index. If their sum is too large, even the smallest remaining value cannot pair with the largest, so move the right index inward."
+  }
+}

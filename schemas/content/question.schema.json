@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://patternly.dev/schemas/content/question-v1.json",
   "title": "Patternly canonical question v1",
-  "description": "Family-neutral question contract. The five oneOf branches are disjoint by interaction.type.",
+  "description": "Family-neutral canonical question contract. The five top-level oneOf branches are disjoint by interaction.type; approach_choice is reserved for the separately versioned paired-task contract.",
   "type": "object",
   "properties": {
     "questionId": { "$ref": "#/$defs/id" },
@@ -205,6 +205,30 @@
       "required": ["type", "scoringMethod", "options"],
       "additionalProperties": false
     },
+    "approachChoiceInteraction": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "approach_choice" },
+        "scoringMethod": { "const": "graded_option" },
+        "options": {
+          "type": "array", "minItems": 2,
+          "items": {
+            "type": "object",
+            "properties": {
+              "optionId": { "$ref": "#/$defs/id" },
+              "approachId": { "$ref": "#/$defs/id" },
+              "text": { "$ref": "#/$defs/learnerText" },
+              "grade": { "enum": ["correct", "partial", "incorrect"] },
+              "feedback": { "$ref": "#/$defs/learnerText" }
+            },
+            "required": ["optionId", "approachId", "text", "grade", "feedback"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["type", "scoringMethod", "options"],
+      "additionalProperties": false
+    },
     "choiceMultipleInteraction": {
       "type": "object",
       "properties": { "type": { "const": "choice_multiple" }, "scoringMethod": { "const": "exact_selected_set" }, "requiredSelectionCount": { "type": "integer", "minimum": 1 }, "options": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/option" } } },
@@ -267,7 +291,7 @@
     },
     "feedback": {
       "type": "object",
-      "properties": { "type": { "enum": ["choice_single", "choice_multiple", "ordering", "complexity", "decision_matrix"] }, "reason": { "$ref": "#/$defs/learnerText" }, "details": { "$ref": "#/$defs/jsonValue" }, "messages": { "type": "array", "items": { "$ref": "#/$defs/feedbackMessage" } }, "course": { "$ref": "#/$defs/course" } },
+      "properties": { "type": { "enum": ["choice_single", "approach_choice", "choice_multiple", "ordering", "complexity", "decision_matrix"] }, "reason": { "$ref": "#/$defs/learnerText" }, "details": { "$ref": "#/$defs/jsonValue" }, "messages": { "type": "array", "items": { "$ref": "#/$defs/feedbackMessage" } }, "course": { "$ref": "#/$defs/course" } },
       "required": ["type", "reason", "details"],
       "additionalProperties": false
     },
@@ -314,6 +338,30 @@
       "allOf": [
         { "$ref": "#/$defs/questionBase" },
         { "type": "object", "properties": { "interaction": { "$ref": "#/$defs/choiceSingleInteraction" }, "answer": { "$ref": "#/$defs/choiceSingleAnswer" }, "feedback": { "allOf": [{ "$ref": "#/$defs/feedback" }, { "properties": { "type": { "const": "choice_single" } } }] } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "approachChoiceQuestion": {
+      "allOf": [
+        { "$ref": "#/$defs/questionBase" },
+        {
+          "type": "object",
+          "properties": {
+            "interaction": { "$ref": "#/$defs/approachChoiceInteraction" },
+            "answer": {
+              "type": "object",
+              "properties": { "type": { "const": "approach_choice" } },
+              "required": ["type"],
+              "additionalProperties": false
+            },
+            "feedback": {
+              "allOf": [
+                { "$ref": "#/$defs/feedback" },
+                { "properties": { "type": { "const": "approach_choice" } } }
+              ]
+            }
+          }
+        }
       ],
       "unevaluatedProperties": false
     },

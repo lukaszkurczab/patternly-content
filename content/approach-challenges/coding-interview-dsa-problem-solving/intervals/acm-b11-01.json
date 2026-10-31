@@ -1,0 +1,118 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b11-01",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "intervals",
+  "requiredFamilyIds": [
+    "intervals"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b11-01-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "merge_overlaps",
+    "prompt": "Shared maintenance windows — Combine time ranges whose union has no gap. Each range has `start`, `startClosed`, `end`, and `endClosed`; the flags say whether the boundary points belong to the range. Return the sorted, maximal ranges with exactly the same point coverage. At an equal boundary, combine the ranges if at least one includes that point. If both exclude it, that point is a gap and the ranges stay separate. Example: [1,3) and [3,5] combine into [1,5]; [1,3) and (3,5] stay separate. Example with several ranges: [8,12), [2,5), [4,9), [13,15), [15,18) → [2,12), [13,18), because the second range includes the shared point 15.",
+    "constraints": [
+      "The input is an unsorted list of n ranges; 0 ≤ n ≤ 100,000.",
+      "Each range has 0 ≤ start < end ≤ 1,000,000,000 and two Boolean flags that say whether its start and end belong to the range. Compare coordinates on a continuous time axis, not only at integer points.",
+      "Do not modify the input. The output must preserve exactly the same union of points and be a sorted list of maximal ranges. An empty input returns []."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "sort-copy-and-extend",
+          "text": "Copy the ranges and sort them by start in ascending order (put a closed start before an open start when they tie). Keep the current range and its greatest end. Combine the next range if its start is before that end, or if they are equal and at least one of the two touching boundaries includes that point. Preserve the correct boundary flags when combining.",
+          "grade": "correct",
+          "feedback": "Sorting puts the ranges in order, and comparing against the greatest end handles nested ranges. The equality rule combines ranges exactly when their union has no missing point."
+        },
+        {
+          "optionId": "B",
+          "approachId": "merge-only-interiors",
+          "text": "Sort by start and combine ranges only when the next start is strictly before the current end; keep all equal boundaries separate.",
+          "grade": "incorrect",
+          "feedback": "Equality does not always leave a gap. [1,3) and [3,5] together cover all of [1,5], so keeping them separate fails to produce a maximal range."
+        },
+        {
+          "optionId": "C",
+          "approachId": "connected-union-graph",
+          "text": "Build a graph. Connect two ranges when their union has no gap (they overlap, or they meet at a boundary included by at least one range). For each connected component, find the outer boundaries and their flags, then sort the result.",
+          "grade": "incorrect",
+          "feedback": "This method returns the correct components for every valid input, but it explicitly checks every pair of ranges and builds a graph. That brute force skips the main optimization: after sorting, one pass over the current boundary is enough."
+        },
+        {
+          "optionId": "D",
+          "approachId": "compare-only-previous-raw-range",
+          "text": "Sort by start, but compare each range only with the previous raw input range instead of with the end of the current combined range.",
+          "grade": "incorrect",
+          "feedback": "The previous raw end can be smaller than the end of the combined range. For [1,10), [2,3), [4,5), the third range still belongs to the union of the first, even though it does not meet the immediately previous raw range."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Consider separately whether the method follows the exact endpoint rules and whether it does only the necessary work.",
+      "details": {}
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b11-01-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "intervals",
+    "mentalUnitId": "merge_overlaps",
+    "prompt": "For the fixed `sort-copy-and-extend` method, use stable top-down merge sort on a copy of the input, reusing a merge buffer, followed by one pass that combines ranges. Choose the tightest standard time and auxiliary-space pair. Do not count the input or returned output as auxiliary space.",
+    "difficulty": "medium",
+    "constraints": [
+      "Analyze only the specified method. The input is already in memory and is not auxiliary space. The returned output is excluded from auxiliary space.",
+      "Each comparison, addition, assignment, and numeric-key comparison takes O(1); arithmetic does not overflow."
+    ],
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "nlogn-n",
+          "text": "Time O(n log n), auxiliary space O(n)"
+        },
+        {
+          "optionId": "nlogn-one",
+          "text": "Time O(n log n), auxiliary space O(1)"
+        },
+        {
+          "optionId": "n2-one",
+          "text": "Time O(n²), auxiliary space O(1)"
+        },
+        {
+          "optionId": "nlogn-nlogn",
+          "text": "Time O(n log n), auxiliary space O(n log n)"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "nlogn-n"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Sorting the copy dominates the running time. The unchanged input needs a separate copy proportional to the number of ranges; the combining pass keeps only the current range as additional state. The returned output is not counted as auxiliary space.",
+      "details": {
+        "time": "O(n log n)",
+        "additionalSpace": "O(n)",
+        "assumptions": "Comparison-based merge sort on a copy of the immutable input; the sort uses a reusable merge buffer. The returned output is excluded."
+      }
+    }
+  },
+  "analyzedApproachId": "sort-copy-and-extend",
+  "methodReveal": {
+    "title": "Sort first, then track the group boundary",
+    "description": "Copy the ranges and sort them by start in ascending order, putting a closed start before an open start when they tie. Keep the current range and its greatest end. Combine the next range when it starts before the current end. At an equal boundary, combine them if the current end or the next start includes that point; if both exclude it, keep the gap and start a new range. When extending the end, carry its flag forward; when the ends are equal, combine their inclusion flags."
+  }
+}

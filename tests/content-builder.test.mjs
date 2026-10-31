@@ -452,6 +452,11 @@ test("Coding Interview simulation profile emits the blueprint and exact checksum
   t.after(() => rm(outputRoot, { recursive: true, force: true }));
   const built = await buildTrack({ rootDirectory, outputRoot, trackId: "coding-interview-dsa-problem-solving" });
   assert.deepEqual(built.artifact.simulationProfiles, validated.simulationProfiles);
+  assert.equal(built.artifact.questions.length, 3404, "paired tasks must not change the legacy canonical question count");
+  assert.equal(built.artifact.approachChallengeProblems.length, 36);
+  assert.equal(built.artifact.approachChallengeProblems.reduce((count, problem) => count + 2, 0), 72);
+  assert.equal(built.approachChallengeManifest.freeProblemCount, 6);
+  assert.equal(built.approachChallengeManifest.premiumProblemCount, 30);
   assert.equal(built.lockEntry.sha256, sha256(built.artifactBytes));
 });
 

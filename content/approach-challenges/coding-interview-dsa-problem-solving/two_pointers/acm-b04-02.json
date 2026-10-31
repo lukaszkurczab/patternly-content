@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b04-02",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "two_pointers",
+  "requiredFamilyIds": [
+    "two_pointers"
+  ],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b04-02-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "two_pointers",
+    "mentalUnitId": "ordered-stream-intersection",
+    "prompt": "Shared Service Codes\n\nTwo maintenance logs contain sorted device codes: arrays first and second are each in nondecreasing order and may contain repeats. Return the common codes in increasing order, with each code appearing once. Do not modify either log.\n\nConstraints: first.length = second.length = n; 0 <= n <= 200000; each code is an integer in [-1000000000, 1000000000]. Return a new array containing the distinct intersection.\n\nExample 1: first = [-3, -1, -1, 2, 6, 6], second = [-2, -1, 0, 2, 2, 7] -> [-1, 2].\nExample 2: first = [4, 4, 4], second = [1, 2, 3] -> [].\nExample 3: first = [], second = [] -> [].",
+    "constraints": [
+      "Both inputs are sorted in nondecreasing order and must remain unchanged.",
+      "The returned array contains each shared value once, regardless of duplicate counts in either input.",
+      "Both inputs have equal length n; returned output storage is excluded from auxiliary-space analysis."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "merge-and-skip-equal-runs",
+          "text": "Keep one index in each log. Advance the index with the smaller code; equal codes are emitted once and both indices skip the rest of that code's run.",
+          "grade": "correct",
+          "feedback": "Advance only the smaller current code; equality emits once and consumes both equal-value runs."
+        },
+        {
+          "optionId": "B",
+          "approachId": "hash-one-log",
+          "text": "Put the distinct codes from the first log in a set, scan the second log, and collect shared codes while suppressing output duplicates.",
+          "grade": "partial",
+          "feedback": "Correct for every input, but it stores up to n codes in a set despite the sorted order."
+        },
+        {
+          "optionId": "C",
+          "approachId": "compare-every-cross-pair",
+          "text": "Compare every code in the first log with every code in the second and collect matches in a set.",
+          "grade": "incorrect",
+          "feedback": "Correct result, but it repeats cross-input comparisons instead of rejecting smaller values permanently."
+        },
+        {
+          "optionId": "D",
+          "approachId": "advance-both-on-inequality",
+          "text": "Whenever the two current codes differ, advance both indices; when they are equal, emit the code and advance both.",
+          "grade": "incorrect",
+          "feedback": "Incorrect: with [1,4,9] and [2,3,4], it skips the shared code 4."
+        }
+      ]
+    },
+    "answer": {
+      "type": "approach_choice"
+    },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Sorted order allows a one-sided rejection: discard only the smaller current value, because every future value on the other side is at least as large.",
+      "details": {}
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b04-02-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "two_pointers",
+    "mentalUnitId": "ordered-stream-intersection",
+    "prompt": "For the fixed merge-and-skip-equal-runs method described after question 1, choose its tight worst-case time and auxiliary-space pair. Exclude the returned intersection array and the two supplied logs; include all other temporary storage.",
+    "constraints": [
+      "Use worst-case bounds, not average-case assumptions.",
+      "The output array is excluded; do not exclude temporary sets or copied inputs."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        {
+          "optionId": "linear-constant",
+          "text": "O(n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "linear-linear",
+          "text": "O(n) time, O(n) auxiliary space"
+        },
+        {
+          "optionId": "nlogn-constant",
+          "text": "O(n log n) time, O(1) auxiliary space"
+        },
+        {
+          "optionId": "quadratic-constant",
+          "text": "O(n²) time, O(1) auxiliary space"
+        }
+      ]
+    },
+    "answer": {
+      "type": "choice_single",
+      "optionId": "linear-constant"
+    },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each index advances only forward and can cross its input at most once. Equal runs are skipped as part of those advances. The only auxiliary state is the two indices, a current comparison value, and output bookkeeping; the newly returned array is excluded by the stated model.",
+      "details": {
+        "targetApproachId": "merge-and-skip-equal-runs",
+        "tightWorstCase": {
+          "time": "O(n)",
+          "auxiliarySpace": "O(1)"
+        },
+        "whyTimeIsTight": "At most 2n index advances occur. In worst-case inputs with interleaved values or a long shared prefix, the scan performs a linear number of comparisons; equal-run skipping never revisits an index.",
+        "whySpaceIsConstant": "The algorithm stores two indices and fixed scalar state. It creates no set, copied input, or recursion stack. The returned distinct intersection is output and is excluded.",
+        "otherOptions": {
+          "linear-linear": "This is the time/space profile of the hash-set alternative; the fixed merge scan needs no size-dependent auxiliary structure.",
+          "nlogn-constant": "Sorting already sorted inputs is unnecessary and would add a logarithmic factor.",
+          "quadratic-constant": "This describes comparing every cross-input pair rather than rejecting the smaller current value."
+        },
+        "numericModel": "Codes fit signed 32-bit range; comparisons do not need arithmetic that can overflow. The output has at most n distinct codes.",
+        "storageModel": "Iterative scan; no recursion or input copies. O(1) counts a fixed number of machine words and excludes the returned array only.",
+        "approachOptionRationales": {
+          "merge-and-skip-equal-runs": "Correct: if first[i] < second[j], no later value in second can equal first[i], so skip that full run in first; symmetrically skip a smaller run in second. At equality, emit the value once and skip both complete runs. Each input index is passed at most once.",
+          "hash-one-log": "Correct if membership is checked and duplicate output is suppressed. The set may contain n distinct codes; the sorted merge scan uses the same linear worst-case scan bound with fixed auxiliary state and no set.",
+          "compare-every-cross-pair": "Correct set of values, but compares as many as n² cross-input pairs and needs a set to deduplicate.",
+          "advance-both-on-inequality": "Incorrect. For first=[1,4,9], second=[2,3,4], advancing both from 1 versus 2 next compares 4 versus 3, then 9 versus 4, and misses the common 4. Advancing only the smaller current value preserves it as a candidate."
+        }
+      }
+    }
+  },
+  "analyzedApproachId": "merge-and-skip-equal-runs",
+  "methodReveal": {
+    "title": "Synchronize the two sorted logs",
+    "description": "Compare the current code from each log. If one is smaller, it cannot match the other current code or any later code there, so advance only that log. If they are equal, record the code once and advance both past every repetition of it. Stop when either log is exhausted."
+  }
+}

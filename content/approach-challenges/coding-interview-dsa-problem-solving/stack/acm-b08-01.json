@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b08-01",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "stack",
+  "requiredFamilyIds": ["stack"],
+  "difficulty": "easy",
+  "approachQuestion": {
+    "questionId": "acm-b08-01-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "nested-scope-lifo-validation",
+    "prompt": "A workflow log uses four markers: OPEN_A, OPEN_B, CLOSE_A, and CLOSE_B. Each OPEN starts a scope; each CLOSE must end the most recently opened scope that has not yet been closed. Given the marker sequence, return true only when every close matches that most recent open and no scope remains open at the end. The sequence has 0 to 200,000 markers. Example: [OPEN_A, OPEN_B, CLOSE_B, CLOSE_A] returns true. [OPEN_A, OPEN_B, CLOSE_A, CLOSE_B] returns false because CLOSE_A skips the still-open B scope.",
+    "constraints": [
+      "The input is an immutable sequence of the four listed marker types.",
+      "Every close must match the type of the latest unmatched open.",
+      "The final sequence is valid only if no open scope remains.",
+      "The output is one boolean; marker types are fixed-size enum values."
+    ],
+    "difficulty": "easy",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "stack-latest-open-scope",
+          "text": "Push each OPEN type. For a CLOSE, compare it with the stack top and pop only on a match; reject a mismatch or an empty stack, then require an empty stack at the end.",
+          "grade": "correct",
+          "feedback": "The stack preserves exactly the unmatched scopes in the order needed: the most recently opened scope must close first."
+        },
+        {
+          "optionId": "B",
+          "approachId": "count-opens-and-closes-by-type",
+          "text": "Count OPEN_A versus CLOSE_A and OPEN_B versus CLOSE_B, and accept when each type has equal totals and no count becomes negative.",
+          "grade": "incorrect",
+          "feedback": "Counts cannot detect crossing scopes. [OPEN_A, OPEN_B, CLOSE_A, CLOSE_B] has balanced nonnegative counts but is invalid because B is the latest unmatched open when CLOSE_A appears."
+        },
+        {
+          "optionId": "C",
+          "approachId": "sort-markers-by-type",
+          "text": "Group markers by type, then check that each open type has a matching close type.",
+          "grade": "incorrect",
+          "feedback": "Grouping discards the event order that defines which scope is currently on top. The crossing example [OPEN_A, OPEN_B, CLOSE_A, CLOSE_B] would be incorrectly accepted."
+        },
+        {
+          "optionId": "D",
+          "approachId": "replay-each-prefix-from-start",
+          "text": "For each CLOSE, replay the sequence from its beginning to reconstruct the unmatched opens, then check the most recent one; finally scan once more for leftover opens.",
+          "grade": "incorrect",
+          "feedback": "This can return the right answer, but repeatedly rebuilding the same prefix repeats earlier checks that could be retained as the sequence is read. A single maintained LIFO state is sufficient."
+        }
+      ]
+    },
+    "answer": { "type": "approach_choice" },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "Nested scopes are resolved in reverse order of opening; matching totals alone lose that ordering information.",
+      "details": {}
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b08-01-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "nested-scope-lifo-validation",
+    "prompt": "Choose the time and auxiliary-space pair for stack-latest-open-scope. Let n be the number of markers. The immutable input and boolean output are excluded from auxiliary space.",
+    "constraints": [
+      "Each marker is inspected once and each stack operation takes constant time in the unit-cost model.",
+      "The stack may contain up to n fixed-size marker values.",
+      "The returned boolean is excluded from auxiliary space."
+    ],
+    "difficulty": "easy",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        { "optionId": "linear-linear", "text": "O(n) time, O(n) auxiliary space" },
+        { "optionId": "linear-constant", "text": "O(n) time, O(1) auxiliary space" },
+        { "optionId": "quadratic-linear", "text": "O(n²) time, O(n) auxiliary space" },
+        { "optionId": "constant-constant", "text": "O(1) time, O(1) auxiliary space" }
+      ]
+    },
+    "answer": { "type": "choice_single", "optionId": "linear-linear" },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "The scan visits all markers and the stack can retain every unmatched OPEN marker. The crossing example is rejected at the first mismatched close; a valid sequence also needs the final empty-stack check.",
+      "details": { "time": "O(n)", "additionalSpace": "O(n)" }
+    }
+  },
+  "analyzedApproachId": "stack-latest-open-scope",
+  "methodReveal": {
+    "title": "Keep the unresolved scopes in opening order",
+    "description": "Read markers from left to right. Put each OPEN type on top of a stack. At a CLOSE, reject if the stack is empty or its top is the other type; otherwise remove that top. Accept after the scan only when the stack is empty. The top is the only scope that is allowed to close next."
+  }
+}

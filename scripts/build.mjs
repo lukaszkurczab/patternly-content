@@ -25,6 +25,9 @@ import {
   validateQuestionRelations
 } from "./content/question-contract.mjs";
 import { PlanningPolicyError, validatePlanningPolicy } from "./content/planning-policy.mjs";
+import { validateApproachChallengeFamily, validateApproachChallengeProblem } from "./content/approach-challenge-contract.mjs";
+import { validateApproachChallengeBlueprint } from "./content/approach-challenge-blueprint.mjs";
+import { loadApproachChallengeBank } from "./content/approach-challenge-bank.mjs";
 import { TRACK_RUNTIME_BINDINGS_FILE, getTrackRuntimeBinding, loadTrackProfileData, loadTrackRuntimeBindings, resolveTrackProfileLoaderRegistration, validateTrackRuntimeBindings } from "./content/track-runtime-bindings.mjs";
 
 export const ARTIFACT_SCHEMA_VERSION = "patternly-content-artifact-v2";
@@ -34,7 +37,7 @@ export const LOCK_FILE_NAME = "content-lock.json";
 const DEFAULT_ROOT_DIRECTORY = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
 const JSON_FILE_SUFFIX = ".json";
 const HASH_PATTERN = /^[a-f0-9]{64}$/;
-const COMMANDS = new Set(["validate", "test", "build", "build-all", "build-premium-node"]);
+const COMMANDS = new Set(["validate", "validate-approach-family", "test", "build", "build-all", "build-premium-node"]);
 const TRACK_COMMANDS = new Set(["validate", "test", "build"]);
 const compareStrings = (left, right) => (left < right ? -1 : left > right ? 1 : 0);
 const DEFAULT_FILE_OPS = Object.freeze({ lstat, mkdir, readFile, readdir, realpath, rename, unlink, writeFile });
@@ -241,6 +244,7 @@ function sourceIdentity(filePath, sourceRoot) {
 }
 
 function validateTrackQuestion(question, { trackId, sourceIdentity: identity, filePath, catalog }) {
+  if (question?.interaction?.type === "approach_choice") fail(`approach_choice is reserved for paired authoring sources outside the canonical question pool: ${filePath}`);
   const result = validateQuestion(question, { catalogTrackIds: catalog.tracks.map((track) => track.trackId) });
   if (!result.valid) fail(`Invalid question in ${filePath}`, result.errors);
   if (question.trackId !== trackId) fail(`Question ${question.questionId} has foreign trackId ${question.trackId}`);
@@ -474,8 +478,9 @@ async function loadCodingSimulationProfileData({ rootDirectory, track, questions
   const config = await readJson(trackConfigPath);
   exactKeys(config, ["schemaVersion", "trackId", "familyId", "taxonomyVersion", "taxonomyPath", "freeNodeExperienceProfilePath", "modeConfiguration"], "Coding Interview track config");
   if (config.schemaVersion !== "track-config-v1" || config.trackId !== CODING_TRACK_ID || config.familyId !== "coding_interview" || !nonEmptyString(config.taxonomyVersion)) fail("Coding Interview track config identity or version is invalid");
-  exactKeys(config.modeConfiguration, ["schemaVersion", "practiceBlueprints", "simulationBlueprint", "userModeMappings"], "Coding Interview mode configuration");
+  exactKeys(config.modeConfiguration, ["schemaVersion", "practiceBlueprints", "simulationBlueprint", "userModeMappings", "approachChallengeBlueprint"], "Coding Interview mode configuration");
   if (config.modeConfiguration.schemaVersion !== "coding-interview-track-mode-config-v1") fail("Coding Interview mode configuration schema is invalid");
+  validateApproachChallengeBlueprint(config.modeConfiguration.approachChallengeBlueprint);
 
   const blueprint = config.modeConfiguration.simulationBlueprint;
   exactKeys(blueprint, ["blueprintId", "blueprintVersion", "modeId", "profileId", "profileVersion", "poolVersion", "requestedLength", "actualLength", "shorteningPolicy", "uniqueItemsRequired", "timerKind", "durationMinutes", "navigationPolicy", "answerChangePolicy", "reinsertPolicy", "feedbackTiming", "learningStages", "selectionPolicy", "eligibleQuestionIds"], "Coding Interview simulation blueprint");
@@ -516,6 +521,11 @@ async function loadCodingSimulationProfileData({ rootDirectory, track, questions
     const selectedTypes = new Set(selectedQuestions.map((question) => question.interaction.type));
     if ([...activeTypes].some((type) => !selectedTypes.has(type))) fail("Coding Interview simulation pool does not represent every active interaction type");
   }
+  const approachChallengeBank = await loadApproachChallengeBank({
+    rootDirectory,
+    taxonomyFamilyIds: patternFamilyIds,
+    canonicalQuestionIds: questions.map((question) => question.questionId)
+  });
   const familyConfig = Object.freeze({
     schemaVersion: "patternly-coding-interview-simulation-config-v1",
     blueprintId: blueprint.blueprintId,
@@ -536,7 +546,19 @@ async function loadCodingSimulationProfileData({ rootDirectory, track, questions
     poolVersion: blueprint.poolVersion,
     eligibleQuestionIds: eligibleIds
   });
-  return { simulationProfiles: [Object.freeze({ schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION, profileId: blueprint.profileId, profileVersion: blueprint.profileVersion, familyId: config.familyId, modeId: blueprint.modeId, familyConfig })] };
+  return {
+    simulationProfiles: [Object.freeze({ schemaVersion: SIMULATION_PROFILE_SCHEMA_VERSION, profileId: blueprint.profileId, profileVersion: blueprint.profileVersion, familyId: config.familyId, modeId: blueprint.modeId, familyConfig })],
+    approachChallengeProblems: approachChallengeBank.problems,
+    approachChallengeManifest: Object.freeze({
+      registryVersion: approachChallengeBank.registryVersion,
+      problemCount: approachChallengeBank.problemCount,
+      questionCount: approachChallengeBank.questionCount,
+      freeProblemCount: approachChallengeBank.freeProblemCount,
+      premiumProblemCount: approachChallengeBank.premiumProblemCount,
+      familyCounts: approachChallengeBank.familyCounts,
+      sourceEntries: approachChallengeBank.sourceEntries
+    })
+  };
 }
 
 export async function loadCodingSimulationProfiles(options) {
@@ -694,7 +716,22 @@ export async function validateTrack({ rootDirectory, root, trackId, profileLoade
   const artifactQuestions = profileData?.questionDomains
     ? questions.map((question) => ({ ...question, contentDomainId: profileData.questionDomains[question.questionId] }))
     : questions;
-  return { rootDirectory: resolvedRoot, catalog, bindings, binding, track, trackId, sourceRoot, sourceFiles, questions, artifactQuestions, planningPolicy, simulationProfiles: profileData?.simulationProfiles };
+  return {
+    rootDirectory: resolvedRoot,
+    catalog,
+    bindings,
+    binding,
+    track,
+    trackId,
+    sourceRoot,
+    sourceFiles,
+    questions,
+    artifactQuestions,
+    planningPolicy,
+    simulationProfiles: profileData?.simulationProfiles,
+    approachChallengeProblems: profileData?.approachChallengeProblems,
+    approachChallengeManifest: profileData?.approachChallengeManifest
+  };
 }
 
 export async function testTrack(options = {}) {
@@ -758,6 +795,7 @@ function artifactFor(validated) {
   };
   if (Object.hasOwn(validated.track, "completionRule")) artifact.completionRule = validated.track.completionRule;
   if (validated.simulationProfiles) artifact.simulationProfiles = validated.simulationProfiles;
+  if (validated.approachChallengeProblems) artifact.approachChallengeProblems = validated.approachChallengeProblems;
   return artifact;
 }
 
@@ -810,7 +848,7 @@ async function readRegularFile(filePath, label) {
 
 function validateArtifactShape(artifact, { entry, catalog, filePath, matchesCurrentVersion }) {
   const requiredKeys = ["schemaVersion", "trackId", "contentVersion", "questions", "planningPolicy"];
-  const allowedKeys = [...requiredKeys, "simulationProfiles", "completionRule"];
+  const allowedKeys = [...requiredKeys, "simulationProfiles", "completionRule", "approachChallengeProblems"];
   if (!isRecord(artifact) || requiredKeys.some((key) => !Object.hasOwn(artifact, key)) || Object.keys(artifact).some((key) => !allowedKeys.includes(key))) {
     fail(`Artifact has an invalid shape: ${filePath}`);
   }
@@ -828,6 +866,23 @@ function validateArtifactShape(artifact, { entry, catalog, filePath, matchesCurr
   }
   if (!Array.isArray(artifact.questions) || artifact.questions.length !== entry.questionCount) {
     fail(`Artifact questionCount mismatch: ${filePath}`);
+  }
+  if (Object.hasOwn(artifact, "approachChallengeProblems")) {
+    if (entry.trackId !== "coding-interview-dsa-problem-solving" || !Array.isArray(artifact.approachChallengeProblems) || artifact.approachChallengeProblems.length !== 36) {
+      fail(`Artifact approachChallengeProblems must contain exactly 36 Coding Interview problem pairs: ${filePath}`);
+    }
+    const problemIds = new Set();
+    const questionIds = new Set(artifact.questions.map((question) => question.questionId));
+    for (const [index, problem] of artifact.approachChallengeProblems.entries()) {
+      const errors = validateApproachChallengeProblem(problem);
+      if (errors.length) fail(`Artifact approachChallengeProblems[${index}] is invalid: ${filePath}`, errors);
+      if (problemIds.has(problem.problemId)) fail(`Artifact approachChallengeProblems has duplicate problemId: ${filePath}`);
+      problemIds.add(problem.problemId);
+      for (const question of [problem.approachQuestion, problem.complexityQuestion]) {
+        if (questionIds.has(question.questionId)) fail(`Artifact approachChallengeProblems has duplicate questionId ${question.questionId}: ${filePath}`);
+        questionIds.add(question.questionId);
+      }
+    }
   }
   try {
     validatePlanningPolicy(artifact.planningPolicy, artifact.questions);
@@ -1184,7 +1239,7 @@ export async function buildPremiumNodePackage(options = {}) {
 }
 
 function usage() {
-  return "Usage: node scripts/build.mjs <validate|test|build> --track <trackId> [--root <dir>] [--output-root <dir>] | build-all [--root <dir>] [--output-root <dir>] | build-premium-node --track <trackId> --node <nodeId> [--app-root <dir>] [--output-root <dir>] [--apply-offer]";
+  return "Usage: node scripts/build.mjs <validate|test|build> --track <trackId> [--root <dir>] [--output-root <dir>] | validate-approach-family --family <familyId> [--root <dir>] | build-all [--root <dir>] [--output-root <dir>] | build-premium-node --track <trackId> --node <nodeId> [--app-root <dir>] [--output-root <dir>] [--apply-offer]";
 }
 
 export function parseArgs(argv = process.argv.slice(2)) {
@@ -1198,15 +1253,17 @@ export function parseArgs(argv = process.argv.slice(2)) {
       options.applyOffer = true;
       continue;
     }
-    if (!["--track", "--node", "--root", "--output-root", "--app-root"].includes(argument)) fail(`Unknown argument: ${argument}\n${usage()}`);
+    if (!["--track", "--node", "--root", "--output-root", "--app-root", "--family"].includes(argument)) fail(`Unknown argument: ${argument}\n${usage()}`);
     if (index + 1 >= rest.length || rest[index + 1].startsWith("--")) fail(`${argument} requires a value\n${usage()}`);
     const value = rest[++index];
     if (!nonEmptyString(value)) fail(`${argument} requires a non-empty value\n${usage()}`);
-    const key = argument === "--output-root" ? "outputRoot" : argument === "--track" ? "trackId" : argument === "--node" ? "nodeId" : argument === "--app-root" ? "appRoot" : argument.slice(2);
+    const key = argument === "--output-root" ? "outputRoot" : argument === "--track" ? "trackId" : argument === "--node" ? "nodeId" : argument === "--app-root" ? "appRoot" : argument === "--family" ? "familyId" : argument.slice(2);
     if (Object.prototype.hasOwnProperty.call(options, key)) fail(`Duplicate argument: ${argument}`);
     options[key] = value;
   }
   if (TRACK_COMMANDS.has(command) && !nonEmptyString(options.trackId)) fail(`--track is required for ${command}\n${usage()}`);
+  if (command === "validate-approach-family" && (!nonEmptyString(options.familyId) || options.trackId || options.nodeId || options.outputRoot || options.appRoot || options.applyOffer)) fail(`validate-approach-family requires only --family and optional --root\n${usage()}`);
+  if (command !== "validate-approach-family" && options.familyId) fail(`--family is only accepted for validate-approach-family\n${usage()}`);
   if (command === "build-premium-node" && (!options.trackId || !options.nodeId)) fail("--track and --node are required for build-premium-node");
   if (command !== "build-premium-node" && (options.nodeId || options.appRoot || options.applyOffer)) fail("--node/--app-root/--apply-offer require build-premium-node");
   if (command === "build-all" && options.trackId) fail(`--track is not accepted for build-all\n${usage()}`);
@@ -1215,6 +1272,14 @@ export function parseArgs(argv = process.argv.slice(2)) {
 
 async function runCli(argv = process.argv.slice(2)) {
   const options = parseArgs(argv);
+  const approachChallengeSummary = (result) => result.approachChallengeManifest
+    ? `; ${result.approachChallengeManifest.problemCount} paired problems/${result.approachChallengeManifest.questionCount} stages (${result.approachChallengeManifest.freeProblemCount} Free/${result.approachChallengeManifest.premiumProblemCount} Premium; separate from the canonical question pool)`
+    : "";
+  if (options.command === "validate-approach-family") {
+    const result = await validateApproachChallengeFamily({ rootDirectory: resolveRoot(options), familyId: options.familyId });
+    console.log(`Validated ${result.problemCount} paired approach challenge(s) for ${result.familyId}; excluded from canonical question pools.`);
+    return;
+  }
   if (options.command === "build-premium-node") {
     const result = await buildPremiumNodePackage(options);
     console.log(`Built current Premium node (${result.derivation.itemCount} questions); local artifacts: ${result.outputRoot}${result.offerPath ? `; offer applied: ${result.offerPath}` : "; offer not applied"}`);
@@ -1222,17 +1287,17 @@ async function runCli(argv = process.argv.slice(2)) {
   }
   if (options.command === "validate") {
     const result = await validateTrack(options);
-    console.log(`Validated ${result.questions.length} question(s) for ${result.trackId}`);
+    console.log(`Validated ${result.questions.length} canonical question(s) for ${result.trackId}${approachChallengeSummary(result)}`);
     return;
   }
   if (options.command === "test") {
     const result = await testTrack(options);
-    console.log(`Tested ${result.questions.length} canonical answer(s) for ${result.trackId}`);
+    console.log(`Tested ${result.questions.length} canonical answer(s) for ${result.trackId}${approachChallengeSummary(result)}`);
     return;
   }
   if (options.command === "build") {
     const result = await buildTrack(options);
-    console.log(`Built ${result.artifactPath} (${result.questions.length} question(s), ${result.lockEntry?.sha256 ?? sha256(result.artifactBytes)})`);
+    console.log(`Built ${result.artifactPath} (${result.questions.length} canonical question(s)${approachChallengeSummary(result)}, ${result.lockEntry?.sha256 ?? sha256(result.artifactBytes)})`);
     return;
   }
   const result = await buildAll(options);

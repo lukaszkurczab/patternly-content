@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "approach-challenge-problem-v1",
+  "problemId": "acm-b08-02",
+  "problemVersion": "1",
+  "trackId": "coding-interview-dsa-problem-solving",
+  "primaryFamilyId": "stack",
+  "requiredFamilyIds": ["stack"],
+  "difficulty": "medium",
+  "approachQuestion": {
+    "questionId": "acm-b08-02-q1",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "push-pop-trace-audit",
+    "prompt": "A device records an operation trace. PUSH(value) places a signed 64-bit integer on a stack. POP(claim) removes the top value and records what the device claims it removed. Audit the trace from the beginning. Return the zero-based index of the first POP that underflows or whose claim differs from the actual top. If every POP is valid, return the maximum stack depth reached; an empty trace returns 0. Example: [PUSH(7), PUSH(4), POP(4), POP(7)] returns 2. [PUSH(7), PUSH(4), POP(7)] returns 2, the index of the mismatching POP.",
+    "constraints": [
+      "The immutable trace has 0 to 200,000 operations.",
+      "Each PUSH carries one signed 64-bit integer; each POP carries one claimed signed 64-bit integer.",
+      "A POP from an empty stack is the first invalid operation.",
+      "The output is either the first invalid zero-based operation index or, when all operations are valid, the maximum depth reached; it fits in a signed 64-bit integer.",
+      "The input trace is not auxiliary space; the stack stores fixed-size integer values."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "approach_choice",
+      "scoringMethod": "graded_option",
+      "options": [
+        {
+          "optionId": "A",
+          "approachId": "simulate-with-value-stack",
+          "text": "Process operations once with a stack of pushed values. On POP, reject an empty stack or a claim unequal to the top; otherwise pop. Track the greatest depth after pushes.",
+          "grade": "correct",
+          "feedback": "This directly models the device: the top value is the only value a POP can remove, and the same pass can maintain the maximum depth."
+        },
+        {
+          "optionId": "B",
+          "approachId": "fifo-queue-simulation",
+          "text": "Store pushed values in a queue and compare each POP claim with the oldest still-pushed value.",
+          "grade": "incorrect",
+          "feedback": "A queue removes the earliest pushed value, while POP removes the latest. [PUSH(7), PUSH(4), POP(4)] is valid for a stack but this method compares 4 with 7 and rejects it."
+        },
+        {
+          "optionId": "C",
+          "approachId": "aggregate-push-pop-counts",
+          "text": "Track only the current number of values and the maximum count; treat every POP as valid whenever the count is positive.",
+          "grade": "incorrect",
+          "feedback": "Depth alone cannot check the claimed value. [PUSH(7), PUSH(4), POP(7)] never underflows, but the POP claim is wrong because 4 is on top."
+        },
+        {
+          "optionId": "D",
+          "approachId": "rebuild-stack-for-each-pop",
+          "text": "For each POP, replay all preceding operations to reconstruct the stack, check its top, and replay the whole trace to find the maximum depth if no POP fails.",
+          "grade": "incorrect",
+          "feedback": "The replay can produce the right result, but reconstructing prior state for each POP repeats work and is far from the single-pass solution. This is an efficiency error, not a claim that the replay returns incorrect stack results."
+        }
+      ]
+    },
+    "answer": { "type": "approach_choice" },
+    "feedback": {
+      "type": "approach_choice",
+      "reason": "The trace is defined by last-in, first-out behavior. Both the value check and maximum depth can be maintained while applying each operation to that state.",
+      "details": {}
+    }
+  },
+  "complexityQuestion": {
+    "questionId": "acm-b08-02-q2",
+    "trackId": "coding-interview-dsa-problem-solving",
+    "nodeId": "stack",
+    "mentalUnitId": "push-pop-trace-audit",
+    "prompt": "Choose the time and auxiliary-space pair for simulate-with-value-stack. Let m be the number of operations. The immutable trace and scalar output are excluded from auxiliary space.",
+    "constraints": [
+      "Each operation is processed at most once before returning or reaching the end.",
+      "Each stored integer occupies one word in the unit-cost model; stack operations are constant time.",
+      "The stack can contain up to m values. No call-stack recursion is used."
+    ],
+    "difficulty": "medium",
+    "interaction": {
+      "type": "choice_single",
+      "scoringMethod": "exact_selected_set",
+      "options": [
+        { "optionId": "linear-linear", "text": "O(m) time, O(m) auxiliary space" },
+        { "optionId": "linear-constant", "text": "O(m) time, O(1) auxiliary space" },
+        { "optionId": "quadratic-linear", "text": "O(m²) time, O(m) auxiliary space" },
+        { "optionId": "linear-output-space", "text": "O(1) time, O(m) auxiliary space" }
+      ]
+    },
+    "answer": { "type": "choice_single", "optionId": "linear-linear" },
+    "feedback": {
+      "type": "choice_single",
+      "reason": "Each operation causes a constant number of checks and at most one push or pop, so the scan is linear. In the worst case all operations are PUSH, leaving m values in the auxiliary stack. The queue alternative has the same broad storage bound but implements the wrong removal order; replaying prefixes repeats earlier operations instead of retaining the current stack state. The output is one scalar and is excluded from auxiliary space.",
+      "details": { "time": "O(m)", "additionalSpace": "O(m)" }
+    }
+  },
+  "analyzedApproachId": "simulate-with-value-stack",
+  "methodReveal": {
+    "title": "Apply and audit each operation against the current top",
+    "description": "Start with an empty stack and maximum depth zero. For PUSH(value), place value on top and update the maximum depth. For POP(claim), first reject an empty stack; otherwise compare claim with the top value and reject a mismatch, then remove the top. Stop at the first invalid POP. If the trace ends without one, return the recorded maximum depth."
+  }
+}

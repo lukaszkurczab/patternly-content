@@ -11,6 +11,7 @@ export const QUESTION_INTERACTION_TYPES = Object.freeze([
   "complexity",
   "decision_matrix"
 ]);
+export const APPROACH_CHALLENGE_INTERACTION_TYPE = "approach_choice";
 
 export const ACCEPTED_TRACK_IDS = acceptedTrackIdsFromRuntimeBindings();
 
@@ -41,6 +42,7 @@ const LEARNER_TEXT_HAS_CONTENT = new RegExp(`[^${CONTRACT_WHITESPACE_CLASS}]`, "
 const TRIM_CLEAN_EDGE = new RegExp(`^[${CONTRACT_WHITESPACE_CLASS}]|[${CONTRACT_WHITESPACE_CLASS}]$`, "u");
 
 const SCORING_METHODS = Object.freeze({
+  approach_choice: "graded_option",
   choice_single: "exact_selected_set",
   choice_multiple: "exact_selected_set",
   ordering: "adjacent_relations",
@@ -49,6 +51,7 @@ const SCORING_METHODS = Object.freeze({
 });
 
 const FEEDBACK_KINDS = Object.freeze({
+  approach_choice: Object.freeze([]),
   choice_single: Object.freeze(["wrong_option"]),
   choice_multiple: Object.freeze(["wrong_option", "omitted_option"]),
   ordering: Object.freeze(["wrong_element", "broken_relation"]),
@@ -340,7 +343,8 @@ function validateDimensionAnswer(answer, type, dimensions, pathName, errors) {
   }
 }
 
-function validateQuestionInternal(question, { catalogTrackIds } = {}) {
+function validateQuestionInternal(question, options = {}) {
+  const { catalogTrackIds, allowApproachChoice = false } = options;
   const errors = [];
   if (!exactKeys(question, QUESTION_KEYS, "question", errors, REQUIRED_QUESTION_KEYS)) return errors;
 
@@ -382,15 +386,36 @@ function validateQuestionInternal(question, { catalogTrackIds } = {}) {
     addError(errors, "question.interaction", "must be an object");
     return errors;
   }
-  if (typeof question.interaction.type !== "string" || !QUESTION_INTERACTION_TYPES.includes(question.interaction.type)) {
-    addError(errors, "question.interaction.type", `must be one of ${QUESTION_INTERACTION_TYPES.join(", ")}`);
+  const isApproachChoice = allowApproachChoice === true && question.interaction.type === APPROACH_CHALLENGE_INTERACTION_TYPE;
+  if (typeof question.interaction.type !== "string" || (!QUESTION_INTERACTION_TYPES.includes(question.interaction.type) && !isApproachChoice)) {
+    addError(errors, "question.interaction.type", `must be one of ${QUESTION_INTERACTION_TYPES.join(", ")}${allowApproachChoice === true ? `, ${APPROACH_CHALLENGE_INTERACTION_TYPE}` : ""}`);
     return errors;
   }
 
   const type = question.interaction.type;
   let referenceIds = [];
   let dimensions = [];
-  if (type === "choice_single" || type === "choice_multiple") {
+  if (type === "approach_choice") {
+    if (!exactKeys(question.interaction, ["type", "scoringMethod", "options"], "question.interaction", errors)) return errors;
+    if (question.interaction.scoringMethod !== SCORING_METHODS[type]) addError(errors, "question.interaction.scoringMethod", `must equal ${SCORING_METHODS[type]}`);
+    if (!Array.isArray(question.interaction.options)) addError(errors, "question.interaction.options", "must be an array");
+    else {
+      if (question.interaction.options.length < 2) addError(errors, "question.interaction.options", "must contain at least two options");
+      const optionIds = [], approachIds = [];
+      question.interaction.options.forEach((option, index) => {
+        const path = `question.interaction.options[${index}]`;
+        if (!exactKeys(option, ["optionId", "approachId", "text", "grade", "feedback"], path, errors)) return;
+        if (trimCleanString(option.optionId, `${path}.optionId`, errors)) optionIds.push(option.optionId);
+        if (trimCleanString(option.approachId, `${path}.approachId`, errors)) approachIds.push(option.approachId);
+        learnerTextString(option.text, `${path}.text`, errors);
+        learnerTextString(option.feedback, `${path}.feedback`, errors);
+        if (!["correct", "partial", "incorrect"].includes(option.grade)) addError(errors, `${path}.grade`, "must be correct, partial, or incorrect");
+      });
+      if (new Set(optionIds).size !== optionIds.length) addError(errors, "question.interaction.options", "option IDs must be unique");
+      if (new Set(approachIds).size !== approachIds.length) addError(errors, "question.interaction.options", "approach IDs must be unique");
+    }
+    if (exactKeys(question.answer, ["type"], "question.answer", errors) && question.answer.type !== type) addError(errors, "question.answer.type", `must equal ${type}`);
+  } else if (type === "choice_single" || type === "choice_multiple") {
     const interactionKeys = type === "choice_multiple"
       ? ["type", "scoringMethod", "options", ...(Object.hasOwn(question.interaction, "requiredSelectionCount") ? ["requiredSelectionCount"] : [])]
       : ["type", "scoringMethod", "options"];
@@ -678,8 +703,15 @@ function scoreDimensionResponse(question, response) {
 }
 
 export function scoreQuestion(question, response) {
-  assertValidQuestion(question);
+  assertValidQuestion(question, { allowApproachChoice: question?.interaction?.type === APPROACH_CHALLENGE_INTERACTION_TYPE });
   const type = question.interaction.type;
+
+  if (type === APPROACH_CHALLENGE_INTERACTION_TYPE) {
+    if (!responseShapeMatches(response, type, ["optionId"])) return scoreResult(1, 0, { invalidResponse: true });
+    const selected = question.interaction.options.find((option) => option.optionId === response.optionId);
+    if (!selected) return scoreResult(1, 0, { invalidResponse: true, selectedOptionId: response.optionId });
+    return { status: selected.grade, earnedPoints: selected.grade === "correct" ? 1 : 0, maxPoints: 1, selectedOptionId: selected.optionId, grade: selected.grade };
+  }
 
   if (type === "choice_single") {
     if (!responseShapeMatches(response, type, ["optionId"])) return scoreResult(1, 0, { invalidResponse: true });
